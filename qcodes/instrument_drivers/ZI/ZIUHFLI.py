@@ -718,12 +718,16 @@ class ZIUHFLI(Instrument):
                                )
 
             for demod_param in ['x', 'y', 'R', 'phi']:
-
+                if demod_param in ('x', 'y', 'R'):
+                    unit = 'V'
+                else:
+                    unit = 'deg'
                 self.add_parameter('demod{}_{}'.format(demod, demod_param),
                                    label='Demod {} {}'.format(demod, demod_param),
                                    get_cmd=partial(self._get_demod_sample,
                                                    demod - 1, demod_param),
-                                   snapshot_value=False
+                                   snapshot_value=False,
+                                   unit=unit
                                    )
 
         ########################################
