@@ -199,7 +199,7 @@ class GS200(VisaInstrument):
 
         # We want to cache the range value so communication with the instrument only happens when the set the
         # range. Getting the range always returns the cached value. This value is adjusted when calling
-        # self._set_range_parser
+        # self._set_range
         self._cached_range_value = None
 
         self.add_parameter('voltage_range',
