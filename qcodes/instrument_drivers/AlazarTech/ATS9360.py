@@ -35,6 +35,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='External Sample Rate',
                            unit='S/s',
+                           vals=validators.Ints(300e6, 1800e6),
                            value=500000000)
         self.add_parameter(name='sample_rate',
                            parameter_class=AlazarParameter,
@@ -74,6 +75,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                                 0x00000075: 3000000000,
                                                 0x0000007B: 3600000000,
                                                 0x00000080: 4000000000,
+                                                0x00000040: 'EXTERNAL_CLOCK',
                                                 })
         self.add_parameter(name='clock_edge',
                            parameter_class=AlazarParameter,
@@ -301,37 +303,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value=1000,
                            vals=validators.Ints(min_value=0))
 
-        self.add_parameter(name='effective_sample_rate',
-                           unit='Hz',
-                           alternative='decimation and sample_rate or external_sample_rate depending on clock_source',
-                           parameter_class=EffectiveSampleRateParameter)
-
         model = self.get_idn()['model']
         if model != 'ATS9360':
             raise Exception("The Alazar board kind is not 'ATS9360',"
                             " found '" + str(model) + "' instead.")
-
-
-    def get_sample_rate(self):
-        """
-        Obtain the effective sampling rate of the acquisition
-        based on clock type, clock speed and decimation
-
-        Returns:
-            the number of samples (per channel) per second
-        """
-        if self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF':
-            rate = self.external_sample_rate.get()
-        elif self.clock_source.get() == 'INTERNAL_CLOCK':
-            rate = self.sample_rate.get()
-        else:
-            raise Exception("Don't know how to get sample rate with {}".format(self.clock_source.get()))
-
-        if rate == '1GHz_REFERENCE_CLOCK':
-            rate = 1e9
-
-        decimation = self.decimation.get()
-        if decimation > 0:
-            return rate / decimation
-        else:
-            return rate
