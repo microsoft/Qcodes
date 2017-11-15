@@ -406,13 +406,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
                     if self._snapshot_value and self.log.isEnabledFor(logging.DEBUG):
                         # Add to log
-                        log_msg = f'parameter set to {val_step}'
+                        log_msg = 'parameter set to {}'.format(val_step)
                         if mapped_value != val_step:
-                            log_msg += f', mapped: {mapped_value}'
+                            log_msg += ', mapped: {}'.format(mapped_value)
                         if scaled_mapped_value != mapped_value:
-                            log_msg += f', scaled: {scaled_mapped_value}'
+                            log_msg += ', scaled: {}'.format(scaled_mapped_value)
                         if parsed_scaled_mapped_value != scaled_mapped_value:
-                            log_msg += f', parsed: {parsed_scaled_mapped_value}'
+                            log_msg += ', parsed: {}'.format(parsed_scaled_mapped_value)
                         self.log.debug(log_msg)
 
                     # Update last set time (used for calculating delays)
