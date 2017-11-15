@@ -404,7 +404,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
 
-                    if self._snapshot_value:
+                    if self._snapshot_value and self.log.isEnabledFor(logging.DEBUG):
                         # Add to log
                         log_msg = f'parameter set to {val_step}'
                         if mapped_value != val_step:
