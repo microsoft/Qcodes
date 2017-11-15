@@ -1116,9 +1116,9 @@ class MultiParameter(_BaseParameter):
                          snapshot_value=snapshot_value,
                          wrap_get=wrap_get, wrap_set=wrap_set)
 
-        if hasattr(self, 'set'):
-            # TODO (alexcjohnson): can we support, ala Combine?
-            warnings.warn('MultiParameters do not support set at this time.')
+        # if hasattr(self, 'set'):
+        #     # TODO (alexcjohnson): can we support, ala Combine?
+        #     warnings.warn('MultiParameters do not support set at this time.')
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])
