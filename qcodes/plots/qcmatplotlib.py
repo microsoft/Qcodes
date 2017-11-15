@@ -2,7 +2,7 @@
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
-from collections import Mapping, Sequence
+from collections import Mapping, Sequence, Iterable
 import os
 from functools import partial
 import logging
