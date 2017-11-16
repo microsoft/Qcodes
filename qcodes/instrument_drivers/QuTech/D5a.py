@@ -104,10 +104,7 @@ class D5a(Instrument):
 
     def _set_span(self, dac, span_str):
         self.d5a.change_span_update(dac, self._span_set_map[span_str])
-<<<<<<< HEAD
-=======
         self.parameters['dac{}'.format(dac + 1)].vals = self._get_validator(dac)
->>>>>>> 9b7140c6... validator has to be updated on span change
 
     def _get_validator(self, dac):
         span = self.d5a.span[dac]
