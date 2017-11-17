@@ -439,7 +439,8 @@ class MatPlot(BasePlot):
 
         if os.path.splitext(filename)[1]:
             # Filename already has extension
-            filename, ext = os.path.splitext(filename)[1]
+            filename, ext = os.path.splitext(filename)
+            ext = ext[1:] # Remove initial `.`
 
         if isinstance(ext, str):
             ext = [ext]
