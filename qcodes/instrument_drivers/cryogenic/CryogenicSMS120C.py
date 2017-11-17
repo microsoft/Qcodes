@@ -46,8 +46,9 @@ class CryogenicSMS120C(VisaInstrument):
         current_ramp_limit (float): current ramp limit in ampere per second,
             for 50mK operation 0.0506A/s (5.737E-3 T/s, 0.34422T/min) - usually used
             for 4K operation 0.12A/s (0.013605 T/s, 0.8163 T/min) - not recommended
-        persistent_mode (bool): check if magnet is in persistent mode (True/False)
-        timing : SMS120C needs a minimum of 200ms delay between commands being sent
+        enable_log (bool): of True set logging level of the driver to INFO
+        
+    Note about timing : SMS120C needs a minimum of 200ms delay between commands being sent
     """
 
     # Reg. exp. to match a float or exponent in a string
@@ -55,7 +56,8 @@ class CryogenicSMS120C(VisaInstrument):
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
                  current_ramp_limit=0.0506,
-                 reset=False, timeout=5, terminator='\r\n', **kwargs):
+                 reset=False, timeout=5, terminator='\r\n', enable_log = True,
+                 **kwargs):
 
         log.debug('Initializing instrument')
         super().__init__(name, address, terminator=terminator, **kwargs)
@@ -134,6 +136,9 @@ class CryogenicSMS120C(VisaInstrument):
                            set_cmd=self._set_pauseRamp,
                            get_cmd=self._get_pauseRamp,
                            val_mapping={False: 0, True: 1})
+
+        if enable_log:
+            log.setLevel(logging.INFO)
 
     def get_idn(self):
         """
@@ -339,10 +344,11 @@ class CryogenicSMS120C(VisaInstrument):
                 switchHeater = 0
             else:  # assume no change to current switch heater state
                 strHeaterStatus = self.ask('HEATER %d' % val)
-                log.info(strHeaterStatus)
+                switchHeater = self._get_switchHeater()
+            log.info(strHeaterStatus)
             return switchHeater
 
-    # Move into persiostent mode (1) or out of persiatet mode(0)
+    # Move into persistent mode (1) or out of persistent mode(0)
     def _set_persistentMode(self, val):
         if self._get_rampStatus() == 0:     # Check magnet on HOLD
             currField = self._get_field()
