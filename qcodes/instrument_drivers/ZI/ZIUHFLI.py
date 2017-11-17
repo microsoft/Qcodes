@@ -2,7 +2,9 @@ import time
 import logging
 import numpy as np
 from functools import partial
-from typing import Union
+
+from typing import Callable, List, Union
+
 try:
     import zhinst.utils
 except ImportError:
@@ -250,13 +252,26 @@ class Scope(MultiParameter):
         # They are updated via build_scope.
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
+        self._scopeactions = []  # list of callables
+
+    def add_post_trigger_action(self, action: Callable) -> None:
+        """
+        Add an action to be performed immediately after the trigger
+        has been armed. The action must be a callable taking zero
+        arguments
+        """
+        self._scopeactions.append(action)
+
+    @property
+    def post_trigger_actions(self) -> List[Callable]:
+        return self._scopeactions
 
     def prepare_scope(self):
         """
         Prepare the scope for a measurement. Must immediately preceed a
         measurement.
         """
-
+        #
         log.info('Preparing the scope')
 
         # A convenient reference
@@ -452,20 +467,26 @@ class Scope(MultiParameter):
             # one shot per trigger. This needs to be set every time
             # a the scope is enabled as below using scope_runstop
             try:
-                # we wrap this in try finally to ensure that scope.finish is always called
-                # even if the measurement is interrupted
+                # we wrap this in try finally to ensure that
+                # scope.finish is always called even if the
+                # measurement is interrupted
                 self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
                 self._instrument.daq.sync()
 
-                scope = self._instrument.scope # There are issues reusing the scope.
+                scope = self._instrument.scope  # There are issues reusing the scope.
                 scope.set('scopeModule/clearhistory', 1)
 
                 # Start the scope triggering/acquiring
-                params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
+                params['scope_runstop'].set('run')  # set /dev/scopes/0/enable to 1
 
                 log.info('[*] Starting ZI scope acquisition.')
                 # Start something... hauling data from the scopeModule?
                 scope.execute()
+
+                # Now perform actions that may produce data, e.g. running an AWG
+                for action in self._scopeactions:
+                    action()
+
                 starttime = time.time()
                 timedout = False
 
