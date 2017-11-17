@@ -350,7 +350,7 @@ class GNUPlotFormat(Formatter):
 
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
-            json.dump(data_set.metadata, snap_file, sort_keys=True,
+            json.dump(data_set.metadata, snap_file, sort_keys=False,
                       indent=4, ensure_ascii=False, cls=NumpyJSONEncoder)
 
     def read_metadata(self, data_set):
