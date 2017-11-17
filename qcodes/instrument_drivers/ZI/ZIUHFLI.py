@@ -2,6 +2,7 @@ import time
 import logging
 import numpy as np
 from functools import partial
+from typing import Union
 try:
     import zhinst.utils
 except ImportError:
@@ -548,15 +549,13 @@ class ZIUHFLI(Instrument):
         * Add zoom-FFT
     """
 
-    def __init__(self, name, device_ID, **kwargs):
+    def __init__(self, name: str, device_ID: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
 
         Args:
             name (str): The internal QCoDeS name of the instrument
             device_ID (str): The device name as listed in the web server.
-            api_level (int): Compatibility mode of the API interface. Must be 5
-              for the UHF.
         """
 
         super().__init__(name, **kwargs)
@@ -710,6 +709,26 @@ class ZIUHFLI(Instrument):
                                val_mapping=dmtrigs,
                                vals=vals.Enum(*list(dmtrigs.keys()))
                                )
+
+            self.add_parameter('demod{}_sample'.format(demod),
+                               label='Demod sample',
+                               get_cmd=partial(self._getter, 'demods',
+                                               demod - 1, 2, 'sample'),
+                               snapshot_value=False
+                               )
+
+            for demod_param in ['x', 'y', 'R', 'phi']:
+                if demod_param in ('x', 'y', 'R'):
+                    unit = 'V'
+                else:
+                    unit = 'deg'
+                self.add_parameter('demod{}_{}'.format(demod, demod_param),
+                                   label='Demod {} {}'.format(demod, demod_param),
+                                   get_cmd=partial(self._get_demod_sample,
+                                                   demod - 1, demod_param),
+                                   snapshot_value=False,
+                                   unit=unit
+                                   )
 
         ########################################
         # SIGNAL INPUTS
@@ -1440,7 +1459,8 @@ class ZIUHFLI(Instrument):
         if mode == 1:
             self.daq.setDouble(setstr, value)
 
-    def _getter(self, module, number, mode, setting):
+    def _getter(self, module: str, number: int,
+                mode: int, setting: str) -> Union[float, int, str, dict]:
         """
         General get function for generic parameters. Note that some parameters
         use more specialised setter/getters.
@@ -1453,7 +1473,7 @@ class ZIUHFLI(Instrument):
                 we want to know the value of.
             number (int): Module's index
             mode (int): Indicating whether we are asking for an int or double.
-                0: Int, 1: double.
+                0: Int, 1: double, 2: Sample
             setting (str): The module's setting to set.
         returns:
             inquered value
@@ -1461,13 +1481,29 @@ class ZIUHFLI(Instrument):
         """
 
         querystr = '/{}/{}/{}/{}'.format(self.device, module, number, setting)
+        log.debug("getting %s", querystr)
         if mode == 0:
             value = self.daq.getInt(querystr)
-        if mode == 1:
+        elif mode == 1:
             value = self.daq.getDouble(querystr)
-
+        elif mode == 2:
+            value = self.daq.getSample(querystr)
+        else:
+            raise RuntimeError("Invalid mode supplied")
         # Weird exception, samplingrate returns a string
         return value
+
+    def _get_demod_sample(self, number: int, demod_param: str) -> float:
+        log.debug("getting demod %s param %s", number, demod_param)
+        mode = 2
+        module = 'demods'
+        setting = 'sample'
+        if demod_param not in ['x', 'y', 'R', 'phi']:
+            raise RuntimeError("Invalid demodulator parameter")
+        datadict = self._getter(module, number, mode, setting)
+        datadict['R'] = np.abs(datadict['x'] + 1j * datadict['y'])
+        datadict['phi'] = np.angle(datadict['x'] + 1j * datadict['y'], deg=True)
+        return datadict[demod_param]
 
     def _sigout_setter(self, number, mode, setting, value):
         """
@@ -1787,7 +1823,7 @@ class ZIUHFLI(Instrument):
             raise ValueError('Can not select attribute:'+
                              '{}. Only the following attributes are' +
                              ' available: ' +
-                             ('{}, '*len(attributes)).format(*attributes))
+                             ('{}, '*len(valid_attributes)).format(*valid_attributes))
 
         # internally, we use strings very similar to the ones used by the
         # instrument, but with the attribute added, e.g.

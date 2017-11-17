@@ -67,7 +67,7 @@ class LuaSweepParameter(ArrayParameter):
         self.steps = steps
         self.mode = mode
 
-    def get(self) -> np.ndarray:
+    def get_raw(self) -> np.ndarray:
 
         data = self._instrument._fast_sweep(self.start,
                                             self.stop,
