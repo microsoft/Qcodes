@@ -47,7 +47,7 @@ class CryogenicSMS120C(VisaInstrument):
             for 50mK operation 0.0506A/s (5.737E-3 T/s, 0.34422T/min) - usually used
             for 4K operation 0.12A/s (0.013605 T/s, 0.8163 T/min) - not recommended
         enable_log (bool): of True set logging level of the driver to INFO
-        
+
     Note about timing : SMS120C needs a minimum of 200ms delay between commands being sent
     """
 
@@ -56,7 +56,7 @@ class CryogenicSMS120C(VisaInstrument):
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
                  current_ramp_limit=0.0506,
-                 reset=False, timeout=5, terminator='\r\n', enable_log = True,
+                 reset=False, timeout=5, terminator='\r\n', enable_log=True,
                  **kwargs):
 
         log.debug('Initializing instrument')
@@ -218,7 +218,9 @@ class CryogenicSMS120C(VisaInstrument):
             print("Switch heater ON, magnet not in persistent mode.")
             persistentField = 0
         elif (self._get_switchHeater() == 0) and (abs(BLeads) > 0.007):
-            print("Switch heater OFF, but current is still in present in leads - not in persistent mode. Leads at: %f" % BLeads)
+            print(
+                "Switch heater OFF, but current is still in present in leads - not in persistent mode. Leads at: %f" %
+                BLeads)
             perString = self.ask('GET PER')
             m = re.match(r'((\S{8})\s)+([^:]+)', perString)
             persistentField = float(m[2])
