@@ -14,6 +14,9 @@ from .parameter import Parameter
 from .function import Function
 
 
+log = logging.getLogger(__name__)
+
+
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
     Base class for all QCodes instruments and instrument channels
@@ -468,6 +471,8 @@ class Instrument(InstrumentBase):
 
         strip_attrs(self, whitelist=['name'])
         self.remove_instance(self)
+        log.debug(f'Closing instrument {self.name}')
+
 
     @classmethod
     def close_all(cls):
