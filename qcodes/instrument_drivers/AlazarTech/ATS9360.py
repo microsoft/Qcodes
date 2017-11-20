@@ -1,5 +1,4 @@
 from .ATS import AlazarTech_ATS, AlazarParameter
-from .acquisition_parameters import EffectiveSampleRateParameter
 from qcodes.utils import validators
 
 
@@ -35,7 +34,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='External Sample Rate',
                            unit='S/s',
-                           vals=validators.Ints(300e6, 1800e6),
+                           vals=validators.Ints(300000000, 1800000000),
                            value=500000000)
         self.add_parameter(name='sample_rate',
                            parameter_class=AlazarParameter,
