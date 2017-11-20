@@ -379,16 +379,27 @@ class GS200(VisaInstrument):
         auto_enabled = self.auto_range()
 
         if not auto_enabled:
-            self_range = self.range()
+            self_range = self._cached_range_value
         else:
             mode = self._cached_mode
-            self_range = {"CURR": 200E-3, "VOLT": 30}[mode]
+            if mode == "CURR":
+                self_range = 200E-3
+            else:
+                self_range = 30
 
-        if abs(output_level) > abs(self_range):
-            raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
-                self_range=self_range))
+        # Check we are not trying to set an out of range value
+        if self._cached_range_value is None or abs(output_level) > abs(self_range):
+            # Update range
+            self.range()
+            # If we are still out of range, raise a value error
+            if abs(output_level) > abs(self_range):
+                raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
+                    self_range=self_range))
 
-        auto_str = {True: ":AUTO", False: ""}[auto_enabled]
+        if auto_enabled:
+            auto_str = ":AUTO"
+        else:
+            auto_str = ""
         cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
         self.write(cmd_str)
 
@@ -446,8 +457,12 @@ class GS200(VisaInstrument):
         if self.output() == 'on':
             raise GS200Exception("Cannot switch mode while source is on")
 
-        self.range = {"VOLT": self.voltage_range, "CURR": self.current_range}[mode]
-        self.output_level = {"VOLT": self.voltage, "CURR": self.current}[mode]
+        if mode == "VOLT":
+            self.range = self.voltage_range
+            self.output_level = self.voltage
+        else:
+            self.range = self.current_range
+            self.output_level = self.current
 
         self.write("SOUR:FUNC {}".format(mode))
         self._update_measurement_module(source_mode=mode)
