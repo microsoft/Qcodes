@@ -191,7 +191,6 @@ class PulseBlasterESRPRO(Instrument):
     def send_instructions(self, *instructions):
         for instruction in instructions:
             self.send_instruction(*instruction, log=False)
-            sleep(0.03)
 
         # Add instructions to log
         self.instruction_sequence(list(self.instruction_sequence()) + list(instructions))
