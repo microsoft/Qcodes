@@ -9,7 +9,7 @@ def float_round(val):
     Rounds a floating number
 
     Args:
-        val: number to be rounded 
+        val: number to be rounded
 
     Returns:
         Rounded integer
@@ -493,7 +493,7 @@ class GS200(VisaInstrument):
 
     def _get_range(self, mode: str) -> None:
         """
-        Update range. 
+        Update range.
         Note: we do not use cached values here to ensure snapshots correctly update range.
 
         Args:
