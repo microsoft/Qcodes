@@ -389,8 +389,11 @@ class GS200(VisaInstrument):
 
         # Check we are not trying to set an out of range value
         if self._cached_range_value is None or abs(output_level) > abs(self_range):
-            # Update range
-            self.range()
+            # Check that the range hasn't changed
+            if not auto_enabled:
+                # Update range
+                self.range()
+                self_range = self._cached_range_value
             # If we are still out of range, raise a value error
             if abs(output_level) > abs(self_range):
                 raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
@@ -468,10 +471,11 @@ class GS200(VisaInstrument):
             self.output_level = self.current
 
         self.write("SOUR:FUNC {}".format(mode))
-        self._update_measurement_module(source_mode=mode)
         self._cached_mode = mode
         # The next time the range is asked, ask from instrument and update the cached value
         self._cached_range_value = None
+        # Update the measurement mode
+        self._update_measurement_module(source_mode=mode)
 
     def _set_range(self, mode: str, val: float) -> None:
         """
@@ -487,9 +491,10 @@ class GS200(VisaInstrument):
         self._cached_range_value = val
         self.write(':SOUR:RANG {}'.format(str(val)))
 
-    def _get_range(self, mode: str, force_update: bool=False) -> None:
+    def _get_range(self, mode: str) -> None:
         """
-        Update range
+        Update range. 
+        Note: we do not use cached values here to ensure snapshots correctly update range.
 
         Args:
             mode (str): "CURR" or "VOLT"
