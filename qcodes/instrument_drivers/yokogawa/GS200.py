@@ -341,8 +341,8 @@ class GS200(VisaInstrument):
         Ramp the output from the current level to the specified output
 
         Args:
-            ramp_to (float): The ramp target in Volt/Ampere
-            step (float): The ramp steps in Volt/Ampere
+            ramp_to (float): The ramp target in volts/amps
+            step (float): The ramp steps in volts/ampere
             delay (float): The time between finishing one step and starting another in seconds.
         """
         saved_step = self.output_level.step
@@ -430,21 +430,24 @@ class GS200(VisaInstrument):
             val (bool): auto range on or off
         """
         self._auto_range = val
-        self._update_measurement_module()
         # Disable measurement if auto range is on
         if self.measure.present:
             # Disable the measurement module if auto range is enabled, because the measurement does not work in the
             # 10mV/100mV ranges
             self.measure._enabled &= not val
 
-    def _assert_mode(self, mode: str) -> None:
+    def _assert_mode(self, mode: str, check: bool=True) -> None:
         """
-        Assert that we are in the correct mode to perform an operation
+        Assert that we are in the correct mode to perform an operation.
+        If check is True, we double check the instrument if this check fails.
 
         Args:
             mode (str): "CURR" or "VOLT"
         """
         if self._cached_mode != mode:
+            if check:
+                self._cached_mode = self.source_mode.get()
+                self._assert_mode(mode, check=False)
             raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cached_mode))
 
     def _set_source_mode(self, mode: str) -> None:
@@ -472,7 +475,7 @@ class GS200(VisaInstrument):
 
     def _set_range(self, mode: str, val: float) -> None:
         """
-        Update range and validators
+        Update range
 
         Args:
             mode (str): "CURR" or "VOLT"
@@ -484,9 +487,13 @@ class GS200(VisaInstrument):
         self._cached_range_value = val
         self.write(':SOUR:RANG {}'.format(str(val)))
 
-    def _get_range(self, mode: str) -> None:
-        self._assert_mode(mode)
-        if self._cached_range_value is None:
-            self._cached_range_value = float(self.ask(":SOUR:RANG?"))
+    def _get_range(self, mode: str, force_update: bool=False) -> None:
+        """
+        Update range
 
+        Args:
+            mode (str): "CURR" or "VOLT"
+        """
+        self._assert_mode(mode)
+        self._cached_range_value = float(self.ask(":SOUR:RANG?"))
         return self._cached_range_value
