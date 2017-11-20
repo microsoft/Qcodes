@@ -170,7 +170,6 @@ class GS200(VisaInstrument):
 
     def __init__(self, name: str, address: str, **kwargs):
         super().__init__(name, address, **kwargs)
-        self.visa_handle.read_termination = "\n"
 
         self.add_parameter('output',
                            label='Output State',
