@@ -166,10 +166,11 @@ class GS200(VisaInstrument):
       name (str): What this instrument is called locally.
       address (str): The GPIB address of this instrument
       kwargs (dict): kwargs to be passed to VisaInstrument class
+      terminator (str): read terminator for reads/writes to the instrument.
     """
 
-    def __init__(self, name: str, address: str, **kwargs):
-        super().__init__(name, address, **kwargs)
+    def __init__(self, name: str, address: str, terminator: str="\n", **kwargs):
+        super().__init__(name, address, terminator=terminator, *kwargs)
 
         self.add_parameter('output',
                            label='Output State',
