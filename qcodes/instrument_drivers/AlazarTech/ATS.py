@@ -857,9 +857,9 @@ class AlazarTech_ATS(Instrument):
         Returns:
             the number of samples (per channel) per second
         """
-        if (self._instrument.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF'
-            and 'external_sample_rate' in self._instrument.parameters):
-            rate = self._instrument.external_sample_rate.get()
+        if (self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF'
+            and 'external_sample_rate' in self.parameters):
+            rate = self.external_sample_rate.get()
             # if we are using an external ref clock the sample rate
             # is set as an integer and not value mapped so we use a different
             # parameter to represent it
