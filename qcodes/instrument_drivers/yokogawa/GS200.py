@@ -6,15 +6,13 @@ from qcodes.utils.validators import Numbers, Bool, Enum, Ints
 
 def float_round(val):
     """
-    Rounds a floating number represented as a string
+    Rounds a floating number
 
-    Parameters
-    ----------
-    val: str
+    Args:
+        val: number to be rounded 
 
-    Returns
-    -------
-    int
+    Returns:
+        Rounded integer
     """
     return round(float(val))
 
@@ -192,10 +190,10 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # When getting the mode internally in the driver, look up the mode as recorded by the _cashed_mode property,
+        # When getting the mode internally in the driver, look up the mode as recorded by the _cached_mode property,
         # instead of calling source_mode(). This will prevent frequent VISA calls to the instrument. Calling
         # _set_source_mode will change the chased value.
-        self._cashed_mode = "VOLT"
+        self._cached_mode = "VOLT"
 
         # We want to cache the range value so communication with the instrument only happens when the set the
         # range. Getting the range always returns the cached value. This value is adjusted when calling
@@ -270,7 +268,7 @@ class GS200(VisaInstrument):
                               'off': 0,
                               'on': 1,
                            })
-        # Note: This feature can be used to remove common mode noise.
+        # Note: The guard feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
         self.add_parameter('guard',
                           label='Guard Terminal',
@@ -386,7 +384,7 @@ class GS200(VisaInstrument):
         if not auto_enabled:
             self_range = self.range()
         else:
-            mode = self._cashed_mode
+            mode = self._cached_mode
             self_range = {"CURR": 200E-3, "VOLT": 30}[mode]
 
         if abs(output_level) > abs(self_range):
@@ -409,7 +407,7 @@ class GS200(VisaInstrument):
             return
 
         if source_mode is None:
-            source_mode = self._cashed_mode
+            source_mode = self._cached_mode
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()
@@ -438,8 +436,8 @@ class GS200(VisaInstrument):
         Args:
             mode (str): "CURR" or "VOLT"
         """
-        if self._cashed_mode != mode:
-            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cashed_mode))
+        if self._cached_mode != mode:
+            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cached_mode))
 
     def _set_source_mode(self, mode: str) -> None:
         """
@@ -456,7 +454,7 @@ class GS200(VisaInstrument):
 
         self.write("SOUR:FUNC {}".format(mode))
         self._update_measurement_module(source_mode=mode)
-        self._cashed_mode = mode
+        self._cached_mode = mode
         # The next time the range is asked, ask from instrument and update the cached value
         self._cached_range_value = None
 
