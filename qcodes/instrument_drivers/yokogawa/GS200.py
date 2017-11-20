@@ -139,17 +139,14 @@ class GS200_Monitor(InstrumentChannel):
         elif not self._enabled:
             raise GS200Exception("Measurements are disabled")
 
-    def update_measurement_enabled(self, unit: str, output_range: float, output: bool):
+    def update_measurement_enabled(self, unit: str, output_range: float):
         """
         Args:
             unit (str)
             output_range (float)
-            output (bool)
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
-        # Update output state
-        self._output = output
         # Update units
         self._range = output_range
         self._unit = unit
@@ -412,7 +409,7 @@ class GS200(VisaInstrument):
         if source_range is None and not self.auto_range():
             source_range = self.range()
 
-        self.measure.update_measurement_enabled(source_mode, source_range, False)
+        self.measure.update_measurement_enabled(source_mode, source_range)
 
     def _set_auto_range(self, val: bool) -> None:
         """
