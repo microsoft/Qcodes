@@ -39,19 +39,40 @@ class Task:
 
     Args:
         func (callable): Function to executed
+        N (int): if set, Task is only executed every N calls.
+            Task is always executed in first call.
+        condition (callable): If set, Task is only executed if condition 
+            evaluates to True
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
 
     """
-    def __init__(self, func, *args, **kwargs):
+
+    def __init__(self, func, *args, N=None, condition=None, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
 
+        self.N = N
+        self.idx = 0
+
+        self.condition = condition
+
     def __call__(self, **ignore_kwargs):
+        if self.N is not None:
+            if self.idx % self.N != 0:
+                self.idx += 1
+                return
+            self.idx += 1
+
+        if self.condition is not None:
+            if not self.condition():
+                return
+
         # If any of the arguments are callable, evaluate them first
         eval_args = [arg() if callable(arg) else arg for arg in self.args]
-        eval_kwargs = {k: (v() if callable(v) else v) for k, v in self.kwargs.items()}
+        eval_kwargs = {k: (v() if callable(v) else v) for k, v in
+                       self.kwargs.items()}
 
         self.func(*eval_args, **eval_kwargs)
 
@@ -64,7 +85,13 @@ class Task:
         Returns:
             dict: snapshot
         """
-        return {'type': 'Task', 'func': repr(self.func)}
+        snapshot = {'type': 'Task', 'func': repr(self.func)}
+        if self.N is not None:
+            snapshot['N'] = self.N
+            snapshot['idx'] = self.idx
+        if self.condition is not None:
+            snapshot['condition'] = self.condition
+        return snapshot
 
 
 class Wait:
