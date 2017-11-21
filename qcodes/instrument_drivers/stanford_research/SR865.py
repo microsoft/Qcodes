@@ -1,4 +1,5 @@
-import math
+import numpy as np
+import time
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -15,11 +16,12 @@ class SR865Buffer(InstrumentChannel):
         self._parent = parent
 
         self.add_parameter(
-            "capture_length",
+            "capture_length_in_kb",
             label="get/set capture length",
             get_cmd="CAPTURELEN?",
             set_cmd="CAPTURELEN {}",
-            set_parser=self._set_capture_len_parser
+            set_parser=self._set_capture_len_parser,
+            get_parser=int
         )
 
         self.add_parameter(
@@ -27,46 +29,66 @@ class SR865Buffer(InstrumentChannel):
             label="capture configuration",
             get_cmd="CAPTURECFG?",
             set_cmd="CAPTURECFG {}",
-            val_mapping={
-                "X": 0,
-                "XY": 1,
-                "RT": 2,
-                "XYRT": 3,
-                0: 0,
-                1: 1,
-                2: 2,
-                3: 3
-            }
+            set_parser=lambda value: {"X": 0, "X,Y": 1, "R,T": 2, "X,Y,R,T": 3}[value],
+            get_parser=lambda value: {"0": "X", "1": "X,Y", "2": "R,T", "3": "X,Y,R,T"}[value]
         )
 
         self.add_parameter(
             "capture_rate_max",
             label="capture rate maximum",
-            get_cmd="CAPTURERATEMAX?"
-        )
-
-        self.add_parameter(
-            "capture_rate_raw",
-            label="capture rate raw",
-            get_cmd="CAPTURERATE?",
-            set_cmd="CAPTURERATE {}",
-            val_mapping=Ints(min_value=0, max_value=20)
+            get_cmd="CAPTURERATEMAX?",
+            get_parser=float
         )
 
         self.add_parameter(
             "capture_rate",
-            label="capture rate in Hz",
+            label="capture rate raw",
             get_cmd="CAPTURERATE?",
             set_cmd="CAPTURERATE {}",
-            get_parser=self._get_capture_rate_parser,
+            get_parser=float,
             set_parser=self._set_capture_rate_parser
         )
+
+        max_rate = self.capture_rate_max()
+        self.available_frequencies = [max_rate / 2 ** i for i in range(20)]
+
+        self.add_parameter(
+            "capture_status",
+            label="capture status",
+            get_cmd="CAPTURESTAT?"
+        )
+
+        self.add_parameter(
+            "count_capture_bytes",
+            label="capture bytes",
+            get_cmd="CAPTUREBYTES?"
+        )
+
+        self.add_parameter(
+            "count_capture_kilobytes",
+            label="capture kilobytes",
+            get_cmd="CAPTUREPROG?"
+        )
+
+        self.bytes_per_samples = 4
+
+    def capture_length(self):
+        """
+        Return the capture length in number of samples per variable measured
+        """
+        capture_len_kb = self.capture_length_in_kb()
+        config = self.capture_config()
+        n_variables = len(config.split(","))
+        sample_count_total = capture_len_kb / self.bytes_per_samples * 1000
+        sample_count_per_variable = sample_count_total / n_variables
+
+        return int(sample_count_per_variable)
 
     @staticmethod
     def _set_capture_len_parser(value):
 
         if value % 2:
-            print("the capture length needs to be even. Setting to {}".format(value+1))
+            print("the capture length needs to be even. Setting to {}".format(value + 1))
             value += 1
 
         if not 1 <= value <= 4096:
@@ -74,21 +96,66 @@ class SR865Buffer(InstrumentChannel):
 
         return value
 
-    def _get_capture_rate_parser(self, value):
-        """
-        See page 136 of the SR860 manual
-        """
-        max_rate = self.capture_rate_max()
-        return max_rate / (2**value)
-
     def _set_capture_rate_parser(self, value):
+        value = float(value)
         max_rate = self.capture_rate_max()
-        n = math.log2(max_rate / value)
-        n = int(round(n))
-        if not 0 <= n <= 20:
+        n = np.log2(max_rate / value)
+        n_round = int(round(n))
+
+        if not 0 <= n_round <= 20:
             raise ValueError("The chosen frequency is invalid. Please consult the SR860 manual at page 136. The maximum"
                              " capture rate is {}".format(max_rate))
-        return n
+
+        set_frequency = max_rate / 2 ** n_round
+        if abs(value - set_frequency) > 1:
+            print("Warning: Setting capture rate to {:.5} Hz".format(set_frequency))
+            available_frequencies = ", ".join([str(f) for f in self.available_frequencies])
+            print("The available frequencies are: {}".format(available_frequencies))
+
+        return n_round
+
+    def start_capture(self, acquisition_mode, trigger_mode):
+        """
+        Start an acquisition. Please see page 137 of the manual for a detailed explanation.
+
+        Args:
+            acquisition_mode (str):  "ONE" | "CONT".
+            trigger_mode (str): IMM | TRIG | SAMP
+        """
+
+        if acquisition_mode not in ["ONE", "CONT"]:
+            raise ValueError("The acquisition mode needs to be either 'ONE' or 'CONT'")
+
+        if trigger_mode not in ["IMM", "TRIG", "SAMP"]:
+            raise ValueError("The trigger mode needs to be either 'IMM', 'TRIG' or 'SAMP'")
+
+        cmd_str = "CAPTURESTART  {},{}".format(acquisition_mode, trigger_mode)
+        self.write(cmd_str)
+
+    def stop_capture(self):
+        self.write("CAPTURESTOP")
+
+    def capture_samples(self, sample_count):
+
+        capture_rate = self.capture_rate()
+        capture_time = sample_count / capture_rate
+
+        self.start_capture("CONT", "IMM")
+        time.sleep(capture_time)
+        self.stop_capture()
+
+        capture_variables = self.capture_config().split(",")
+        n_variables = len(capture_variables)
+
+        sample_size = int(np.ceil(n_variables * sample_count / 1024 * 4))
+        values = self._parent.visa_handle.query_binary_values("CAPTUREGET? 0,{}".format(sample_size),
+                                                              datatype='f', is_big_endian=False)
+        values = np.array(values)
+        values = values[values != 0]
+
+        data = {k: v for k, v in zip(capture_variables, values.reshape((-1, n_variables)).T)}
+
+        return data
 
 
 class SR865(VisaInstrument):
