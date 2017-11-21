@@ -200,10 +200,10 @@ class CryogenicSMS120C(VisaInstrument):
             units = self._get_unit()
             if units == 1:
                 log.info("Magnet in persistent mode, at a field of %f T" %
-                      persistentField)
+                         persistentField)
             elif units == 0:
                 log.info("Magnet in persistent mode, at a field of %f A" %
-                      persistentField)
+                         persistentField)
             persistentMode = True
         else:
             log.info("Magnet not persistent.")
@@ -218,7 +218,8 @@ class CryogenicSMS120C(VisaInstrument):
             log.info("Switch heater ON, magnet not in persistent mode.")
             persistentField = 0
         elif (self._get_switchHeater() == 0) and (abs(BLeads) > 0.007):
-            log.info("Switch heater OFF, but current is still in present in leads - not in persistent mode. Leads at: %f" % BLeads)
+            log.info(
+                "Switch heater OFF, but current is still in present in leads - not in persistent mode. Leads at: %f" % BLeads)
             perString = self.ask('GET PER')
             m = re.match(r'((\S{8})\s)+([^:]+)', perString)
             persistentField = float(m[2])
@@ -382,7 +383,7 @@ class CryogenicSMS120C(VisaInstrument):
                 persistentField = self._get_persistentField()
                 if self._get_persistentMode() == True and (self._get_switchHeater() == False):
                     log.info('Exiting persistent mode from a field of %f' %
-                          persistentField)
+                             persistentField)
                     switchHeater = 1
                     strHeaterStatus = self.ask('HEATER %d' % switchHeater)
                     log.info(strHeaterStatus)
