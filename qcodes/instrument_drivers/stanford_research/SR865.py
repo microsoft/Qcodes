@@ -1,5 +1,94 @@
+import math
+
 from qcodes import VisaInstrument
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
+
+
+class SR865Buffer(InstrumentChannel):
+    """
+    SR860 manual:
+    http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
+    """
+    def __init__(self, parent, name):
+        super().__init__(parent, name)
+        self._parent = parent
+
+        self.add_parameter(
+            "capture_length",
+            label="get/set capture length",
+            get_cmd="CAPTURELEN?",
+            set_cmd="CAPTURELEN {}",
+            set_parser=self._set_capture_len_parser
+        )
+
+        self.add_parameter(
+            "capture_config",
+            label="capture configuration",
+            get_cmd="CAPTURECFG?",
+            set_cmd="CAPTURECFG {}",
+            val_mapping={
+                "X": 0,
+                "XY": 1,
+                "RT": 2,
+                "XYRT": 3,
+                0: 0,
+                1: 1,
+                2: 2,
+                3: 3
+            }
+        )
+
+        self.add_parameter(
+            "capture_rate_max",
+            label="capture rate maximum",
+            get_cmd="CAPTURERATEMAX?"
+        )
+
+        self.add_parameter(
+            "capture_rate_raw",
+            label="capture rate raw",
+            get_cmd="CAPTURERATE?",
+            set_cmd="CAPTURERATE {}",
+            val_mapping=Ints(min_value=0, max_value=20)
+        )
+
+        self.add_parameter(
+            "capture_rate",
+            label="capture rate in Hz",
+            get_cmd="CAPTURERATE?",
+            set_cmd="CAPTURERATE {}",
+            get_parser=self._get_capture_rate_parser,
+            set_parser=self._set_capture_rate_parser
+        )
+
+    @staticmethod
+    def _set_capture_len_parser(value):
+
+        if value % 2:
+            print("the capture length needs to be even. Setting to {}".format(value+1))
+            value += 1
+
+        if not 1 <= value <= 4096:
+            raise ValueError("the capture length should be between 1 and 4096")
+
+        return value
+
+    def _get_capture_rate_parser(self, value):
+        """
+        See page 136 of the SR860 manual
+        """
+        max_rate = self.capture_rate_max()
+        return max_rate / (2**value)
+
+    def _set_capture_rate_parser(self, value):
+        max_rate = self.capture_rate_max()
+        n = math.log2(max_rate / value)
+        n = int(round(n))
+        if not 0 <= n <= 20:
+            raise ValueError("The chosen frequency is invalid. Please consult the SR860 manual at page 136. The maximum"
+                             " capture rate is {}".format(max_rate))
+        return n
 
 
 class SR865(VisaInstrument):
@@ -262,6 +351,9 @@ class SR865(VisaInstrument):
 
         self.add_function('disable_front_panel', call_cmd='OVRM 0')
         self.add_function('enable_front_panel', call_cmd='OVRM 1')
+
+        buffer = SR865Buffer(self, "{}_buffer".format(self.name))
+        self.add_submodule("buffer", buffer)
 
         self.input_config()
         self.connect_message()
