@@ -147,6 +147,7 @@ class GS200_Monitor(InstrumentChannel):
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
+
         # Update units
         self._range = output_range
         self._unit = unit
@@ -354,7 +355,7 @@ class GS200(VisaInstrument):
 
         self.output_level.step = saved_step
         self.output_level.inter_delay = saved_inter_delay
-
+        
     def _get_set_output(self, mode: str, output_level: float=None) -> float:
         """
         Get or set the output level.
@@ -459,6 +460,7 @@ class GS200(VisaInstrument):
 
         Args:
             mode (str): "CURR" or "VOLT"
+
         """
         if self.output() == 'on':
             raise GS200Exception("Cannot switch mode while source is on")
