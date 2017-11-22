@@ -13,6 +13,9 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
 
     // Render the view.
     render: function() {
+
+      this.widgetCells = {};
+
       this.model.on('change:_initialize', this.initialize_sidebar, this);
       this.model.on('change:_closed', this.close_sidebar, this);
 
