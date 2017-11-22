@@ -15,10 +15,95 @@ except ImportError:
 
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
 log = logging.getLogger(__name__)
 
+class AUXOutputChannel(InstrumentChannel):
+
+    def __init__(self, parent: 'ZIUHFLI', name: str, channum: int) -> None:
+        super().__init__(parent, name)
+
+        # TODO better validations of parameters
+        self.add_parameter('scale',
+                           label='scale',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'scale'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'scale'),
+                           vals=vals.Numbers()
+                           )
+
+        self.add_parameter('preoffset',
+                           label='preoffset',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'preoffset'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'preoffset'),
+                           vals=vals.Numbers()
+                           )
+        self.add_parameter('offset',
+                           label='offset',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'offset'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'offset'),
+                           vals=vals.Numbers()
+                           )
+        self.add_parameter('limitlower',
+                           label='Lower :imit',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'limitlower'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'limitlower'),
+                           vals=vals.Numbers()
+                           )
+
+        self.add_parameter('limitupper',
+                           label='Upper limit',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'limitupper'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'limitupper'),
+                           vals=vals.Numbers()
+                           )
+
+        # TODO the validator does not catch that there are only
+        # 2 valid output channels for AU types
+        self.add_parameter('channel',
+                           label='Channel',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 0, 'demodselect'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 0, 'demodselect'),
+                           get_parser=lambda x: x+1,
+                           set_parser=lambda x: x-1,
+                           vals=vals.Ints(0,7)
+                           )
+
+        outputvalmapping = {'Demod X': 0,
+                            'Demod Y': 1,
+                            'Demod R': 2,
+                            'Demod THETA': 3,
+                            'AU Cartesian': 7,
+                            'AU Polar': 8}
+
+        self.add_parameter('output',
+                           label='Output',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 0, 'outputselect'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 0, 'outputselect'),
+                           val_mapping=outputvalmapping
+                           )
 
 class Sweep(MultiParameter):
     """
@@ -887,8 +972,16 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
+        auxoutputchannels = ChannelList(self, "AUXOutputChannels", AUXOutputChannel,
+                               snapshotable=False)
 
-
+        for auxchannum in range(1,5):
+            name = 'aux_out{}'.format(auxchannum)
+            auxchannel = AUXOutputChannel(self, name, auxchannum)
+            auxoutputchannels.append(auxchannel)
+            self.add_submodule(name, auxchannel)
+        auxoutputchannels.lock()
+        self.add_submodule('aux_out_channels', auxoutputchannels)
         ########################################
         # SWEEPER PARAMETERS
 
