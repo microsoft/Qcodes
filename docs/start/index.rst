@@ -29,7 +29,7 @@ Installation
 
 To setup an Anaconda environment for QCoDeS it's convenient to download
 QCoDeS environment.yml file from
-`here https://github.com/QCoDeS/Qcodes/blob/master/environment.yml`_.
+`here <https://github.com/QCoDeS/Qcodes/blob/master/environment.yml>`__.
 Right click on raw and select save link as and download the file to a location
 that you can find again.
 Once Anaconda is installed and the environment.yml file downloaded
