@@ -138,6 +138,14 @@ class Keysight_33500B(VisaInstrument):
                                val_mapping={'ON': 1, 'OFF': 0}
                                )
 
+            self.add_parameter('ch{}_output_polarity'.format(chan),
+                               label='Channel {} output polarity'.format(chan),
+                               set_cmd='OUTPut{}:POL'.format(chan) + ' {}',
+                               get_cmd='OUTPut{}:POL?'.format(chan),
+                               get_parser=str.strip,
+                               vals=vals.Enum('NORM', 'INV')
+                               )
+
             self.add_parameter('ch{}_ramp_symmetry'.format(chan),
                                label='Channel {} ramp symmetry'.format(chan),
                                set_cmd=setcmd(chan, 'FUNCtion:RAMP:SYMMetry'),
