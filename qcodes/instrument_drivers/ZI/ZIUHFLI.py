@@ -55,7 +55,7 @@ class AUXOutputChannel(InstrumentChannel):
                            vals=vals.Numbers()
                            )
         self.add_parameter('limitlower',
-                           label='Lower :imit',
+                           label='Lower limit',
                            unit='',
                            get_cmd=partial(self._parent._getter, 'auxouts',
                                            channum - 1, 1, 'limitlower'),
