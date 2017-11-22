@@ -70,19 +70,7 @@ class SR865Buffer(InstrumentChannel):
             get_cmd="CAPTUREPROG?"
         )
 
-        self.bytes_per_samples = 4
-
-    def capture_length(self):
-        """
-        Return the capture length in number of samples per variable measured
-        """
-        capture_len_kb = self.capture_length_in_kb()
-        config = self.capture_config()
-        n_variables = len(config.split(","))
-        sample_count_total = capture_len_kb / self.bytes_per_samples * 1000
-        sample_count_per_variable = sample_count_total / n_variables
-
-        return int(sample_count_per_variable)
+        self.bytes_per_sample = 4
 
     @staticmethod
     def _set_capture_len_parser(value):
@@ -140,15 +128,19 @@ class SR865Buffer(InstrumentChannel):
         capture_rate = self.capture_rate()
         capture_time = sample_count / capture_rate
 
+        capture_variables = self.capture_config().split(",")
+        n_variables = len(capture_variables)
+
+        total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
+
+        if total_size_in_kb > 64:
+            raise ValueError("Too many samples. Either reduce the sample count or adjust the capture configuration")
+
         self.start_capture("CONT", "IMM")
         time.sleep(capture_time)
         self.stop_capture()
 
-        capture_variables = self.capture_config().split(",")
-        n_variables = len(capture_variables)
-
-        sample_size = int(np.ceil(n_variables * sample_count / 1024 * 4))
-        values = self._parent.visa_handle.query_binary_values("CAPTUREGET? 0,{}".format(sample_size),
+        values = self._parent.visa_handle.query_binary_values("CAPTUREGET? 0,{}".format(total_size_in_kb),
                                                               datatype='f', is_big_endian=False)
         values = np.array(values)
         values = values[values != 0]
