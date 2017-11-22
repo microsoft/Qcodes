@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Dict, Callable
 from functools import partial
 
@@ -7,7 +8,7 @@ import numpy as np
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
 from qcodes import ArrayParameter
-from qcodes.utils.validators import Enum, Numbers
+from qcodes.utils.validators import Enum, Numbers, Ints
 
 
 log = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ class RawTrace(ArrayParameter):
 
         # shorthand
         instr = self._instrument
+        scope = instr._parent
 
         # set up the instrument
         # ---------------------------------------------------------------------
@@ -89,13 +91,31 @@ class RawTrace(ArrayParameter):
         state = instr.ask(':RSTate?')
         # realtime mode: only one trigger is used
         instr._parent.acquire_mode('RTIMe')
-
-        # acquire the data
+            # acquire the data
         # ---------------------------------------------------------------------
 
+        # digitize is a blocking call, so the scope will not respond to any visa
+        # commands in the meantime. Here the digitization time is calculated
+        # to wait for the acquisition to finish.
+        # in the manual chap. 7 example: Checking for Armed Status
+        # the function `read_stb()` from the visa api is used to read the
+        # status byte. Setting a timeout seems to be a better solution as it
+        # does not require constantly polling for the status.
+        old_timeout = scope._get_visa_timeout()
+        if scope.acquire_average.get_latest():
+            naverages = scope.acquire_average_count.get_latest()
+        else:
+            naverages = 1
+        new_timeout = scope.acquisition_factor*naverages * scope.acquire_timespan()
+        if new_timeout > old_timeout:
+            scope._set_visa_timeout(new_timeout)
+            log.warning('old timeout is {}. Setting to {}'.format(old_timeout, new_timeout))
+
+        log.debug("issuing Digitize command")
         # digitize is the actual call for acquisition, blocks
         instr.write(':DIGitize CHANnel{}'.format(self._channel))
-
+        instr.ask('*OPC?')
+        scope._set_visa_timeout(old_timeout)
         # transfer the data
         # ---------------------------------------------------------------------
 
@@ -115,7 +135,7 @@ class RawTrace(ArrayParameter):
         if len(data) != self.shape[0]:
             raise TraceSetPointsChanged('{} points have been aquired and {} \
             set points have been prepared in \
-            prepare_curvedata'.format(lend(data), self.shape[0]))
+            prepare_curvedata'.format(len(data), self.shape[0]))
         # check x data scaling
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
@@ -146,6 +166,7 @@ class RawTrace(ArrayParameter):
         if state == 'RUN':
             instr.write(':RUN')
 
+        log.debug("done")
         return channel_data
 
 
@@ -168,6 +189,7 @@ class InfiniiumChannel(InstrumentChannel):
                            get_cmd='CHAN{}:OFFS?'.format(channel),
                            get_parser=float
                            )
+
 
         # scale and range are interdependent, when setting one, invalidate the
         # the other.
@@ -229,7 +251,7 @@ class Infiniium(VisaInstrument):
 
         # Scope trace boolean
         self.trace_ready = False
-
+        self.acquisition_factor = 3.5
         # functions
 
         # general parameters
@@ -283,6 +305,13 @@ class Infiniium(VisaInstrument):
                            val_mapping={True: 1, False: 0}
                            )
 
+        self.add_parameter('trigger_sweep',
+                           label='Trigger sweeping mode (Auto/Triggred/Single)',
+                           get_cmd=':TRIGger:SWEep?',
+                           set_cmd=':TRIGger:SWEep {}',
+                           vals=Enum('auto', 'triggered', 'single')
+                           )
+
         self.add_parameter('trigger_edge_source',
                            label='Source channel for the edge trigger',
                            get_cmd=':TRIGger:EDGE:SOURce?',
@@ -328,6 +357,22 @@ class Infiniium(VisaInstrument):
                            get_parser=float
                            )
 
+        self.add_parameter('acquire_average',
+                           label='Averaging state',
+                           get_cmd=':ACQuire:AVERage?',
+                           set_cmd=':ACQuire:AVERage {}',
+                           val_mapping={True: '1', False: '0'}
+                           )
+
+        self.add_parameter('acquire_average_count',
+                           label='Number of averages',
+                           get_cmd=':ACQuire:AVERage:COUNt?',
+                           set_cmd=':ACQuire:AVERage:COUNt {}',
+                           get_parser=float,
+                           vals=vals.Ints(2,65534)
+                           )
+
+
         # this parameter gets used internally for data aquisition. For now it
         # should not be used manually
         self.add_parameter('data_source',
@@ -365,14 +410,23 @@ class Infiniium(VisaInstrument):
                                       'HRESolution', 'SEGMented',
                                       'SEGPdetect', 'SEGHres')
                             )
-        
+
+        # the `get_latest` method does not seem to work if the value was not
+        # set
+
+        # self.add_parameter('acquire_timespan',
+        #                     get_cmd=(lambda: self.acquire_points.get_latest() \
+        #                                     /self.acquire_sample_rate.get_latest()),
+        #                     unit='s',
+        #                     get_parser=float
+        #                     )
+
         self.add_parameter('acquire_timespan',
-                            get_cmd=(lambda: self.acquire_points.get_latest() \
-                                            /self.acquire_sample_rate.get_latest()),
+                            get_cmd=(lambda: self.acquire_points() \
+                                            /self.acquire_sample_rate()),
                             unit='s',
                             get_parser=float
                             )
-
 
         # time of the first point
         self.add_parameter('waveform_xorigin',
