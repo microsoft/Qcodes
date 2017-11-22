@@ -1,7 +1,11 @@
-import atexit
-from IPython.display import display
 from ipywidgets.widgets import *
 from traitlets import Unicode, List, Bool
+
+from qcodes.widgets import display_auto
+
+
+display_auto('widgets/toc_widget/main.css')
+display_auto('widgets/toc_widget/toc_widget.js')
 
 
 class TOCWidget(DOMWidget):
