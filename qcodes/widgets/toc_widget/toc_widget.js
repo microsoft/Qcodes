@@ -277,24 +277,24 @@ define('toc', [
       $('<a>').addClass('toc-mod-link').attr('id', toc_mod_id).prependTo(h);
 
       // Create lock for hiding of cells
-      var lock = $('<i>')
-        .addClass('fa fa-unlock')
-        .css('opacity', 0.1)
-        .on('click', function(evt){
-          if ($(evt.currentTarget).hasClass('fa-unlock')) {
-            $(evt.currentTarget).attr('class', 'fa fa-lock')
-              .css('opacity', 1)
-          } else {
-            $(evt.currentTarget).attr('class', 'fa fa-unlock')
-              .css('opacity', 0.1)
-          }
-        });
+      // var lock = $('<i>')
+      //   .addClass('fa fa-unlock')
+      //   .css('opacity', 0.1)
+      //   .on('click', function(evt){
+      //     if ($(evt.currentTarget).hasClass('fa-unlock')) {
+      //       $(evt.currentTarget).attr('class', 'fa fa-lock')
+      //         .css('opacity', 1)
+      //     } else {
+      //       $(evt.currentTarget).attr('class', 'fa fa-unlock')
+      //         .css('opacity', 0.1)
+      //     }
+      //   });
 
       li = $('<li>')
         .append($('<span/>')
           .css('display', 'flex')
           .append(make_link(h, toc_mod_id))
-          .append(lock)
+          // .append(lock)
         );
       ul.append(li);
     });
