@@ -2,7 +2,7 @@
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
-from collections import Mapping, Sequence, Iterable
+from collections import Mapping, Iterable, Sequence
 import os
 from functools import partial
 import logging
@@ -20,6 +20,13 @@ from qcodes.utils.threading import UpdaterThread
 
 
 logger = logging.getLogger(__name__)
+
+
+def _is_active_data_array(data_array):
+    return (isinstance(data_array, DataArray) and
+            data_array.data_set is not None and
+            data_array.data_set.sync())
+
 
 class MatPlot(BasePlot):
     """
@@ -75,8 +82,9 @@ class MatPlot(BasePlot):
             self.rescale_axis()
 
         self.tight_layout()
-        if any(isinstance(arg, DataArray) and arg.data_set is not None and
-                arg.data_set.sync()
+        if any(any(map(_is_active_data_array, arg))
+               if isinstance(arg, Iterable)
+               else _is_active_data_array(arg)
                for arg in args):
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
@@ -148,7 +156,7 @@ class MatPlot(BasePlot):
 
         Args:
             use_offset (bool, Optional): Whether or not ticks can have an offset
-            
+
             kwargs: with the following exceptions (mostly the data!), these are
                 passed directly to the matplotlib plotting routine.
                 `subplot`: the 1-based axes number to append to (default 1)
@@ -423,14 +431,14 @@ class MatPlot(BasePlot):
     def save(self, filename=None, ext='png'):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title. Can also save as multiple extensions
 
         Args:
             filename (Optional[str]): Location of the file
                 Can contain extension, or provided separately with `ext` kwarg
             ext (Optional[str]): File extension, by default `png`.
-                Can also be list of extensions, in which case each extension is 
+                Can also be list of extensions, in which case each extension is
                 saved separately. Is ignored if filename contains an extension.
         """
         if filename is None:

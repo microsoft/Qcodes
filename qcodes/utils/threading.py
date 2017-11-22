@@ -9,6 +9,7 @@ import time
 from collections import Iterable
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -138,10 +139,6 @@ class KillableThread(threading.Thread):
             if tobj is self:
                 _async_raise(tid, excobj)
                 return
-
-        # the thread was alive when we entered the loop, but was not found
-        # in the dict, hence it must have been already terminated. should we raise
-        # an exception here? silently ignore?
 
     def terminate(self):
         # must raise the SystemExit type, instead of a SystemExit() instance

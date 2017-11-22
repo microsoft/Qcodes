@@ -357,6 +357,7 @@ class ActiveLoop(Metadatable):
     # Currently active loop, is set when calling loop.run(set_active=True)
     # is reset to None when active measurement is finished
     active_loop = None
+    _is_stopped = False
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -619,6 +620,7 @@ class ActiveLoop(Metadatable):
 
     def _raise_if_stopped(self):
         if self._is_stopped:
+            ActiveLoop._is_stopped = False
             raise _QcodesBreak
 
     def set_common_attrs(self, data_set, use_threads):
@@ -790,6 +792,7 @@ class ActiveLoop(Metadatable):
             if not quiet:
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
+            data_set.active = True
             self._run_wrapper(set_active=set_active)
             ds = self.data_set
         except:
@@ -804,6 +807,7 @@ class ActiveLoop(Metadatable):
             # again. But also if something went wrong during the loop execution
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
+            data_set.active = False
             self.data_set = None
             if set_active:
                 ActiveLoop.active_loop = None
@@ -947,6 +951,10 @@ class ActiveLoop(Metadatable):
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
+                    except _QcodesBreak:
+                        log.error('QCodes break raise, stopping')
+                        print('print: QCodes break raise, stopping')
+                        break
                     except Exception:
                         if self.last_task_failed:
                             self.bg_task = None
@@ -957,8 +965,11 @@ class ActiveLoop(Metadatable):
 
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
-            log.debug('Running the background task one last time.')
-            self.bg_task()
+            try:
+                log.debug('Running the background task one last time.')
+                self.bg_task()
+            except _QcodesBreak:
+                pass
 
         # the loop is finished - run the .then actions
         log.debug('Finishing loop, running the .then actions...')
@@ -976,3 +987,7 @@ class ActiveLoop(Metadatable):
             finish_clock = time.perf_counter() + delay
             t = wait_secs(finish_clock)
             time.sleep(t)
+
+
+def stop():
+    ActiveLoop._is_stopped = True
