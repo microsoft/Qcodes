@@ -1,9 +1,11 @@
 """
 Live plotting using pyqtgraph
 """
+from typing import Optional, Dict, Union
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
+from pyqtgraph import QtGui
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import qcodes.utils.helpers
 
@@ -35,7 +37,14 @@ class QtPlot(BasePlot):
         theme: tuple of (foreground_color, background_color), where each is
             a valid Qt color. default (dark gray, white), opposite the pyqtgraph
             default of (white, black)
-
+        fig_x_pos: fraction of screen width to place the figure at
+            0 is all the way to the left and
+            1 is all the way to the right.
+            default None let qt decide.
+        fig_y_pos: fraction of screen width to place the figure at
+            0 is all the way to the top and
+            1 is all the way to the bottom.
+            default None let qt decide.
         **kwargs: passed along to QtPlot.add() to add the first data trace
     """
     proc = None
@@ -51,11 +60,14 @@ class QtPlot(BasePlot):
     plots = deque(maxlen=qcodes.config['gui']['pyqtmaxplots'])
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
+                 window_title='', theme=((60, 60, 60), 'w'), show_window=True,
+                 remote=True, fig_x_position=None, fig_y_position=None,
+                 **kwargs):
         super().__init__(interval)
 
         if 'windowTitle' in kwargs.keys():
-            warnings.warn("windowTitle argument has been changed to window_title. Please update your call to QtPlot")
+            warnings.warn("windowTitle argument has been changed to "
+                          "window_title. Please update your call to QtPlot")
             temp_wt = kwargs.pop('windowTitle')
             if not window_title:
                 window_title = temp_wt
@@ -80,6 +92,10 @@ class QtPlot(BasePlot):
                 raise err
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
+        self._orig_fig_size = figsize
+
+        self.set_relative_window_position(fig_x_position, fig_y_position)
+
         self.subplots = [self.add_subplot()]
 
         if args or kwargs:
@@ -89,6 +105,19 @@ class QtPlot(BasePlot):
             self.win.hide()
 
         self.plots.append(self)
+
+    def set_relative_window_position(self, fig_x_position, fig_y_position):
+        if fig_x_position is not None or fig_y_position is not None:
+            _, _, width, height = QtGui.QDesktopWidget().screenGeometry().getCoords()
+            if fig_y_position is not None:
+                y_pos = height * fig_y_position
+            else:
+                y_pos = self.win.y()
+            if fig_x_position is not None:
+                x_pos = width * fig_x_position
+            else:
+                x_pos = self.win.x()
+            self.win.move(x_pos, y_pos)
 
     @classmethod
     def _init_qt(cls):
@@ -144,6 +173,7 @@ class QtPlot(BasePlot):
 
         if prev_default_title == self.win.windowTitle():
             self.win.setWindowTitle(self.get_default_title())
+        self.fixUnitScaling()
 
     def _draw_plot(self, subplot_object, y, x=None, color=None, width=None,
                    antialias=None, **kwargs):
@@ -182,10 +212,12 @@ class QtPlot(BasePlot):
     def _line_data(self, x, y):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
 
-    def _draw_image(self, subplot_object, z, x=None, y=None, cmap='hot',
+    def _draw_image(self, subplot_object, z, x=None, y=None, cmap=None,
                     zlabel=None,
                     zunit=None,
                     **kwargs):
+        if cmap is None:
+            cmap = qcodes.config['gui']['defaultcolormap']
         img = self.rpg.ImageItem()
         subplot_object.addItem(img)
 
@@ -475,3 +507,97 @@ class QtPlot(BasePlot):
     def setGeometry(self, x, y, w, h):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
+
+    def autorange(self, reset_colorbar: bool=False):
+        """
+        Auto range all limits in case they were changed during interactive
+        plot. Reset colormap if changed and resize window to original size.
+        Args:
+            reset_colorbar: Should the limits and colorscale of the colorbar
+                be reset. Off by default
+        """
+        for subplot in self.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
+        cmap = None
+        # resize histogram
+        for trace in self.traces:
+            if 'plot_object' in trace.keys():
+                if (isinstance(trace['plot_object'], dict) and
+                            'hist' in trace['plot_object'].keys() and
+                            reset_colorbar):
+                    cmap = trace['plot_object']['cmap']
+                    maxval = trace['config']['z'].max()
+                    minval = trace['config']['z'].min()
+                    trace['plot_object']['hist'].setLevels(minval, maxval)
+                    trace['plot_object']['hist'].vb.autoRange()
+        if cmap:
+            self.set_cmap(cmap)
+        # set window back to original size
+        self.win.resize(*self._orig_fig_size)
+
+    def fixUnitScaling(self, startranges: Optional[Dict[str, Dict[str, Union[float,int]]]]=None):
+        """
+        Disable SI rescaling if units are not standard units and limit
+        ranges to data if known.
+
+        Args:
+
+            startranges: The plot can automatically infer the full ranges
+                         array parameters. However it has no knowledge of the
+                         ranges or regular parameters. You can explicitly pass
+                         in the values here as a dict of the form
+                         {'paramtername': {max: value, min:value}}
+        """
+        axismapping = {'x': 'bottom',
+                       'y': 'left'}
+        standardunits = self.standardunits
+        for i, plot in enumerate(self.subplots):
+            # make a dict mapping axis labels to axis positions
+            for axis in ('x', 'y', 'z'):
+                if self.traces[i]['config'].get(axis) is not None:
+                    unit = getattr(self.traces[i]['config'][axis], 'unit', None)
+                    if unit is not None and unit not in standardunits:
+                        if axis in ('x', 'y'):
+                            ax = plot.getAxis(axismapping[axis])
+                        else:
+                            # 2D measurement
+                            # Then we should fetch the colorbar
+                            ax = self.traces[i]['plot_object']['hist'].axis
+                        ax.enableAutoSIPrefix(False)
+                        # because updateAutoSIPrefix called from
+                        # enableAutoSIPrefix doesnt actually take the
+                        # value of the argument into account we have
+                        # to manually replicate the update here
+                        ax.autoSIPrefixScale = 1.0
+                        ax.setLabel(unitPrefix='')
+                        ax.picture = None
+                        ax.update()
+
+                    # set limits either from dataset or
+                    setarr = getattr(self.traces[i]['config'][axis], 'ndarray', None)
+                    arrmin = None
+                    arrmax = None
+                    if setarr is not None and not np.all(np.isnan(setarr)):
+                        arrmax = setarr.max()
+                        arrmin = setarr.min()
+                    elif startranges is not None:
+                        try:
+                            paramname = self.traces[i]['config'][axis].full_name
+                            arrmax = startranges[paramname]['max']
+                            arrmin = startranges[paramname]['min']
+                        except (IndexError, KeyError, AttributeError):
+                            continue
+
+                    if axis == 'x':
+                        rangesetter = getattr(plot.getViewBox(), 'setXRange')
+                    elif axis == 'y':
+                        rangesetter = getattr(plot.getViewBox(), 'setYRange')
+                    else:
+                        rangesetter = None
+
+                    if (rangesetter is not None
+                        and arrmin is not None
+                        and arrmax is not None):
+                        rangesetter(arrmin, arrmax)
+

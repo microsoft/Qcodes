@@ -1,9 +1,9 @@
 import qcodes as qc
 import ctypes
+from time import sleep
 
 from qcodes import Instrument
 import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import ManualParameter
 
 from qcodes.instrument_drivers.spincore import spinapi as api
 
@@ -45,7 +45,7 @@ class PulseBlasterESRPRO(Instrument):
                            vals=vals.Numbers(0, 500))
 
         self.add_parameter('board_number',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=board_number)
 
         self.add_function('initialize',
@@ -82,7 +82,7 @@ class PulseBlasterESRPRO(Instrument):
                           call_cmd=api.pb_get_error)
 
         self.add_parameter('instruction_sequence',
-                           parameter_class = ManualParameter,
+                           set_cmd=None,
                            initial_value=[],
                            vals=vals.Anything())
 
@@ -151,7 +151,7 @@ class PulseBlasterESRPRO(Instrument):
         assert return_msg == 0, 'Error starting programming: {}'.format(api.pb_get_error())
         return return_msg
 
-    def send_instruction(self, flags, instruction, inst_args, length):
+    def send_instruction(self, flags, instruction, inst_args, length, log=True):
         '''
         Send programming instruction to Pulseblaster.
         Programming instructions can only be sent after the initial command pb.start_programming.
@@ -166,14 +166,16 @@ class PulseBlasterESRPRO(Instrument):
             instruction: Instruction to be sent, case-insensitive (see above for possible instructions)
             inst_args: Accompanying instruction argument, dependent on instruction type
             length: Number of clock cycles to perform instruction
+            log: Whether to log to instruction_sequence (True by default)
 
         Returns:
             return_msg, which contains instruction address
         '''
 
         # Add instruction to log
-        self.instruction_sequence(self.instruction_sequence() +
-                          [(flags, instruction, inst_args, length)])
+        if log:
+            self.instruction_sequence(self.instruction_sequence() +
+                              [(flags, instruction, inst_args, length)])
 
         instruction_int = self.program_instructions_map[instruction.upper()]
         #Need to call underlying spinapi because function does not exist in wrapper
@@ -185,6 +187,13 @@ class PulseBlasterESRPRO(Instrument):
         assert return_msg >= 0, \
             'Error sending instruction: {}'.format(api.pb_get_error())
         return return_msg
+
+    def send_instructions(self, *instructions):
+        for instruction in instructions:
+            self.send_instruction(*instruction, log=False)
+
+        # Add instructions to log
+        self.instruction_sequence(list(self.instruction_sequence()) + list(instructions))
 
     def stop_programming(self):
         '''

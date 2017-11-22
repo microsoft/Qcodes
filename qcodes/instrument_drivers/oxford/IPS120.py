@@ -85,10 +85,10 @@ class OxfordInstruments_IPS120(VisaInstrument):
                            get_cmd=self._get_voltage_limit)
 
         # Find the F field limits
-        MaxField = self.field_setpoint._vals._max_value
-        MinField = self.field_setpoint._vals._min_value
-        MaxFieldSweep = self.sweeprate_field._vals._max_value
-        MinFieldSweep = self.sweeprate_field._vals._min_value
+        MaxField = self.field_setpoint.vals._max_value
+        MinField = self.field_setpoint.vals._min_value
+        MaxFieldSweep = self.sweeprate_field.vals._max_value
+        MinFieldSweep = self.sweeprate_field.vals._min_value
         # A to B conversion
         ABconversion = 115.733 / 14  # Ampere per Tesla
         self.add_parameter('current_setpoint',
@@ -236,7 +236,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def get_idn(self):
         """
-        Overides the function of Instrument since IPS120 does not support '*IDN?'
+        Overides the function of Instrument since IPS120 does not support `*IDN?`
 
         This string is supposed to be a comma-separated list of vendor, model,
         serial, and firmware, but semicolon and colon are also common
@@ -493,7 +493,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         log.info('Read voltage limit')
         result = self._execute('R15')
         result = float(result.replace('R', ''))
-        self.voltage._vals = vals.Numbers(-result, result)
+        self.voltage.vals = vals.Numbers(-result, result)
         return result
 
     def _get_persistent_current(self):

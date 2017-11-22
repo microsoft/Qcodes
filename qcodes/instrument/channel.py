@@ -80,7 +80,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         self._channels = channels
         self._param_name = param_name
 
-    def get(self) -> tuple:
+    def get_raw(self) -> tuple:
         """
         Return a tuple containing the data from each of the channels in the
         list
@@ -88,7 +88,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         return tuple(chan.parameters[self._param_name].get() for chan
                      in self._channels)
 
-    def set(self, value):
+    def set_raw(self, value):
         """
         Set all parameters to this value
 

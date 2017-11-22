@@ -2,6 +2,9 @@ import time
 import logging
 import numpy as np
 from functools import partial
+
+from typing import Callable, List, Union
+
 try:
     import zhinst.utils
 except ImportError:
@@ -10,7 +13,6 @@ except ImportError:
                          download and installation instructions.
                       ''')
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
 from qcodes.utils import validators as vals
@@ -250,6 +252,20 @@ class Scope(MultiParameter):
         # They are updated via build_scope.
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
+        self._scopeactions = []  # list of callables
+
+    def add_post_trigger_action(self, action: Callable) -> None:
+        """
+        Add an action to be performed immediately after the trigger
+        has been armed. The action must be a callable taking zero
+        arguments
+        """
+        if action not in self._scopeactions:
+            self._scopeactions.append(action)
+
+    @property
+    def post_trigger_actions(self) -> List[Callable]:
+        return self._scopeactions
 
     def prepare_scope(self):
         """
@@ -452,24 +468,36 @@ class Scope(MultiParameter):
             # one shot per trigger. This needs to be set every time
             # a the scope is enabled as below using scope_runstop
             try:
-                # we wrap this in try finally to ensure that scope.finish is always called
-                # even if the measurement is interrupted
+                # we wrap this in try finally to ensure that
+                # scope.finish is always called even if the
+                # measurement is interrupted
                 self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
-                self._instrument.daq.sync()
 
-                scope = self._instrument.scope # There are issues reusing the scope.
+
+                scope = self._instrument.scope
                 scope.set('scopeModule/clearhistory', 1)
 
                 # Start the scope triggering/acquiring
-                params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
+                # set /dev/scopes/0/enable to 1
+                params['scope_runstop'].set('run')
 
-                log.info('[*] Starting ZI scope acquisition.')
+                self._instrument.daq.sync()
+
+                log.debug('Starting ZI scope acquisition.')
                 # Start something... hauling data from the scopeModule?
                 scope.execute()
+
+                # Now perform actions that may produce data, e.g. running an AWG
+                for action in self._scopeactions:
+                    action()
+
                 starttime = time.time()
                 timedout = False
 
-                while scope.progress() < 1:
+                progress = scope.progress()
+                while progress < 1:
+                    log.debug('Scope progress is {}'.format(progress))
+                    progress = scope.progress()
                     time.sleep(0.1)  # This while+sleep is how ZI engineers do it
                     if (time.time()-starttime) > 20*meas_time+1:
                         timedout = True
@@ -496,8 +524,10 @@ class Scope(MultiParameter):
                     error_counter += 1
 
                 if error_counter >= num_retries:
-                    log.warning('[+] ZI scope acquisition failed, maximum number'
-                                'of retries performed. No data returned')
+                    log.error('[+] ZI scope acquisition failed, maximum number'
+                              'of retries performed. No data returned')
+                    raise RuntimeError('[+] ZI scope acquisition failed, maximum number'
+                              'of retries performed. No data returned')
             finally:
                 # cleanup and make ready for next scope acquisition
                 scope.finish()
@@ -547,15 +577,13 @@ class ZIUHFLI(Instrument):
         * Add zoom-FFT
     """
 
-    def __init__(self, name, device_ID, **kwargs):
+    def __init__(self, name: str, device_ID: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
 
         Args:
             name (str): The internal QCoDeS name of the instrument
             device_ID (str): The device name as listed in the web server.
-            api_level (int): Compatibility mode of the API interface. Must be 5
-              for the UHF.
         """
 
         super().__init__(name, **kwargs)
@@ -710,6 +738,26 @@ class ZIUHFLI(Instrument):
                                vals=vals.Enum(*list(dmtrigs.keys()))
                                )
 
+            self.add_parameter('demod{}_sample'.format(demod),
+                               label='Demod sample',
+                               get_cmd=partial(self._getter, 'demods',
+                                               demod - 1, 2, 'sample'),
+                               snapshot_value=False
+                               )
+
+            for demod_param in ['x', 'y', 'R', 'phi']:
+                if demod_param in ('x', 'y', 'R'):
+                    unit = 'V'
+                else:
+                    unit = 'deg'
+                self.add_parameter('demod{}_{}'.format(demod, demod_param),
+                                   label='Demod {} {}'.format(demod, demod_param),
+                                   get_cmd=partial(self._get_demod_sample,
+                                                   demod - 1, demod_param),
+                                   snapshot_value=False,
+                                   unit=unit
+                                   )
+
         ########################################
         # SIGNAL INPUTS
 
@@ -796,7 +844,7 @@ class ZIUHFLI(Instrument):
                                 unit='V')
 
             self.add_parameter('signal_output{}_ampdef'.format(sigout),
-                                parameter_class=ManualParameter,
+                                get_cmd=None, set_cmd=None,
                                 initial_value='Vpk',
                                 label="Signal output amplitude's definition",
                                 unit='V',
@@ -1084,7 +1132,7 @@ class ZIUHFLI(Instrument):
                            label='Sweep timeout',
                            unit='s',
                            initial_value=600,
-                           parameter_class=ManualParameter)
+                           get_cmd=None, set_cmd=None)
 
         ########################################
         # THE SWEEP ITSELF
@@ -1439,7 +1487,8 @@ class ZIUHFLI(Instrument):
         if mode == 1:
             self.daq.setDouble(setstr, value)
 
-    def _getter(self, module, number, mode, setting):
+    def _getter(self, module: str, number: int,
+                mode: int, setting: str) -> Union[float, int, str, dict]:
         """
         General get function for generic parameters. Note that some parameters
         use more specialised setter/getters.
@@ -1452,7 +1501,7 @@ class ZIUHFLI(Instrument):
                 we want to know the value of.
             number (int): Module's index
             mode (int): Indicating whether we are asking for an int or double.
-                0: Int, 1: double.
+                0: Int, 1: double, 2: Sample
             setting (str): The module's setting to set.
         returns:
             inquered value
@@ -1460,13 +1509,29 @@ class ZIUHFLI(Instrument):
         """
 
         querystr = '/{}/{}/{}/{}'.format(self.device, module, number, setting)
+        log.debug("getting %s", querystr)
         if mode == 0:
             value = self.daq.getInt(querystr)
-        if mode == 1:
+        elif mode == 1:
             value = self.daq.getDouble(querystr)
-
+        elif mode == 2:
+            value = self.daq.getSample(querystr)
+        else:
+            raise RuntimeError("Invalid mode supplied")
         # Weird exception, samplingrate returns a string
         return value
+
+    def _get_demod_sample(self, number: int, demod_param: str) -> float:
+        log.debug("getting demod %s param %s", number, demod_param)
+        mode = 2
+        module = 'demods'
+        setting = 'sample'
+        if demod_param not in ['x', 'y', 'R', 'phi']:
+            raise RuntimeError("Invalid demodulator parameter")
+        datadict = self._getter(module, number, mode, setting)
+        datadict['R'] = np.abs(datadict['x'] + 1j * datadict['y'])
+        datadict['phi'] = np.angle(datadict['x'] + 1j * datadict['y'], deg=True)
+        return datadict[demod_param]
 
     def _sigout_setter(self, number, mode, setting, value):
         """
@@ -1786,7 +1851,7 @@ class ZIUHFLI(Instrument):
             raise ValueError('Can not select attribute:'+
                              '{}. Only the following attributes are' +
                              ' available: ' +
-                             ('{}, '*len(attributes)).format(*attributes))
+                             ('{}, '*len(valid_attributes)).format(*valid_attributes))
 
         # internally, we use strings very similar to the ones used by the
         # instrument, but with the attribute added, e.g.

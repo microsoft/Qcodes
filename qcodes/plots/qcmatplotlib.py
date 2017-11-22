@@ -3,10 +3,12 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping, Iterable, Sequence
+import os
 from functools import partial
 import logging
 
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
@@ -76,6 +78,8 @@ class MatPlot(BasePlot):
             else:
                 # Arg is single element, add to subplot
                 self[k].add(arg, **kwargs)
+        if args:
+            self.rescale_axis()
 
         self.tight_layout()
         if any(any(map(_is_active_data_array, arg))
@@ -105,12 +109,15 @@ class MatPlot(BasePlot):
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
-                # self.max_subplot_columns defines the limit on how many
-                # subplots can be in one row. Adjust subplot rows and columns
-                #  accordingly
-                nrows = int(np.ceil(subplots / self.max_subplot_columns))
-                ncols = min(subplots, self.max_subplot_columns)
-                subplots = (nrows, ncols)
+                if subplots == 4:
+                    subplots = (2,2)
+                else:
+                    # self.max_subplot_columns defines the limit on how many
+                    # subplots can be in one row. Adjust subplot rows and columns
+                    #  accordingly
+                    nrows = int(np.ceil(subplots / self.max_subplot_columns))
+                    ncols = min(subplots, self.max_subplot_columns)
+                    subplots = (nrows, ncols)
 
             if figsize is None:
                 # Adjust figsize depending on rows and columns in subplots
@@ -170,7 +177,11 @@ class MatPlot(BasePlot):
             plot_object = self._draw_plot(ax, **kwargs)
 
         # Specify if axes ticks can have offset or not
-        ax.ticklabel_format(useOffset=use_offset)
+        try:
+            ax.ticklabel_format(useOffset=use_offset)
+        except AttributeError:
+            # Not using ScalarFormatter (axis probably rescaled)
+            pass
 
         self._update_labels(ax, kwargs)
         prev_default_title = self.get_default_title()
@@ -365,7 +376,9 @@ class MatPlot(BasePlot):
                     arr_pad += diff
                     # Ignore final value
                     arr_pad = arr_pad[:-1]
-                args.append(masked_invalid(arr_pad))
+                    # C is allowed to be masked in pcolormesh but x and y are
+                    # not so replace any empty data with nans
+                args.append(np.ma.filled(arr_pad, fill_value=np.nan))
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask
@@ -415,18 +428,32 @@ class MatPlot(BasePlot):
 
         return pc
 
-    def save(self, filename=None):
+    def save(self, filename=None, ext='png'):
         """
         Save current plot to filename, by default
         to the location corresponding to the default
-        title.
+        title. Can also save as multiple extensions
 
         Args:
             filename (Optional[str]): Location of the file
+                Can contain extension, or provided separately with `ext` kwarg
+            ext (Optional[str]): File extension, by default `png`.
+                Can also be list of extensions, in which case each extension is
+                saved separately. Is ignored if filename contains an extension.
         """
-        default = "{}.png".format(self.get_default_title())
-        filename = filename or default
-        self.fig.savefig(filename)
+        if filename is None:
+            filename = self.get_default_title()
+
+        if os.path.splitext(filename)[1]:
+            # Filename already has extension
+            filename, ext = os.path.splitext(filename)
+            ext = ext[1:] # Remove initial `.`
+
+        if isinstance(ext, str):
+            ext = [ext]
+
+        for ext_instance in ext:
+            self.fig.savefig('{}.{}'.format(filename, ext_instance))
 
     def tight_layout(self):
         """
@@ -434,3 +461,61 @@ class MatPlot(BasePlot):
         the top is also added for the title.
         """
         self.fig.tight_layout(rect=[0, 0, 1, 0.95])
+
+    def rescale_axis(self):
+        """
+        Rescale axis and units for axis that are in standard units
+        i.e. V, s J ... to m μ, m
+        This scales units defined in BasePlot.standardunits only
+        to avoid prefixes on combined or non standard units
+        """
+        def scale_formatter(i, pos, scale):
+            return "{0:.7g}".format(i * scale)
+
+        for i, subplot in enumerate(self.subplots):
+            traces = [trace for trace in self.traces if trace['config'].get('subplot', None) == i+1]
+            if not traces:
+                continue
+            else:
+                # TODO: include all traces when calculating maxval etc.
+                trace = traces[0]
+            for axis in 'x', 'y', 'z':
+                if axis in trace['config'] and isinstance(trace['config'][axis], DataArray):
+                    unit = trace['config'][axis].unit
+                    label = trace['config'][axis].label
+                    maxval = np.nanmax(abs(trace['config'][axis].ndarray))
+                    units_to_scale = self.standardunits
+
+                    # allow values up to a <1000. i.e. nV is used up to 1000 nV
+                    prefixes = ['n', 'μ', 'm', '', 'k', 'M', 'G']
+                    thresholds = [10**(-6 + 3*n) for n in range(len(prefixes))]
+                    scales = [10**(9 - 3*n) for n in range(len(prefixes))]
+
+                    if unit in units_to_scale:
+                        scale = 1
+                        new_unit = unit
+                        for prefix, threshold, trialscale in zip(prefixes,
+                                                                 thresholds,
+                                                                 scales):
+                            if maxval < threshold:
+                                scale = trialscale
+                                new_unit = prefix + unit
+                                break
+                        # special case the largest
+                        if maxval > thresholds[-1]:
+                            scale = scales[-1]
+                            new_unit = prefixes[-1] + unit
+
+                        tx = ticker.FuncFormatter(
+                            partial(scale_formatter, scale=scale))
+                        new_label = "{} ({})".format(label, new_unit)
+                        if axis in ('x', 'y'):
+                            getattr(subplot,
+                                    "{}axis".format(axis)).set_major_formatter(
+                                tx)
+                            getattr(subplot, "set_{}label".format(axis))(
+                                new_label)
+                        else:
+                            subplot.qcodes_colorbar.formatter = tx
+                            subplot.qcodes_colorbar.set_label(new_label)
+                            subplot.qcodes_colorbar.update_ticks()

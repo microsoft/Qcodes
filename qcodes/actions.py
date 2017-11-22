@@ -8,6 +8,12 @@ from qcodes.utils.threading import thread_map
 _NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
 
 
+# exception when threading is attempted used to simultaneously
+# query the same instrument for several values
+class UnsafeThreadingException(Exception):
+    pass
+
+
 def _actions_snapshot(actions, update):
     """Make a list of snapshots from a list of actions."""
     snapshot = []
@@ -33,19 +39,40 @@ class Task:
 
     Args:
         func (callable): Function to executed
+        N (int): if set, Task is only executed every N calls.
+            Task is always executed in first call.
+        condition (callable): If set, Task is only executed if condition 
+            evaluates to True
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
 
     """
-    def __init__(self, func, *args, **kwargs):
+
+    def __init__(self, func, *args, N=None, condition=None, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
 
+        self.N = N
+        self.idx = 0
+
+        self.condition = condition
+
     def __call__(self, **ignore_kwargs):
+        if self.N is not None:
+            if self.idx % self.N != 0:
+                self.idx += 1
+                return
+            self.idx += 1
+
+        if self.condition is not None:
+            if not self.condition():
+                return
+
         # If any of the arguments are callable, evaluate them first
         eval_args = [arg() if callable(arg) else arg for arg in self.args]
-        eval_kwargs = {k: (v() if callable(v) else v) for k, v in self.kwargs.items()}
+        eval_kwargs = {k: (v() if callable(v) else v) for k, v in
+                       self.kwargs.items()}
 
         self.func(*eval_args, **eval_kwargs)
 
@@ -58,7 +85,13 @@ class Task:
         Returns:
             dict: snapshot
         """
-        return {'type': 'Task', 'func': repr(self.func)}
+        snapshot = {'type': 'Task', 'func': repr(self.func)}
+        if self.N is not None:
+            snapshot['N'] = self.N
+            snapshot['idx'] = self.idx
+        if self.condition is not None:
+            snapshot['condition'] = self.condition
+        return snapshot
 
 
 class Wait:
@@ -113,8 +146,12 @@ class _Measure:
         self.getters = []
         self.param_ids = []
         self.composite = []
+        paramcheck = []  # list to check if parameters are unique
         for param, action_indices in params_indices:
             self.getters.append(param.get)
+
+            if param._instrument:
+                paramcheck.append((param, param._instrument))
 
             if hasattr(param, 'names'):
                 part_ids = []
@@ -127,6 +164,17 @@ class _Measure:
                 param_id = data_set.action_id_map[action_indices]
                 self.param_ids.append(param_id)
                 self.composite.append(False)
+
+        if self.use_threads:
+            insts = [p[1] for p in paramcheck]
+            if (len(set(insts)) != len(insts)):
+                duplicates = [p for p in paramcheck if insts.count(p[1]) > 1]
+                raise UnsafeThreadingException('Can not use threading to '
+                                               'read '
+                                               'several things from the same '
+                                               'instrument. Specifically, you '
+                                               'asked for'
+                                               ' {}.'.format(duplicates))
 
     def __call__(self, loop_indices, **ignore_kwargs):
         out_dict = {}
@@ -166,7 +214,7 @@ class BreakIf:
 
     """
     Loop action that breaks out of the loop if a condition is truthy.
-    
+
     Args:
         condition (callable): a callable taking no arguments.
             Can be a simple function that returns truthy when it's time to quit

@@ -3,24 +3,39 @@ import time
 from unittest import TestCase
 import numpy as np
 from unittest.mock import patch
+import os
 
 from qcodes.loops import Loop
 from qcodes.actions import Task, Wait, BreakIf, _QcodesBreak
 from qcodes.station import Station
 from qcodes.data.data_array import DataArray
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter, MultiParameter
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import LogCapture
 
-from .instrument_mocks import MultiGetter
+from .instrument_mocks import MultiGetter, DummyInstrument
+
+
+class NanReturningParameter(MultiParameter):
+
+    def __init__(self, name, instrument, names=('first', 'second'),
+                 shapes=((), ())):
+
+        super().__init__(name=name, names=names, shapes=shapes,
+                         instrument=instrument)
+
+    def get_raw(self):  # this results in a nan-filled DataArray
+        return (13,)
 
 
 class TestLoop(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
-        cls.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
-        cls.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
+        cls.p1 = Parameter('p1', get_cmd=None, set_cmd=None, vals=Numbers(-10, 10))
+        cls.p2 = Parameter('p2', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
+        cls.p3 = Parameter('p3', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
+        instr = DummyInstrument('dummy_bunny')
+        cls.p4_crazy = NanReturningParameter('p4_crazy', instrument=instr)
         Station().set_measurement(cls.p2, cls.p3)
 
     def test_nesting(self):
@@ -92,6 +107,15 @@ class TestLoop(TestCase):
                     '   Measured | p2_2_0     | p2           | (2, 2)\n'
                     '   Measured | p1         | p1           | (2,)')
         self.assertEqual(data.__repr__(), expected)
+
+    def test_measurement_with_many_nans(self):
+        loop = Loop(self.p1.sweep(0, 1, num=10),
+                    delay=0.05).each(self.p4_crazy)
+        ds = loop.get_data_set()
+        loop.run()
+
+        # assert that both the snapshot and the datafile are there
+        self.assertEqual(len(os.listdir(ds.location)), 2)
 
     def test_default_measurement(self):
         self.p2.set(4)
@@ -448,7 +472,7 @@ class TestLoop(TestCase):
         self.assertEqual(len(f_calls), 1)
 
 
-class AbortingGetter(ManualParameter):
+class AbortingGetter(Parameter):
     """
     A manual parameter that can only be measured n times
     before it aborts the loop that's measuring it.
@@ -458,11 +482,11 @@ class AbortingGetter(ManualParameter):
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._count -= 1
         if self._count <= 0:
             raise _QcodesBreak
-        return super().get()
+        return self.get_latest()
 
     def reset(self):
         self._count = self._initial_count
@@ -474,7 +498,7 @@ class Test_halt(TestCase):
         self.res = list(np.arange(0, abort_after-1, 1.))
         [self.res.append(float('nan')) for i in range(0, abort_after-1)]
 
-        p1 = AbortingGetter('p1', count=abort_after, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=abort_after, vals=Numbers(-10, 10), set_cmd=None)
         loop = Loop(p1.sweep(0, abort_after, 1), 0.005).each(p1)
         # we want to test what's in data, so get it ahead of time
         # because loop.run will not return.
@@ -486,7 +510,7 @@ class Test_halt(TestCase):
 
 class TestMetaData(TestCase):
     def test_basic(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10), set_cmd=None)
         sv = p1[1:3:1]
         loop = Loop(sv)
 

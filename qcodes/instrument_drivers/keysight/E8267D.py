@@ -13,6 +13,8 @@ class Keysight_E8267D(VisaInstrument):
     def __init__(self, name, address, step_attenuator=False, **kwargs):
         super().__init__(name, address, **kwargs)
 
+        self.set_terminator('\n')
+
         self.add_parameter(name='frequency',
                            label='Frequency',
                            unit='Hz',
@@ -82,7 +84,8 @@ class Keysight_E8267D(VisaInstrument):
         self.add_parameter('frequency_deviation',
                            get_cmd='FM:DEV?',
                            set_cmd='FM:DEV {}',
-                           get_parser=self.parse_on_off,
+                           get_parser=float,
+                           set_parser=float,
                            vals=vals.Numbers(0, 80e6))
         self.add_parameter('amplitude_modulation',
                            get_cmd='AM:STAT?',

@@ -78,4 +78,8 @@ target/
 tmp/
 
 docs/examples/data/*
-.idea/*
+
+.idea/
+
+# Mac files
+.DS_Store

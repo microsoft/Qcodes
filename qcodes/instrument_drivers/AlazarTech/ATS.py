@@ -4,9 +4,8 @@ import numpy as np
 import os
 
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
-from qcodes.instrument.parameter import MultiParameter, ManualParameter
+from qcodes.instrument.parameter import Parameter, MultiParameter
 
 # TODO(damazter) (C) logging
 
@@ -251,13 +250,13 @@ class AlazarTech_ATS(Instrument):
         # get channel info
         max_s, bps = self._get_channel_info(self._handle)
         self.add_parameter(name='bits_per_sample',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=bps)
         self.add_parameter(name='bytes_per_sample',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=int((bps + 7)//8))
         self.add_parameter(name='maximum_samples',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=max_s)
 
     def get_idn(self):
@@ -530,7 +529,7 @@ class AlazarTech_ATS(Instrument):
                            self._handle, pretriggersize,
                            post_trigger_size)
 
-        number_of_channels = len(self.channel_selection._latest_value)
+        number_of_channels = len(self.channel_selection.get_latest())
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
         samples_per_record = self.samples_per_record._get_byte()

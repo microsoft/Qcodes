@@ -4,7 +4,6 @@ import numpy as np
 import logging
 import time
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
 from .ATS import AcquisitionController
 
@@ -38,7 +37,7 @@ class Triggered_AcquisitionController(AcquisitionController):
         }
 
         self.add_parameter(name='average_mode',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
         self.add_parameter(name='samples_per_trace',
@@ -155,14 +154,14 @@ class Continuous_AcquisitionController(AcquisitionController):
         self._acquisition_settings = self._fixed_acquisition_settings.copy()
 
         self.add_parameter(name='average_mode',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
         self.add_parameter(name='samples_per_trace',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            vals=vals.Multiples(divisor=16))
         self.add_parameter(name='traces_per_acquisition',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            vals=vals.Ints())
 
         self.buffer_idx = None
@@ -299,29 +298,29 @@ class SteeredInitialization_AcquisitionController(
         self._target_instrument = target_instrument
 
         self.add_parameter(name='t_no_blip',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            unit='ms',
                            initial_value=40)
         self.add_parameter(name='t_max_wait',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            unit='ms',
                            initial_value=500)
         self.add_parameter(name='max_wait_action',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            unit='ms',
                            initial_value='start',
                            vals=vals.Enum('start', 'error'))
 
         self.add_parameter(name='silent',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=True,
                            vals=vals.Bool())
         self.add_parameter(name='stage',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            vals=vals.Enum('initialization', 'active',
                                           'read'))
         self.add_parameter(name='record_initialization_traces',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=False,
                            vals=vals.Bool())
 
@@ -329,20 +328,20 @@ class SteeredInitialization_AcquisitionController(
         self.add_parameter(name='target_instrument',
                            get_cmd=lambda: self._target_instrument.name)
         self.add_parameter(name='target_command',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value='start',
                            vals=vals.Strings())
 
         self.add_parameter(name='readout_channel',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            vals=vals.Enum('A', 'B', 'C', 'D'))
         self.add_parameter(name='trigger_channel',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            vals=vals.Enum('A', 'B', 'C', 'D'))
         self.add_parameter(name='trigger_threshold_voltage',
-                           parameter_class=ManualParameter)
+                           set_cmd=None)
         self.add_parameter(name='readout_threshold_voltage',
-                           parameter_class=ManualParameter)
+                           set_cmd=None)
 
         self.add_parameter(name='initialization_traces',
                            get_cmd=lambda: self._initialization_traces)
@@ -514,7 +513,7 @@ class TestContinuous_AcquisitionController(Continuous_AcquisitionController):
         super().__init__(**kwargs)
         self.add_parameter(name='max_buffers',
                            initial_value=100000,
-                           parameter_class=ManualParameter)
+                           set_cmd=None)
 
     def _requires_buffer(self, buffers_completed):
         return buffers_completed <= self.max_buffers()
