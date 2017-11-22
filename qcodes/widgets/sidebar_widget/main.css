@@ -1,0 +1,18 @@
+.sidebar-wrapper {
+    height: 100%;
+    padding: 3px;
+    position: fixed !important;
+    width: 250px;
+    max-width: 40%;
+    background-color: #FFFFFF;
+    border-style: solid;
+    border-color: #EEEEEE;
+    opacity: .99;
+    overflow: hidden;
+}
+.sidebar-wrapper.left {
+    left: 0px;
+}
+.sidebar-wrapper.right {
+    right: 18px;
+}

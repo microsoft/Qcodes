@@ -5,28 +5,6 @@ from IPython.display import display
 from ipywidgets.widgets import *
 from traitlets import Unicode, Bool
 
-from .display import display_auto
-
-display_auto('widgets/sidebar_widget.js')
-
-
-class SidebarWidget(DOMWidget):
-    _view_name = Unicode('SidebarView').tag(sync=True)
-    _view_module = Unicode('sidebar').tag(sync=True)
-    _view_module_version = Unicode('0.1.0').tag(sync=True)
-    _widget_name = Unicode('none').tag(sync=True)
-    _add_widget = Bool(False).tag(sync=True)
-    _playing = Bool(False).tag(sync=True)
-
-    def __init__(self):
-        super().__init__()
-        display(self)
-
-    def add_widget(self, widget_name):
-        self._widget_name = widget_name
-        self._add_widget = not self._add_widget
-
-
 import qcodes as qc
 from qcodes.utils.threading import UpdaterThread
 
