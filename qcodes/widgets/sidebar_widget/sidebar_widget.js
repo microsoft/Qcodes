@@ -50,9 +50,11 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
 
       // Add sidebar height resizing
       $([Jupyter.events]).on("resize-header.Page", () => {this.set_sidebar_height()});
-      $(window).on('resize', () => {this.set_sidebar_height()});
+      $(window).on('resize', () => {
+        this.set_sidebar_height();
+        setNotebookWidth()});
 
-      setNotebookWidth();
+      $(window).trigger('resize');
 
       console.log(`${position} sidebar initialized`);
       console.log(sidebar)
