@@ -78,8 +78,7 @@ class RawTrace(ArrayParameter):
                                 'the scope for acquiring a trace.')
 
         # shorthand
-        instr = self._instrument
-        scope = instr._parent
+        instr =  self._instrument._parent
 
         # set up the instrument
         # ---------------------------------------------------------------------
@@ -90,39 +89,41 @@ class RawTrace(ArrayParameter):
         # get intrument state
         state = instr.ask(':RSTate?')
         # realtime mode: only one trigger is used
-        instr._parent.acquire_mode('RTIMe')
+        instr.acquire_mode('RTIMe')
             # acquire the data
         # ---------------------------------------------------------------------
 
-        # digitize is a blocking call, so the scope will not respond to any visa
+        # digitize is a blocking call, so the instr will not respond to any visa
         # commands in the meantime. Here the digitization time is calculated
         # to wait for the acquisition to finish.
         # in the manual chap. 7 example: Checking for Armed Status
         # the function `read_stb()` from the visa api is used to read the
         # status byte. Setting a timeout seems to be a better solution as it
         # does not require constantly polling for the status.
-        old_timeout = scope._get_visa_timeout()
-        if scope.acquire_average.get_latest():
-            naverages = scope.acquire_average_count.get_latest()
+        old_timeout = instr._get_visa_timeout()
+        if instr.acquire_average.get_latest():
+            naverages = instr.acquire_average_count.get_latest()
         else:
             naverages = 1
-        new_timeout = scope.acquisition_factor*naverages * scope.acquire_timespan()
+        new_timeout = instr.acquisition_factor*naverages * instr.acquire_timespan()
         if new_timeout > old_timeout:
-            scope._set_visa_timeout(new_timeout)
+            instr._set_visa_timeout(new_timeout)
             log.warning('old timeout is {}. Setting to {}'.format(old_timeout, new_timeout))
 
         log.debug("issuing Digitize command")
         # digitize is the actual call for acquisition, blocks
         instr.write(':DIGitize CHANnel{}'.format(self._channel))
         instr.ask('*OPC?')
-        scope._set_visa_timeout(old_timeout)
+        instr._set_visa_timeout(old_timeout)
+
+
         # transfer the data
         # ---------------------------------------------------------------------
 
         # switch the response header off for lower overhead
         instr.write(':SYSTem:HEADer OFF')
         # select the channel from which to read
-        instr._parent.data_source('CHAN{}'.format(self._channel))
+        instr.data_source('CHAN{}'.format(self._channel))
         # specifiy the data format in which to read
         instr.write(':WAVeform:FORMat WORD')
         instr.write(":waveform:byteorder LSBFirst")
@@ -130,7 +131,7 @@ class RawTrace(ArrayParameter):
         instr.write(':WAVeform:STReaming OFF')
 
         # request the actual transfer
-        data = instr._parent.visa_handle.query_binary_values(
+        data = instr.visa_handle.query_binary_values(
             'WAV:DATA?', datatype='h', is_big_endian=False)
         if len(data) != self.shape[0]:
             raise TraceSetPointsChanged('{} points have been aquired and {} \
