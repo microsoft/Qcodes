@@ -449,9 +449,6 @@ class GS200(VisaInstrument):
             mode (str): "CURR" or "VOLT"
         """
         if self._cached_mode != mode:
-            if check:
-                self._cached_mode = self.source_mode.get()
-                self._assert_mode(mode, check=False)
             raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cached_mode))
 
     def _set_source_mode(self, mode: str) -> None:
@@ -474,32 +471,38 @@ class GS200(VisaInstrument):
 
         self.write("SOUR:FUNC {}".format(mode))
         self._cached_mode = mode
-        # The next time the range is asked, ask from instrument and update the cached value
-        self._cached_range_value = None
         # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
-    def _set_range(self, mode: str, val: float) -> None:
+    def _set_range(self, mode: str, range: float) -> None:
         """
         Update range
 
         Args:
             mode (str): "CURR" or "VOLT"
-            val (float): value to set
+            range (float): range to set. For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current
+                            we have the ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
+                            output can only happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
-        val = float(val)
-        self._update_measurement_module(source_mode=mode, source_range=val)
-        self._cached_range_value = val
-        self.write(':SOUR:RANG {}'.format(str(val)))
+        range = float(range)
+        self._update_measurement_module(source_mode=mode, source_range=range)
+        self._cached_range_value = range
+        self.write(':SOUR:RANG {}'.format(str(range)))
 
-    def _get_range(self, mode: str) -> None:
+    def _get_range(self, mode: str) -> float:
         """
-        Update range.
-        Note: we do not use cached values here to ensure snapshots correctly update range.
+        Query the present range.
+        Note: we do not return the cached value here to ensure snapshots correctly update range. In fact, we update the
+        cached value when calling this method.
 
         Args:
             mode (str): "CURR" or "VOLT"
+
+        Returns:
+            range (float): For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current we have the
+                            ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the output can
+                            only happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
         self._cached_range_value = float(self.ask(":SOUR:RANG?"))
