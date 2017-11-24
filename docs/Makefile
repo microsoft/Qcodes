@@ -228,6 +228,7 @@ dummy:
 	@echo
 	@echo "Build finished. Dummy builder generates no files."
 
+.PHONY: html-api
 html-api:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py
 	mkdir -p api/generated/
@@ -240,6 +241,7 @@ html-api:
 	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
 	make html
 
+.PHONY: gh-pages
 gh-pages:
 	git config --global user.email "bot@travics.com"
 	git config --global user.name "Documentation Bot"
