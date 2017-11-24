@@ -39,7 +39,7 @@ script:
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - |
       cd ../docs
-      make html-api
+      make SPHINXOPTS="-W" html-api
     - cd ..
 
 after_success:
