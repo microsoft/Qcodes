@@ -33,6 +33,10 @@ class D5a(Instrument):
         The D5a module works with volts as units. For backward compatibility
         there is the option to allow mV for the dacX parameters.
 
+        The output span of the DAC module can be changed with the spanX
+        command. Be carefull when executing this command with a sample
+        connected as voltage jumps can occur.
+
         Args:
             name (str): name of the instrument.
 
@@ -87,7 +91,8 @@ class D5a(Instrument):
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),
                                set_cmd=partial(self._set_span, i),
-                               vals=Enum(*self._span_set_map.keys()))
+                               vals=Enum(*self._span_set_map.keys()),
+                               docstring='Change the output span of the DAC. This command also updates the validator.')
 
     def _set_dacs_zero(self):
         for i in range(16):
@@ -104,6 +109,8 @@ class D5a(Instrument):
 
     def _set_span(self, dac, span_str):
         self.d5a.change_span_update(dac, self._span_set_map[span_str])
+        self.parameters['dac{}'.format(
+            dac + 1)].vals = self._get_validator(dac)
 
     def _get_validator(self, dac):
         span = self.d5a.span[dac]
