@@ -230,7 +230,7 @@ dummy:
 
 .PHONY: html-api
 html-api:
-	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
 	mkdir -p _notebooks
 	mkdir -p _notebooks/driver_examples
