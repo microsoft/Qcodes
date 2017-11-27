@@ -1,10 +1,13 @@
 import numpy as np
 import time
+import logging
 
 import qcodes
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
+
+log = logging.getLogger(__name__)
 
 
 class SR86xBuffer(InstrumentChannel):
@@ -13,7 +16,7 @@ class SR86xBuffer(InstrumentChannel):
     For reference, please consult the SR860 manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
-    def __init__(self, parent: qcodes.instrument, name: str):
+    def __init__(self, parent: qcodes.instrument, name: str) ->None:
         super().__init__(parent, name)
         self._parent = parent
 
@@ -23,7 +26,8 @@ class SR86xBuffer(InstrumentChannel):
             get_cmd="CAPTURELEN?",
             set_cmd="CAPTURELEN {}",
             set_parser=self._set_capture_len_parser,
-            get_parser=int
+            get_parser=int,
+            unit="kB"
         )
 
         self.add_parameter(  # Configure which parameters we want to capture
@@ -31,8 +35,7 @@ class SR86xBuffer(InstrumentChannel):
             label="capture configuration",
             get_cmd="CAPTURECFG?",
             set_cmd="CAPTURECFG {}",
-            set_parser=lambda value: {"X": 0, "X,Y": 1, "R,T": 2, "X,Y,R,T": 3}[value],
-            get_parser=lambda value: {"0": "X", "1": "X,Y", "2": "R,T", "3": "X,Y,R,T"}[value]
+            val_mapping={"X": "0", "X,Y": "1", "R,T": "2", "X,Y,R,T": "3"}
         )
 
         self.add_parameter(
@@ -63,13 +66,15 @@ class SR86xBuffer(InstrumentChannel):
         self.add_parameter(
             "count_capture_bytes",
             label="capture bytes",
-            get_cmd="CAPTUREBYTES?"
+            get_cmd="CAPTUREBYTES?",
+            unit="B"
         )
 
         self.add_parameter(
             "count_capture_kilobytes",
             label="capture kilobytes",
-            get_cmd="CAPTUREPROG?"
+            get_cmd="CAPTUREPROG?",
+            unit="kB"
         )
 
         self.bytes_per_sample = 4
@@ -78,7 +83,7 @@ class SR86xBuffer(InstrumentChannel):
     def _set_capture_len_parser(value: int) -> int:
 
         if value % 2:
-            print("the capture length needs to be even. Setting to {}".format(value + 1))
+            log.warning("the capture length needs to be even. Setting to {}".format(value + 1))
             value += 1
 
         if not 1 <= value <= 4096:
@@ -109,9 +114,9 @@ class SR86xBuffer(InstrumentChannel):
 
         nearest_valid_rate = max_rate / 2 ** n_round
         if abs(capture_rate_hz - nearest_valid_rate) > 1:
-            print("Warning: Setting capture rate to {:.5} Hz".format(nearest_valid_rate))
+            log.warning("Warning: Setting capture rate to {:.5} Hz".format(nearest_valid_rate))
             available_frequencies = ", ".join([str(f) for f in self.available_frequencies])
-            print("The available frequencies are: {}".format(available_frequencies))
+            log.warning("The available frequencies are: {}".format(available_frequencies))
 
         return n_round
 
@@ -167,7 +172,7 @@ class SR86xBuffer(InstrumentChannel):
 
         return data
 
-    def capture_samples(self, sample_count: int):
+    def capture_samples(self, sample_count: int) ->dict:
         """
         Capture a number of samples. This convenience function provides an example how we use the start and stop
         methods. We acquire the samples by sleeping for a time and then reading the buffer.
@@ -225,8 +230,9 @@ class SR86x(VisaInstrument):
     }
     _N_TO_INPUT_SIGNAL = {v: k for k, v in _INPUT_SIGNAL_TO_N.items()}
 
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(self, name, address, max_frequency, reset=False, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
+        self._max_frequency = max_frequency
         # Reference commands
         self.add_parameter(name='frequency',
                            label='Frequency',
@@ -234,7 +240,7 @@ class SR86x(VisaInstrument):
                            get_cmd='FREQ?',
                            set_cmd='FREQ {}',
                            get_parser=float,
-                           vals=Numbers(min_value=1e-3, max_value=2.5e6))
+                           vals=Numbers(min_value=1e-3, max_value=self._max_frequency))
         self.add_parameter(name='sine_outdc',
                            label='Sine out dc level',
                            unit='V',
