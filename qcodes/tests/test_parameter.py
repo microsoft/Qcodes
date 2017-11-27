@@ -5,6 +5,9 @@ from collections import namedtuple
 from unittest import TestCase
 from time import sleep
 
+import numpy as np
+from hypothesis import given
+import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
@@ -19,10 +22,23 @@ class GettableParam(Parameter):
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(42)
         return 42
+
+
+class BookkeepingValidator(vals.Validator):
+    """
+    Validator that keeps track of what it validates
+    """
+    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
+        self.values_validated = []
+
+    def validate(self, value, context=''):
+        self.values_validated.append(value)
+
+    is_numeric = True
 
 
 blank_instruments = (
@@ -31,6 +47,7 @@ blank_instruments = (
     namedtuple('blank', 'name')('')  # blank .name
 )
 named_instrument = namedtuple('yesname', 'name')('astro')
+
 
 class MemoryParameter(Parameter):
     def __init__(self, get_cmd=None, **kwargs):
@@ -134,6 +151,19 @@ class TestParameter(TestCase):
                      'setpoint_labels', 'full_names']:
             self.assertFalse(hasattr(p, attr), attr)
 
+    def test_number_of_validations(self):
+
+        p = Parameter('p', set_cmd=None, initial_value=0,
+                      vals=BookkeepingValidator())
+
+        self.assertEqual(p.vals.values_validated, [0])
+
+        p.step = 1
+        p.set(10)
+
+        self.assertEqual(p.vals.values_validated,
+                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
                                snapshot_value=True)
@@ -223,13 +253,42 @@ class TestParameter(TestCase):
         self.assertEqual(p.get_latest(), 21)
         self.assertEqual(p.get_values, [21])
 
+
+class TestValsandParseParameter(TestCase):
+
+    def setUp(self):
+        self.parameter = Parameter(name='foobar',
+                                   set_cmd=None, get_cmd=None,
+                                   set_parser=lambda x: int(round(x)),
+                                   vals=vals.PermissiveInts(0))
+
+    def test_setting_int_with_float(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+1)
+        for i in values:
+            self.parameter(i)
+            a = self.parameter()
+            assert isinstance(a, int)
+
+    def test_setting_int_with_float_not_close(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+2)
+        for i in values[1:-2]:
+            with self.assertRaises(TypeError):
+                self.parameter(i)
+
+
 class SimpleArrayParam(ArrayParameter):
     def __init__(self, return_val, *args, **kwargs):
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -237,7 +296,7 @@ class SimpleArrayParam(ArrayParameter):
 
 class SettableArray(SimpleArrayParam):
     # this is not allowed - just created to raise an error in the test below
-    def set(self, v):
+    def set_raw(self, v):
         self.v = v
 
 
@@ -260,19 +319,18 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'label': name,
-            'unit': '',
-            'value': [[1, 2, 3], [4, 5, 6]]
+            'unit': ''
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
 
         self.assertIn(name, p.__doc__)
 
-    def test_explicit_attrbutes(self):
+    def test_explicit_attributes(self):
         name = 'tiny_array'
         shape = (2,)
         label = 'it takes two to tango'
@@ -286,7 +344,7 @@ class TestArrayParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -299,14 +357,15 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'label': label,
             'unit': unit,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -360,7 +419,7 @@ class SimpleMultiParam(MultiParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -369,7 +428,7 @@ class SimpleMultiParam(MultiParameter):
 class SettableMulti(SimpleMultiParam):
     # this is not fully suported - just created to raise a warning in the test below.
     # We test that the warning is raised
-    def set(self, v):
+    def set_raw(self, v):
         print("Calling set")
         self.v = v
 
@@ -396,13 +455,12 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'units': [''] * 3
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -429,7 +487,7 @@ class TestMultiParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -444,7 +502,7 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'names': names,
@@ -452,7 +510,8 @@ class TestMultiParameter(TestCase):
             'units': units,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -622,14 +681,94 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
+    @given(scale=hst.integers(1, 100),
+           value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_scaled(self, scale, value):
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p, scale=scale,
+                      initial_value=0)
+        assert p() == 0.0
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        expected_output =np.linspace(0.1,10,100)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_output)
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == value * scale
+
+    @given(value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_parser(self, value):
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      set_parser=lambda x: -x,
+                      get_parser=lambda x: -x,
+                      initial_value=0)
+        assert p() == 0.0
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        expected_output =np.linspace(0.1,10,100)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_output)
+        p.set(value)
+        assert p.get() == value
+        assert p.raw_value == -value
+
+    @given(scale=hst.integers(1, 100),
+           value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_parsed_scaled(self, scale, value):
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p, scale=scale,
+                      set_parser=lambda x: -x,
+                      get_parser=lambda x: -x,
+                      initial_value=0)
+        assert p() == 0.0
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        expected_output =np.linspace(0.1,10,100)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_output)
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == -scale * value
+
+class TestManualParameterValMapping(TestCase):
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+
+    def test_val_mapping(self):
+        self.instrument.add_parameter('myparameter', set_cmd=None, get_cmd=None, val_mapping={'A': 0, 'B': 1})
+        self.instrument.myparameter('A')
+        assert self.instrument.myparameter() == 'A'
+        assert self.instrument.myparameter() == 'A'
+        assert self.instrument.myparameter.raw_value == 0
+
+
 
 class TestInstrumentRefParameter(TestCase):
+
+    def setUp(self):
+        self.a = DummyInstrument('dummy_holder')
+        self.d = DummyInstrument('dummy')
+
     def test_get_instr(self):
-        a = DummyInstrument('dummy_holder')
-        d = DummyInstrument('dummy')
-        a.add_parameter('test', parameter_class=InstrumentRefParameter)
+        self.a.add_parameter('test', parameter_class=InstrumentRefParameter)
 
-        a.test.set(d.name)
+        self.a.test.set(self.d.name)
 
-        self.assertEqual(a.test.get(), d.name)
-        self.assertEqual(a.test.get_instr(), d)
+        self.assertEqual(self.a.test.get(), self.d.name)
+        self.assertEqual(self.a.test.get_instr(), self.d)
+
+    def tearDown(self):
+        self.a.close()
+        self.d.close()
+        del self.a
+        del self.d
