@@ -465,6 +465,11 @@ define('toc', [
 
     $([Jupyter.events]).on('execute.CodeCell', highlight_toc_item);
 
+    // turn off event where delete cell unhides all other cells
+    setTimeout(function() {
+        Jupyter.notebook.events.off('delete.Cell')
+    }, 5000);
+
 
     events[cfg.collapse_to_match_collapsible_headings ? 'on' : 'off'](
       'collapse.CollapsibleHeading uncollapse.CollapsibleHeading', callback_sidebar_toc_collapsible_headings);
