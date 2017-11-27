@@ -435,17 +435,16 @@ class AlazarTech_ATS(Instrument):
         self._set_if_present('aux_io_param', aux_io_param)
         # endregion
 
+        sample_rate = self.get_sample_rate(include_decimation=False)
         # handle that external clock and internal clock uses
         # two different ways of setting the sample rate.
-        # We use the matching one and mark the order one
+        # We use the matching one above and mark the order one
         # as up to date since it's not being pushed to
         # the instrument at any time and is never used
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
-            sample_rate = self.external_sample_rate
             if 'sample_rate' in self.parameters:
                 self.parameters['sample_rate']._set_updated()
         elif clock_source == 'INTERNAL_CLOCK':
-            sample_rate = self.sample_rate
             if 'external_sample_rate' in self.parameters:
                 self.parameters['external_sample_rate']._set_updated()
 
@@ -849,7 +848,7 @@ class AlazarTech_ATS(Instrument):
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
-    def get_sample_rate(self):
+    def get_sample_rate(self, include_decimation=True):
         """
         Obtain the effective sampling rate of the acquisition
         based on clock speed and decimation
@@ -871,7 +870,10 @@ class AlazarTech_ATS(Instrument):
         if rate == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
 
-        decimation = self.decimation.get()
+        if include_decimation:
+            decimation = self.decimation.get()
+        else:
+            decimation = 0
         if decimation > 0:
             return rate / decimation
         else:
