@@ -78,6 +78,7 @@ class SR86xBuffer(InstrumentChannel):
         )
 
         self.bytes_per_sample = 4
+        self._capture_data = []
 
     @staticmethod
     def _set_capture_len_parser(value: int) -> int:
@@ -144,7 +145,13 @@ class SR86xBuffer(InstrumentChannel):
         """
         self.write("CAPTURESTOP")
 
-    def read_capture_data(self, sample_count: int) -> dict:
+    def get_cached_capture_data(self) ->list:
+        """
+        Retrieve the capture data from the last readout
+        """
+        return self._capture_data
+
+    def perform_capture_data(self, sample_count: int) -> dict:
         """
         Read capture data from the buffer.
 
@@ -169,6 +176,7 @@ class SR86xBuffer(InstrumentChannel):
         values = values[values != 0]
 
         data = {k: v for k, v in zip(capture_variables, values.reshape((-1, n_variables)).T)}
+        self._capture_data = data
 
         return data
 
@@ -190,7 +198,7 @@ class SR86xBuffer(InstrumentChannel):
         time.sleep(capture_time)
         self.stop_capture()
 
-        return self.read_capture_data(sample_count)
+        return self.perform_capture_data(sample_count)
 
 
 class SR86x(VisaInstrument):
@@ -457,6 +465,12 @@ class SR86x(VisaInstrument):
 
         buffer = SR86xBuffer(self, "{}_buffer".format(self.name))
         self.add_submodule("buffer", buffer)
+
+        self.add_parameter(
+            'buffer_values',
+            label="cached capture data",
+            get_cmd=self.buffer.get_cached_capture_data
+        )
 
         self.input_config()
         self.connect_message()
