@@ -733,7 +733,7 @@ class ActiveLoop(Metadatable):
         if set_active:
             # Set is_stopped flag to False,
             ActiveLoop._is_stopped = False
-        elif ActiveLoop._is_stopped:
+        elif ActiveLoop._is_stopped and active_loop() is not None:
             raise _QcodesBreak
 
         if progress_interval is not False:
