@@ -314,8 +314,8 @@ class ZNBChannel(InstrumentChannel):
             for avgcount in range(self.avg()):
                 self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
                 data_str = self.ask(
-                    'CALC{}:DATA? {}'.format(self._instrument_channel),
-                                             data_format_command)
+                    'CALC{}:DATA? {}'.format(self._instrument_channel,
+                                             data_format_command))
                 data = np.array(data_str.rstrip().split(',')).astype('float64')
                 if self.format() in ['Polar', 'Complex',
                                      'Smith', 'Inverse Smith']:
