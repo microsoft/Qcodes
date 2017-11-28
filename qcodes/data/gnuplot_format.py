@@ -263,7 +263,6 @@ class GNUPlotFormat(Formatter):
                 the usual naming scheme and possibly overwrite files, so
                 use with care. The file will be saved in the normal location.
         """
-        print('DEBUG: received location: {}'.format(location))
         arrays = data_set.arrays
 
         # puts everything with same dimensions together
