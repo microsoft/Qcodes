@@ -24,7 +24,7 @@ def main():
 
     sr.buffer.stop_capture()
     sr.buffer.get_capture_data(n_samples)
-    meas = qcodes.Measure(sr.buffer_values_X)
+    meas = qcodes.Measure(sr.buffer.buffer_values_X)
     data = meas.run()
 
 

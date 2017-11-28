@@ -23,24 +23,25 @@ class SR86xBufferReadout(ArrayParameter):
                          docstring='Holds an acquired (part of the) data buffer of one channel.')
 
         self.name = name
-        self._instrument = instrument
+        self._capture_data = None
         self._capture_parameter = capture_parameter
 
-    def get(self):
-        try:
-            capture_data = self._instrument.buffer.get_cached_capture_data(self._capture_parameter)
-        except KeyError:
-            raise ValueError(f"Cannot return data for parameter {self._capture_parameter}. Please prepare for "
-                             f"readout by calling 'get_capture_data' with appropriate configuration settings")
+    def prepare_readout(self, capture_data):
+        self._capture_data = capture_data
 
         data_len = len(capture_data)
-        self.shape = (data_len, )
+        self.shape = (data_len,)
         self.setpoint_units = ('',)
         self.setpoint_names = ('trig_events',)
         self.setpoint_labels = ('Trigger event number',)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-        return capture_data
+    def get(self):
+        if self._capture_data is None:
+            raise ValueError(f"Cannot return data for parameter {self._capture_parameter}. Please prepare for "
+                             f"readout by calling 'get_capture_data' with appropriate configuration settings")
+
+        return self._capture_data
 
 
 class SR86xBuffer(InstrumentChannel):
@@ -110,6 +111,13 @@ class SR86xBuffer(InstrumentChannel):
             unit="kB"
         )
 
+        for parameter_name in ["X", "Y", "R", "T"]:
+            self.add_parameter(
+                f'buffer_values_{parameter_name}',
+                capture_parameter=parameter_name,
+                parameter_class=SR86xBufferReadout
+            )
+
         self.bytes_per_sample = 4
         self._capture_data = dict()
 
@@ -178,15 +186,6 @@ class SR86xBuffer(InstrumentChannel):
         """
         self.write("CAPTURESTOP")
 
-    def get_cached_capture_data(self, parameter: str) ->np.array:
-        """
-        Retrieve the capture data from the last readout
-
-        Args:
-            parameter (str)
-        """
-        return self._capture_data[parameter]
-
     def get_capture_data(self, sample_count: int) -> dict:
         """
         Read capture data from the buffer.
@@ -215,7 +214,10 @@ class SR86xBuffer(InstrumentChannel):
         values = values[values != 0]
 
         data = {k: v for k, v in zip(capture_variables, values.reshape((-1, n_variables)).T)}
-        self._capture_data = data
+
+        for capture_variable in capture_variables:
+            buffer_parameter = getattr(self, f"buffer_values_{capture_variable}")
+            buffer_parameter.prepare_readout(data[capture_variable])
 
         return data
 
@@ -504,13 +506,6 @@ class SR86x(VisaInstrument):
 
         buffer = SR86xBuffer(self, "{}_buffer".format(self.name))
         self.add_submodule("buffer", buffer)
-
-        for parameter_name in ["X", "Y", "R", "T"]:
-            self.add_parameter(
-                f'buffer_values_{parameter_name}',
-                capture_parameter=parameter_name,
-                parameter_class=SR86xBufferReadout
-            )
 
         self.input_config()
         self.connect_message()
