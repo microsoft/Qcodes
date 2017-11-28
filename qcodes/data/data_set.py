@@ -486,13 +486,20 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
 
-        # NB: Only the gnuplot formatter has a "filename" kwarg
-        self.formatter.write(self,
-                             self.io,
-                             self.location,
-                             write_metadata=write_metadata,
-                             only_complete=only_complete,
-                             filename=filename)
+        # Only the gnuplot formatter has a "filename" kwarg
+        if isinstance(self.formatter, GNUPlotFormat):
+            self.formatter.write(self,
+                                 self.io,
+                                 self.location,
+                                 write_metadata=write_metadata,
+                                 only_complete=only_complete,
+                                 filename=filename)
+        else:
+            self.formatter.write(self,
+                                 self.io,
+                                 self.location,
+                                 write_metadata=write_metadata,
+                                 only_complete=only_complete)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
