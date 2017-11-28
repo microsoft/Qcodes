@@ -54,13 +54,14 @@ class SR86xBufferReadout(ArrayParameter):
         self.setpoint_labels = ('Sample number',)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-    def get(self) ->None:
+    def get_raw(self) ->None:
         """
         Public method to access the capture data
         """
         if self._capture_data is None:
-            raise ValueError(f"Cannot return data for parameter {self.name}. Please prepare for "
-                             f"readout by calling 'get_capture_data' with appropriate configuration settings")
+            err_str = f"Cannot return data for parameter {self.name}. Please prepare for "
+            err_str = err_str + "readout by calling 'get_capture_data' with appropriate configuration settings"
+            raise ValueError(err_str)
 
         return self._capture_data
 
