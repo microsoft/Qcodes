@@ -52,7 +52,7 @@ class D5a(Instrument):
         self.d5a = D5a_module(spi_rack, module, reset_voltages=reset_voltages)
         self._mV = mV
         self._number_dacs = number_dacs
-        
+
         self._span_set_map = {
             '4v uni': 0,
             '4v bi': 2,
