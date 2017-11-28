@@ -80,3 +80,14 @@ except NameError:
 # Close all instruments when exiting QCoDeS
 import atexit
 atexit.register(Instrument.close_all)
+
+# Patch matplotlib webagg backend to add delay when refreshing.
+# Otherwise, any event (such as moving mouse over plot) can temporarily create
+# a blank figure. Adding a small sleep fixes this
+from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg as _FigureManagerWebAgg
+_original_refresh_all = _FigureManagerWebAgg.refresh_all
+def _new_refresh_all(self):
+    from time import sleep
+    sleep(0.01)
+    _original_refresh_all(self)
+_FigureManagerWebAgg.refresh_all = _new_refresh_all
