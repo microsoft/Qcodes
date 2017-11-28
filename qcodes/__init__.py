@@ -86,8 +86,9 @@ atexit.register(Instrument.close_all)
 # a blank figure. Adding a small sleep fixes this
 from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg as _FigureManagerWebAgg
 _original_refresh_all = _FigureManagerWebAgg.refresh_all
+_FigureManagerWebAgg._sleep_duration = 0.1
 def _new_refresh_all(self):
     from time import sleep
-    sleep(0.05)
+    sleep(self._sleep_duration)
     _original_refresh_all(self)
 _FigureManagerWebAgg.refresh_all = _new_refresh_all
