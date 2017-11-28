@@ -2,7 +2,6 @@ import numpy as np
 import time
 import logging
 
-import qcodes
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
@@ -12,11 +11,24 @@ log = logging.getLogger(__name__)
 
 
 class SR86xBufferReadout(ArrayParameter):
-    def __init__(self, name, instrument, capture_parameter):
+    """
+    The parameter array that holds read out data. We need this to be compatible with qcodes.Measure
+
+    Args
+    ----
+        name (str)
+        instrument (SR86x): This argument is unused, but needed because the add_parameter method of the Instrument
+                            base class adds this as a kwarg.
+    """
+    def __init__(self, name: str, instrument: 'SR86x') ->None:
+
+        unit = "deg"
+        if name in ["X", "Y", "R"]:
+            unit = "V"
 
         super().__init__(name,
                          shape=(1,),  # dummy initial shape
-                         unit='V',
+                         unit=unit,
                          setpoint_names=('Time',),
                          setpoint_labels=('Time',),
                          setpoint_units=('s',),
@@ -24,21 +36,30 @@ class SR86xBufferReadout(ArrayParameter):
 
         self.name = name
         self._capture_data = None
-        self._capture_parameter = capture_parameter
 
-    def prepare_readout(self, capture_data):
+    def prepare_readout(self, capture_data: np.array) ->None:
+        """
+        Prepare this parameter for readout.
+
+        Args
+        ----
+        capture_data (np.array)
+        """
         self._capture_data = capture_data
 
         data_len = len(capture_data)
         self.shape = (data_len,)
         self.setpoint_units = ('',)
-        self.setpoint_names = ('trig_events',)
-        self.setpoint_labels = ('Trigger event number',)
+        self.setpoint_names = ('sample_nr',)
+        self.setpoint_labels = ('Sample number',)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-    def get(self):
+    def get(self) ->None:
+        """
+        Public method to access the capture data
+        """
         if self._capture_data is None:
-            raise ValueError(f"Cannot return data for parameter {self._capture_parameter}. Please prepare for "
+            raise ValueError(f"Cannot return data for parameter {self.name}. Please prepare for "
                              f"readout by calling 'get_capture_data' with appropriate configuration settings")
 
         return self._capture_data
@@ -50,7 +71,7 @@ class SR86xBuffer(InstrumentChannel):
     For reference, please consult the SR860 manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
-    def __init__(self, parent: qcodes.instrument, name: str) ->None:
+    def __init__(self, parent: 'SR86x', name: str) ->None:
         super().__init__(parent, name)
         self._parent = parent
 
@@ -113,8 +134,7 @@ class SR86xBuffer(InstrumentChannel):
 
         for parameter_name in ["X", "Y", "R", "T"]:
             self.add_parameter(
-                f'buffer_values_{parameter_name}',
-                capture_parameter=parameter_name,
+                parameter_name,
                 parameter_class=SR86xBufferReadout
             )
 
@@ -216,7 +236,7 @@ class SR86xBuffer(InstrumentChannel):
         data = {k: v for k, v in zip(capture_variables, values.reshape((-1, n_variables)).T)}
 
         for capture_variable in capture_variables:
-            buffer_parameter = getattr(self, f"buffer_values_{capture_variable}")
+            buffer_parameter = getattr(self, capture_variable)
             buffer_parameter.prepare_readout(data[capture_variable])
 
         return data
