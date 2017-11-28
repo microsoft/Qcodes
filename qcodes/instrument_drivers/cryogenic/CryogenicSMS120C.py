@@ -46,7 +46,6 @@ class CryogenicSMS120C(VisaInstrument):
         current_ramp_limit (float): current ramp limit in ampere per second,
             for 50mK operation 0.0506A/s (5.737E-3 T/s, 0.34422T/min) - usually used
             for 4K operation 0.12A/s (0.013605 T/s, 0.8163 T/min) - not recommended
-        enable_log (bool): of True set logging level of the driver to INFO
 
     Note about timing : SMS120C needs a minimum of 200ms delay between commands being sent
     """
@@ -55,9 +54,7 @@ class CryogenicSMS120C(VisaInstrument):
     _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
-                 current_ramp_limit=0.0506,
-                 reset=False, timeout=5, terminator='\r\n', 
-                 **kwargs):
+                 current_ramp_limit=0.0506,reset=False, timeout=5, terminator='\r\n', **kwargs):
 
         log.debug('Initializing instrument')
         super().__init__(name, address, terminator=terminator, **kwargs)
