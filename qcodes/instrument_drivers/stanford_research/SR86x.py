@@ -6,8 +6,41 @@ import qcodes
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
+from qcodes.instrument.parameter import ArrayParameter
 
 log = logging.getLogger(__name__)
+
+
+class SR86xBufferReadout(ArrayParameter):
+    def __init__(self, name, instrument, capture_parameter):
+
+        super().__init__(name,
+                         shape=(1,),  # dummy initial shape
+                         unit='V',
+                         setpoint_names=('Time',),
+                         setpoint_labels=('Time',),
+                         setpoint_units=('s',),
+                         docstring='Holds an acquired (part of the) data buffer of one channel.')
+
+        self.name = name
+        self._instrument = instrument
+        self._capture_parameter = capture_parameter
+
+    def get(self):
+        try:
+            capture_data = self._instrument.buffer.get_cached_capture_data(self._capture_parameter)
+        except KeyError:
+            raise ValueError(f"Cannot return data for parameter {self._capture_parameter}. Please prepare for "
+                             f"readout by calling 'get_capture_data' with appropriate configuration settings")
+
+        data_len = len(capture_data)
+        self.shape = (data_len, )
+        self.setpoint_units = ('',)
+        self.setpoint_names = ('trig_events',)
+        self.setpoint_labels = ('Trigger event number',)
+        self.setpoints = (tuple(np.arange(0, data_len)),)
+
+        return capture_data
 
 
 class SR86xBuffer(InstrumentChannel):
@@ -78,7 +111,7 @@ class SR86xBuffer(InstrumentChannel):
         )
 
         self.bytes_per_sample = 4
-        self._capture_data = []
+        self._capture_data = dict()
 
     @staticmethod
     def _set_capture_len_parser(value: int) -> int:
@@ -145,13 +178,16 @@ class SR86xBuffer(InstrumentChannel):
         """
         self.write("CAPTURESTOP")
 
-    def get_cached_capture_data(self) ->list:
+    def get_cached_capture_data(self, parameter: str) ->np.array:
         """
         Retrieve the capture data from the last readout
-        """
-        return self._capture_data
 
-    def perform_capture_data(self, sample_count: int) -> dict:
+        Args:
+            parameter (str)
+        """
+        return self._capture_data[parameter]
+
+    def get_capture_data(self, sample_count: int) -> dict:
         """
         Read capture data from the buffer.
 
@@ -166,6 +202,9 @@ class SR86xBuffer(InstrumentChannel):
         n_variables = len(capture_variables)
 
         total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
+        # We will samples one kb more then strictly speaking required and trim the data length to the requested
+        # sample count. In this way, we are always sure that the user requested number of samples is returned.
+        total_size_in_kb += 1
 
         if total_size_in_kb > 64:
             raise ValueError("Number of samples specified is larger then the buffer size")
@@ -198,7 +237,7 @@ class SR86xBuffer(InstrumentChannel):
         time.sleep(capture_time)
         self.stop_capture()
 
-        return self.perform_capture_data(sample_count)
+        return self.get_capture_data(sample_count)
 
 
 class SR86x(VisaInstrument):
@@ -466,11 +505,12 @@ class SR86x(VisaInstrument):
         buffer = SR86xBuffer(self, "{}_buffer".format(self.name))
         self.add_submodule("buffer", buffer)
 
-        self.add_parameter(
-            'buffer_values',
-            label="cached capture data",
-            get_cmd=self.buffer.get_cached_capture_data
-        )
+        for parameter_name in ["X", "Y", "R", "T"]:
+            self.add_parameter(
+                f'buffer_values_{parameter_name}',
+                capture_parameter=parameter_name,
+                parameter_class=SR86xBufferReadout
+            )
 
         self.input_config()
         self.connect_message()
