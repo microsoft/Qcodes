@@ -88,6 +88,6 @@ from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg as _Figu
 _original_refresh_all = _FigureManagerWebAgg.refresh_all
 def _new_refresh_all(self):
     from time import sleep
-    sleep(0.01)
+    sleep(0.05)
     _original_refresh_all(self)
 _FigureManagerWebAgg.refresh_all = _new_refresh_all
