@@ -128,36 +128,8 @@ class FrequencySweep(ArrayParameter):
         self.shape = (npts,)
 
     def get(self):
-        if not self._instrument._parent.rf_power():
-            log.warning("RF output is off when getting mag")
-        # it is possible that the instrument and qcodes disagree about
-        # which parameter is measured on this channel
-        instrument_parameter = self._instrument.vna_parameter()
-        if instrument_parameter != self._instrument._vna_parameter:
-            raise RuntimeError("Invalid parameter. Tried to measure "
-                               "{} got {}".format(self._instrument._vna_parameter,
-                                                  instrument_parameter))
-        self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
-        self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
-
-        self._instrument._parent.cont_meas_off()
-        try:
-            # instrument averages over its last 'avg' number of sweeps
-            # need to ensure averaged result is returned
-            for avgcount in range(self._instrument.avg()):
-                self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-                data_str = self._instrument.ask(
-                    'CALC{}:DATA? FDAT'.format(self._channel))
-                data = np.array(data_str.rstrip().split(',')).astype('float64')
-                if self._instrument.format() in ['Polar', 'Complex',
-                                                 'Smith', 'Inverse Smith']:
-                    log.warning("QCoDeS Dataset does not currently support Complex "
-                    "values. Will discard the imaginary part.")
-                    data = data[0::2] + 1j * data[1::2]
-        finally:
-            self._instrument._parent.cont_meas_on()
-        return data
-
+       data = self._intrument._get_sweep_data()
+       return data
 
 class ZNBChannel(InstrumentChannel):
 
@@ -359,6 +331,36 @@ class ZNBChannel(InstrumentChannel):
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
 
+    def _get_sweep_data(self):
+        if not self._parent.rf_power():
+            log.warning("RF output is off when getting sweep data")
+        # it is possible that the instrument and qcodes disagree about
+        # which parameter is measured on this channel
+        instrument_parameter = self.vna_parameter()
+        if instrument_parameter != self._vna_parameter:
+            raise RuntimeError("Invalid parameter. Tried to measure "
+                               "{} got {}".format(self._vna_parameter,
+                                                  instrument_parameter))
+        self.write('SENS{}:AVER:STAT ON'.format(self._instrument_channel))
+        self.write('SENS{}:AVER:CLE'.format(self._instrument_channel))
+
+        self._parent.cont_meas_off()
+        try:
+            # instrument averages over its last 'avg' number of sweeps
+            # need to ensure averaged result is returned
+            for avgcount in range(self.avg()):
+                self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
+                data_str = self.ask(
+                    'CALC{}:DATA? FDAT'.format(self._instrument_channel))
+                data = np.array(data_str.rstrip().split(',')).astype('float64')
+                if self.format() in ['Polar', 'Complex',
+                                     'Smith', 'Inverse Smith']:
+                    log.warning("QCoDeS Dataset does not currently support Complex "
+                    "values. Will discard the imaginary part.")
+                    data = data[0::2] + 1j * data[1::2]
+        finally:
+            self._parent.cont_meas_on()
+        return data
 
 class ZNB(VisaInstrument):
     """
@@ -483,3 +485,4 @@ class ZNB(VisaInstrument):
                 submodule._channels = []
                 submodule._channel_mapping = {}
                 submodule._locked = False
+
