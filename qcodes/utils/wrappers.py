@@ -95,6 +95,17 @@ def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
     if annotate_image:
         _init_device_image(station)
 
+def init_python_logger():
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+    ch.setFormatter(formatter)
+    fh1 = logging.handlers.TimedRotatingFileHandler('pythonlog.log', when='D')
+    fh1.setLevel(logging.INFO)
+    fh1.setFormatter(formatter)
+    logging.basicConfig(handlers=[ch, fh1], level=logging.DEBUG)
 
 def _init_device_image(station):
 
@@ -336,70 +347,75 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     Returns:
         (plot, data)
     """
-    parameters = [sp[0] for sp in set_params] + list(meas_params)
-    _flush_buffers(*parameters)
-
-    # startranges for _plot_setup
-    startranges = {}
-    for sp in set_params:
-        minval = min(sp[1], sp[2])
-        maxval = max(sp[1], sp[2])
-        startranges[sp[0].full_name] = {'max': maxval, 'min': minval}
-    interrupted = False
-
-    data = loop.get_data_set()
-
-    if do_plots:
-        try:
-            plot, _ = _plot_setup(data, meas_params, startranges=startranges)
-        except (ClosedError, ConnectionError):
-            log.warning('Remote process crashed png will not be saved')
-    else:
-        plot = None
     try:
+        parameters = [sp[0] for sp in set_params] + list(meas_params)
+        _flush_buffers(*parameters)
+
+        # startranges for _plot_setup
+        startranges = {}
+        for sp in set_params:
+            minval = min(sp[1], sp[2])
+            maxval = max(sp[1], sp[2])
+            startranges[sp[0].full_name] = {'max': maxval, 'min': minval}
+        interrupted = False
+
+        data = loop.get_data_set()
+
         if do_plots:
-            _ = loop.with_bg_task(plot.update).run(use_threads=use_threads)
+            try:
+                plot, _ = _plot_setup(data, meas_params, startranges=startranges)
+            except (ClosedError, ConnectionError):
+                log.warning('Remote process crashed png will not be saved')
         else:
-            _ = loop.run(use_threads=use_threads)
-    except KeyboardInterrupt:
-        interrupted = True
-        print("Measurement Interrupted")
-    if do_plots:
-        # Ensure the correct scaling before saving
+            plot = None
         try:
-            plot.autorange()
-            plot.save()
-        except (ClosedError, ConnectionError):
-            log.warning('Remote process crashed png will not be saved')
-        plt.ioff()
-        pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.rescale_axis()
-        pdfplot.fig.tight_layout(pad=3)
-        title_list = plot.get_default_title().split(sep)
-        title_list.insert(-1, CURRENT_EXPERIMENT['pdf_subfolder'])
-        title = sep.join(title_list)
+            if do_plots:
+                _ = loop.with_bg_task(plot.update).run(use_threads=use_threads)
+            else:
+                _ = loop.run(use_threads=use_threads)
+        except KeyboardInterrupt:
+            interrupted = True
+            print("Measurement Interrupted")
+        if do_plots:
+            # Ensure the correct scaling before saving
+            try:
+                plot.autorange()
+                plot.save()
+            except (ClosedError, ConnectionError):
+                log.warning('Remote process crashed png will not be saved')
+            plt.ioff()
+            pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
+            # pad a bit more to prevent overlap between
+            # suptitle and title
+            pdfplot.rescale_axis()
+            pdfplot.fig.tight_layout(pad=3)
+            title_list = plot.get_default_title().split(sep)
+            title_list.insert(-1, CURRENT_EXPERIMENT['pdf_subfolder'])
+            title = sep.join(title_list)
 
-        pdfplot.save("{}.pdf".format(title))
-        if pdfdisplay['combined'] or (num_subplots == 1 and pdfdisplay['individual']):
-            pdfplot.fig.canvas.draw()
-            plt.show()
-        else:
-            plt.close(pdfplot.fig)
-        if num_subplots > 1:
-            _save_individual_plots(data, meas_params, pdfdisplay['individual'])
-        plt.ion()
-    if CURRENT_EXPERIMENT.get('device_image'):
-        log.debug('Saving device image')
-        save_device_image(tuple(sp[0] for sp in set_params))
+            pdfplot.save("{}.pdf".format(title))
+            if pdfdisplay['combined'] or (num_subplots == 1 and pdfdisplay['individual']):
+                pdfplot.fig.canvas.draw()
+                plt.show()
+            else:
+                plt.close(pdfplot.fig)
+            if num_subplots > 1:
+                _save_individual_plots(data, meas_params, pdfdisplay['individual'])
+            plt.ion()
+        if CURRENT_EXPERIMENT.get('device_image'):
+            log.debug('Saving device image')
+            save_device_image(tuple(sp[0] for sp in set_params))
 
-    # add the measurement ID to the logfile
-    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
-        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
-              file=fid)
-    if interrupted:
-        raise KeyboardInterrupt
+        # add the measurement ID to the logfile
+        with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
+            print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
+                  file=fid)
+        if interrupted:
+            raise KeyboardInterrupt
+    except:
+        log.exception("Exception in doND")
+        raise
+
     return plot, data
 
 
