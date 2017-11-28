@@ -7,6 +7,7 @@ from copy import deepcopy
 import numpy as np
 from typing import Optional, Tuple
 import functools
+import time
 import matplotlib.pyplot as plt
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
 
@@ -441,17 +442,18 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True,
         plot, data : returns the plot and the dataset
 
     """
-
+    log.info("Starting do1D sweeping {} from {} to {} in {} steps measuring {}".format(inst_set.name, start, stop, num_points, inst_meas))
     loop = qc.Loop(inst_set.sweep(start,
                                   stop,
                                   num=num_points), delay).each(*inst_meas)
 
     set_params = (inst_set, start, stop),
     meas_params = _select_plottables(inst_meas)
-
+    start = time.perf_counter()
     plot, data = _do_measurement(loop, set_params, meas_params,
                                  do_plots=do_plots, use_threads=use_threads)
-
+    stop = time.perf_counter()
+    log.info("running do1D took {:.6f} s at {:.6f} s per point".format(stop-start, (stop-start)/num_points))
     return plot, data
 
 
@@ -523,7 +525,11 @@ def do2d(inst_set, start, stop, num_points, delay,
         plot, data : returns the plot and the dataset
 
     """
-
+    log.info("Starting do2D sweeping {} from {} to {} in {} steps and"
+             " {} from {} to {} in {} steps "
+             "measuring {}".format(inst_set.name, start, stop, num_points,
+                                   inst_set2.name, start2, stop2, num_points2,
+                                   inst_meas))
     for inst in inst_meas:
         if getattr(inst, "setpoints", False):
             raise ValueError("3d plotting is not supported")
@@ -540,10 +546,12 @@ def do2d(inst_set, start, stop, num_points, delay,
     set_params = ((inst_set, start, stop),
                   (inst_set2, start2, stop2))
     meas_params = _select_plottables(inst_meas)
-
+    start = time.perf_counter()
     plot, data = _do_measurement(outerloop, set_params, meas_params,
                                  do_plots=do_plots, use_threads=use_threads)
-
+    stop = time.perf_counter()
+    log.info("running do2D took {:.6f} s at {:.6f} s per line and {:.6f} s per point".format(stop-start,
+             (stop-start)/num_points, (stop-start)/(num_points*num_points2)))
     return plot, data
 
 
