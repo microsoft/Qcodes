@@ -139,21 +139,23 @@ class FrequencySweep(ArrayParameter):
                                                   instrument_parameter))
         self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
         self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
-        self._instrument._parent.cont_meas_off()
 
-        # instrument averages over its last 'avg' number of sweeps
-        # need to ensure averaged result is returned
-        for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-        data_str = self._instrument.ask(
-            'CALC{}:DATA? FDAT'.format(self._channel))
-        data = np.array(data_str.rstrip().split(',')).astype('float64')
-        if self._instrument.format() in ['Polar', 'Complex',
-                                         'Smith', 'Inverse Smith']:
-            log.warning("QCoDeS Dataset does not currently support Complex "
-                        "values. Will discard the imaginary part.")
-            data = data[0::2] + 1j * data[1::2]
-        self._instrument._parent.cont_meas_on()
+        self._instrument._parent.cont_meas_off()
+        try:
+            # instrument averages over its last 'avg' number of sweeps
+            # need to ensure averaged result is returned
+            for avgcount in range(self._instrument.avg()):
+                self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
+                data_str = self._instrument.ask(
+                    'CALC{}:DATA? FDAT'.format(self._channel))
+                data = np.array(data_str.rstrip().split(',')).astype('float64')
+                if self._instrument.format() in ['Polar', 'Complex',
+                                                 'Smith', 'Inverse Smith']:
+                    log.warning("QCoDeS Dataset does not currently support Complex "
+                    "values. Will discard the imaginary part.")
+                    data = data[0::2] + 1j * data[1::2]
+        finally:
+            self._instrument._parent.cont_meas_on()
         return data
 
 
