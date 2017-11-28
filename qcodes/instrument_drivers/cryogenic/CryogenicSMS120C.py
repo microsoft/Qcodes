@@ -56,7 +56,7 @@ class CryogenicSMS120C(VisaInstrument):
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
                  current_ramp_limit=0.0506,
-                 reset=False, timeout=5, terminator='\r\n', enable_log=True,
+                 reset=False, timeout=5, terminator='\r\n', 
                  **kwargs):
 
         log.debug('Initializing instrument')
@@ -137,8 +137,6 @@ class CryogenicSMS120C(VisaInstrument):
                            get_cmd=self._get_pauseRamp,
                            val_mapping={False: 0, True: 1})
 
-        if enable_log:
-            log.setLevel(logging.INFO)
 
     def get_idn(self):
         """
@@ -259,16 +257,10 @@ class CryogenicSMS120C(VisaInstrument):
         maxField = float(m[1])
         return maxField
 
-    # Get current magnetic field, returns a float (in Amps or Tesla)
+    # Get current magnetic field, returns a float (assume in Tesla)
     def _get_field(self):
         _, value = self.query('GET OUTPUT')
-        units = self._get_unit()
-        if units == 1:
-            m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,
-                                                            CryogenicSMS120C._re_float_exp), value)
-        elif units == 0:
-            m = re.match(r'({}) AMPS AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,
-                                                           CryogenicSMS120C._re_float_exp), value)
+        m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,CryogenicSMS120C._re_float_exp), value)       
         field = float(m[1])
         return field
 
@@ -400,6 +392,8 @@ class CryogenicSMS120C(VisaInstrument):
                             break
                         time.sleep(5)  # check every 5 seconds
                 elif self._get_persistentMode() == False:
+                    persistentMode = 0
+                    persistentField = 0                    
                     log.info('Magnet already non-persistent.')
         else:
             log.warning(
