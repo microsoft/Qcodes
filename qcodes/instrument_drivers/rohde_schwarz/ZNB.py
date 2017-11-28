@@ -12,27 +12,7 @@ log = logging.getLogger(__name__)
 
 class FrequencySweepMagPhase(MultiParameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz ZNB trace.
-
-    Instrument returns an list of transmission data in the form of a list of
-    complex numbers taken from a frequency sweep.
-
-    This is a multiparameter containing both amplitude and phase
-
-    Args:
-        name: parameter name
-        instrument: instrument the parameter belongs to
-        start: starting frequency of sweep
-        stop: ending frequency of sweep
-        npts: number of points in frequency sweep
-
-    Methods:
-          set_sweep(start, stop, npts): sets the shapes and
-              setpoint arrays of the parameter to correspond with the sweep
-          get(): executes a sweep and returns magnitude and phase arrays
-
-    TODO:
-      - ability to choose for linear or db in magnitude return
+    Sweep that return magnitude and phase.
     """
 
     def __init__(self, name, instrument, start, stop, npts, channel):
@@ -56,37 +36,8 @@ class FrequencySweepMagPhase(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get(self):
-        if not self._instrument._parent.rf_power():
-            log.warning("RF output is off when getting mag phase")
-        # it is possible that the instrument and qcodes disagree about
-        # which parameter is measured on this channel
-        instrument_parameter = self._instrument.vna_parameter()
-        if instrument_parameter != self._instrument._vna_parameter:
-            raise RuntimeError("Invalid parameter. Tried to measure "
-                               "{} got {}".format(self._instrument._vna_parameter,
-                                                  instrument_parameter))
-        self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
-        self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
-        self._instrument._parent.cont_meas_off()
-
-        # instrument averages over its last 'avg' number of sweeps
-        # need to ensure averaged result is returned
-        for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-        data_str = self._instrument.ask(
-            'CALC{}:DATA? SDAT'.format(self._channel)).split(',')
-        data_list = [float(v) for v in data_str]
-
-        # data_list of complex numbers [re1,im1,re2,im2...]
-        data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
-        mag_array, phase_array = [], []
-        for comp in data_arr:
-            complex_num = complex(comp[0], comp[1])
-            mag_array.append(abs(complex_num))
-            phase_array.append(phase(complex_num))
-        self._instrument._parent.cont_meas_on()
-        return mag_array, phase_array
-
+       data = self._intrument._get_sweep_data(force_polar = True)
+       return abs(data), phase(data)
 
 class FrequencySweep(ArrayParameter):
     """
@@ -129,6 +80,10 @@ class FrequencySweep(ArrayParameter):
 
     def get(self):
        data = self._intrument._get_sweep_data()
+       if self.format() in ['Polar', 'Complex',
+                            'Smith', 'Inverse Smith']:
+           log.warning("QCoDeS Dataset does not currently support Complex "
+                       "values. Will discard the imaginary part.")
        return data
 
 class ZNBChannel(InstrumentChannel):
@@ -331,7 +286,8 @@ class ZNBChannel(InstrumentChannel):
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
 
-    def _get_sweep_data(self):
+    def _get_sweep_data(self, force_polar = False):
+
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
         # it is possible that the instrument and qcodes disagree about
@@ -346,17 +302,23 @@ class ZNBChannel(InstrumentChannel):
 
         self._parent.cont_meas_off()
         try:
+            # if force polar is set, the SDAT data format will be used. Here
+            # the data will be transfered as a complex number independet of
+            # the set format in the instrument.
+            if force_polar:
+                data_format_command = 'SDAT'
+            else:
+                data_format_command = 'FDAT'
             # instrument averages over its last 'avg' number of sweeps
             # need to ensure averaged result is returned
             for avgcount in range(self.avg()):
                 self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
                 data_str = self.ask(
-                    'CALC{}:DATA? FDAT'.format(self._instrument_channel))
+                    'CALC{}:DATA? {}'.format(self._instrument_channel),
+                                             data_format_command)
                 data = np.array(data_str.rstrip().split(',')).astype('float64')
                 if self.format() in ['Polar', 'Complex',
                                      'Smith', 'Inverse Smith']:
-                    log.warning("QCoDeS Dataset does not currently support Complex "
-                    "values. Will discard the imaginary part.")
                     data = data[0::2] + 1j * data[1::2]
         finally:
             self._parent.cont_meas_on()
