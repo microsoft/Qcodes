@@ -59,7 +59,7 @@ class SR86xBufferReadout(ArrayParameter):
         Public method to access the capture data
         """
         if self._capture_data is None:
-            err_str = f"Cannot return data for parameter {self.name}. Please prepare for "
+            err_str = "Cannot return data for parameter {}. Please prepare for ".format(self.name)
             err_str = err_str + "readout by calling 'get_capture_data' with appropriate configuration settings"
             raise ValueError(err_str)
 
