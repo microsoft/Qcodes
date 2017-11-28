@@ -257,7 +257,7 @@ class CryogenicSMS120C(VisaInstrument):
     # Get current magnetic field, returns a float (assume in Tesla)
     def _get_field(self):
         _, value = self.query('GET OUTPUT')
-        m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,CryogenicSMS120C._re_float_exp), value)       
+        m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,CryogenicSMS120C._re_float_exp), value)
         field = float(m[1])
         return field
 
@@ -390,7 +390,7 @@ class CryogenicSMS120C(VisaInstrument):
                         time.sleep(5)  # check every 5 seconds
                 elif self._get_persistentMode() == False:
                     persistentMode = 0
-                    persistentField = 0                    
+                    persistentField = 0
                     log.info('Magnet already non-persistent.')
         else:
             log.warning(
