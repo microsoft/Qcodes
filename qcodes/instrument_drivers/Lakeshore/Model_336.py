@@ -42,6 +42,13 @@ class Model_336(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
+        self.add_parameter('temperature_limits',
+                            set_cmd=set_temperature_limits
+                            get_cmd=get_temperature_limits
+                            label='Temperature limits for ranges ',
+                            unit='K')
+
+
         # Allow access to channels either by referring to the channel name
         # or through a channel list.
         # i.e. Model_336.A.temperature() and Model_336.channels[0].temperature()
@@ -55,3 +62,10 @@ class Model_336(VisaInstrument):
         self.add_submodule("channels", channels)
 
         self.connect_message()
+
+    def set_temperature_limits(self, T):
+        self.t1 = T[0]
+        self.t2 = T[1]
+
+    def get_temperature_limits(self):
+        return self.t1, self.t2
