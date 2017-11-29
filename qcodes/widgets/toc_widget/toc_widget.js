@@ -138,6 +138,7 @@ define('toc', [
     var cell = cell_begin;
     while (Jupyter.notebook.find_cell_index(cell) !== cell_end_index) {
       cell.element.slideDown(0);
+      delete cell.metadata.heading_collapsed;
       cell = Jupyter.notebook.get_next_cell(cell);
     }
     cell.element.slideDown(0);
