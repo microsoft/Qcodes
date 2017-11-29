@@ -25,12 +25,13 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
       this.model.on('change:_remove_widget', this.removeWidget, this);
       this.model.on('change:_clear_all_widgets', this.clearAllWidgets, this);
 
+      // Add periodic hiding of any additional output
       setInterval(function() {
         let sidebar_outputs = $("[id='sidebar_widget']");
         sidebar_outputs.each((k, sidebar_output) => {
           $(sidebar_output).siblings('.output_area').hide()
         })
-      }, 2000)
+      }, 2000);
     },
 
     initialize_sidebar: function() {
