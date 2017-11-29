@@ -40,26 +40,30 @@ class Model_336(VisaInstrument):
     """
 
     def __init__(self, name, address, **kwargs):
-        super().__init__(name, address, terminator="\r\n", **kwargs)
+        if 'terminator' not in kwargs:
+            kwargs['terminator'] = "\r\n"
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter('temperature_limits',
-                            set_cmd=set_temperature_limits
-                            get_cmd=get_temperature_limits
+                            set_cmd=self.set_temperature_limits,
+                            get_cmd=self.get_temperature_limits,
                             label='Temperature limits for ranges ',
                             unit='K')
 
+        self.t1 = 1
+        self.t2 = 2
 
         # Allow access to channels either by referring to the channel name
         # or through a channel list.
         # i.e. Model_336.A.temperature() and Model_336.channels[0].temperature()
         # refer to the same parameter.
-        channels = ChannelList(self, "TempSensors", SensorChannel, snapshotable=False)
-        for chan_name in ('A', 'B', 'C', 'D'):
-            channel = SensorChannel(self, 'Chan{}'.format(chan_name), chan_name)
-            channels.append(channel)
-            self.add_submodule(chan_name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
+        # channels = ChannelList(self, "TempSensors", SensorChannel, snapshotable=False)
+        # for chan_name in ('A', 'B', 'C', 'D'):
+        #     channel = SensorChannel(self, 'Chan{}'.format(chan_name), chan_name)
+        #     channels.append(channel)
+        #     self.add_submodule(chan_name, channel)
+        # channels.lock()
+        # self.add_submodule("channels", channels)
 
         self.connect_message()
 
