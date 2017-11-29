@@ -14,21 +14,29 @@ devices:
       temperature:
         default: 100.0
         getter:
-          q: "KRDG?"
+          q: "KRDG? A"
           r: "{}"
-        setter:
-          q: "KRDG {}"
-          r: OK
 
-      frequency:
-        default: 100.0
+      sensor_raw:
+        default: 101.0
         getter:
-          q: "FREQ?"
+          q: "SRDG? A"
+          r: "{}"
+
+      sensor_status:
+        default: 0
+        getter:
+          q: "RDGST? A"
+          r: "{}"
+
+      sensor_name:
+        default: "my name is boring"
+        getter:
+          q: "INNAME? A"
           r: "{}"
         setter:
-          q: "FREQ {}"
+          q: "INNAME A,\"{}\""
           r: OK
-
 resources:
   GPIB::9::INSTR:
     device: device 1
