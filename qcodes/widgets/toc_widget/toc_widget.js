@@ -403,7 +403,7 @@ define('toc', [
       let toc_id = $(toc_link).attr('toc-id')
       if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
         collapse_by_toc_id(toc_id, false, true);
-        console.log('collapsing' + $(toc_link).attr('toc-id'))
+        console.log('collapsing toc link ' + $(toc_link).attr('toc-id'))
       } else {
         collapse_by_toc_id(toc_id, true, true)
       }
@@ -451,7 +451,11 @@ define('toc', [
     if (trigger_event !== false) {
       // fire event for collapsible_heading to catch
       var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
-      events.trigger((show ? 'un' : '') + 'collapse.Toc', {cell: cell});
+      if (cell.metadata.heading_collapsed === true && show) {
+        events.trigger('uncollapse.Toc', {cell: cell});
+      } else if (cell.metadata.heading_collapsed !== true && !show) {
+        events.trigger('collapse.Toc', {cell: cell});
+      }
     }
   }
 
