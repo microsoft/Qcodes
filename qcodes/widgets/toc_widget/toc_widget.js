@@ -59,6 +59,11 @@ define('toc', [
 
       patch_keyboard_actions();
 
+      $('a[toc-id]').each(function() {
+        let toc_link_level = get_toc_link_level($(this));
+        collapse_by_toc_id($(this).attr('toc-id'))
+      });
+
 
       if ($("#toc_button").length === 0) {
         IPython.toolbar.add_buttons_group([
@@ -98,7 +103,7 @@ define('toc', [
   }
 
   function hide_cells_above(cell) {
-    console.log(`Sidebar: Hiding cells above ${Jupyter.notebook.find_cell_index(cell)}`);
+    console.log(`TOC: Hiding cells above ${Jupyter.notebook.find_cell_index(cell)}`);
     while (cell !== null) {
       cell = Jupyter.notebook.get_prev_cell(cell);
       if (cell !== null) {
@@ -108,7 +113,7 @@ define('toc', [
   }
 
   function hide_cells_below(cell) {
-    console.log(`Sidebar: Hiding cells below ${Jupyter.notebook.find_cell_index(cell)}`);
+    console.log(`TOC: Hiding cells below ${Jupyter.notebook.find_cell_index(cell)}`);
     while (cell !== null) {
       cell = Jupyter.notebook.get_next_cell(cell);
       if (cell !== null) {
@@ -118,7 +123,7 @@ define('toc', [
   }
 
   function show_all_cells() {
-    console.log('Sidebar: Showing all cells');
+    console.log('TOC: Showing all cells');
     for (let cell of Jupyter.notebook.get_cells()) {
       cell.element.slideDown(0)
     }
@@ -128,7 +133,7 @@ define('toc', [
   function show_cells_between(cell_begin, cell_end) {
     var cell_begin_index = Jupyter.notebook.find_cell_index(cell_begin);
     var cell_end_index = Jupyter.notebook.find_cell_index(cell_end);
-    console.log(`Sidebar: showing cells between ${cell_begin_index} and ${cell_end_index}`);
+    console.log(`TOC: showing cells between ${cell_begin_index} and ${cell_end_index}`);
 
     var cell = cell_begin;
     while (Jupyter.notebook.find_cell_index(cell) !== cell_end_index) {
@@ -322,7 +327,7 @@ define('toc', [
 
   /** Add TOC link **/
   function make_link(h, toc_mod_id) {
-    console.log('Sidebar: making TOC link (make_link)');
+    console.log('TOC: making TOC link (make_link)');
     var a = $('<a>')
       .attr({
         'href': window.location.href.split('#')[0] + h.find('.anchor-link').attr('href'),
@@ -330,7 +335,7 @@ define('toc', [
       });
     // get the text *excluding* the link text, whatever it may be
     var hclone = h.clone();
-    hclone = removeMathJaxPreview(hclone);
+    hclone = remove_MathJax_preview(hclone);
     a.html(hclone.html());
     a.width('100%');
     a.css('display', 'inline-block');
@@ -344,7 +349,7 @@ define('toc', [
   /** **************** **/
   /** Highlight a TOC element, either as executing or selected **/
   function highlight_toc_item(evt, data) {
-    // console.log('Sidebar: Highlighting toc item (highlight_toc_item)');
+    // console.log('TOC: Highlighting toc item (highlight_toc_item)');
     var c = $(data.cell.element);
     if (c.length < 1) {
       return;
@@ -370,30 +375,39 @@ define('toc', [
 
   /** Perform actions when TOC link is clicked **/
   function callback_toc_link_click(evt) {
-    console.log('Sidebar: clicked TOC header (callback_toc_link_click)');
     // workaround for https://github.com/jupyter/notebook/issues/699
     setTimeout(function () {
       $.ajax()
     }, 100);
     evt.preventDefault();
-    var toc_id = $(evt.currentTarget).attr('toc-id');
-    console.log('TOC: toc_id: ' + toc_id);
-    // use native scrollIntoView method with semi-unique id
-    // ! browser native click does't follow links on all browsers
-    // $('<a>').attr('href', window.location.href.split('#')[0] + '#' +
-    // toc_id)[0].click();
+
+    let current_toc_link = $(evt.currentTarget);
+    let toc_id = current_toc_link.attr('toc-id');
+    console.log('TOC: clicked TOC link with id ' + toc_id);
+
     document.getElementById(toc_id).scrollIntoView(true);
 
-    // use native document method as jquery won't cope with characters
-    // like . in an id
+    // collapse all other toc links
+    $('a[toc-id]').each(function(idx, toc_link) {
+      let toc_id = $(toc_link).attr('toc-id')
+      if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
+        collapse_by_toc_id(toc_id);
+        console.log('collapsing' + $(toc_link).attr('toc-id'))
+      } else {
+        collapse_by_toc_id(toc_id, true)
+      }
+    });
+
+
+    // Select first cell in link
     var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
     Jupyter.notebook.select(Jupyter.notebook.find_cell_index(cell));
 
-    // Find closest link that is locked
-
+    // Hide all cells not in toc_link
     if (cfg.hide_others) {
       hide_all_cells_except_id(toc_id);
     }
+
     highlight_toc_item("toc_link_click", {cell: cell});
   }
 
@@ -413,7 +427,7 @@ define('toc', [
   }
 
   /** Remove MathJax for links (no Latex) **/
-  function removeMathJaxPreview(elt) {
+  function remove_MathJax_preview(elt) {
     elt.children('.anchor-link, .toc-mod-link').remove();
     elt.find("script[type='math/tex']").each(
       function(i, e) {
@@ -425,7 +439,7 @@ define('toc', [
   }
 
   /** Collapse TOC link **/
-  function collapse_by_id(toc_id, show, trigger_event) {
+  function collapse_by_toc_id(toc_id, show, trigger_event) {
     var anchors = $('.toc .toc-item > li > span > a').filter(function (idx, elt) {
       return $(elt).attr('toc-id') === toc_id;
     });
@@ -446,7 +460,7 @@ define('toc', [
     }).attr('toc-id');
     var show = evt.type.indexOf('un') >= 0;
     // use trigger_event false to avoid re-triggering collapsible_headings
-    collapse_by_id(toc_id, show, false);
+    collapse_by_toc_id(toc_id, show, false);
   }
 
   function callback_collapser(evt) {
@@ -456,9 +470,20 @@ define('toc', [
       return $(elt).attr('toc-id') === toc_id;
     });
     var show = clicked_i.hasClass('fa-caret-right');
-    collapse_by_id(toc_id, show);
+    collapse_by_toc_id(toc_id, show);
   }
 
+  /** Check if toc link is parent of other toc link **/
+  function toc_link_is_parent(current_toc_link, target_toc_link) {
+    let current_toc_id = $(current_toc_link).attr('toc-id').split('-').pop();
+    let target_toc_id = $(target_toc_link).attr('toc-id').split('-').pop();
+    return target_toc_id.startsWith(current_toc_id)
+  }
+
+  function get_toc_link_level(toc_link) {
+    let toc_id = $(toc_link).attr('toc-id').split('-').pop();
+    return toc_id.split('.').length;
+  }
 
 
   /** *************************** **/
@@ -509,7 +534,7 @@ define('toc', [
   }
 
   function patch_keyboard_actions() {
-    console.log('Sidebar: patching Jupyter up/down actions');
+    console.log('TOC: patching Jupyter up/down actions');
 
     var kbm = Jupyter.keyboard_manager;
 
