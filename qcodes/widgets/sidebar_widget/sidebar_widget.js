@@ -93,7 +93,8 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
         cell._handle_execute_reply = _cell_handle_execute_reply;
 
         cell.set_text(
-          `_widget = ${this.name}.widgets[${widgetName}; ` +
+          `from IPython.display import display\n` +
+          `_widget = ${this.name}.widgets['${widgetName}']\n` +
           `_widget.display() if hasattr(_widget, 'display') else display(_widget)`);
         this.sidebar
           .prepend($("<div/>")
