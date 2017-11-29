@@ -86,7 +86,7 @@ define('toc', [
   /** Cell manipulation **/
   /** ***************** **/
   /** Hide all cells except for certain ids **/
-  function hide_all_cells_except_id(toc_id) {
+  function hide_all_cells_except_id(toc_id, children) {
     var cell_begin = $(document.getElementById(toc_id)).closest('.cell').data('cell');
     var level = get_cell_level(cell_begin);
 
@@ -387,16 +387,6 @@ define('toc', [
 
     document.getElementById(toc_id).scrollIntoView(true);
 
-    // collapse all other toc links
-    $('a[toc-id]').each(function(idx, toc_link) {
-      let toc_id = $(toc_link).attr('toc-id')
-      if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
-        collapse_by_toc_id(toc_id, false, true);
-        console.log('collapsing' + $(toc_link).attr('toc-id'))
-      } else {
-        collapse_by_toc_id(toc_id, true, true)
-      }
-    });
 
 
     // Select first cell in link
@@ -407,6 +397,17 @@ define('toc', [
     if (cfg.hide_others) {
       hide_all_cells_except_id(toc_id);
     }
+
+    // collapse all other toc links
+    $('a[toc-id]').each(function(idx, toc_link) {
+      let toc_id = $(toc_link).attr('toc-id')
+      if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
+        collapse_by_toc_id(toc_id, false, true);
+        console.log('collapsing' + $(toc_link).attr('toc-id'))
+      } else {
+        collapse_by_toc_id(toc_id, true, true)
+      }
+    });
 
     highlight_toc_item("toc_link_click", {cell: cell});
   }
