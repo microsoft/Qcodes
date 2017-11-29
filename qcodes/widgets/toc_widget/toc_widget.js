@@ -26,7 +26,7 @@ define('toc', [
   /** Config **/
   /** ****** **/
   var default_cfg = {'threshold':4,
-    collapse_to_match_collapsible_headings: false,
+    collapse_to_match_collapsible_headings: true,
     nav_menu: {},
     number_sections: true,
     skip_h1_title: false,
@@ -391,10 +391,10 @@ define('toc', [
     $('a[toc-id]').each(function(idx, toc_link) {
       let toc_id = $(toc_link).attr('toc-id')
       if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
-        collapse_by_toc_id(toc_id);
+        collapse_by_toc_id(toc_id, false, true);
         console.log('collapsing' + $(toc_link).attr('toc-id'))
       } else {
-        collapse_by_toc_id(toc_id, true)
+        collapse_by_toc_id(toc_id, true, true)
       }
     });
 
