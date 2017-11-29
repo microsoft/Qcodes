@@ -15,6 +15,7 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
     render: function() {
 
       this.widgetCells = {};
+      this.name = this.model.get('name');
 
       this.model.on('change:_initialize', this.initialize_sidebar, this);
       this.model.on('change:_closed', this.close_sidebar, this);
@@ -91,7 +92,9 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
         });
         cell._handle_execute_reply = _cell_handle_execute_reply;
 
-        cell.set_text(`${widgetName}.display() if hasattr(${widgetName}, 'display') else display(${widgetName})`);
+        cell.set_text(
+          `_widget = ${this.name}.widgets[${widgetName}; ` +
+          `_widget.display() if hasattr(_widget, 'display') else display(_widget)`);
         this.sidebar
           .prepend($("<div/>")
             .append(cell.element));
