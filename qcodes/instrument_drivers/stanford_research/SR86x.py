@@ -54,7 +54,7 @@ class SR86xBufferReadout(ArrayParameter):
         self.setpoint_labels = ('Sample number',)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-    def get_raw(self) ->None:
+    def get_raw(self) ->np.ndarray:
         """
         Public method to access the capture data
         """
