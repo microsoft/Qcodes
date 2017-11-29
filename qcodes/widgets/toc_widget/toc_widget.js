@@ -80,9 +80,9 @@ define('toc', [
   /** ***************** **/
   /** Cell manipulation **/
   /** ***************** **/
-  /** Hide all cells except for certain ids**/
-  function hide_all_cells_except_id(trg_id) {
-    var cell_begin = $(document.getElementById(trg_id)).closest('.cell').data('cell');
+  /** Hide all cells except for certain ids **/
+  function hide_all_cells_except_id(toc_id) {
+    var cell_begin = $(document.getElementById(toc_id)).closest('.cell').data('cell');
     var level = get_cell_level(cell_begin);
 
     var cell_end = cell_begin;
@@ -349,12 +349,12 @@ define('toc', [
     if (c.length < 1) {
       return;
     }
-    var trg_id = c.find('.toc-mod-link').attr('id') ||
+    var toc_id = c.find('.toc-mod-link').attr('id') ||
       c.prevAll().find('.toc-mod-link').eq(-1).attr('id');
     var highlighted_item = $();
-    if (trg_id !== undefined) {
+    if (toc_id !== undefined) {
       highlighted_item = $('.toc a').filter(function (idx, elt) {
-        return $(elt).attr('toc-id') === trg_id;
+        return $(elt).attr('toc-id') === toc_id;
       });
     }
     if (evt.type === 'execute') {
@@ -376,23 +376,23 @@ define('toc', [
       $.ajax()
     }, 100);
     evt.preventDefault();
-    var trg_id = $(evt.currentTarget).attr('toc-id');
-    console.log('TOC: trg_id: ' + trg_id);
+    var toc_id = $(evt.currentTarget).attr('toc-id');
+    console.log('TOC: toc_id: ' + toc_id);
     // use native scrollIntoView method with semi-unique id
     // ! browser native click does't follow links on all browsers
-    // $('<a>').attr('href', window.location.href.split('#')[0] + '#' + trg_id)[0].click();
-    document.getElementById(trg_id).scrollIntoView(true);
+    // $('<a>').attr('href', window.location.href.split('#')[0] + '#' +
+    // toc_id)[0].click();
+    document.getElementById(toc_id).scrollIntoView(true);
 
     // use native document method as jquery won't cope with characters
     // like . in an id
-    var cell = $(document.getElementById(trg_id)).closest('.cell').data('cell');
+    var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
     Jupyter.notebook.select(Jupyter.notebook.find_cell_index(cell));
 
     // Find closest link that is locked
 
-    console.log($(evt.currentTarget))
     if (cfg.hide_others) {
-      hide_all_cells_except_id(trg_id);
+      hide_all_cells_except_id(toc_id);
     }
     highlight_toc_item("toc_link_click", {cell: cell});
   }
@@ -425,9 +425,9 @@ define('toc', [
   }
 
   /** Collapse TOC link **/
-  function collapse_by_id(trg_id, show, trigger_event) {
+  function collapse_by_id(toc_id, show, trigger_event) {
     var anchors = $('.toc .toc-item > li > span > a').filter(function (idx, elt) {
-      return $(elt).attr('toc-id') === trg_id;
+      return $(elt).attr('toc-id') === toc_id;
     });
     anchors.siblings('i')
       .toggleClass('fa-caret-right', !show)
@@ -435,28 +435,28 @@ define('toc', [
     anchors.parent().siblings('ul')[show ? 'slideDown' : 'slideUp']('fast');
     if (trigger_event !== false) {
       // fire event for collapsible_heading to catch
-      var cell = $(document.getElementById(trg_id)).closest('.cell').data('cell');
+      var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
       events.trigger((show ? 'un' : '') + 'collapse.Toc', {cell: cell});
     }
   }
 
   function callback_sidebar_toc_collapsible_headings(evt, data) {
-    var trg_id = data.cell.element.find(':header').filter(function (idx, elt) {
+    var toc_id = data.cell.element.find(':header').filter(function (idx, elt) {
       return Boolean($(elt).attr('toc-id'));
     }).attr('toc-id');
     var show = evt.type.indexOf('un') >= 0;
     // use trigger_event false to avoid re-triggering collapsible_headings
-    collapse_by_id(trg_id, show, false);
+    collapse_by_id(toc_id, show, false);
   }
 
   function callback_collapser(evt) {
     var clicked_i = $(evt.currentTarget);
-    var trg_id = clicked_i.siblings('a').attr('toc-id');
+    var toc_id = clicked_i.siblings('a').attr('toc-id');
     $('.toc .toc-item > li > span > a').filter(function (idx, elt) {
-      return $(elt).attr('toc-id') === trg_id;
+      return $(elt).attr('toc-id') === toc_id;
     });
     var show = clicked_i.hasClass('fa-caret-right');
-    collapse_by_id(trg_id, show);
+    collapse_by_id(toc_id, show);
   }
 
 
