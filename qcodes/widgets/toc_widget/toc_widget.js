@@ -91,23 +91,29 @@ define('toc', [
     for (let cell of Jupyter.notebook.get_cells()) {
       if ($(cell.element).hasClass('collapsible_headings_ellipsis')) {
         let cell_toc_id = $(cell.element).find('[toc-id]').attr('toc-id');
-        let cell_toc_num = cell_toc_id.split('-').pop();
+        if (cell_toc_id !== undefined) {
+          let cell_toc_num = cell_toc_id.split('-').pop();
 
-        if (toc_num === cell_toc_num) {
-          events.trigger('uncollapse.Toc', {cell: cell});
-          cell.element.slideDown('fast')
-        } else if (toc_num.startsWith(cell_toc_num + '.')) {
-          // is parent
-          events.trigger('uncollapse.Toc', {cell: cell});
-          cell.element.slideDown('fast')
-        } else if (cell_toc_num.startsWith(toc_num)){
-          // is child
-          events.trigger('collapse.Toc', {cell: cell});
-          cell.element.slideDown('fast')
+          if (toc_num === cell_toc_num) {
+            events.trigger('uncollapse.Toc', {cell: cell});
+            cell.element.slideDown('fast')
+          } else if (toc_num.startsWith(cell_toc_num + '.')) {
+            // is parent
+            events.trigger('uncollapse.Toc', {cell: cell});
+            cell.element.slideDown('fast')
+          } else if (cell_toc_num.startsWith(toc_num)) {
+            // is child
+            events.trigger('collapse.Toc', {cell: cell});
+            cell.element.slideDown('fast')
+          } else {
+            events.trigger('collapse.Toc', {cell: cell});
+            cell.element.slideUp('fast')
+          }
         } else {
-          events.trigger('collapse.Toc', {cell: cell});
-          cell.element.slideUp('fast')
+            events.trigger('collapse.Toc', {cell: cell});
+            cell.element.slideUp('fast')
         }
+
       }
     }
     // var cell_begin = $(document.getElementById(toc_id)).closest('.cell').data('cell');
@@ -516,6 +522,7 @@ define('toc', [
   /** *************************** **/
   function attach_events() {
     // event: render toc for each markdown cell modification
+    $([IPython.events]).off("rendered.MarkdownCell");
     $([IPython.events]).on("rendered.MarkdownCell",
       function(evt, data) {
         create_toc_links(); // recompute the toc
