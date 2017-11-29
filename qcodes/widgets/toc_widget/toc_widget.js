@@ -86,20 +86,43 @@ define('toc', [
   /** Cell manipulation **/
   /** ***************** **/
   /** Hide all cells except for certain ids **/
-  function hide_all_cells_except_id(toc_id, children) {
-    var cell_begin = $(document.getElementById(toc_id)).closest('.cell').data('cell');
-    var level = get_cell_level(cell_begin);
+  function hide_all_cells_except_id(toc_id) {
+    let toc_num = toc_id.split('-').pop();
+    for (let cell of Jupyter.notebook.get_cells()) {
+      if ($(cell.element).hasClass('collapsible_headings_ellipsis')) {
+        let cell_toc_id = $(cell.element).find('[toc-id]').attr('toc-id');
+        let cell_toc_num = cell_toc_id.split('-').pop();
 
-    var cell_end = cell_begin;
-    var next_cell = Jupyter.notebook.get_next_cell(cell_end);
-    while (next_cell !== null && get_cell_level(next_cell) > level) {
-      cell_end = next_cell;
-      next_cell = Jupyter.notebook.get_next_cell(cell_end);
+        if (toc_num === cell_toc_num) {
+          events.trigger('uncollapse.Toc', {cell: cell});
+          cell.element.slideDown('fast')
+        } else if (toc_num.startsWith(cell_toc_num + '.')) {
+          // is parent
+          events.trigger('uncollapse.Toc', {cell: cell});
+          cell.element.slideDown('fast')
+        } else if (cell_toc_num.startsWith(toc_num)){
+          // is child
+          events.trigger('collapse.Toc', {cell: cell});
+          cell.element.slideDown('fast')
+        } else {
+          events.trigger('collapse.Toc', {cell: cell});
+          cell.element.slideUp('fast')
+        }
+      }
     }
-
-    hide_cells_above(cell_begin);
-    hide_cells_below(cell_end);
-    show_cells_between(cell_begin, cell_end);
+    // var cell_begin = $(document.getElementById(toc_id)).closest('.cell').data('cell');
+    // var level = get_cell_level(cell_begin);
+    //
+    // var cell_end = cell_begin;
+    // var next_cell = Jupyter.notebook.get_next_cell(cell_end);
+    // while (next_cell !== null && get_cell_level(next_cell) > level) {
+    //   cell_end = next_cell;
+    //   next_cell = Jupyter.notebook.get_next_cell(cell_end);
+    // }
+    //
+    // hide_cells_above(cell_begin);
+    // hide_cells_below(cell_end);
+    // show_cells_between(cell_begin, cell_end);
   }
 
   function hide_cells_above(cell) {
@@ -403,10 +426,10 @@ define('toc', [
     $('a[toc-id]').each(function(idx, toc_link) {
       let toc_id = $(toc_link).attr('toc-id')
       if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
-        collapse_by_toc_id(toc_id, false, true);
+        collapse_by_toc_id(toc_id, false);
         console.log('collapsing toc link ' + $(toc_link).attr('toc-id'))
       } else {
-        collapse_by_toc_id(toc_id, true, true)
+        collapse_by_toc_id(toc_id, true)
       }
     });
 
@@ -452,11 +475,7 @@ define('toc', [
     if (trigger_event !== false) {
       // fire event for collapsible_heading to catch
       var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
-      if (cell.metadata.heading_collapsed === true && show) {
-        events.trigger('uncollapse.Toc', {cell: cell});
-      } else if (cell.metadata.heading_collapsed !== true && !show) {
-        events.trigger('collapse.Toc', {cell: cell});
-      }
+
     }
   }
 
