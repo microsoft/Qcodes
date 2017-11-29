@@ -58,6 +58,19 @@ define('toc', [
       attach_events();
 
       patch_keyboard_actions();
+
+
+      if ($("#toc_button").length === 0) {
+        IPython.toolbar.add_buttons_group([
+          {
+            'label'   : 'Show all cells',
+            'icon'    : 'fa-eye',
+            'callback':  show_all_cells,
+            'id'      : 'toc_button'
+          }
+        ]);
+      };
+
     },
 
 
@@ -331,7 +344,7 @@ define('toc', [
   /** **************** **/
   /** Highlight a TOC element, either as executing or selected **/
   function highlight_toc_item(evt, data) {
-    console.log('Sidebar: Highlighting toc item (highlight_toc_item)');
+    // console.log('Sidebar: Highlighting toc item (highlight_toc_item)');
     var c = $(data.cell.element);
     if (c.length < 1) {
       return;
