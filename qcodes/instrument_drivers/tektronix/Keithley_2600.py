@@ -33,7 +33,9 @@ class Keithley_2600(VisaInstrument):
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        model = self.ask('localnode.model')
+        self._channel = channel
+
+        model = self.visa_handle.ask('print(localnode.model)')
 
         knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
@@ -75,8 +77,6 @@ class Keithley_2600(VisaInstrument):
                              1e-3, 10e-6, 100e-3, 1, 1.5],
                    '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
                              1e-3, 10e-6, 100e-3, 1, 1.5]}
-
-        self._channel = channel
 
         self.add_parameter('volt',
                            get_cmd='measure.v()',

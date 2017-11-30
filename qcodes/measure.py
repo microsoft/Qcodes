@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.loops import Loop
 from qcodes.actions import _actions_snapshot
 from qcodes.utils.helpers import full_class
@@ -18,8 +18,9 @@ class Measure(Metadatable):
             Scalars returned by an action will be saved as length-1 arrays,
             with a dummy setpoint for consistency with other DataSets.
     """
-    dummy_parameter = ManualParameter(name='single',
-                                      label='Single Measurement')
+    dummy_parameter = Parameter(name='single',
+                                label='Single Measurement',
+                                set_cmd=None, get_cmd=None)
 
     def __init__(self, *actions):
         super().__init__()
@@ -30,6 +31,9 @@ class Measure(Metadatable):
         Wrapper to run this measurement as a temporary data set
         """
         return self.run(quiet=True, location=False, **kwargs)
+
+    def get_data_set(self, *args, **kwargs):
+        return self._dummyLoop.get_data_set(*args, **kwargs)
 
     def run(self, use_threads=False, quiet=False, station=None, **kwargs):
         """
