@@ -82,5 +82,5 @@ class PXIe_4322(Instrument):
 
     def _write_voltages_to_file(self):
         with open(self.voltage_file, 'w') as output_file:
-            voltages = [self.parameters[f'voltage_channel_{i}']() for i in range(self.channels)]
+            voltages = [self.parameters[f'voltage_channel_{i}'].raw_value for i in range(self.channels)]
             json.dump(voltages, output_file, ensure_ascii=False)
