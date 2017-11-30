@@ -57,7 +57,11 @@ class Validator:
 
         raises an error (TypeError or ValueError) if the value fails
 
-    valid_values: a property exposing _valid_values
+    valid_values: a property exposing _valid_values, which is a list
+        of examples of valid values. For very simple validators, like
+        Bool or Enum, the list contains all valid values, but in general
+        it just holds SOME valid values. These example values are intended
+        to be useful when simulating instruments.
 
     is_numeric: is this a numeric type (so it can be swept)?
     """
