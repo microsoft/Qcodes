@@ -2,7 +2,9 @@ import time
 import logging
 import numpy as np
 from functools import partial
-from typing import Union
+
+from typing import Callable, List, Union
+
 try:
     import zhinst.utils
 except ImportError:
@@ -13,10 +15,95 @@ except ImportError:
 
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
 log = logging.getLogger(__name__)
 
+class AUXOutputChannel(InstrumentChannel):
+
+    def __init__(self, parent: 'ZIUHFLI', name: str, channum: int) -> None:
+        super().__init__(parent, name)
+
+        # TODO better validations of parameters
+        self.add_parameter('scale',
+                           label='scale',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'scale'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'scale'),
+                           vals=vals.Numbers()
+                           )
+
+        self.add_parameter('preoffset',
+                           label='preoffset',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'preoffset'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'preoffset'),
+                           vals=vals.Numbers()
+                           )
+        self.add_parameter('offset',
+                           label='offset',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'offset'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'offset'),
+                           vals=vals.Numbers()
+                           )
+        self.add_parameter('limitlower',
+                           label='Lower limit',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'limitlower'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'limitlower'),
+                           vals=vals.Numbers()
+                           )
+
+        self.add_parameter('limitupper',
+                           label='Upper limit',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 1, 'limitupper'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 1, 'limitupper'),
+                           vals=vals.Numbers()
+                           )
+
+        # TODO the validator does not catch that there are only
+        # 2 valid output channels for AU types
+        self.add_parameter('channel',
+                           label='Channel',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 0, 'demodselect'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 0, 'demodselect'),
+                           get_parser=lambda x: x+1,
+                           set_parser=lambda x: x-1,
+                           vals=vals.Ints(0,7)
+                           )
+
+        outputvalmapping = {'Demod X': 0,
+                            'Demod Y': 1,
+                            'Demod R': 2,
+                            'Demod THETA': 3,
+                            'AU Cartesian': 7,
+                            'AU Polar': 8}
+
+        self.add_parameter('output',
+                           label='Output',
+                           unit='',
+                           get_cmd=partial(self._parent._getter, 'auxouts',
+                                           channum - 1, 0, 'outputselect'),
+                           set_cmd=partial(self._parent._setter, 'auxouts',
+                                           channum - 1, 0, 'outputselect'),
+                           val_mapping=outputvalmapping
+                           )
 
 class Sweep(MultiParameter):
     """
@@ -250,6 +337,20 @@ class Scope(MultiParameter):
         # They are updated via build_scope.
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
+        self._scopeactions = []  # list of callables
+
+    def add_post_trigger_action(self, action: Callable) -> None:
+        """
+        Add an action to be performed immediately after the trigger
+        has been armed. The action must be a callable taking zero
+        arguments
+        """
+        if action not in self._scopeactions:
+            self._scopeactions.append(action)
+
+    @property
+    def post_trigger_actions(self) -> List[Callable]:
+        return self._scopeactions
 
     def prepare_scope(self):
         """
@@ -412,6 +513,9 @@ class Scope(MultiParameter):
             ValueError: If the scope has not been prepared by running the
                 prepare_scope function.
         """
+        t_start = time.monotonic()
+        log.info('Scope get method called')
+
         if not self._instrument.scope_correctly_built:
             raise ValueError('Scope not properly prepared. Please run '
                              'prepare_scope before measuring.')
@@ -452,24 +556,36 @@ class Scope(MultiParameter):
             # one shot per trigger. This needs to be set every time
             # a the scope is enabled as below using scope_runstop
             try:
-                # we wrap this in try finally to ensure that scope.finish is always called
-                # even if the measurement is interrupted
+                # we wrap this in try finally to ensure that
+                # scope.finish is always called even if the
+                # measurement is interrupted
                 self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
-                self._instrument.daq.sync()
 
-                scope = self._instrument.scope # There are issues reusing the scope.
+
+                scope = self._instrument.scope
                 scope.set('scopeModule/clearhistory', 1)
 
                 # Start the scope triggering/acquiring
-                params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
+                # set /dev/scopes/0/enable to 1
+                params['scope_runstop'].set('run')
 
-                log.info('[*] Starting ZI scope acquisition.')
+                self._instrument.daq.sync()
+
+                log.debug('Starting ZI scope acquisition.')
                 # Start something... hauling data from the scopeModule?
                 scope.execute()
+
+                # Now perform actions that may produce data, e.g. running an AWG
+                for action in self._scopeactions:
+                    action()
+
                 starttime = time.time()
                 timedout = False
 
-                while scope.progress() < 1:
+                progress = scope.progress()
+                while progress < 1:
+                    log.debug('Scope progress is {}'.format(progress))
+                    progress = scope.progress()
                     time.sleep(0.1)  # This while+sleep is how ZI engineers do it
                     if (time.time()-starttime) > 20*meas_time+1:
                         timedout = True
@@ -503,6 +619,10 @@ class Scope(MultiParameter):
             finally:
                 # cleanup and make ready for next scope acquisition
                 scope.finish()
+
+        t_stop = time.monotonic()
+        log.info('scope get method returning after {} s'.format(t_stop -
+                                                                t_start))
         return data
 
     @staticmethod
@@ -859,8 +979,16 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
+        auxoutputchannels = ChannelList(self, "AUXOutputChannels", AUXOutputChannel,
+                               snapshotable=False)
 
-
+        for auxchannum in range(1,5):
+            name = 'aux_out{}'.format(auxchannum)
+            auxchannel = AUXOutputChannel(self, name, auxchannum)
+            auxoutputchannels.append(auxchannel)
+            self.add_submodule(name, auxchannel)
+        auxoutputchannels.lock()
+        self.add_submodule('aux_out_channels', auxoutputchannels)
         ########################################
         # SWEEPER PARAMETERS
 

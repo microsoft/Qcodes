@@ -244,7 +244,7 @@ class GNUPlotFormat(Formatter):
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
     def write(self, data_set, io_manager, location, force_write=False,
-              write_metadata=True, only_complete=True):
+              write_metadata=True, only_complete=True, filename=None):
         """
         Write updates in this DataSet to storage.
 
@@ -259,6 +259,9 @@ class GNUPlotFormat(Formatter):
                 or only complete rows? Is used to make sure that everything
                 gets written when the DataSet is finalised, even if some
                 dataarrays are strange (like, full of nans)
+            filename (Optional[str]): Filename to save to. Will override
+                the usual naming scheme and possibly overwrite files, so
+                use with care. The file will be saved in the normal location.
         """
         arrays = data_set.arrays
 
@@ -271,7 +274,11 @@ class GNUPlotFormat(Formatter):
         for group in groups:
             log.debug('Attempting to write the following '
                       'group: {}'.format(group))
-            fn = io_manager.join(location, group.name + self.extension)
+
+            if filename:
+                fn = io_manager.join(location, filename + self.extension)
+            else:
+                fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
 
