@@ -34,6 +34,12 @@ class DacReader(object):
 
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
         val = int(round(frac * 65536))
+        # extra check to be absolutely sure that the instrument does nothing
+        # receive an out-of-bounds value
+        if val > 65535 or val < 0:
+            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
+                             ', which is not within the allowed range.'
+                             ''.format(volt, val))
         return val
 
     def _dac_code_to_v(self, code):
