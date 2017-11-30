@@ -10,23 +10,35 @@ class USB_4SPDT(Instrument):
     """
     This is a qcodes driver USB 4DSPT A18. This driver requires 
     Pythonnet module to be installed in addition usual to the Qcodes environment.
-    mcl_RF_Switch_Controller64.dll file has to be located in python path.
 
     Args:
       name (str): What this instrument is called locally.
-      address (int): Passed to Connect(). Not needed if only one USB switch is connected to PC.
+      address (int): Not needed if only one USB switch is connected to PC.
       kwargs (dict): kwargs to be passed to VisaInstrument class.
     """
 
     def __init__(self, name, address=None, **kwargs):
         super().__init__(name, **kwargs)
 
-        clr.AddReference('qcodes//instrument_drivers//Minicircuits//mcl_RF_Switch_Controller64')
+        try:
+            clr.AddReference('qcodes//instrument_drivers//Minicircuits//mcl_RF_Switch_Controller64')
+        except ImportError:
+            raise ImportError("""Load of mcl_RF_Switch_Controller64.dll not possible. Make sure 
+                                the dll file is not blocked by Windows. To unblock right-click 
+                                the dll to open proporties and check the 'unblock' checkmark 
+                                in the bottom. Check that your python installation is 64bit.""")
 
         import mcl_RF_Switch_Controller64
 
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
-        self.switch.Connect(address)
+
+        if address == None:
+            self.switch.Connect()
+            self.address = self.switch.Get_Address()
+        else:
+            self.switch.ConnectByAddress(address)
+            self.address = address
+
 
         ports = ['A','B','C','D']
         for port in ports:
@@ -38,16 +50,16 @@ class USB_4SPDT(Instrument):
                                get_parser=int)
 
     def get_PortA(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus()[1])[-1])+1
+        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-1])+1
 
     def get_PortB(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus()[1])[-2])+1
+        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-2])+1
 
     def get_PortC(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus()[1])[-3])+1
+        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-3])+1
 
     def get_PortD(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus()[1])[-4])+1
+        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-4])+1
 
     def set_PortA(self,val):
         if val in [1,2]:
@@ -75,4 +87,3 @@ class USB_4SPDT(Instrument):
 
     
     
-
