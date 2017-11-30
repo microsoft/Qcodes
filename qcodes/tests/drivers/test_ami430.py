@@ -184,9 +184,6 @@ def test_spherical_setpoints(current_driver, set_target):
     points as intended. This test is very similar to the sanity test, but
     adds in the FieldVector as well.
     """
-
-    print(set_target)
-
     current_driver.spherical(set_target)
 
     r = current_driver.field()
