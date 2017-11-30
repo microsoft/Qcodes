@@ -437,7 +437,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
-            start_value = self.raw_value
+            start_value = self.get_latest()
 
             if not (isinstance(start_value, (int, float)) and
                     isinstance(value, (int, float))):
