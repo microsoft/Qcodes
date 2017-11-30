@@ -8,7 +8,7 @@ except ImportError:
 
 class USB_4SPDT(Instrument):
     """
-    This is a qcodes driver USB 4DSPT A18. This driver requires 
+    This is a qcodes driver USB 4DSPT A18. This driver requires
     Pythonnet module to be installed in addition usual to the Qcodes environment.
 
     Args:
@@ -23,7 +23,7 @@ class USB_4SPDT(Instrument):
         try:
             clr.AddReference('qcodes//instrument_drivers//Minicircuits//mcl_RF_Switch_Controller64')
         except ImportError:
-            raise ImportError("""Load of mcl_RF_Switch_Controller64.dll not possible. Make sure 
+            raise ImportError("""Load of mcl_RF_Switch_Controller64.dll not possible. Make sure
                                 the dll file is not blocked by Windows. To unblock right-click 
                                 the dll to open proporties and check the 'unblock' checkmark 
                                 in the bottom. Check that your python installation is 64bit.""")
@@ -84,6 +84,3 @@ class USB_4SPDT(Instrument):
             self.switch.Set_Switch("D",val-1)
         else:
             raise ValueError('Invalid input. Switch port can only be set in positions 1 or 2.')
-
-    
-    
