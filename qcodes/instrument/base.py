@@ -13,6 +13,8 @@ from qcodes.utils.validators import Anything
 from .parameter import Parameter
 from .function import Function
 
+log = logging.getLogger(__name__)
+
 
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
@@ -172,8 +174,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             try:
                 snap['parameters'][name] = param.snapshot(update=update)
             except:
-                logging.info("Snapshot: Could not update parameter:"
-                             "{}".format(name))
+                log.debug("Snapshot: Could not update parameter:"
+                          "{}".format(name))
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
@@ -398,8 +400,8 @@ class Instrument(InstrumentBase):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            logging.debug('Error getting or interpreting *IDN?: '
-                          + repr(idstr))
+            log.debug('Error getting or interpreting *IDN?: '
+                      + repr(idstr))
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
