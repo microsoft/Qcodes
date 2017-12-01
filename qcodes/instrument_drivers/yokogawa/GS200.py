@@ -3,7 +3,6 @@ from functools import partial
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
 
-
 def float_round(val):
     """
     Rounds a floating number
@@ -19,7 +18,6 @@ def float_round(val):
 
 class GS200Exception(Exception):
     pass
-
 
 class GS200_Monitor(InstrumentChannel):
     """
@@ -157,7 +155,6 @@ class GS200_Monitor(InstrumentChannel):
         else:
             self.measure.label = 'Source Voltage'
             self.measure.unit = 'V'
-
 
 class GS200(VisaInstrument):
     """
@@ -355,7 +352,7 @@ class GS200(VisaInstrument):
 
         self.output_level.step = saved_step
         self.output_level.inter_delay = saved_inter_delay
-        
+
     def _get_set_output(self, mode: str, output_level: float=None) -> float:
         """
         Get or set the output level.
@@ -474,21 +471,21 @@ class GS200(VisaInstrument):
         # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
-    def _set_range(self, mode: str, range: float) -> None:
+    def _set_range(self, mode: str, output_range: float) -> None:
         """
         Update range
 
         Args:
             mode (str): "CURR" or "VOLT"
-            range (float): range to set. For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current
+            output_range (float): range to set. For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0, 30e0]. For current
                             we have the ranges [1e-3, 10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
                             output can only happen if the set value is smaller then the present range.
         """
         self._assert_mode(mode)
-        range = float(range)
-        self._update_measurement_module(source_mode=mode, source_range=range)
-        self._cached_range_value = range
-        self.write(':SOUR:RANG {}'.format(str(range)))
+        output_range = float(output_range)
+        self._update_measurement_module(source_mode=mode, source_range=output_range)
+        self._cached_range_value = output_range
+        self.write(':SOUR:RANG {}'.format(output_range))
 
     def _get_range(self, mode: str) -> float:
         """
