@@ -156,7 +156,7 @@ class Triton(IPInstrument):
             self._get_named_channels()
         except:
             logging.warning('Ignored an error in _get_named_channels\n' +
-                         format_exc())
+                            format_exc())
 
         self.connect_message()
 
@@ -211,12 +211,19 @@ class Triton(IPInstrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_control_channel(self, force_get=False):
-        if force_get or (not self._control_channel):
-            for i in range(20):
-                tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
-                if not tempval.endswith('NOT_FOUND'):
-                    self._control_channel = i
-        return self._control_channel
+
+        # verify current channel
+        if self._control_channel and not force_get:
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
+            if not tempval.endswith('NOT_FOUND'):
+                return self._control_channel
+
+        # either _control_channel is not set or wrong
+        for i in range(1,17):
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
+            if not tempval.endswith('NOT_FOUND'):
+                self._control_channel = i
+                break
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
