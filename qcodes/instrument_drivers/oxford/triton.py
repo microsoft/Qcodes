@@ -149,7 +149,7 @@ class Triton(IPInstrument):
 
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
-            self._get_temp_channels()
+            self._get_temp_channels(tmpfile)
         self._get_pressure_channels()
 
         try:
@@ -207,7 +207,7 @@ class Triton(IPInstrument):
     def get_idn(self):
         idstr = self.ask('*IDN?')
         idparts = [p.strip() for p in idstr.split(':', 4)][1:]
-        
+
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_control_channel(self, force_get=False):
