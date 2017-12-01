@@ -453,9 +453,11 @@ class AlazarTech_ATS(Instrument):
                        self._handle, self.clock_source, sample_rate,
                        self.clock_edge, self.decimation)
 
+        channel_mapping = [2**n for n in range(16)]
+        # see table page 175 in sdk manual
         for i in range(1, self.channels + 1):
             self._call_dll('AlazarInputControl',
-                           self._handle, i,
+                           self._handle, channel_mapping[i-1],
                            self.parameters['coupling' + str(i)],
                            self.parameters['channel_range' + str(i)],
                            self.parameters['impedance' + str(i)])
