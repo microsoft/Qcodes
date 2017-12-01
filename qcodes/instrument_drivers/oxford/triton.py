@@ -15,7 +15,7 @@ class Triton(IPInstrument):
     Triton Driver
 
     Args:
-        tmpfile: Expects an exported windows registry file from the registry
+        tmpfile Optional: Expects an exported windows registry file from the registry
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
             and is used to extract the available temperature channels.
@@ -55,7 +55,8 @@ class Triton(IPInstrument):
         self.add_parameter(name='pid_control_channel',
                            label='PID control channel',
                            get_cmd=self._get_control_channel,
-                           set_cmd=self._set_control_channel)
+                           set_cmd=self._set_control_channel,
+                           vals=Ints(1,16)))
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
@@ -284,7 +285,7 @@ class Triton(IPInstrument):
         for ch in allchans:
             msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
-            if 'INVALID' not in rep:
+             if 'INVALID' not in rep and 'NONE' not in rep:
                 alias, chan = rep.split(':')[-2:]
                 self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
@@ -293,16 +294,36 @@ class Triton(IPInstrument):
                                    get_parser=self._parse_temp)
 
     def _get_pressure_channels(self):
+        self.chan_pressure = []
         for i in range(1, 7):
             chan = 'P%d' % i
+            self.chan_pressure.append(chan)
             self.add_parameter(name=chan,
                                unit='bar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
+        self.chan_pressure = set(self.chan_pressure)
 
+    def _get_temp_channel_names(self, file):
+        config = configparser.ConfigParser()
+        with open(file, 'r', encoding='utf16') as f:
+            next(f)
+            config.read_file(f)
+
+        for section in config.sections():
+            options = config.options(section)
+            namestr = '"m_lpszname"'
+            if namestr in options:
+                chan_number = int(section.split('\\')[-1].split('[')[-1]) + 1
+                # the names used in the register file are base 0 but the api and the gui
+                # uses base one names so add one
+                chan = 'T'+ str(chan_number)
+                name = config.get(section, '"m_lpszname"').strip("\"")
+                self.chan_temp_names[chan] = {'name': name, 'value': None}
+                
     def _get_temp_channels(self, file):
         config = configparser.ConfigParser()
-        with open(file, 'r') as f:
+        with open(file, 'r', encoding='utf16') as f:
             next(f)
             config.read_file(f)
 
