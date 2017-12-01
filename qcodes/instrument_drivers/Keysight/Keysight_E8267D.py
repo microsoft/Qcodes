@@ -1,6 +1,13 @@
-from numpy import pi, rad2deg, deg2rad
-
+from numpy import rad2deg, deg2rad
 from qcodes import VisaInstrument, validators as vals
+
+
+def parse_on_off(stat):
+    if stat.startswith('0'):
+        stat = 'Off'
+    elif stat.startswith('1'):
+        stat = 'On'
+    return stat
 
 
 class Keysight_E8267D(VisaInstrument):
@@ -47,20 +54,13 @@ class Keysight_E8267D(VisaInstrument):
         self.add_parameter('status',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
-                           get_parser=self.parse_on_off,
+                           get_parser=parse_on_off,
                            # Only listed most common spellings idealy want a
                            # .upper val for Enum or string
                            vals=vals.Enum('on', 'On', 'ON',
                                           'off', 'Off', 'OFF'))
 
         self.connect_message()
-
-    def parse_on_off(self, stat):
-        if stat.startswith('0'):
-            stat = 'Off'
-        elif stat.startswith('1'):
-            stat = 'On'
-        return stat
 
     def on(self):
         self.set('status', 'on')
