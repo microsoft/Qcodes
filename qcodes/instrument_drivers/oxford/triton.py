@@ -15,7 +15,7 @@ class Triton(IPInstrument):
     Triton Driver
 
     Args:
-        tmpfile Optional: Expects an exported windows registry file from the registry
+        tmpfile: Optional: an exported windows registry file from the registry
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
             and is used to extract the available temperature channels.
@@ -56,7 +56,7 @@ class Triton(IPInstrument):
                            label='PID control channel',
                            get_cmd=self._get_control_channel,
                            set_cmd=self._set_control_channel,
-                           vals=Ints(1,16)))
+                           vals=Ints(1,16))
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
@@ -144,16 +144,18 @@ class Triton(IPInstrument):
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
         self.chan_alias = {}
+        self.chan_temp_names  = {}
         self.chan_temps = {}
 
         if tmpfile is not None:
-            self._get_temp_channels(tmpfile)
+            self._get_temp_channel_names(tmpfile)
+            self._get_temp_channels()
         self._get_pressure_channels()
 
         try:
             self._get_named_channels()
         except:
-            logging.warn('Ignored an error in _get_named_channels\n' +
+            logging.warning('Ignored an error in _get_named_channels\n' +
                          format_exc())
 
         self.connect_message()
@@ -169,6 +171,14 @@ class Triton(IPInstrument):
             sleep(t_wait)
         else:
             print('Warning: set magnet sweep rate in range (0 , 0.2] T/min')
+
+    def _get_control_B_param(self, param):
+        cmd = 'READ:SYS:VRM:{}'.format(param)
+        return self._get_response_value(self.ask(cmd))
+
+    def _get_control_Bcomp_param(self, param):
+        cmd = 'READ:SYS:VRM:{}'.format(param)
+        return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _get_response(self, msg):
         return msg.split(':')[-1]
@@ -197,6 +207,7 @@ class Triton(IPInstrument):
     def get_idn(self):
         idstr = self.ask('*IDN?')
         idparts = [p.strip() for p in idstr.split(':', 4)][1:]
+        
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_control_channel(self, force_get=False):
@@ -216,14 +227,6 @@ class Triton(IPInstrument):
         chan = self._get_control_channel()
         cmd = 'READ:DEV:T{}:TEMP:LOOP:{}'.format(chan, param)
         return self._get_response_value(self.ask(cmd))
-
-    def _get_control_B_param(self, param):
-        cmd = 'READ:SYS:VRM:{}'.format(param)
-        return self._get_response_value(self.ask(cmd))
-
-    def _get_control_Bcomp_param(self, param):
-        cmd = 'READ:SYS:VRM:{}'.format(param)
-        return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _set_control_param(self, param, value):
         chan = self._get_control_channel()
@@ -285,7 +288,7 @@ class Triton(IPInstrument):
         for ch in allchans:
             msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
-             if 'INVALID' not in rep and 'NONE' not in rep:
+            if 'INVALID' not in rep and 'NONE' not in rep:
                 alias, chan = rep.split(':')[-2:]
                 self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
