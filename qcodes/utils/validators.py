@@ -571,11 +571,11 @@ class Dict(Validator):
                 '{} is not a dictionary; {}'.format(repr(value), context))
 
         if self.allowed_keys is not None:
-            forbidden_keys = [key for key in d if key not in self.allowed_keys]
+            forbidden_keys = [key for key in value if key not in self.allowed_keys]
             if forbidden_keys:
-                raise SyntaxError(f'Dictionary keys {} are not in allowed keys '
-                                  f'{}'.format(forbidden_keys,
-                                               self.allowed_keys))
+                raise SyntaxError('Dictionary keys {} are not in allowed keys '
+                                  '{}'.format(forbidden_keys,
+                                              self.allowed_keys))
 
 
     def __repr__(self):
