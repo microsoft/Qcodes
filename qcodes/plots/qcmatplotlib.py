@@ -14,7 +14,7 @@ from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
 import qcodes.config
-from qcodes import DataArray
+from qcodes.data.data_array import DataArray
 
 
 class MatPlot(BasePlot):
