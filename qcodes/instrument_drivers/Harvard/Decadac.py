@@ -305,9 +305,9 @@ class DacSlot(InstrumentChannel, DacReader):
         self._VERSA_EEPROM_available = self._parent._VERSA_EEPROM_available
 
         # Create a list of channels in the slot
-        channels = ChannelList(self, "Slot_Channels", DacChannel)
+        channels = ChannelList(self, "Slot_Channels", parent.DAC_CHANNEL_CLASS)
         for i in range(4):
-            channels.append(DacChannel(self, "Chan{}".format(i), i,
+            channels.append(parent.DAC_CHANNEL_CLASS(self, "Chan{}".format(i), i,
                                        min_val=min_val, max_val=max_val))
         self.add_submodule("channels", channels)
         # Set the slot mode. Valid modes are:
@@ -328,7 +328,7 @@ class DacSlot(InstrumentChannel, DacReader):
                            val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
-        self.slot_mode.set(DacSlot.SLOT_MODE_DEFAULT)
+        self.slot_mode.set(self.SLOT_MODE_DEFAULT)
 
     def write(self, cmd):
         """
@@ -366,6 +366,8 @@ class Decadac(VisaInstrument, DacReader):
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.
     """
+    DAC_CHANNEL_CLASS = DacChannel
+    DAC_SLOT_CLASS = DacSlot
 
     def __init__(self, name, address, min_val=-5, max_val=5, **kwargs):
         """
@@ -395,10 +397,10 @@ class Decadac(VisaInstrument, DacReader):
         self._feature_detect()
 
         # Create channels
-        channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
-        slots = ChannelList(self, "Slots", DacSlot)
-        for i in range(5):  # Create the 5 DAC slots
-            slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
+        channels = ChannelList(self, "Channels", self.DAC_CHANNEL_CLASS, snapshotable=False)
+        slots = ChannelList(self, "Slots", self.DAC_SLOT_CLASS)
+        for i in range(5):  # Create the 6 DAC slots
+            slots.append(self.DAC_SLOT_CLASS(self, "Slot{}".format(i), i, min_val, max_val))
             channels.extend(slots[i].channels)
         slots.lock()
         channels.lock()
