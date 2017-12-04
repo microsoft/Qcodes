@@ -10,24 +10,32 @@ from qcodes.instrument.visa import VisaInstrument
 log = logging.getLogger(__name__)
 
 
-def _signal_parser(response: str) -> float:
+def _signal_parser(our_scaling: float, response: str) -> float:
     """
-    Parse a response string into a value.
+    Parse a response string into a correct SI value.
+
+    Args:
+        our_scaling: Whatever scale we might need to apply to get from
+            e.g. A/min to A/s.
+        response: What comes back from instrument.ask
     """
 
     # there might be a scale before the unit. We only want to deal in SI
     # units, so we translate the scale
     scale_to_factor = {'n': 1e-9, 'u': 1e-6, 'm': 1e-3,
-                       '': 1, 'k': 1e3, 'M': 1e6}
+                       'k': 1e3, 'M': 1e6}
 
     numchars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-']
 
     response = response.replace(':', '')
     digits = ''.join([d for d in response if d in numchars])
     scale_and_unit = response[len(digits):]
-    scale = scale_and_unit[:-1]
+    if scale_and_unit[0] in scale_to_factor.keys():
+        their_scaling = scale_to_factor[scale_and_unit[0]]
+    else:
+        their_scaling = 1
 
-    return float(digits)*scale_to_factor[scale]
+    return float(digits)*their_scaling*our_scaling
 
 
 class MercurySlavePS(InstrumentChannel):
@@ -55,7 +63,56 @@ class MercurySlavePS(InstrumentChannel):
                            label='Output voltage',
                            get_cmd=partial(self._param_getter, 'SIG:VOLT'),
                            unit='V',
-                           get_parser=_signal_parser)
+                           get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('current',
+                           label='Output current',
+                           get_cmd=partial(self._param_getter, 'SIG:CURR'),
+                           unit='A',
+                           get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('current_persistent',
+                           label='Output persistent current',
+                           get_cmd=partial(self._param_getter, 'SIG:PCUR'),
+                           unit='A',
+                           get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('current_target',
+                           label='Target current',
+                           get_cmd=partial(self._param_getter, 'SIG:CSET'),
+                           unit='A',
+                           get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('field_target',
+                            label='Target field',
+                            get_cmd=partial(self._param_getter, 'SIG:FSET'),
+                            unit='T',
+                            get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('current_ramp_rate',
+                            label='Ramp rate (current)',
+                            unit='A/s',
+                            get_cmd=partial(self._param_getter, 'SIG:RCST'),
+                            get_parser=partial(_signal_parser, 1/60))
+
+        self.add_parameter('field_ramp_rate',
+                            label='Ramp rate (field)',
+                            unit='T/s',
+                            get_cmd=partial(self._param_getter, 'SIG:RFST'),
+                            get_parser=partial(_signal_parser, 1/60))
+
+        self.add_parameter('field',
+                            label='Field strength',
+                            unit='T',
+                            get_cmd=partial(self._param_getter, 'SIG:FLD'),
+                            get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('field_persistent',
+                            label='Persistent field strength',
+                            unit='T',
+                            get_cmd=partial(self._param_getter, 'SIG:PFLD'),
+                            get_parser=partial(_signal_parser, 1))
+
 
     def _param_getter(self, get_cmd: str) -> str:
         """
