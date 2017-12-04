@@ -218,8 +218,8 @@ class Formatter:
                             "Will overwrite")
             if last_saved_index is not None and not file_exists:
                 log.warning("Inconsistent file information. "
-                            "last_save_index is Not None but file does not "
-                            "exists. Will rewrite from scatcho")
+                            "last_save_index is not None but file does not "
+                            "exist. Will rewrite from scratch")
             return self._match_save_range_whole_file(
                 full_dim_data, only_complete)
 
