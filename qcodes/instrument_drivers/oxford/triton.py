@@ -5,13 +5,13 @@ import logging
 from traceback import format_exc
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Ints
 
 from time import sleep
 
 
 class Triton(IPInstrument):
-    """
+    r"""
     Triton Driver
 
     Args:
@@ -192,15 +192,15 @@ class Triton(IPInstrument):
         elif msg.endswith('RTOS'):
             return 'RTOS'
         elif msg.endswith('Bx'):
-            return float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0])
+            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0])
         elif msg.endswith('By'):
-            return float(re.findall("[-+]?\d*\.\d+|\d+", msg)[1])
+            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[1])
         elif msg.endswith('Bz'):
-            return float(re.findall("[-+]?\d*\.\d+|\d+", msg)[2])
-        elif len(re.findall("[-+]?\d*\.\d+|\d+", msg)) > 1:
-            return [float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0]), float(re.findall("[-+]?\d*\.\d+|\d+", msg)[1]), float(re.findall("[-+]?\d*\.\d+|\d+", msg)[2])]
+            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[2])
+        elif len(re.findall(r"[-+]?\d*\.\d+|\d+", msg)) > 1:
+            return [float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0]), float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[1]), float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[2])]
         try:
-            return float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0])
+            return float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0])
         except Exception:
             return msg
 
