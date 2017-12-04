@@ -446,7 +446,7 @@ class ChannelListValidator(Validator):
             The channel list must be locked and populated before it can be used to
             construct a validator.
     """
-    def __init__(self, channel_list: ChannelList):
+    def __init__(self, channel_list: ChannelList) -> None:
         # Save the base parameter list
         if not isinstance(channel_list, ChannelList):
             raise ValueError("channel_list must be a ChannelList object containing the "
