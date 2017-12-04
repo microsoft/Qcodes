@@ -26,12 +26,20 @@ class DacReader(object):
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
+        if volt < self.min_val or volt >= self.max_val:
+            raise ValueError('Cannot convert voltage {} V '.format(volt) +
+                             'to a voltage code, value out of range '
+                             '({} V - {} V).'.format(self.min_val,
+                                                     self.max_val))
+
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
         val = int(round(frac * 65536))
-        if val >= 65536:  # Check limits. For example setting max_val will cause an overflow
-            return 65535
-        if val < 0:  # Ensure no negative values
-            return 0
+        # extra check to be absolutely sure that the instrument does nothing
+        # receive an out-of-bounds value
+        if val > 65535 or val < 0:
+            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
+                             ', which is not within the allowed range.'
+                             ''.format(volt, val))
         return val
 
     def _dac_code_to_v(self, code):
@@ -257,8 +265,8 @@ class DacChannel(InstrumentChannel, DacReader):
 
     def _set_dac(self, code):
         """
-        Set the voltage on the dac channel, ramping if the enable_rate parameter is set for this
-        channel.
+        Set the voltage on the dac channel, ramping if the enable_rate
+        parameter is set for this channel.
 
         Params:
             code (int): the DAC code to set the voltage to
