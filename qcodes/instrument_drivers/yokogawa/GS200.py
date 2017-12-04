@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Optional
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
@@ -34,7 +35,7 @@ class GS200_Monitor(InstrumentChannel):
         name (str): instrument name
         present (bool):
     """
-    def __init__(self, parent: 'GS200', name: str, present: bool):
+    def __init__(self, parent: 'GS200', name: str, present: bool) -> None:
         super().__init__(parent, name)
 
         self.present = present
@@ -167,8 +168,9 @@ class GS200(VisaInstrument):
       terminator (str): read terminator for reads/writes to the instrument.
     """
 
-    def __init__(self, name: str, address: str, terminator: str="\n", **kwargs):
-        super().__init__(name, address, terminator=terminator, *kwargs)
+    def __init__(self, name: str, address: str, terminator: str="\n",
+                 **kwargs) -> None:
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('output',
                            label='Output State',
@@ -193,7 +195,7 @@ class GS200(VisaInstrument):
         # We want to cache the range value so communication with the instrument only happens when the set the
         # range. Getting the range always returns the cached value. This value is adjusted when calling
         # self._set_range
-        self._cached_range_value = None
+        self._cached_range_value = None # type: Optional[float]
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
@@ -353,7 +355,8 @@ class GS200(VisaInstrument):
         self.output_level.step = saved_step
         self.output_level.inter_delay = saved_inter_delay
 
-    def _get_set_output(self, mode: str, output_level: float=None) -> float:
+    def _get_set_output(self, mode: str,
+                        output_level: float=None) -> Optional[float]:
         """
         Get or set the output level.
 
@@ -364,6 +367,7 @@ class GS200(VisaInstrument):
         self._assert_mode(mode)
         if output_level is not None:
             self._set_output(output_level)
+            return None
         else:
             return float(self.ask(":SOUR:LEV?"))
 
