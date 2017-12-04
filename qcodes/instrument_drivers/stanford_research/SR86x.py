@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import logging
+from typing import Optional
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -140,7 +141,6 @@ class SR86xBuffer(InstrumentChannel):
             )
 
         self.bytes_per_sample = 4
-        self._capture_data = dict()
 
     @staticmethod
     def _set_capture_len_parser(value: int) -> int:
