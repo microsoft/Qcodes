@@ -330,7 +330,7 @@ class Triton(IPInstrument):
                 chan = 'T'+ str(chan_number)
                 name = config.get(section, '"m_lpszname"').strip("\"")
                 self.chan_temp_names[chan] = {'name': name, 'value': None}
-                
+
     def _get_temp_channels(self, file):
         config = configparser.ConfigParser()
         with open(file, 'r', encoding='utf16') as f:
