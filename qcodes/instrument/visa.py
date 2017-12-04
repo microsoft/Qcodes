@@ -101,6 +101,7 @@ class VisaInstrument(Instrument):
             terminator (str): Character(s) to look for at the end of a read.
                 eg. '\r\n'.
         """
+        self.visa_handle.write_termination = terminator
         self.visa_handle.read_termination = terminator
         self._terminator = terminator
 

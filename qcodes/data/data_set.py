@@ -470,7 +470,7 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self, write_metadata=False, only_complete=True):
+    def write(self, write_metadata=False, only_complete=True, filename=None):
         """
         Writes updates to the DataSet to storage.
         N.B. it is recommended to call data_set.finalize() when a DataSet is
@@ -481,15 +481,26 @@ class DataSet(DelegateAttributes):
             only_complete (bool): passed on to the match_save_range inside
                 self.formatter.write. Used to ensure that all new data gets
                 saved even when some columns are strange.
+            filename (Optional[str]): The filename (minus extension) to use.
+                The file gets saved in the usual location.
         """
         if self.location is False:
             return
 
-        self.formatter.write(self,
-                             self.io,
-                             self.location,
-                             write_metadata=write_metadata,
-                             only_complete=only_complete)
+        # Only the gnuplot formatter has a "filename" kwarg
+        if isinstance(self.formatter, GNUPlotFormat):
+            self.formatter.write(self,
+                                 self.io,
+                                 self.location,
+                                 write_metadata=write_metadata,
+                                 only_complete=only_complete,
+                                 filename=filename)
+        else:
+            self.formatter.write(self,
+                                 self.io,
+                                 self.location,
+                                 write_metadata=write_metadata,
+                                 only_complete=only_complete)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
@@ -563,21 +574,28 @@ class DataSet(DelegateAttributes):
             self.snapshot()
             self.formatter.write_metadata(self, self.io, self.location)
 
-    def finalize(self):
+    def finalize(self, filename=None, write_metadata=True):
         """
         Mark the DataSet complete and write any remaining modifications.
 
         Also closes the data file(s), if the ``Formatter`` we're using
         supports that.
+
+        Args:
+            filename (Optional[str]): The file name (minus extension) to
+                write to. The location of the file is the usual one.
+            write_metadata (bool): Whether to save a snapshot. For e.g. dumping
+                raw data inside a loop, a snapshot is not wanted.
         """
         log.debug('Finalising the DataSet. Writing.')
         # write all new data, not only (to?) complete columns
-        self.write(only_complete=False)
+        self.write(only_complete=False, filename=filename)
 
         if hasattr(self.formatter, 'close_file'):
             self.formatter.close_file(self)
 
-        self.save_metadata()
+        if write_metadata:
+            self.save_metadata()
 
     def snapshot(self, update=False):
         """JSON state of the DataSet."""
