@@ -69,6 +69,10 @@ class SensorChannel(InstrumentChannel):
             range_id =  3
         self.range_id(range_id)
 
+    def set_setpoint_and_range(self, temperature):
+        self.set_range_from_temperature(temperature)
+        self.setpoint(temperature)
+
 
 class Model_336(VisaInstrument):
     """
