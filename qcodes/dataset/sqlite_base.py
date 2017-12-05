@@ -865,6 +865,8 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                            ",".join([p.name for p in parameters]),
                            False
                            )
+        c = _add_parameters_to_layout_and_deps(conn, formatted_name, *parameters)
+
     else:
         query = f"""
         INSERT INTO {table}
@@ -1015,7 +1017,7 @@ def add_parameter_(conn: sqlite3.Connection,
 
 def add_parameter_2(conn: sqlite3.Connection,
                     formatted_name: str,
-                    parameter: ParamSpec):
+                    *parameter: ParamSpec):
     """ Add parameters to the dataset
 
     This will update the layouts and dependencies tables
@@ -1027,9 +1029,10 @@ def add_parameter_2(conn: sqlite3.Connection,
         - parameter: the paraemters to add
     """
     p_names = []
-    p = parameter
-    insert_column(conn, formatted_name, p.name, p.type)
-    p_names.append(p.name)
+    for p in parameter:
+        print(p)
+        insert_column(conn, formatted_name, p.name, p.type)
+        p_names.append(p.name)
     # get old parameters column from run table
     sql = f"""
     SELECT parameters FROM runs
@@ -1044,39 +1047,53 @@ def add_parameter_2(conn: sqlite3.Connection,
     sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
     transaction(conn, sql, new_parameters, formatted_name)
 
+
+    # Update the layouts table
+    c = _add_parameters_to_layout_and_deps(conn, formatted_name, *parameter)
+
+def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
+                                       formatted_name: str,
+                                       *parameter: ParamSpec) -> sqlite3.Cursor:
     # get the run_id
     sql = f"""
     SELECT run_id FROM runs WHERE result_table_name="{formatted_name}";
     """
     run_id = one(transaction(conn, sql), 'run_id')
-    # Update the layouts table
-    sql = """
+    layout_args = []
+    for p in parameter:
+        print(p)
+        layout_args.append(run_id)
+        layout_args.append(p.name)
+        layout_args.append(p.label)
+        layout_args.append(p.unit)
+        layout_args.append(p.inferred_from)
+    rowplaceholder = '(?, ?, ?, ?, ?)'
+    placeholder = ','.join([rowplaceholder] * len(parameter))
+    sql = f"""
     INSERT INTO layouts (run_id, parameter, label, unit, inferred_from)
-    VALUES (?,?,?,?,?)
+    VALUES {placeholder}
     """
-    c = transaction(conn, sql, run_id, p.name, p.label, p.unit,
-                    p.inferred_from)
-
+    c = transaction(conn, sql, *layout_args)
     layout_id = c.lastrowid
 
-    # update the dependencies table
     # TODO: how to manage the axis_num?
-    if p.depends_on != '':
-        deps = p.depends_on.split(', ')
-        for ax_num, dp in enumerate(deps):
-            sql = """
-            SELECT layout_id FROM layouts
-            WHERE run_id=? and parameter=?;
-            """
-            c = transaction(conn, sql, run_id, dp)
-            dep_ind = one(c, 'layout_id')
+    for p in parameter:
+        if p.depends_on != '':
+            deps = p.depends_on.split(', ')
+            for ax_num, dp in enumerate(deps):
+                sql = """
+                SELECT layout_id FROM layouts
+                WHERE run_id=? and parameter=?;
+                """
+                c = transaction(conn, sql, run_id, dp)
+                dep_ind = one(c, 'layout_id')
 
-            sql = """
-            INSERT INTO dependencies (dependent, independent, axis_num)
-            VALUES (?,?,?)
-            """
-            c = transaction(conn, sql, layout_id, dep_ind, ax_num)
-
+                sql = """
+                INSERT INTO dependencies (dependent, independent, axis_num)
+                VALUES (?,?,?)
+                """
+                c = transaction(conn, sql, layout_id, dep_ind, ax_num)
+    return c
 
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
