@@ -545,14 +545,29 @@ class Dict(Validator):
     """
     Validator for dictionaries
     """
-    def __init__(self):
-        # exists only to overwrite parent class
-        pass
+    def __init__(self, allowed_keys=None):
+        """
+        Validator for dictionary keys
+        Args:
+            allowed_keys (List): if set, all keys must be in allowed_keys
+        """
+        self.allowed_keys = allowed_keys
 
     def validate(self, value, context=''):
         if not isinstance(value, dict):
             raise TypeError(
                 '{} is not a dictionary; {}'.format(repr(value), context))
 
+        if self.allowed_keys is not None:
+            forbidden_keys = [key for key in value if key not in self.allowed_keys]
+            if forbidden_keys:
+                raise SyntaxError('Dictionary keys {} are not in allowed keys '
+                                  '{}'.format(forbidden_keys,
+                                              self.allowed_keys))
+
+
     def __repr__(self):
-        return '<Dict>'
+        if self.allowed_keys is None:
+            return '<Dict>'
+        else:
+            return '<Dict {}>'.format(self.allowed_keys)
