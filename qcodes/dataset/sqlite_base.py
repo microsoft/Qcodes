@@ -7,8 +7,12 @@ from numpy import ndarray
 import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict
+import logging
+
 
 from qcodes.dataset.param_spec import ParamSpec
+
+log = logging.getLogger(__name__)
 
 # represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
@@ -35,7 +39,7 @@ CREATE  TABLE IF NOT EXISTS experiments (
 
 _runs_table_schema = """
 CREATE TABLE IF NOT EXISTS runs (
-    -- this will autoncrement by default if
+    -- this will autoincrement by default if
     -- no value is specified on insert
     run_id INTEGER PRIMARY KEY,
     exp_id INTEGER,
@@ -258,6 +262,7 @@ def atomic(conn: sqlite3.Connection):
         yield
     except Exception as e:
         conn.rollback()
+        log.exception("Rolling back due to unhandled exception")
         raise RuntimeError("Rolling back due to unhandled exception") from e
     else:
         conn.commit()
@@ -1081,7 +1086,7 @@ def add_parameter(conn: sqlite3.Connection,
     Args:
         - conn: the connection to the sqlite database
         - formatted_name: name of the table
-        - parameter: the paraemters to add
+        - parameter: the parameters to add
     """
     with atomic(conn):
         add_parameter_2(conn, formatted_name, *parameter)
