@@ -4,10 +4,10 @@ from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum as QCEnum, Strings
 
 class ChannelDescriptor(Enum):
-    A = 1
-    B = 2
-    C = 3
-    D = 4
+    a = 1
+    b = 2
+    c = 3
+    d = 4
 
 class SensorChannel(InstrumentChannel):
     """
@@ -36,6 +36,7 @@ class SensorChannel(InstrumentChannel):
                            get_parser=float,
                            label='Raw_Reading',
                            unit='Ohms')  # TODO: This will vary based on sensor type
+
         self.add_parameter('sensor_status', get_cmd='RDGST? {}'.format(self._channel),
                            val_mapping={'OK': 0, 'Invalid Reading': 1, 'Temp Underrange': 16, 'Temp Overrange': 32,
                            'Sensor Units Zero': 64, 'Sensor Units Overrange': 128}, label='Sensor_Status')
@@ -47,16 +48,26 @@ class SensorChannel(InstrumentChannel):
                            label = 'Temperature setpoint',
                            unit='K')
 
-        self.add_parameter('range',
+        self.add_parameter('range_id',
                            get_cmd='range? {}'.format(self._channel),
                            set_cmd='range {},{{}}'.format(self._channel),
-                           get_parser=float,
-                           label = 'Temperature setpoint',
+                           get_parser=QCEnum(1,2,3),
+                           label = 'Range ID',
                            unit='K')
 
         self.add_parameter('sensor_name', get_cmd='INNAME? {}'.format(self._channel),
                            get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=Strings(15),
                            label='Sensor_Name')
+
+
+    def set_range_from_temperature(self, temperature):
+        if temperature < self._parent.t_limit(1):
+            range_id = 1
+        elif temperature < self._parent.t_limit(2):
+            range_id = 2
+        else:
+            range_id =  3
+        self.range_id(range_id)
 
 
 class Model_336(VisaInstrument):
