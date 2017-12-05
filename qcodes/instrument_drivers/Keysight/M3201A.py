@@ -11,7 +11,7 @@ class Keysight_M3201A_AWG(SD_AWG):
         slot (int)      : slot number where the device is plugged in
     """
 
-    def __init__(self, name, chassis=1, slot=7, **kwargs):
+    def __init__(self, name, chassis=0, slot=7, **kwargs):
         super().__init__(name, chassis, slot, channels=4, triggers=8, **kwargs)
 
 class Keysight_M3201A_FPGA(SD_FPGA):
@@ -25,5 +25,5 @@ class Keysight_M3201A_FPGA(SD_FPGA):
         slot (int)      : slot number where the device is plugged in
     """
 
-    def __init__(self, name, chassis=1, slot=7, **kwargs):
+    def __init__(self, name, chassis=0, slot=7, **kwargs):
         super().__init__(name, chassis, slot, **kwargs)
