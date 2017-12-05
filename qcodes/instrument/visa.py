@@ -65,7 +65,7 @@ class VisaInstrument(Instrument):
                               'different ways. Please do not include "@" in '
                               'the address kwarg and only use the visalib '
                               'kwarg for that.')
-                self.visa_lib = visalib
+                self.visalib = visalib
             else:
                 warnings.warn('You have specified the VISA library using '
                               'an "@" in the address kwarg. Please use the '
@@ -115,6 +115,11 @@ class VisaInstrument(Instrument):
         # their buffers which behaves differently to clear. This is
         # particularly important for instruments which do not support
         # SCPI commands.
+
+        # Simulated instruments do not support a handle clear
+        if self.visabackend == 'sim':
+            return
+
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
             self.visa_handle.flush(
                 vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
