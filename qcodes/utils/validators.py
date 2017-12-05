@@ -72,13 +72,27 @@ class Anything(Validator):
     def validate(self, value, context=''):
         pass
     # NOTE(giulioungaretti): why is_numeric?
-    # it allows fort set_step in parameter
+    # it allows for set_step in parameter
     # TODO(giulioungaretti): possible refactor
     is_numeric = True
 
     def __repr__(self):
         return '<Anything>'
 
+class Nothing(Validator):
+    """allow no value to pass"""
+
+    def __init__(self, reason):
+        if reason:
+            self.reason = reason
+        else:
+            self.reason = "Nothing Validator"
+
+    def validate(self, value, context=''):
+        raise RuntimeError("{}; {}".format(self.reason, context))
+
+    def __repr__(self):
+        return '<Nothing({})>'.format(self.reason)
 
 class Bool(Validator):
     """
@@ -531,14 +545,29 @@ class Dict(Validator):
     """
     Validator for dictionaries
     """
-    def __init__(self):
-        # exists only to overwrite parent class
-        pass
+    def __init__(self, allowed_keys=None):
+        """
+        Validator for dictionary keys
+        Args:
+            allowed_keys (List): if set, all keys must be in allowed_keys
+        """
+        self.allowed_keys = allowed_keys
 
     def validate(self, value, context=''):
         if not isinstance(value, dict):
             raise TypeError(
                 '{} is not a dictionary; {}'.format(repr(value), context))
 
+        if self.allowed_keys is not None:
+            forbidden_keys = [key for key in value if key not in self.allowed_keys]
+            if forbidden_keys:
+                raise SyntaxError('Dictionary keys {} are not in allowed keys '
+                                  '{}'.format(forbidden_keys,
+                                              self.allowed_keys))
+
+
     def __repr__(self):
-        return '<Dict>'
+        if self.allowed_keys is None:
+            return '<Dict>'
+        else:
+            return '<Dict {}>'.format(self.allowed_keys)
