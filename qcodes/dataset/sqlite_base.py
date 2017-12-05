@@ -6,7 +6,7 @@ from numbers import Number
 from numpy import ndarray
 import numpy as np
 import io
-from typing import Any, List, Optional, Tuple, Union, Dict
+from typing import Any, List, Optional, Tuple, Union, Dict, cast
 import logging
 
 
@@ -603,8 +603,9 @@ def get_setpoints(conn: sqlite3.Connection,
     IN {str(indeps).replace('[', '(').replace(']', ')')}
     """
     c = transaction(conn, sql)
-    setpoint_names = many_many(c, 'parameter')
-    setpoint_names = [spn[0] for spn in setpoint_names]
+    setpoint_names_temp = many_many(c, 'parameter')
+    setpoint_names = [spn[0] for spn in setpoint_names_temp]
+    setpoint_names = cast(List[str], setpoint_names)
 
     # get the actual setpoint data
     output = []
@@ -912,8 +913,9 @@ def get_parameters(conn: sqlite3.Connection,
     SELECT parameter FROM layouts WHERE run_id={run_id}
     """
     c = conn.execute(sql)
-    param_names = many_many(c, 'parameter')
-    param_names = [p[0] for p in param_names]
+    param_names_temp = many_many(c, 'parameter')
+    param_names = [p[0] for p in param_names_temp]
+    param_names = cast(List[str], param_names)
 
     parspecs = []
 
@@ -966,11 +968,12 @@ def get_paramspec(conn: sqlite3.Connection,
     (layout_id, _, _, label, unit, inferred_from) = resp
 
     deps = get_dependencies(conn, layout_id)
+    depends_on: Optional[List[str]]
     if len(deps) == 0:
-        depends_on = ''
+        depends_on = None
     else:
-        dps = [dp[0] for dp in deps]
-        ax_nums = [dp[1] for dp in deps]
+        dps: List[int] = [dp[0] for dp in deps]
+        ax_nums: List[int] = [dp[1] for dp in deps]
         depends_on = []
         for _, dp in sorted(zip(ax_nums, dps)):
             sql = f"""

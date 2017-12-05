@@ -1,4 +1,4 @@
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Sequence
 import logging
 
 import numpy as np
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 
-def flatten_1D_data_for_plot(rawdata: List[List[Any]]) -> np.ndarray:
+def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
     """
     Cast the return value of the database query to
     a numpy array
@@ -298,7 +298,7 @@ def _all_in_group_or_subgroup(setpoints: np.ndarray) -> bool:
     return aigos
 
 
-def _all_steps_multiples_of_min_step(rows: List[np.ndarray]) -> bool:
+def _all_steps_multiples_of_min_step(rows: Sequence[np.ndarray]) -> bool:
     """
     Are all steps integer multiples of the smallest step?
     This is used in determining whether the setpoints correspond
@@ -311,7 +311,7 @@ def _all_steps_multiples_of_min_step(rows: List[np.ndarray]) -> bool:
         The answer to the question
     """
 
-    steps = []
+    steps: List[np.ndarray] = []
     for row in rows:
         # TODO: What is an appropriate precision?
         steps += list(np.unique(np.diff(row).round(decimals=15)))
@@ -325,7 +325,7 @@ def _all_steps_multiples_of_min_step(rows: List[np.ndarray]) -> bool:
     return asmoms
 
 
-def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
+def _plottype_from_setpoints(setpoints: Sequence[Sequence[Sequence[Any]]]) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
     to display the data.
@@ -369,3 +369,5 @@ def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     # this is the check that we are on an equidistant grid
     if y_check and x_check:
         return 'equidistant'
+
+    raise RuntimeError("Could not find plottype")

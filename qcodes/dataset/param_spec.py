@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, cast, Sequence
 from qcodes.instrument.parameter import _BaseParameter
 
 
@@ -10,8 +10,8 @@ class ParamSpec():
                  paramtype: str,
                  label: str=None,
                  unit: str=None,
-                 inferred_from: List[Union['ParamSpec', str]]=None,
-                 depends_on: List[Union['ParamSpec', str]]=None,
+                 inferred_from: Sequence[Union['ParamSpec', str]]=None,
+                 depends_on: Sequence[Union['ParamSpec', str]]=None,
                  **metadata) -> None:
         """
         Args:
@@ -31,8 +31,10 @@ class ParamSpec():
             temp_inf_from = []
             for inff in inferred_from:
                 if hasattr(inff, 'name'):
+                    inff = cast('ParamSpec', inff)
                     temp_inf_from.append(inff.name)
                 else:
+                    inff = cast(str, inff)
                     temp_inf_from.append(inff)
             self.inferred_from = ', '.join(temp_inf_from)
         else:
@@ -42,8 +44,10 @@ class ParamSpec():
             temp_dep_on = []
             for dpn in depends_on:
                 if hasattr(dpn, 'name'):
+                    dpn = cast('ParamSpec', dpn)
                     temp_dep_on.append(dpn.name)
                 else:
+                    dpn = cast(str, dpn)
                     temp_dep_on.append(dpn)
             self.depends_on = ', '.join(temp_dep_on)
         else:

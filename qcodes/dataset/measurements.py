@@ -2,7 +2,7 @@ import json
 import logging
 from time import monotonic
 from collections import OrderedDict
-from typing import Callable, Union, Dict, Tuple, List
+from typing import Callable, Union, Dict, Tuple, List, Sequence
 from inspect import signature
 import numpy as np
 
@@ -31,7 +31,7 @@ class DataSaver:
         self._dataset = dataset
         self.write_period = write_period
         self._known_parameters = known_parameters
-        self._results = []  # will be filled by addResult
+        self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
 
     def addResult(self,
@@ -113,7 +113,7 @@ class Runner:
         # be read from some config file
         self.write_period = write_period if write_period is not None else 5
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
         for func, args in self.enteractions.items():
@@ -172,11 +172,11 @@ class Measurement:
             station: The QCoDeS station to snapshot
         """
         self.exp = exp
-        self.exitactions = OrderedDict()  # key: function, value: args
-        self.enteractions = OrderedDict()  # key: function, value: args
+        self.exitactions: Dict[Callable, Sequence] = OrderedDict()
+        self.enteractions: Dict[Callable, Sequence] = OrderedDict()
         self.experiment = exp
         self.station = station
-        self.parameters = OrderedDict()  # key: name, value: ParamSpec
+        self.parameters: Dict[str, ParamSpec] = OrderedDict()
 
     def registerParameter(
             self, parameter: Parameter,
