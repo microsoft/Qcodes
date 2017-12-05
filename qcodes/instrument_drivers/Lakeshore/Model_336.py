@@ -92,7 +92,7 @@ class Model_336(VisaInstrument):
                             unit='K')
 
         # plug some senisble values in here
-        self.t_limit = (1, 2)
+        self.t_limit = (10, 20)
 
         # Allow access to channels either by referring to the channel name
         # or through a channel list.
