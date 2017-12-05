@@ -1,8 +1,7 @@
 from functools import partial
-from typing import Dict
+from typing import Dict, Union
 import logging
 
-from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
@@ -84,35 +83,34 @@ class MercurySlavePS(InstrumentChannel):
                            get_parser=partial(_signal_parser, 1))
 
         self.add_parameter('field_target',
-                            label='Target field',
-                            get_cmd=partial(self._param_getter, 'SIG:FSET'),
-                            unit='T',
-                            get_parser=partial(_signal_parser, 1))
+                           label='Target field',
+                           get_cmd=partial(self._param_getter, 'SIG:FSET'),
+                           unit='T',
+                           get_parser=partial(_signal_parser, 1))
 
         self.add_parameter('current_ramp_rate',
-                            label='Ramp rate (current)',
-                            unit='A/s',
-                            get_cmd=partial(self._param_getter, 'SIG:RCST'),
-                            get_parser=partial(_signal_parser, 1/60))
+                           label='Ramp rate (current)',
+                           unit='A/s',
+                           get_cmd=partial(self._param_getter, 'SIG:RCST'),
+                           get_parser=partial(_signal_parser, 1/60))
 
         self.add_parameter('field_ramp_rate',
-                            label='Ramp rate (field)',
-                            unit='T/s',
-                            get_cmd=partial(self._param_getter, 'SIG:RFST'),
-                            get_parser=partial(_signal_parser, 1/60))
+                           label='Ramp rate (field)',
+                           unit='T/s',
+                           get_cmd=partial(self._param_getter, 'SIG:RFST'),
+                           get_parser=partial(_signal_parser, 1/60))
 
         self.add_parameter('field',
-                            label='Field strength',
-                            unit='T',
-                            get_cmd=partial(self._param_getter, 'SIG:FLD'),
-                            get_parser=partial(_signal_parser, 1))
+                           label='Field strength',
+                           unit='T',
+                           get_cmd=partial(self._param_getter, 'SIG:FLD'),
+                           get_parser=partial(_signal_parser, 1))
 
         self.add_parameter('field_persistent',
-                            label='Persistent field strength',
-                            unit='T',
-                            get_cmd=partial(self._param_getter, 'SIG:PFLD'),
-                            get_parser=partial(_signal_parser, 1))
-
+                           label='Persistent field strength',
+                           unit='T',
+                           get_cmd=partial(self._param_getter, 'SIG:PFLD'),
+                           get_parser=partial(_signal_parser, 1))
 
     def _param_getter(self, get_cmd: str) -> str:
         """
@@ -130,6 +128,17 @@ class MercurySlavePS(InstrumentChannel):
         resp = self._parent.ask(dressed_cmd)
 
         return resp
+
+    def _param_setter(self, set_cmd: str, value: Union[float, str]) -> None:
+        """
+        General setter function for parameters
+
+        Args:
+            set_cmd: raw string for the command, e.g. 'SIG:FSET'
+        """
+        pass
+        # TODO: override write in the parent class and fill this out
+        # and introduce a set_parser to account for non-SI units
 
 
 class MercuryiPS(VisaInstrument):
