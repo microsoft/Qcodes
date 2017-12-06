@@ -282,7 +282,10 @@ class GNUPlotFormat(Formatter):
 
             written_files.add(fn)
 
-            file_exists = fn in existing_files
+            # fn may or may not be an absolute path depending on the location manager
+            # used however, io_manager always returns relative paths so make sure both are
+            # relative by calling to_location
+            file_exists = io_manager.to_location(fn) in existing_files
             save_range = self.match_save_range(group, file_exists,
                                                only_complete=only_complete)
 
