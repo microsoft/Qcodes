@@ -316,7 +316,8 @@ class GNUPlotFormat(Formatter):
 
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
-                log.debug('Wrote to file')
+                log.debug('Wrote to file from '
+                          '{} to {}'.format(save_range[0], save_range[1]+1))
             # now that we've saved the data, mark it as such in the data.
             # we mark the data arrays and the inner setpoint array. Outer
             # setpoint arrays have different dimension (so would need a
