@@ -35,7 +35,7 @@ class FrequencySweepMagPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get(self):
+    def get_raw(self):
        data = self._intrument._get_sweep_data(force_polar = True)
        return abs(data), phase(data)
 
@@ -77,7 +77,7 @@ class FrequencySweep(ArrayParameter):
         self.setpoints = (f,)
         self.shape = (npts,)
 
-    def get(self):
+    def get_raw(self):
        data = self._intrument._get_sweep_data()
        if self.format() in ['Polar', 'Complex',
                             'Smith', 'Inverse Smith']:
