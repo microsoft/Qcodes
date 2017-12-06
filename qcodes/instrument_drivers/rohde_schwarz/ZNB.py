@@ -299,6 +299,9 @@ class ZNBChannel(InstrumentChannel):
         self.write('SENS{}:AVER:STAT ON'.format(self._instrument_channel))
         self.write('SENS{}:AVER:CLE'.format(self._instrument_channel))
 
+        # preserve original state of the znb
+        initial_state = self.status()
+        self.status(1)
         self._parent.cont_meas_off()
         try:
             # if force polar is set, the SDAT data format will be used. Here
@@ -321,6 +324,7 @@ class ZNBChannel(InstrumentChannel):
                     data = data[0::2] + 1j * data[1::2]
         finally:
             self._parent.cont_meas_on()
+            self.status(initial_state)
         return data
 
 class ZNB(VisaInstrument):
