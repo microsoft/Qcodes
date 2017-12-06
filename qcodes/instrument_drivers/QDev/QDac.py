@@ -10,7 +10,6 @@ from functools import partial
 from operator import xor
 from collections import OrderedDict
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -129,13 +128,13 @@ class QDac(VisaInstrument):
             self.add_parameter(name='ch{:02}_sync_delay'.format(i),
                                label='Channel {} sync pulse delay'.format(i),
                                unit='s',
-                               parameter_class=ManualParameter,
+                               get_cmd=None, set_cmd=None,
                                initial_value=0)
 
             self.add_parameter(name='ch{:02}_sync_duration'.format(i),
                                label='Channel {} sync pulse duration'.format(i),
                                unit='s',
-                               parameter_class=ManualParameter,
+                               get_cmd=None, set_cmd=None,
                                initial_value=0.01)
 
         for board in range(6):
@@ -158,7 +157,7 @@ class QDac(VisaInstrument):
 
         self.add_parameter(name='fast_voltage_set',
                            label='fast voltage set',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Bool(),
                            initial_value=False,
                            docstring=""""Toggles if DC voltage set should unset any ramp attached to this channel.

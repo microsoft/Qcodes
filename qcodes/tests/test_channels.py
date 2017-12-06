@@ -3,7 +3,7 @@ import unittest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -142,7 +142,7 @@ class TestChannelsLoop(TestCase):
                            data.testchanneldummy_ChanA_temperature.ndarray)
 
     def test_loop_measure_all_channels(self):
-        p1 = ManualParameter(name='p1', vals=Numbers(-10, 10))
+        p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(self.instrument.channels.temperature)
         data = loop.run()
         self.assertEqual(data.p1_set.ndarray.shape, (21, ))
@@ -151,7 +151,7 @@ class TestChannelsLoop(TestCase):
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
 
     def test_loop_measure_channels_individually(self):
-        p1 = ManualParameter(name='p1', vals=Numbers(-10, 10))
+        p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(self.instrument.channels[0].temperature,
                                                      self.instrument.channels[1].temperature,
                                                      self.instrument.channels[2].temperature,
@@ -164,7 +164,7 @@ class TestChannelsLoop(TestCase):
     @given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
     @settings(max_examples=10)
     def test_loop_measure_channels_by_name(self, values):
-        p1 = ManualParameter(name='p1', vals=Numbers(-10, 10))
+        p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         for i in range(4):
             self.instrument.channels[i].temperature(values[i])
         loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(self.instrument.A.temperature,
