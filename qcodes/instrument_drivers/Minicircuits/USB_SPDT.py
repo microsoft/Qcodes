@@ -1,22 +1,46 @@
-from qcodes.instrument.visa import Instrument
-try:
-    import clr
-except ImportError:
-    raise ImportError("""Module clr not found. Please obtain it by
-                         running 'pip install -i https://pypi.anaconda.org/pythonnet/simple pythonnet' 
-                         in a qcodes environment terminal""")
+from qcodes import Instrument
+from qcodes.utils import validators as vals
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
-class USB_4SPDT(Instrument):
+
+class SwitchChannelUSB(InstrumentChannel):
+    def __init__(self, parent, name, channel_letter):
+        """
+        Args:
+            parent (Instrument): The instrument the channel is a part of
+            name (str): the name of the channel
+            channel_letter (str): channel letter ['a', 'b', 'c' or 'd'])
+        """
+
+        super().__init__(parent, name)
+        self.channel_letter = channel_letter.upper()
+        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        self.channel_number = _chanlist.index(channel_letter)
+
+        self.add_parameter('switch',
+                           label='switch',
+                           set_cmd=self._set_switch,
+                           get_cmd=self._get_switch,
+                           vals=vals.Ints(1, 2)
+                           )
+
+    def _set_switch(self, switch): 
+        self._parent.switch.Set_Switch(self.channel_letter,switch-1)
+
+    def _get_switch(self):
+        status = self._parent.switch.GetSwitchesStatus(self._parent.address)[1]
+        return int("{0:04b}".format(status[-1-self.channel_number]))+1
+
+
+class USB_SPDT(Instrument):
     """
-    This is a qcodes driver USB 4DSPT A18. This driver requires
-    Pythonnet module to be installed in addition usual to the Qcodes environment.
+    Mini-Circuits SPDT RF switch
 
     Args:
-      name (str): What this instrument is called locally.
-      address (int): Not needed if only one USB switch is connected to PC.
-      kwargs (dict): kwargs to be passed to VisaInstrument class.
+            name (str): the name of the instrument
+            address (int, optional):
+            kwargs (dict): kwargs to be passed to Instrument class.
     """
-
     def __init__(self, name, address=None, **kwargs):
         super().__init__(name, **kwargs)
 
@@ -27,9 +51,7 @@ class USB_4SPDT(Instrument):
                                 the dll file is not blocked by Windows. To unblock right-click 
                                 the dll to open proporties and check the 'unblock' checkmark 
                                 in the bottom. Check that your python installation is 64bit.""")
-
         import mcl_RF_Switch_Controller64
-
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
 
         if address == None:
@@ -38,49 +60,29 @@ class USB_4SPDT(Instrument):
         else:
             self.switch.ConnectByAddress(address)
             self.address = address
+        self.connect_message()
 
+        channels = ChannelList(self, "Channels", MC_channel,
+                               snapshotable=False)
 
-        ports = ['A','B','C','D']
-        for port in ports:
-            self.add_parameter('Port{}'.format(port),
-                               label='Port {}'.format(port),
-                               unit='',
-                               get_cmd=getattr(self,'get_Port{}'.format(port)),
-                               set_cmd=getattr(self,'set_Port{}'.format(port)),
-                               get_parser=int)
+        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        _max_channel_number = int(self.IDN()['model'][3])
+        _chanlist = _chanlist[0:_max_channel_number]
 
-    def get_PortA(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-1])+1
+        for c in _chanlist:
+            channel = SwitchChannelUSB(self, 'channel_{}'.format(c), c)
+            channels.append(channel)
+            self.add_submodule('channel_{}'.format(c), channel)
+        channels.lock()
+        self.add_submodule('channels', channels)
 
-    def get_PortB(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-2])+1
+    def get_idn(self):
+        fw = self.switch.GetFirmware()
+        MN = self.switch.Read_ModelName()
+        SN = self.switch.Read_SN()
 
-    def get_PortC(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-3])+1
-
-    def get_PortD(self):
-        return int("{0:04b}".format(self.switch.GetSwitchesStatus(self.address)[1])[-4])+1
-
-    def set_PortA(self,val):
-        if val in [1,2]:
-            self.switch.Set_Switch("A",val-1)
-        else:
-            raise ValueError('Invalid input. Switch port can only be set in positions 1 or 2.')
-
-    def set_PortB(self,val):
-        if val in [1,2]:
-            self.switch.Set_Switch("B",val-1)
-        else:
-            raise ValueError('Invalid input. Switch port can only be set in positions 1 or 2.')
-
-    def set_PortC(self,val):
-        if val in [1,2]:
-            self.switch.Set_Switch("C",val-1)
-        else:
-            raise ValueError('Invalid input. Switch port can only be set in positions 1 or 2.')
-
-    def set_PortD(self,val):
-        if val in [1,2]:
-            self.switch.Set_Switch("D",val-1)
-        else:
-            raise ValueError('Invalid input. Switch port can only be set in positions 1 or 2.')
+        id_dict = {'firmware': fw,
+                   'model': MN[3:],
+                   'serial': SN[3:],
+                   'vendor': 'Mini-Circuits'}
+        return id_dict
