@@ -12,7 +12,7 @@ import numpy as np
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from .parameter import Parameter
+from .parameter import Parameter, _BaseParameter
 from .function import Function
 
 log = logging.getLogger(__name__)
@@ -47,9 +47,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                  metadata: Optional[Dict]=None, **kwargs) -> None:
         self.name = str(name)
 
-        self.parameters = {}
-        self.functions = {}
-        self.submodules = {}
+        self.parameters = {} # type: Dict[str, _BaseParameter]
+        self.functions = {} # type: Dict[str, Function]
+        self.submodules = {} # type: Dict[str, Metadatable]
         super().__init__(**kwargs)
 
     def add_parameter(self, name: str,
