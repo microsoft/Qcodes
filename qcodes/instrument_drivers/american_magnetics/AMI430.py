@@ -6,9 +6,10 @@ from functools import partial
 import numpy as np
 
 from qcodes import Instrument, IPInstrument
-from qcodes.instrument.mockers.ami430 import MockAMI430
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Numbers, Anything
+
+log = logging.getLogger(__name__)
 
 
 class AMI430(IPInstrument):
@@ -28,32 +29,33 @@ class AMI430(IPInstrument):
         current_ramp_limit (float): current ramp limit in ampere per second
         persistent_switch (bool): whether this magnet has a persistent switch
     """
-
-    mocker_class = MockAMI430
     default_current_ramp_limit = 0.06  # [A/s]
 
     def __init__(self, name, address=None, port=None, persistent_switch=True,
-                 reset=False, current_ramp_limit=None, terminator='\r\n', testing=False, **kwargs):
-
-        if None in [address, port] and not testing:
-            raise ValueError("The port and address values need to be given if not in testing mode")
+                 reset=False, current_ramp_limit=None,
+                 terminator='\r\n', **kwargs):
 
         if current_ramp_limit is None:
             current_ramp_limit = AMI430.default_current_ramp_limit
 
         elif current_ramp_limit > AMI430.default_current_ramp_limit:
-            warning_message = "Increasing maximum ramp rate: we have a default current ramp rate limit of {dcrl} " \
-                              "A/s. We do not want to ramp faster then a set maximum so as to avoid quenching " \
-                              "the magnet. A value of {dcrl} A/s seems like a safe, conservative value for any " \
-                              "magnet. Change this value at your own responsibility after consulting the specs of " \
-                              "your particular magnet".format(dcrl=AMI430.default_current_ramp_limit)
+            warning_message = ("Increasing maximum ramp rate: we have a "
+                               "default current ramp rate limit of "
+                               "{}".format(AMI430.default_current_ramp_limit) +
+                               "A/s. We do not want to ramp faster than a set "
+                               "maximum so as to avoid quenching "
+                               "the magnet. A value of "
+                               "{}".format(AMI430.default_current_ramp_limit) +
+                               " A/s seems like a safe, conservative value for"
+                               " any magnet. Change this value at your own "
+                               "responsibility after consulting the specs of "
+                               "your particular magnet")
             raise Warning(warning_message)
 
-        super().__init__(name, address, port, terminator=terminator, testing=testing,
+        super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
 
         self._parent_instrument = None
-        # If we are in testing mode there is no need to have pauses built-in when setting field values.
 
         # Make sure the ramp rate time unit is seconds
         if int(self.ask('RAMP:RATE:UNITS?')) == 1:
@@ -104,6 +106,7 @@ class AMI430(IPInstrument):
             self.add_parameter('switch_heater_enabled',
                                get_cmd='PS?',
                                set_cmd=self._set_persistent_switch,
+                               get_parser=int,
                                val_mapping={False: 0, True: 1})
 
             self.add_parameter('in_persistent_mode',
@@ -119,6 +122,7 @@ class AMI430(IPInstrument):
 
         self.add_parameter('ramping_state',
                            get_cmd='STATE?',
+                           get_parser=int,
                            val_mapping={
                                'ramping': 1,
                                'holding': 2,
@@ -144,8 +148,14 @@ class AMI430(IPInstrument):
         self.connect_message()
 
     def _sleep(self, t):
-        """Sleep for a number of seconds t. If we are in testing mode, commit this"""
-        if self._testing:
+        """
+        Sleep for a number of seconds t. If we are or using
+        the PyVISA 'sim' backend, omit this
+        """
+
+        simmode = getattr(self, 'visabackend', False) == 'sim'
+
+        if simmode:
             return
         else:
             time.sleep(t)
@@ -298,7 +308,8 @@ class AMI430(IPInstrument):
 
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y, instrument_z, field_limit, **kwargs):
+    def __init__(self, name, instrument_x, instrument_y,
+                 instrument_z, field_limit, **kwargs):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
@@ -496,6 +507,7 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
+        log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
         if not self._verify_safe_setpoint(values):
@@ -512,17 +524,22 @@ class AMI430_3D(Instrument):
 
         # Now that we know we can proceed, call the individual instruments
 
+        log.debug("Field values OK, proceeding")
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
-            # This will ensure that we are always in a save region as far as the quenching of the magnets is concerned
+            # This will ensure that we are always in a safe region as
+            # far as the quenching of the magnets is concerned
             for name, value in zip(["x", "y", "z"], values):
 
                 instrument = getattr(self, "_instrument_{}".format(name))
                 current_actual = instrument.field()
-                # If the new set point is practically equal to the current one then do nothing
+
+                # If the new set point is practically equal to the
+                # current one then do nothing
                 if np.isclose(value, current_actual, rtol=0, atol=1e-8):
                     continue
-                # evaluate if the new set point is lesser or greater then the current value
+                # evaluate if the new set point is smaller or larger
+                # than the current value
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
@@ -553,8 +570,12 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return_value = [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
-        # guaranty that the order in which the values are returned is the same as the original intention
+
+        # Do not do "return list(d.values())", because then there is
+        # no guaranty that the order in which the values are returned
+        # is the same as the original intention
+        return_value = [d[name] for name in names]
+
         if len(names) == 1:
             return_value = return_value[0]
 
@@ -615,12 +636,3 @@ class AMI430_3D(Instrument):
     def _set_rho(self, rho):
         self._set_point.set_component(rho=rho)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def get_mocker_messages(self):
-        messages = []
-        for name in ["x", "y", "z"]:
-            instrument = getattr(self, "_instrument_{}".format(name))
-            if instrument.is_testing():
-                messages += instrument.get_mock_messages()
-
-        return messages

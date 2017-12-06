@@ -3,6 +3,7 @@ from traceback import format_exc
 from operator import attrgetter
 import logging
 
+log = logging.getLogger(__name__)
 
 class Formatter:
     """
@@ -105,8 +106,8 @@ class Formatter:
                 try:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
-                    logging.warning('error reading file ' + fn)
-                    logging.warning(format_exc())
+                    log.warning('error reading file ' + fn)
+                    log.warning(format_exc())
 
     def write_metadata(self, data_set, io_manager, location, read_first=True):
         """
@@ -211,6 +212,14 @@ class Formatter:
         last_saved_index = inner_setpoint.last_saved_index
 
         if last_saved_index is None or not file_exists:
+            if last_saved_index is None and file_exists:
+                log.warning("Inconsistent file information. "
+                            "last_save_index is None but file exists. "
+                            "Will overwrite")
+            if last_saved_index is not None and not file_exists:
+                log.warning("Inconsistent file information. "
+                            "last_save_index is not None but file does not "
+                            "exist. Will rewrite from scratch")
             return self._match_save_range_whole_file(
                 full_dim_data, only_complete)
 
