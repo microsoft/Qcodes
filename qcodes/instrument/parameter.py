@@ -15,11 +15,13 @@ This file defines four classes of parameters:
 
 - ``Parameter`` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
+
     1. As an ``Instrument`` parameter that sends/receives commands. Provides a
        standardized interface to construct strings to pass to the
        instrument's ``write`` and ``ask`` methods
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
+
     Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
     settable parameter as the swept variable in a ``Loop``.
     The get/set functionality can be modified.
@@ -627,12 +629,15 @@ class Parameter(_BaseParameter):
 
     By default only gettable, returning its last value.
     This behaviour can be modified in two ways:
+
     1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+
        a. callable, with zero args for get_cmd, one arg for set_cmd
        b. VISA command string
        c. None, in which case it retrieves its last value for ``get_cmd``,
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
+
     2. Creating a subclass with an explicit ``get``/``set`` method. This
        enables more advanced functionality.
 
