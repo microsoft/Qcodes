@@ -3,3 +3,4 @@ sphinx_rtd_theme
 sphinxcontrib-jsonschema
 nbconvert
 ipython
+sphinx-autodoc-typehints
