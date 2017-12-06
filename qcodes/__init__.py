@@ -72,10 +72,11 @@ from qcodes.dataset.experiment_container import new_experiment, load_experiment,
     load_last_experiment, experiments
 from qcodes.dataset.param_spec import ParamSpec
 # TODO: do we want this?
-import qcodes.dataset.sqlite_base
+from qcodes.dataset.sqlite_base import connect as _connect
+from qcodes.dataset.sqlite_base import init_db as _init_db
 
-_c = qcodes.dataset.sqlite_base.connect(qcodes.config["core"]["db_location"], qcodes.config["core"]["db_debug"])
+_c = _connect(config["core"]["db_location"], config["core"]["db_debug"])
 # init is actually idempotent so it's safe to always call!
-qcodes.dataset.sqlite_base.init_db(_c)
+_init_db(_c)
 _c.close()
 del _c
