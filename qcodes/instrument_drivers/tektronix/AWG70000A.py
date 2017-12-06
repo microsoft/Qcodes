@@ -10,6 +10,39 @@ from typing import List
 
 from qcodes import Instrument, VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
+from qcodes.utils.validators import Validator
+
+
+class SRValidator(Validator):
+    """
+    Validator to validate the AWG clock sample rate
+    """
+
+    def __init__(self, awg: 'AWG70000A') -> None:
+        """
+        Args:
+            awg: The parent instrument instance. We need this since sample
+                rate validation depends on many clock settings
+        """
+        self.awg = awg
+        if self.awg.model == '70001A':
+            self._internal_validator = vals.Numbers(1.49e3, 50e9)
+            self._freq_multiplier = 4
+        elif self.awg.model == '70002A':
+            self._internal_validator = vals.Numbers(1.49e3, 25e9)
+            self._freq_multiplier = 2
+        # no other models are possible, since the __init__ of
+        # the AWG70000A raises an error if anything else is given
+
+    def validate(self, value: float, context: str='') -> None:
+        if 'Internal' in self.awg.clock_source():
+            self._internal_validator.validate(value)
+        else:
+            ext_freq = self.awg.clock_external_frequency()
+            # TODO: I'm not sure what the minimal allowed sample rate is
+            # in this case
+            validator = vals.Numbers(1.49e3, self._freq_multiplier*ext_freq)
+            validator.validate(value)
 
 
 class AWGChannel(InstrumentChannel):
@@ -181,6 +214,14 @@ class AWG70000A(VisaInstrument):
 
         super().__init__(name, address, timeout=timeout, **kwargs)
 
+        # The 'model' value begins with 'AWG'
+        self.model = self.IDN()['model'][3:]
+
+        if self.model not in ['70001A', '70002A']:
+            raise ValueError('Unknown model type: {}. Are you using '
+                             'the right driver for your instrument?'
+                             ''.format(self.model))
+
         self.add_parameter('current_directory',
                            label='Current file system directory',
                            set_cmd='MMEMory:CDIRectory "{}"',
@@ -192,6 +233,34 @@ class AWG70000A(VisaInstrument):
                            set_cmd='INSTrument:MODE {}',
                            get_cmd='INSTrument:MODE?',
                            vals=vals.Enum('AWG', 'FGEN'))
+
+        ##################################################
+        # Clock parameters
+
+        self.add_parameter('sample_rate',
+                           label='Clock sample rate',
+                           set_cmd='CLOCk:SRATe {}',
+                           get_cmd='CLOCk:SRATe?',
+                           unit='Sa/s',
+                           get_parser=float,
+                           vals=SRValidator(self))
+
+        self.add_parameter('clock_source',
+                           label='Clock source',
+                           set_cmd='CLOCk:SOURce {}',
+                           get_cmd='CLOCk:SOURce?',
+                           val_mapping={'Internal': 'INT',
+                                        'Internal, 10 MHZ ref.': 'EFIX',
+                                        'Internal, variable ref.': 'EVAR',
+                                        'External': 'EXT'})
+
+        self.add_parameter('clock_external_frequency',
+                           label='External clock frequency',
+                           set_cmd='CLOCk:ECLock:FREQuency {}',
+                           get_cmd='CLOCk:ECLock:FREQuency?',
+                           get_parser=float,
+                           unit='Hz',
+                           vals=vals.Numbers(6.25e9, 12.5e9))
 
         for ch_num in range(1, num_channels+1):
             ch_name = 'ch{}'.format(ch_num)
