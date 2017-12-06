@@ -97,8 +97,10 @@ class MercurySlavePS(InstrumentChannel):
         self.add_parameter('field_ramp_rate',
                            label='Ramp rate (field)',
                            unit='T/s',
+                           set_cmd=partial(self._param_setter, 'SIG:RFST'),
                            get_cmd=partial(self._param_getter, 'SIG:RFST'),
-                           get_parser=partial(_signal_parser, 1/60))
+                           get_parser=partial(_signal_parser, 1/60),
+                           set_parser=lambda x: x*60)
 
         self.add_parameter('field',
                            label='Field strength',
@@ -111,6 +113,15 @@ class MercurySlavePS(InstrumentChannel):
                            unit='T',
                            get_cmd=partial(self._param_getter, 'SIG:PFLD'),
                            get_parser=partial(_signal_parser, 1))
+
+        self.add_parameter('ATOB',
+                           label='Current to field ratio',
+                           unit='A/T',
+                           get_cmd=partial(self._param_getter, 'ATOB'),
+                           get_parser=partial(_signal_parser, 1),
+                           set_cmd=partial(self._param_setter, 'ATOB'))
+
+
 
     def _param_getter(self, get_cmd: str) -> str:
         """
@@ -136,9 +147,14 @@ class MercurySlavePS(InstrumentChannel):
         Args:
             set_cmd: raw string for the command, e.g. 'SIG:FSET'
         """
-        pass
-        # TODO: override write in the parent class and fill this out
-        # and introduce a set_parser to account for non-SI units
+        dressed_cmd = '{}:{}:{}:{}:{}:{}'.format('SET', 'DEV', self.uid, 'PSU',
+                                                 set_cmd, value)
+        # the instrument always very verbosely responds
+        # 'resp' holds the value reported back by the instrument
+        resp = self._parent.ask(dressed_cmd)
+
+        # TODO: we could use the opportunity to check that we did set
+        # the intended value
 
 
 class MercuryiPS(VisaInstrument):
@@ -157,8 +173,8 @@ class MercuryiPS(VisaInstrument):
 
         # ensure that a socket is used
         if not address.endswith('SOCKET'):
-             ValueError('Incorrect VISA resource name. Must be of type '
-                             'TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET.')
+            ValueError('Incorrect VISA resource name. Must be of type '
+                       'TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET.')
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -204,6 +220,11 @@ class MercuryiPS(VisaInstrument):
         if 'INVALID' in resp:
             log.error('Invalid command. Got response: {}'.format(resp))
             base_resp = resp
+        # if the command was not invalid, it can either be a SET or a READ
+        # SET:
+        elif resp.endswith('VALID'):
+            base_resp = resp.split(':')[-2]
+        # READ:
         else:
             # For "normal" commands only (e.g. '*IDN?' is excepted):
             # the response of a valid command echoes back said command,
@@ -211,4 +232,4 @@ class MercuryiPS(VisaInstrument):
             base_cmd = cmd.replace('READ:', '')
             base_resp = resp.replace('STAT:{}'.format(base_cmd), '')
 
-            return base_resp
+        return base_resp
