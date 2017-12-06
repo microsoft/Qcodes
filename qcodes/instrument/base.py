@@ -3,7 +3,7 @@ import logging
 import time
 import warnings
 import weakref
-from typing import Sequence
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List
 
 import numpy as np
 
@@ -13,16 +13,17 @@ from qcodes.utils.validators import Anything
 from .parameter import Parameter
 from .function import Function
 
+log = logging.getLogger(__name__)
+
 
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
     Base class for all QCodes instruments and instrument channels
 
     Args:
-        name (str): an identifier for this instrument, particularly for
+        name: an identifier for this instrument, particularly for
             attaching it to a Station.
-
-        metadata (Optional[Dict]): additional static metadata to add to this
+        metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
 
@@ -40,38 +41,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             Usually populated via ``add_submodule``
     """
 
-    def __init__(self, name, testing=False, **kwargs):
+    def __init__(self, name: str,
+                 metadata: Optional[Dict]=None, **kwargs) -> None:
         self.name = str(name)
-        self._testing = testing
-
-        if testing:
-            if hasattr(type(self), "mocker_class"):
-                mocker_class = type(self).mocker_class
-                self.mocker = mocker_class(name)
-            else:
-                raise ValueError("Testing turned on but no mocker class defined")
 
         self.parameters = {}
         self.functions = {}
         self.submodules = {}
         super().__init__(**kwargs)
 
-    def is_testing(self):
-        """Return True if we are testing"""
-        return self._testing
-
-    def get_mock_messages(self):
-        """
-        For testing purposes we might want to get log messages from the mocker.
-
-        Returns:
-            mocker_messages: list, str
-        """
-        if not self._testing:
-            raise ValueError("Cannot get mock messages if not in testing mode")
-        return self.mocker.get_log_messages()
-
-    def add_parameter(self, name, parameter_class=Parameter, **kwargs):
+    def add_parameter(self, name: str,
+                      parameter_class: type=Parameter, **kwargs) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -82,11 +62,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         anything the user can set and/or get
 
         Args:
-            name (str): How the parameter will be stored within
+            name: How the parameter will be stored within
                 ``instrument.parameters`` and also how you address it using the
                 shortcut methods: ``instrument.set(param_name, value)`` etc.
 
-            parameter_class (Optional[type]): You can construct the parameter
+            parameter_class: You can construct the parameter
                 out of any class. Default ``StandardParameter``.
 
             **kwargs: constructor arguments for ``parameter_class``.
@@ -100,7 +80,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
-    def add_function(self, name, **kwargs):
+    def add_function(self, name: str, **kwargs) -> None:
         """
         Bind one Function to this instrument.
 
@@ -129,29 +109,31 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name, submodule):
+    def add_submodule(self, name: str, submodule: Metadatable) -> None:
         """
         Bind one submodule to this instrument.
 
         Instrument subclasses can call this repeatedly in their ``__init__``
         method for every submodule of the instrument.
 
-        Submodules can effectively be considered as instruments within the main
-        instrument, and should at minimum be snapshottable. For example, they can
-        be used to either store logical groupings of parameters, which may or may
-        not be repeated, or channel lists.
+        Submodules can effectively be considered as instruments within
+        the main instrument, and should at minimum be
+        snapshottable. For example, they can be used to either store
+        logical groupings of parameters, which may or may not be
+        repeated, or channel lists.
 
         Args:
-            name (str): how the submodule will be stored within ``instrument.submodules``
-            and also how it can be addressed.
+            name: how the submodule will be stored within
+                ``instrument.submodules`` and also how it can be
+            addressed.
 
-            submodule (Metadatable): The submodule to be stored.
+            submodule: The submodule to be stored.
 
         Raises:
             KeyError: if this instrument already contains a submodule with this
                 name.
-            TypeError: if the submodule that we are trying to add is not an instance
-                of an Metadatable object.
+            TypeError: if the submodule that we are trying to add is
+                not an instance of an Metadatable object.
         """
         if name in self.submodules:
             raise KeyError('Duplicate submodule name {}'.format(name))
@@ -160,12 +142,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.submodules[name] = submodule
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None):
+                      params_to_skip_update: Sequence[str]=None) -> Dict:
         """
         State of the instrument as a JSON-compatible dict.
 
         Args:
-            update (bool): If True, update the state by querying the
+            update: If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
@@ -177,8 +159,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
 
         snap = {
-            "functions": {name: func.snapshot(update=update) for name, func in self.functions.items()},
-            "submodules": {name: subm.snapshot(update=update) for name, subm in self.submodules.items()},
+            "functions": {name: func.snapshot(update=update)
+                          for name, func in self.functions.items()},
+            "submodules": {name: subm.snapshot(update=update)
+                           for name, subm in self.submodules.items()},
             "__class__": full_class(self)
         }
 
@@ -190,25 +174,28 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             try:
                 snap['parameters'][name] = param.snapshot(update=update)
             except:
-                logging.info("Snapshot: Could not update parameter: {}".format(name))
+                log.debug("Snapshot: Could not update parameter:"
+                          "{}".format(name))
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
         return snap
 
-    def print_readable_snapshot(self, update=False, max_chars=80):
+    def print_readable_snapshot(self, update: bool=False,
+                                max_chars: int=80) -> None:
         """
         Prints a readable version of the snapshot.
         The readable snapshot includes the name, value and unit of each
         parameter.
-        A convenience function to quickly get an overview of the status of an instrument.
+        A convenience function to quickly get an overview of the
+        status of an instrument.
 
         Args:
-            update (bool)  : If True, update the state by querying the
+            update: If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
                 This argument gets passed to the snapshot function.
-            max_chars (int) : the maximum number of characters per line. The
+            max_chars: the maximum number of characters per line. The
                 readable snapshot will be cropped if this value is exceeded.
                 Defaults to 80 to be consistent with default terminal width.
         """
@@ -266,64 +253,66 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     #
     delegate_attr_dicts = ['parameters', 'functions', 'submodules']
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Union[Callable, Parameter]:
         """Delegate instrument['name'] to parameter or function 'name'."""
         try:
             return self.parameters[key]
         except KeyError:
             return self.functions[key]
 
-    def set(self, param_name, value):
+    def set(self, param_name: str, value: Any) -> None:
         """
         Shortcut for setting a parameter from its name and new value.
 
         Args:
-            param_name (str): The name of a parameter of this instrument.
-            value (any): The new value to set.
+            param_name: The name of a parameter of this instrument.
+            value: The new value to set.
         """
         self.parameters[param_name].set(value)
 
-    def get(self, param_name):
+    def get(self, param_name: str) -> Any:
         """
         Shortcut for getting a parameter from its name.
 
         Args:
-            param_name (str): The name of a parameter of this instrument.
+            param_name: The name of a parameter of this instrument.
 
         Returns:
-            any: The current value of the parameter.
+            The current value of the parameter.
         """
         return self.parameters[param_name].get()
 
-    def call(self, func_name, *args):
+    def call(self, func_name: str, *args) -> Any:
         """
         Shortcut for calling a function from its name.
 
         Args:
-            func_name (str): The name of a function of this instrument.
+            func_name: The name of a function of this instrument.
             *args: any arguments to the function.
 
         Returns:
-            any: The return value of the function.
+            The return value of the function.
         """
         return self.functions[func_name].call(*args)
 
     def __getstate__(self):
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'Pickling %s. qcodes Instruments should not be pickled. Likely this means you '
+            'Pickling {}. qcodes Instruments should not.'.format(self.name) +
+            ' be pickled. Likely this means you '
             'were trying to use a local instrument (defined with '
             'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.' % self.name)
+            'only be used in Loops with background=False.')
 
-    def validate_status(self, verbose=False):
+    def validate_status(self, verbose: bool=False) -> None:
         """ Validate the values of all gettable parameters
 
         The validation is done for all parameters that have both a get and
         set method.
 
         Arguments:
-            verbose (bool): If True, then information about the parameters that are being check is printed.
+            verbose: If True, then information about the
+                parameters that are being check is printed.
 
         """
         for k, p in self.parameters.items():
@@ -340,10 +329,9 @@ class Instrument(InstrumentBase):
     Base class for all QCodes instruments.
 
     Args:
-        name (str): an identifier for this instrument, particularly for
+        name: an identifier for this instrument, particularly for
             attaching it to a Station.
-
-        metadata (Optional[Dict]): additional static metadata to add to this
+        metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
 
@@ -366,12 +354,13 @@ class Instrument(InstrumentBase):
 
     _all_instruments = {}
 
-    def __init__(self, name, testing=False, **kwargs):
+    def __init__(self, name: str,
+                 metadata: Optional[Dict]=None, **kwargs) -> None:
         self._t0 = time.time()
         if kwargs.pop('server_name', False):
             warnings.warn("server_name argument not supported any more",
                           stacklevel=0)
-        super().__init__(name, testing=testing, **kwargs)
+        super().__init__(name, **kwargs)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
@@ -380,7 +369,7 @@ class Instrument(InstrumentBase):
 
         self.record_instance(self)
 
-    def get_idn(self):
+    def get_idn(self) -> Dict:
         """
         Parse a standard VISA '\*IDN?' response into an ID dict.
 
@@ -411,7 +400,8 @@ class Instrument(InstrumentBase):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            logging.debug('Error getting or interpreting *IDN?: ' + repr(idstr))
+            log.debug('Error getting or interpreting *IDN?: '
+                      + repr(idstr))
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
@@ -420,14 +410,15 @@ class Instrument(InstrumentBase):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def connect_message(self, idn_param='IDN', begin_time=None):
+    def connect_message(self, idn_param: str='IDN',
+                        begin_time: float=None) -> None:
         """
         Print a standard message on initial connection to an instrument.
 
         Args:
-            idn_param (str): name of parameter that returns ID dict.
+            idn_param: name of parameter that returns ID dict.
                 Default 'IDN'.
-            begin_time (number): time.time() when init started.
+            begin_time: time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't
@@ -456,7 +447,7 @@ class Instrument(InstrumentBase):
         except:
             pass
 
-    def close(self):
+    def close(self) -> None:
         """
         Irreversibly stop this instrument and free its resources.
 
@@ -470,7 +461,7 @@ class Instrument(InstrumentBase):
         self.remove_instance(self)
 
     @classmethod
-    def close_all(cls):
+    def close_all(cls) -> None:
         """
         Try to close all instruments registered in
         `_all_instruments` This is handy for use with atexit to
@@ -488,7 +479,7 @@ class Instrument(InstrumentBase):
                 pass
 
     @classmethod
-    def record_instance(cls, instance):
+    def record_instance(cls, instance: 'Instrument') -> None:
         """
         Record (a weak ref to) an instance in a class's instance list.
 
@@ -496,7 +487,7 @@ class Instrument(InstrumentBase):
         that there are no other instruments with the same name.
 
         Args:
-            instance (Instrument): Instance to record
+            instance: Instance to record
 
         Raises:
             KeyError: if another instance with the same name is already present
@@ -519,7 +510,7 @@ class Instrument(InstrumentBase):
         cls._instances.append(wr)
 
     @classmethod
-    def instances(cls):
+    def instances(cls) -> List['Instrument']:
         """
         Get all currently defined instances of this instrument class.
 
@@ -527,7 +518,7 @@ class Instrument(InstrumentBase):
         and it's also used by the test system to find objects to test against.
 
         Returns:
-            List[Instrument]]
+            A list of instances
         """
         if getattr(cls, '_type', None) is not cls:
             # only instances of a superclass - we want instances of this
@@ -536,12 +527,12 @@ class Instrument(InstrumentBase):
         return [wr() for wr in getattr(cls, '_instances', []) if wr()]
 
     @classmethod
-    def remove_instance(cls, instance):
+    def remove_instance(cls, instance: 'Instrument') -> None:
         """
         Remove a particular instance from the record.
 
         Args:
-            instance (Union[Instrument])
+            The instance to remove
         """
         wr = weakref.ref(instance)
         if wr in cls._instances:
@@ -555,14 +546,14 @@ class Instrument(InstrumentBase):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name, instrument_class=None):
+    def find_instrument(cls, name: str,
+                        instrument_class: Optional[type]=None) -> 'Instrument':
         """
         Find an existing instrument by name.
 
         Args:
-            name (str)
-            instrument_class (Optional[class]): The type of instrument
-                you are looking for.
+            name: name of the instrument
+            instrument_class: The type of instrument you are looking for.
 
         Returns:
             Union[Instrument]
@@ -591,7 +582,7 @@ class Instrument(InstrumentBase):
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
 
-    def write(self, cmd):
+    def write(self, cmd: str) -> None:
         """
         Write a command string with NO response to the hardware.
 
@@ -600,22 +591,20 @@ class Instrument(InstrumentBase):
         hardware communication should instead override ``write_raw``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
 
         Raises:
             Exception: wraps any underlying exception with extra context,
                 including the command and the instrument.
         """
         try:
-            if self._testing:
-                self.mocker.write(cmd)
-            else:
-                self.write_raw(cmd)
+            self.write_raw(cmd)
         except Exception as e:
-            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            inst = repr(self)
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + inst,)
             raise e
 
-    def write_raw(self, cmd):
+    def write_raw(self, cmd: str) -> None:
         """
         Low level method to write a command string to the hardware.
 
@@ -624,13 +613,13 @@ class Instrument(InstrumentBase):
         override ``write``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
         """
         raise NotImplementedError(
             'Instrument {} has not defined a write method'.format(
                 type(self).__name__))
 
-    def ask(self, cmd):
+    def ask(self, cmd: str) -> str:
         """
         Write a command string to the hardware and return a response.
 
@@ -639,7 +628,7 @@ class Instrument(InstrumentBase):
         hardware communication should instead override ``ask_raw``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
 
         Returns:
             response (str, normally)
@@ -649,18 +638,16 @@ class Instrument(InstrumentBase):
                 including the command and the instrument.
         """
         try:
-            if self._testing:
-                answer = self.mocker.ask(cmd)
-            else:
-                answer = self.ask_raw(cmd)
+            answer = self.ask_raw(cmd)
 
             return answer
 
         except Exception as e:
-            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            inst = repr(self)
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + inst,)
             raise e
 
-    def ask_raw(self, cmd):
+    def ask_raw(self, cmd: str) -> None:
         """
         Low level method to write to the hardware and return a response.
 
@@ -669,7 +656,7 @@ class Instrument(InstrumentBase):
         override ``ask``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
         """
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
