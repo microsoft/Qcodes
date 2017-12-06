@@ -51,6 +51,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf _auto
 	rm -rf _notebooks
+	rm -rf api/generated
 
 .PHONY: html
 html:
