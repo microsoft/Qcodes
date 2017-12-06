@@ -24,6 +24,9 @@ install:
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade
     - pip install -r docs_requirements.txt
+# Install a new version of Sphinx that correctly handles forward refs once 1.7.0 is out that should
+# be used instead
+    - pip install git+https://github.com/jenshnielsen/sphinx.git@working_forward_ref --upgrade
     - pip install -e .
 
 before_script: # configure a headless display to test plot generation
@@ -38,8 +41,8 @@ script:
       cd ..
       mypy qcodes --ignore-missing-imports
     - |
-      cd docs
-      make html-api
+      cd ../docs
+      make SPHINXOPTS="-W" html-api
     - cd ..
 
 after_success:

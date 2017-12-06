@@ -393,8 +393,10 @@ class DataSet(DelegateAttributes):
             log.debug('Attempting to write')
             self.write()
             self.last_write = time.time()
-        else:
-            log.debug('.store method: This is not the right time to write')
+        # The below could be useful but as it writes at every single
+        # step of the loop its too verbose even at debug
+        # else:
+        #     log.debug('.store method: This is not the right time to write')
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
