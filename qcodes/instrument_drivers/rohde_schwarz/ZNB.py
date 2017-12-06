@@ -59,7 +59,6 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
-
     def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
@@ -342,6 +341,8 @@ class ZNB(VisaInstrument):
     TODO:
     - check initialisation settings and test functions
     """
+    CHANNEL_CLASS = ZNBChannel
+
 
     def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
 
@@ -387,7 +388,7 @@ class ZNB(VisaInstrument):
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
         self.clear_channels()
-        channels = ChannelList(self, "VNAChannels", ZNBChannel,
+        channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
                                snapshotable=True)
         self.add_submodule("channels", channels)
         if init_s_params:
@@ -414,7 +415,7 @@ class ZNB(VisaInstrument):
 
     def add_channel(self, vna_parameter: str):
         n_channels = len(self.channels)
-        channel = ZNBChannel(self, vna_parameter, n_channels + 1)
+        channel = self.CHANNEL_CLASS(self, vna_parameter, n_channels + 1)
         self.channels.append(channel)
         if n_channels == 0:
             self.display_single_window()
