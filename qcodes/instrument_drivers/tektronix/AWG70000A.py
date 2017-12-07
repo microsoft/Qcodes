@@ -409,7 +409,7 @@ class AWG70000A(VisaInstrument):
         if not path:
             path = self.seqxFileFolder
 
-        self.sendWFMXFile(seqx, filename, path)
+        self._sendBinaryFile(seqx, filename, path)
 
     # TODO: refactor and make a _sendBinaryBlob
     def sendWFMXFile(self, wfmx: bytes, filename: str,
@@ -425,23 +425,36 @@ class AWG70000A(VisaInstrument):
             path: The path to the directory where the file should be saved. If
                 omitted, seqxFileFolder will be used.
         """
+        if not path:
+            path = self.wfmxFileFolder
+
+        self._sendBinaryFile(wfmx, filename, path)
+
+    def _sendBinaryFile(self, binfile: bytes, filename: str,
+                        path: str) -> None:
+        """
+        Send a binary file to the AWG's mass memory (disk).
+
+        Args:
+            binfile: The binary file to send.
+            filename: The name of the file on the AWG disk, including the
+                extension.
+            path: The path to the directory where the file should be saved.
+        """
 
         name_str = 'MMEMory:DATA "{}"'.format(filename).encode('ascii')
-        len_file = len(wfmx)
+        len_file = len(binfile)
         len_str = len(str(len_file))  # No. of digits needed to write length
         size_str = (',#{}{}'.format(len_str, len_file)).encode('ascii')
 
-        msg = name_str + size_str + wfmx
+        msg = name_str + size_str + binfile
 
         # IEEE 488.2 limit on a single write is 999,999,999 bytes
         # TODO: If this happens, we should split the file
         if len(msg) > 1e9-1:
             raise ValueError('File too large to transfer')
 
-        if path:
-            self.current_directory(path)
-        else:
-            self.current_directory(self.wfmxFileFolder)
+        self.current_directory(path)
 
         self.visa_handle.write_raw(msg)
 
