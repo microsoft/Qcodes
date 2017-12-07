@@ -1,5 +1,6 @@
 from collections import Sized
 from typing import Optional, List
+import logging
 
 import qcodes
 from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
@@ -13,19 +14,20 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
 from qcodes.dataset.sqlite_base import new_experiment as ne
 
 DB = qcodes.config["core"]["db_location"]
+debug_db = qcodes.config["core"]["db_debug"]
 
-
+log = logging.getLogger(__name__)
 class Experiment(Sized):
     def __init__(self, path_to_db: str) -> None:
         self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db)
+        self.conn = connect(self.path_to_db, debug_db)
         self._debug = False
 
     def _new(self,
              name: str,
              sample_name: str,
              format_string: Optional[str] = "{}-{}-{}"
-             ):
+             ) -> None:
         """
         Actually perform all the side effects needed for
         the creation of a new dataset.
@@ -129,10 +131,11 @@ def experiments()->List[Experiment]:
         All the experiments in the container
 
     """
-    rows = get_experiments(connect(DB))
+    log.info("loading experiments from {}".format(DB))
+    rows = get_experiments(connect(DB, debug_db))
     experiments = []
     for row in rows:
-        experiments.append(load_by_id(row['exp_id']))
+        experiments.append(load_experiment(row['exp_id']))
     return experiments
 
 
@@ -149,6 +152,7 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
+    log.info("creating new experiment in {}".format(DB))
     e = Experiment(DB)
     e._new(name, sample_name, format_string)
     return e
