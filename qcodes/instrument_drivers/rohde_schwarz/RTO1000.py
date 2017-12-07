@@ -468,6 +468,14 @@ class RTO1000(VisaInstrument):
                                get_cmd='HDEFinition:STAte?',
                                val_mapping={'ON': 1, 'OFF': 0})
 
+            self.add_parameter('high_definition_bandwidth',
+                               label='High definition mode bandwidth',
+                               set_cmd='HDEFinition:BWIDth {}',
+                               get_cmd='HDEFinition:BWIDth?',
+                               unit='Hz',
+                               get_parser=float,
+                               vals=vals.Numbers(1e4, 1e9))
+
         # Add the channels to the instrument
         for ch in range(1, self.num_chans+1):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
