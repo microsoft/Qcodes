@@ -71,7 +71,7 @@ class USB_SPDT(Instrument):
                                snapshotable=False)
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        _max_channel_number = int(self.IDN()['model'][3])
+        _max_channel_number = int(self.IDN()['model'][4])
         _chanlist = _chanlist[0:_max_channel_number]
 
         for c in _chanlist:
@@ -83,8 +83,8 @@ class USB_SPDT(Instrument):
 
     def get_idn(self):
         fw = self.switch.GetFirmware()
-        MN = self.switch.Read_ModelName('')
-        SN = self.switch.Read_SN('')
+        MN = self.switch.Read_ModelName('')[1]
+        SN = self.switch.Read_SN('')[1]
 
         id_dict = {'firmware': fw,
                    'model': MN[3:],
