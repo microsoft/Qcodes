@@ -4,6 +4,7 @@ import numpy as np
 import struct
 import os
 import zipfile as zf
+import logging
 
 from dateutil.tz import time
 from typing import List
@@ -11,6 +12,8 @@ from typing import List
 from qcodes import Instrument, VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Validator
+
+log = logging.getLogger(__name__)
 
 
 class SRValidator(Validator):
@@ -328,12 +331,18 @@ class AWG70000A(VisaInstrument):
         self.write('WLISt:WAVeform:DELete ALL')
 
     @staticmethod
-    def makeWFMXFile(data: np.ndarray, headeronly: bool=False) -> bytes:
+    def makeWFMXFile(data: np.ndarray, amplitude: float,
+                     headeronly: bool=False) -> bytes:
         """
         Compose a WFMX file
 
         Args:
             data: A numpy array holding the data. Markers can be included.
+            amplitude: The peak-to-peak amplitude (V) assumed to be set on the
+                channel that will play this waveform. This information is
+                needed as the waveform must be rescaled to (-1, 1) where
+                -1 will correspond to the channel's min. voltage and 1 to the
+                channel's max. voltage.
             headeronly: Only make the header (for debugging). Default: False.
         """
 
@@ -350,7 +359,7 @@ class AWG70000A(VisaInstrument):
         wfmx_hdr = AWG70000A._makeWFMXFileHeader(num_samples=N,
                                                  markers_included=markers_included)
         wfmx_hdr = bytes(wfmx_hdr, 'ascii')
-        wfmx_data = AWG70000A._makeWFMXFileBinaryData(data)
+        wfmx_data = AWG70000A._makeWFMXFileBinaryData(data, amplitude)
 
         wfmx = wfmx_hdr
 
@@ -389,6 +398,7 @@ class AWG70000A(VisaInstrument):
             filename: The name of the file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved. If
+                omitted, seqxFileFolder will be used.
         """
 
         name_str = 'MMEMory:DATA "{}"'.format(filename).encode('ascii')
@@ -539,15 +549,25 @@ class AWG70000A(VisaInstrument):
         return xmlstr
 
     @staticmethod
-    def _makeWFMXFileBinaryData(data: np.ndarray) -> bytes:
+    def _makeWFMXFileBinaryData(data: np.ndarray, amplitude: float) -> bytes:
         """
         For the binary part.
 
         Args:
             data: Either a shape (N,) array with only a waveform or
-            a shape (3, N) array with waveform, marker1, marker2, i.e.
-            data = np.array([wfm, m1, m2])
+                a shape (3, N) array with waveform, marker1, marker2, i.e.
+                data = np.array([wfm, m1, m2]). The waveform data is assumed
+                to be in V.
+            amplitude: The peak-to-peak amplitude (V) assumed to be set on the
+                channel that will play this waveform. This information is
+                needed as the waveform must be rescaled to (-1, 1) where
+                -1 will correspond to the channel's min. voltage and 1 to the
+                channel's max. voltage.
         """
+
+        channel_max = amplitude/2
+        channel_min = -amplitude/2
+
         shape = np.shape(data)
 
         if len(shape) == 1:
@@ -563,15 +583,23 @@ class AWG70000A(VisaInstrument):
             elif M == 3:
                 m1 = data[1, :]
                 m2 = data[2, :]
-                markers = m1+2*m2  # This is how ony byte encodes both markers
+                markers = m1+2*m2  # This is how one byte encodes both markers
                 markers = markers.astype(int)
             fmt = N*'B'  # endian-ness doesn't matter for one byte
             binary_marker = struct.pack(fmt, *markers)
 
-        # the data must be rescaled to fall between -1 and 1
-        # lest the waveform is clipped upon output
-        wfm -= np.mean(wfm)
-        wfm /= max([np.abs(wfm.min()), np.abs(wfm.max())])
+        if wfm.max() > channel_max or wfm.min() < channel_min:
+            log.warning('Waveform exceeds specified channel range.'
+                        ' The resulting waveform will be clipped. '
+                        'Waveform min.: {} (V), waveform max.: {} (V),'
+                        'Channel min.: {} (V), channel max.: {} (V)'
+                        ''.format(wfm.min(), wfm.max(), channel_min,
+                                  channel_max))
+
+        # the data must be such that channel_max becomes 1 and
+        # channel_min becomes -1
+        scale = 2/amplitude
+        wfm = wfm*scale
 
         # TODO: Is this a fast method?
         fmt = '<' + N*'f'
