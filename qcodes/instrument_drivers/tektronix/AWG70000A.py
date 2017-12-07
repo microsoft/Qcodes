@@ -171,7 +171,7 @@ class AWGChannel(InstrumentChannel):
         self.add_parameter(
             'awg_amplitude',
             label='Channel {} AWG peak-to-peak amplitude'.format(channel),
-            set_cmd='SOURCe{}:POWer {}'.format(channel),
+            set_cmd='SOURCe{}:POWer {{}}'.format(channel),
             get_cmd='SOURce{}:POWer?'.format(channel),
             unit='V',
             get_parser=lambda s: 2*10**((float(s)-10)/20),
