@@ -1,7 +1,12 @@
 from qcodes import Instrument
 from qcodes.utils import validators as vals
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-
+try:
+    import clr
+except ImportError:
+    raise ImportError("""Module clr not found. Please obtain it by
+                         running 'pip install -i https://pypi.anaconda.org/pythonnet/simple pythonnet' 
+                         in a qcodes environment terminal""")
 
 class SwitchChannelUSB(InstrumentChannel):
     def __init__(self, parent, name, channel_letter):
@@ -18,7 +23,7 @@ class SwitchChannelUSB(InstrumentChannel):
         self.channel_number = _chanlist.index(channel_letter)
 
         self.add_parameter('switch',
-                           label='switch',
+                           label='switch {}'.self.channel_letter,
                            set_cmd=self._set_switch,
                            get_cmd=self._get_switch,
                            vals=vals.Ints(1, 2)
@@ -29,7 +34,7 @@ class SwitchChannelUSB(InstrumentChannel):
 
     def _get_switch(self):
         status = self._parent.switch.GetSwitchesStatus(self._parent.address)[1]
-        return int("{0:04b}".format(status[-1-self.channel_number]))+1
+        return int("{0:04b}".format(status)[-1-self.channel_number])+1
 
 
 class USB_SPDT(Instrument):
@@ -78,8 +83,8 @@ class USB_SPDT(Instrument):
 
     def get_idn(self):
         fw = self.switch.GetFirmware()
-        MN = self.switch.Read_ModelName()
-        SN = self.switch.Read_SN()
+        MN = self.switch.Read_ModelName('')
+        SN = self.switch.Read_SN('')
 
         id_dict = {'firmware': fw,
                    'model': MN[3:],
