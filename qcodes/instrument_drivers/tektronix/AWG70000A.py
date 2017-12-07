@@ -329,6 +329,8 @@ class AWG70000A(VisaInstrument):
             resp = resp.replace('"', '')
             slist.append(resp)
 
+        return slist
+
     @property
     def waveformList(self) -> List[str]:
         """
