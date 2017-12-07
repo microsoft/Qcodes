@@ -80,6 +80,9 @@ class AWGChannel(InstrumentChannel):
                            vals=vals.Ints(0, 1),
                            get_parser=int)
 
+        ##################################################
+        # FGEN PARAMETERS
+
         # TODO: Setting high and low will change this parameter's value
         self.add_parameter('fgen_amplitude',
                            label='Channel {} {} amplitude'.format(channel, fg),
@@ -157,6 +160,26 @@ class AWGChannel(InstrumentChannel):
                                         'EXPONENTIALRISE': 'EXPR',
                                         'EXPONENTIALDECAY': 'EXPD',
                                         'NONE': 'NONE'})
+
+        ##################################################
+        # AWG PARAMETERS
+
+        # this command internally uses power in dBm
+        # the manual claims that this command only works in AC mode
+        # (OUTPut[n]:PATH is AC), but I've tested that it does what
+        # one would expect in DIR mode.
+        self.add_parameter(
+            'awg_amplitude',
+            label='Channel {} AWG peak-to-peak amplitude'.format(channel),
+            set_cmd='SOURCe{}:POWer {}'.format(channel),
+            get_cmd='SOURce{}:POWer?'.format(channel),
+            unit='V',
+            get_parser=lambda s: 2*10**((float(s)-10)/20),
+            set_parser=lambda V: 10 + 20 * np.log10(V/2),
+            vals=vals.Numbers(0.250, 0.500))
+
+        ##################################################
+        # MISC.
 
         self.add_parameter('resolution',
                            label='Channel {} bit resolution'.format(channel),
