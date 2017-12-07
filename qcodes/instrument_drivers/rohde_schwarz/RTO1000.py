@@ -82,7 +82,7 @@ class ScopeTrace(ArrayParameter):
         # we must ensure that all this took effect before proceeding
         self.channel._parent.ask('*OPC?')
 
-    def get(self):
+    def get_raw(self):
         """
         Returns a trace
         """
