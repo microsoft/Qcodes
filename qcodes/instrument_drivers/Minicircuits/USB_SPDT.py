@@ -72,7 +72,7 @@ class USB_SPDT(Instrument):
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         _max_channel_number = int(self.IDN()['model'][4])
-        _chanlist = _chanlist[0:_max_channel_number]
+        _chanlist = _chanlist[0:_max_channel_number-1]
 
         for c in _chanlist:
             channel = SwitchChannelUSB(self, 'channel_{}'.format(c), c)
