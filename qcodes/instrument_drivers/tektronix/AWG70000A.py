@@ -714,10 +714,6 @@ class AWG70000A(VisaInstrument):
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seq_name)
 
-        filename = 'myzip.seqx'
-        if os.path.exists(filename):
-            os.remove(filename)
-
         buffer = io.BytesIO()
 
         zipfile = zf.ZipFile(buffer, mode='a')
@@ -844,7 +840,7 @@ class AWG70000A(VisaInstrument):
         # Description of the data
         datadesc = ET.SubElement(datasets, 'DataDescription')
         _ = ET.SubElement(datadesc, 'SequenceName')
-        _.text = 'Sequence'
+        _.text = 'Sequence de Luxe'
         _ = ET.SubElement(datadesc, 'Timestamp')
         _.text = timestr
         _ = ET.SubElement(datadesc, 'JumpTiming')
