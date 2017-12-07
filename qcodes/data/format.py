@@ -3,6 +3,7 @@ from traceback import format_exc
 from operator import attrgetter
 import logging
 
+log = logging.getLogger(__name__)
 
 class Formatter:
     """
@@ -48,7 +49,7 @@ class Formatter:
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
     def write(self, data_set, io_manager, location, write_metadata=True,
-              force_write=False):
+              force_write=False, only_complete=True):
         """
         Write the DataSet to storage.
 
@@ -63,6 +64,8 @@ class Formatter:
             location (str): the file location within the io_manager.
             write_metadata (bool): if True, then the metadata is written to disk
             force_write (bool): if True, then the data is written to disk
+            only_complete (bool): Used only by the gnuplot formatter's
+                overridden version of this method
         """
         raise NotImplementedError
 
@@ -103,8 +106,8 @@ class Formatter:
                 try:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
-                    logging.warning('error reading file ' + fn)
-                    logging.warning(format_exc())
+                    log.warning('error reading file ' + fn)
+                    log.warning(format_exc())
 
     def write_metadata(self, data_set, io_manager, location, read_first=True):
         """
@@ -190,7 +193,9 @@ class Formatter:
 
         Returns:
             Tuple(int, int): the first and last raveled indices that should
-                be saved.
+                be saved. Returns None if:
+                    * no data is present
+                    * no new data can be found
         """
         inner_setpoint = group.set_arrays[-1]
         full_dim_data = (inner_setpoint, ) + group.data
@@ -207,6 +212,14 @@ class Formatter:
         last_saved_index = inner_setpoint.last_saved_index
 
         if last_saved_index is None or not file_exists:
+            if last_saved_index is None and file_exists:
+                log.warning("Inconsistent file information. "
+                            "last_save_index is None but file exists. "
+                            "Will overwrite")
+            if last_saved_index is not None and not file_exists:
+                log.warning("Inconsistent file information. "
+                            "last_save_index is not None but file does not "
+                            "exist. Will rewrite from scratch")
             return self._match_save_range_whole_file(
                 full_dim_data, only_complete)
 
