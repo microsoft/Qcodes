@@ -3,6 +3,7 @@ import datetime as dt
 import numpy as np
 import struct
 import os
+import io
 import zipfile as zf
 import logging
 
@@ -369,6 +370,9 @@ class AWG70000A(VisaInstrument):
                 -1 will correspond to the channel's min. voltage and 1 to the
                 channel's max. voltage.
             headeronly: Only make the header (for debugging). Default: False.
+
+        Returns:
+            The binary .wfmx file, ready to be sent to the instrument.
         """
 
         shape = np.shape(data)
@@ -656,7 +660,7 @@ class AWG70000A(VisaInstrument):
                      event_jumps: List[int],
                      event_jump_to: List[int],
                      go_to: List[int],
-                     wfms: List[List[bytes]]):
+                     wfms: List[List[bytes]]) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -677,7 +681,21 @@ class AWG70000A(VisaInstrument):
         userNotes.txt
 
         Args:
-            wfms: Binary .wfmx files
+            trig_waits: Wait for a trigger? If yes, you must specify the
+                trigger input. 0 for off, 1 for 'TrigA', 2 for 'TrigB',
+                3 for 'Internal'.
+            nreps: No. of repetitions. 0 corresponds to infinite.
+            event_jumps: Jump when event triggered? If yes, you must specify
+                the trigger input. 0 for off, 1 for 'TrigA', 2 for 'TrigB',
+                3 for 'Internal'.
+            event_jump_to: Jump target in case of event. 1-indexed,
+                0 means next. Must be specified for all elements.
+            go_to: Which element to play next. 1-indexed, 0 means next.
+            wfms: Binary .wfmx files. Should be packed like
+                [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+
+        Returns:
+            The binary .seqx file, ready to be sent to the instrument.
         """
 
         seq_name = 'Sequence'
@@ -700,7 +718,9 @@ class AWG70000A(VisaInstrument):
         if os.path.exists(filename):
             os.remove(filename)
 
-        zipfile = zf.ZipFile(filename, mode='a')
+        buffer = io.BytesIO()
+
+        zipfile = zf.ZipFile(buffer, mode='a')
         zipfile.writestr('Sequences/{}.sml'.format(seq_name), sml_file)
 
         for (name, wfile) in zip(flat_wfm_names, flat_wfmxs):
@@ -709,6 +729,12 @@ class AWG70000A(VisaInstrument):
         zipfile.writestr('setup.xml', setup_file)
         zipfile.writestr('userNotes.txt', user_file)
         zipfile.close()
+
+        buffer.seek(0)
+        seqx = buffer.getvalue()
+        buffer.close()
+
+        return seqx
 
     @staticmethod
     def _makeSetupFile(sequence: str) -> bytes:
