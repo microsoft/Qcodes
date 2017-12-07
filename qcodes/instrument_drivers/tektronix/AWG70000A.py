@@ -415,7 +415,6 @@ class AWG70000A(VisaInstrument):
 
         self._sendBinaryFile(seqx, filename, path)
 
-    # TODO: refactor and make a _sendBinaryBlob
     def sendWFMXFile(self, wfmx: bytes, filename: str,
                      path: str=None) -> None:
         """
@@ -660,7 +659,8 @@ class AWG70000A(VisaInstrument):
                      event_jumps: List[int],
                      event_jump_to: List[int],
                      go_to: List[int],
-                     wfms: List[List[bytes]]) -> bytes:
+                     wfms: List[List[bytes]],
+                     seqname: str) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -693,12 +693,15 @@ class AWG70000A(VisaInstrument):
             go_to: Which element to play next. 1-indexed, 0 means next.
             wfms: Binary .wfmx files. Should be packed like
                 [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+            seqname: The name of the sequence. This name will appear in the
+                sequence list. Note that all spaces are converted to '_'
 
         Returns:
             The binary .seqx file, ready to be sent to the instrument.
         """
 
-        seq_name = 'Sequence'
+        # input sanitising to avoid spaces in filenames
+        seqname = seqname.replace(' ', '_')
 
         (chans, elms) = np.shape(wfms)
         wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
@@ -709,15 +712,15 @@ class AWG70000A(VisaInstrument):
 
         sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
                                           event_jumps, event_jump_to,
-                                          go_to, wfm_names)
+                                          go_to, wfm_names, seqname)
 
         user_file = b''
-        setup_file = AWG70000A._makeSetupFile(seq_name)
+        setup_file = AWG70000A._makeSetupFile(seqname)
 
         buffer = io.BytesIO()
 
         zipfile = zf.ZipFile(buffer, mode='a')
-        zipfile.writestr('Sequences/{}.sml'.format(seq_name), sml_file)
+        zipfile.writestr('Sequences/{}.sml'.format(seqname), sml_file)
 
         for (name, wfile) in zip(flat_wfm_names, flat_wfmxs):
             zipfile.writestr('Waveforms/{}.wfmx'.format(name), wfile)
@@ -767,7 +770,8 @@ class AWG70000A(VisaInstrument):
                      event_jumps: List[int],
                      event_jump_to: List[int],
                      go_to: List[int],
-                     wfm_names: List[List[str]]) -> bytes:
+                     wfm_names: List[List[str]],
+                     seqname: str) -> bytes:
         """
         Make an xml file describing a sequence.
 
@@ -784,6 +788,8 @@ class AWG70000A(VisaInstrument):
             go_to: Which element to play next. 1-indexed, 0 means next.
             wfm_names: The waveforms to use. Should be packed like
                 [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+            seqname: The name of the sequence. This name will appear in
+                the sequence list of the instrument.
 
         Returns:
             A bytestring to be saved as an .sml file
@@ -840,7 +846,7 @@ class AWG70000A(VisaInstrument):
         # Description of the data
         datadesc = ET.SubElement(datasets, 'DataDescription')
         _ = ET.SubElement(datadesc, 'SequenceName')
-        _.text = 'Sequence de Luxe'
+        _.text = seqname
         _ = ET.SubElement(datadesc, 'Timestamp')
         _.text = timestr
         _ = ET.SubElement(datadesc, 'JumpTiming')
