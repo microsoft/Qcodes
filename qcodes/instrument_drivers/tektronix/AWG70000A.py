@@ -379,9 +379,9 @@ class AWG70000A(VisaInstrument):
         else:
             raise ValueError('Input data has too many dimensions!')
 
-        wfmx_hdr = AWG70000A._makeWFMXFileHeader(num_samples=N,
-                                                 markers_included=markers_included)
-        wfmx_hdr = bytes(wfmx_hdr, 'ascii')
+        wfmx_hdr_str = AWG70000A._makeWFMXFileHeader(num_samples=N,
+                                                     markers_included=markers_included)
+        wfmx_hdr = bytes(wfmx_hdr_str, 'ascii')
         wfmx_data = AWG70000A._makeWFMXFileBinaryData(data, amplitude)
 
         wfmx = wfmx_hdr
@@ -559,7 +559,8 @@ class AWG70000A(VisaInstrument):
                           attrib={'name': ''})
         _ = ET.SubElement(hdr, 'Setup')
 
-        xmlstr = ET.tostringlist(hdr)[0].decode('ascii')
+        # TODO: what is the purpose of this decoding?
+        xmlstr = ET.tostringlist(hdr)[0].decode('ascii')  # type: ignore
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
         # As the final step, count the length of the header and write this
@@ -714,7 +715,8 @@ class AWG70000A(VisaInstrument):
         _ = ET.SubElement(prodspec, 'CreatorProperties')
         _.set('name', '')
 
-        xmlstr = ET.tostringlist(head)[0].decode('ascii')
+        # TODO: Why are we decoding?
+        xmlstr = ET.tostringlist(head)[0].decode('ascii')  # type: ignore
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
         return xmlstr.encode('ascii')
@@ -768,7 +770,7 @@ class AWG70000A(VisaInstrument):
         chans = np.shape(wfm_names)[0]
 
         # for easy indexing later
-        wfm_names = np.array(wfm_names)
+        wfm_names_arr = np.array(wfm_names)
 
         # form the timestamp string
         timezone = time.timezone
@@ -855,7 +857,7 @@ class AWG70000A(VisaInstrument):
                 gotostep.text = '{:d}'.format(go_to[n-1])
 
             assets = ET.SubElement(step, 'Assets')
-            for wfm in wfm_names[:, n-1]:
+            for wfm in wfm_names_arr[:, n-1]:
                 asset = ET.SubElement(assets, 'Asset')
                 _ = ET.SubElement(asset, 'AssetName')
                 _.text = wfm
@@ -874,7 +876,8 @@ class AWG70000A(VisaInstrument):
         _.set('name', '')
         _ = ET.SubElement(datafile, 'Setup')
 
-        xmlstr = ET.tostringlist(datafile)[0].decode('ascii')
+        # TODO: WHy are we decoding?
+        xmlstr = ET.tostringlist(datafile)[0].decode('ascii')  # type: ignore
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
         # As the final step, count the length of the header and write this
