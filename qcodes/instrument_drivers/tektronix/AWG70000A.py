@@ -465,7 +465,7 @@ class AWG70000A(VisaInstrument):
 
     def loadSEQXFile(self, filename: str, path: str=None) -> None:
         """
-        Load a seqx file from memory. All sequences in the file
+        Load a seqx file from instrument disk memory. All sequences in the file
         are loaded into the sequence list.
 
         Args:
@@ -576,6 +576,9 @@ class AWG70000A(VisaInstrument):
     def _makeWFMXFileBinaryData(data: np.ndarray, amplitude: float) -> bytes:
         """
         For the binary part.
+
+        Note that currently only zero markers or two markers are supported;
+        one-marker data will break.
 
         Args:
             data: Either a shape (N,) array with only a waveform or
