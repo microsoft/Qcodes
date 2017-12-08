@@ -577,8 +577,7 @@ class AWG70000A(VisaInstrument):
                           attrib={'name': ''})
         _ = ET.SubElement(hdr, 'Setup')
 
-        # TODO: what is the purpose of this decoding?
-        xmlstr = ET.tostringlist(hdr)[0].decode('ascii')  # type: ignore
+        xmlstr = ET.tostring(hdr, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
         # As the final step, count the length of the header and write this
@@ -758,11 +757,10 @@ class AWG70000A(VisaInstrument):
         _ = ET.SubElement(prodspec, 'CreatorProperties')
         _.set('name', '')
 
-        # TODO: Why are we decoding?
-        xmlstr = ET.tostringlist(head)[0].decode('ascii')  # type: ignore
+        xmlstr = ET.tostring(head, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
-        return xmlstr.encode('ascii')
+        return xmlstr
 
     @staticmethod
     def _makeSMLFile(trig_waits: List[int],
@@ -922,8 +920,7 @@ class AWG70000A(VisaInstrument):
         _.set('name', '')
         _ = ET.SubElement(datafile, 'Setup')
 
-        # TODO: WHy are we decoding?
-        xmlstr = ET.tostringlist(datafile)[0].decode('ascii')  # type: ignore
+        xmlstr = ET.tostring(datafile, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
         # As the final step, count the length of the header and write this
@@ -933,4 +930,4 @@ class AWG70000A(VisaInstrument):
                                 '{num:0{pad}d}'.format(num=len(xmlstr),
                                                        pad=offsetdigits))
 
-        return xmlstr.encode('ascii')
+        return xmlstr
