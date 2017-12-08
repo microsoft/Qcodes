@@ -23,7 +23,7 @@ class SwitchChannelUSB(InstrumentChannel):
         self.channel_number = _chanlist.index(channel_letter)
 
         self.add_parameter('switch',
-                           label='switch {}'.self.channel_letter,
+                           label='switch {}'.format(self.channel_letter),
                            set_cmd=self._set_switch,
                            get_cmd=self._get_switch,
                            vals=vals.Ints(1, 2)
@@ -67,12 +67,12 @@ class USB_SPDT(Instrument):
             self.address = address
         self.connect_message()
 
-        channels = ChannelList(self, "Channels", MC_channel,
+        channels = ChannelList(self, "Channels", SwitchChannelUSB,
                                snapshotable=False)
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         _max_channel_number = int(self.IDN()['model'][4])
-        _chanlist = _chanlist[0:_max_channel_number-1]
+        _chanlist = _chanlist[0:_max_channel_number]
 
         for c in _chanlist:
             channel = SwitchChannelUSB(self, 'channel_{}'.format(c), c)
@@ -81,13 +81,14 @@ class USB_SPDT(Instrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
+
     def get_idn(self):
         fw = self.switch.GetFirmware()
         MN = self.switch.Read_ModelName('')[1]
         SN = self.switch.Read_SN('')[1]
 
         id_dict = {'firmware': fw,
-                   'model': MN[3:],
-                   'serial': SN[3:],
+                   'model': MN,
+                   'serial': SN,
                    'vendor': 'Mini-Circuits'}
         return id_dict
