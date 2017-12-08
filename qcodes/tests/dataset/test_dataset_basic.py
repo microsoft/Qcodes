@@ -31,9 +31,10 @@ def empty_temp_db():
 
 
 @pytest.fixture(scope='function')
-def temp_db_with_exp_and_ds(empty_temp_db):
+def dataset(empty_temp_db):
     e = new_experiment("test-experiment", sample_name="test-sample")
-    #dataset = new_data_set("test-dataset")
+    dataset = new_data_set("test-dataset")
+    yield dataset
 
 def test_tabels_exists(empty_temp_db):
     print(qc.config["core"]["db_location"])
@@ -52,6 +53,7 @@ def test_add_experiments(empty_temp_db, experiment_name,
                          sample_name, dataset_name):
     global n_experiments
     n_experiments += 1
+
     e = new_experiment(experiment_name, sample_name=sample_name)
     exps = experiments()
     assert len(exps) == n_experiments
@@ -80,10 +82,25 @@ def test_add_experiments(empty_temp_db, experiment_name,
                                                           loaded_dataset.counter)
 
 
-def test_add_paramspec(temp_db_with_exp_and_ds):
+def test_add_paramspec(dataset):
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
     assert exp.name == "test-experiment"
     assert exp.sample_name == "test-sample"
-    assert exp.last_counter == 0
+    assert exp.last_counter == 1
+
+    parameter_a = ParamSpec("a", "INTEGER")
+    # metadata with key="value", and number=1
+    parameter_b = ParamSpec("b", "INTEGER", key="value", number=1)
+    # cann add new parameter: an array
+    parameter_c = ParamSpec("c", "array")
+    dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+    paramspecs = dataset.paramspecs
+    expected_keys = ['a', 'b', 'c']
+    keys = sorted(list(paramspecs.keys()))
+    assert keys == expected_keys
+    for param in expected_keys:
+        ps = paramspecs[param]
+        ps.name = param
+
