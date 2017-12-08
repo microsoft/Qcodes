@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS dependencies (
 );
 """
 
-_unicode_categories = ('Lu', 'Li', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd')
+_unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 # utility function to allow sqlite/numpy type
 
 def _adapt_array(arr: ndarray) -> sqlite3.Binary:
