@@ -77,6 +77,10 @@ class TestBool(TestCase):
 
         self.assertEqual(repr(b), '<Boolean>')
 
+    def test_valid_values(self):
+        val = Bool()
+        val.validate(val.valid_values[0])
+
 
 class TestStrings(TestCase):
     long_string = '+'.join(str(i) for i in range(100000))
@@ -174,6 +178,10 @@ class TestStrings(TestCase):
             with self.assertRaises(TypeError):
                 Strings(min_length=length)
 
+    def test_valid_values(self):
+        val = Strings()
+        val.validate(val.valid_values[0])
+
 
 class TestNumbers(TestCase):
     numbers = [0, 1, -1, 0.1, -0.1, 100, 1000000, 1.0, 3.5, -2.3e6, 5.5e15,
@@ -202,9 +210,13 @@ class TestNumbers(TestCase):
         with self.assertRaises(ValueError):
             n.validate(float('nan'))
 
+        n.validate(n.valid_values[0])
+
     def test_min(self):
         for min_val in [-1e20, -1, -0.1, 0, 0.1, 10]:
             n = Numbers(min_value=min_val)
+
+            n.validate(n.valid_values[0])
             for v in self.numbers:
                 if v >= min_val:
                     n.validate(v)
@@ -222,6 +234,8 @@ class TestNumbers(TestCase):
     def test_max(self):
         for max_val in [-1e20, -1, -0.1, 0, 0.1, 10]:
             n = Numbers(max_value=max_val)
+
+            n.validate(n.valid_values[0])
             for v in self.numbers:
                 if v <= max_val:
                     n.validate(v)
@@ -284,6 +298,7 @@ class TestInts(TestCase):
 
     def test_unlimited(self):
         n = Ints()
+        n.validate(n.valid_values[0])
 
         for v in self.ints:
             n.validate(v)
@@ -354,9 +369,10 @@ class TestInts(TestCase):
 
 class TestPermissiveInts(TestCase):
 
-
     def test_close_to_ints(self):
         validator = PermissiveInts()
+        validator.validate(validator.valid_values[0])
+
         a = 0
         b = 10
         values = np.linspace(a, b, b-a+1)
@@ -365,6 +381,8 @@ class TestPermissiveInts(TestCase):
 
     def test_bad_values(self):
         validator = PermissiveInts(0, 10)
+        validator.validate(validator.valid_values[0])
+
         a = 0
         b = 10
         values = np.linspace(a, b, b-a+2)
@@ -408,10 +426,17 @@ class TestEnum(TestCase):
             with self.assertRaises(TypeError):
                 Enum(*enum)
 
+    def test_valid_values(self):
+        for enum in self.enums:
+            e = Enum(*enum)
+            for val in e._valid_values:
+                e.validate(val)
+
 
 class TestMultiples(TestCase):
     divisors = [3, 7, 11, 13]
-    not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+    not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5,
+                    -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
                     math.pi, math.e, '', None, float("nan"), float("inf"),
                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
                     AClass, AClass(), a_func]
@@ -450,6 +475,12 @@ class TestMultiples(TestCase):
         self.assertEqual(
             repr(n), '<Ints 1<=v<=10, Multiples of 3>')
 
+    def test_valid_values(self):
+
+        for d in self.divisors:
+            n = Multiples(divisor=d)
+            n.validate(n._valid_values[0])
+
 
 class TestPermissiveMultiples(TestCase):
     divisors = [40e-9, -1, 0.2225, 1/3, np.pi/2]
@@ -487,6 +518,12 @@ class TestPermissiveMultiples(TestCase):
         with self.assertRaises(ValueError):
             pm_strict.validate(70.2e-9)
 
+    def test_valid_values(self):
+        for div in self.divisors:
+            pm = PermissiveMultiples(div)
+            for val in pm.valid_values:
+                pm.validate(val)
+
 
 class TestMultiType(TestCase):
 
@@ -512,6 +549,11 @@ class TestMultiType(TestCase):
         for args in [[], [1], [Strings(), True]]:
             with self.assertRaises(TypeError):
                 MultiType(*args)
+
+    def test_valid_values(self):
+        m = MultiType(Strings(2, 4), Ints(10, 32))
+        for val in m.valid_values:
+            m.validate(val)
 
 
 class TestArrays(TestCase):
@@ -549,6 +591,10 @@ class TestArrays(TestCase):
         v = np.array([[2, 0], [1, 2]])
         m.validate(v)
 
+    def test_valid_values(self):
+        val = Arrays(min_value=-5, max_value=50, shape=(2, 2))
+        val.validate(val.valid_values[0])
+
 
 class TestLists(TestCase):
 
@@ -570,6 +616,10 @@ class TestLists(TestCase):
         with self.assertRaises(ValueError):
             l.validate(v2)
 
+    def test_valid_values(self):
+        l = Lists(Ints(max_value=10))
+        l.validate(l.valid_values[0])
+
 
 class TestCallable(TestCase):
 
@@ -583,13 +633,21 @@ class TestCallable(TestCase):
         with self.assertRaises(TypeError):
             c.validate(test_int)
 
+    def test_valid_values(self):
+        c = Callable()
+        c.validate(c.valid_values[0])
+
 
 class TestDict(TestCase):
 
-    def test_callable(self):
+    def test_dict(self):
         d = Dict()
         test_dict = {}
         d.validate(test_dict)
         test_int = 5
         with self.assertRaises(TypeError):
             d.validate(test_int)
+
+    def test_valid_values(self):
+        d = Dict()
+        d.validate(d.valid_values[0])
