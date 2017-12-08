@@ -9,7 +9,7 @@ import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
 import logging
 
-
+import unicodedata
 from qcodes.dataset.param_spec import ParamSpec
 
 log = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS dependencies (
 );
 """
 
-
+_unicode_categories = ('Lu', 'Li', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd')
 # utility function to allow sqlite/numpy type
 
 def _adapt_array(arr: ndarray) -> sqlite3.Binary:
@@ -117,6 +117,8 @@ def one(curr: sqlite3.Cursor, column: str) -> Any:
     res = curr.fetchall()
     if len(res) > 1:
         raise RuntimeError("Expected only one row")
+    elif len(res) == 0:
+        raise RuntimeError("Expected one row")
     else:
         return res[0][column]
 
@@ -1097,6 +1099,15 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
                 """
                 c = transaction(conn, sql, layout_id, dep_ind, ax_num)
     return c
+
+def _validate_table_name(table_name: str) -> bool:
+    valid = True
+    categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd')
+    for i in table_name:
+        if unicodedata.category(i) not in categories:
+            valid = False
+            break
+    return valid
 
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
