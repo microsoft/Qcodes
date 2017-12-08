@@ -1137,6 +1137,9 @@ def _create_run_table(conn: sqlite3.Connection,
         conn: database connection
         formatted_name: the name of the table to create
     """
+    table_valid = _validate_table_name(formatted_name)
+    if not table_valid:
+        raise RuntimeError("Invalid table name supplied {}".format(formatted_name))
     if parameters and values:
         _parameters = ",".join([p.sql_repr() for p in parameters])
         query = f"""
