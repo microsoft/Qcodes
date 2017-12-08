@@ -1102,11 +1102,11 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
 
 def _validate_table_name(table_name: str) -> bool:
     valid = True
-    categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd')
     for i in table_name:
-        if unicodedata.category(i) not in categories:
+        if unicodedata.category(i) not in _unicode_categories:
             valid = False
-            break
+            raise RuntimeError("Invalid table name "
+                               "{} starting at {}".format(table_name, i))
     return valid
 
 def add_parameter(conn: sqlite3.Connection,
@@ -1138,8 +1138,6 @@ def _create_run_table(conn: sqlite3.Connection,
         formatted_name: the name of the table to create
     """
     table_valid = _validate_table_name(formatted_name)
-    if not table_valid:
-        raise RuntimeError("Invalid table name supplied {}".format(formatted_name))
     if parameters and values:
         _parameters = ",".join([p.sql_repr() for p in parameters])
         query = f"""
