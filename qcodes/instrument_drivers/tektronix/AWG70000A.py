@@ -227,7 +227,7 @@ class AWG70000A(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, num_channels: int,
-                 timeout: float=10, terminator='\n', **kwargs) -> None:
+                 timeout: float=10, **kwargs) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
@@ -238,7 +238,8 @@ class AWG70000A(VisaInstrument):
 
         self.num_channels = num_channels
 
-        super().__init__(name, address, timeout=timeout, **kwargs)
+        super().__init__(name, address, timeout=timeout, terminator='\n',
+                         **kwargs)
 
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
