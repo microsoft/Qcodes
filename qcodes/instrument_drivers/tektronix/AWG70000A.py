@@ -540,41 +540,41 @@ class AWG70000A(VisaInstrument):
 
         # Description of the data
         datadesc = ET.SubElement(datasets, 'DataDescription')
-        _ = ET.SubElement(datadesc, 'NumberSamples')
-        _.text = '{:d}'.format(num_samples)
-        _ = ET.SubElement(datadesc, 'SamplesType')
-        _.text = 'AWGWaveformSample'
-        _ = ET.SubElement(datadesc, 'MarkersIncluded')
-        _.text = ('{}'.format(markers_included)).lower()
-        _ = ET.SubElement(datadesc, 'NumberFormat')
-        _.text = 'Single'
-        _ = ET.SubElement(datadesc, 'Endian')
-        _.text = 'Little'
-        _ = ET.SubElement(datadesc, 'Timestamp')
-        _.text = timestr
+        temp_elem = ET.SubElement(datadesc, 'NumberSamples')
+        temp_elem.text = '{:d}'.format(num_samples)
+        temp_elem = ET.SubElement(datadesc, 'SamplesType')
+        temp_elem.text = 'AWGWaveformSample'
+        temp_elem = ET.SubElement(datadesc, 'MarkersIncluded')
+        temp_elem.text = ('{}'.format(markers_included)).lower()
+        temp_elem = ET.SubElement(datadesc, 'NumberFormat')
+        temp_elem.text = 'Single'
+        temp_elem = ET.SubElement(datadesc, 'Endian')
+        temp_elem.text = 'Little'
+        temp_elem = ET.SubElement(datadesc, 'Timestamp')
+        temp_elem.text = timestr
 
         # Product specific information
         prodspec = ET.SubElement(datasets, 'ProductSpecific')
         prodspec.set('name', '')
-        _ = ET.SubElement(prodspec, 'ReccSamplingRate')
-        _.set('units', 'Hz')
-        _.text = 'NaN'
-        _ = ET.SubElement(prodspec, 'ReccAmplitude')
-        _.set('units', 'Volts')
-        _.text = 'NaN'
-        _ = ET.SubElement(prodspec, 'ReccOffset')
-        _.set('units', 'Volts')
-        _.text = 'NaN'
-        _ = ET.SubElement(prodspec, 'SerialNumber')
-        _ = ET.SubElement(prodspec, 'SoftwareVersion')
-        _.text = '1.0.0917'
-        _ = ET.SubElement(prodspec, 'UserNotes')
-        _ = ET.SubElement(prodspec, 'OriginalBitDepth')
-        _.text = 'Floating'
-        _ = ET.SubElement(prodspec, 'Thumbnail')
-        _ = ET.SubElement(prodspec, 'CreatorProperties',
+        temp_elem = ET.SubElement(prodspec, 'ReccSamplingRate')
+        temp_elem.set('units', 'Hz')
+        temp_elem.text = 'NaN'
+        temp_elem = ET.SubElement(prodspec, 'ReccAmplitude')
+        temp_elem.set('units', 'Volts')
+        temp_elem.text = 'NaN'
+        temp_elem = ET.SubElement(prodspec, 'ReccOffset')
+        temp_elem.set('units', 'Volts')
+        temp_elem.text = 'NaN'
+        temp_elem = ET.SubElement(prodspec, 'SerialNumber')
+        temp_elem = ET.SubElement(prodspec, 'SoftwareVersion')
+        temp_elem.text = '1.0.0917'
+        temp_elem = ET.SubElement(prodspec, 'UserNotes')
+        temp_elem = ET.SubElement(prodspec, 'OriginalBitDepth')
+        temp_elem.text = 'Floating'
+        temp_elem = ET.SubElement(prodspec, 'Thumbnail')
+        temp_elem = ET.SubElement(prodspec, 'CreatorProperties',
                           attrib={'name': ''})
-        _ = ET.SubElement(hdr, 'Setup')
+        temp_elem = ET.SubElement(hdr, 'Setup')
 
         xmlstr = ET.tostring(hdr, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
@@ -734,27 +734,30 @@ class AWG70000A(VisaInstrument):
         return seqx
 
     @staticmethod
-    def _makeSetupFile(sequence: str) -> bytes:
+    def _makeSetupFile(sequence: str) -> str:
         """
         Make a setup.xml file.
 
         Args:
             sequence: The name of the main sequence
+
+        Returns:
+            The setup file as a string
         """
         head = ET.Element('RSAPersist')
         head.set('version', '0.1')
-        _ = ET.SubElement(head, 'Application')
-        _.text = 'Pascal'
-        _ = ET.SubElement(head, 'MainSequence')
-        _.text = sequence
+        temp_elem = ET.SubElement(head, 'Application')
+        temp_elem.text = 'Pascal'
+        temp_elem = ET.SubElement(head, 'MainSequence')
+        temp_elem.text = sequence
         prodspec = ET.SubElement(head, 'ProductSpecific')
         prodspec.set('name', 'AWG70002A')
-        _ = ET.SubElement(prodspec, 'SerialNumber')
-        _.text = 'B020397'
-        _ = ET.SubElement(prodspec, 'SoftwareVersion')
-        _.text = '5.3.0128.0'
-        _ = ET.SubElement(prodspec, 'CreatorProperties')
-        _.set('name', '')
+        temp_elem = ET.SubElement(prodspec, 'SerialNumber')
+        temp_elem.text = 'B020397'
+        temp_elem = ET.SubElement(prodspec, 'SoftwareVersion')
+        temp_elem.text = '5.3.0128.0'
+        temp_elem = ET.SubElement(prodspec, 'CreatorProperties')
+        temp_elem.set('name', '')
 
         xmlstr = ET.tostring(head, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
@@ -768,7 +771,7 @@ class AWG70000A(VisaInstrument):
                      event_jump_to: List[int],
                      go_to: List[int],
                      wfm_names: List[List[str]],
-                     seqname: str) -> bytes:
+                     seqname: str) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -789,7 +792,7 @@ class AWG70000A(VisaInstrument):
                 the sequence list of the instrument.
 
         Returns:
-            A bytestring to be saved as an .sml file
+            A str containing the file contents, to be saved as an .sml file
         """
         offsetdigits = 9
 
@@ -817,7 +820,7 @@ class AWG70000A(VisaInstrument):
 
         # form the timestamp string
         timezone = time.timezone
-        tz_m, tz_s = divmod(timezone, 60)
+        tz_m, _ = divmod(timezone, 60)
         tz_h, tz_m = divmod(tz_m, 60)
         if np.sign(tz_h) == -1:
             signstr = '-'
@@ -842,27 +845,27 @@ class AWG70000A(VisaInstrument):
 
         # Description of the data
         datadesc = ET.SubElement(datasets, 'DataDescription')
-        _ = ET.SubElement(datadesc, 'SequenceName')
-        _.text = seqname
-        _ = ET.SubElement(datadesc, 'Timestamp')
-        _.text = timestr
-        _ = ET.SubElement(datadesc, 'JumpTiming')
-        _.text = 'JumpImmed'  # TODO: What does this control?
-        _ = ET.SubElement(datadesc, 'RecSampleRate')
-        _.text = 'NaN'
-        _ = ET.SubElement(datadesc, 'RepeatFlag')
-        _.text = 'false'
-        _ = ET.SubElement(datadesc, 'PatternJumpTable')
-        _.set('Enabled', 'false')
-        _.set('Count', '65536')
+        temp_elem = ET.SubElement(datadesc, 'SequenceName')
+        temp_elem.text = seqname
+        temp_elem = ET.SubElement(datadesc, 'Timestamp')
+        temp_elem.text = timestr
+        temp_elem = ET.SubElement(datadesc, 'JumpTiming')
+        temp_elem.text = 'JumpImmed'  # TODO: What does this control?
+        temp_elem = ET.SubElement(datadesc, 'RecSampleRate')
+        temp_elem.text = 'NaN'
+        temp_elem = ET.SubElement(datadesc, 'RepeatFlag')
+        temp_elem.text = 'false'
+        temp_elem = ET.SubElement(datadesc, 'PatternJumpTable')
+        temp_elem.set('Enabled', 'false')
+        temp_elem.set('Count', '65536')
         steps = ET.SubElement(datadesc, 'Steps')
         steps.set('StepCount', '{:d}'.format(N))
         steps.set('TrackCount', '{:d}'.format(chans))
 
         for n in range(1, N+1):
             step = ET.SubElement(steps, 'Step')
-            _ = ET.SubElement(step, 'StepNumber')
-            _.text = '{:d}'.format(n)
+            temp_elem = ET.SubElement(step, 'StepNumber')
+            temp_elem.text = '{:d}'.format(n)
             # repetitions
             rep = ET.SubElement(step, 'Repeat')
             repcount = ET.SubElement(step, 'RepeatCount')
@@ -876,11 +879,11 @@ class AWG70000A(VisaInstrument):
                 rep.text = 'RepeatCount'
                 repcount.text = '{:d}'.format(nreps[n-1])
             # trigger wait
-            _ = ET.SubElement(step, 'WaitInput')
-            _.text = waitinputs[trig_waits[n-1]]
+            temp_elem = ET.SubElement(step, 'WaitInput')
+            temp_elem.text = waitinputs[trig_waits[n-1]]
             # event jump
-            _ = ET.SubElement(step, 'EventJumpInput')
-            _.text = eventinputs[event_jumps[n-1]]
+            temp_elem = ET.SubElement(step, 'EventJumpInput')
+            temp_elem.text = eventinputs[event_jumps[n-1]]
             jumpto = ET.SubElement(step, 'EventJumpTo')
             jumpstep = ET.SubElement(step, 'EventJumpToStep')
             if event_jump_to[n-1] == 0:
@@ -902,22 +905,22 @@ class AWG70000A(VisaInstrument):
             assets = ET.SubElement(step, 'Assets')
             for wfm in wfm_names_arr[:, n-1]:
                 asset = ET.SubElement(assets, 'Asset')
-                _ = ET.SubElement(asset, 'AssetName')
-                _.text = wfm
-                _ = ET.SubElement(asset, 'AssetType')
-                _.text = 'Waveform'
+                temp_elem = ET.SubElement(asset, 'AssetName')
+                temp_elem.text = wfm
+                temp_elem = ET.SubElement(asset, 'AssetType')
+                temp_elem.text = 'Waveform'
 
             flags = ET.SubElement(step, 'Flags')
             for _ in range(chans):
                 flagset = ET.SubElement(flags, 'FlagSet')
                 for flg in ['A', 'B', 'C', 'D']:
-                    _ = ET.SubElement(flagset, 'Flag')
-                    _.set('name', flg)
-                    _.text = 'NoChange'
+                    temp_elem = ET.SubElement(flagset, 'Flag')
+                    temp_elem.set('name', flg)
+                    temp_elem.text = 'NoChange'
 
-        _ = ET.SubElement(datasets, 'ProductSpecific')
-        _.set('name', '')
-        _ = ET.SubElement(datafile, 'Setup')
+        temp_elem = ET.SubElement(datasets, 'ProductSpecific')
+        temp_elem.set('name', '')
+        temp_elem = ET.SubElement(datafile, 'Setup')
 
         xmlstr = ET.tostring(datafile, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
