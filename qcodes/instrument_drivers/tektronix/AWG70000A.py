@@ -227,7 +227,7 @@ class AWG70000A(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, num_channels: int,
-                 timeout: float=10, **kwargs) -> None:
+                 timeout: float=10, terminator='\n', **kwargs) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
