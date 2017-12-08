@@ -9,7 +9,7 @@ import numpy as np
 from qcodes import Instrument, IPInstrument
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Numbers
-from qcodes import ArrayParameter, MultiParameter
+from qcodes import MultiParameter
 
 log = logging.getLogger(__name__)
 
