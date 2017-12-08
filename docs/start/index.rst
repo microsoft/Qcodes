@@ -11,7 +11,7 @@ Requirements
 ------------
 
 For scientist we require to install Anaconda, because it makes
-easy to get all dependencies. 
+easy to get all dependencies.
 Download and install `here <https://www.anaconda.com/download>`_.
 Make sure to download the latest version with python 3.6.
 
@@ -41,6 +41,7 @@ Now you are ready to install QCoDeS, type in the terminal.
 .. code:: bash
 
     conda env create -f environment.yml
+    activate qcodes
     pip install qcodes
 
 Enter QCoDes
