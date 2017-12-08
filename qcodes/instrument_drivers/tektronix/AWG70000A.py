@@ -2,7 +2,6 @@ import xml.etree.ElementTree as ET
 import datetime as dt
 import numpy as np
 import struct
-import os
 import io
 import zipfile as zf
 import logging
@@ -516,7 +515,7 @@ class AWG70000A(VisaInstrument):
 
         # form the timestamp string
         timezone = time.timezone
-        tz_m, tz_s = divmod(timezone, 60)
+        tz_m, _ = divmod(timezone, 60)  # returns (minutes, seconds)
         tz_h, tz_m = divmod(tz_m, 60)
         if np.sign(tz_h) == -1:
             signstr = '-'
@@ -909,7 +908,7 @@ class AWG70000A(VisaInstrument):
                 _.text = 'Waveform'
 
             flags = ET.SubElement(step, 'Flags')
-            for ch in range(chans):
+            for _ in range(chans):
                 flagset = ET.SubElement(flags, 'FlagSet')
                 for flg in ['A', 'B', 'C', 'D']:
                     _ = ET.SubElement(flagset, 'Flag')
