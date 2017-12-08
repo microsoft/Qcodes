@@ -233,13 +233,6 @@ class FieldVector(object):
 
         return True
 
-    # A method property allows us to confidently retrieve values but disallows modifying them
-    # We can do this:
-    # a = field_vector.x
-    # But this:
-    # field_vector.x = a
-    # Will raise an error.
-
     @property
     def x(self):
         return self._x

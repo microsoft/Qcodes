@@ -2,14 +2,51 @@ import collections
 import logging
 import time
 from functools import partial
+import warnings
 
 import numpy as np
 
 from qcodes import Instrument, IPInstrument
 from qcodes.math.field_vector import FieldVector
-from qcodes.utils.validators import Numbers, Anything
+from qcodes.utils.validators import Numbers
+from qcodes import ArrayParameter, MultiParameter
 
 log = logging.getLogger(__name__)
+
+
+class AMICoordinateParameter(MultiParameter):
+    """
+    This parameter holds the AMI430_3D 3 dimensional parameters
+    """
+    def __init__(self, name, instrument, unit, get_cmd, set_cmd=None, **kwargs):
+
+        names = ["{}_{}".format(name, c) for c in "xyz"]
+        shapes = 3 * [(1, )]  # three times a number
+
+        # Ignore warning that the MultiParameter does not support setting.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            super().__init__(name, names, shapes, instrument, snapshot_value=True, **kwargs)
+
+        self._get = get_cmd
+        self._set = set_cmd
+        self.unit = unit
+        self._instrument = instrument
+
+    def get_raw(self):
+        try:
+            value = self._get()
+            self._save_val(value)
+            return value
+        except Exception as e:
+            e.args = e.args + ('getting {}'.format(self.full_name),)
+            raise e
+
+    def set_raw(self, setpoint):
+        if self._set is None:
+            raise ValueError("Parameter not settable")
+
+        return self._set(setpoint)
 
 
 class AMI430(IPInstrument):
@@ -312,12 +349,6 @@ class AMI430_3D(Instrument):
                  instrument_z, field_limit, **kwargs):
         super().__init__(name, **kwargs)
 
-        if not isinstance(name, str):
-            raise ValueError("Name should be a string")
-
-        if not all([isinstance(instrument, Instrument) for instrument in [instrument_x, instrument_y, instrument_z]]):
-            raise ValueError("Instruments need to be instances of the class Instrument")
-
         self._instrument_x = instrument_x
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
@@ -337,7 +368,8 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'cartesian_measured',
             get_cmd=partial(self._get_measured, 'x', 'y', 'z'),
-            unit='T'
+            unit='T',
+            parameter_class=AMICoordinateParameter
         )
 
         self.add_parameter(
@@ -360,13 +392,9 @@ class AMI430_3D(Instrument):
 
         self.add_parameter(
             'spherical_measured',
-            get_cmd=partial(
-                self._get_measured,
-                'r',
-                'theta',
-                'phi'
-            ),
-            unit='T'
+            get_cmd=partial(self._get_measured, 'r', 'theta', 'phi'),
+            unit='T',
+            parameter_class=AMICoordinateParameter
         )
 
         self.add_parameter(
@@ -384,15 +412,15 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'field_measured',
             get_cmd=partial(self._get_measured, 'r'),
-            unit='T')
+            unit='T'
+        )
 
         self.add_parameter(
             'cylindrical_measured',
-            get_cmd=partial(self._get_measured,
-                            'rho',
-                            'phi',
-                            'z'),
-            unit='T')
+            get_cmd=partial(self._get_measured, 'rho', 'phi', 'z'),
+            unit='T',
+            parameter_class=AMICoordinateParameter
+        )
 
         self.add_parameter(
             'rho_measured',
@@ -406,7 +434,7 @@ class AMI430_3D(Instrument):
             get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
             set_cmd=self._set_cartesian,
             unit='T',
-            vals=Anything()
+            parameter_class=AMICoordinateParameter
         )
 
         self.add_parameter(
@@ -435,15 +463,10 @@ class AMI430_3D(Instrument):
 
         self.add_parameter(
             'spherical',
-            get_cmd=partial(
-                self._get_setpoints,
-                'r',
-                'theta',
-                'phi'
-            ),
+            get_cmd=partial(self._get_setpoints, 'r', 'theta', 'phi'),
             set_cmd=self._set_spherical,
             unit='tuple?',
-            vals=Anything()
+            parameter_class=AMICoordinateParameter
         )
 
         self.add_parameter(
@@ -472,15 +495,10 @@ class AMI430_3D(Instrument):
 
         self.add_parameter(
             'cylindrical',
-            get_cmd=partial(
-                self._get_setpoints,
-                'rho',
-                'phi',
-                'z'
-            ),
+            get_cmd=partial(self._get_setpoints, 'rho', 'phi', 'z'),
             set_cmd=self._set_cylindrical,
             unit='tuple?',
-            vals=Anything()
+            parameter_class=AMICoordinateParameter
         )
 
         self.add_parameter(
