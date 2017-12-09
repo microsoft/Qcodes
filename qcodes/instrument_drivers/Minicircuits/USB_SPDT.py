@@ -8,7 +8,7 @@ try:
     import clr
 except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
-                         running 'pip install -i https://pypi.anaconda.org/pythonnet/simple pythonnet' 
+                         running 'pip install pythonnet' 
                          in a qcodes environment terminal""")
 
 class SwitchChannelUSB(InstrumentChannel):
