@@ -29,7 +29,7 @@ class SwitchChannelUSB(InstrumentChannel):
                            vals=vals.Ints(1, 2)
                            )
 
-    def _set_switch(self, switch): 
+    def _set_switch(self, switch):
         self._parent.switch.Set_Switch(self.channel_letter,switch-1)
 
     def _get_switch(self):
