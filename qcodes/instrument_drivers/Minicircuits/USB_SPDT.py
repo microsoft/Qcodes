@@ -1,6 +1,9 @@
 from qcodes import Instrument
 from qcodes.utils import validators as vals
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+import os
+if os.name != 'nt':
+    raise ImportError("""This driver only works in Windows.""")
 try:
     import clr
 except ImportError:
