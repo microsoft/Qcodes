@@ -1,4 +1,5 @@
 import os
+import warnings
 
 # QCoDeS imports
 from qcodes import Instrument
@@ -69,6 +70,7 @@ class USB_SPDT(Instrument):
             )
         import mcl_RF_Switch_Controller64
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
+        self._deprecated_attributes = {}
 
         if address is None:
             self.switch.Connect()
@@ -88,7 +90,10 @@ class USB_SPDT(Instrument):
         for c in _chanlist:
             channel = SwitchChannelUSB(self, 'channel_{}'.format(c), c)
             channels.append(channel)
-            self.add_submodule('channel_{}'.format(c), channel)
+            attribute_name = 'channel_{}'.format(c)
+            self.add_submodule(attribute_name, channel)
+            self.add_submodule(c, channel)
+            self._deprecated_attributes[attribute_name] = c
         channels.lock()
         self.add_submodule('channels', channels)
 
@@ -108,3 +113,10 @@ class USB_SPDT(Instrument):
     def all(self, switch_to):
         for c in self.channels:
             c.switch(switch_to)
+
+    def __getattr__(self, key):
+        if key in self._deprecated_attributes:
+            warnings.warn("""Using '{}' is deprecated and will be removed in
+                future releases. Use '{}' instead""".format(
+                key, self._deprecated_attributes[key]), DeprecationWarning)
+        super().__getattr__(key)
