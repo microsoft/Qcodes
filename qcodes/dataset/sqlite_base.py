@@ -15,7 +15,8 @@ from qcodes.dataset.param_spec import ParamSpec
 log = logging.getLogger(__name__)
 
 # represent the type of  data we can/want map to sqlite column
-VALUES = List[Union[str, Number, List, ndarray, bool]]
+VALUE = Union[str, Number, List, ndarray, bool]
+VALUES = List[VALUE]
 
 _experiment_table_schema = """
 CREATE  TABLE IF NOT EXISTS experiments (

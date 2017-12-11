@@ -25,7 +25,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
                                         add_meta_data, mark_run,
                                         modify_many_values, insert_values,
                                         insert_many_values,
-                                        VALUES, get_data,
+                                        VALUE, VALUES, get_data,
                                         get_values,
                                         get_setpoints,
                                         get_metadata, one)
@@ -289,7 +289,7 @@ class DataSet(Sized):
         for sub in self.subscribers.values():
             sub.done_callback()
 
-    def add_result(self, results: Dict[str, VALUES]) -> int:
+    def add_result(self, results: Dict[str, VALUE]) -> int:
         """
         Add a logically single result to existing parameters
 
@@ -413,7 +413,7 @@ class DataSet(Sized):
         error will result.
 
         It is an error to add parameters to a completed DataSet.
-        # TODO: fix type cheking
+        # TODO: fix type checking
         """
         # first check that the len of values (if dataset is not empty)
         # is the right size i.e. the same as the dataset
