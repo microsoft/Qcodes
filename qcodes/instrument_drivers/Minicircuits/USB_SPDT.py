@@ -14,7 +14,7 @@ except ImportError:
                          in a qcodes environment terminal""")
 
 
-class SwitchChannelUSB(InstrumentChannel):
+class SwitchChannelBase(InstrumentChannel):
     def __init__(self, parent, name, channel_letter):
         """
         Args:
@@ -36,6 +36,52 @@ class SwitchChannelUSB(InstrumentChannel):
             vals=vals.Ints(1, 2))
 
     def _set_switch(self, switch):
+        raise NotImplementedError()
+
+    def _get_switch(self):
+        raise NotImplementedError()
+
+
+class SPDT_Base(Instrument):
+    @property
+    def CHANNEL_CLASS(self):
+        raise NotImplementedError
+
+    def add_channels(self):
+        channels = ChannelList(
+            self, "Channels", self.CHANNEL_CLASS, snapshotable=False)
+
+        self._deprecated_attributes = {}
+
+        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        _max_channel_number = int(self.IDN()['model'][4])
+        _chanlist = _chanlist[0:_max_channel_number]
+
+        for c in _chanlist:
+            channel = self.CHANNEL_CLASS(self, 'channel_{}'.format(c), c)
+            channels.append(channel)
+            attribute_name = 'channel_{}'.format(c)
+            self.add_submodule(attribute_name, channel)
+            self.add_submodule(c, channel)
+            self._deprecated_attributes[attribute_name] = c
+        channels.lock()
+        self.add_submodule('channels', channels)
+
+    def all(self, switch_to):
+        for c in self.channels:
+            c.switch(switch_to)
+
+    def __getattr__(self, key):
+        if key in self._deprecated_attributes:
+            warnings.warn("""Using '{}' is deprecated and will be removed in
+                future releases. Use '{}' instead""".format(
+                key, self._deprecated_attributes[key]), DeprecationWarning)
+        super().__getattr__(key)
+
+
+class SwitchChannelUSB(SwitchChannelBase):
+
+    def _set_switch(self, switch):
         self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
     def _get_switch(self):
@@ -43,7 +89,7 @@ class SwitchChannelUSB(InstrumentChannel):
         return int("{0:04b}".format(status)[-1 - self.channel_number]) + 1
 
 
-class USB_SPDT(Instrument):
+class USB_SPDT(Instrument, SPDT_Base):
     """
     Mini-Circuits SPDT RF switch
 
@@ -52,6 +98,8 @@ class USB_SPDT(Instrument):
             address (int, optional):
             kwargs (dict): kwargs to be passed to Instrument class.
     """
+
+    CHANNEL_CLASS = SwitchChannelUSB
 
     def __init__(self, name, address=None, **kwargs):
         super().__init__(name, **kwargs)
@@ -70,7 +118,6 @@ class USB_SPDT(Instrument):
             )
         import mcl_RF_Switch_Controller64
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
-        self._deprecated_attributes = {}
 
         if address is None:
             self.switch.Connect()
@@ -79,23 +126,7 @@ class USB_SPDT(Instrument):
             self.switch.ConnectByAddress(address)
             self.address = address
         self.connect_message()
-
-        channels = ChannelList(
-            self, "Channels", SwitchChannelUSB, snapshotable=False)
-
-        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        _max_channel_number = int(self.IDN()['model'][4])
-        _chanlist = _chanlist[0:_max_channel_number]
-
-        for c in _chanlist:
-            channel = SwitchChannelUSB(self, 'channel_{}'.format(c), c)
-            channels.append(channel)
-            attribute_name = 'channel_{}'.format(c)
-            self.add_submodule(attribute_name, channel)
-            self.add_submodule(c, channel)
-            self._deprecated_attributes[attribute_name] = c
-        channels.lock()
-        self.add_submodule('channels', channels)
+        self.add_channels()
 
     def get_idn(self):
         fw = self.switch.GetFirmware()
@@ -109,14 +140,3 @@ class USB_SPDT(Instrument):
             'vendor': 'Mini-Circuits'
         }
         return id_dict
-
-    def all(self, switch_to):
-        for c in self.channels:
-            c.switch(switch_to)
-
-    def __getattr__(self, key):
-        if key in self._deprecated_attributes:
-            warnings.warn("""Using '{}' is deprecated and will be removed in
-                future releases. Use '{}' instead""".format(
-                key, self._deprecated_attributes[key]), DeprecationWarning)
-        super().__getattr__(key)
