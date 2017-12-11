@@ -5,8 +5,9 @@
     },
     "gui" :{
         "notebook": true,
-        "plotlib": "matplotlib",
-        "pyqtmaxplots": 100
+        "plotlib": "all",
+        "pyqtmaxplots": 100,
+        "defaultcolormap": "hot"
     },
     "user": {}
 }

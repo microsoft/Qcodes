@@ -1,6 +1,6 @@
 from typing import Union
 
-from qcodes import Parameter, StandardParameter, Instrument
+from qcodes import Parameter, Instrument
 
 
 class VoltageDivider(Parameter):
@@ -44,7 +44,7 @@ class VoltageDivider(Parameter):
     """
 
     def __init__(self,
-                 v1: StandardParameter,
+                 v1: Parameter,
                  division_value: Union[int, float],
                  name: str=None,
                  label: str=None,
@@ -72,12 +72,12 @@ class VoltageDivider(Parameter):
         # extend metadata
         self._meta_attrs.extend(["division_value"])
 
-    def set(self, value: Union[int, float]) -> None:
+    def set_raw(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value
         self._save_val(value)
         self.v1.set(instrument_value)
 
-    def get(self) -> Union[int, float]:
+    def get_raw(self) -> Union[int, float]:
         """
         Returns:
             number: value at which was set at the sample

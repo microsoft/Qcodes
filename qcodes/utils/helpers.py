@@ -53,18 +53,6 @@ def tprint(string, dt=1, tag='default'):
         _tprint_times[tag] = time.time()
 
 
-def in_notebook():
-    """
-    Check if inside a notebook.
-    This could mean we are connected to a notebook, but this is not guaranteed.
-    see: http://stackoverflow.com/questions/15411967
-    Returns:
-        bool: True if the code is running with a ipython or jypyter
-
-    """
-    return 'ipy' in repr(sys.stdout)
-
-
 def is_sequence(obj):
     """
     Test if an object is a sequence.
@@ -72,7 +60,7 @@ def is_sequence(obj):
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators)
     """
-    return (isinstance(obj, (Iterator, Sequence)) and
+    return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
@@ -462,3 +450,36 @@ def compare_dictionaries(dict_1, dict_2,
 def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
+def foreground_qt_window(window):
+    """
+    Try as hard as possible to bring a qt window to the front. This
+    will use pywin32 if installed and running on windows as this
+    seems to be the only reliable way to foreground a window. The
+    build-in qt functions often doesn't work. Note that to use this
+    with pyqtgraphs remote process you should use the ref in that module
+    as in the example below.
+
+    Args:
+        window: handle to qt window to foreground
+    Examples:
+        >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
+    """
+    try:
+        from win32gui import SetWindowPos
+        import win32con
+        # use the idea from
+        # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
+        SetWindowPos(window.winId(),
+                     win32con.HWND_TOPMOST, # = always on top. only reliable way to bring it to the front on windows
+                     0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+        SetWindowPos(window.winId(),
+                     win32con.HWND_NOTOPMOST, # disable the always on top, but leave window at its top position
+                     0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+    except ImportError:
+        pass
+    window.show()
+    window.raise_()
+    window.activateWindow()

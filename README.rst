@@ -60,7 +60,7 @@ Developer-pyenv
 
 Core developers use virtualenv and pyenv to make sure all the system are the same,
 this rules out issues and the usual "it works on my machine". Install pyenv
-on your OS `see this <https://github.com/yyuu/pyenv>`__ .
+on your OS `see this <https://github.com/pyenv/pyenv>`__ .
 
 $QCODES_INSTALL_DIR is the folder where you want to have the source code.
 
@@ -68,11 +68,11 @@ $QCODES_INSTALL_DIR is the folder where you want to have the source code.
 
     git clone https://github.com/QCoDeS/Qcodes.git $QCODES_INSTALL_DIR
     cd $QCODES_INSTALL_DIR
-    pyenv install 3.5.2
-    pyenv virtualenv 3.5.2 qcodes-dev
+    pyenv install 3.6.3
+    pyenv virtualenv 3.6.3 qcodes-dev
     pyenv activate qcodes-dev
     pip install -r requirements.txt
-    pip install coverage pytest-cov pytest --upgrade
+    pip install -r test_requirements.txt --upgrade
     pip install -e .
     py.test --cov=qcodes --cov-config=.coveragerc
 
@@ -112,11 +112,17 @@ Documentation is updated and deployed on every successful build in master.
 We use sphinx for documentations, makefiles are provided both for
 Windows, and \*nix.
 
+Make sure that you have the extra dependencies required to install the docs
+
+.. code:: bash
+
+    pip install -r docs_requirements.txt
+
 Go to the directory ``docs`` and
 
 .. code:: bash
 
-    make html
+    make html-api
 
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html. 
@@ -138,5 +144,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://travis-ci.org/QCoDeS/Qcodes
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.802178.svg
-   :target: https://doi.org/10.5281/zenodo.802178
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.894477.svg
+   :target: https://doi.org/10.5281/zenodo.894477

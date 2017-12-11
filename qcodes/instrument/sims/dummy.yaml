@@ -1,0 +1,26 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, m0d3l, 1337, 0.0.01"
+
+    properties:
+      frequency:
+        default: 100.0
+        getter:
+          q: "FREQ?"
+          r: "{}"
+        setter:
+          q: "FREQ {}"
+          r: OK
+
+
+resources:
+  GPIB::8::INSTR:
+    device: device 1

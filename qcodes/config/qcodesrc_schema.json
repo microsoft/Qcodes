@@ -37,15 +37,20 @@
                     "default": true
                 },
                 "plotlib": {
-                    "description": "Plotting library",
-                    "type": "string",
-                    "enum": ["QT", "matplotlib" ],
-                    "default": "matplotlib"
+                    "description": "Plotting library set to null to run without plotting",
+                    "type": ["string", "null"],
+                    "enum": ["QT", "matplotlib", "all", null],
+                    "default": "all"
                 },
                 "pyqtmaxplots": {
                     "description": "Maximum number of PyQtPlots to automatically keep in memory",
                     "type": "integer",
                     "default": 100
+                },
+                "defaultcolormap":{
+                    "description": "Default colormap to use for Heatmaps with both Matplotlib and PyQtGraph",
+                    "type": "string",
+                    "default": "hot"
                 }
             },
             "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
