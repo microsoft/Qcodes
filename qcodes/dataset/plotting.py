@@ -32,7 +32,7 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
     return dataarray
 
 
-def plot_by_id(run_id: int) -> None:
+def plot_by_id(run_id: int) -> Figure:
     """
     Construct all plots for a given run
 
