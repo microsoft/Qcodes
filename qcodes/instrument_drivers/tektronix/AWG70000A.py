@@ -422,8 +422,7 @@ class AWG70000A(VisaInstrument):
         Args:
             wfmx: The binary wfmx file, preferably the output of
                 makeWFMXFile.
-            filename: The name of th
-e file on the AWG disk, including the
+            filename: The name of the file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved. If
                 omitted, seqxFileFolder will be used.
