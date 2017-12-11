@@ -28,7 +28,7 @@ def test_init_awg2(awg2):
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-@settings(deadline=600, max_examples=25)
+@settings(deadline=1000, max_examples=25)
 @given(N=hst.integers(1, 1000))
 def test_SML_successful_generation_vary_length(N):
 
@@ -47,5 +47,21 @@ def test_SML_successful_generation_vary_length(N):
 
     # This line will raise an exception if the XML is not valid
     etree.parse(StringIO(smlstring))
+
+
+@given(num_samples=hst.integers(min_value=2400),
+       markers_included=hst.booleans())
+def test_WFMXHeader_succesful(num_samples, markers_included):
+
+    xmlstr = AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
+    etree.parse(StringIO(xmlstr))
+
+
+@given(num_samples=hst.integers(max_value=2399),
+       markers_included=hst.booleans())
+def test_WFMXHeader_failing(num_samples, markers_included):
+    with pytest.raises(ValueError):
+        AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
+
 
 # TODO: Add some failing tests for inproper input

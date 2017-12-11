@@ -513,6 +513,9 @@ class AWG70000A(VisaInstrument):
         if not isinstance(num_samples, int):
             raise ValueError('num_samples must be of type int.')
 
+        if num_samples < 2400:
+            raise ValueError('num_samples must be at least 2400.')
+
         # form the timestamp string
         timezone = time.timezone
         tz_m, _ = divmod(timezone, 60)  # returns (minutes, seconds)
