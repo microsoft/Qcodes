@@ -3,6 +3,7 @@ import logging
 import time
 from functools import partial
 import warnings
+import typing
 
 import numpy as np
 
@@ -17,8 +18,17 @@ log = logging.getLogger(__name__)
 class AMICoordinateParameter(MultiParameter):
     """
     This parameter holds the AMI430_3D 3 dimensional parameters
+
+    Args
+    ----
+        name (str)
+        instrument (qcodes.Instrument)
+        unit (str)
+        get_cmd (callable)
+        set_cmd (callable)
     """
-    def __init__(self, name, instrument, unit, get_cmd, set_cmd=None, **kwargs):
+    def __init__(self, name: str, instrument: 'AMI430_3D', unit: str, get_cmd: typing.Callable,
+                 set_cmd: typing.Callable =None, **kwargs: str) -> None:
 
         names = ["{}_{}".format(name, c) for c in "xyz"]
         shapes = 3 * [(1, )]  # three times a number
@@ -33,7 +43,7 @@ class AMICoordinateParameter(MultiParameter):
         self.unit = unit
         self._instrument = instrument
 
-    def get_raw(self):
+    def get_raw(self) ->list:
         try:
             value = self._get()
             self._save_val(value)
@@ -42,7 +52,7 @@ class AMICoordinateParameter(MultiParameter):
             e.args = e.args + ('getting {}'.format(self.full_name),)
             raise e
 
-    def set_raw(self, setpoint):
+    def set_raw(self, setpoint: list):
         if self._set is None:
             raise ValueError("Parameter not settable")
 
@@ -54,23 +64,24 @@ class AMI430(IPInstrument):
     Driver for the American Magnetics Model 430 magnet power supply programmer.
 
     This class controls a single magnet power supply. In order to use two or
-    three magnets simultaniously to set field vectors, first instantiate the
+    three magnets simultaneously to set field vectors, first instantiate the
     individual magnets using this class and then pass them as arguments to
     either the AMI430_2D or AMI430_3D virtual instrument classes.
 
     Args:
-        name (string): a name for the instrument
-        address (string): IP address of the power supply programmer
-        coil_constant (float): coil constant in Tesla per ampere
-        current_rating (float): maximum current rating in ampere
-        current_ramp_limit (float): current ramp limit in ampere per second
+        name (str): a name for the instrument
+        address (str): IP address of the power supply programmer
+        port (str)
         persistent_switch (bool): whether this magnet has a persistent switch
+        reset (bool)
+        current_ramp_limit (float): current ramp limit in ampere per second
+        terminator (str): Set the terminator string for messages
     """
     default_current_ramp_limit = 0.06  # [A/s]
 
-    def __init__(self, name, address=None, port=None, persistent_switch=True,
-                 reset=False, current_ramp_limit=None,
-                 terminator='\r\n', **kwargs):
+    def __init__(self, name: str, address: str =None, port: str=None, persistent_switch: bool=True,
+                 reset: bool=False, current_ramp_limit: float=None,
+                 terminator: str='\r\n', **kwargs):
 
         if current_ramp_limit is None:
             current_ramp_limit = AMI430.default_current_ramp_limit
@@ -184,7 +195,7 @@ class AMI430(IPInstrument):
 
         self.connect_message()
 
-    def _sleep(self, t):
+    def _sleep(self, t: float) ->None:
         """
         Sleep for a number of seconds t. If we are or using
         the PyVISA 'sim' backend, omit this
@@ -193,11 +204,11 @@ class AMI430(IPInstrument):
         simmode = getattr(self, 'visabackend', False) == 'sim'
 
         if simmode:
-            return
+            time.sleep(0.01)  # We need this in order to prevent race conditions during testing.
         else:
             time.sleep(t)
 
-    def _can_start_ramping(self):
+    def _can_start_ramping(self) ->bool:
         """
         Check the current state of the magnet to see if we can start ramping
         """
@@ -222,14 +233,23 @@ class AMI430(IPInstrument):
 
         return False
 
-    def set_field(self, value, *, perform_safety_check=True):
+    def set_field(self, value: float, perform_safety_check: bool=True) ->None:
+        """
+        Public interface to set the field strength to a particular value
+        Args:
+            value (float)
+            perform_safety_check (bool):  Whether to set the field via a parent
+                driver (if present), which might perform additional safety
+                checks.
+        """
         self._set_field(value, perform_safety_check=perform_safety_check)
 
-    def _set_field(self, value, *, perform_safety_check=True):
+    def _set_field(self, value: float, perform_safety_check: bool=True) ->None:
         """
         Blocking method to ramp to a certain field
 
         Args:
+            value (float)
             perform_safety_check (bool): Whether to set the field via a parent
                 driver (if present), which might perform additional safety
                 checks.
@@ -271,7 +291,7 @@ class AMI430(IPInstrument):
                 msg = '_set_field({}) failed with state: {}'
                 raise Exception(msg.format(value, state))
 
-    def _ramp_to(self, value):
+    def _ramp_to(self, value: float) ->None:
         """ Non-blocking method to ramp to a certain field """
         if np.abs(value) > self._field_rating:
             msg = 'Aborted _ramp_to; {} is higher than limit of {}'
@@ -300,7 +320,7 @@ class AMI430(IPInstrument):
 
             self.ramp()
 
-    def _get_ramp_rate(self):
+    def _get_ramp_rate(self) ->float:
         """ Return the ramp rate of the first segment in Tesla per second """
         results = self.ask('RAMP:RATE:FIELD:1?').split(',')
 
@@ -312,7 +332,7 @@ class AMI430(IPInstrument):
 
         self.write(cmd)
 
-    def _set_persistent_switch(self, on):
+    def _set_persistent_switch(self, on: bool):
         """
         Blocking function that sets the persistent switch heater state and
         waits until it has finished either heating or cooling
@@ -334,7 +354,7 @@ class AMI430(IPInstrument):
             while self.ramping_state() == 'cooling switch':
                 self._sleep(0.3)
 
-    def _connect(self):
+    def _connect(self) ->None:
         """
         Append the IPInstrument connect to flush the welcome message of the AMI
         430 programmer
@@ -345,8 +365,21 @@ class AMI430(IPInstrument):
 
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y,
-                 instrument_z, field_limit, **kwargs):
+    """
+    A "meta" instrument which controls three AMI430 instruments for combined X, Y and Z action
+
+    Args
+    ----
+        name (str)
+        instrument_x (AMI430)
+        instrument_y (AMI430)
+        instrument_z (AMI430)
+        field_limit (list or callable)
+    """
+    def __init__(self, name: str, instrument_x: 'AMI430', instrument_y: 'AMI430',
+                 instrument_z: 'AMI430', field_limit: typing.Union[list, typing.Callable],
+                 **kwargs: str) ->None:
+
         super().__init__(name, **kwargs)
 
         self._instrument_x = instrument_x
@@ -509,14 +542,14 @@ class AMI430_3D(Instrument):
             vals=Numbers()
         )
 
-    def _verify_safe_setpoint(self, setpoint_values):
+    def _verify_safe_setpoint(self, setpoint_values: tuple) ->bool:
 
         if repr(self._field_limit).isnumeric():
-            return np.linalg.norm(setpoint_values) < self._field_limit
+            return np.linalg.norm(setpoint_values) < float(self._field_limit)
 
         return any([limit_function(*setpoint_values) for limit_function in self._field_limit])
 
-    def _set_fields(self, values):
+    def _set_fields(self, values: tuple) ->bool:
         """
         Set the fields of the x/y/z magnets. This function is called
         whenever the field is changed and performs several safety checks
@@ -563,7 +596,7 @@ class AMI430_3D(Instrument):
 
                 instrument.set_field(value, perform_safety_check=False)
 
-    def _request_field_change(self, instrument, value):
+    def _request_field_change(self, instrument: 'AMI430', value: float) ->bool:
         """
         This method is called by the child x/y/z magnets if they are set
         individually. It results in additional safety checks being
@@ -579,7 +612,7 @@ class AMI430_3D(Instrument):
             msg = 'This magnet doesnt belong to its specified parent {}'
             raise NameError(msg.format(self))
 
-    def _get_measured(self, *names):
+    def _get_measured(self, *names: list) ->list:
 
         x = self._instrument_x.field()
         y = self._instrument_y.field()
@@ -599,7 +632,7 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _get_setpoints(self, *names):
+    def _get_setpoints(self, *names: list) ->list:
 
         measured_values = self._set_point.get_components(*names)
 
@@ -612,45 +645,45 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _set_cartesian(self, values):
+    def _set_cartesian(self, values: tuple) ->None:
         x, y, z = values
         self._set_point.set_vector(x=x, y=y, z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_x(self, x):
+    def _set_x(self, x: float) ->None:
         self._set_point.set_component(x=x)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_y(self, y):
+    def _set_y(self, y: float) ->None:
         self._set_point.set_component(y=y)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_z(self, z):
+    def _set_z(self, z: float) ->None:
         self._set_point.set_component(z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_spherical(self, values):
+    def _set_spherical(self, values: list) ->None:
         r, theta, phi = values
         self._set_point.set_vector(r=r, theta=theta, phi=phi)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_r(self, r):
+    def _set_r(self, r: float) ->None:
         self._set_point.set_component(r=r)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_theta(self, theta):
+    def _set_theta(self, theta: float) ->None:
         self._set_point.set_component(theta=theta)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_phi(self, phi):
+    def _set_phi(self, phi: float) ->None:
         self._set_point.set_component(phi=phi)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_cylindrical(self, values):
+    def _set_cylindrical(self, values: list) ->None:
         rho, phi, z = values
         self._set_point.set_vector(rho=rho, phi=phi, z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def _set_rho(self, rho):
+    def _set_rho(self, rho: float) ->None:
         self._set_point.set_component(rho=rho)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
