@@ -46,6 +46,6 @@ def test_SML_successful_generation_vary_length(N):
                                        wfm_names, seqname)
 
     # This line will raise an exception if the XML is not valid
-    parsed_xml = etree.parse(StringIO(smlstring))
+    etree.parse(StringIO(smlstring))
 
 # TODO: Add some failing tests for inproper input
