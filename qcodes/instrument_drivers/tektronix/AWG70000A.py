@@ -171,11 +171,10 @@ class AWGChannel(InstrumentChannel):
         self.add_parameter(
             'awg_amplitude',
             label='Channel {} AWG peak-to-peak amplitude'.format(channel),
-            set_cmd='SOURCe{}:POWer {{}}'.format(channel),
-            get_cmd='SOURce{}:POWer?'.format(channel),
+            set_cmd='SOURCe{}:VOLTage {{}}'.format(channel),
+            get_cmd='SOURce{}:VOLTage?'.format(channel),
             unit='V',
-            get_parser=lambda s: 2*10**((float(s)-10)/20),
-            set_parser=lambda V: 10 + 20 * np.log10(V/2),
+            get_parser=float,
             vals=vals.Numbers(0.250, 0.500))
 
         ##################################################
