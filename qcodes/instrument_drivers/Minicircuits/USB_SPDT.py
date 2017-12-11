@@ -1,13 +1,17 @@
-from qcodes import Instrument
-from qcodes.utils import validators as vals
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
 import os
+
+# QCoDeS imports
+from qcodes import Instrument
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.utils import validators as vals
+
 try:
     import clr
 except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
-                         running 'pip install pythonnet' 
+                         running 'pip install pythonnet'
                          in a qcodes environment terminal""")
+
 
 class SwitchChannelUSB(InstrumentChannel):
     def __init__(self, parent, name, channel_letter):
@@ -23,19 +27,19 @@ class SwitchChannelUSB(InstrumentChannel):
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self.channel_number = _chanlist.index(channel_letter)
 
-        self.add_parameter('switch',
-                           label='switch {}'.format(self.channel_letter),
-                           set_cmd=self._set_switch,
-                           get_cmd=self._get_switch,
-                           vals=vals.Ints(1, 2)
-                           )
+        self.add_parameter(
+            'switch',
+            label='switch {}'.format(self.channel_letter),
+            set_cmd=self._set_switch,
+            get_cmd=self._get_switch,
+            vals=vals.Ints(1, 2))
 
     def _set_switch(self, switch):
-        self._parent.switch.Set_Switch(self.channel_letter,switch-1)
+        self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
     def _get_switch(self):
         status = self._parent.switch.GetSwitchesStatus(self._parent.address)[1]
-        return int("{0:04b}".format(status)[-1-self.channel_number])+1
+        return int("{0:04b}".format(status)[-1 - self.channel_number]) + 1
 
 
 class USB_SPDT(Instrument):
@@ -47,21 +51,26 @@ class USB_SPDT(Instrument):
             address (int, optional):
             kwargs (dict): kwargs to be passed to Instrument class.
     """
+
     def __init__(self, name, address=None, **kwargs):
         super().__init__(name, **kwargs)
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
         try:
-            clr.AddReference('qcodes//instrument_drivers//Minicircuits//mcl_RF_Switch_Controller64')
+            clr.AddReference(
+                'qcodes//instrument_drivers//Minicircuits//mcl_RF_Switch_Controller64'
+            )
         except ImportError:
-            raise ImportError("""Load of mcl_RF_Switch_Controller64.dll not possible. Make sure
-                                the dll file is not blocked by Windows. To unblock right-click 
-                                the dll to open proporties and check the 'unblock' checkmark 
-                                in the bottom. Check that your python installation is 64bit.""")
+            raise ImportError(
+                """Load of mcl_RF_Switch_Controller64.dll not possible. Make sure
+                the dll file is not blocked by Windows. To unblock right-click
+                the dll to open proporties and check the 'unblock' checkmark
+                in the bottom. Check that your python installation is 64bit."""
+            )
         import mcl_RF_Switch_Controller64
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
 
-        if address == None:
+        if address is None:
             self.switch.Connect()
             self.address = self.switch.Get_Address()
         else:
@@ -69,8 +78,8 @@ class USB_SPDT(Instrument):
             self.address = address
         self.connect_message()
 
-        channels = ChannelList(self, "Channels", SwitchChannelUSB,
-                               snapshotable=False)
+        channels = ChannelList(
+            self, "Channels", SwitchChannelUSB, snapshotable=False)
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         _max_channel_number = int(self.IDN()['model'][4])
@@ -83,14 +92,15 @@ class USB_SPDT(Instrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
-
     def get_idn(self):
         fw = self.switch.GetFirmware()
         MN = self.switch.Read_ModelName('')[1]
         SN = self.switch.Read_SN('')[1]
 
-        id_dict = {'firmware': fw,
-                   'model': MN,
-                   'serial': SN,
-                   'vendor': 'Mini-Circuits'}
+        id_dict = {
+            'firmware': fw,
+            'model': MN,
+            'serial': SN,
+            'vendor': 'Mini-Circuits'
+        }
         return id_dict
