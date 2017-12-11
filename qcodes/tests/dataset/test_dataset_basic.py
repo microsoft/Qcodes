@@ -9,13 +9,13 @@ import os
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
+import numpy as np
 
 n_experiments = 0
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
     # create a temp database for testing
-    print("setting up db")
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
@@ -29,10 +29,14 @@ def empty_temp_db():
         _c.close()
         yield
 
+@pytest.fixture(scope='function')
+def experiment(empty_temp_db):
+    e = new_experiment("test-experiment", sample_name="test-sample")
+    yield e
+
 
 @pytest.fixture(scope='function')
-def dataset(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
+def dataset(experiment):
     dataset = new_data_set("test-dataset")
     yield dataset
 
@@ -91,16 +95,57 @@ def test_add_paramspec(dataset):
     assert exp.last_counter == 1
 
     parameter_a = ParamSpec("a", "INTEGER")
-    # metadata with key="value", and number=1
     parameter_b = ParamSpec("b", "INTEGER", key="value", number=1)
-    # cann add new parameter: an array
     parameter_c = ParamSpec("c", "array")
     dataset.add_parameters([parameter_a, parameter_b, parameter_c])
     paramspecs = dataset.paramspecs
     expected_keys = ['a', 'b', 'c']
     keys = sorted(list(paramspecs.keys()))
     assert keys == expected_keys
-    for param in expected_keys:
-        ps = paramspecs[param]
-        ps.name = param
+    for expected_param_name in expected_keys:
+        ps = paramspecs[expected_param_name]
+        assert ps.name == expected_param_name
 
+def test_add_data_1d(experiment):
+    exps = experiments()
+    assert len(exps) == 1
+    exp = exps[0]
+    assert exp.name == "test-experiment"
+    assert exp.sample_name == "test-sample"
+    assert exp.last_counter == 0
+
+    dataset = new_data_set("test-dataset", specs=[ParamSpec("x", "number"),
+                                                  ParamSpec("y", "number")])
+
+    expected_x = []
+    expected_y = []
+    for x in range(100):
+        expected_x.append([x])
+        y = 3 * x + 10
+        expected_y.append([y])
+        dataset.add_result({"x": x, "y": y})
+    assert dataset.get_data('x') == expected_x
+    assert dataset.get_data('y') == expected_y
+
+
+def test_add_data_array(experiment):
+    exps = experiments()
+    assert len(exps) == 1
+    exp = exps[0]
+    assert exp.name == "test-experiment"
+    assert exp.sample_name == "test-sample"
+    assert exp.last_counter == 0
+
+    dataset = new_data_set("test", specs=[ParamSpec("x", "number"),
+                                          ParamSpec("y", "array")])
+
+    expected_x = []
+    expected_y = []
+    for x in range(100):
+        expected_x.append([x])
+        y = np.random.random_sample(10)
+        expected_y.append([y])
+        dataset.add_result({"x": x, "y": y})
+    assert dataset.get_data('x') == expected_x
+    y_data = dataset.get_data('y')
+    np.testing.assert_allclose(dataset.get_data('y'), expected_y)
