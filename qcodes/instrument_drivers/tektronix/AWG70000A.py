@@ -423,7 +423,8 @@ class AWG70000A(VisaInstrument):
         Args:
             wfmx: The binary wfmx file, preferably the output of
                 makeWFMXFile.
-            filename: The name of the file on the AWG disk, including the
+            filename: The name of th
+e file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved. If
                 omitted, seqxFileFolder will be used.
@@ -804,6 +805,9 @@ class AWG70000A(VisaInstrument):
         lstlens = [len(lst) for lst in inputlsts]
         if lstlens.count(lstlens[0]) != len(lstlens):
             raise ValueError('All input lists must have the same length!')
+
+        if lstlens[0] == 0:
+            raise ValueError('Received empty sequence option lengths!')
 
         # hackish check of wmfs dimensions
         if len(np.shape(wfm_names)) != 2:
