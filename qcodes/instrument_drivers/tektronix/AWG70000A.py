@@ -7,7 +7,7 @@ import zipfile as zf
 import logging
 
 from dateutil.tz import time
-from typing import List
+from typing import List, Sequence
 
 from qcodes import Instrument, VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -653,12 +653,12 @@ e file on the AWG disk, including the
         return binary_out
 
     @staticmethod
-    def makeSEQXFile(trig_waits: List[int],
-                     nreps: List[int],
-                     event_jumps: List[int],
-                     event_jump_to: List[int],
-                     go_to: List[int],
-                     wfms: List[List[bytes]],
+    def makeSEQXFile(trig_waits: Sequence[int],
+                     nreps: Sequence[int],
+                     event_jumps: Sequence[int],
+                     event_jump_to: Sequence[int],
+                     go_to: Sequence[int],
+                     wfms: Sequence[Sequence[bytes]],
                      seqname: str) -> bytes:
         """
         Make a full .seqx file (bundle)
@@ -766,12 +766,12 @@ e file on the AWG disk, including the
         return xmlstr
 
     @staticmethod
-    def _makeSMLFile(trig_waits: List[int],
-                     nreps: List[int],
-                     event_jumps: List[int],
-                     event_jump_to: List[int],
-                     go_to: List[int],
-                     wfm_names: List[List[str]],
+    def _makeSMLFile(trig_waits: Sequence[int],
+                     nreps: Sequence[int],
+                     event_jumps: Sequence[int],
+                     event_jump_to: Sequence[int],
+                     go_to: Sequence[int],
+                     wfm_names: Sequence[Sequence[str]],
                      seqname: str) -> str:
         """
         Make an xml file describing a sequence.
