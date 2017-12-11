@@ -35,6 +35,15 @@ class SwitchChannelBase(InstrumentChannel):
             get_cmd=self._get_switch,
             vals=vals.Ints(1, 2))
 
+    def __call__(self, *args):
+        if len(args) == 1:
+            self._set_switch(args)
+        elif len(args) == 0:
+            return self._get_switch()
+        else:
+            raise RuntimeError(
+                'Call channel with either one or zero arguments')
+
     def _set_switch(self, switch):
         raise NotImplementedError()
 
