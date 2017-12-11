@@ -1036,7 +1036,6 @@ def add_parameter_2(conn: sqlite3.Connection,
     """
     p_names = []
     for p in parameter:
-        print(p)
         insert_column(conn, formatted_name, p.name, p.type)
         p_names.append(p.name)
     # get old parameters column from run table
@@ -1067,7 +1066,6 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
     run_id = one(transaction(conn, sql), 'run_id')
     layout_args = []
     for p in parameter:
-        print(p)
         layout_args.append(run_id)
         layout_args.append(p.name)
         layout_args.append(p.label)
