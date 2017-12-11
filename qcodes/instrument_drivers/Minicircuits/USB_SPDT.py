@@ -104,3 +104,7 @@ class USB_SPDT(Instrument):
             'vendor': 'Mini-Circuits'
         }
         return id_dict
+
+    def all(self, switch_to):
+        for c in self.channels:
+            c.switch(switch_to)
