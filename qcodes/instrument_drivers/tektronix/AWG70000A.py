@@ -301,6 +301,18 @@ class AWG70000A(VisaInstrument):
 
         self.connect_message()
 
+    def force_triggerA(self):
+        """
+        Force a trigger A event
+        """
+        self.write('TRIGger:IMMediate ATRigger')
+
+    def force_triggerB(self):
+        """
+        Force a trigger B event
+        """
+        self.write('TRIGger:IMMediate BTRigger')
+
     def play(self) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
