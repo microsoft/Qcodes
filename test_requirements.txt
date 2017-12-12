@@ -5,3 +5,5 @@ codacy-coverage
 hypothesis
 mypy
 pyvisa-sim
+lxml
+codecov
