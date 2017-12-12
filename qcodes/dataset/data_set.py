@@ -313,7 +313,6 @@ class DataSet(Sized):
                 deps = self.paramspecs[param].depends_on.split(', ')
                 for dep in deps:
                     if dep not in results.keys():
-                        print(list(results.keys()))
                         raise ValueError(f'Can not add result for {param}, '
                                          f'since this depends on {dep}, '
                                          'which is not being added.')
