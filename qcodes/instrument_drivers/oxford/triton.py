@@ -56,7 +56,7 @@ class Triton(IPInstrument):
                            label='PID control channel',
                            get_cmd=self._get_control_channel,
                            set_cmd=self._set_control_channel,
-                           vals=Ints(1,16))
+                           vals=Ints(1, 16))
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
@@ -144,7 +144,7 @@ class Triton(IPInstrument):
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
         self.chan_alias = {}
-        self.chan_temp_names  = {}
+        self.chan_temp_names = {}
         self.chan_temps = {}
 
         if tmpfile is not None:
@@ -214,12 +214,13 @@ class Triton(IPInstrument):
 
         # verify current channel
         if self._control_channel and not force_get:
-            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
+            tempval = self.ask(
+                'READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
             if not tempval.endswith('NOT_FOUND'):
                 return self._control_channel
 
         # either _control_channel is not set or wrong
-        for i in range(1,17):
+        for i in range(1, 17):
             tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
             if not tempval.endswith('NOT_FOUND'):
                 self._control_channel = i
@@ -249,7 +250,8 @@ class Triton(IPInstrument):
             self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
                        ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
         else:
-            print('Warning: set sweeprate in range (0 , 0.2] T/min, not setting sweeprate')
+            print(
+                'Warning: set sweeprate in range (0 , 0.2] T/min, not setting sweeprate')
 
     def _set_control_Bx_param(self, x):
         s = self.magnet_sweeprate()
@@ -328,7 +330,7 @@ class Triton(IPInstrument):
                 chan_number = int(section.split('\\')[-1].split('[')[-1]) + 1
                 # the names used in the register file are base 0 but the api and the gui
                 # uses base one names so add one
-                chan = 'T'+ str(chan_number)
+                chan = 'T' + str(chan_number)
                 name = config.get(section, '"m_lpszname"').strip("\"")
                 self.chan_temp_names[chan] = {'name': name, 'value': None}
 
