@@ -1,5 +1,6 @@
 import qcodes as qc
-from qcodes import ParamSpec, new_data_set, new_experiment, experiments, load_by_id
+from qcodes import ParamSpec, new_data_set, new_experiment, experiments
+from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, connect, _unicode_categories
 import qcodes.dataset.data_set
 import qcodes.dataset.experiment_container
@@ -153,7 +154,7 @@ def test_add_data_1d(experiment):
         expected_x.append([x])
         y = 3 * x + 10
         expected_y.append([y])
-        dataset.add_result({"x": x, "y": y})
+        mydataset.add_result({"x": x, "y": y})
     assert mydataset.get_data('x') == expected_x
     assert mydataset.get_data('y') == expected_y
     assert mydataset.completed is False
@@ -182,3 +183,21 @@ def test_add_data_array(experiment):
     assert mydataset.get_data('x') == expected_x
     y_data = mydataset.get_data('y')
     np.testing.assert_allclose(y_data, expected_y)
+
+
+def test_load_by_counter(dataset):
+    dataset = load_by_counter(1, 1)
+    exps = experiments()
+    assert len(exps) == 1
+    exp = exps[0]
+    assert dataset.name == "test-dataset"
+    assert exp.name == "test-experiment"
+    assert exp.sample_name == "test-sample"
+    assert exp.last_counter == 1
+
+
+def test_dataset_with_no_experiment_raises(empty_temp_db):
+    with pytest.raises(ValueError):
+        mydataset = new_data_set("test-dataset",
+                                 specs=[ParamSpec("x", "number"),
+                                        ParamSpec("y", "number")])
