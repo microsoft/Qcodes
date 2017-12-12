@@ -42,7 +42,7 @@ script:
       cd ..
       mypy qcodes --ignore-missing-imports
     - |
-      cd ../docs
+      cd docs
       make SPHINXOPTS="-W" html-api
     - cd ..
 
