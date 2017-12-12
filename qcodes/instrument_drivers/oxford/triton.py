@@ -224,6 +224,7 @@ class Triton(IPInstrument):
             if not tempval.endswith('NOT_FOUND'):
                 self._control_channel = i
                 break
+        return self._control_channel
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
@@ -248,7 +249,7 @@ class Triton(IPInstrument):
             self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
                        ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
         else:
-            print('Warning: set sweeprate in range (0 , 0.2] T/min')
+            print('Warning: set sweeprate in range (0 , 0.2] T/min, not setting sweeprate')
 
     def _set_control_Bx_param(self, x):
         s = self.magnet_sweeprate()
