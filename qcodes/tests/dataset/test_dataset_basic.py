@@ -7,11 +7,12 @@ import pytest
 import tempfile
 import os
 
-from hypothesis import given, settings
+from hypothesis import given
 import hypothesis.strategies as hst
 import numpy as np
 
 n_experiments = 0
+
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
@@ -29,6 +30,7 @@ def empty_temp_db():
         _c.close()
         yield
 
+
 @pytest.fixture(scope='function')
 def experiment(empty_temp_db):
     e = new_experiment("test-experiment", sample_name="test-sample")
@@ -39,6 +41,7 @@ def experiment(empty_temp_db):
 def dataset(experiment):
     dataset = new_data_set("test-dataset")
     yield dataset
+
 
 def test_tabels_exists(empty_temp_db):
     print(qc.config["core"]["db_location"])
@@ -58,7 +61,7 @@ def test_add_experiments(empty_temp_db, experiment_name,
     global n_experiments
     n_experiments += 1
 
-    e = new_experiment(experiment_name, sample_name=sample_name)
+    _ = new_experiment(experiment_name, sample_name=sample_name)
     exps = experiments()
     assert len(exps) == n_experiments
     exp = exps[-1]
@@ -106,6 +109,33 @@ def test_add_paramspec(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
+
+def test_add_paramspec_one_by_one(dataset):
+    exps = experiments()
+    assert len(exps) == 1
+    exp = exps[0]
+    assert exp.name == "test-experiment"
+    assert exp.sample_name == "test-sample"
+    assert exp.last_counter == 1
+
+    parameters = [ParamSpec("a", "INTEGER"),
+                  ParamSpec("b", "INTEGER", key="value", number=1),
+                  ParamSpec("c", "array")]
+    for parameter in parameters:
+        dataset.add_parameter(parameter)
+    paramspecs = dataset.paramspecs
+    expected_keys = ['a', 'b', 'c']
+    keys = sorted(list(paramspecs.keys()))
+    assert keys == expected_keys
+    for expected_param_name in expected_keys:
+        ps = paramspecs[expected_param_name]
+        assert ps.name == expected_param_name
+
+    with pytest.raises(ValueError):
+        dataset.add_parameter(parameters[0])
+    assert len(dataset.paramspecs.keys()) == 3
+
+
 def test_add_data_1d(experiment):
     exps = experiments()
     assert len(exps) == 1
@@ -114,8 +144,8 @@ def test_add_data_1d(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    dataset = new_data_set("test-dataset", specs=[ParamSpec("x", "number"),
-                                                  ParamSpec("y", "number")])
+    mydataset = new_data_set("test-dataset", specs=[ParamSpec("x", "number"),
+                                                    ParamSpec("y", "number")])
 
     expected_x = []
     expected_y = []
@@ -124,8 +154,11 @@ def test_add_data_1d(experiment):
         y = 3 * x + 10
         expected_y.append([y])
         dataset.add_result({"x": x, "y": y})
-    assert dataset.get_data('x') == expected_x
-    assert dataset.get_data('y') == expected_y
+    assert mydataset.get_data('x') == expected_x
+    assert mydataset.get_data('y') == expected_y
+    assert mydataset.completed is False
+    mydataset.mark_complete()
+    assert mydataset.completed is True
 
 
 def test_add_data_array(experiment):
@@ -136,8 +169,8 @@ def test_add_data_array(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    dataset = new_data_set("test", specs=[ParamSpec("x", "number"),
-                                          ParamSpec("y", "array")])
+    mydataset = new_data_set("test", specs=[ParamSpec("x", "number"),
+                                            ParamSpec("y", "array")])
 
     expected_x = []
     expected_y = []
@@ -145,7 +178,7 @@ def test_add_data_array(experiment):
         expected_x.append([x])
         y = np.random.random_sample(10)
         expected_y.append([y])
-        dataset.add_result({"x": x, "y": y})
-    assert dataset.get_data('x') == expected_x
-    y_data = dataset.get_data('y')
-    np.testing.assert_allclose(dataset.get_data('y'), expected_y)
+        mydataset.add_result({"x": x, "y": y})
+    assert mydataset.get_data('x') == expected_x
+    y_data = mydataset.get_data('y')
+    np.testing.assert_allclose(y_data, expected_y)
