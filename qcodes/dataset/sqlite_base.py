@@ -7,7 +7,6 @@ from numpy import ndarray
 import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
-import logging
 
 import unicodedata
 from qcodes.dataset.param_spec import ParamSpec
