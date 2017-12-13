@@ -1,4 +1,6 @@
+import logging
 import os
+import re
 import warnings
 
 # QCoDeS imports
@@ -12,6 +14,8 @@ except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
                          running 'pip install pythonnet'
                          in a qcodes environment terminal""")
+
+log = logging.getLogger(__name__)
 
 
 class SwitchChannelBase(InstrumentChannel):
@@ -63,7 +67,7 @@ class SPDT_Base(Instrument):
         self._deprecated_attributes = {}
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        _max_channel_number = int(self.IDN()['model'][4])
+        _max_channel_number = self.get_number_of_channels()
         _chanlist = _chanlist[0:_max_channel_number]
 
         for c in _chanlist:
@@ -85,7 +89,19 @@ class SPDT_Base(Instrument):
             warnings.warn("""Using '{}' is deprecated and will be removed in
                 future releases. Use '{}' instead""".format(
                 key, self._deprecated_attributes[key]), DeprecationWarning)
-        super().__getattr__(key)
+        return super().__getattr__(key)
+
+    def get_number_of_channels(self):
+        model = self.get_idn()['model']
+        model_parts = model.split('-')
+        if len(model_parts) < 2:
+            raise RuntimeError('The driver could not determine the number of channels of the model \'{}\', it might not be supported')
+        if model_parts[0] not in ('RC', 'USB'):
+            log.warning('The model with the name \'{}\' might not be supported by the driver'.format(model))
+        channels = re.match('^[0-9]*', model_parts[1])[0]
+        if not channels:
+            raise RuntimeError('The driver could not determine the number of channels of the model \'{}\', it might not be supported')
+        return int(channels)
 
 
 class SwitchChannelUSB(SwitchChannelBase):
@@ -98,7 +114,7 @@ class SwitchChannelUSB(SwitchChannelBase):
         return int("{0:04b}".format(status)[-1 - self.channel_number]) + 1
 
 
-class USB_SPDT(Instrument, SPDT_Base):
+class USB_SPDT(SPDT_Base):
     """
     Mini-Circuits SPDT RF switch
 
