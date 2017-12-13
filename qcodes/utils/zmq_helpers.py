@@ -5,7 +5,7 @@ import time
 
 import zmq
 
-logging.basicConfig(level="DEBUG")
+#logging.basicConfig(level="DEBUG")
 DEBUGF = "%(levelname)s:%(name)s:%(lineno)d:%(asctime)s%(message)s"
 INFOF = "%(levelname)s:%(name)s:%(message)s\n"
 WARNF = "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s\n"
