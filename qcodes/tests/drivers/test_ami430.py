@@ -199,7 +199,7 @@ def test_spherical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10)
+@settings(max_examples=10, deadline=300)
 def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -221,7 +221,7 @@ def test_cylindrical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, deadline=300)
 def test_measured(current_driver, set_target):
     """
     Simply call the measurement methods and verify that no exceptions
