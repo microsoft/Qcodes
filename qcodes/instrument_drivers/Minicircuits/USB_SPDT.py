@@ -41,7 +41,7 @@ class SwitchChannelBase(InstrumentChannel):
 
     def __call__(self, *args):
         if len(args) == 1:
-            self._set_switch(args)
+            self._set_switch(args[0])
         elif len(args) == 0:
             return self._get_switch()
         else:
