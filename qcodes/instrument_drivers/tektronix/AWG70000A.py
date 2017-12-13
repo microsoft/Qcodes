@@ -731,7 +731,6 @@ class AWG70000A(VisaInstrument):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]
 
-        # flat_wfmxs = [wfmx for lst in wfms for wfmx in lst]
         flat_wfm_names = [name for lst in wfm_names for name in lst]
 
         sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
