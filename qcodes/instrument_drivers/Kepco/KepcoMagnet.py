@@ -1,6 +1,5 @@
-from qcodes import Instrument
-from qcodes.instrument.parameter import MultiParameter
-from qcodes.utils.validators import Enum, Bool, Numbers
+from qcodes.instrument.base import Instrument
+from qcodes.utils.validators import Numbers
 import qcodes as qc
 
 from typing import Union
@@ -48,7 +47,6 @@ class KepcoMagnet(Instrument):
         range = abs(self.v1() - instrument_value)
         npoints = round(range/step)
         qc.Loop(self.v1.sweep(self.v1(), instrument_value, num=npoints), delay=delay).each(self.v1).run()
-        print(npoints)
 
     def get_field(self) -> Union[int, float]:
         """
