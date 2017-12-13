@@ -1,8 +1,10 @@
 # All manual references are to R&S RTO Digital Oscilloscope User Manual
 # for firmware 3.65, 2017
 
-import numpy as np
+import logging
 import warnings
+
+import numpy as np
 from distutils.version import LooseVersion
 
 from qcodes import Instrument
@@ -10,6 +12,8 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import ArrayParameter
+
+log = logging.getLogger(__name__)
 
 
 class ScopeTrace(ArrayParameter):
@@ -298,6 +302,10 @@ class RTO1000(VisaInstrument):
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
         # the user must provide the model manually
         firmware_version = self.get_idn()['firmware']
+
+        if LooseVersion(firmware_version) < LooseVersion(3):
+            log.warning('Old firmware version detected. This driver may '
+                        'not be compatible. Please upgrade your firmware.')
 
         if LooseVersion(firmware_version) >= LooseVersion('3.65'):
             # strip just in case there is a newline character at the end
