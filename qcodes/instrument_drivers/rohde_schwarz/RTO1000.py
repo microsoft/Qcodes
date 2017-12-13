@@ -426,7 +426,7 @@ class RTO1000(VisaInstrument):
 
         self.add_parameter('num_acquisitions',
                            label='Number of single acquisitions',
-                           get_cmd='ACQuire:COUNt ?',
+                           get_cmd='ACQuire:COUNt?',
                            set_cmd='ACQuire:COUNt {}',
                            vals=vals.Ints(1, 16777215),
                            get_parser=int)
