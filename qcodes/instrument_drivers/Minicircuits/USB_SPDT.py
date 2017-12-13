@@ -55,7 +55,9 @@ class USB_SPDT(SPDT_Base):
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
 
         if address is None:
-            self.switch.Connect()
+            success = self.switch.Connect()
+            if not success:
+                raise RuntimeError('Could not connect to device')
             self.address = self.switch.Get_Address()
         else:
             self.switch.ConnectByAddress(address)
