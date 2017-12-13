@@ -109,15 +109,18 @@ class USB_SPDT(Instrument, SPDT_Base):
     """
 
     CHANNEL_CLASS = SwitchChannelUSB
+    PATH_TO_DRIVER = r'mcl_RF_Switch_Controller64'
 
-    def __init__(self, name, address=None, **kwargs):
+    def __init__(self, name, driver_path=None, address=None, **kwargs):
         super().__init__(name, **kwargs)
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
         try:
-            clr.AddReference(
-                'qcodes//instrument_drivers//Minicircuits//mcl_RF_Switch_Controller64'
-            )
+            if driver_path is None:
+                clr.AddReference(self.PATH_TO_DRIVER)
+            else:
+                clr.AddReference(driver_path)
+
         except ImportError:
             raise ImportError(
                 """Load of mcl_RF_Switch_Controller64.dll not possible. Make sure
