@@ -376,7 +376,6 @@ class ANC300(VisaInstrument):
         answer = end_msg_pattern.sub('', answer)  # remove end_msg_pattern
 
         if err_check == 'ERROR':
-            log.error("Instrument returned ERROR: %r", answer)
             if answer.strip() == 'Wrong axis id':
                 raise ANC300WrongAxisId
             elif answer.strip() == 'Wrong axis type':
