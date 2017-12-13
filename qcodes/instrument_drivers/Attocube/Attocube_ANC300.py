@@ -23,10 +23,12 @@ class ANC300GenericError(Exception):
 
 class ANMxx0(InstrumentChannel):
     """
-    QCoDeS driver for an Attocube ANMxx0 module, to be used as channels of an
-    Attocube ANC300 piezo controller
+    QCoDeS driver for an Attocube ANMxx0 module.
+
+    To be used as channels of an Attocube ANC300 piezo controller.
+
     TODO(ThibaudRuelle): separate channel and instrument to be able to
-                         reference ANC300 in ANMxx0 init
+        reference ANC300 in ANMxx0 init
     """
     def __init__(self, parent: Instrument, name, aid):
         """
@@ -61,12 +63,14 @@ class ANMxx0(InstrumentChannel):
 
         def ans_parser(name, ans, unit=None, parser=str):
             """
-            Parses "{name} = {value} ({unit})" type answers from ANC300.
+            Parse "{name} = {value} ({unit})" type answers from ANC300.
+
             Args:
                 name: The expected name
                 ans: The answer from the instrument
                 unit: The expected unit. Defaults to None.
                 parser: Function to use to parse the value.
+
             Returns parser(value).
             """
             ans = ans.strip().replace('=', ' ')
@@ -233,7 +237,7 @@ class ANMxx0(InstrumentChannel):
 
 class ANC300(VisaInstrument):
     """
-    QCodeS driver for the Attocube ANC300 piezo controller
+    QCodeS driver for Attocube ANC300 piezo controller
     """
 
     def __init__(self, name, address=None, password='123456', axis_names=None,
@@ -242,11 +246,11 @@ class ANC300(VisaInstrument):
         Args:
             name: The name of the instrument
             address: The VISA resource name of the instrument
-                     (e.g. "tcpip0::192.168.1.2::7230::socket")
+                (e.g. "tcpip0::192.168.1.2::7230::socket")
             password: Password for authenticating into the instrument
-                      (default: '123456')
+                (default: '123456')
             axis_names(optional): List of names to give to the individual
-                                  channels
+                channels
         """
         super().__init__(name, address, terminator='\r\n', **kwargs)
 
