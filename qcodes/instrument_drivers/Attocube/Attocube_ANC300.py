@@ -315,18 +315,15 @@ class ANC300(VisaInstrument):
         # the simulation backend does not return anything on
         # write
         log.debug("Writing to instrument %s: %r", self.name, cmd)
-        """ Uncomment when #859 is in pip version
         if self.visabackend == 'sim':
             # if we use pyvisa-sim, we must read back the 'OK'
             # response of the setting
             resp = self.visa_handle.ask(cmd)
             if resp != 'OK':
                 log.warning('Received non-OK response from instrument '
-                            '{}: {}.'.format(self.name, resp))
+                            '%s: %r.', self.name, resp)
         else:
             self._ask_raw(cmd)
-        """
-        self._ask_raw(cmd)
 
     def ask_raw(self, cmd):
         """
