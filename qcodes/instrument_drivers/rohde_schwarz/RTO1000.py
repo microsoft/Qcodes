@@ -37,18 +37,8 @@ class ScopeTrace(ArrayParameter):
         """
         Prepare the scope for returning data, calculate the setpoints
         """
-
-        # we must have this nesting, since the parameter high_definition_state
-        # only exists if HD
-        if self.channel._parent.HD:
-            if self.channel._parent.high_definition_state() == 'ON':
-                dataformat = 'INT,16'
-            else:
-                dataformat = 'INT,8'
-        else:
-            dataformat = 'INT,8'
-
-        self.channel._parent.dataformat(dataformat)
+        # We always use 16 bit integers for the data format
+        self.channel._parent.dataformat('INT,16')
         # ensure little-endianess
         self.channel._parent.write('FORMat:BORder LSBFirst')
         # only export y-values
