@@ -24,6 +24,10 @@ class KepcoMagnet(Instrument):
         self.axis=axis
         self.rate=rate
 
+        delay = 0.1
+        self.v1.inter_delay = delay
+        self.v1.step = (self.rate * self.field_to_amp / self.volt_to_amp) * delay / 60
+
         self.v1.vals = Numbers(-self.MAX_AMP / volt_to_amp,
                                self.MAX_AMP / volt_to_amp)
 
@@ -31,7 +35,6 @@ class KepcoMagnet(Instrument):
                            label='Maximum field value',
                            unit='T',
                            vals=Numbers())
-
 
         self.add_parameter('{}_BField'.format(axis),
                            label='{} magnetic field'.format(axis),
@@ -42,11 +45,7 @@ class KepcoMagnet(Instrument):
 
     def set_field(self, value: Union[int, float]) -> None:
         instrument_value = value * self.field_to_amp / self.volt_to_amp
-        delay=0.1
-        step = (self.rate * self.field_to_amp / self.volt_to_amp) * delay / 60
-        range = abs(self.v1() - instrument_value)
-        npoints = round(range/step)
-        qc.Loop(self.v1.sweep(self.v1(), instrument_value, num=npoints), delay=delay).each(self.v1).run()
+        self.v1.set(instrument_value)
 
     def get_field(self) -> Union[int, float]:
         """
