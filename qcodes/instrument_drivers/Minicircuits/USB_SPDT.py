@@ -66,7 +66,9 @@ class SPDT_Base(Instrument):
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self._deprecated_attributes = {
-            'channel_{}'.format(k): k for k in _chanlist}
+            'channel_{}'.format(k): k
+            for k in _chanlist
+        }
 
         _max_channel_number = self.get_number_of_channels()
         _chanlist = _chanlist[0:_max_channel_number]
@@ -87,25 +89,31 @@ class SPDT_Base(Instrument):
 
     def __getattr__(self, key):
         if key in self._deprecated_attributes:
-            warnings.warn("Using '{}' is deprecated and will be removed in future releases. Use '{}' instead".format(
-                key, self._deprecated_attributes[key]), UserWarning)
+            warnings.warn(
+                "Using '{}' is deprecated and will be removed in future releases. Use '{}' instead".
+                format(key, self._deprecated_attributes[key]), UserWarning)
         return super().__getattr__(key)
 
     def get_number_of_channels(self):
         model = self.get_idn()['model']
         model_parts = model.split('-')
         if len(model_parts) < 2:
-            raise RuntimeError('The driver could not determine the number of channels of the model \'{}\', it might not be supported')
+            raise RuntimeError(
+                'The driver could not determine the number of channels of the model \'{}\', it might not be supported'
+            )
         if model_parts[0] not in ('RC', 'USB'):
-            log.warning('The model with the name \'{}\' might not be supported by the driver'.format(model))
+            log.warning(
+                'The model with the name \'{}\' might not be supported by the driver'.
+                format(model))
         channels = re.match('^[0-9]*', model_parts[1])[0]
         if not channels:
-            raise RuntimeError('The driver could not determine the number of channels of the model \'{}\', it might not be supported')
+            raise RuntimeError(
+                'The driver could not determine the number of channels of the model \'{}\', it might not be supported'
+            )
         return int(channels)
 
 
 class SwitchChannelUSB(SwitchChannelBase):
-
     def _set_switch(self, switch):
         self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
