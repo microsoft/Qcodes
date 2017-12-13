@@ -32,9 +32,9 @@ class SwitchChannelBase(InstrumentChannel):
 
     def __call__(self, *args):
         if len(args) == 1:
-            self._set_switch(args[0])
+            self.switch(args[0])
         elif len(args) == 0:
-            return self._get_switch()
+            return self.switch()
         else:
             raise RuntimeError(
                 'Call channel with either one or zero arguments')
