@@ -27,14 +27,15 @@ class USB_SPDT(SPDT_Base):
 
     Args:
             name (str): the name of the instrument
-            address (int, optional):
+            serial_number (str, optional): the serial number of the device
+               (printed on the sticker on the back side, without s/n)
             kwargs (dict): kwargs to be passed to Instrument class.
     """
 
     CHANNEL_CLASS = SwitchChannelUSB
     PATH_TO_DRIVER = r'mcl_RF_Switch_Controller64'
 
-    def __init__(self, name, driver_path=None, address=None, **kwargs):
+    def __init__(self, name, driver_path=None, serial_number=None, **kwargs):
         super().__init__(name, **kwargs)
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
@@ -54,18 +55,16 @@ class USB_SPDT(SPDT_Base):
         import mcl_RF_Switch_Controller64
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
 
-        if address is None:
-            success = self.switch.Connect()
-            if not success:
-                raise RuntimeError('Could not connect to device')
-            self.address = self.switch.Get_Address()
-        else:
-            self.switch.ConnectByAddress(address)
-            self.address = address
+        if not self.switch.Connect(serial_number):
+            raise RuntimeError('Could not connect to device')
+        self.address = self.switch.Get_Address()
+        self.serial_number = self.switch.Read_SN('')[1]
         self.connect_message()
         self.add_channels()
 
     def get_idn(self):
+        # the arguments in those functions is the serial number or none if
+        # there is only one switch.
         fw = self.switch.GetFirmware()
         MN = self.switch.Read_ModelName('')[1]
         SN = self.switch.Read_SN('')[1]
