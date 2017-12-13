@@ -181,7 +181,7 @@ class AWGChannel(InstrumentChannel):
         for mrk in range(1, 3):
 
             self.add_parameter(
-                'marker1_high',
+                'marker{}_high'.format(mrk),
                 label='Channel {} marker 1 high level'.format(channel),
                 set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
                                                                      mrk),
@@ -191,7 +191,7 @@ class AWGChannel(InstrumentChannel):
                 get_parser=float)
 
             self.add_parameter(
-                'marker1_low',
+                'marker{}_low'.format(mrk),
                 label='Channel {} marker 1 low level'.format(channel),
                 set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
                                                                     mrk),
