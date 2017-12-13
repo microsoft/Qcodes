@@ -177,6 +177,29 @@ class AWGChannel(InstrumentChannel):
             get_parser=float,
             vals=vals.Numbers(0.250, 0.500))
 
+        # markers
+        for mrk in range(1, 3):
+
+            self.add_parameter(
+                'marker1_high',
+                label='Channel {} marker 1 high level'.format(channel),
+                set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
+                                                                     mrk),
+                get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
+                unit='V',
+                vals=vals.Numbers(-1.4, 1.4),
+                get_parser=float)
+
+            self.add_parameter(
+                'marker1_low',
+                label='Channel {} marker 1 low level'.format(channel),
+                set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
+                                                                    mrk),
+                get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
+                unit='V',
+                vals=vals.Numbers(-1.4, 1.4),
+                get_parser=float)
+
         ##################################################
         # MISC.
 
