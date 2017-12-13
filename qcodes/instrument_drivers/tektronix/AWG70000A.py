@@ -182,7 +182,7 @@ class AWGChannel(InstrumentChannel):
 
             self.add_parameter(
                 'marker{}_high'.format(mrk),
-                label='Channel {} marker 1 high level'.format(channel),
+                label='Channel {} marker {} high level'.format(channel, mrk),
                 set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
                                                                      mrk),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
@@ -192,13 +192,20 @@ class AWGChannel(InstrumentChannel):
 
             self.add_parameter(
                 'marker{}_low'.format(mrk),
-                label='Channel {} marker 1 low level'.format(channel),
+                label='Channel {} marker {} low level'.format(channel, mrk),
                 set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
                                                                     mrk),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
                 unit='V',
                 vals=vals.Numbers(-1.4, 1.4),
                 get_parser=float)
+
+            self.add_parameter(
+                'marker{}_waitvalue'.format(mrk),
+                label='Channel {} marker {} wait state'.format(channel, mrk),
+                set_cmd='OUTPut{}:WVALue:MARKer{} {{}}'.format(channel, mrk),
+                get_cmd='OUTPut{}:WVALue:MARKer{}?'.format(channel, mrk),
+                vals=vals.Enum('FIRST', 'LOW', 'HIGH'))
 
         ##################################################
         # MISC.
