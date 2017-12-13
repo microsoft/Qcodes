@@ -8,6 +8,8 @@ config = Config()
 
 from qcodes.utils.zmq_helpers import check_broker
 haz_broker = check_broker()
+
+log = logging.getLogger(__name__)
 if haz_broker:
     from qcodes.utils.zmq_helpers import QPUBHandler
     import logging.config
@@ -15,7 +17,7 @@ if haz_broker:
     logger_config = pkgr.resource_filename(__name__, "./config/logging.conf")
     logging.config.fileConfig(logger_config)
 else:
-    logging.warning("Can't publish logs, did you star the server?")
+    log.warning("Can't publish logs, did you star the server?")
 
 
 # name space
