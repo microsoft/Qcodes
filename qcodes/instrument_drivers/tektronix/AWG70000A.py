@@ -6,7 +6,7 @@ import io
 import zipfile as zf
 import logging
 
-from dateutil.tz import time
+import time
 from typing import List, Sequence
 
 from qcodes import Instrument, VisaInstrument, validators as vals
@@ -336,10 +336,10 @@ class AWG70000A(VisaInstrument):
         """
         Return the waveform list as a list of strings
         """
-        resp = self.ask("WLISt:LIST?")
-        resp = resp.strip()
-        resp = resp.replace('"', '')
-        resp = resp.split(',')
+        respstr = self.ask("WLISt:LIST?")
+        respstr = respstr.strip()
+        respstr = respstr.replace('"', '')
+        resp = respstr.split(',')
 
         return resp
 
