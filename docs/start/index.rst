@@ -67,7 +67,7 @@ Finally install QCoDeS add the repository via
     pip install -e <path-to-repository>
 
 Updating QCoDeS
-~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 If you have installed with pip, run the following to update:
 
