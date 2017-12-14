@@ -3,6 +3,7 @@
 
 import logging
 import warnings
+import time
 
 import numpy as np
 from distutils.version import LooseVersion
@@ -81,11 +82,21 @@ class ScopeTrace(ArrayParameter):
         Returns a trace
         """
 
+        instr = self.channel._parent
+
         if not self._trace_ready:
             raise ValueError('Trace not ready! Please call '
                              'prepare_trace().')
 
-        vh = self.channel._parent.visa_handle
+        if instr.run_mode() == 'RUN Nx SINGLE':
+            N = instr.num_acquisition()
+            M = instr.completed_acquisitions()
+            log.info('Acquiring {} traces.'.format(N))
+            while M < N:
+                log.info('Acquired {}:{} traces.'.format(M, N))
+                time.sleep(0.25)
+
+        vh = instr.visa_handle
         vh.write('CHANnel{}:DATA?'.format(self.channum))
         raw_vals = vh.read_raw()
 
@@ -95,7 +106,7 @@ class ScopeTrace(ArrayParameter):
         # cut of the header and the trailing '\n'
         raw_vals = raw_vals[2+num_length:-1]
 
-        dataformat = self.channel._parent.dataformat.get_latest()
+        dataformat = instr.dataformat.get_latest()
 
         if dataformat == 'INT,8':
             int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
@@ -109,7 +120,7 @@ class ScopeTrace(ArrayParameter):
         scale = self.channel.scale()
         no_divs = 10  # TODO: Is this ever NOT 10?
         if self.channel._parent.HD:
-            if self.channel._parent.high_definition_state() == 'ON':
+            if instr.high_definition_state() == 'ON':
                 quant_levels = 253*256
             else:
                 quant_levels = 253
@@ -508,14 +519,14 @@ class RTO1000(VisaInstrument):
         Set the instrument in 'RUN CONT' mode
         """
         self.write('RUN')
-        self.runmode.set('RUN CONT')
+        self.run_mode.set('RUN CONT')
 
     def run_single(self) -> None:
         """
         Set the instrument in 'RUN Nx SINGLE' mode
         """
         self.write('SINGLE')
-        self.runmode.set('RUN Nx SINGLE')
+        self.run_mode.set('RUN Nx SINGLE')
 
     #########################
     # Specialised set/get functions
