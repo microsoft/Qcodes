@@ -67,3 +67,14 @@ from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 from qcodes.utils import validators
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
+
+try:
+    get_ipython() # Check if we are in iPython
+    from qcodes.utils.magic import register_magic_class
+    _register_magic = config.core.get('register_magic', False)
+    if _register_magic is not False:
+        register_magic_class(magic_commands=_register_magic)
+except NameError:
+    pass
+except RuntimeError as e:
+    print(e)

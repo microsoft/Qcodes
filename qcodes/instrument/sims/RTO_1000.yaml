@@ -1,0 +1,24 @@
+# SIMULATED INSTRUMENT FOR ROHDE&SCHWARZ RTO 1000 SERIES OSCILLOSCOPES
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, RTO 1000 (Simulation), 1000, 0.1"  # NOTE: firmware version > 3.65 gets queried by driver
+
+    properties:
+
+      timebase divisions:
+        default: 10
+        getter:
+          q: "TIMebase:DIVisions?"
+          r: "{}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
