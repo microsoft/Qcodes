@@ -756,7 +756,7 @@ class AWG70000A(VisaInstrument):
                      for ch in range(1, chans+1)]
 
         # generate wfmx files for the waveforms
-        flat_wfmxs = []
+        flat_wfmxs = [] # type: List[bytes]
         for amplitude, wfm_lst in zip(amplitudes, wfms):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]
