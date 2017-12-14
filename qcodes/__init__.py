@@ -69,7 +69,7 @@ from qcodes.utils import validators
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
 try:
-    get_ipython() # Check if we are in iPython
+    get_ipython() # type: ignore # Check if we are in iPython
     from qcodes.utils.magic import register_magic_class
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
