@@ -422,11 +422,26 @@ class RTO1000(VisaInstrument):
         #########################
         # Acquisition
 
+        # I couldn't find a way to query the run mode, so we manually keep
+        # track of it. It is very important when getting the trace to make
+        # sense of completed_acquisitions
+        self.add_parameter('run_mode',
+                           label='Run/acqusition mode of the scope',
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.run_mode('RUN CONT')
+
         self.add_parameter('num_acquisitions',
-                           label='Number of single acquisitions',
+                           label='Number of single acquisitions to perform',
                            get_cmd='ACQuire:COUNt?',
                            set_cmd='ACQuire:COUNt {}',
                            vals=vals.Ints(1, 16777215),
+                           get_parser=int)
+
+        self.add_parameter('completed_acquisitions',
+                           label='Number of completed acquisitions',
+                           get_cmd='ACQuire:CURRent?',
                            get_parser=int)
 
         self.add_parameter('sampling_rate',
@@ -479,8 +494,6 @@ class RTO1000(VisaInstrument):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
 
-        self.add_function('run_cont', call_cmd='RUN')
-        self.add_function('run_single', call_cmd='SINGle')
         self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
         self.add_function('opc', call_cmd='*OPC?')
@@ -489,6 +502,20 @@ class RTO1000(VisaInstrument):
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
 
         self.connect_message()
+
+    def run_cont(self) -> None:
+        """
+        Set the instrument in 'RUN CONT' mode
+        """
+        self.write('RUN')
+        self.runmode.set('RUN CONT')
+
+    def run_single(self) -> None:
+        """
+        Set the instrument in 'RUN Nx SINGLE' mode
+        """
+        self.write('SINGLE')
+        self.runmode.set('RUN Nx SINGLE')
 
     #########################
     # Specialised set/get functions
