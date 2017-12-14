@@ -2,7 +2,7 @@
 from typing import List, Tuple, Union, Optional, Dict, Sequence, cast
 
 from .base import InstrumentBase, Instrument
-from .parameter import MultiParameter, ArrayParameter
+from .parameter import MultiParameter, ArrayParameter, Parameter
 from ..utils.validators import Validator
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
@@ -366,30 +366,32 @@ class ChannelList(Metadatable):
             if isinstance(self._channels[0].parameters[name], MultiParameter):
                 raise NotImplementedError("Slicing is currently not "
                                           "supported for MultiParameters")
+            parameters = cast(List[Union[Parameter, ArrayParameter]],
+                              [chan.parameters[name] for chan in self._channels])
             names = tuple("{}_{}".format(chan.name, name)
                           for chan in self._channels)
-            labels = tuple(chan.parameters[name].label
-                           for chan in self._channels)
-            units = tuple(chan.parameters[name].unit
-                          for chan in self._channels)
+            labels = tuple(parameter.label
+                           for parameter in parameters)
+            units = tuple(parameter.unit
+                          for parameter in parameters)
 
-            if isinstance(self._channels[0].parameters[name], ArrayParameter):
-                shapes = tuple(chan.parameters[name].shape for
-                               chan in self._channels)
-                f_parameter = cast(ArrayParameter, self._channels[0].parameters[name])
-                if f_parameter.setpoints:
-                    setpoints = tuple(chan.parameters[name].setpoints for
-                                      chan in self._channels)
-                if f_parameter.setpoint_names:
-                    setpoint_names = tuple(chan.parameters[name].setpoint_names
-                                           for chan in self._channels)
-                if f_parameter.setpoint_labels:
+            if isinstance(parameters[0], ArrayParameter):
+                arrayparameters = cast(List[ArrayParameter],parameters)
+                shapes = tuple(parameter.shape for
+                               parameter in arrayparameters)
+                if arrayparameters[0].setpoints:
+                    setpoints = tuple(parameter.setpoints for
+                                      parameter in arrayparameters)
+                if arrayparameters[0].setpoint_names:
+                    setpoint_names = tuple(parameter.setpoint_names for
+                                           parameter in arrayparameters)
+                if arrayparameters[0].setpoint_labels:
                     setpoint_labels = tuple(
-                        chan.parameters[name].setpoint_labels
-                        for chan in self._channels)
-                if f_parameter.setpoint_units:
-                    setpoint_units = tuple(chan.parameters[name].setpoint_units
-                                           for chan in self._channels)
+                        parameter.setpoint_labels
+                        for parameter in arrayparameters)
+                if arrayparameters[0].setpoint_units:
+                    setpoint_units = tuple(parameter.setpoint_units
+                                           for parameter in arrayparameters)
             else:
                 shapes = tuple(() for _ in self._channels)
 
