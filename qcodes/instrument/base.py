@@ -652,7 +652,7 @@ class Instrument(InstrumentBase):
             e.args = e.args + ('asking ' + repr(cmd) + ' to ' + inst,)
             raise e
 
-    def ask_raw(self, cmd: str) -> None:
+    def ask_raw(self, cmd: str) -> str:
         """
         Low level method to write to the hardware and return a response.
 
