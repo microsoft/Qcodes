@@ -356,6 +356,8 @@ class Instrument(InstrumentBase):
     shared_kwargs = ()
 
     _all_instruments = {} # type: Dict[str, weakref.ref]
+    _type = None
+    _instances = [] # type: List[weakref.ref]
 
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
