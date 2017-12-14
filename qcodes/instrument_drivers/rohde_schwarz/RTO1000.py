@@ -89,13 +89,15 @@ class ScopeTrace(ArrayParameter):
                              'prepare_trace().')
 
         if instr.run_mode() == 'RUN Nx SINGLE':
-            N = instr.num_acquisition()
+            N = instr.num_acquisitions()
             M = instr.completed_acquisitions()
             log.info('Acquiring {} traces.'.format(N))
             while M < N:
                 log.info('Acquired {}:{} traces.'.format(M, N))
                 time.sleep(0.25)
+                M = instr.completed_acquisitions()
 
+        log.info('Acquisition completed. Polling trace from instrument.')
         vh = instr.visa_handle
         vh.write('CHANnel{}:DATA?'.format(self.channum))
         raw_vals = vh.read_raw()
@@ -119,13 +121,9 @@ class ScopeTrace(ArrayParameter):
 
         scale = self.channel.scale()
         no_divs = 10  # TODO: Is this ever NOT 10?
-        if self.channel._parent.HD:
-            if instr.high_definition_state() == 'ON':
-                quant_levels = 253*256
-            else:
-                quant_levels = 253
-        else:
-            quant_levels = 253
+
+        # we always export as 16 bit integers
+        quant_levels = 253*256
         conv_factor = scale*no_divs/quant_levels
         output = conv_factor*int_vals + self.channel.offset()
 
