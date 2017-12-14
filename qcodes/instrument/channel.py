@@ -1,5 +1,5 @@
 """ Base class for the channel of an instrument """
-from typing import List, Tuple, Union, Optional, Dict, Sequence
+from typing import List, Tuple, Union, Optional, Dict, Sequence, cast
 
 from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
@@ -376,18 +376,18 @@ class ChannelList(Metadatable):
             if isinstance(self._channels[0].parameters[name], ArrayParameter):
                 shapes = tuple(chan.parameters[name].shape for
                                chan in self._channels)
-
-                if self._channels[0].parameters[name].setpoints:
+                f_parameter = cast(ArrayParameter, self._channels[0].parameters[name])
+                if f_parameter.setpoints:
                     setpoints = tuple(chan.parameters[name].setpoints for
                                       chan in self._channels)
-                if self._channels[0].parameters[name].setpoint_names:
+                if f_parameter.setpoint_names:
                     setpoint_names = tuple(chan.parameters[name].setpoint_names
                                            for chan in self._channels)
-                if self._channels[0].parameters[name].setpoint_labels:
+                if f_parameter.setpoint_labels:
                     setpoint_labels = tuple(
                         chan.parameters[name].setpoint_labels
                         for chan in self._channels)
-                if self._channels[0].parameters[name].setpoint_units:
+                if f_parameter.setpoint_units:
                     setpoint_units = tuple(chan.parameters[name].setpoint_units
                                            for chan in self._channels)
             else:
