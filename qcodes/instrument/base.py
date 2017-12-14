@@ -3,12 +3,13 @@ import logging
 import time
 import warnings
 import weakref
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING
 
 
 from typing import Dict, Sequence
 import numpy as np
-
+if TYPE_CHECKING:
+    from qcodes.instrumet.channel import ChannelList
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
@@ -49,7 +50,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         self.parameters = {} # type: Dict[str, _BaseParameter]
         self.functions = {} # type: Dict[str, Function]
-        self.submodules = {} # type: Dict[str, Metadatable]
+        self.submodules = {} # type: Dict[str, Union['InstrumentBase', 'ChannelList']]
         super().__init__(**kwargs)
 
     def add_parameter(self, name: str,
@@ -111,7 +112,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name: str, submodule: Metadatable) -> None:
+    def add_submodule(self, name: str, submodule:  Union['InstrumentBase', 'ChannelList']) -> None:
         """
         Bind one submodule to this instrument.
 
