@@ -303,7 +303,7 @@ class RTO1000(VisaInstrument):
         # the user must provide the model manually
         firmware_version = self.get_idn()['firmware']
 
-        if LooseVersion(firmware_version) < LooseVersion(3):
+        if LooseVersion(firmware_version) < LooseVersion('3'):
             log.warning('Old firmware version detected. This driver may '
                         'not be compatible. Please upgrade your firmware.')
 
