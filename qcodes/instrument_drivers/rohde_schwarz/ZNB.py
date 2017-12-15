@@ -227,8 +227,6 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:START {:.4f}'.format(channel, val))
         stop = self.stop()
-        npts = self.npts()
-
         if val >= stop:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
@@ -237,14 +235,11 @@ class ZNBChannel(InstrumentChannel):
         if val != start:
             log.warning(
                 "Could not set start to {} setting it to {}".format(val, start))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        self._update_traces()
 
     def _set_stop(self, val):
         channel = self._instrument_channel
         start = self.start()
-        npts = self.npts()
         if val <= start:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
@@ -254,38 +249,36 @@ class ZNBChannel(InstrumentChannel):
         if val != stop:
             log.warning(
                 "Could not set stop to {} setting it to {}".format(val, stop))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        self._update_traces()
 
     def _set_npts(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:SWE:POIN {:.4f}'.format(channel, val))
-        start = self.start()
-        stop = self.stop()
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(start, stop, val)
-        self.trace_mag_phase.set_sweep(start, stop, val)
+        self._update_traces()
 
     def _set_span(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:SPAN {:.4f}'.format(channel, val))
-        start = self.start()
-        stop = self.stop()
-        npts = self.npts()
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        self._update_traces()
 
     def _set_center(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:CENT {:.4f}'.format(channel, val))
+        self._update_traces()
+
+    def _update_traces(self):
+        """ updates start, stop and npts of all trace parameters"""
         start = self.start()
         stop = self.stop()
         npts = self.npts()
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        for p in self.parameters:
+            if isinstance(p, ArrayParameter):
+                try:
+                    p.set_sweep(start, stop, npts)
+                except AttributeError:
+                    pass
 
-    def _get_sweep_data(self, force_polar = False):
+    def _get_sweep_data(self, force_polar=False):
 
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
@@ -452,4 +445,3 @@ class ZNB(VisaInstrument):
                 submodule._channels = []
                 submodule._channel_mapping = {}
                 submodule._locked = False
-
