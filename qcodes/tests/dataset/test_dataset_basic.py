@@ -36,12 +36,14 @@ def empty_temp_db():
 def experiment(empty_temp_db):
     e = new_experiment("test-experiment", sample_name="test-sample")
     yield e
+    e.conn.close()
 
 
 @pytest.fixture(scope='function')
 def dataset(experiment):
     dataset = new_data_set("test-dataset")
     yield dataset
+    dataset.conn.close()
 
 
 def test_tabels_exists(empty_temp_db):
@@ -51,7 +53,7 @@ def test_tabels_exists(empty_temp_db):
     expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
     for row, expected_table in zip(cursor, expected_tables):
         assert expected_table in row['sql']
-
+    conn.close()
 
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
