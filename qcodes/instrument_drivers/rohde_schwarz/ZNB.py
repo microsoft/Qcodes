@@ -3,7 +3,6 @@ import logging
 from qcodes import VisaInstrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
-from cmath import phase
 import numpy as np
 from qcodes import MultiParameter, ArrayParameter
 
@@ -36,8 +35,11 @@ class FrequencySweepMagPhase(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get_raw(self):
-       data = self._intrument._get_sweep_data(force_polar = True)
-       return abs(data), phase(data)
+        old_format = self._instrument.format()
+        self._instrument.format('Complex')
+        data = self._instrument._get_sweep_data(force_polar = True)
+        self._instrument.format(old_format)
+        return abs(data), np.angle(data)
 
 class FrequencySweep(ArrayParameter):
     """
@@ -78,8 +80,8 @@ class FrequencySweep(ArrayParameter):
         self.shape = (npts,)
 
     def get_raw(self):
-       data = self._intrument._get_sweep_data()
-       if self.format() in ['Polar', 'Complex',
+       data = self._instrument._get_sweep_data()
+       if self._instrument.format() in ['Polar', 'Complex',
                             'Smith', 'Inverse Smith']:
            log.warning("QCoDeS Dataset does not currently support Complex "
                        "values. Will discard the imaginary part.")
@@ -384,6 +386,7 @@ class ZNB(VisaInstrument):
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
+        self.reset()
         self.clear_channels()
         channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
                                snapshotable=True)
@@ -410,9 +413,9 @@ class ZNB(VisaInstrument):
         """
         self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
 
-    def add_channel(self, vna_parameter: str):
+    def add_channel(self, vna_parameter: str, **kwargs):
         n_channels = len(self.channels)
-        channel = self.CHANNEL_CLASS(self, vna_parameter, n_channels + 1)
+        channel = self.CHANNEL_CLASS(self, vna_parameter, n_channels + 1, **kwargs)
         self.channels.append(channel)
         if n_channels == 0:
             self.display_single_window()
