@@ -121,8 +121,6 @@ class MercurySlavePS(InstrumentChannel):
                            get_parser=partial(_signal_parser, 1),
                            set_cmd=partial(self._param_setter, 'ATOB'))
 
-
-
     def _param_getter(self, get_cmd: str) -> str:
         """
         General getter function for parameters
@@ -150,10 +148,11 @@ class MercurySlavePS(InstrumentChannel):
         dressed_cmd = '{}:{}:{}:{}:{}:{}'.format('SET', 'DEV', self.uid, 'PSU',
                                                  set_cmd, value)
         # the instrument always very verbosely responds
-        # 'resp' holds the value reported back by the instrument
-        resp = self._parent.ask(dressed_cmd)
+        # the return value of `ask`
+        # holds the value reported back by the instrument
+        self._parent.ask(dressed_cmd)
 
-        # TODO: we could use the opportunity to check that we did set
+        # TODO: we could use the opportunity to check that we did set/ achieve
         # the intended value
 
 
