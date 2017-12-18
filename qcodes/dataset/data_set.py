@@ -65,7 +65,7 @@ class Subscriber(Thread):
                  state: Optional[Any] = None, min_wait: int = 100,
                  min_count: int = 1) -> None:
         self.sub_id = id
-        # wether or not this is actually thread safe I am not sure :P
+        # whether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
         self.conn = dataSet.conn
@@ -513,7 +513,7 @@ class DataSet(Sized):
 
     def unsubscribe(self, uuid: str) -> None:
         """
-        Remov subscriber with the provided uuid
+        Remove subscriber with the provided uuid
         """
         with atomic(self.conn):
             self._remove_trigger(uuid)
