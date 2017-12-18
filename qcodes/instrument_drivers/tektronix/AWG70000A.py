@@ -177,6 +177,36 @@ class AWGChannel(InstrumentChannel):
             get_parser=float,
             vals=vals.Numbers(0.250, 0.500))
 
+        # markers
+        for mrk in range(1, 3):
+
+            self.add_parameter(
+                'marker{}_high'.format(mrk),
+                label='Channel {} marker {} high level'.format(channel, mrk),
+                set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
+                                                                     mrk),
+                get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
+                unit='V',
+                vals=vals.Numbers(-1.4, 1.4),
+                get_parser=float)
+
+            self.add_parameter(
+                'marker{}_low'.format(mrk),
+                label='Channel {} marker {} low level'.format(channel, mrk),
+                set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
+                                                                    mrk),
+                get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
+                unit='V',
+                vals=vals.Numbers(-1.4, 1.4),
+                get_parser=float)
+
+            self.add_parameter(
+                'marker{}_waitvalue'.format(mrk),
+                label='Channel {} marker {} wait state'.format(channel, mrk),
+                set_cmd='OUTPut{}:WVALue:MARKer{} {{}}'.format(channel, mrk),
+                get_cmd='OUTPut{}:WVALue:MARKer{}?'.format(channel, mrk),
+                vals=vals.Enum('FIRST', 'LOW', 'HIGH'))
+
         ##################################################
         # MISC.
 
@@ -301,6 +331,18 @@ class AWG70000A(VisaInstrument):
 
         self.connect_message()
 
+    def force_triggerA(self):
+        """
+        Force a trigger A event
+        """
+        self.write('TRIGger:IMMediate ATRigger')
+
+    def force_triggerB(self):
+        """
+        Force a trigger B event
+        """
+        self.write('TRIGger:IMMediate BTRigger')
+
     def play(self) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
@@ -356,8 +398,7 @@ class AWG70000A(VisaInstrument):
         self.write('WLISt:WAVeform:DELete ALL')
 
     @staticmethod
-    def makeWFMXFile(data: np.ndarray, amplitude: float,
-                     headeronly: bool=False) -> bytes:
+    def makeWFMXFile(data: np.ndarray, amplitude: float) -> bytes:
         """
         Compose a WFMX file
 
@@ -368,7 +409,6 @@ class AWG70000A(VisaInstrument):
                 needed as the waveform must be rescaled to (-1, 1) where
                 -1 will correspond to the channel's min. voltage and 1 to the
                 channel's max. voltage.
-            headeronly: Only make the header (for debugging). Default: False.
 
         Returns:
             The binary .wfmx file, ready to be sent to the instrument.
@@ -391,8 +431,7 @@ class AWG70000A(VisaInstrument):
 
         wfmx = wfmx_hdr
 
-        if not headeronly:
-            wfmx += wfmx_data
+        wfmx += wfmx_data
 
         return wfmx
 
@@ -660,7 +699,8 @@ class AWG70000A(VisaInstrument):
                      event_jumps: Sequence[int],
                      event_jump_to: Sequence[int],
                      go_to: Sequence[int],
-                     wfms: Sequence[Sequence[bytes]],
+                     wfms: Sequence[Sequence[np.ndarray]],
+                     amplitudes: Sequence[float],
                      seqname: str) -> bytes:
         """
         Make a full .seqx file (bundle)
@@ -692,8 +732,12 @@ class AWG70000A(VisaInstrument):
             event_jump_to: Jump target in case of event. 1-indexed,
                 0 means next. Must be specified for all elements.
             go_to: Which element to play next. 1-indexed, 0 means next.
-            wfms: Binary .wfmx files. Should be packed like
+            wfms: numpy arrays describing each waveform plus two markers,
+                packed like np.array([wfm, m1, m2]). These numpy arrays
+                are then again packed in lists according to:
                 [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+            amplitudes: The peak-to-peak amplitude in V of the channels, i.e.
+                a list [ch1_amp, ch2_amp].
             seqname: The name of the sequence. This name will appear in the
                 sequence list. Note that all spaces are converted to '_'
 
@@ -704,11 +748,19 @@ class AWG70000A(VisaInstrument):
         # input sanitising to avoid spaces in filenames
         seqname = seqname.replace(' ', '_')
 
-        (chans, elms) = np.shape(wfms)
+        # np.shape(wfms) returns
+        # (no_of_chans, no_of_elms, no_of_arrays, no_of_points)
+        # where no_of_arrays is 3 if both markers are included
+        (chans, elms) = np.shape(wfms)[0: 2]
         wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
                      for ch in range(1, chans+1)]
 
-        flat_wfmxs = [wfmx for lst in wfms for wfmx in lst]
+        # generate wfmx files for the waveforms
+        flat_wfmxs = []
+        for amplitude, wfm_lst in zip(amplitudes, wfms):
+            flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
+                           for wfm in wfm_lst]
+
         flat_wfm_names = [name for lst in wfm_names for name in lst]
 
         sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
