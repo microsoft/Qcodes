@@ -2,6 +2,7 @@ import time
 import logging
 import numpy as np
 from functools import partial
+from math import sqrt
 
 from typing import Callable, List, Union
 

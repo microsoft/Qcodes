@@ -66,15 +66,30 @@ Finally install QCoDeS add the repository via
 
     pip install -e <path-to-repository>
 
+Updating QCoDeS
+~~~~~~~~~~~~~~~
+
+If you have installed with pip, run the following to update:
+
+.. code:: bash
+
+   pip install --upgrade qcodes
+
+in principle, there should be a new release out roughly every month.
+
+If you have installed with git, pull the QCoDeS repository using your
+favourite method (git bash, git shell, github desktop, ...). There are
+new commits to the repository daily.
+
 
 Using QCoDes
 ------------
 For using QCoDeS, as with any other python library, it is useful to use an
 application that facilitates the editing and execution of python files. With
-Anaconda there come two preinstalled options:
+Anaconda come two preinstalled options:
 
- * **Jupyter**, a browser based notebook
- * **Spyder**, an integrated development environment
+ - **Jupyter**, a browser based notebook
+ - **Spyder**, an integrated development environment
 
 To start either of them you can use the shortcuts in the start menu under
 *Anaconda3* with a trailing *(qcodes)*.
