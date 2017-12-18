@@ -204,13 +204,13 @@ def make_sweep(start, stop, step=None, num=None):
         steps_lo = int(np.floor(steps + tolerance))
         steps_hi = int(np.ceil(steps - tolerance))
 
-        if steps_lo != steps_hi:
-            raise ValueError(
-                'Could not find an integer number of points for '
-                'the the given `start`, `stop`, and `step` '
-                'values. \nNumber of points is {:d} or {:d}.'
-                .format(steps_lo + 1, steps_hi + 1))
-        num = steps_lo + 1
+        # if steps_lo != steps_hi:
+            # raise ValueError(
+            #     'Could not find an integer number of points for '
+            #     'the the given `start`, `stop`, and `step` '
+            #     'values. \nNumber of points is {:d} or {:d}.'
+            #     .format(steps_lo + 1, steps_hi + 1))
+        num = steps_hi + 1
 
     return np.linspace(start, stop, num=num).tolist()
 
