@@ -60,7 +60,7 @@ class MatPlot(BasePlot):
     max_subplot_columns = 3
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
-                 **kwargs):
+                 colorbar=True, **kwargs):
         super().__init__(interval)
 
         if subplots is None:
@@ -74,10 +74,10 @@ class MatPlot(BasePlot):
             if isinstance(arg, Sequence):
                 # Arg consists of multiple elements, add all to same subplot
                 for subarg in arg:
-                    self[k].add(subarg, **kwargs)
+                    self[k].add(subarg, colorbar=colorbar, **kwargs)
             else:
                 # Arg is single element, add to subplot
-                self[k].add(arg, **kwargs)
+                self[k].add(arg, colorbar=colorbar, **kwargs)
         if args:
             self.rescale_axis()
 
@@ -150,7 +150,7 @@ class MatPlot(BasePlot):
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
-    def add_to_plot(self, use_offset=False, **kwargs):
+    def add_to_plot(self, use_offset=False, colorbar=True, **kwargs):
         """
         adds one trace to this MatPlot.
 
@@ -172,7 +172,7 @@ class MatPlot(BasePlot):
         # 1-based, to subplot idx, which is 0-based.
         ax = self[kwargs.get('subplot', 1) - 1]
         if 'z' in kwargs:
-            plot_object = self._draw_pcolormesh(ax, **kwargs)
+            plot_object = self._draw_pcolormesh(ax, colorbar=colorbar, **kwargs)
         else:
             plot_object = self._draw_plot(ax, **kwargs)
 
@@ -324,6 +324,7 @@ class MatPlot(BasePlot):
                          yunit=None,
                          zunit=None,
                          nticks=None,
+                         colorbar=True,
                          **kwargs):
 
         # Add labels if DataArray is passed
@@ -398,7 +399,7 @@ class MatPlot(BasePlot):
         if getattr(ax, 'qcodes_colorbar', None):
             # update_normal doesn't seem to work...
             ax.qcodes_colorbar.update_bruteforce(pc)
-        else:
+        elif colorbar:
             # TODO: what if there are several colormeshes on this subplot,
             # do they get the same colorscale?
             # We should make sure they do, and have it include
@@ -419,12 +420,14 @@ class MatPlot(BasePlot):
                 label = "{} ({})".format(zlabel, zunit)
             else:
                 label = "{}".format(zlabel)
-            ax.qcodes_colorbar.set_label(label)
+            if colorbar:
+                ax.qcodes_colorbar.set_label(label)
 
-        # Scale colors if z has elements
-        cmin = np.nanmin(args_masked[-1])
-        cmax = np.nanmax(args_masked[-1])
-        ax.qcodes_colorbar.set_clim(cmin, cmax)
+        if hasattr(ax, 'qcodes_colorbar'):
+            # Scale colors if z has elements
+            cmin = np.nanmin(args_masked[-1])
+            cmax = np.nanmax(args_masked[-1])
+            ax.qcodes_colorbar.set_clim(cmin, cmax)
 
         return pc
 
@@ -515,7 +518,7 @@ class MatPlot(BasePlot):
                                 tx)
                             getattr(subplot, "set_{}label".format(axis))(
                                 new_label)
-                        else:
+                        elif hasattr(subplot, 'qcodes_colorbar'):
                             subplot.qcodes_colorbar.formatter = tx
                             subplot.qcodes_colorbar.set_label(new_label)
                             subplot.qcodes_colorbar.update_ticks()

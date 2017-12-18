@@ -24,7 +24,7 @@ class Keysight_M3300A_AWG(SD_AWG):
         AWG = Keysight_M3300A_AWG('M3300A')
     """
     def __init__(self, name, chassis=1, slot=8, **kwargs):
-        super().__init__(name, chassis=1, slot=8, channels=4, triggers=8, **kwargs)
+        super().__init__(name, chassis=0, slot=8, channels=4, triggers=8, **kwargs)
 
 class Keysight_M3300A_DIG(SD_DIG):
     """ Driver for the digitizer of the Keysight M3300A card.
@@ -37,7 +37,7 @@ class Keysight_M3300A_DIG(SD_DIG):
     Example:
         DIG  = Keysight_M3300A_DIG('M3300A')
     """
-    def __init__(self, name, chassis=1, slot=8, **kwargs):
+    def __init__(self, name, chassis=0, slot=8, **kwargs):
         super().__init__(name, chassis, slot, channels=8, triggers=8, **kwargs)
 
 class Keysight_M3300A_FPGA(SD_FPGA):
@@ -52,5 +52,5 @@ class Keysight_M3300A_FPGA(SD_FPGA):
             FPGA  = Keysight_M3300A_FPGA('M3300A')
         """
 
-    def __init__(self, name, chassis=1, slot=8, **kwargs):
+    def __init__(self, name, chassis=0, slot=8, **kwargs):
         super().__init__(name, chassis, slot, **kwargs)
