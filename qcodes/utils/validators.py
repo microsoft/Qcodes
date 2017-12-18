@@ -147,7 +147,7 @@ class Strings(Validator):
         else:
             raise TypeError('max_length must be a positive integer '
                             'no smaller than min_length')
-        self._valid_values = ['.'*min_length, '.'*max_length]
+        self._valid_values = ['.'*min_length]
 
     def validate(self, value, context=''):
         if not isinstance(value, str):
