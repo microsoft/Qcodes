@@ -4,6 +4,7 @@ from IPython.core.magic import Magics, magics_class, line_cell_magic
 if sys.version_info < (3, 6):
     raise RuntimeError('Magic only supported for Python version 3.6 and up')
 
+
 @magics_class
 class QCoDeSMagic(Magics):
     """Magics related to code management (loading, saving, editing, ...)."""
@@ -82,11 +83,10 @@ class QCoDeSMagic(Magics):
         data_name = options.get('d', 'data')
         loop_name = options.get('l', 'loop')
 
-
         lines = cell.splitlines()
         assert lines[0][:3] == 'for', "Measurement must start with for loop"
 
-        contents = f'import qcodes\n{loop_name} = '
+        contents = 'import qcodes\n{} = '.format(loop_name)
         previous_level = 0
         for k, line in enumerate(lines):
             line, level = line.lstrip(), int((len(line)-len(line.lstrip())) / 4)
@@ -99,7 +99,7 @@ class QCoDeSMagic(Magics):
                 continue
             else:
                 line_representation = ' ' * level * 4
-                if level < previous_level :
+                if level < previous_level:
                     # Exiting inner loop, close bracket
                     line_representation += '),' * (previous_level - level)
                     line_representation += '\n' + ' ' * level * 4
@@ -109,13 +109,16 @@ class QCoDeSMagic(Magics):
                     for_opts, for_code = self.parse_options(line[4:-1], 'd:')
                     if 'd' in for_opts:
                         # Delay option provided
-                        line_representation += f'qcodes.Loop({for_code}, ' \
-                                               f'delay={for_opts["d"]}).each(\n'
+                        line_representation += ('qcodes.Loop({}, '
+                                                'delay={}).each(\n'
+                                                ''.format(for_code,
+                                                          for_opts["d"]))
                     else:
-                        line_representation += f'qcodes.Loop({for_code}).each(\n'
+                        line_representation += ('qcodes.Loop({}).each(\n'
+                                                ''.format(for_code))
                 else:
                     # Action in current loop
-                    line_representation += f'{line},\n'
+                    line_representation += '{},\n'.format(line)
                 contents += line_representation
 
                 # Remember level for next iteration (might exit inner loop)
@@ -124,7 +127,9 @@ class QCoDeSMagic(Magics):
         # Add closing brackets for any remaining loops
         contents += ')' * previous_level + '\n'
         # Add dataset
-        contents += f"{data_name} = {loop_name}.get_data_set(name='{msmt_name}')"
+        contents += "{} = {}.get_data_set(name='{}')".format(data_name,
+                                                             loop_name,
+                                                             msmt_name)
 
         for line in lines[k+1:]:
             contents += '\n' + line
@@ -154,6 +159,6 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
         if magic_commands is not True:
             # filter out any magic commands that are not in magic_commands
             cls.magics = {line_cell: {key: val for key, val in magics.items()
-                                         if key in magic_commands}
+                                      if key in magic_commands}
                           for line_cell, magics in cls.magics.items()}
         ip.magics_manager.register(cls)
