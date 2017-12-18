@@ -564,7 +564,7 @@ class DataSet(DelegateAttributes):
             self.snapshot()
             self.formatter.write_metadata(self, self.io, self.location)
 
-    def finalize(self):
+    def finalize(self, save_metadata=True):
         """
         Mark the DataSet complete and write any remaining modifications.
 
@@ -578,7 +578,8 @@ class DataSet(DelegateAttributes):
         if hasattr(self.formatter, 'close_file'):
             self.formatter.close_file(self)
 
-        self.save_metadata()
+        if save_metadata:
+            self.save_metadata()
 
     def snapshot(self, update=False):
         """JSON state of the DataSet."""

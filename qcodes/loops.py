@@ -692,7 +692,8 @@ class ActiveLoop(Metadatable):
         return self.run(quiet=True, location=False, **kwargs)
 
     def run(self, thread=False, use_threads=False, quiet=False, station=None,
-            progress_interval=False, set_active=True, *args, **kwargs):
+            progress_interval=False, set_active=True, save_metadata=True,
+            *args, **kwargs):
         """
         Execute this loop.
 
@@ -706,6 +707,7 @@ class ActiveLoop(Metadatable):
             progress_interval (default None): show progress of the loop every x
                 seconds. If provided here, will override any interval provided
                 with the Loop definition
+            save_metadata: save metadata of dataset
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`
@@ -763,29 +765,31 @@ class ActiveLoop(Metadatable):
                                          'station': station,
                                          'progress_interval': progress_interval,
                                          'set_active': set_active,
+                                         'save_metadata': save_metadata,
                                          **kwargs})
             t.start()
             return data_set
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
-        station = station or self.station or Station.default
-        if station:
-            data_set.add_metadata({'station': station.snapshot()})
+        if save_metadata:
+            station = station or self.station or Station.default
+            if station:
+                data_set.add_metadata({'station': station.snapshot()})
 
-        # information about the loop definition is in its snapshot
-        data_set.add_metadata({'loop': self.snapshot()})
-        # then add information about how and when it was run
-        ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        data_set.add_metadata({'loop': {
-            'ts_start': ts,
-            'use_threads': use_threads,
-        }})
+            # information about the loop definition is in its snapshot
+            data_set.add_metadata({'loop': self.snapshot()})
+            # then add information about how and when it was run
+            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            data_set.add_metadata({'loop': {
+                'ts_start': ts,
+                'use_threads': use_threads,
+            }})
 
-        data_set.save_metadata()
+            data_set.save_metadata()
 
-        if hasattr(data_set, 'save_config'):
-            data_set.save_config()
+            if hasattr(data_set, 'save_config'):
+                data_set.save_config()
 
         if set_active:
             ActiveLoop.active_loop = self
@@ -795,7 +799,7 @@ class ActiveLoop(Metadatable):
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             data_set.active = True
-            self._run_wrapper(set_active=set_active)
+            self._run_wrapper(set_active=set_active, save_metadata=save_metadata)
             ds = self.data_set
         except:
             log.exception('Loop exception')
@@ -845,7 +849,7 @@ class ActiveLoop(Metadatable):
         else:
             return action
 
-    def _run_wrapper(self, set_active=True, *args, **kwargs):
+    def _run_wrapper(self, set_active=True, save_metadata=True, *args, **kwargs):
         try:
             self._run_loop(*args, **kwargs)
         finally:
@@ -855,7 +859,7 @@ class ActiveLoop(Metadatable):
                 # run(), but it is saved to the metadata
                 ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 self.data_set.add_metadata({'loop': {'ts_end': ts}})
-                self.data_set.finalize()
+                self.data_set.finalize(save_metadata=save_metadata)
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
