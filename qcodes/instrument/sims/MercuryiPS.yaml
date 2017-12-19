@@ -1,0 +1,15 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:  # It seems that pyvisa-sim cannot find a TCPIP instrument unless it's actually there..?
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "IDN:OXFORD INSTRUMENTS:SIMULATED MERCURY iPS:000:000"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
