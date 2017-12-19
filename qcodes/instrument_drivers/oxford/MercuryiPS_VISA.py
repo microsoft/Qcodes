@@ -2,7 +2,6 @@ from functools import partial
 from typing import Dict, Union
 import logging
 
-from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
 
@@ -42,7 +41,7 @@ class MercurySlavePS(InstrumentChannel):
     Class to hold a slave power supply for the MercuryiPS
     """
 
-    def __init__(self, parent: Instrument, name: str, UID: str) -> None:
+    def __init__(self, parent: VisaInstrument, name: str, UID: str) -> None:
         """
         Args:
             parent: The Instrument instance of the MercuryiPS
@@ -50,7 +49,6 @@ class MercurySlavePS(InstrumentChannel):
             UID: The UID as used internally by the MercuryiPS, e.g.
                 'GRPX'
         """
-
         if ':' in UID:
             raise ValueError('Invalid UID. Must be axis group name or device '
                              'name, e.g. "GRPX" or "PSU.M1"')
@@ -162,20 +160,29 @@ class MercuryiPS(VisaInstrument):
     supply
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, visalib=None,
+                 **kwargs) -> None:
         """
         Args:
             name: The name to give this instrument internally in QCoDeS
             address: The VISA resource of the instrument. Note that a
                 socket connection to port 7020 must be made
+            visalib: The VISA library to use. Leave blank if not in simulation
+                mode.
         """
 
-        # ensure that a socket is used
-        if not address.endswith('SOCKET'):
-            ValueError('Incorrect VISA resource name. Must be of type '
-                       'TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET.')
+        if visalib:
+            visabackend = visalib.split('@')[1]
+        else:
+            visabackend = 'NI'
 
-        super().__init__(name, address, terminator='\n', **kwargs)
+        # ensure that a socket is used unless we are in simulation mode
+        if not address.endswith('SOCKET') and visabackend != 'sim':
+            raise ValueError('Incorrect VISA resource name. Must be of type '
+                             'TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET.')
+
+        super().__init__(name, address, terminator='\n', visalib=visalib,
+                         **kwargs)
 
         # to ensure a correct snapshot, we must wrap the get function
         self.IDN.get = self.IDN._wrap_get(self._idn_getter)
