@@ -273,7 +273,10 @@ class GNUPlotFormat(Formatter):
         # Every group gets its own datafile
         for group in groups:
             log.debug('Attempting to write the following '
-                      'group: {}'.format(group))
+                      'group: {}'.format(group.name))
+            # it might be useful to output the whole group as below but it is
+            # very verbose
+            #log.debug('containing {}'.format(group))
 
             if filename:
                 fn = io_manager.join(location, filename + self.extension)
@@ -282,7 +285,10 @@ class GNUPlotFormat(Formatter):
 
             written_files.add(fn)
 
-            file_exists = fn in existing_files
+            # fn may or may not be an absolute path depending on the location manager
+            # used however, io_manager always returns relative paths so make sure both are
+            # relative by calling to_location
+            file_exists = io_manager.to_location(fn) in existing_files
             save_range = self.match_save_range(group, file_exists,
                                                only_complete=only_complete)
 
@@ -313,7 +319,8 @@ class GNUPlotFormat(Formatter):
 
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
-                    log.debug('Wrote to file')
+                log.debug('Wrote to file from '
+                          '{} to {}'.format(save_range[0], save_range[1]+1))
             # now that we've saved the data, mark it as such in the data.
             # we mark the data arrays and the inner setpoint array. Outer
             # setpoint arrays have different dimension (so would need a
