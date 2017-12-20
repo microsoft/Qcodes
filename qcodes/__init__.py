@@ -62,6 +62,7 @@ from qcodes.instrument.parameter import (
     ManualParameter,
     combine,
     CombinedParameter)
+from qcodes.instrument.parameter_node import ParameterNode
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators

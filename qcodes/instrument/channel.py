@@ -1,13 +1,14 @@
 """ Base class for the channel of an instrument """
 from typing import List, Tuple, Union
 
-from .base import InstrumentBase, Instrument
+from .base import Instrument
+from .parameter_node import ParameterNode
 from .parameter import MultiParameter, ArrayParameter
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
 
-class InstrumentChannel(InstrumentBase):
+class InstrumentChannel(ParameterNode):
     """
     Base class for a channel in an instrument
 
