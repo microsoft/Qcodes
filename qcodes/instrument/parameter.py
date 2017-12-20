@@ -156,8 +156,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+    def __init__(self, name: str = None,
+                 instrument: Optional['Instrument'] = None,
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  wrap_get: bool=True,
@@ -235,7 +235,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
-        self.log = logging.getLogger(str(self))
+
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
@@ -261,6 +261,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
+
+    @property
+    def log(self):
+        return logging.getLogger(str(self))
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str]=None) -> dict:
@@ -743,7 +747,7 @@ class Parameter(_BaseParameter):
 
     """
 
-    def __init__(self, name: str,
+    def __init__(self, name: str = None,
                  instrument: Optional['Instrument']=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
