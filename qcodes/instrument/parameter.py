@@ -150,8 +150,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+    def __init__(self, name: str = None,
+                 instrument: Optional['Instrument'] = None,
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Union[int, float]]=None,
@@ -725,7 +725,7 @@ class Parameter(_BaseParameter):
 
     """
 
-    def __init__(self, name: str,
+    def __init__(self, name: str = None,
                  instrument: Optional['Instrument']=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
