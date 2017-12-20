@@ -5,6 +5,7 @@ import struct
 import io
 import zipfile as zf
 import logging
+from functools import partial
 
 from dateutil.tz import time
 from typing import List, Sequence
@@ -103,9 +104,8 @@ class AWGChannel(InstrumentChannel):
         self.add_parameter('fgen_frequency',
                            label='Channel {} {} frequency'.format(channel, fg),
                            get_cmd='FGEN:CHANnel{}:FREQuency?'.format(channel),
-                           set_cmd='FGEN:CHANnel{}:FREQuency {{}}'.format(channel),
+                           set_cmd=partial(self._set_fgfreq, channel),
                            unit='Hz',
-                           vals=vals.Numbers(1, 50000000),
                            get_parser=float)
 
         self.add_parameter('fgen_dclevel',
@@ -221,6 +221,26 @@ class AWGChannel(InstrumentChannel):
                                       markers, 9 bit resolution
                                       allows for one, and 10 bit
                                       does NOT allow for markers"""))
+
+    def _set_fgfreq(self, channel: int, frequency: float) -> None:
+        """
+        Set the function generator frequency
+        """
+        functype = self.fgen_type.get()
+        if functype in ['SINE', 'SQUARE']:
+            max_freq = 12.5e9
+        else:
+            max_freq = 6.25e9
+
+        # validate
+        if frequency < 1 or frequency > max_freq:
+            raise ValueError('Can not set channel {} frequency to {} Hz.'
+                             ' Maximum frequency for function type {} is {} '
+                             'Hz, minimum is 1 Hz'.format(channel, frequency,
+                                                          functype, max_freq))
+        else:
+            self._parent.write('FGEN:CHANnel{}:FREQuency {}'.format(channel,
+                                                                    frequency))
 
     def setWaveform(self, name: str) -> None:
         """
