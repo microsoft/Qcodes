@@ -15,6 +15,7 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
     render: function() {
 
       this.widgetCells = {};
+      this.name = this.model.get('name');
 
       this.model.on('change:_initialize', this.initialize_sidebar, this);
       this.model.on('change:_closed', this.close_sidebar, this);
@@ -23,6 +24,14 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
       this.model.on('change:_add_widget', this.addWidget, this);
       this.model.on('change:_remove_widget', this.removeWidget, this);
       this.model.on('change:_clear_all_widgets', this.clearAllWidgets, this);
+
+      // Add periodic hiding of any additional output
+      setInterval(function() {
+        let sidebar_outputs = $("[id='sidebar_widget']");
+        sidebar_outputs.each((k, sidebar_output) => {
+          $(sidebar_output).siblings('.output_area').hide()
+        })
+      }, 2000);
     },
 
     initialize_sidebar: function() {
@@ -43,7 +52,7 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
         handles: "all" ,
         autoHide:true,
         resize : function(event,ui){
-          console.log('resizing')
+          console.log('resizing');
           setNotebookWidth()
         },
       });
@@ -91,7 +100,10 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
         });
         cell._handle_execute_reply = _cell_handle_execute_reply;
 
-        cell.set_text(`${widgetName}.display() if hasattr(${widgetName}, 'display') else display(${widgetName})`);
+        cell.set_text(
+          `from IPython.display import display\n` +
+          `_widget = ${this.name}.widgets['${widgetName}']\n` +
+          `_widget.display() if hasattr(_widget, 'display') else display(_widget)`);
         this.sidebar
           .prepend($("<div/>")
             .append(cell.element));

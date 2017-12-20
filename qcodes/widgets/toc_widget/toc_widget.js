@@ -26,7 +26,7 @@ define('toc', [
   /** Config **/
   /** ****** **/
   var default_cfg = {'threshold':4,
-    collapse_to_match_collapsible_headings: false,
+    collapse_to_match_collapsible_headings: true,
     nav_menu: {},
     number_sections: true,
     skip_h1_title: false,
@@ -58,6 +58,24 @@ define('toc', [
       attach_events();
 
       patch_keyboard_actions();
+
+      $('a[toc-id]').each(function() {
+        let toc_link_level = get_toc_link_level($(this));
+        collapse_by_toc_id($(this).attr('toc-id'))
+      });
+
+
+      if ($("#toc_button").length === 0) {
+        IPython.toolbar.add_buttons_group([
+          {
+            'label'   : 'Show all cells',
+            'icon'    : 'fa-eye',
+            'callback':  show_all_cells,
+            'id'      : 'toc_button'
+          }
+        ]);
+      };
+
     },
 
 
@@ -67,25 +85,54 @@ define('toc', [
   /** ***************** **/
   /** Cell manipulation **/
   /** ***************** **/
-  /** Hide all cells except for certain ids**/
-  function hide_all_cells_except_id(trg_id) {
-    var cell_begin = $(document.getElementById(trg_id)).closest('.cell').data('cell');
-    var level = get_cell_level(cell_begin);
+  /** Hide all cells except for certain ids **/
+  function hide_all_cells_except_id(toc_id) {
+    let toc_num = toc_id.split('-').pop();
+    for (let cell of Jupyter.notebook.get_cells()) {
+      if ($(cell.element).hasClass('collapsible_headings_ellipsis')) {
+        let cell_toc_id = $(cell.element).find('[toc-id]').attr('toc-id');
+        if (cell_toc_id !== undefined) {
+          let cell_toc_num = cell_toc_id.split('-').pop();
 
-    var cell_end = cell_begin;
-    var next_cell = Jupyter.notebook.get_next_cell(cell_end);
-    while (next_cell !== null && get_cell_level(next_cell) > level) {
-      cell_end = next_cell;
-      next_cell = Jupyter.notebook.get_next_cell(cell_end);
+          if (toc_num === cell_toc_num) {
+            events.trigger('uncollapse.Toc', {cell: cell});
+            cell.element.slideDown('fast')
+          } else if (toc_num.startsWith(cell_toc_num + '.')) {
+            // is parent
+            events.trigger('uncollapse.Toc', {cell: cell});
+            cell.element.slideDown('fast')
+          } else if (cell_toc_num.startsWith(toc_num)) {
+            // is child
+            events.trigger('collapse.Toc', {cell: cell});
+            cell.element.slideDown('fast')
+          } else {
+            events.trigger('collapse.Toc', {cell: cell});
+            cell.element.slideUp('fast')
+          }
+        } else {
+            events.trigger('collapse.Toc', {cell: cell});
+            cell.element.slideUp('fast')
+        }
+
+      }
     }
-
-    hide_cells_above(cell_begin);
-    hide_cells_below(cell_end);
-    show_cells_between(cell_begin, cell_end);
+    // var cell_begin = $(document.getElementById(toc_id)).closest('.cell').data('cell');
+    // var level = get_cell_level(cell_begin);
+    //
+    // var cell_end = cell_begin;
+    // var next_cell = Jupyter.notebook.get_next_cell(cell_end);
+    // while (next_cell !== null && get_cell_level(next_cell) > level) {
+    //   cell_end = next_cell;
+    //   next_cell = Jupyter.notebook.get_next_cell(cell_end);
+    // }
+    //
+    // hide_cells_above(cell_begin);
+    // hide_cells_below(cell_end);
+    // show_cells_between(cell_begin, cell_end);
   }
 
   function hide_cells_above(cell) {
-    console.log(`Sidebar: Hiding cells above ${Jupyter.notebook.find_cell_index(cell)}`);
+    console.log(`TOC: Hiding cells above ${Jupyter.notebook.find_cell_index(cell)}`);
     while (cell !== null) {
       cell = Jupyter.notebook.get_prev_cell(cell);
       if (cell !== null) {
@@ -95,7 +142,7 @@ define('toc', [
   }
 
   function hide_cells_below(cell) {
-    console.log(`Sidebar: Hiding cells below ${Jupyter.notebook.find_cell_index(cell)}`);
+    console.log(`TOC: Hiding cells below ${Jupyter.notebook.find_cell_index(cell)}`);
     while (cell !== null) {
       cell = Jupyter.notebook.get_next_cell(cell);
       if (cell !== null) {
@@ -105,7 +152,7 @@ define('toc', [
   }
 
   function show_all_cells() {
-    console.log('Sidebar: Showing all cells');
+    console.log('TOC: Showing all cells');
     for (let cell of Jupyter.notebook.get_cells()) {
       cell.element.slideDown(0)
     }
@@ -115,11 +162,12 @@ define('toc', [
   function show_cells_between(cell_begin, cell_end) {
     var cell_begin_index = Jupyter.notebook.find_cell_index(cell_begin);
     var cell_end_index = Jupyter.notebook.find_cell_index(cell_end);
-    console.log(`Sidebar: showing cells between ${cell_begin_index} and ${cell_end_index}`);
+    console.log(`TOC: showing cells between ${cell_begin_index} and ${cell_end_index}`);
 
     var cell = cell_begin;
     while (Jupyter.notebook.find_cell_index(cell) !== cell_end_index) {
       cell.element.slideDown(0);
+      delete cell.metadata.heading_collapsed;
       cell = Jupyter.notebook.get_next_cell(cell);
     }
     cell.element.slideDown(0);
@@ -309,7 +357,7 @@ define('toc', [
 
   /** Add TOC link **/
   function make_link(h, toc_mod_id) {
-    console.log('Sidebar: making TOC link (make_link)');
+    console.log('TOC: making TOC link (make_link)');
     var a = $('<a>')
       .attr({
         'href': window.location.href.split('#')[0] + h.find('.anchor-link').attr('href'),
@@ -317,7 +365,7 @@ define('toc', [
       });
     // get the text *excluding* the link text, whatever it may be
     var hclone = h.clone();
-    hclone = removeMathJaxPreview(hclone);
+    hclone = remove_MathJax_preview(hclone);
     a.html(hclone.html());
     a.width('100%');
     a.css('display', 'inline-block');
@@ -331,17 +379,17 @@ define('toc', [
   /** **************** **/
   /** Highlight a TOC element, either as executing or selected **/
   function highlight_toc_item(evt, data) {
-    console.log('Sidebar: Highlighting toc item (highlight_toc_item)');
+    // console.log('TOC: Highlighting toc item (highlight_toc_item)');
     var c = $(data.cell.element);
     if (c.length < 1) {
       return;
     }
-    var trg_id = c.find('.toc-mod-link').attr('id') ||
+    var toc_id = c.find('.toc-mod-link').attr('id') ||
       c.prevAll().find('.toc-mod-link').eq(-1).attr('id');
     var highlighted_item = $();
-    if (trg_id !== undefined) {
+    if (toc_id !== undefined) {
       highlighted_item = $('.toc a').filter(function (idx, elt) {
-        return $(elt).attr('toc-id') === trg_id;
+        return $(elt).attr('toc-id') === toc_id;
       });
     }
     if (evt.type === 'execute') {
@@ -357,30 +405,40 @@ define('toc', [
 
   /** Perform actions when TOC link is clicked **/
   function callback_toc_link_click(evt) {
-    console.log('Sidebar: clicked TOC header (callback_toc_link_click)');
     // workaround for https://github.com/jupyter/notebook/issues/699
     setTimeout(function () {
       $.ajax()
     }, 100);
     evt.preventDefault();
-    var trg_id = $(evt.currentTarget).attr('toc-id');
-    console.log('TOC: trg_id: ' + trg_id);
-    // use native scrollIntoView method with semi-unique id
-    // ! browser native click does't follow links on all browsers
-    // $('<a>').attr('href', window.location.href.split('#')[0] + '#' + trg_id)[0].click();
-    document.getElementById(trg_id).scrollIntoView(true);
 
-    // use native document method as jquery won't cope with characters
-    // like . in an id
-    var cell = $(document.getElementById(trg_id)).closest('.cell').data('cell');
+    let current_toc_link = $(evt.currentTarget);
+    let toc_id = current_toc_link.attr('toc-id');
+    console.log('TOC: clicked TOC link with id ' + toc_id);
+
+    document.getElementById(toc_id).scrollIntoView(true);
+
+
+
+    // Select first cell in link
+    var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
     Jupyter.notebook.select(Jupyter.notebook.find_cell_index(cell));
 
-    // Find closest link that is locked
-
-    console.log($(evt.currentTarget))
+    // Hide all cells not in toc_link
     if (cfg.hide_others) {
-      hide_all_cells_except_id(trg_id);
+      hide_all_cells_except_id(toc_id);
     }
+
+    // collapse all other toc links
+    $('a[toc-id]').each(function(idx, toc_link) {
+      let toc_id = $(toc_link).attr('toc-id')
+      if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
+        collapse_by_toc_id(toc_id, false);
+        console.log('collapsing toc link ' + $(toc_link).attr('toc-id'))
+      } else {
+        collapse_by_toc_id(toc_id, true)
+      }
+    });
+
     highlight_toc_item("toc_link_click", {cell: cell});
   }
 
@@ -400,7 +458,7 @@ define('toc', [
   }
 
   /** Remove MathJax for links (no Latex) **/
-  function removeMathJaxPreview(elt) {
+  function remove_MathJax_preview(elt) {
     elt.children('.anchor-link, .toc-mod-link').remove();
     elt.find("script[type='math/tex']").each(
       function(i, e) {
@@ -412,9 +470,9 @@ define('toc', [
   }
 
   /** Collapse TOC link **/
-  function collapse_by_id(trg_id, show, trigger_event) {
+  function collapse_by_toc_id(toc_id, show, trigger_event) {
     var anchors = $('.toc .toc-item > li > span > a').filter(function (idx, elt) {
-      return $(elt).attr('toc-id') === trg_id;
+      return $(elt).attr('toc-id') === toc_id;
     });
     anchors.siblings('i')
       .toggleClass('fa-caret-right', !show)
@@ -422,30 +480,41 @@ define('toc', [
     anchors.parent().siblings('ul')[show ? 'slideDown' : 'slideUp']('fast');
     if (trigger_event !== false) {
       // fire event for collapsible_heading to catch
-      var cell = $(document.getElementById(trg_id)).closest('.cell').data('cell');
-      events.trigger((show ? 'un' : '') + 'collapse.Toc', {cell: cell});
+      var cell = $(document.getElementById(toc_id)).closest('.cell').data('cell');
+
     }
   }
 
   function callback_sidebar_toc_collapsible_headings(evt, data) {
-    var trg_id = data.cell.element.find(':header').filter(function (idx, elt) {
+    var toc_id = data.cell.element.find(':header').filter(function (idx, elt) {
       return Boolean($(elt).attr('toc-id'));
     }).attr('toc-id');
     var show = evt.type.indexOf('un') >= 0;
     // use trigger_event false to avoid re-triggering collapsible_headings
-    collapse_by_id(trg_id, show, false);
+    collapse_by_toc_id(toc_id, show, false);
   }
 
   function callback_collapser(evt) {
     var clicked_i = $(evt.currentTarget);
-    var trg_id = clicked_i.siblings('a').attr('toc-id');
+    var toc_id = clicked_i.siblings('a').attr('toc-id');
     $('.toc .toc-item > li > span > a').filter(function (idx, elt) {
-      return $(elt).attr('toc-id') === trg_id;
+      return $(elt).attr('toc-id') === toc_id;
     });
     var show = clicked_i.hasClass('fa-caret-right');
-    collapse_by_id(trg_id, show);
+    collapse_by_toc_id(toc_id, show);
   }
 
+  /** Check if toc link is parent of other toc link **/
+  function toc_link_is_parent(current_toc_link, target_toc_link) {
+    let current_toc_id = $(current_toc_link).attr('toc-id').split('-').pop();
+    let target_toc_id = $(target_toc_link).attr('toc-id').split('-').pop();
+    return target_toc_id.startsWith(current_toc_id)
+  }
+
+  function get_toc_link_level(toc_link) {
+    let toc_id = $(toc_link).attr('toc-id').split('-').pop();
+    return toc_id.split('.').length;
+  }
 
 
   /** *************************** **/
@@ -453,6 +522,7 @@ define('toc', [
   /** *************************** **/
   function attach_events() {
     // event: render toc for each markdown cell modification
+    $([IPython.events]).off("rendered.MarkdownCell");
     $([IPython.events]).on("rendered.MarkdownCell",
       function(evt, data) {
         create_toc_links(); // recompute the toc
@@ -496,7 +566,7 @@ define('toc', [
   }
 
   function patch_keyboard_actions() {
-    console.log('Sidebar: patching Jupyter up/down actions');
+    console.log('TOC: patching Jupyter up/down actions');
 
     var kbm = Jupyter.keyboard_manager;
 
