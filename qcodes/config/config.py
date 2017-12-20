@@ -439,6 +439,11 @@ class DotDict(dict):
         except KeyError:
             raise AttributeError('Attribute {} not found'.format(key))
 
+    def __dir__(self):
+        # Add keys to dir, used for auto-completion
+        items = super().__dir__()
+        items.extend(self.keys())
+        return items
 
 def update(d, u):
     for k, v in u.items():
