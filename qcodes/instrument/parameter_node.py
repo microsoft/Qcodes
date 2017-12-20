@@ -12,6 +12,32 @@ logger = logging.getLogger(__name__)
 
 
 class ParameterNode(Metadatable, DelegateAttributes):
+    """ Container for parameters
+    
+    The ParameterNode is a container for `Parameters`, and is primarily used for
+    an `Instrument`.
+    
+    Args:
+        name: Optional name for parameter node
+    
+    A parameter can be added to a ParameterNode by settings its attribute:
+    ``parameter_node.new_parameter = Parameter()``
+    The name of the parameter is set to the attribute name
+    
+    Once a parameter has been added its value can be set as such:
+    ``parameter_node.new_parameter = 42``
+    Note that this doesn't replace the parameter by 42, but instead sets the 
+    value of the parameter.
+    
+     Similarly, its value can be returned by accessing the attribute
+     ``parameter_node.new_parameter`` (returns 42)
+     Again, this doesn't return the parameter, but its value
+     
+    The parameter object can be accessed in two ways:
+    - ``parameter_node['new_parameter']``
+    - ``parameter_node().new_parameter``
+    """
+
     parameters = {}
 
     def __init__(self, name: str = None, **kwargs):
@@ -27,8 +53,12 @@ class ParameterNode(Metadatable, DelegateAttributes):
         self._meta_attrs = ['name']
 
     def __repr__(self):
-        return 'ParameterNode {} containing {} parameters, {} nodes'.format(
+        repr_str = 'ParameterNode '
+        if self.name is not None:
+            repr_str += '{} '.format(self.name)
+        repr_str += 'containing {} parameters, {} nodes'.format(
             self.name, len(self.parameters), len(self.parameter_nodes))
+        return repr_str
 
     def __call__(self) -> dict:
         return self.parameters
