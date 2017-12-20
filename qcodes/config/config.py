@@ -399,6 +399,11 @@ class DotDict(dict):
     __setattr__ = __setitem__
     __getattr__ = __getitem__
 
+    def __dir__(self):
+        # Add keys to dir, used for auto-completion
+        items = super().__dir__()
+        items.extend(self.keys())
+        return items
 
 def update(d, u):
     for k, v in u.items():
