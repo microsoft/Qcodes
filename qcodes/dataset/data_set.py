@@ -6,6 +6,7 @@
 #
 # Distributed under terms of the MIT license.
 # import json
+import functools
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
 import time
@@ -61,9 +62,10 @@ DB = qcodes.config["core"]["db_location"]
 
 class Subscriber(Thread):
     def __init__(self, dataSet, id: str,
-                 callback: Callable[[List[Any], int, Optional[Any]], None],
+                 callback: Callable[..., None],
                  state: Optional[Any] = None, min_wait: int = 100,
-                 min_count: int = 1) -> None:
+                 min_count: int = 1,
+                 callback_kwargs: Optional[Dict[str, Any]]=None) -> None:
         self.sub_id = id
         # whether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
@@ -75,7 +77,10 @@ class Subscriber(Thread):
         self.min_wait = min_wait
         self.min_count = min_count
         self._send_queue: int = 0
-        self.callback = callback
+        if callback_kwargs is None:
+            self.callback = callback
+        else:
+            self.callback = functools.partial(callback, **callback_kwargs)
         self._stop_signal: bool = False
 
         parameters = dataSet.get_parameters()
@@ -504,9 +509,11 @@ class DataSet(Sized):
     def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
                   min_wait: int = 0, min_count: int = 1,
                   state: Optional[Any] = None,
+                  callback_kwargs: Optional[Dict[str, Any]] = None,
                   subscriber_class=Subscriber) -> str:
         sub_id = hash_from_parts(str(time.time()))
-        sub = Subscriber(self, sub_id, callback, state, min_wait, min_count)
+        sub = Subscriber(self, sub_id, callback, state, min_wait, min_count,
+                         callback_kwargs)
         self.subscribers[sub_id] = sub
         sub.start()
         return sub.sub_id
