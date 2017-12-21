@@ -32,5 +32,23 @@ def test_sync(driver):
     assert driver.sync.output() == 'ON'
 
     assert driver.sync.source() == 1
-    # driver.sync.source(2)
-    # assert driver.sync.source() == 2
+    driver.sync.source(2)
+    assert driver.sync.source() == 2
+
+def test_channel(driver):
+    assert driver.ch1.function_type() == 'SIN'
+    driver.ch1.function_type('SQU')
+    assert driver.ch1.function_type() == 'SQU'
+
+
+def test_burst(driver):
+    assert driver.ch1.burst_ncycles() == 1
+    driver.ch1.burst_ncycles(10)
+    assert driver.ch1.burst_ncycles() == 10
+    # the following does not actually work because
+    # val parser cannot handle INF being returned.
+    # not clear if this is a bug or the instrument get
+    # set to something else?
+    # driver.ch1.burst_ncycles('INF')
+    # assert driver.ch1.burst_ncycles() == 'INF'
+
