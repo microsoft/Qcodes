@@ -19,8 +19,7 @@ class AMICoordinateParameter(MultiParameter):
     """
     This parameter holds the AMI430_3D 3 dimensional parameters
 
-    Args
-    ----
+    Args:
         name (str)
         instrument (qcodes.Instrument)
         unit (str)
@@ -238,9 +237,8 @@ class AMI430(IPInstrument):
         Public interface to set the field strength to a particular value
         Args:
             value (float)
-            perform_safety_check (bool):  Whether to set the field via a parent
-                driver (if present), which might perform additional safety
-                checks.
+            perform_safety_check (bool):  Whether to set the field via a parent driver (if present), which might
+            perform additional safety checks.
         """
         self._set_field(value, perform_safety_check=perform_safety_check)
 
@@ -250,9 +248,8 @@ class AMI430(IPInstrument):
 
         Args:
             value (float)
-            perform_safety_check (bool): Whether to set the field via a parent
-                driver (if present), which might perform additional safety
-                checks.
+            perform_safety_check (bool): Whether to set the field via a parent driver (if present), which might
+            perform additional safety checks.
         """
         # If part of a parent driver, set the value using that driver
         if np.abs(value) > self._field_rating:
@@ -368,8 +365,7 @@ class AMI430_3D(Instrument):
     """
     A "meta" instrument which controls three AMI430 instruments for combined X, Y and Z action
 
-    Args
-    ----
+    Args:
         name (str)
         instrument_x (AMI430)
         instrument_y (AMI430)
@@ -549,7 +545,7 @@ class AMI430_3D(Instrument):
 
         return any([limit_function(*setpoint_values) for limit_function in self._field_limit])
 
-    def _set_fields(self, values: tuple) ->bool:
+    def _set_fields(self, values: tuple) ->None:
         """
         Set the fields of the x/y/z magnets. This function is called
         whenever the field is changed and performs several safety checks
@@ -596,7 +592,7 @@ class AMI430_3D(Instrument):
 
                 instrument.set_field(value, perform_safety_check=False)
 
-    def _request_field_change(self, instrument: 'AMI430', value: float) ->bool:
+    def _request_field_change(self, instrument: 'AMI430', value: float) ->None:
         """
         This method is called by the child x/y/z magnets if they are set
         individually. It results in additional safety checks being
