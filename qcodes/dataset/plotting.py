@@ -32,7 +32,7 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
     return dataarray
 
 
-def plot_by_id(run_id: int) -> Figure:
+def plot_by_id(run_id: int, **plot_kwargs: dict) -> Figure:
     """
     Construct all plots for a given run
 
@@ -75,7 +75,7 @@ def plot_by_id(run_id: int) -> Figure:
             # sort for plotting
             order = first_axis_data.argsort()
 
-            ax.plot(first_axis_data[order], second_axis_data[order])
+            ax.plot(first_axis_data[order], second_axis_data[order], **plot_kwargs)
 
             if first_axis_label == '':
                 lbl = first_axis_name
