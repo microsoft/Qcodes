@@ -396,6 +396,7 @@ class Instrument(InstrumentBase):
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
+            idparts = []
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
