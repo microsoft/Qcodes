@@ -68,10 +68,13 @@ class LuaSweepParameter(ArrayParameter):
 
     def get_raw(self) -> np.ndarray:
 
-        data = self._instrument._fast_sweep(self.start,
-                                            self.stop,
-                                            self.steps,
-                                            self.mode)
+        if self._instrument is not None:
+            data = self._instrument._fast_sweep(self.start,
+                                                self.stop,
+                                                self.steps,
+                                                self.mode)
+        else:
+            raise RuntimeError("No instrument attached to Parameter")
 
         return data
 
