@@ -374,7 +374,7 @@ class Instrument(InstrumentBase):
 
         self.record_instance(self)
 
-    def get_idn(self) -> Dict:
+    def get_idn(self) -> Dict[str, Optional[str]]:
         """
         Parse a standard VISA '\*IDN?' response into an ID dict.
 
@@ -396,7 +396,7 @@ class Instrument(InstrumentBase):
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts = []
+            idparts = [] # type: List[Optional[str]]
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
