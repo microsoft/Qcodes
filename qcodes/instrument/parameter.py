@@ -499,7 +499,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             TypeError: if step is not a number
         """
         if step is None:
-            self._step = step
+            self._step = step # type: Optional[Union[float, int]]
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
