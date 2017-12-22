@@ -355,7 +355,7 @@ class Instrument(InstrumentBase):
 
     shared_kwargs = ()
 
-    _all_instruments = {} # type: Dict[str, weakref.ref]
+    _all_instruments = {} # type: Dict[str, weakref.ref[Instrument]]
     _type = None
     _instances = [] # type: List[weakref.ref]
 
