@@ -3,7 +3,7 @@ import logging
 import time
 import warnings
 import weakref
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING, cast
 
 
 from typing import Dict, Sequence
@@ -575,14 +575,14 @@ class Instrument(InstrumentBase):
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError('Instrument {} has been removed'.format(name))
-
+        inst = cast('Instrument', ins)
         if instrument_class is not None:
-            if not isinstance(ins, instrument_class):
+            if not isinstance(inst, instrument_class):
                 raise TypeError(
                     'Instrument {} is {} but {} was requested'.format(
-                        name, type(ins), instrument_class))
+                        name, type(inst), instrument_class))
 
-        return ins
+        return inst
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
