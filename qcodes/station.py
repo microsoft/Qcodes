@@ -122,9 +122,9 @@ class Station(Metadatable, DelegateAttributes):
         if name is None:
             name = getattr(component, 'name',
                            'component{}'.format(len(self.components)))
-        name = make_unique(str(name), self.components)
-        self.components[name] = component
-        return name
+        namestr = make_unique(str(name), self.components)
+        self.components[namestr] = component
+        return namestr
 
     def set_measurement(self, *actions):
         """
