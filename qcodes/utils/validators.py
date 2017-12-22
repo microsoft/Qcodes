@@ -1,5 +1,5 @@
 import math
-from typing import Union, Tuple, cast
+from typing import Union, Tuple, cast, Optional
 
 import numpy as np
 
@@ -385,7 +385,7 @@ class PermissiveMultiples(Validator):
         self.precision = precision
         self._numval = Numbers()
         if isinstance(divisor, int):
-            self._mulval = Multiples(divisor=abs(divisor))
+            self._mulval = Multiples(divisor=abs(divisor)) # type: Optional[Multiples]
         else:
             self._mulval = None
         self._valid_values = [divisor]
