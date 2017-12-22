@@ -2,7 +2,7 @@ import json
 import logging
 from time import monotonic
 from collections import OrderedDict
-from typing import Callable, Union, Dict, Tuple, List, Sequence
+from typing import Callable, Union, Dict, Tuple, List, Sequence, Type
 from inspect import signature
 import numpy as np
 
@@ -102,7 +102,8 @@ class Runner:
             self, enteractions: OrderedDict, exitactions: OrderedDict,
             experiment: Experiment=None, station: Station=None,
             write_period: float=None,
-            parameters: Dict[str, ParamSpec]=None) -> None:
+            parameters: Dict[str, ParamSpec]=None,
+            saver_class: Type=DataSaver) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -112,6 +113,7 @@ class Runner:
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = write_period if write_period is not None else 5
+        self._saver_class = saver_class
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -140,8 +142,9 @@ class Runner:
 
         print(f'Starting experimental run with id: {self.ds.id}')
 
-        self.datasaver = DataSaver(self.ds, self.write_period,
-                                   list(self.parameters.keys()))
+        self.datasaver = self._saver_class(
+            self.ds, self.write_period, list(self.parameters.keys())
+        )
 
         return self.datasaver
 

@@ -35,17 +35,17 @@ def sweep(obj, sweep_points):
 
 def wrap_objects(*objects):
 
-    def wrapper(o):
-        if isinstance(o, qcodes.Parameter):
-            new_o = ParameterWrapper(o)
-        elif callable(o):
-            new_o = FunctionWrapper(o)
+    def wrapper(obj):
+        if isinstance(obj, qcodes.Parameter):
+            new_obj = ParameterWrapper(obj)
+        elif callable(obj):
+            new_obj = FunctionWrapper(obj)
         else:
-            new_o = o
+            new_obj = obj
 
-        return new_o
+        return new_obj
 
-    return [wrapper(o) for o in objects]
+    return [wrapper(obj) for obj in objects]
 
 
 def nest(*objects):
@@ -58,4 +58,3 @@ def chain(*objects):
 
 def szip(*objects):
     return Zip(wrap_objects(*objects))
-
