@@ -24,9 +24,8 @@ class LuaSweepParameter(ArrayParameter):
 
         super().__init__(name=name,
                          shape=(1,),
-                         docstring='Holds a sweep')
-
-        self._instrument = instrument
+                         docstring='Holds a sweep',
+                         instrument=instrument)
 
     def prepareSweep(self, start: float, stop: float, steps: int,
                      mode: str) -> None:
