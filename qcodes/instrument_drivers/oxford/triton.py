@@ -205,6 +205,7 @@ class Triton(IPInstrument):
             return msg
 
     def get_idn(self):
+        """ Return the Instrument Identifier Message """
         idstr = self.ask('*IDN?')
         idparts = [p.strip() for p in idstr.split(':', 4)][1:]
 
@@ -353,6 +354,13 @@ class Triton(IPInstrument):
                                    get_parser=self._parse_temp)
 
     def _parse_action(self, msg):
+        """ Parse message and return action as a string
+        
+        Args:
+            msg (str): message string
+        Returns
+            action (str): string describing the action
+        """
         action = msg[17:]
         if action == 'PCL':
             action = 'Precooling'
