@@ -355,7 +355,7 @@ class Triton(IPInstrument):
 
     def _parse_action(self, msg):
         """ Parse message and return action as a string
-        
+
         Args:
             msg (str): message string
         Returns
