@@ -4,7 +4,8 @@ from qcodes.instrument.parameter import _BaseParameter
 
 # TODO: we should validate type somehow
 # we can't accept everything (or we can but crash at runtime?)
-# we only support the types in VALUES type
+# we only support the types in VALUES type, that is:
+# str, Number, List, ndarray, bool
 class ParamSpec():
     def __init__(self, name: str,
                  paramtype: str,
@@ -16,11 +17,19 @@ class ParamSpec():
         """
         Args:
             name: name of the parameter
-            type: type of the parameter
+            paramtype: type of the parameter, i.e. the SQL storage class
             label: label of the parameter
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
         """
+        # TODO: Should this be the storage class or the python type?
+        allowed_types = ['array', 'real', 'integer', 'text']
+        if not isinstance(paramtype, str):
+            raise ValueError('Paramtype must be a string.')
+        if paramtype.lower() not in allowed_types:
+            raise ValueError("Illegal paramtype. Must be 'array', 'real',"
+                             " 'integer', or 'text'.")
+
         self.name = name
         self.type = paramtype
         self.label = '' if label is None else label
