@@ -47,3 +47,21 @@ class TestParameterNode(TestCase):
         parameter_node.test_parameter = 42
         self.assertEqual(parameter_node.test_parameter(), 42)
 
+    def test_nested_parameter_node(self):
+        parameter_node = ParameterNode(use_as_attributes=True)
+        nested_parameter_node = ParameterNode(use_as_attributes=True)
+        parameter_node.nested = nested_parameter_node
+        self.assertEqual(parameter_node.nested.name, 'nested')
+
+        # Add parameter
+        parameter_node.nested.param = Parameter(set_cmd=None)
+        parameter_node.nested.param = 42
+        self.assertEqual(parameter_node.nested.param, 42)
+
+    def test_parameter_node_nested_explicit_name(self):
+        parameter_node = ParameterNode(use_as_attributes=True)
+        nested_explicit_parameter_node = ParameterNode(name='explicit_name',
+                                                       use_as_attributes=True)
+        parameter_node.nested = nested_explicit_parameter_node
+        self.assertEqual(parameter_node.nested.name, 'explicit_name')
+
