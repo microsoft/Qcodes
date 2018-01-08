@@ -5,7 +5,7 @@ import numpy as np
 from qcodes.utils.helpers import DelegateAttributes, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.config.config import DotDict
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.instrument.parameter import _BaseParameter, Parameter
 from qcodes.instrument.function import Function
 
 logger = logging.getLogger(__name__)
@@ -14,13 +14,17 @@ logger = logging.getLogger(__name__)
 class ParameterNode(Metadatable, DelegateAttributes):
     parameters = {}
 
-    def __init__(self, name: str = None, **kwargs):
+    def __init__(self, name: str = None,
+                 use_as_attributes: bool = False,
+                 **kwargs):
+        self.use_as_attributes = use_as_attributes
+
         self.name = name
 
         self.parameters = DotDict()
         self.parameter_nodes = DotDict()
-        self.functions = {}
         self.submodules = {}
+        self.functions = {}
 
         super().__init__(**kwargs)
 
@@ -34,10 +38,18 @@ class ParameterNode(Metadatable, DelegateAttributes):
         return self.parameters
 
     def __getattr__(self, attr):
-        if attr in self.parameter_nodes:
+        if attr == 'use_as_attributes':
+            return super().__getattr__(attr)
+        elif attr in self.parameter_nodes:
             return self.parameter_nodes[attr]
         elif attr in self.parameters:
-            return self.parameters[attr]()
+            parameter = self.parameters[attr]
+            if self.use_as_attributes:
+                # Perform get and return value
+                return parameter()
+            else:
+                # Return parameter instance
+                return parameter
         else:
             return super().__getattr__(attr)
 
@@ -103,12 +115,12 @@ class ParameterNode(Metadatable, DelegateAttributes):
         method for every submodule of the instrument.
 
         Submodules can effectively be considered as instruments within the main
-        instrument, and should at minimum be snapshottable. For example, they 
+        instrument, and should at minimum be snapshottable. For example, they
         can be used to either store logical groupings of parameters, which may
         or may not be repeated, or channel lists.
 
         Args:
-            name: how the submodule will be stored within 
+            name: how the submodule will be stored within
                 `instrument.submodules` and also how it can be addressed.
 
             submodule: The submodule to be stored.
@@ -169,7 +181,7 @@ class ParameterNode(Metadatable, DelegateAttributes):
                        update: bool = False,
                        max_chars: int = 80):
         """ Prints a readable version of the snapshot.
-        
+
         The readable snapshot includes the name, value and unit of each
         parameter.
         A convenience function to quickly get an overview of the parameter node.
@@ -303,3 +315,34 @@ class ParameterNode(Metadatable, DelegateAttributes):
     def print_readable_snapshot(self, update=False, max_chars=80):
         logger.warning('print_readable_snapshot is replaced with print_snapshot')
         self.print_snapshot(update=update, max_chars=max_chars)
+
+    def add_parameter(self, name, parameter_class=Parameter, **kwargs):
+        """
+        Bind one Parameter to this instrument.
+
+        Instrument subclasses can call this repeatedly in their ``__init__``
+        for every real parameter of the instrument.
+
+        In this sense, parameters are the state variables of the instrument,
+        anything the user can set and/or get
+
+        Args:
+            name (str): How the parameter will be stored within
+                ``instrument.parameters`` and also how you address it using the
+                shortcut methods: ``instrument.set(param_name, value)`` etc.
+
+            parameter_class (Optional[type]): You can construct the parameter
+                out of any class. Default ``StandardParameter``.
+
+            **kwargs: constructor arguments for ``parameter_class``.
+
+        Raises:
+            KeyError: if this instrument already has a parameter with this
+                name.
+        """
+        logger.warning('adding parameter should be done by setting the '
+                       'attribute instead of via add_parameter')
+        if name in self.parameters:
+            raise KeyError('Duplicate parameter name {}'.format(name))
+        param = parameter_class(name=name, instrument=self, **kwargs)
+        self.parameters[name] = param
