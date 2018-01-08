@@ -69,8 +69,9 @@ class ParameterNode(Metadatable, DelegateAttributes):
                     val.label = label
         elif isinstance(val, ParameterNode):
             self.parameter_nodes[attr] = val
-            # Update nested ParameterNode name
-            val.name = attr
+            if val.name is None:
+                # Update nested ParameterNode name
+                val.name = attr
         elif attr in self.parameters:
             # Set parameter value
             self.parameters[attr](val)
