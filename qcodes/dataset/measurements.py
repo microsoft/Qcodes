@@ -34,7 +34,7 @@ class DataSaver:
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
 
-    def addResult(self,
+    def add_result(self,
                   *res: Tuple[Union[Parameter, str],
                               Union[str, int, float, np.ndarray]])-> None:
         """
@@ -43,7 +43,7 @@ class DataSaver:
         varying two voltages and measuring two currents, a measurement point
         is the four dimensional (v1, v2, c1, c2). The corresponding call
         to this function would be (e.g.)
-        >> addResult((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+        >> add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
 
         For better performance, this function does not immediately write to
         the database, but keeps the results in memory. Writing happens every
@@ -67,10 +67,10 @@ class DataSaver:
 
         self._results.append(res_dict)
         if monotonic() - self._last_save_time > self.write_period:
-            self.flushDataToDatabase()
+            self.flush_data_to_database()
             self._last_save_time = monotonic()
 
-    def flushDataToDatabase(self):
+    def flush_data_to_database(self):
         """
         Write the in-memory results to the database.
         """
@@ -150,7 +150,7 @@ class Runner:
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
 
-        self.datasaver.flushDataToDatabase()
+        self.datasaver.flush_data_to_database()
 
         # perform the "teardown" events
         for func, args in self.exitactions.items():
@@ -181,7 +181,7 @@ class Measurement:
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
 
-    def registerParameter(
+    def register_parameter(
             self, parameter: Parameter,
             setpoints: Tuple[Parameter]=None,
             basis: Tuple[Parameter]=None) -> None:
@@ -199,9 +199,14 @@ class Measurement:
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
         """
+        # input validation
+        if not isinstance(parameter, Parameter):
+            raise ValueError('Can not register object of type {}. Can only '
+                             'register a QCoDeS Parameter.'
+                             ''.format(type(parameter)))
         # perhaps users will want a different name? But the name must be unique
         # on a per-run basis
-        # we also use str(parameter) below, but perhaps is is better to have
+        # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
         # the next one is tricky and deserves some thought
@@ -220,6 +225,9 @@ class Measurement:
                 if str(sp) not in list(self.parameters.keys()):
                     raise ValueError(f'Unknown setpoint: {str(sp)}.'
                                      ' Please register that parameter first.')
+                elif str(sp) == str(parameter):
+                    raise ValueError('A parameter can not have itself as '
+                                     'setpoint.')
                 else:
                     depends_on.append(str(sp))
 
@@ -240,9 +248,9 @@ class Measurement:
                               inferred_from=inf_from,
                               depends_on=depends_on)
 
-        self.parameters[str(parameter)] = paramspec
+        self.parameters[name] = paramspec
 
-    def addBeforeRun(self, func: Callable, args: tuple) -> None:
+    def add_before_run(self, func: Callable, args: tuple) -> None:
         """
         Add an action to be performed before the measurement.
 
@@ -258,7 +266,7 @@ class Measurement:
 
         self.enteractions[func] = args
 
-    def addAfterRun(self, func: Callable, args: tuple) -> None:
+    def add_after_run(self, func: Callable, args: tuple) -> None:
         """
         Add an action to be performed after the measurement.
 
