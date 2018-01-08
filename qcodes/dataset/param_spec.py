@@ -70,13 +70,4 @@ class ParamSpec():
 
     def __repr__(self):
         return f"{self.name} ({self.type})"
-
-
-def param_spec(parameter: _BaseParameter, paramtype: str) -> ParamSpec:
-    """ Generates a ParamSpec from a qcodes parameter
-
-    Args:
-        - parameter: the qcodes parameter to make a spec
-
-    """
-    return ParamSpec(parameter.name, paramtype, **parameter.metadata)
+g
