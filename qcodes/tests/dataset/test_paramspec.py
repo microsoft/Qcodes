@@ -28,3 +28,16 @@ def test_creation(name, sp1, sp2, inff1, inff2):
     ps1 = ParamSpec(sp1, 'real')
     p1 = ParamSpec(name, 'real', depends_on=(ps1, sp2))
     assert p1.depends_on == ps.depends_on
+
+    ps2 = ParamSpec(inff1, 'real')
+    p2 = ParamSpec(name, 'real', inferred_from=(ps2, inff2))
+    assert p2.inferred_from == ps.inferred_from
+
+
+@given(name=hst.text(min_size=1))
+def test_repr(name):
+    okay_types = ['array', 'real', 'integer', 'text']
+
+    for okt in okay_types:
+        ps = ParamSpec(name, okt)
+        assert ps.__repr__() == f"{name} ({okt})"
