@@ -225,6 +225,10 @@ class Measurement:
                 elif str(sp) == str(parameter):
                     raise ValueError('A parameter can not have itself as '
                                      'setpoint.')
+                elif self.parameters[str(sp)].depends_on != '':
+                    raise ValueError("A parameter's setpoints can not have "
+                                     f"setpoints themselves. {sp} depends on"
+                                     f" {self.parameters[str(sp)].depends_on}")
                 else:
                     depends_on.append(str(sp))
 
@@ -235,6 +239,9 @@ class Measurement:
                 if str(inff) not in list(self.parameters.keys()):
                     raise ValueError(f'Unknown basis parameter: {str(inff)}.'
                                      ' Please register that parameter first.')
+                elif str(inff) == str(parameter):
+                    raise ValueError('A parameter can not be inferred from'
+                                     'itself.')
                 else:
                     inf_from.append(str(inff))
 
@@ -246,6 +253,36 @@ class Measurement:
                               depends_on=depends_on)
 
         self.parameters[name] = paramspec
+        log.info(f'Registered {name} in the Measurement.')
+
+    def unregister_parameter(self, parameter: Union[Parameter, str]) -> None:
+        """
+        Remove a custom/QCoDeS parameter from the dataset produced by
+        running this measurement
+        """
+        if isinstance(parameter, Parameter):
+            param = str(parameter)
+        elif isinstance(parameter, str):
+            param = parameter
+        else:
+            raise ValueError('Wrong input type. Must be a QCoDeS parameter or'
+                             ' the name (a string) of a parameter.')
+
+        if param not in self.parameters:
+            log.info(f'Tried to unregister {param}, but it was not'
+                     'registered.')
+            return
+
+        for name, paramspec in self.parameters.items():
+            if param in paramspec.depends_on:
+                raise ValueError(f'Can not unregister {param}, it is a '
+                                 f'setpoint for {name}')
+            if param in paramspec.inferred_from:
+                raise ValueError(f'Can not unregister {param}, it is a '
+                                 f'basis for {name}')
+
+        self.parameters.pop(param)
+        log.info(f'Removed {param} from Measurement.')
 
     def add_before_run(self, func: Callable, args: tuple) -> None:
         """
