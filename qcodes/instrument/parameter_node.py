@@ -343,8 +343,6 @@ class ParameterNode(Metadatable, DelegateAttributes):
             KeyError: if this instrument already has a parameter with this
                 name.
         """
-        logger.warning('adding parameter should be done by setting the '
-                       'attribute instead of via add_parameter')
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
         param = parameter_class(name=name, instrument=self, **kwargs)
