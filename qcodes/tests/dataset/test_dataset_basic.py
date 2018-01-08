@@ -147,8 +147,8 @@ def test_add_data_1d(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    mydataset = new_data_set("test-dataset", specs=[ParamSpec("x", "number"),
-                                                    ParamSpec("y", "number")])
+    mydataset = new_data_set("test-dataset", specs=[ParamSpec("x", "real"),
+                                                    ParamSpec("y", "real")])
 
     expected_x = []
     expected_y = []
@@ -172,7 +172,7 @@ def test_add_data_array(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    mydataset = new_data_set("test", specs=[ParamSpec("x", "number"),
+    mydataset = new_data_set("test", specs=[ParamSpec("x", "real"),
                                             ParamSpec("y", "array")])
 
     expected_x = []
@@ -201,5 +201,5 @@ def test_load_by_counter(dataset):
 def test_dataset_with_no_experiment_raises(empty_temp_db):
     with pytest.raises(ValueError):
         mydataset = new_data_set("test-dataset",
-                                 specs=[ParamSpec("x", "number"),
-                                        ParamSpec("y", "number")])
+                                 specs=[ParamSpec("x", "real"),
+                                        ParamSpec("y", "real")])
