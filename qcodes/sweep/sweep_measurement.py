@@ -60,7 +60,7 @@ class SweepDataSaver(DataSaver):
         self._register_parameters_in_result_dict(result_dict)
 
         result_list = [(name, result_dict[name]["value"]) for name in result_dict.keys()]
-        super().addResult(*result_list)
+        super().add_result(*result_list)
 
 
 class SweepMeasurement(Measurement):
