@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class ParameterNode(Metadatable, DelegateAttributes):
+    # Add default empty dicts for parameters and parameter_nodes in case they
+    # are not defined but is accessed (avoids infinite recursion).
     parameters = {}
+    parameter_nodes = {}
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
