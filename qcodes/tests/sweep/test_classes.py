@@ -50,7 +50,7 @@ def test_nesting(parameters, sweep_values):
     """
 
     def test():
-        _ = list(Nest([ParameterSweep(p, lambda: v) for p, v in zip(parameters, sweep_values)]))
+        _ = list(Nest([ParameterSweep(p, lambda v=v: v) for p, v in zip(parameters, sweep_values)]))
 
     def compare():
 
