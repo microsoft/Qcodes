@@ -186,6 +186,15 @@ class DataSet(Sized):
                                 "result_table_name", "run_id", self.id)
 
     @property
+    def number_of_results(self):
+        tabnam = self.table_name
+        print(f'I think table name is {tabnam}')
+        # TODO: is it better/faster to use the max index?
+        sql = f'SELECT COUNT(*) FROM "{tabnam}"'
+        cursor = atomicTransaction(self.conn, sql)
+        return one(cursor, 'COUNT(*)')
+
+    @property
     def counter(self):
         return select_one_where(self.conn, "runs",
                                 "result_counter", "run_id", self.id)
