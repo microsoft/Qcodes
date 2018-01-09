@@ -6,6 +6,7 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.dataset.param_spec import ParamSpec
 
 
 @pytest.fixture  # scope is "function" per default
@@ -39,11 +40,11 @@ def test_register_parameter_numbers(DAC, DMM):
     my_param = DAC.ch1
     meas.register_parameter(my_param)
     assert len(meas.parameters) == 1
-    paramspec = meas.parameters[my_param.full_name]
-    assert paramspec.name == my_param.full_name
+    paramspec = meas.parameters[str(my_param)]
+    assert paramspec.name == str(my_param)
     assert paramspec.label == my_param.label
     assert paramspec.unit == my_param.unit
-    assert paramspec.type == 'number'
+    assert paramspec.type == 'real'
 
     # registering the same parameter twice should lead
     # to a replacement/update
@@ -55,7 +56,7 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.name == str(my_param)
     assert paramspec.label == my_param.label
     assert paramspec.unit == my_param.unit
-    assert paramspec.type == 'number'
+    assert paramspec.type == 'real'
 
     for parameter in parameters:
         with pytest.raises(ValueError):
@@ -82,6 +83,63 @@ def test_register_parameter_numbers(DAC, DMM):
     meas.register_parameter(DAC.ch2, setpoints=(DAC.ch1,))
     with pytest.raises(ValueError):
         meas.register_parameter(DMM.v1, setpoints=(DAC.ch2,))
+
+
+def test_register_custom_parameter(DAC):
+    """
+    Test the registration of custom parameters
+    """
+    meas = Measurement()
+
+    name = 'V modified'
+    paramtype = 'real'
+    unit = 'V^2'
+    label = 'square of the voltage'
+
+    with pytest.raises(TypeError):
+        meas.register_custom_parameter(name=name, label=label, unit=unit)
+
+    meas.register_custom_parameter(name, paramtype, label, unit)
+
+    assert len(meas.parameters) == 1
+    assert isinstance(meas.parameters[name], ParamSpec)
+    assert meas.parameters[name].unit == unit
+    assert meas.parameters[name].label == label
+    assert meas.parameters[name].type == paramtype
+
+    newunit = 'V^3'
+    newlabel = 'cube of the voltage'
+
+    meas.register_custom_parameter(name, paramtype, newlabel, newunit)
+
+    assert len(meas.parameters) == 1
+    assert isinstance(meas.parameters[name], ParamSpec)
+    assert meas.parameters[name].unit == newunit
+    assert meas.parameters[name].label == newlabel
+
+    with pytest.raises(ValueError):
+        meas.register_custom_parameter(name, paramtype, label, unit,
+                                       setpoints=(DAC.ch1,))
+    with pytest.raises(ValueError):
+        meas.register_custom_parameter(name, paramtype, label, unit,
+                                       basis=(DAC.ch2,))
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+    meas.register_custom_parameter('strange dac', 'real')
+
+    meas.register_custom_parameter(name, paramtype, label, unit,
+                                   setpoints=(DAC.ch1, str(DAC.ch2)),
+                                   basis=('strange dac',))
+
+    assert len(meas.parameters) == 4
+    parspec = meas.parameters[name]
+    assert parspec.inferred_from == 'strange dac'
+    assert parspec.setpoints == ', '.join([str(DAC.ch1), str(DAC.ch2)])
+
+    with pytest.raises(ValueError):
+        meas.register_custom_parameter('double dependence', 'real',
+                                       'label', 'unit', setpoints=(name,))
 
 
 def test_unregister_parameter(DAC, DMM):

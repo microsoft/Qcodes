@@ -7,8 +7,8 @@ from inspect import signature
 import numpy as np
 
 import qcodes as qc
-from qcodes import Station, Parameter
-from qcodes.instrument.parameter import ArrayParameter
+from qcodes import Station
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -35,8 +35,8 @@ class DataSaver:
         self._last_save_time = monotonic()
 
     def add_result(self,
-                  *res: Tuple[Union[Parameter, str],
-                              Union[str, int, float, np.ndarray]])-> None:
+                   *res: Tuple[Union[_BaseParameter, str],
+                               Union[str, int, float, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -178,10 +178,58 @@ class Measurement:
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
 
+    def _registration_validation(
+            self, name: str, setpoints: Tuple[str]=None,
+            basis: Tuple[str]=None) -> Tuple[Tuple[str], Tuple[str]]:
+        """
+        Helper function to do all the validation in terms of dependencies
+        when adding parameters, e.g. that no setpoints have setpoints etc.
+
+        Called by register_parameter and register_custom_parameter
+
+        Args:
+            name: Name of the parameter to register
+            setpoints: name(s) of the setpoint parameter(s)
+            basis: name(s) of the parameter(s) that this parameter is
+                inferred from
+        """
+
+        # now handle setpoints
+        depends_on = []
+        if setpoints:
+            for sp in setpoints:
+                if sp not in list(self.parameters.keys()):
+                    raise ValueError(f'Unknown setpoint: {sp}.'
+                                     ' Please register that parameter first.')
+                elif sp == name:
+                    raise ValueError('A parameter can not have itself as '
+                                     'setpoint.')
+                elif self.parameters[sp].depends_on != '':
+                    raise ValueError("A parameter's setpoints can not have "
+                                     f"setpoints themselves. {sp} depends on"
+                                     f" {self.parameters[sp].depends_on}")
+                else:
+                    depends_on.append(sp)
+
+        # now handle inferred parameters
+        inf_from = []
+        if basis:
+            for inff in basis:
+                if inff not in list(self.parameters.keys()):
+                    raise ValueError(f'Unknown basis parameter: {inff}.'
+                                     ' Please register that parameter first.')
+                elif inff == name:
+                    raise ValueError('A parameter can not be inferred from'
+                                     'itself.')
+                else:
+                    inf_from.append(inff)
+
+        return (depends_on, inf_from)
+
     def register_parameter(
-            self, parameter: Parameter,
-            setpoints: Tuple[Parameter]=None,
-            basis: Tuple[Parameter]=None) -> None:
+            self, parameter: _BaseParameter,
+            setpoints: Tuple[_BaseParameter]=None,
+            basis: Tuple[_BaseParameter]=None) -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -197,7 +245,7 @@ class Measurement:
                 this should be left blank.
         """
         # input validation
-        if not isinstance(parameter, Parameter):
+        if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
@@ -211,39 +259,22 @@ class Measurement:
         if isinstance(parameter, ArrayParameter):
             paramtype = 'array'
         else:
-            paramtype = 'number'
+            paramtype = 'real'
         label = parameter.label
         unit = parameter.unit
 
-        # now handle setpoints
-        depends_on = []
         if setpoints:
-            for sp in setpoints:
-                if str(sp) not in list(self.parameters.keys()):
-                    raise ValueError(f'Unknown setpoint: {str(sp)}.'
-                                     ' Please register that parameter first.')
-                elif str(sp) == str(parameter):
-                    raise ValueError('A parameter can not have itself as '
-                                     'setpoint.')
-                elif self.parameters[str(sp)].depends_on != '':
-                    raise ValueError("A parameter's setpoints can not have "
-                                     f"setpoints themselves. {sp} depends on"
-                                     f" {self.parameters[str(sp)].depends_on}")
-                else:
-                    depends_on.append(str(sp))
-
-        # now handle inferred parameters
-        inf_from = []
+            sp_strings = [str(sp) for sp in setpoints]
+        else:
+            sp_strings = []
         if basis:
-            for inff in basis:
-                if str(inff) not in list(self.parameters.keys()):
-                    raise ValueError(f'Unknown basis parameter: {str(inff)}.'
-                                     ' Please register that parameter first.')
-                elif str(inff) == str(parameter):
-                    raise ValueError('A parameter can not be inferred from'
-                                     'itself.')
-                else:
-                    inf_from.append(str(inff))
+            bs_strings = [str(bs) for bs in basis]
+        else:
+            bs_strings = []
+
+        # validate all dependencies
+        depends_on, inf_from = self._registration_validation(name, sp_strings,
+                                                             bs_strings)
 
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
@@ -255,12 +286,57 @@ class Measurement:
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
 
-    def unregister_parameter(self, parameter: Union[Parameter, str]) -> None:
+    def register_custom_parameter(
+            self, name: str, paramtype: str,
+            label: str=None, unit: str=None,
+            basis: Sequence[Union[str, _BaseParameter]]=None,
+            setpoints: Sequence[Union[str, _BaseParameter]]=None) -> None:
+        """
+        Register a custom parameter with this measurement
+
+        Args:
+            name: The name that this parameter will have in the dataset. Must
+                be unique (will overwrite an existing parameter with the same
+                name!)
+            paramtype: The SQL storage class of the parameter ('integer',
+                'real', 'array', or 'text')
+            label: The label
+            unit: The unit
+            basis: A list of either QCoDeS Parameters or the names
+                of parameters already registered in the measurement that
+                this parameter is inferred from
+            setpoints: A list of either QCoDeS Parameters or the names of
+                of parameters already registered in the measurement that
+                are the setpoints of this parameter
+        """
+
+        # validate dependencies
+        if setpoints:
+            sp_strings = [str(sp) for sp in setpoints]
+        else:
+            sp_strings = []
+        if basis:
+            bs_strings = [str(bs) for bs in basis]
+        else:
+            bs_strings = []
+
+        # validate all dependencies
+        depends_on, inf_from = self._registration_validation(name, sp_strings,
+                                                             bs_strings)
+
+        parspec = ParamSpec(name=name, paramtype=paramtype,
+                            label=label, unit=unit,
+                            inferred_from=basis,
+                            depends_on=setpoints)
+        self.parameters[name] = parspec
+
+    def unregister_parameter(self,
+                             parameter: Union[_BaseParameter, str]) -> None:
         """
         Remove a custom/QCoDeS parameter from the dataset produced by
         running this measurement
         """
-        if isinstance(parameter, Parameter):
+        if isinstance(parameter, _BaseParameter):
             param = str(parameter)
         elif isinstance(parameter, str):
             param = parameter
