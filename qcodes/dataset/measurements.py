@@ -326,8 +326,8 @@ class Measurement:
 
         parspec = ParamSpec(name=name, paramtype=paramtype,
                             label=label, unit=unit,
-                            inferred_from=basis,
-                            depends_on=setpoints)
+                            inferred_from=inf_from,
+                            depends_on=depends_on)
         self.parameters[name] = parspec
 
     def unregister_parameter(self,
