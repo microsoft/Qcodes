@@ -14,6 +14,7 @@ We test that looping with the sweep module produces the same result as using "ra
 NB: For debugging, use the decorator "@settings(use_coverage=False)"
 """
 
+import pytest
 from hypothesis import given
 
 from qcodes.sweep.sweep import (
@@ -21,6 +22,7 @@ from qcodes.sweep.sweep import (
     FunctionSweep,
     Nest,
     Chain,
+    Zip,
     FunctionWrapper,
     ParameterWrapper
 )
@@ -167,7 +169,9 @@ def test_measurement_function(parameters, measurements, sweep_values):
 
 @given(parameter_list(2), sweep_values_list(2))
 def test_chain(parameters, sweep_values):
-
+    """
+    Test the Chain operator
+    """
     def test():
         list(Chain([ParameterSweep(p, lambda v=v: v) for p, v in zip(parameters, sweep_values)]))
 
@@ -180,3 +184,25 @@ def test_chain(parameters, sweep_values):
             parameters[1].set(value1)
 
     equivalence_test(test, compare)
+
+
+@given(parameter_list(2), sweep_values_list(2))
+def test_zip(parameters, sweep_values):
+    """
+    Test the Zip operator
+    """
+    def test():
+        list(Zip([ParameterSweep(p, lambda v=v: v) for p, v in zip(parameters, sweep_values)]))
+
+    def compare():
+
+        for value0, value1 in zip(*sweep_values):
+            parameters[0].set(value0)
+            parameters[1].set(value1)
+
+    if len(set([len(i) for i in sweep_values])) > 1:
+        with pytest.raises(RuntimeError) as exception:
+            equivalence_test(test, compare)
+        assert str(exception.value) == "When zipping sweep objects, the number of iterations of each should be equal"
+    else:
+        equivalence_test(test, compare)

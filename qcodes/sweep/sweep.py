@@ -1,3 +1,4 @@
+import itertools
 import time  # For defining a time trace sweep object type
 
 
@@ -149,7 +150,9 @@ class Zip(BaseSweepObject):
         return combined
 
     def _setter_factory(self):
-        for results in zip(*self._sweep_objects):
+        for results in itertools.zip_longest(*self._sweep_objects, fillvalue="error"):
+            if "error" in results:
+                raise RuntimeError("When zipping sweep objects, the number of iterations of each should be equal")
             yield Zip._combine_dictionaries(results)
 
 

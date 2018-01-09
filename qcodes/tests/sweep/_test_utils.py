@@ -85,6 +85,7 @@ def equivalence_test(test: Callable, compare: Callable)->None:
     """
     Assert that two test functions produce the same output on the stdout
     """
+    mock_io.flush()
     test()
     test_value = str(mock_io)
     mock_io.flush()
