@@ -31,11 +31,54 @@ class TestParameter(ManualParameter):
     """
     A Manual Parameter subclass to test against
     """
+    def __init__(self, name: str, unit: str, independent_parameter: bool=False)->None:
+        super().__init__(name, unit=unit)
+        self._independent_parameter = independent_parameter
+
     def set_raw(self, value: AnyStr)->None:
+        self._save_val(value)
         mock_io.write("Setting {} to {}".format(self.name, str(value)))
 
     def get_raw(self)->int:
-        return 0
+        if self._independent_parameter:
+            raw_value = hash(str(mock_io))
+            mock_io.write("Current value of {} is {}".format(self.name, str(raw_value)))
+        else:
+            raw_value = self.raw_value
+        return raw_value
+
+
+class TestMeasureFunction:
+    """
+    We can use measurement function instead of qcodes parameters to measure dependent parameters.
+    """
+    def __init__(self, name: str)->None:
+        self._name = name
+
+    @property
+    def name(self)->str:
+        return self._name
+
+    def __call__(self)->dict:
+        hs = hash(str(mock_io))
+        mock_io.write("{} returns {}".format(self._name, hs))
+        return {self._name: {"unit": "hash", "value": hs, "independent_parameter": False}}
+
+
+class TestSetFunction:
+    """
+    We can use set functions instead of qcodes parameters to set independent parameters
+    """
+    def __init__(self, name: str)->None:
+        self._name = name
+
+    @property
+    def name(self)->str:
+        return self._name
+
+    def __call__(self, value: float)->dict:
+        mock_io.write("Setting {} to {}".format(self._name, value))
+        return {self._name: {"unit": "none", "value": value, "independent_parameter": True}}
 
 
 def equivalence_test(test: Callable, compare: Callable)->None:
@@ -55,7 +98,7 @@ def equivalence_test(test: Callable, compare: Callable)->None:
 
 def parameter_list(list_size: int)->st.lists:
     """
-    Return a list of parameters useful for testing through the hypothesis module.
+    Return a list of independent parameters useful for testing through the hypothesis module.
     """
     a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
 
@@ -63,7 +106,62 @@ def parameter_list(list_size: int)->st.lists:
         st.builds(
             TestParameter,
             name=st.text(alphabet=a_to_z, min_size=4, max_size=4),
-            unit=st.text(alphabet=a_to_z, min_size=4, max_size=4)
+            unit=st.text(alphabet=a_to_z, min_size=1, max_size=1)
+        ),
+        min_size=list_size,
+        max_size=list_size,
+        unique_by=lambda p: p.name
+    )
+
+
+def measurement_parameter_list(list_size: int)->st.lists:
+    """
+    Return a list of dependent parameters useful for testing through the hypothesis module. The difference between
+    dependent and independent parameters in this context is that the latter will be verbose on getting the current
+    parameter value
+    """
+    a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
+
+    return st.lists(
+        st.builds(
+            TestParameter,
+            name=st.text(alphabet=a_to_z, min_size=4, max_size=4),
+            unit=st.text(alphabet=a_to_z, min_size=1, max_size=1),
+            independent_parameter=st.sampled_from([True])
+        ),
+        min_size=list_size,
+        max_size=list_size,
+        unique_by=lambda p: p.name
+    )
+
+
+def measure_function_list(list_size: int)->st.lists:
+    """
+    Return a list of measurement functions useful for testing through the hypothesis module.
+    """
+    a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
+
+    return st.lists(
+        st.builds(
+            TestMeasureFunction,
+            name=st.text(alphabet=a_to_z, min_size=4, max_size=4)
+        ),
+        min_size=list_size,
+        max_size=list_size,
+        unique_by=lambda p: p.name
+    )
+
+
+def set_function_list(list_size: int)->st.lists:
+    """
+    Return a list of set functions useful for testing through the hypothesis module.
+    """
+    a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
+
+    return st.lists(
+        st.builds(
+            TestSetFunction,
+            name=st.text(alphabet=a_to_z, min_size=4, max_size=4)
         ),
         min_size=list_size,
         max_size=list_size,
