@@ -170,7 +170,7 @@ def set_function_list(list_size: int)->st.lists:
     )
 
 
-def sweep_values_list(list_size: int)->st.lists:
+def sweep_values_list(list_size: int, sweep_value_sizes=(3, 6))->st.lists:
     """
     Return a list of sweep values useful for testing through the hypothesis module. Sweep values are themselves lists
     of floats.
@@ -178,7 +178,7 @@ def sweep_values_list(list_size: int)->st.lists:
     return st.lists(
         st.lists(
             st.floats(allow_nan=False, allow_infinity=False),
-            min_size=3, max_size=6,
+            min_size=sweep_value_sizes[0], max_size=sweep_value_sizes[1],
             unique=True
         ),
         min_size=list_size, max_size=list_size

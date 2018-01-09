@@ -186,7 +186,7 @@ def test_chain(parameters, sweep_values):
     equivalence_test(test, compare)
 
 
-@given(parameter_list(2), sweep_values_list(2))
+@given(parameter_list(2), sweep_values_list(2, sweep_value_sizes=(4, 4)))
 def test_zip(parameters, sweep_values):
     """
     Test the Zip operator
@@ -200,9 +200,4 @@ def test_zip(parameters, sweep_values):
             parameters[0].set(value0)
             parameters[1].set(value1)
 
-    if len(set([len(i) for i in sweep_values])) > 1:
-        with pytest.raises(RuntimeError) as exception:
-            equivalence_test(test, compare)
-        assert str(exception.value) == "When zipping sweep objects, the number of iterations of each should be equal"
-    else:
-        equivalence_test(test, compare)
+    equivalence_test(test, compare)

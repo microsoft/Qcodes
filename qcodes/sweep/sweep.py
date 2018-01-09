@@ -1,4 +1,3 @@
-import itertools
 import time  # For defining a time trace sweep object type
 
 
@@ -150,9 +149,7 @@ class Zip(BaseSweepObject):
         return combined
 
     def _setter_factory(self):
-        for results in itertools.zip_longest(*self._sweep_objects, fillvalue="error"):
-            if "error" in results:
-                raise RuntimeError("When zipping sweep objects, the number of iterations of each should be equal")
+        for results in zip(*self._sweep_objects):
             yield Zip._combine_dictionaries(results)
 
 
@@ -200,13 +197,20 @@ class ParameterWrapper(BaseSweepObject):
     ----------
     parameter: qcodes.StandardParameter
     """
-    def __init__(self, parameter):
+    def __init__(self, parameter, repeat=False):
+        """
+        Note: please use repeat=True carefully as this can easily lead to infinite loops.
+        """
         self._parameter = parameter
+        self._repeat = repeat
         super().__init__()
 
     def _setter_factory(self):
-        value = self._parameter()
-        yield parameter_log_format(self._parameter, value, setting=False)
+        stop = False
+        while not stop:
+            value = self._parameter()
+            yield parameter_log_format(self._parameter, value, setting=False)
+            stop = not self._repeat
 
 
 class FunctionSweep(BaseSweepObject):
@@ -242,12 +246,19 @@ class FunctionWrapper(BaseSweepObject):
     func: callable
         callable of station, namespace
     """
-    def __init__(self, func):
+    def __init__(self, func, repeat=False):
+        """
+        Note: please use repeat=True carefully as this can easily lead to infinite loops.
+        """
         self._func = func
+        self._repeat = repeat
         super().__init__()
 
     def _setter_factory(self):
-        yield self._func()
+        stop = False
+        while not stop:
+            yield self._func()
+            stop = not self._repeat
 
 
 class TimeTrace(BaseSweepObject):

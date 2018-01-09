@@ -14,7 +14,7 @@ from qcodes.sweep.sweep import (
     ParameterWrapper
 )
 
-from qcodes.sweep import sweep, nest, chain
+from qcodes.sweep import sweep, nest
 
 from ._test_utils import (
     parameter_list,
