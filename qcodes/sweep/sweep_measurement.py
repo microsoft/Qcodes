@@ -9,7 +9,7 @@ Intended usage:
 >>> experiment = new_experiment()
 >>> with SweepMeasurement(experiment).run() as data_saver:
 >>>     for result_dict in sweep(obj, values):
->>>         data_saver.add(result_dict)
+>>>         data_saver.add_result(result_dict)
 >>>
 
 
@@ -56,7 +56,7 @@ class SweepDataSaver(DataSaver):
         self._dataset.add_parameters([param_spec])
         self._parameters.add(parameter_name)
 
-    def addResult(self, result_dict):  # In the sweep version of the data saver we expect dictionaries
+    def add_result(self, result_dict: dict)->None:  # In the sweep version of the data saver we expect dictionaries
         self._register_parameters_in_result_dict(result_dict)
 
         result_list = [(name, result_dict[name]["value"]) for name in result_dict.keys()]

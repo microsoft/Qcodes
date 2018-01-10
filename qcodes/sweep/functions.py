@@ -33,13 +33,13 @@ def sweep(obj, sweep_points):
         return ParameterSweep(obj, point_function)
 
 
-def wrap_objects(*objects):
+def wrap_objects(*objects, repeat=False):
 
     def wrapper(obj):
         if isinstance(obj, qcodes.Parameter):
-            new_obj = ParameterWrapper(obj)
+            new_obj = ParameterWrapper(obj, repeat=repeat)
         elif callable(obj):
-            new_obj = FunctionWrapper(obj)
+            new_obj = FunctionWrapper(obj, repeat=repeat)
         else:
             new_obj = obj
 
@@ -57,4 +57,19 @@ def chain(*objects):
 
 
 def szip(*objects):
-    return Zip(wrap_objects(*objects))
+    """
+    A plausible scenario for using szip is the following:
+
+    >>> szip(therometer.t, sweep(source.voltage, [0, 1, 2]))
+
+    The idea is to measure the temperature *before* going to each voltage set point. The parameter "thermometer.t" needs
+    to be wrapped by the ParameterWrapper in such a way that the get method of the parameter is called repeatedly. An
+    infinite loop is prevented because the sweep object "sweep(source.voltage, [0, 1, 2])"  has a finite length and the
+    Zip operator loops until the shortest sweep object is exhausted
+    """
+    repeat = False
+    if any([isinstance(i, BaseSweepObject) for i in objects]):  # If any of the objects is a sweep object it (probably)
+        # has a finite length and therefore wrapping functions and parameters with repeat=True is save. These parameters
+        # and functions will be called as often as the length of the sweep object.
+        repeat = True
+    return Zip(wrap_objects(*objects, repeat=repeat))

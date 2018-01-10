@@ -5,16 +5,17 @@ sweep objects.
 
 from hypothesis import given
 
+from qcodes.instrument.parameter import ManualParameter
+
 from qcodes.sweep.sweep import (
     ParameterSweep,
     FunctionSweep,
     Nest,
-    Chain,
     FunctionWrapper,
     ParameterWrapper
 )
 
-from qcodes.sweep import sweep, nest
+from qcodes.sweep import sweep, nest, szip
 
 from ._test_utils import (
     parameter_list,
@@ -83,4 +84,42 @@ def test_wrap_callable(parameters, sweep_values, measurements):
 
     equivalence_test(test, compare)
 
-# Since the zip and chain operators use the same wrapping function as nest, so we will not test these separately.
+# Since the chain operator use the same wrapping function as nest, so we will not test this separately.
+
+
+def test_szip_measure_prior_to_set():
+    """
+    We can use szip to perform a measurement before setting sweep set points.  Test this scenario
+    """
+    x = ManualParameter("x")
+    v = range(1, 10)
+    m = ManualParameter("m")
+    m.get = lambda: 2 * x()
+
+    x(0)
+    count = 0
+    previous_x = x()
+
+    for count, i in enumerate(szip(m, sweep(x, v))):
+        assert i["m"]["value"] == 2 * previous_x  # Note that at this point, x should already have been incremented
+        assert count < len(v)
+        previous_x = x()
+
+    assert count == len(v) - 1
+
+
+def test_szip_finiteness():
+    """
+    Test that if only parameters and/or functions are given to szip, we do not end up in infinite loops but instead
+    iterate once returning the value of the parameter/function
+    """
+    x = ManualParameter("x")
+    y = ManualParameter("y")
+
+    x(0)
+    y(1)
+
+    for count, i in enumerate(szip(x, y)):
+        assert i["x"]["value"] == x()
+        assert i["y"]["value"] == y()
+        assert count == 0

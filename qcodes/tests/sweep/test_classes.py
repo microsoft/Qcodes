@@ -13,8 +13,6 @@ We test that looping with the sweep module produces the same result as using "ra
 
 NB: For debugging, use the decorator "@settings(use_coverage=False)"
 """
-
-import pytest
 from hypothesis import given
 
 from qcodes.sweep.sweep import (
