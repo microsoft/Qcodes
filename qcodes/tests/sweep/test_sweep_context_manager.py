@@ -1,0 +1,63 @@
+"""
+A context manager subclassed from the original has been designed to work seamlessly with sweep objects. This is tested
+here.
+"""
+import numpy as np
+
+import qcodes as qc
+from qcodes.instrument.parameter import ManualParameter
+from qcodes.sweep import sweep, nest, chain, SweepMeasurement
+from qcodes import new_experiment, Station
+
+
+def test_simple():
+    x = ManualParameter("x")
+    sweep_values = np.linspace(-1, 1, 100)
+
+    m = ManualParameter("m")
+    m.get = lambda: np.sin(x())
+
+    sweep_object = nest(sweep(x, sweep_values), m)
+
+    experiment = new_experiment("sweep_measure", sample_name="sine")
+    station = Station()
+    meas = SweepMeasurement(exp=experiment, station=station)
+
+    with meas.run() as datasaver:
+        for data in sweep_object:
+            datasaver.add_result(data)
+
+    data_set = datasaver._dataset
+    assert data_set.paramspecs["x"].depends_on == ""
+    assert data_set.paramspecs["m"].depends_on == "x"
+
+
+def test_nest():
+    x = ManualParameter("x")
+    sweep_values_x = np.linspace(-1, 1, 100)
+
+    y = ManualParameter("y")
+    sweep_values_y = np.linspace(-1, 1, 100)
+
+    m = ManualParameter("m")
+    m.get = lambda: np.sin(x())
+
+    n = ManualParameter("n")
+    n.get = lambda: np.cos(x()) + 2 * np.sin(y())
+
+    sweep_object = nest(sweep(x, sweep_values_x), chain(m, nest(sweep(y, sweep_values_y), n)))
+    # x * (m + y * n)
+
+    experiment = new_experiment("sweep_measure", sample_name="sine")
+    station = Station()
+    meas = SweepMeasurement(exp=experiment, station=station)
+
+    with meas.run() as datasaver:
+        for data in sweep_object:
+            datasaver.add_result(data)
+
+    data_set = datasaver._dataset
+    assert data_set.paramspecs["x"].depends_on == ""
+    assert data_set.paramspecs["y"].depends_on == ""
+    assert data_set.paramspecs["m"].depends_on == "x"
+    assert data_set.paramspecs["n"].depends_on == "y, x"
