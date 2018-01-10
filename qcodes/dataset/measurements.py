@@ -4,6 +4,8 @@ from time import monotonic
 from collections import OrderedDict
 from typing import Callable, Union, Dict, Tuple, List, Sequence
 from inspect import signature
+from numbers import Number
+
 import numpy as np
 
 import qcodes as qc
@@ -27,12 +29,18 @@ class DataSaver:
     """
 
     def __init__(self, dataset: DataSet, write_period: float,
-                 known_parameters: List[str]) -> None:
+                 parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
         self.write_period = write_period
-        self._known_parameters = known_parameters
+        self.parameters = parameters
+        self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
+        self._known_dependencies = {}
+        for param, parspec in parameters.items():
+            if parspec.depends_on != '':
+                self._known_dependencies.update({str(param):
+                                                parspec.depends_on.split(', ')})
 
     def add_result(self,
                    *res: Tuple[Union[_BaseParameter, str],
@@ -43,11 +51,18 @@ class DataSaver:
         varying two voltages and measuring two currents, a measurement point
         is the four dimensional (v1, v2, c1, c2). The corresponding call
         to this function would be (e.g.)
-        >> add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+        >> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
 
         For better performance, this function does not immediately write to
         the database, but keeps the results in memory. Writing happens every
         `write_period` seconds and during the __exit__ method if this class.
+
+        Regarding arrays: since arrays as binary blobs are (almost) worthless
+        in a relational database, this function "unravels" arrays passed to it.
+        That, in turn, forces us to impose rules on what can be saved in one
+        go. Any number of scalars and any number of arrays OF THE SAME LENGTH
+        can be passed to add_result. The scalars are duplicated to match the
+        arrays.
 
         Args:
             res: a dictionary with keys that are parameter names and items
@@ -59,13 +74,56 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        res_dict = {}
 
+        # we iterate through the input twice in order to allow users to call
+        # add_result with the arguments in any particular order, i.e. NOT
+        # enforcing that setpoints come before dependent variables.
+        # Also, we pre-check that array dimensions are compatible before
+        # proceeding.
+        input_size = 1
+        params = []
         for partial_result in res:
-            # TODO: Here we again use the str(), which may not be terrific
-            res_dict.update({str(partial_result[0]): partial_result[1]})
+            param = str(partial_result[0])
+            params.append(param)
+            if param not in self._known_parameters:
+                raise ValueError(f'Can not add a result for {param}, no such'
+                                 ' parameter registered in this measurement.')
+            if self.parameters[param].type == 'array':
+                array_size = len(partial_result[1])
+                if input_size > 1 and input_size != array_size:
+                    raise ValueError('Incompatible array dimensions. Trying to'
+                                     f' add arrays of dimension {input_size} '
+                                     f'and {array_size}')
+                else:
+                    input_size = array_size
 
-        self._results.append(res_dict)
+        # Now check for missing setpoints
+        for partial_result in res:
+            param = str(partial_result[0])
+            value = partial_result[1]
+            if param in self._known_dependencies.keys():
+                stuffweneed = set(self._known_dependencies[param])
+                stuffwehave = set(params)
+                if not stuffweneed.issubset(stuffwehave):
+                    raise ValueError('Can not add this result; missing '
+                                     f'setpoint values for {param}:'
+                                     f' {stuffweneed}.'
+                                     f' Values only given for {params}.')
+
+        for index in range(input_size):
+            res_dict = {}
+            for partial_result in res:
+                param = str(partial_result[0])
+                value = partial_result[1]
+
+                if self.parameters[param].type == 'array':
+                    res_dict.update({param: value[index]})
+                else:
+                    res_dict.update({param: value})
+
+            self._results.append(res_dict)
+        print(f'Results are now: {self._results}')
+
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = monotonic()
@@ -86,6 +144,10 @@ class DataSaver:
     @property
     def id(self):
         return self._dataset.id
+
+    @property
+    def points_written(self):
+        return self._dataset.number_of_results
 
 
 class Runner:
@@ -125,6 +187,9 @@ class Runner:
         else:
             eid = None
 
+        # TODO: FIXME: WARNING: the name should be put in properly
+        # I guess this should be piped down from the Measurement
+        # and default to 'results'
         self.ds = qc.new_data_set('name', eid)
 
         # .. and give it a snapshot as metadata
@@ -133,15 +198,17 @@ class Runner:
         else:
             station = self.station
 
-        self.ds.add_metadata('snapshot', json.dumps(station.snapshot()))
+        if station:
+            self.ds.add_metadata('snapshot', json.dumps(station.snapshot()))
 
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
 
         print(f'Starting experimental run with id: {self.ds.id}')
 
-        self.datasaver = DataSaver(self.ds, self.write_period,
-                                   list(self.parameters.keys()))
+        self.datasaver = DataSaver(dataset=self.ds,
+                                   write_period=self.write_period,
+                                   parameters=self.parameters)
 
         return self.datasaver
 
@@ -177,6 +244,19 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
+        self._write_period = None
+
+    @property
+    def write_period(self):
+        return self.write_period
+
+    @write_period.setter
+    def write_period(self, wp: Number) -> None:
+        if not isinstance(wp, Number):
+            raise ValueError('The write period must be a number (of seconds).')
+        if wp < 1e-3:
+            raise ValueError('The write period must be at least 1 ms.')
+        self._write_period = wp
 
     def _registration_validation(
             self, name: str, setpoints: Tuple[str]=None,
@@ -283,6 +363,10 @@ class Measurement:
                               inferred_from=inf_from,
                               depends_on=depends_on)
 
+        # ensure the correct order
+        if name in self.parameters.keys():
+            self.parameters.pop(name)
+
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
 
@@ -328,6 +412,11 @@ class Measurement:
                             label=label, unit=unit,
                             inferred_from=inf_from,
                             depends_on=depends_on)
+
+        # ensure the correct order
+        if name in self.parameters.keys():
+            self.parameters.pop(name)
+
         self.parameters[name] = parspec
 
     def unregister_parameter(self,
@@ -397,5 +486,6 @@ class Measurement:
         Returns the context manager for the experimental run
         """
         return Runner(self.enteractions, self.exitactions,
-                      self.experiment,
+                      self.experiment, station=self.station,
+                      write_period=self._write_period,
                       parameters=self.parameters)

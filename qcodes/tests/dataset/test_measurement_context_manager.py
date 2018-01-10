@@ -1,12 +1,36 @@
 import pytest
+import tempfile
+import os
+from time import sleep
 
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as hst
+import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.sqlite_base import connect, init_db, connect, _unicode_categories
+
+
+@pytest.fixture(scope="function")
+def empty_temp_db():
+    # create a temp database for testing
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
+        qc.config["core"]["db_debug"] = True
+        # this is somewhat annoying but these module scope variables
+        # are initialized at import time so they need to be overwritten
+        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
+        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
+        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
+        _c = connect(qc.config["core"]["db_location"],
+                     qc.config["core"]["db_debug"])
+        init_db(_c)
+        _c.close()
+        yield
 
 
 @pytest.fixture  # scope is "function" per default
@@ -47,7 +71,10 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.type == 'real'
 
     # registering the same parameter twice should lead
-    # to a replacement/update
+    # to a replacement/update, but also change the
+    # parameter order behind the scenes
+    # (to allow us to re-register a parameter with new
+    # setpoints)
 
     my_param.unit = my_param.unit + '/s'
     meas.register_parameter(my_param)
@@ -70,8 +97,9 @@ def test_register_parameter_numbers(DAC, DMM):
     meas.register_parameter(my_param, basis=(DAC.ch2,),
                             setpoints=(DMM.v1, DMM.v2))
 
-    assert list(meas.parameters.keys()) == [str(my_param), str(DAC.ch2),
-                                            str(DMM.v1), str(DMM.v2)]
+    assert list(meas.parameters.keys()) == [str(DAC.ch2),
+                                            str(DMM.v1), str(DMM.v2),
+                                            str(my_param)]
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
     assert paramspec.inferred_from == ', '.join([str(DAC.ch2)])
@@ -135,7 +163,7 @@ def test_register_custom_parameter(DAC):
     assert len(meas.parameters) == 4
     parspec = meas.parameters[name]
     assert parspec.inferred_from == 'strange dac'
-    assert parspec.setpoints == ', '.join([str(DAC.ch1), str(DAC.ch2)])
+    assert parspec.depends_on == ', '.join([str(DAC.ch1), str(DAC.ch2)])
 
     with pytest.raises(ValueError):
         meas.register_custom_parameter('double dependence', 'real',
@@ -173,3 +201,112 @@ def test_unregister_parameter(DAC, DMM):
 
     meas.unregister_parameter(DAC.ch2)
     assert list(meas.parameters.keys()) == [str(DMM.v1), str(DMM.v2)]
+
+
+@given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
+                     hst.text()))
+def test_setting_write_period(empty_temp_db, wp):
+    new_experiment('firstexp', sample_name='no sample')
+    meas = Measurement()
+
+    if isinstance(wp, str):
+        with pytest.raises(ValueError):
+            meas.write_period = wp
+    elif wp < 1e-3:
+        with pytest.raises(ValueError):
+            meas.write_period = wp
+    else:
+        meas.write_period = wp
+        assert meas._write_period == wp
+
+        with meas.run() as datasaver:
+            assert datasaver.write_period == wp
+
+
+# There is no way around it: this test is slow. We test that write_period
+# works and hence we must wait for some time to elapse. Sorry.
+@settings(max_examples=5, deadline=1600)
+@given(breakpoint=hst.integers(min_value=1, max_value=19),
+       write_period=hst.floats(min_value=0.1, max_value=1.5),
+       set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
+       get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20))
+def test_datasaver_scalars(empty_temp_db, DAC, DMM, set_values, get_values,
+                           breakpoint, write_period):
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+    meas.write_period = write_period
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+
+    with meas.run() as datasaver:
+        for set_v, get_v in zip(set_values[:breakpoint], get_values[:breakpoint]):
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+        assert datasaver._dataset.number_of_results == 0
+        sleep(write_period)
+        datasaver.add_result((DAC.ch1, set_values[breakpoint]),
+                             (DMM.v1, get_values[breakpoint]))
+        assert datasaver.points_written == breakpoint + 1
+
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError):
+            datasaver.add_result((DAC.ch2, 1), (DAC.ch2, 2))
+        with pytest.raises(ValueError):
+            datasaver.add_result((DMM.v1, 0))
+
+    # More assertions of setpoints, labels and units in the DB!
+
+
+@settings(deadline=1000)
+@given(N=hst.integers(min_value=2, max_value=500))
+def test_datasaver_arrays(empty_temp_db, N):
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='freqax',
+                                   paramtype='array',
+                                   label='Frequency axis',
+                                   unit='Hz')
+    meas.register_custom_parameter(name='signal',
+                                   paramtype='array',
+                                   label='qubit signal',
+                                   unit='Majorana number',
+                                   setpoints=('freqax',))
+
+    with meas.run() as datasaver:
+        freqax = np.linspace(1e6, 2e6, N)
+        signal = np.random.randn(N)
+
+        datasaver.add_result(('freqax', freqax), ('signal', signal))
+
+    assert datasaver.points_written == N
+
+    with meas.run() as datasaver:
+        freqax = np.linspace(1e6, 2e6, N)
+        signal = np.random.randn(N-1)
+
+        with pytest.raises(ValueError):
+            datasaver.add_result(('freqax', freqax), ('signal', signal))
+
+    meas.register_custom_parameter(name='gate_voltage',
+                                   paramtype='real',
+                                   label='Gate tuning potential',
+                                   unit='V')
+    meas.register_custom_parameter(name='signal',
+                                   paramtype='array',
+                                   label='qubit signal',
+                                   unit='Majorana flux',
+                                   setpoints=('freqax', 'gate_voltage'))
+
+    with meas.run() as datasaver:
+        freqax = np.linspace(1e6, 2e6, N)
+        signal = np.random.randn(N)
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
