@@ -29,6 +29,11 @@ class ParamSpec():
         if paramtype.lower() not in allowed_types:
             raise ValueError("Illegal paramtype. Must be 'array', 'real',"
                              " 'integer', or 'text'.")
+        if not name.isidentifier():
+            raise ValueError(f'Invalid name: {name}. Only valid python '
+                             'identifier names are allowed (no spaces or '
+                             'punctuation marks, no prepended '
+                             'numbers, etc.)')
 
         self.name = name
         self.type = paramtype.lower()

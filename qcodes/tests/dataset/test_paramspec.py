@@ -19,9 +19,23 @@ def test_creation(name, sp1, sp2, inff1, inff2):
         with pytest.raises(ValueError):
             ParamSpec(name, inv_type)
 
+    if not inff1.isidentifier():
+        inff1 = 'inff1'
+
+    if not sp1.isidentifier():
+        sp1 = 'sp1'
+
+    if not name.isidentifier():
+        with pytest.raises(ValueError):
+            ps = ParamSpec(name, 'real', label=None, unit='V',
+                           inferred_from=(inff1, inff2),
+                           depends_on=(sp1, sp2))
+        name = 'name'
+
     ps = ParamSpec(name, 'real', label=None, unit='V',
                    inferred_from=(inff1, inff2),
                    depends_on=(sp1, sp2))
+
     assert ps.inferred_from == f'{inff1}, {inff2}'
     assert ps.depends_on == f'{sp1}, {sp2}'
 
@@ -39,5 +53,9 @@ def test_repr(name):
     okay_types = ['array', 'real', 'integer', 'text']
 
     for okt in okay_types:
-        ps = ParamSpec(name, okt)
-        assert ps.__repr__() == f"{name} ({okt})"
+        if name.isidentifier():
+            ps = ParamSpec(name, okt)
+            assert ps.__repr__() == f"{name} ({okt})"
+        else:
+            with pytest.raises(ValueError):
+                ps = ParamSpec(name, okt)
