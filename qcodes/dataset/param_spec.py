@@ -31,7 +31,7 @@ class ParamSpec():
                              " 'integer', or 'text'.")
 
         self.name = name
-        self.type = paramtype
+        self.type = paramtype.lower()
         self.label = '' if label is None else label
         self.unit = '' if unit is None else unit
 
