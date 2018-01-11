@@ -15,10 +15,14 @@ Intended usage:
 
 """
 from typing import List
+import logging
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.measurements import DataSaver, Measurement, Runner
 from qcodes.dataset.data_set import DataSet
+
+
+log = logging.getLogger(__name__)
 
 
 class SweepDataSaver(DataSaver):
@@ -61,6 +65,22 @@ class SweepDataSaver(DataSaver):
 
         result_list = [(name, result_dict[name]["value"]) for name in result_dict.keys()]
         super().add_result(*result_list)
+
+    def flush_data_to_database(self):
+        """
+        Write the in-memory results to the database.
+        """
+        log.debug('Flushing to database')
+        if self._results != []:
+            try:
+                for result in self._results:
+                    self._dataset.add_result(result)  # add_results does not work when
+                    # individual results do not have the same number of columns. This happens when we are measuring
+                    # multiple parameters with different coordinate layouts.
+                log.debug(f'Successfully wrote data')
+                self._results = []
+            except Exception as e:
+                log.warning(f'Could not commit to database; {e}')
 
 
 class SweepMeasurement(Measurement):
