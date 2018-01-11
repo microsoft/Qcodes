@@ -140,8 +140,6 @@ class DataSaver:
                 self._results = []
             except Exception as e:
                 log.warning(f'Could not commit to database; {e}')
-                # TODO: Do we want to reraise this one?
-                raise e
 
     @property
     def id(self):

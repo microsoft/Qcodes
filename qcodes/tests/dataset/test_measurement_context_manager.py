@@ -55,18 +55,6 @@ def DMM():
     dmm.close()
 
 
-def test_flush_to_database_raises(experiment, DAC):
-
-    meas = Measurement()
-
-    meas.register_parameter(DAC.ch1)
-
-    with meas.run() as datasaver:
-        datasaver.add_result((DAC.ch1, 0))
-        with pytest.raises(ProgrammingError):
-            datasaver._results.append({'one': 1, 'two': 2})
-
-
 def test_register_parameter_numbers(DAC, DMM):
     """
     Test the registration of scalar QCoDeS parameters
