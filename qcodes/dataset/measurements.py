@@ -2,7 +2,7 @@ import json
 import logging
 from time import monotonic
 from collections import OrderedDict
-from typing import Callable, Union, Dict, Tuple, List, Sequence
+from typing import Callable, Union, Dict, Tuple, List, Sequence, cast, Optional
 from inspect import signature
 from numbers import Number
 
@@ -36,7 +36,7 @@ class DataSaver:
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
-        self._known_dependencies = {}
+        self._known_dependencies: Dict[str, str] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
                 self._known_dependencies.update({str(param):
@@ -89,7 +89,8 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {param}, no such'
                                  ' parameter registered in this measurement.')
             if self.parameters[param].type == 'array':
-                array_size = len(partial_result[1])
+                value = cast(np.ndarray, partial_result[1])
+                array_size = len(value)
                 if input_size > 1 and input_size != array_size:
                     raise ValueError('Incompatible array dimensions. Trying to'
                                      f' add arrays of dimension {input_size} '
@@ -243,7 +244,7 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
-        self._write_period = None
+        self._write_period: Optional[Number] = None
 
     @property
     def write_period(self):
@@ -253,13 +254,14 @@ class Measurement:
     def write_period(self, wp: Number) -> None:
         if not isinstance(wp, Number):
             raise ValueError('The write period must be a number (of seconds).')
-        if wp < 1e-3:
+        wp_float = cast(float, wp)
+        if wp_float < 1e-3:
             raise ValueError('The write period must be at least 1 ms.')
         self._write_period = wp
 
     def _registration_validation(
-            self, name: str, setpoints: Tuple[str]=None,
-            basis: Tuple[str]=None) -> Tuple[Tuple[str], Tuple[str]]:
+            self, name: str, setpoints: Sequence[str]=None,
+            basis: Sequence[str]=None) -> Tuple[List[str], List[str]]:
         """
         Helper function to do all the validation in terms of dependencies
         when adding parameters, e.g. that no setpoints have setpoints etc.
