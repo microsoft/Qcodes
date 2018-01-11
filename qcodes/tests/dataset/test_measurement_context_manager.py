@@ -255,10 +255,17 @@ def test_enter_and_exit_actions(experiment, DAC, words):
     assert len(meas.enteractions) == splitpoint
     assert len(meas.exitactions) == len(words) - splitpoint
 
-    with meas.run() as datasaver:
+    with meas.run() as _:
         assert testlist == words[:splitpoint]
 
     assert testlist == words
+
+    meas = Measurement()
+
+    with pytest.raises(ValueError):
+        meas.add_before_run(action, 'no list!')
+    with pytest.raises(ValueError):
+        meas.add_after_run(action, testlist)
 
 
 # There is no way around it: this test is slow. We test that write_period
