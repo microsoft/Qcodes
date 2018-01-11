@@ -2,6 +2,7 @@ import pytest
 import tempfile
 import os
 from time import sleep
+from functools import partial
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -9,10 +10,11 @@ import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.experiment_container import (new_experiment,
+                                                 load_last_experiment)
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.sqlite_base import connect, init_db, connect, _unicode_categories
+from qcodes.dataset.sqlite_base import connect, init_db
 
 
 @pytest.fixture(scope="function")
@@ -31,6 +33,13 @@ def empty_temp_db():
         init_db(_c)
         _c.close()
         yield
+
+
+@pytest.fixture(scope='function')
+def experiment(empty_temp_db):
+    e = new_experiment("test-experiment", sample_name="test-sample")
+    yield e
+    e.conn.close()
 
 
 @pytest.fixture  # scope is "function" per default
@@ -119,7 +128,7 @@ def test_register_custom_parameter(DAC):
     """
     meas = Measurement()
 
-    name = 'V modified'
+    name = 'V_modified'
     paramtype = 'real'
     unit = 'V^2'
     label = 'square of the voltage'
@@ -154,15 +163,15 @@ def test_register_custom_parameter(DAC):
 
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)
-    meas.register_custom_parameter('strange dac', 'real')
+    meas.register_custom_parameter('strange_dac', 'real')
 
     meas.register_custom_parameter(name, paramtype, label, unit,
                                    setpoints=(DAC.ch1, str(DAC.ch2)),
-                                   basis=('strange dac',))
+                                   basis=('strange_dac',))
 
     assert len(meas.parameters) == 4
     parspec = meas.parameters[name]
-    assert parspec.inferred_from == 'strange dac'
+    assert parspec.inferred_from == 'strange_dac'
     assert parspec.depends_on == ', '.join([str(DAC.ch1), str(DAC.ch2)])
 
     with pytest.raises(ValueError):
@@ -223,6 +232,20 @@ def test_setting_write_period(empty_temp_db, wp):
             assert datasaver.write_period == wp
 
 
+def test_enter_and_exit_actions(experiment, DAC):
+
+    # we use a list to check that the functions executed
+    # in the correct order
+
+    def action(lst, word):
+        lst.append(word)
+
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.add_before_run
+
+
+
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
 @settings(max_examples=5, deadline=1600)
@@ -230,9 +253,10 @@ def test_setting_write_period(empty_temp_db, wp):
        write_period=hst.floats(min_value=0.1, max_value=1.5),
        set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
        get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20))
-def test_datasaver_scalars(empty_temp_db, DAC, DMM, set_values, get_values,
+def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
                            breakpoint, write_period):
-    new_experiment('firstexp', sample_name='no sample')
+
+    no_of_runs = len(experiment)
 
     meas = Measurement()
     meas.write_period = write_period
@@ -249,6 +273,8 @@ def test_datasaver_scalars(empty_temp_db, DAC, DMM, set_values, get_values,
         datasaver.add_result((DAC.ch1, set_values[breakpoint]),
                              (DMM.v1, get_values[breakpoint]))
         assert datasaver.points_written == breakpoint + 1
+
+    assert datasaver.id == no_of_runs + 1
 
     with meas.run() as datasaver:
         with pytest.raises(ValueError):
