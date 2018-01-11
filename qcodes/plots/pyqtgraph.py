@@ -175,6 +175,8 @@ class QtPlot(BasePlot):
             self.win.setWindowTitle(self.get_default_title())
         self.fixUnitScaling()
 
+        return plot_object
+
     def _draw_plot(self, subplot_object, y, x=None, color=None, width=None,
                    antialias=None, **kwargs):
         if 'pen' not in kwargs:
