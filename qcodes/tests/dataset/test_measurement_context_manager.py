@@ -2,6 +2,7 @@ import pytest
 import tempfile
 import os
 from time import sleep
+from sqlite3 import ProgrammingError
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -62,8 +63,8 @@ def test_flush_to_database_raises(experiment, DAC):
 
     with meas.run() as datasaver:
         datasaver.add_result((DAC.ch1, 0))
-        # TODO: make the datasaver raise an error for this one
-        datasaver._results.append({'one': 1, 'two': 2})
+        with pytest.raises(ProgrammingError):
+            datasaver._results.append({'one': 1, 'two': 2})
 
 
 def test_register_parameter_numbers(DAC, DMM):
