@@ -2,7 +2,6 @@ import pytest
 import tempfile
 import os
 from time import sleep
-from functools import partial
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -10,8 +9,7 @@ import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.experiment_container import (new_experiment,
-                                                 load_last_experiment)
+from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
@@ -54,6 +52,18 @@ def DMM():
     dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
     yield dmm
     dmm.close()
+
+
+def test_flush_to_database_raises(experiment, DAC):
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+
+    with meas.run() as datasaver:
+        datasaver.add_result((DAC.ch1, 0))
+        # TODO: make the datasaver raise an error for this one
+        datasaver._results.append({'one': 1, 'two': 2})
 
 
 def test_register_parameter_numbers(DAC, DMM):
