@@ -247,7 +247,7 @@ class Measurement:
 
     @property
     def write_period(self):
-        return self.write_period
+        return self._write_period
 
     @write_period.setter
     def write_period(self, wp: Number) -> None:
