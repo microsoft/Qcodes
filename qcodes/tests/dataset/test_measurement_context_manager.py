@@ -283,6 +283,8 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
     meas = Measurement()
     meas.write_period = write_period
 
+    assert meas.write_period == write_period
+
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
