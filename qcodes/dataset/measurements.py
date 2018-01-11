@@ -160,7 +160,7 @@ class Runner:
     and clean-up after the measurement.
     """
     def __init__(
-            self, enteractions: OrderedDict, exitactions: OrderedDict,
+            self, enteractions: List, exitactions: List,
             experiment: Experiment=None, station: Station=None,
             write_period: float=None,
             parameters: Dict[str, ParamSpec]=None) -> None:
@@ -177,7 +177,7 @@ class Runner:
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-        for func, args in self.enteractions.items():
+        for func, args in self.enteractions:
             func(*args)
 
         # next set up the "datasaver"
@@ -216,7 +216,7 @@ class Runner:
         self.datasaver.flush_data_to_database()
 
         # perform the "teardown" events
-        for func, args in self.exitactions.items():
+        for func, args in self.exitactions:
             func(*args)
 
         # and finally mark the dataset as closed, thus
@@ -238,8 +238,8 @@ class Measurement:
             station: The QCoDeS station to snapshot
         """
         self.exp = exp
-        self.exitactions: Dict[Callable, Sequence] = OrderedDict()
-        self.enteractions: Dict[Callable, Sequence] = OrderedDict()
+        self.exitactions: List[Tuple[Callable, Sequence]] = []
+        self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
@@ -462,7 +462,7 @@ class Measurement:
             raise ValueError('Mismatch between function call signature and '
                              'the provided arguments.')
 
-        self.enteractions[func] = args
+        self.enteractions.append((func, args))
 
     def add_after_run(self, func: Callable, args: tuple) -> None:
         """
@@ -478,7 +478,7 @@ class Measurement:
             raise ValueError('Mismatch between function call signature and '
                              'the provided arguments.')
 
-        self.exitactions[func] = args
+        self.exitactions.append((func, args))
 
     def run(self):
         """

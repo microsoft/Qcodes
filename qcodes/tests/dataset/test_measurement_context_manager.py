@@ -232,7 +232,8 @@ def test_setting_write_period(empty_temp_db, wp):
             assert datasaver.write_period == wp
 
 
-def test_enter_and_exit_actions(experiment, DAC):
+@given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
+def test_enter_and_exit_actions(experiment, DAC, words):
 
     # we use a list to check that the functions executed
     # in the correct order
@@ -242,8 +243,22 @@ def test_enter_and_exit_actions(experiment, DAC):
 
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
-    meas.add_before_run
 
+    testlist = []
+
+    splitpoint = round(len(words)/2)
+    for n in range(splitpoint):
+        meas.add_before_run(action, (testlist, words[n]))
+    for m in range(splitpoint, len(words)):
+        meas.add_after_run(action, (testlist, words[m]))
+
+    assert len(meas.enteractions) == splitpoint
+    assert len(meas.exitactions) == len(words) - splitpoint
+
+    with meas.run() as datasaver:
+        assert testlist == words[:splitpoint]
+
+    assert testlist == words
 
 
 # There is no way around it: this test is slow. We test that write_period
