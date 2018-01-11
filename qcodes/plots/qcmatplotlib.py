@@ -143,6 +143,9 @@ class MatPlot(BasePlot):
                 without `z` we draw a scatter/lines plot (ax.plot):
                     `x`, `y`, and `fmt` (if present) are passed as positional
                     args
+        
+        Returns:
+            Plot handle for trace
         """
         # TODO some way to specify overlaid axes?
         # Note that there is a conversion from subplot kwarg, which is
