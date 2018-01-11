@@ -168,6 +168,8 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
+        return plot_object
+
     def _update_labels(self, ax, config):
         for axletter in ("x", "y"):
             if axletter+'label' in config:

@@ -88,8 +88,10 @@ class BasePlot:
         """
         # TODO(giulioungaretti): replace with an explicit version, see expand trace
         self.expand_trace(args, kwargs)
-        self.add_to_plot(**kwargs)
+        plot_object = self.add_to_plot(**kwargs)
         self.add_updater(updater, kwargs)
+
+        return plot_object
 
     def add_to_plot(self, **kwargs):
         """
