@@ -290,7 +290,9 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
     no_of_runs = len(experiment)
 
-    meas = Measurement()
+    station = qc.Station(DAC, DMM)
+
+    meas = Measurement(station=station)
     meas.write_period = write_period
 
     assert meas.write_period == write_period
@@ -315,6 +317,9 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DAC.ch2, 1), (DAC.ch2, 2))
         with pytest.raises(ValueError):
             datasaver.add_result((DMM.v1, 0))
+
+    # important cleanup, else the following tests will fail
+    qc.Station.default = None
 
     # More assertions of setpoints, labels and units in the DB!
 
