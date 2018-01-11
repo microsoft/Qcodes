@@ -84,6 +84,9 @@ class BasePlot:
                              ylabel= "Amplitude",
                              yunit ="V")
 
+        Returns:
+            Plot handle for trace
+
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
         """
