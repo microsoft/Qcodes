@@ -122,7 +122,6 @@ class DataSaver:
                     res_dict.update({param: value})
 
             self._results.append(res_dict)
-        print(f'Results are now: {self._results}')
 
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
