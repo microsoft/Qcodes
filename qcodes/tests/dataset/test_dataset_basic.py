@@ -187,6 +187,45 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
+def test_modify_result(experiment):
+    dataset = new_data_set("test_modify_result")
+    xparam = ParamSpec("x", "real", label="x parameter",
+                       unit='V')
+    yparam = ParamSpec("y", 'real', label='y parameter',
+                       unit='Hz', depends_on=[xparam])
+    zparam = ParamSpec("z", 'array', label='z parameter',
+                       unit='sqrt(Hz)', depends_on=[xparam])
+    dataset.add_parameter(xparam)
+    dataset.add_parameter(yparam)
+    dataset.add_parameter(zparam)
+
+    xdata = 0
+    ydata = 1
+    zdata = np.linspace(0, 1, 100)
+
+    dataset.add_result({'x': 0, 'y': 1, 'z': zdata})
+
+    assert dataset.get_data('x')[0][0] == xdata
+    assert dataset.get_data('y')[0][0] == ydata
+    assert (dataset.get_data('z')[0][0] == zdata).all()
+
+    with pytest.raises(ValueError):
+        dataset.modify_result(0, {' x': 1})
+
+    xdata = 1
+    ydata = 12
+    zdata = np.linspace(0, 1, 99)
+
+    dataset.modify_result(0, {'x': xdata})
+    assert dataset.get_data('x')[0][0] == xdata
+
+    dataset.modify_result(0, {'y': ydata})
+    assert dataset.get_data('y')[0][0] == ydata
+
+    dataset.modify_result(0, {'z': zdata})
+    assert (dataset.get_data('z')[0][0] == zdata).all()
+
+
 @settings(max_examples=25)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))

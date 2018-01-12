@@ -380,6 +380,9 @@ class DataSet(Sized):
         """
         if self.completed:
             raise CompletedError
+        for param in results.keys():
+            if param not in self.paramspecs.keys():
+                raise ValueError(f'No such parameter: {param}.')
         with atomic(self.conn):
             modify_values(self.conn, self.table_name, index,
                           list(results.keys()),
