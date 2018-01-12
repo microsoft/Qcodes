@@ -18,3 +18,5 @@ dependencies:
  - pytest
  - pytest-runner
  - spyder
+ - pip:
+  - memory_profiler
