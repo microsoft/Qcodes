@@ -1,16 +1,17 @@
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+import numpy as np
+
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, init_db, connect, _unicode_categories
+from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
+from qcodes.dataset.data_set import CompletedError
 import qcodes.dataset.experiment_container
 import pytest
 import tempfile
 import os
-
-from hypothesis import given, settings
-import hypothesis.strategies as hst
-import numpy as np
 
 n_experiments = 0
 
@@ -224,6 +225,11 @@ def test_modify_result(experiment):
 
     dataset.modify_result(0, {'z': zdata})
     assert (dataset.get_data('z')[0][0] == zdata).all()
+
+    dataset.mark_complete()
+
+    with pytest.raises(CompletedError):
+        dataset.modify_result(0, {'x': 2})
 
 
 @settings(max_examples=25)
