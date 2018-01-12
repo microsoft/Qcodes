@@ -405,8 +405,15 @@ class DataArray(DelegateAttributes):
         """
         return len(self.ndarray)
 
-    def mean(self, axis=None, dtype=None, out=None, **kwargs):
-        sub_array = np.nanmean(self, axis=axis, dtype=dtype, out=out, **kwargs)
+    def mean(self, axis=None, dtype=None, out=None,
+             min_filter=None, max_filter=None, **kwargs):
+        arr = self.ndarray
+        if min_filter is not None:
+            arr[arr < min_filter] = np.nan
+        if max_filter is not None:
+            arr[arr > max_filter] = np.nan
+
+        sub_array = np.nanmean(arr, axis=axis, dtype=dtype, out=out, **kwargs)
         if axis is None or self.ndim == 1:
             return sub_array
         else:
