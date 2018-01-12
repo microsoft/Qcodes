@@ -8,7 +8,7 @@ import pytest
 import tempfile
 import os
 
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
 
@@ -185,6 +185,30 @@ def test_add_data_array(experiment):
     assert mydataset.get_data('x') == expected_x
     y_data = mydataset.get_data('y')
     np.testing.assert_allclose(y_data, expected_y)
+
+
+@settings(max_examples=25)
+@given(N=hst.integers(min_value=1, max_value=10000),
+       M=hst.integers(min_value=1, max_value=10000))
+def test_add_parameter_values(experiment, N, M):
+
+    mydataset = new_data_set("test_add_parameter_values")
+    xparam = ParamSpec('x', 'real')
+    xparam.type = 'number'
+    mydataset.add_parameter(xparam)
+
+    x_results = [{'x': x} for x in range(N)]
+    mydataset.add_results(x_results)
+
+    if N != M:
+        with pytest.raises(ValueError):
+            mydataset.add_parameter_values(ParamSpec("y", "real"),
+                                           [y for y in range(M)])
+
+    mydataset.add_parameter_values(ParamSpec("y", "real"),
+                                   [y for y in range(N)])
+
+    mydataset.mark_complete()
 
 
 def test_load_by_counter(dataset):
