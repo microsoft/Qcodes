@@ -407,7 +407,7 @@ class DataArray(DelegateAttributes):
 
     def mean(self, axis=None, dtype=None, out=None,
              min_filter=None, max_filter=None, **kwargs):
-        arr = self.ndarray
+        arr = self.ndarray.copy()
         if min_filter is not None:
             arr[arr < min_filter] = np.nan
         if max_filter is not None:
