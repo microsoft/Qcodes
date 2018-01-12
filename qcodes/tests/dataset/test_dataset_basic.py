@@ -148,8 +148,10 @@ def test_add_data_1d(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    mydataset = new_data_set("test-dataset", specs=[ParamSpec("x", "real"),
-                                                    ParamSpec("y", "real")])
+    psx = ParamSpec("x", "real")
+    psy = ParamSpec("y", "real", depends_on=['x'])
+
+    mydataset = new_data_set("test-dataset", specs=[psx, psy])
 
     expected_x = []
     expected_y = []
@@ -160,9 +162,19 @@ def test_add_data_1d(experiment):
         mydataset.add_result({"x": x, "y": y})
     assert mydataset.get_data('x') == expected_x
     assert mydataset.get_data('y') == expected_y
+
+    with pytest.raises(ValueError):
+        mydataset.add_result({'y': 500})
+
     assert mydataset.completed is False
     mydataset.mark_complete()
     assert mydataset.completed is True
+
+    with pytest.raises(ValueError):
+        mydataset.add_result({'y': 500})
+
+    with pytest.raises(CompletedError):
+        mydataset.add_result({'x': 5})
 
 
 def test_add_data_array(experiment):
