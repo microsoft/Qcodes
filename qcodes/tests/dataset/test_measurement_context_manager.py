@@ -2,7 +2,7 @@ import pytest
 import tempfile
 import os
 from time import sleep
-from functools import partial
+from sqlite3 import ProgrammingError
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -10,8 +10,7 @@ import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.experiment_container import (new_experiment,
-                                                 load_last_experiment)
+from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
