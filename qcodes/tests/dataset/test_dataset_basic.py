@@ -214,12 +214,17 @@ def test_adding_too_many_results(experiment):
     dataset.add_parameter(yparam)
     n_max = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
 
+    vals = np.linspace(0, 1, int(n_max/2)+2)
+    results = [{'x': val} for val in vals]
+    dataset.add_results(results)
+
     vals = np.linspace(0, 1, int(n_max/2)+1)
     results = [{'x': val, 'y': val} for val in vals]
     dataset.add_results(results)
 
     vals = np.linspace(0, 1, n_max*3+1)
     results = [{'x': val} for val in vals]
+    dataset.add_results(results)
 
 
 def test_modify_result(experiment):
