@@ -405,7 +405,7 @@ def insert_many_values(conn: sqlite3.Connection,
     #  too-many-terms-in-compound-select"
     version = qc.SQLiteSettings.settings['VERSION']
 
-    if LooseVersion(version) <= LooseVersion('3.8.2g'):
+    if LooseVersion(version) <= LooseVersion('3.8.2'):
         max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
     else:
         max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
