@@ -35,7 +35,7 @@ def _read_settings() -> Tuple[Dict[str, str],
     opt_num = 0
     resp = ''
 
-    limits = DEFAULT_LIMITS
+    limits = DEFAULT_LIMITS.copy()
     settings = {}
 
     c.execute(f'select sqlite_compileoption_get({opt_num});')
