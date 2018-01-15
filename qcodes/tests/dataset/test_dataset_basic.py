@@ -200,6 +200,28 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
+def test_adding_too_many_results(experiment):
+    """
+    This test really tests the "chunking" functionality of the
+    insert_many_values function of the sqlite_base module
+    """
+    dataset = new_data_set("test_adding_too_many_results")
+    xparam = ParamSpec("x", "real", label="x parameter",
+                       unit='V')
+    yparam = ParamSpec("y", 'real', label='y parameter',
+                       unit='Hz', depends_on=[xparam])
+    dataset.add_parameter(xparam)
+    dataset.add_parameter(yparam)
+    n_max = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+
+    vals = np.linspace(0, 1, int(n_max/2)+1)
+    results = [{'x': val, 'y': val} for val in vals]
+    dataset.add_results(results)
+
+    vals = np.linspace(0, 1, n_max*3+1)
+    results = [{'x': val} for val in vals]
+
+
 def test_modify_result(experiment):
     dataset = new_data_set("test_modify_result")
     xparam = ParamSpec("x", "real", label="x parameter",

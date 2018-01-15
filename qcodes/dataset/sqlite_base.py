@@ -8,6 +8,7 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
 
+import qcodes as qc
 import unicodedata
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -375,30 +376,59 @@ def insert_values(conn: sqlite3.Connection,
 def insert_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        columns: List[str],
-                       values: List[List[VALUES]],
+                       values: List[VALUES],
                        ) -> int:
     """
     Inserts many values for the specified columns.
 
+    Example input:
+    columns: ['xparam', 'yparam']
+    values: [[x1, y1], [x2, y2], [x3, y3]]
+
     NOTE this need to be committed before closing the connection.
     """
-    _columns = ",".join(columns)
-    # TODO: none of the code below is not form PRADA SS-2017
-    # [a, b] -> (?,?), (?,?)
-    # [[1,1], [2,2]]
-    _values = "(" + ",".join(["?"] * len(values[0])) + ")"
-    # NOTE: assume that all the values have same length
-    _values_x_params = ",".join([_values] * len(values))
+    # We demand that all values have the same length
+    lengths = [len(val) for val in values]
+    if len(np.unique(lengths)) > 1:
+        raise ValueError(f'Wrong input format for values. Must specify the '
+                         'same number of values for all columns. Received'
+                         ' lengths {lengths}.')
+    no_of_rows = len(lengths)
+    no_of_columns = lengths[0]
 
-    query = f"""INSERT INTO "{formatted_name}"
-        ({_columns})
-    VALUES
-        {_values_x_params}
-    """
-    # we need to make values a flat list from a list of list
-    flattened_values = [item for sublist in values for item in sublist]
-    c = transaction(conn, query, *flattened_values)
-    return c.lastrowid
+    # The TOTAL number of inserted values in one query
+    # must be less than the SQLITE_MAX_VARIABLE_NUMBER
+
+    max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+    rows_per_transaction = int(max_var/no_of_columns)
+
+    _columns = ",".join(columns)
+    _values = "(" + ",".join(["?"] * len(values[0])) + ")"
+
+    a, b = divmod(no_of_rows, rows_per_transaction)
+    chunks = a*[rows_per_transaction] + [b]
+
+    start = 0
+    stop = 0
+
+    for ii, chunk in enumerate(chunks):
+        _values_x_params = ",".join([_values] * chunk)
+
+        query = f"""INSERT INTO "{formatted_name}"
+                    ({_columns})
+                    VALUES
+                    {_values_x_params}
+                 """
+        stop += chunk
+        # we need to make values a flat list from a list of list
+        flattened_values = [item for sublist in values[start:stop]
+                            for item in sublist]
+        c = transaction(conn, query, *flattened_values)
+        if ii == 0:
+            return_value = c.lastrowid
+        start += chunk
+
+    return return_value
 
 
 def modify_values(conn: sqlite3.Connection,
@@ -432,7 +462,7 @@ def modify_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        start_index: int,
                        columns: List[str],
-                       values: List[VALUES],
+                       list_of_values: List[VALUES],
                        ) -> None:
     """
     Modify many values for the specified columns.
@@ -441,16 +471,16 @@ def modify_many_values(conn: sqlite3.Connection,
     If a column is mapped to None, it will be a null value.
     """
     _len = length(conn, formatted_name)
-    len_requested = start_index + len(values)
+    len_requested = start_index + len(list_of_values[0])
     available = _len - start_index
     if len_requested > _len:
         reason = f""""Modify operation Out of bounds.
-        Trying to modify {len(values)} results,
+        Trying to modify {len(list_of_values)} results,
         but therere are only {available} results.
         """
         raise ValueError(reason)
-    for value in values:
-        modify_values(conn, formatted_name, start_index, columns, value)
+    for values in list_of_values:
+        modify_values(conn, formatted_name, start_index, columns, values)
         start_index += 1
 
 
