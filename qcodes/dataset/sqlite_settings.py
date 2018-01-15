@@ -63,6 +63,10 @@ def _read_settings() -> Tuple[Dict[str, str],
         c.execute(f'select sqlite_compileoption_get({opt_num});')
         resp = c.fetchone()[0]
 
+    c.execute('select sqlite_version();')
+    resp = c.fetchone()[0]
+    settings.update({'VERSION': resp})
+
     c.close()
 
     return (limits, settings)
