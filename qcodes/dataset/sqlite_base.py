@@ -7,6 +7,7 @@ from numpy import ndarray
 import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
+from distutils.version import LooseVersion
 
 import qcodes as qc
 import unicodedata
@@ -399,7 +400,15 @@ def insert_many_values(conn: sqlite3.Connection,
     # The TOTAL number of inserted values in one query
     # must be less than the SQLITE_MAX_VARIABLE_NUMBER
 
-    max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+    # Version check cf.
+    # "https://stackoverflow.com/questions/9527851/sqlite-error-
+    #  too-many-terms-in-compound-select"
+    version = qc.SQLiteSettings.settings['VERSION']
+
+    if LooseVersion(version) <= LooseVersion('3.7.11'):
+        max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
+    else:
+        max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
     rows_per_transaction = int(max_var/no_of_columns)
 
     _columns = ",".join(columns)
