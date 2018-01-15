@@ -339,7 +339,7 @@ class DataSet(Sized):
         self.conn.commit()
         return index
 
-    def add_results(self, results: List[Dict[str, VALUES]]) -> int:
+    def add_results(self, results: List[Dict[str, VALUE]]) -> int:
         """
         Adds a sequence of results to the DataSet.
 
@@ -405,10 +405,22 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to modify a result in a completed DataSet.
         """
+        if self.completed:
+            raise CompletedError
+
         keys = [list(val.keys()) for val in updates]
         flattened_keys = [item for sublist in keys for item in sublist]
+
+        mod_params = set(flattened_keys)
+        old_params = set(self.paramspecs.keys())
+        if not mod_params.issubset(old_params):
+            raise ValueError('Can not modify values for parameter(s) '
+                             f'{mod_params.difference(old_params)}, '
+                             'no such parameter(s) in the dataset.')
+
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
+
         with atomic(self.conn):
             modify_many_values(self.conn,
                                self.table_name,
