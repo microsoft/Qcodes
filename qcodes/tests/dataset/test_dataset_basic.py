@@ -200,6 +200,10 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
+def test_to_print():
+    assert qc.SQLiteSettings.settings['VERSION'] == 0
+
+
 def test_adding_too_many_results(experiment):
     """
     This test really tests the "chunking" functionality of the
