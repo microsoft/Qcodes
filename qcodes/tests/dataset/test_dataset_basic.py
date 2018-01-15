@@ -1,3 +1,5 @@
+from sqlite3 import OperationalError
+
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
@@ -266,10 +268,10 @@ def test_modify_result(experiment):
         dataset.modify_result(0, {'x': 2})
 
 
-@settings(max_examples=25)
-@given(N=hst.integers(min_value=1, max_value=10000),
-       M=hst.integers(min_value=1, max_value=10000))
-def test_add_parameter_values(experiment, N, M):
+#@settings(max_examples=25)
+#@given(N=hst.integers(min_value=1, max_value=10000),
+#       M=hst.integers(min_value=1, max_value=10000))
+def test_add_parameter_values(experiment, N=501, M=1):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'real')
@@ -277,7 +279,11 @@ def test_add_parameter_values(experiment, N, M):
     mydataset.add_parameter(xparam)
 
     x_results = [{'x': x} for x in range(N)]
-    mydataset.add_results(x_results)
+    if N > qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']:
+        with pytest.raises(OperationalError):
+            mydataset.add_results(x_results)
+    else:
+        mydataset.add_results(x_results)
 
     if N != M:
         with pytest.raises(ValueError):
