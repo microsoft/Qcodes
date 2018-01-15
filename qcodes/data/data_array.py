@@ -1,5 +1,6 @@
 import numpy as np
 import collections
+import warnings
 
 from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
 
@@ -408,12 +409,17 @@ class DataArray(DelegateAttributes):
     def mean(self, axis=None, dtype=None, out=None,
              min_filter=None, max_filter=None, **kwargs):
         arr = self.ndarray.copy()
-        if min_filter is not None:
-            arr[arr < min_filter] = np.nan
-        if max_filter is not None:
-            arr[arr > max_filter] = np.nan
 
-        sub_array = np.nanmean(arr, axis=axis, dtype=dtype, out=out, **kwargs)
+        # Catch runtime warnings as we may compare NaN or take mean of all Nan's
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            if min_filter is not None:
+                arr[arr < min_filter] = np.nan
+            if max_filter is not None:
+                arr[arr > max_filter] = np.nan
+
+            sub_array = np.nanmean(arr, axis=axis, dtype=dtype, out=out, **kwargs)
+
         if axis is None or self.ndim == 1:
             return sub_array
         else:
