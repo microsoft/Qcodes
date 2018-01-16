@@ -7,6 +7,7 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
+from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
 from qcodes.dataset.data_set import CompletedError
 import qcodes.dataset.experiment_container
 import pytest
@@ -312,3 +313,17 @@ def test_dataset_with_no_experiment_raises(empty_temp_db):
         new_data_set("test-dataset",
                      specs=[ParamSpec("x", "real"),
                             ParamSpec("y", "real")])
+
+
+def test_database_upgrade(empty_temp_db):
+    connection = connect(qc.config["core"]["db_location"],
+                 qc.config["core"]["db_debug"])
+    userversion = get_user_version(connection)
+    if userversion != 0:
+        raise RuntimeError("trying to upgrade from version 0"
+                           " but your database is version"
+                           " {}".format(userversion))
+    sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
+
+    atomicTransaction(connection, sql)
+    set_user_version(connection, 1)
