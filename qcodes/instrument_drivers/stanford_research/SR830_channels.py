@@ -117,10 +117,10 @@ class ChannelBuffer(ArrayParameter):
 
         params = self._instrument.parameters
         # YES, it should be: "is not 'none'" NOT "is not None"
-        if params['ch{}_ratio'.format(self.channel)].get() is not 'none':
+        if self._instrument.channels[self.channel].ratio() is not 'none':
             self.unit = '%'
         else:
-            disp = params['ch{}_display'.format(self.channel)].get()
+            disp = self._instrument.channels[self.channel].display()
             if disp == 'Phase':
                 self.unit = 'deg'
             else:
