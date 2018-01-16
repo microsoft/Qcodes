@@ -222,7 +222,7 @@ def test_adding_too_many_results(experiment):
     results = [{'x': val, 'y': val} for val in vals]
     dataset.add_results(results)
 
-    vals = np.linspace(0, 1, n_max*3+1)
+    vals = np.linspace(0, 1, n_max*3)
     results = [{'x': val} for val in vals]
     dataset.add_results(results)
 

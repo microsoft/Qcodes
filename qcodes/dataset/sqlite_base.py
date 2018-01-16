@@ -405,6 +405,9 @@ def insert_many_values(conn: sqlite3.Connection,
     #  too-many-terms-in-compound-select"
     version = qc.SQLiteSettings.settings['VERSION']
 
+    # According to the SQLite changelog, the version number
+    # to check against below
+    # ought to be 3.7.11, but that fails on Travis
     if LooseVersion(version) <= LooseVersion('3.8.2'):
         max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
     else:
@@ -416,6 +419,8 @@ def insert_many_values(conn: sqlite3.Connection,
 
     a, b = divmod(no_of_rows, rows_per_transaction)
     chunks = a*[rows_per_transaction] + [b]
+    if chunks[-1] == 0:
+        chunks.pop()
 
     start = 0
     stop = 0
