@@ -279,7 +279,7 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
-@settings(max_examples=5, deadline=1600)
+@settings(max_examples=5, deadline=2500)
 @given(breakpoint=hst.integers(min_value=1, max_value=19),
        write_period=hst.floats(min_value=0.1, max_value=1.5),
        set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
