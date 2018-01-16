@@ -281,7 +281,7 @@ def init_db(conn: sqlite3.Connection)->None:
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
-                  type: Optional[str] = None) -> None:
+                  paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
 
     Args:
@@ -290,9 +290,9 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
         name: column name
         type: sqlite type of the column
     """
-    if type:
+    if paramtype:
         transaction(conn,
-                    f'ALTER TABLE "{table}" ADD COLUMN "{name}" {type}')
+                    f'ALTER TABLE "{table}" ADD COLUMN "{name}" {paramtype}')
     else:
         transaction(conn,
                     f'ALTER TABLE "{table}" ADD COLUMN "{name}"')

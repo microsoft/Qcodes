@@ -1,4 +1,4 @@
-from typing import List, Any, Tuple, Sequence
+from typing import List, Any, Sequence
 import logging
 
 import numpy as np
@@ -104,8 +104,9 @@ def plot_by_id(run_id: int) -> Figure:
 
             heatmap_layout = get_layout(conn, dep)
             heatmap_name = heatmap_layout['name']
-            heatmap_label = heatmap_layout['label']
-            heatmap_unit = heatmap_layout['unit']
+            # TODO: implement the colorbar and use the label and unit
+            # heatmap_label = heatmap_layout['label']
+            # heatmap_unit = heatmap_layout['unit']
 
             setpoints = data.get_setpoints(heatmap_name)
             heatmap_data = data.get_values(heatmap_name)

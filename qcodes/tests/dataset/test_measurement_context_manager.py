@@ -131,8 +131,9 @@ def test_register_custom_parameter(DAC):
     unit = 'V^2'
     label = 'square of the voltage'
 
-    with pytest.raises(TypeError):
-        meas.register_custom_parameter(name=name, label=label, unit=unit)
+    with pytest.raises(ValueError):
+        meas.register_custom_parameter(name=name, paramtype='wrong type',
+                                       label=label, unit=unit)
 
     meas.register_custom_parameter(name, paramtype, label, unit)
 
