@@ -4,14 +4,15 @@ Contributing
 Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
-Alex Johnson (alexcjohnson) & and Giulio Ungaretti
-(unga@nbi.ku.dk) are the creators and current maintainers of
-Qcodes (aka core developers), along with a group of talented and smart
+Jens H. Nielsen (j.h.nielsen@nbi.ku.dk), William H.P Nielsen
+(william@nbi.ku.dk), Dominik Vogel (a-dovoge@microsoft.com), and
+Sohail Chatoor (a-sochat@microsoft.com) are the current maintainers of
+QCoDeS (aka core developers), along with a group of talented and smart
 volunteers. Please don't hesitate to reach out if you have any
 questions, or just need a little help getting started.
 
 Join us on Slack, where informal discussion is more than welcome. (For
-now ask us to be invited)
+now email one of us to be invited)
 
 .. contents::
 
@@ -25,7 +26,7 @@ addressed, `please open a new issue
 
 The github GUI will show you a template both for bugs and features.
 Delete the wrong part and try to follow the template. Writing a good
-issue helps you in the first place.Bug reports must be accompanied by a
+issue helps you in the first place. Bug reports must be accompanied by a
 reproducible example.
 
 Have an idea about future directions to go with Qcodes? Visions of
@@ -38,7 +39,7 @@ some core ideas in the package? We can use issues for this too. We will pick the
 Clever usage
 ------------
 
-Figured out a new way to use qcodes? Found a package that makes your
+Figured out a new way to use QCoDeS? Found a package that makes your
 life better and easier? Got realtime analysis working after struggling
 with it for days? Write it on Slack so we can keep github more
 organized.
@@ -158,7 +159,7 @@ truncate otherwise making the commit hard to read. No line may exceed
 well as in various git tools.
 
 Type
-    
+
 
 Must be one of the following:
 
@@ -175,7 +176,7 @@ Must be one of the following:
    libraries such as documentation generation
 
 Subject
-       
+
 
 The subject contains succinct description of the change:
 
@@ -185,14 +186,14 @@ The subject contains succinct description of the change:
 -  no dot (.) at the end
 
 Body
-    
+
 
 Just as in the **subject**, use the imperative, present tense: "change"
 not "changed" nor "changes"The body should include the motivation for
 the change and contrast this with previous behavior.
 
 Footer
-      
+
 
 The footer should contain any information about **Breaking Changes** and
 is also the place to reference GitHub issues that this commit

@@ -1,6 +1,5 @@
 sphinx
 sphinx_rtd_theme
-jsonschema
 sphinxcontrib-jsonschema
 nbconvert
 ipython

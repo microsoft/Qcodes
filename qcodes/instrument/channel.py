@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 
 from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
+from ..utils.validators import Validator
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
@@ -84,7 +85,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         self._channels = channels
         self._param_name = param_name
 
-    def get(self) -> tuple:
+    def get_raw(self) -> tuple:
         """
         Return a tuple containing the data from each of the channels in the
         list
@@ -92,7 +93,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         return tuple(chan.parameters[self._param_name].get() for chan
                      in self._channels)
 
-    def set(self, value):
+    def set_raw(self, value):
         """
         Set all parameters to this value
 
@@ -111,7 +112,6 @@ class MultiChannelInstrumentParameter(MultiParameter):
         """
 
         return self.names
-
 
 class ChannelList(Metadatable):
     """
@@ -305,6 +305,15 @@ class ChannelList(Metadatable):
 
         return self._channels.insert(index, obj)
 
+    def get_validator(self):
+        """
+        Returns a validator that checks that the returned object is a channel
+        in this channel list
+        """
+        if not self._locked:
+            raise AttributeError("Cannot create a validator for an unlocked channel list")
+        return ChannelListValidator(self)
+
     def lock(self):
         """
         Lock the channel list. Once this is done, the channel list is
@@ -425,3 +434,44 @@ class ChannelList(Metadatable):
             names += list(self._channels[0].functions.keys())
             names += [channel.short_name for channel in self._channels]
         return sorted(set(names))
+
+
+class ChannelListValidator(Validator):
+    """
+    A validator that checks that the returned object is a member of the
+    channel list with which the validator was constructed.
+
+    This class will not normally be created directly, but created from a channel
+    list using the `ChannelList.get_validator` method.
+
+    Args:
+        channel_list (ChannelList): the channel list that should be checked against.
+            The channel list must be locked and populated before it can be used to
+            construct a validator.
+    """
+    def __init__(self, channel_list: ChannelList):
+        # Save the base parameter list
+        if not isinstance(channel_list, ChannelList):
+            raise ValueError("channel_list must be a ChannelList object containing the "
+                "channels that should be validated")
+        if not channel_list._locked:
+            raise AttributeError("Channel list must be locked before it can be used "
+                "to create a validator")
+        self._channel_list = channel_list
+
+    def validate(self, value, context=''):
+        """
+        Checks to see that value is a member of the channel list referenced by this
+        validator
+
+        Args:
+            value (InstrumentChannel): the value to be checked against the reference
+                channel list.
+
+            context (string): the context of the call, used as part of the exception
+                raised.
+        """
+        if value not in self._channel_list:
+            raise ValueError(
+                '{} is not part of the expected channel list; {}'.format(
+                    repr(value), context))

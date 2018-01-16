@@ -1,12 +1,14 @@
 {
     "core":{
         "loglevel": "DEBUG",
-        "default_fmt": "data/{date}/#{counter}_{name}_{time}"
+        "default_fmt": "data/{date}/#{counter}_{name}_{time}",
+        "register_magic": true
     },
     "gui" :{
         "notebook": true,
         "plotlib": "all",
-        "pyqtmaxplots": 100
+        "pyqtmaxplots": 100,
+        "defaultcolormap": "hot"
     },
     "user": {}
 }

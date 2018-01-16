@@ -1,6 +1,7 @@
+import warnings
+
 from qcodes import VisaInstrument, validators as vals
 from functools import partial
-from pyvisa.errors import VisaIOError
 import logging
 
 log = logging.getLogger(__name__)
@@ -19,6 +20,12 @@ class Keysight_33500B(VisaInstrument):
             address (string): The VISA resource name.
             silent (Optional[bool]): If True, no connect message is printed.
         """
+
+        warnings.warn("This driver is old and will be removed "
+                      "from QCoDeS soon. Please use the "
+                      "WaveformGenerator_33XXX from the file "
+                      "instrument_drivers/Keysight/KeysightAgilent_33XXX"
+                      " instead.", UserWarning)
 
         super().__init__(name, address, **kwargs)
 
@@ -129,6 +136,14 @@ class Keysight_33500B(VisaInstrument):
                                set_cmd='OUTPut{}'.format(chan) + ' {}',
                                get_cmd='OUTPut{}?'.format(chan),
                                val_mapping={'ON': 1, 'OFF': 0}
+                               )
+
+            self.add_parameter('ch{}_output_polarity'.format(chan),
+                               label='Channel {} output polarity'.format(chan),
+                               set_cmd='OUTPut{}:POL'.format(chan) + ' {}',
+                               get_cmd='OUTPut{}:POL?'.format(chan),
+                               get_parser=str.strip,
+                               vals=vals.Enum('NORM', 'INV')
                                )
 
             self.add_parameter('ch{}_ramp_symmetry'.format(chan),
