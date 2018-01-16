@@ -63,8 +63,9 @@ def test_atomic_raises(experiment):
     bad_sql = '""'
 
     with pytest.raises(OperationalError):
-        with mut.atomic(conn):
-            mut.transaction(conn, bad_sql)
+        with pytest.raises(RuntimeError):
+            with mut.atomic(conn):
+                mut.transaction(conn, bad_sql)
 
 
 def test_insert_many_values_raises(experiment):
