@@ -309,7 +309,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
                              (DMM.v1, get_values[breakpoint]))
         assert datasaver.points_written == breakpoint + 1
 
-    assert datasaver.id == no_of_runs + 1
+    assert datasaver.run_id == no_of_runs + 1
 
     with meas.run() as datasaver:
         with pytest.raises(ValueError):

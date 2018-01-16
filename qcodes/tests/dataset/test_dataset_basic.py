@@ -56,6 +56,7 @@ def test_tabels_exists(empty_temp_db):
         assert expected_table in row['sql']
     conn.close()
 
+
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
@@ -74,22 +75,22 @@ def test_add_experiments(empty_temp_db, experiment_name,
     assert exp.last_counter == 0
 
     dataset = new_data_set(dataset_name)
-    dsid = dataset.id
+    dsid = dataset.run_id
     loaded_dataset = load_by_id(dsid)
     expected_ds_counter = 1
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
     assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
-                                                          exp.id,
+                                                          exp.exp_id,
                                                           loaded_dataset.counter)
     expected_ds_counter += 1
     dataset = new_data_set(dataset_name)
-    dsid = dataset.id
+    dsid = dataset.run_id
     loaded_dataset = load_by_id(dsid)
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
     assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
-                                                          exp.id,
+                                                          exp.exp_id,
                                                           loaded_dataset.counter)
 
 
