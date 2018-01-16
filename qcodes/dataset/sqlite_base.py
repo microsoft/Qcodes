@@ -1246,7 +1246,7 @@ def add_meta_data(conn: sqlite3.Connection,
                   metadata: Dict[str, Any],
                   table_name: Optional[str] = "runs") -> None:
     """
-    Add medata data (updates if exists, create otherwise).
+    Add metadata data (updates if exists, create otherwise).
 
     Args:
         - conn: the connection to the sqlite database
@@ -1263,3 +1263,14 @@ def add_meta_data(conn: sqlite3.Connection,
             update_meta_data(conn, row_id, table_name, metadata)
         else:
             raise e
+
+
+def get_user_version(conn: sqlite3.Connection) -> int:
+
+    curr = atomicTransaction(conn, 'PRAGMA user_version')
+    res = one(curr, 0)
+    return res
+
+def set_user_version(conn: sqlite3.Connection, version: int) -> None:
+
+    curr = atomicTransaction(conn, 'PRAGMA user_version({})'.format(version))
