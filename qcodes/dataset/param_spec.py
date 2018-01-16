@@ -1,5 +1,4 @@
-from typing import List, Union, cast, Sequence
-from qcodes.instrument.parameter import _BaseParameter
+from typing import Union, cast, Sequence
 
 
 # TODO: we should validate type somehow

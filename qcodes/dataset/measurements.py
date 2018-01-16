@@ -142,8 +142,8 @@ class DataSaver:
                 log.warning(f'Could not commit to database; {e}')
 
     @property
-    def id(self):
-        return self._dataset.id
+    def run_id(self):
+        return self._dataset.run_id
 
     @property
     def points_written(self):
@@ -204,7 +204,7 @@ class Runner:
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
 
-        print(f'Starting experimental run with id: {self.ds.id}')
+        print(f'Starting experimental run with id: {self.ds.run_id}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,

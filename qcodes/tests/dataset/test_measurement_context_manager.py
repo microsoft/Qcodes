@@ -2,7 +2,6 @@ import pytest
 import tempfile
 import os
 from time import sleep
-from sqlite3 import ProgrammingError
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst

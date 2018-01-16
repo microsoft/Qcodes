@@ -458,7 +458,7 @@ def modify_values(conn: sqlite3.Connection,
     If a column is mapped to None, it will be a null value.
     """
     name_val_template = []
-    for name, value in zip(columns, values):
+    for name in columns:
         name_val_template.append(f"{name}=?")
     name_val_templates = ",".join(name_val_template)
     query = f"""
@@ -912,7 +912,7 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                            ",".join([p.name for p in parameters]),
                            False
                            )
-        c = _add_parameters_to_layout_and_deps(conn, formatted_name, *parameters)
+        _add_parameters_to_layout_and_deps(conn, formatted_name, *parameters)
 
     else:
         query = f"""
@@ -1142,6 +1142,7 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
                 c = transaction(conn, sql, layout_id, dep_ind, ax_num)
     return c
 
+
 def _validate_table_name(table_name: str) -> bool:
     valid = True
     for i in table_name:
@@ -1150,6 +1151,7 @@ def _validate_table_name(table_name: str) -> bool:
             raise RuntimeError("Invalid table name "
                                "{} starting at {}".format(table_name, i))
     return valid
+
 
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
@@ -1179,7 +1181,7 @@ def _create_run_table(conn: sqlite3.Connection,
         conn: database connection
         formatted_name: the name of the table to create
     """
-    table_valid = _validate_table_name(formatted_name)
+    _validate_table_name(formatted_name)
     if parameters and values:
         _parameters = ",".join([p.sql_repr() for p in parameters])
         query = f"""
@@ -1213,7 +1215,7 @@ def _create_run_table(conn: sqlite3.Connection,
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                parameters: List[ParamSpec],
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]] = None) -> Tuple[int, int, str]:
+               metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
 
@@ -1249,7 +1251,7 @@ def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
     return select_one_where(conn, "runs", tag,
-                             "result_table_name", table_name)
+                            "result_table_name", table_name)
 
 
 def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
@@ -1263,7 +1265,7 @@ def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
-    for key, value in metadata.items():
+    for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
 

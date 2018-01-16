@@ -9,7 +9,7 @@ from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
 from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         get_run_counter, get_runs,
                                         get_last_run,
-                                        connect, transaction, one,
+                                        connect, transaction,
                                         get_last_experiment, get_experiments)
 from qcodes.dataset.sqlite_base import new_experiment as ne
 

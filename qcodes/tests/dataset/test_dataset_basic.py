@@ -309,6 +309,6 @@ def test_load_by_counter(dataset):
 
 def test_dataset_with_no_experiment_raises(empty_temp_db):
     with pytest.raises(ValueError):
-        mydataset = new_data_set("test-dataset",
-                                 specs=[ParamSpec("x", "real"),
-                                        ParamSpec("y", "real")])
+        new_data_set("test-dataset",
+                     specs=[ParamSpec("x", "real"),
+                            ParamSpec("y", "real")])
