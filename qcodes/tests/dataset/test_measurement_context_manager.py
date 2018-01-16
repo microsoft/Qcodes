@@ -323,7 +323,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
     # More assertions of setpoints, labels and units in the DB!
 
 
-@settings(deadline=1000)
+@settings(deadline=2500)
 @given(N=hst.integers(min_value=2, max_value=500))
 def test_datasaver_arrays(empty_temp_db, N):
     new_experiment('firstexp', sample_name='no sample')
