@@ -1033,40 +1033,9 @@ def get_paramspec(conn: sqlite3.Connection,
     return parspec
 
 
-# TODO: Deprecate/replace with add_parameter_2
-def add_parameter_(conn: sqlite3.Connection,
-                   formatted_name: str,
-                   *parameter: ParamSpec):
-    """ Add parameters to the dataset
-
-    NOTE: two parameters with the same name are not allowed
-    Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
-        - parameter: the paraemters to add
-    """
-    p_names = []
-    for p in parameter:
-        insert_column(conn, formatted_name, p.name, p.type)
-        p_names.append(p.name)
-    # get old parameters column from run table
-    sql = f"""
-    SELECT parameters FROM runs
-    WHERE result_table_name=?
-    """
-    c = transaction(conn, sql, formatted_name)
-    old_parameters = one(c, 'parameters')
-    if old_parameters:
-        new_parameters = ",".join([old_parameters] + p_names)
-    else:
-        new_parameters = ",".join(p_names)
-    sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-    transaction(conn, sql, new_parameters, formatted_name)
-
-
-def add_parameter_2(conn: sqlite3.Connection,
-                    formatted_name: str,
-                    *parameter: ParamSpec):
+def add_parameter(conn: sqlite3.Connection,
+                  formatted_name: str,
+                  *parameter: ParamSpec):
     """ Add parameters to the dataset
 
     This will update the layouts and dependencies tables
@@ -1077,27 +1046,29 @@ def add_parameter_2(conn: sqlite3.Connection,
         - formatted_name: name of the table
         - parameter: the paraemters to add
     """
-    p_names = []
-    for p in parameter:
-        insert_column(conn, formatted_name, p.name, p.type)
-        p_names.append(p.name)
-    # get old parameters column from run table
-    sql = f"""
-    SELECT parameters FROM runs
-    WHERE result_table_name=?
-    """
-    c = transaction(conn, sql, formatted_name)
-    old_parameters = one(c, 'parameters')
-    if old_parameters:
-        new_parameters = ",".join([old_parameters] + p_names)
-    else:
-        new_parameters = ",".join(p_names)
-    sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-    transaction(conn, sql, new_parameters, formatted_name)
+    with atomic(conn):
+        p_names = []
+        for p in parameter:
+            insert_column(conn, formatted_name, p.name, p.type)
+            p_names.append(p.name)
+        # get old parameters column from run table
+        sql = f"""
+        SELECT parameters FROM runs
+        WHERE result_table_name=?
+        """
+        c = transaction(conn, sql, formatted_name)
+        old_parameters = one(c, 'parameters')
+        if old_parameters:
+            new_parameters = ",".join([old_parameters] + p_names)
+        else:
+            new_parameters = ",".join(p_names)
+        sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
+        transaction(conn, sql, new_parameters, formatted_name)
 
+        # Update the layouts table
+        c = _add_parameters_to_layout_and_deps(conn, formatted_name,
+                                               *parameter)
 
-    # Update the layouts table
-    c = _add_parameters_to_layout_and_deps(conn, formatted_name, *parameter)
 
 def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
                                        formatted_name: str,
@@ -1151,20 +1122,6 @@ def _validate_table_name(table_name: str) -> bool:
             raise RuntimeError("Invalid table name "
                                "{} starting at {}".format(table_name, i))
     return valid
-
-
-def add_parameter(conn: sqlite3.Connection,
-                  formatted_name: str,
-                  *parameter: ParamSpec):
-    """ Add parameters to the dataset
-    NOTE: two parameters with the same name are not allowed
-    Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
-        - parameter: the parameters to add
-    """
-    with atomic(conn):
-        add_parameter_2(conn, formatted_name, *parameter)
 
 
 # (WilliamHPNielsen) This creates a result table, right?
