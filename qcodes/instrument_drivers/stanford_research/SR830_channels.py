@@ -62,7 +62,7 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, channel_array: 'SR830Channel', channel: int):
+    def __init__(self, name: str, instrument: 'SR830Channel', channel: int):
         """
         Args:
             name (str): The name of the parameter
@@ -76,7 +76,7 @@ class ChannelBuffer(ArrayParameter):
             raise ValueError('Invalid channel specifier. SR830 only has '
                              'channels 1 and 2.')
 
-        if not isinstance(channel_array, SR830Channel):
+        if not isinstance(instrument, SR830Channel):
             raise ValueError('Invalid parent instrument. ChannelBuffer '
                              'can only live on a channel buffer of SR830.')
 
@@ -90,7 +90,7 @@ class ChannelBuffer(ArrayParameter):
                                    'data buffer of one channel.')
 
         self.channel = channel
-        self._instrument = channel_array.parent
+        self._instrument = instrument.parent
 
     def prepare_buffer_readout(self):
         """

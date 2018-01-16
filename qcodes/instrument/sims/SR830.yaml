@@ -1,0 +1,26 @@
+spec: "1.1"
+devices:
+  SR830:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, Standford Research 830 simulation, 1337, 0.0.01"
+
+    properties:
+
+      isrc:
+        default: '0'
+        getter:
+          q: 'ISRC?'
+          r: '0'
+        setter:
+          q: 'ISRC {}'
+          r: OK
+
+resources:  # we always need three power supplies; one for each axis. For the testing we add a few more
+  GPIB::1::INSTR:
+    device: SR830
