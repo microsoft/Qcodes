@@ -155,8 +155,8 @@ class SR830(VisaInstrument):
 
     def __init__(self, name, address, **kwargs):
 
-        DeprecationWarning("This is an old driver an will be removed. Please use the the new driver: "
-                           "\"SR830_channels\"")
+        RuntimeWarning("This is an old driver an will be removed. Please use the the new driver: "
+                       "\"SR830_channels\"")
 
         super().__init__(name, address, **kwargs)
 
