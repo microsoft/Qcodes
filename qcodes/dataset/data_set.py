@@ -61,6 +61,10 @@ DB = qcodes.config["core"]["db_location"]
 
 
 class Subscriber(Thread):
+    """
+    Class to add a subscriber to a DataSet. The subscriber gets called
+    every time an insert is made to the results_table.
+    """
     def __init__(self, dataSet, sub_id: str,
                  callback: Callable[..., None],
                  state: Optional[Any] = None, min_wait: int = 100,
