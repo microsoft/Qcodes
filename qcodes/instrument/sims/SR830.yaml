@@ -65,7 +65,13 @@ devices:
           q: 'SPTS ?'
           r: '1000'
 
+      poll binary data channel 1:
+        getter:
+          q: 'TRCL ? 1, 0, 1000'
+          r: !!binary |
 
-resources:  # we always need three power supplies; one for each axis. For the testing we add a few more
+            R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5OTk6enp56enmlpaWNjY6Ojo4SEhP/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++f/++SH+Dk1hZGUgd2l0aCBHSU1QACwAAAAADAAMAAAFLCAgjoEwnuNAFOhpEMTRiggcz4BNJHrv/zCFcLiwMWYNG84BwwEeECcgggoBADs=
+
+resources:
   GPIB::1::INSTR:
     device: SR830

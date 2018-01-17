@@ -7,8 +7,16 @@ from qcodes.utils.validators import Numbers, Ints, Enum, Strings
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 
-class SR830AuxChannel(InstrumentChannel):  # We see that InstrumentChannel, ChannelList are something of a misnomer
-    def __init__(self, parent, name, aux_number):
+class SR830AuxChannel(InstrumentChannel):
+    """
+    Auxiliary channel for the SR830
+
+    Args:
+        parent (SR830)
+        name (string)
+        aux_number (int)
+    """
+    def __init__(self, parent: 'SR830', name: str, aux_number: int) ->None:
         super().__init__(parent, name)
 
         self.add_parameter('aux_in',
@@ -26,7 +34,15 @@ class SR830AuxChannel(InstrumentChannel):  # We see that InstrumentChannel, Chan
 
 
 class SR830Channel(InstrumentChannel):
-    def __init__(self, parent, name, channel_number):
+    """
+    SR830 channel
+
+    Args:
+        parent (SR830)
+        name (string)
+        channel_number (int)
+    """
+    def __init__(self, parent: 'SR830', name: str, channel_number: int) ->None:
         super().__init__(parent, name)
         # detailed validation and mapping performed in set/get functions. Note that we only have
         # two channels
@@ -62,7 +78,7 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: 'SR830Channel', channel: int):
+    def __init__(self, name: str, instrument: 'SR830Channel', channel: int) ->None:
         """
         Args:
             name (str): The name of the parameter
@@ -92,7 +108,7 @@ class ChannelBuffer(ArrayParameter):
         self.channel = channel
         self._instrument = instrument.parent
 
-    def prepare_buffer_readout(self):
+    def prepare_buffer_readout(self) ->None:
         """
         Function to generate the setpoints for the channel buffer and
         get the right units
@@ -381,6 +397,7 @@ class SR830(VisaInstrument):
             if count < 3:
                 channel = SR830Channel(self, "channel{}".format(count), count)
                 channels.append(channel)
+                self.add_submodule("ch{}".format(count), channel)
 
         aux.lock()
         channels.lock()
