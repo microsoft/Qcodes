@@ -36,5 +36,3 @@ def test_set_get_autorange(driver):
     driver.autorange.set('OFF')
     ar = driver.autorange.get()
     assert ar == 'OFF'
-        
-    
