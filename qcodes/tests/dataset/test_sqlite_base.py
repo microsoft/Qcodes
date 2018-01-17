@@ -21,7 +21,7 @@ def empty_temp_db():
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
+        qc.config["core"]["db_debug"] = False
         # this is somewhat annoying but these module scope variables
         # are initialized at import time so they need to be overwritten
         qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
@@ -62,10 +62,12 @@ def test_atomic_raises(experiment):
 
     bad_sql = '""'
 
-    with pytest.raises(OperationalError):
-        with pytest.raises(RuntimeError):
-            with mut.atomic(conn):
-                mut.transaction(conn, bad_sql)
+    # it seems that the type of error raised differs between python versions
+    # 3.6.0 (OperationalError) and 3.6.3 (RuntimeError)
+    # -strange, huh?
+    with pytest.raises((OperationalError, RuntimeError)):
+        with mut.atomic(conn):
+            mut.transaction(conn, bad_sql)
 
 
 def test_insert_many_values_raises(experiment):
