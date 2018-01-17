@@ -141,7 +141,7 @@ class DiskIO:
             location (str): the location string corresponding to this path.
         """
         if self.base_location:
-            return os.path.relpath(path, self.base_location)
+            return os.path.join(self.base_location, path)
         else:
             return path
 
