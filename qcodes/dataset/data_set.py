@@ -65,6 +65,9 @@ class Subscriber(Thread):
     Class to add a subscriber to a DataSet. The subscriber gets called
     every time an insert is made to the results_table.
 
+    The Subscriber is not meant to be instantiated directly, but rather used
+    via the 'subscribe' method of the DataSet.
+
     NOTE: A subscriber should be added *after* all parameters have added.
     """
     def __init__(self, dataSet, sub_id: str,
