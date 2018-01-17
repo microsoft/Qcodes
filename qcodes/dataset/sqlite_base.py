@@ -1271,6 +1271,7 @@ def get_user_version(conn: sqlite3.Connection) -> int:
     res = one(curr, 0)
     return res
 
+
 def set_user_version(conn: sqlite3.Connection, version: int) -> None:
 
-    curr = atomicTransaction(conn, 'PRAGMA user_version({})'.format(version))
+    atomicTransaction(conn, 'PRAGMA user_version({})'.format(version))
