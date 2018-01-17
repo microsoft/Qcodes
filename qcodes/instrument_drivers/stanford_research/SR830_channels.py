@@ -64,7 +64,7 @@ class SR830Channel(InstrumentChannel):
 
         self.add_parameter(
             'databuffer',
-            channel=channel_number,
+            channel_number=channel_number,
             parameter_class=ChannelBuffer
         )
 
@@ -78,7 +78,7 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: 'SR830Channel', channel: int) ->None:
+    def __init__(self, name: str, instrument: 'SR830Channel', channel_number: int) ->None:
         """
         Args:
             name (str): The name of the parameter
@@ -88,7 +88,7 @@ class ChannelBuffer(ArrayParameter):
         """
         self._valid_channels = (1, 2)
 
-        if channel not in self._valid_channels:
+        if channel_number not in self._valid_channels:
             raise ValueError('Invalid channel specifier. SR830 only has '
                              'channels 1 and 2.')
 
@@ -105,14 +105,16 @@ class ChannelBuffer(ArrayParameter):
                          docstring='Holds an acquired (part of the) '
                                    'data buffer of one channel.')
 
-        self.channel = channel
+        self._channel_number = channel_number
         self._instrument = instrument.parent
+        self._channel = None  # This is set by the time we call "prepare_buffer_readout"
 
     def prepare_buffer_readout(self) ->None:
         """
         Function to generate the setpoints for the channel buffer and
         get the right units
         """
+        self._channel = self._instrument.channels[self._channel_number]
 
         N = self._instrument.buffer_npts()  # problem if this is zero?
         # TODO (WilliamHPNielsen): what if SR was changed during acquisition?
@@ -131,27 +133,26 @@ class ChannelBuffer(ArrayParameter):
 
         self.shape = (N,)
 
-        params = self._instrument.parameters
         # YES, it should be: "is not 'none'" NOT "is not None"
-        if self._instrument.channels[self.channel].ratio() is not 'none':
+        if self._channel.ratio() is not 'none':
             self.unit = '%'
         else:
-            disp = self._instrument.channels[self.channel].display()
+            disp = self._channel.display()
             if disp == 'Phase':
                 self.unit = 'deg'
             else:
                 self.unit = 'V'
 
-        if self.channel == 1:
+        if self._channel_number == 1:
             self._instrument._buffer1_ready = True
         else:
             self._instrument._buffer2_ready = True
 
-    def get(self):
+    def get(self) ->np.ndarray:
         """
         Get command. Returns numpy array
         """
-        if self.channel == 1:
+        if self._channel_number == 1:
             ready = self._instrument._buffer1_ready
         else:
             ready = self._instrument._buffer2_ready
@@ -165,7 +166,7 @@ class ChannelBuffer(ArrayParameter):
                              ' Can not poll anything.')
 
         # poll raw binary data
-        self._instrument.write('TRCL ? {}, 0, {}'.format(self.channel, N))
+        self._instrument.write('TRCL ? {}, 0, {}'.format(self._channel_number, N))
         rawdata = self._instrument.visa_handle.read_raw()
 
         # parse it
@@ -180,6 +181,10 @@ class SR830(VisaInstrument):
     """
     This is the qcodes driver for the Stanford Research Systems SR830
     Lock-in Amplifier
+
+    Args:
+        name (str)
+        address (str): A VISA address (e.g. GPIB::1::INSTR)
     """
 
     _VOLT_TO_N = {2e-9:    0, 5e-9:    1, 10e-9:  2,
@@ -216,7 +221,7 @@ class SR830(VisaInstrument):
 
     _N_TO_INPUT_CONFIG = {v: k for k, v in _INPUT_CONFIG_TO_N.items()}
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: None) ->None:
         super().__init__(name, address, **kwargs)
 
         # Reference and phase
@@ -578,13 +583,17 @@ class SR830(VisaInstrument):
         self.write('DDEF {}, {}, {}'.format(channel, disp, ratio_val))
         self._buffer_ready = False
 
-    def _set_units(self, unit):
+    def _set_units(self, unit: str) ->None:
         # TODO:
         # make a public parameter function that allows to change the units
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.unit = unit
 
-    def _get_input_config(self, s):
+    def _get_input_config(self, s: str) ->int:
+        """
+        Args:
+            s (str): string representative of an integer
+        """
         mode = self._N_TO_INPUT_CONFIG[int(s)]
 
         if mode in ['a', 'a-b']:
@@ -596,7 +605,7 @@ class SR830(VisaInstrument):
 
         return mode
 
-    def _set_input_config(self, s):
+    def _set_input_config(self, s: str) ->int:
         if s in ['a', 'a-b']:
             self.sensitivity.set_validator(self._VOLT_ENUM)
             self._set_units('V')
@@ -606,13 +615,13 @@ class SR830(VisaInstrument):
 
         return self._INPUT_CONFIG_TO_N[s]
 
-    def _get_sensitivity(self, s):
+    def _get_sensitivity(self, s: int) ->float:
         if self.input_config() in ['a', 'a-b']:
             return self._N_TO_VOLT[int(s)]
         else:
             return self._N_TO_CURR[int(s)]
 
-    def _set_sensitivity(self, s):
+    def _set_sensitivity(self, s: float) ->int:
         if self.input_config() in ['a', 'a-b']:
             return self._VOLT_TO_N[s]
         else:
