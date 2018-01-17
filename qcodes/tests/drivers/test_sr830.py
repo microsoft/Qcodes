@@ -26,4 +26,3 @@ def test_init():
 
     sr830.channels[0].databuffer.prepare_buffer_readout()
     meas = qcodes.Measure(sr830.channels[0].databuffer)
-    #data = meas.run() # This line causes an exception in the test
