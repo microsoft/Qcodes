@@ -22,3 +22,11 @@ def test_init(driver):
     idn_dict = driver.IDN()
 
     assert idn_dict['vendor'] == 'QCoDeS'
+
+
+def test_trigger_source_level(driver):
+    assert driver.trigger_source() == 'CH1'
+    assert driver.trigger_level() == 0
+    driver.trigger_level(1.0)
+    assert driver.trigger_level() == 1
+
