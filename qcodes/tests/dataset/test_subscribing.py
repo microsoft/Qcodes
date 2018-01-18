@@ -62,9 +62,9 @@ def basic_subscriber():
 
 
 def test_basic_subscription(dataset, basic_subscriber):
-    xparam = ParamSpec(name='x', paramtype='real', label='x parameter',
+    xparam = ParamSpec(name='x', paramtype='numeric', label='x parameter',
                        unit='V')
-    yparam = ParamSpec(name='y', paramtype='real', label='y parameter',
+    yparam = ParamSpec(name='y', paramtype='numeric', label='y parameter',
                        unit='Hz', depends_on=[xparam])
     dataset.add_parameter(xparam)
     dataset.add_parameter(yparam)

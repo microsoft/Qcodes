@@ -27,30 +27,30 @@ def test_creation(name, sp1, sp2, inff1, inff2):
 
     if not name.isidentifier():
         with pytest.raises(ValueError):
-            ps = ParamSpec(name, 'real', label=None, unit='V',
+            ps = ParamSpec(name, 'numeric', label=None, unit='V',
                            inferred_from=(inff1, inff2),
                            depends_on=(sp1, sp2))
         name = 'name'
 
-    ps = ParamSpec(name, 'real', label=None, unit='V',
+    ps = ParamSpec(name, 'numeric', label=None, unit='V',
                    inferred_from=(inff1, inff2),
                    depends_on=(sp1, sp2))
 
     assert ps.inferred_from == f'{inff1}, {inff2}'
     assert ps.depends_on == f'{sp1}, {sp2}'
 
-    ps1 = ParamSpec(sp1, 'real')
-    p1 = ParamSpec(name, 'real', depends_on=(ps1, sp2))
+    ps1 = ParamSpec(sp1, 'numeric')
+    p1 = ParamSpec(name, 'numeric', depends_on=(ps1, sp2))
     assert p1.depends_on == ps.depends_on
 
-    ps2 = ParamSpec(inff1, 'real')
-    p2 = ParamSpec(name, 'real', inferred_from=(ps2, inff2))
+    ps2 = ParamSpec(inff1, 'numeric')
+    p2 = ParamSpec(name, 'numeric', inferred_from=(ps2, inff2))
     assert p2.inferred_from == ps.inferred_from
 
 
 @given(name=hst.text(min_size=1))
 def test_repr(name):
-    okay_types = ['array', 'real', 'integer', 'text']
+    okay_types = ['array', 'numeric', 'text']
 
     for okt in okay_types:
         if name.isidentifier():

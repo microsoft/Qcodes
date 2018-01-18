@@ -340,7 +340,7 @@ class Measurement:
         if isinstance(parameter, ArrayParameter):
             paramtype = 'array'
         else:
-            paramtype = 'real'
+            paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
 
@@ -383,8 +383,8 @@ class Measurement:
             name: The name that this parameter will have in the dataset. Must
                 be unique (will overwrite an existing parameter with the same
                 name!)
-            paramtype: The SQL storage class of the parameter ('integer',
-                'real', 'array', or 'text')
+            paramtype: The SQL storage class of the parameter (
+                'numeric', 'array', or 'text')
             label: The label
             unit: The unit
             basis: A list of either QCoDeS Parameters or the names

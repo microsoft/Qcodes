@@ -75,7 +75,7 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.name == str(my_param)
     assert paramspec.label == my_param.label
     assert paramspec.unit == my_param.unit
-    assert paramspec.type == 'real'
+    assert paramspec.type == 'numeric'
 
     # registering the same parameter twice should lead
     # to a replacement/update, but also change the
@@ -90,7 +90,7 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.name == str(my_param)
     assert paramspec.label == my_param.label
     assert paramspec.unit == my_param.unit
-    assert paramspec.type == 'real'
+    assert paramspec.type == 'numeric'
 
     for parameter in parameters:
         with pytest.raises(ValueError):
@@ -127,7 +127,7 @@ def test_register_custom_parameter(DAC):
     meas = Measurement()
 
     name = 'V_modified'
-    paramtype = 'real'
+    paramtype = 'numeric'
     unit = 'V^2'
     label = 'square of the voltage'
 
@@ -162,7 +162,7 @@ def test_register_custom_parameter(DAC):
 
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)
-    meas.register_custom_parameter('strange_dac', 'real')
+    meas.register_custom_parameter('strange_dac', 'numeric')
 
     meas.register_custom_parameter(name, paramtype, label, unit,
                                    setpoints=(DAC.ch1, str(DAC.ch2)),
@@ -174,7 +174,7 @@ def test_register_custom_parameter(DAC):
     assert parspec.depends_on == ', '.join([str(DAC.ch1), str(DAC.ch2)])
 
     with pytest.raises(ValueError):
-        meas.register_custom_parameter('double dependence', 'real',
+        meas.register_custom_parameter('double dependence', 'numeric',
                                        'label', 'unit', setpoints=(name,))
 
 
@@ -356,7 +356,7 @@ def test_datasaver_arrays(empty_temp_db, N):
             datasaver.add_result(('freqax', freqax), ('signal', signal))
 
     meas.register_custom_parameter(name='gate_voltage',
-                                   paramtype='real',
+                                   paramtype='numeric',
                                    label='Gate tuning potential',
                                    unit='V')
     meas.register_custom_parameter(name='signal',

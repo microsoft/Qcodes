@@ -21,13 +21,12 @@ class ParamSpec():
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
         """
-        # TODO: Should this be the storage class or the python type?
-        allowed_types = ['array', 'real', 'integer', 'text']
+        allowed_types = ['array', 'numeric', 'text']
         if not isinstance(paramtype, str):
             raise ValueError('Paramtype must be a string.')
         if paramtype.lower() not in allowed_types:
-            raise ValueError("Illegal paramtype. Must be 'array', 'real',"
-                             " 'integer', or 'text'.")
+            raise ValueError("Illegal paramtype. Must be 'array', 'numeric'"
+                             ", or 'text'.")
         if not name.isidentifier():
             raise ValueError(f'Invalid name: {name}. Only valid python '
                              'identifier names are allowed (no spaces or '

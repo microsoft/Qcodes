@@ -103,8 +103,8 @@ def test_add_paramspec(dataset):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
-    parameter_a = ParamSpec("a", "INTEGER")
-    parameter_b = ParamSpec("b", "INTEGER", key="value", number=1)
+    parameter_a = ParamSpec("a", "NUMERIC")
+    parameter_b = ParamSpec("b", "NUMERIC", key="value", number=1)
     parameter_c = ParamSpec("c", "array")
     dataset.add_parameters([parameter_a, parameter_b, parameter_c])
     paramspecs = dataset.paramspecs
@@ -124,8 +124,8 @@ def test_add_paramspec_one_by_one(dataset):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
-    parameters = [ParamSpec("a", "INTEGER"),
-                  ParamSpec("b", "INTEGER", key="value", number=1),
+    parameters = [ParamSpec("a", "NUMERIC"),
+                  ParamSpec("b", "NUMERIC", key="value", number=1),
                   ParamSpec("c", "array")]
     for parameter in parameters:
         dataset.add_parameter(parameter)
@@ -150,8 +150,8 @@ def test_add_data_1d(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    psx = ParamSpec("x", "real")
-    psy = ParamSpec("y", "real", depends_on=['x'])
+    psx = ParamSpec("x", "numeric")
+    psy = ParamSpec("y", "numeric", depends_on=['x'])
 
     mydataset = new_data_set("test-dataset", specs=[psx, psy])
 
@@ -187,7 +187,7 @@ def test_add_data_array(experiment):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 0
 
-    mydataset = new_data_set("test", specs=[ParamSpec("x", "real"),
+    mydataset = new_data_set("test", specs=[ParamSpec("x", "numeric"),
                                             ParamSpec("y", "array")])
 
     expected_x = []
@@ -208,9 +208,9 @@ def test_adding_too_many_results(experiment):
     insert_many_values function of the sqlite_base module
     """
     dataset = new_data_set("test_adding_too_many_results")
-    xparam = ParamSpec("x", "real", label="x parameter",
+    xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
-    yparam = ParamSpec("y", 'real', label='y parameter',
+    yparam = ParamSpec("y", 'numeric', label='y parameter',
                        unit='Hz', depends_on=[xparam])
     dataset.add_parameter(xparam)
     dataset.add_parameter(yparam)
@@ -231,9 +231,9 @@ def test_adding_too_many_results(experiment):
 
 def test_modify_result(experiment):
     dataset = new_data_set("test_modify_result")
-    xparam = ParamSpec("x", "real", label="x parameter",
+    xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
-    yparam = ParamSpec("y", 'real', label='y parameter',
+    yparam = ParamSpec("y", 'numeric', label='y parameter',
                        unit='Hz', depends_on=[xparam])
     zparam = ParamSpec("z", 'array', label='z parameter',
                        unit='sqrt(Hz)', depends_on=[xparam])
@@ -279,7 +279,7 @@ def test_modify_result(experiment):
 def test_add_parameter_values(experiment, N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
-    xparam = ParamSpec('x', 'real')
+    xparam = ParamSpec('x', 'numeric')
     xparam.type = 'number'
     mydataset.add_parameter(xparam)
 
@@ -288,10 +288,10 @@ def test_add_parameter_values(experiment, N, M):
 
     if N != M:
         with pytest.raises(ValueError):
-            mydataset.add_parameter_values(ParamSpec("y", "real"),
+            mydataset.add_parameter_values(ParamSpec("y", "numeric"),
                                            [y for y in range(M)])
 
-    mydataset.add_parameter_values(ParamSpec("y", "real"),
+    mydataset.add_parameter_values(ParamSpec("y", "numeric"),
                                    [y for y in range(N)])
 
     mydataset.mark_complete()
@@ -311,8 +311,8 @@ def test_load_by_counter(dataset):
 def test_dataset_with_no_experiment_raises(empty_temp_db):
     with pytest.raises(ValueError):
         new_data_set("test-dataset",
-                     specs=[ParamSpec("x", "real"),
-                            ParamSpec("y", "real")])
+                     specs=[ParamSpec("x", "numeric"),
+                            ParamSpec("y", "numeric")])
 
 
 def test_database_upgrade(empty_temp_db):
