@@ -127,26 +127,21 @@ def test_register_custom_parameter(DAC):
     meas = Measurement()
 
     name = 'V_modified'
-    paramtype = 'numeric'
     unit = 'V^2'
     label = 'square of the voltage'
 
-    with pytest.raises(ValueError):
-        meas.register_custom_parameter(name=name, paramtype='wrong type',
-                                       label=label, unit=unit)
-
-    meas.register_custom_parameter(name, paramtype, label, unit)
+    meas.register_custom_parameter(name, label, unit)
 
     assert len(meas.parameters) == 1
     assert isinstance(meas.parameters[name], ParamSpec)
     assert meas.parameters[name].unit == unit
     assert meas.parameters[name].label == label
-    assert meas.parameters[name].type == paramtype
+    assert meas.parameters[name].type == 'numeric'
 
     newunit = 'V^3'
     newlabel = 'cube of the voltage'
 
-    meas.register_custom_parameter(name, paramtype, newlabel, newunit)
+    meas.register_custom_parameter(name, newlabel, newunit)
 
     assert len(meas.parameters) == 1
     assert isinstance(meas.parameters[name], ParamSpec)
@@ -154,17 +149,17 @@ def test_register_custom_parameter(DAC):
     assert meas.parameters[name].label == newlabel
 
     with pytest.raises(ValueError):
-        meas.register_custom_parameter(name, paramtype, label, unit,
+        meas.register_custom_parameter(name, label, unit,
                                        setpoints=(DAC.ch1,))
     with pytest.raises(ValueError):
-        meas.register_custom_parameter(name, paramtype, label, unit,
+        meas.register_custom_parameter(name, label, unit,
                                        basis=(DAC.ch2,))
 
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)
-    meas.register_custom_parameter('strange_dac', 'numeric')
+    meas.register_custom_parameter('strange_dac')
 
-    meas.register_custom_parameter(name, paramtype, label, unit,
+    meas.register_custom_parameter(name, label, unit,
                                    setpoints=(DAC.ch1, str(DAC.ch2)),
                                    basis=('strange_dac',))
 
@@ -174,7 +169,7 @@ def test_register_custom_parameter(DAC):
     assert parspec.depends_on == ', '.join([str(DAC.ch1), str(DAC.ch2)])
 
     with pytest.raises(ValueError):
-        meas.register_custom_parameter('double dependence', 'numeric',
+        meas.register_custom_parameter('double dependence',
                                        'label', 'unit', setpoints=(name,))
 
 
@@ -323,7 +318,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
     # More assertions of setpoints, labels and units in the DB!
 
 
-@settings(deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 def test_datasaver_arrays(empty_temp_db, N):
     new_experiment('firstexp', sample_name='no sample')
@@ -331,11 +326,9 @@ def test_datasaver_arrays(empty_temp_db, N):
     meas = Measurement()
 
     meas.register_custom_parameter(name='freqax',
-                                   paramtype='array',
                                    label='Frequency axis',
                                    unit='Hz')
     meas.register_custom_parameter(name='signal',
-                                   paramtype='array',
                                    label='qubit signal',
                                    unit='Majorana number',
                                    setpoints=('freqax',))
@@ -356,11 +349,9 @@ def test_datasaver_arrays(empty_temp_db, N):
             datasaver.add_result(('freqax', freqax), ('signal', signal))
 
     meas.register_custom_parameter(name='gate_voltage',
-                                   paramtype='numeric',
                                    label='Gate tuning potential',
                                    unit='V')
     meas.register_custom_parameter(name='signal',
-                                   paramtype='array',
                                    label='qubit signal',
                                    unit='Majorana flux',
                                    setpoints=('freqax', 'gate_voltage'))

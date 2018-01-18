@@ -84,11 +84,12 @@ class DataSaver:
         params = []
         for partial_result in res:
             param = str(partial_result[0])
+            value = partial_result[1]
             params.append(param)
             if param not in self._known_parameters:
                 raise ValueError(f'Can not add a result for {param}, no such'
                                  ' parameter registered in this measurement.')
-            if self.parameters[param].type == 'array':
+            if isinstance(value, np.ndarray):
                 value = cast(np.ndarray, partial_result[1])
                 array_size = len(value)
                 if input_size > 1 and input_size != array_size:
@@ -335,12 +336,16 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        # the next one is tricky and deserves some thought
-        # TODO: How to handle types?
-        if isinstance(parameter, ArrayParameter):
-            paramtype = 'array'
-        else:
-            paramtype = 'numeric'
+
+        # We currently treat ALL parameters as 'numeric' and fail to add them
+        # to the dataset if they can not be unraveled to fit that description
+        # (except strings, we just let those through)
+        # this is indeed a limitation, but a sane one. We might loosen that
+        # requirement later and start saving binary blobs with the datasaver,
+        # but for now binary blob saving is referred to using the DataSet
+        # API directly
+
+        paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
 
@@ -372,7 +377,7 @@ class Measurement:
         log.info(f'Registered {name} in the Measurement.')
 
     def register_custom_parameter(
-            self, name: str, paramtype: str,
+            self, name: str,
             label: str=None, unit: str=None,
             basis: Sequence[Union[str, _BaseParameter]]=None,
             setpoints: Sequence[Union[str, _BaseParameter]]=None) -> None:
@@ -383,8 +388,6 @@ class Measurement:
             name: The name that this parameter will have in the dataset. Must
                 be unique (will overwrite an existing parameter with the same
                 name!)
-            paramtype: The SQL storage class of the parameter (
-                'numeric', 'array', or 'text')
             label: The label
             unit: The unit
             basis: A list of either QCoDeS Parameters or the names
@@ -409,7 +412,7 @@ class Measurement:
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)
 
-        parspec = ParamSpec(name=name, paramtype=paramtype,
+        parspec = ParamSpec(name=name, paramtype='numeric',
                             label=label, unit=unit,
                             inferred_from=inf_from,
                             depends_on=depends_on)
