@@ -74,8 +74,8 @@ try:
     register_magic = config.core.get('register_magic', False)
     if register_magic is not False:
         register_magic_class(magic_commands=register_magic)
-except NameError:
-    pass
+except RuntimeError as e:
+    print(e)
 
 # Close all instruments when exiting QCoDeS
 import atexit

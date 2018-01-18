@@ -17,6 +17,8 @@ from qcodes.data.data_array import DataArray
 
 from .base import BasePlot
 from qcodes.utils.threading import UpdaterThread
+import qcodes.config
+from qcodes.data.data_array import DataArray
 
 
 logger = logging.getLogger(__name__)
@@ -166,7 +168,7 @@ class MatPlot(BasePlot):
                 without `z` we draw a scatter/lines plot (ax.plot):
                     `x`, `y`, and `fmt` (if present) are passed as positional
                     args
-        
+
         Returns:
             Plot handle for trace
         """

@@ -24,6 +24,9 @@ install:
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade
     - pip install -r docs_requirements.txt
+# Install a new version of Sphinx that correctly handles forward refs once 1.7.0 is out that should
+# be used instead
+    - pip install git+https://github.com/jenshnielsen/sphinx.git@working_forward_ref --upgrade
     - pip install -e .
 
 before_script: # configure a headless display to test plot generation
@@ -34,14 +37,16 @@ before_script: # configure a headless display to test plot generation
 script:
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    # build docs with warnings as errors
     - |
       cd ../docs
-      make html-api
+      make SPHINXOPTS="-W" html-api
     - cd ..
 
 after_success:
-    # install dependencies for docs build
+    # upload code coverage
     - python-codacy-coverage -r qcodes/coverage.xml
+    - codecov
     # upload the docs
     - |
       if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then

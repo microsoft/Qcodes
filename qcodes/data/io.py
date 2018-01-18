@@ -143,7 +143,7 @@ class DiskIO:
         if os.path.isabs(path):
             return path
         elif self.base_location:
-            return os.path.relpath(path, self.base_location)
+            return os.path.join(self.base_location, path)
         else:
             raise SyntaxError('Must either give absolute path or specify '
                               'base_location')
