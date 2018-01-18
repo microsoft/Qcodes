@@ -234,12 +234,12 @@ html-api:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
 	mkdir -p _notebooks
-	mkdir -p _notebooks/Dataset
+	mkdir -p _notebooks/DataSet
 	mkdir -p _notebooks/driver_examples
 	mkdir -p _notebooks/benchmarking
 	cp _auto/qcodes.instrument_drivers.* api/generated/
 	jupyter-nbconvert --to rst 'examples/*.ipynb' --output-dir=_notebooks
-	jupyter-nbconvert --to rst 'examples/Dataset/*.ipynb' --output-dir=_notebooks/Dataset
+	jupyter-nbconvert --to rst 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
 	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir=_notebooks/driver_examples
 	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
 	make html
