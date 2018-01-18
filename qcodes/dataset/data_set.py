@@ -109,7 +109,7 @@ class Subscriber(Thread):
         super().__init__()
 
     def cache(self, *args) -> None:
-        self.log.debug(f"{self.callbackid} called with args:{args}")
+        self.log.debug(f"Args:{args} put into queue for {self.callbackid}")
         self.data.put(args)
         self._data_set_len += 1
         self._send_queue += 1
@@ -131,6 +131,7 @@ class Subscriber(Thread):
     def _send(self) -> List:
         result_list = self._exhaust_queue(self.data)
         self.callback(result_list, self._data_set_len, self.state)
+        self.log.debug(f"{self.callback} called.")
         return result_list
 
     def _loop(self) -> None:
@@ -138,7 +139,7 @@ class Subscriber(Thread):
             if self._stop_signal:
                 self._clean_up()
                 break
-            if self._send_queue > self.min_count:
+            if self._send_queue >= self.min_count:
                 self._send()
                 self._send_queue = 0
 
