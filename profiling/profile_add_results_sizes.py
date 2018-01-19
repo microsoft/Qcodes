@@ -3,18 +3,16 @@ In this script, we profile the time performance of the "add_results" call as a f
 insert.
 """
 
+from collections import defaultdict
 import cProfile
-from memory_profiler import profile as memory_profiler
+import matplotlib.pyplot as plt
 
 from qcodes import ParamSpec, new_data_set, new_experiment
 import numpy as np
 
-from profiling.utilities import capture_stdout, parse_profile_result
-
 new_experiment("profile", "profile")
 
-@capture_stdout
-@memory_profiler
+
 def stress_test_simple(sz):
 
     data_set = new_data_set("stress_test_simple")
@@ -30,38 +28,35 @@ def stress_test_simple(sz):
     data_set.add_results(results)
 
 
-@capture_stdout
 def run_profiler(sz):
-    cProfile.run("stress_test_simple({sz})".format(sz=sz))
+    profiler = cProfile.Profile()
+    profiler.runcall(stress_test_simple, sz=sz)
+    return profiler.getstats()
 
 
 def time_performance():
 
     sample_sizes = [10, 50, 100, 150, 200, 250, 300, 350, 400]  # We cannot make the sample sizes bigger yet due to
     # bug https://github.com/QCoDeS/Qcodes/issues/942
-    total_times = []
+    total_times = defaultdict(lambda: 0)
 
-    for sample_size in sample_sizes:
-        profile_result = run_profiler(sample_size)
-        parsed_profile_result = parse_profile_result(profile_result)
+    repeats = 1000
 
-        line_count = len(parsed_profile_result["ncalls"])
+    for _ in range(repeats):
+        for sample_size in sample_sizes:
+            profiler = cProfile.Profile()
+            profiler.runcall(stress_test_simple, sz=sample_size)
 
-        times = [
-            parsed_profile_result["tottime"][i] for i in range(line_count)
-            if "sqlite3" in parsed_profile_result["filename:lineno(function)"][i]
-        ]
+            profile_stats = profiler.getstats()
+            times = [r.totaltime/1000 for r in profile_stats if "sqlite_base.py" in str(r.code)]
+            total_times[sample_size] += sum(times)
 
-        total_time = sum([float(i) for i in times])
-        total_times.append(total_time)
+    tt = [v/repeats for v in total_times.values()]
 
-    print(total_times)
-
-
-def memory_performance():
-    result = stress_test_simple(400)
-    print(result)
-
+    plt.plot(sample_sizes, tt)
+    plt.xlabel("sample size")
+    plt.ylabel("average 'add_results' time [ms]")
+    plt.show()
 
 if __name__ == "__main__":
-    memory_performance()
+    time_performance()
