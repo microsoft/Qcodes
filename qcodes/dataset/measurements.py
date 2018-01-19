@@ -130,7 +130,9 @@ class DataSaver:
                 param = str(partial_result[0])
                 value = partial_result[1]
 
-                if isinstance(value, np.ndarray):
+                # For compatibility with the old Loop, setpoints are
+                # tuples of numbers (usually tuple(np.linspace(...))
+                if hasattr(value, '__len__') and not(isinstance(value, str)):
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -351,7 +353,8 @@ class Measurement:
 
         if isinstance(parameter, ArrayParameter):
             if parameter.setpoint_names:
-                spname = parameter.setpoint_names[0]
+                spname = (f'{parameter._instrument.name}_'
+                          f'{parameter.setpoint_names[0]}')
             else:
                 spname = f'{name}_setpoint'
             if parameter.setpoint_labels:
@@ -367,6 +370,7 @@ class Measurement:
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
+            setpoints = setpoints if setpoints else ()
             setpoints += (spname,)
 
         # We currently treat ALL parameters as 'numeric' and fail to add them

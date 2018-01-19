@@ -13,6 +13,7 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
+from qcodes.instrument.parameter import ArrayParameter
 
 
 @pytest.fixture(scope="function")
@@ -52,6 +53,43 @@ def DMM():
     dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
     yield dmm
     dmm.close()
+
+
+@pytest.fixture
+def SpectrumAnalyzer():
+    """
+    Yields a DummyInstrument that holds an ArrayParameter
+    """
+
+    class Spectrum(ArrayParameter):
+
+        def __init__(self, name, instrument):
+            super().__init__(name=name,
+                             shape=(1,),  # this attribute should be removed
+                             label='Flower Power Spectrum',
+                             unit='V/sqrt(Hz)',
+                             setpoint_names=('Frequency',),
+                             setpoint_units=('Hz',))
+
+            self.npts = 100
+            self.start = 0
+            self.stop = 2e6
+            self._instrument = instrument
+
+        def get_raw(self):
+            # This is how it should be: the setpoints are generated at the
+            # time we get. But that will of course not work with the old Loop
+            self.setpoints = (tuple(np.linspace(self.start, self.stop,
+                                                self.npts)),)
+            # not the best SA on the market; it just returns noise...
+            return np.random.randn(self.npts)
+
+    SA = DummyInstrument('dummy_SA')
+    SA.add_parameter('spectrum', parameter_class=Spectrum)
+
+    yield SA
+
+    SA.close()
 
 
 def test_register_parameter_numbers(DAC, DMM):
@@ -365,3 +403,38 @@ def test_datasaver_arrays(empty_temp_db, N):
                              ('gate_voltage', 0))
 
     assert datasaver.points_written == N
+
+
+@settings(max_examples=5)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    spectrum = SpectrumAnalyzer.spectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(spectrum)
+
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(spectrum)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(spectrum)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(spectrum, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    spectrum.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (spectrum, spectrum.get()))
+
+    assert datasaver.points_written == N*M
