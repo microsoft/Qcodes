@@ -164,6 +164,10 @@ class DataSaver:
     def points_written(self):
         return self._dataset.number_of_results
 
+    @property
+    def dataset(self):
+        return self._dataset
+
 
 class Runner:
     """
