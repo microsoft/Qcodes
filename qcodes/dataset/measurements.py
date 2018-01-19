@@ -74,6 +74,7 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
+        res = list(res)  # ArrayParameters cause us to mutate the results
 
         # we iterate through the input twice in order to allow users to call
         # add_result with the arguments in any particular order, i.e. NOT
@@ -83,12 +84,14 @@ class DataSaver:
         input_size = 1
         params = []
         for partial_result in res:
-            param = str(partial_result[0])
+            parameter = partial_result[0]
+            paramstr = str(partial_result[0])
             value = partial_result[1]
-            params.append(param)
-            if param not in self._known_parameters:
-                raise ValueError(f'Can not add a result for {param}, no such'
-                                 ' parameter registered in this measurement.')
+            params.append(paramstr)
+            if paramstr not in self._known_parameters:
+                raise ValueError(f'Can not add a result for {paramstr}, no '
+                                 'such parameter registered in this '
+                                 'measurement.')
             if isinstance(value, np.ndarray):
                 value = cast(np.ndarray, partial_result[1])
                 array_size = len(value)
@@ -98,6 +101,15 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            if isinstance(parameter, ArrayParameter):
+                sps = parameter.setpoints[0]
+                if f'{paramstr}_setpoint' in self.parameters.keys():
+                    res.append((f'{paramstr}_setpoint', sps))
+                elif parameter.setpoint_names[0] in self.parameters.keys():
+                    res.append((parameter.setpoint_names[0], sps))
+                else:
+                    raise RuntimeError('No setpoints registered for '
+                                       f'ArrayParameter {paramstr}!')
 
         # Now check for missing setpoints
         for partial_result in res:
@@ -118,7 +130,7 @@ class DataSaver:
                 param = str(partial_result[0])
                 value = partial_result[1]
 
-                if self.parameters[param].type == 'array':
+                if isinstance(value, np.ndarray):
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -337,6 +349,26 @@ class Measurement:
         # a more robust Parameter2String function?
         name = str(parameter)
 
+        if isinstance(parameter, ArrayParameter):
+            if parameter.setpoint_names:
+                spname = parameter.setpoint_names[0]
+            else:
+                spname = f'{name}_setpoint'
+            if parameter.setpoint_labels:
+                splabel = parameter.setpoint_labels[0]
+            else:
+                splabel = ''
+            if parameter.setpoint_units:
+                spunit = parameter.setpoint_units[0]
+            else:
+                spunit = ''
+
+            sp = ParamSpec(name=spname, paramtype='numeric',
+                           label=splabel, unit=spunit)
+
+            self.parameters[spname] = sp
+            setpoints += (spname,)
+
         # We currently treat ALL parameters as 'numeric' and fail to add them
         # to the dataset if they can not be unraveled to fit that description
         # (except strings, we just let those through)
@@ -344,7 +376,6 @@ class Measurement:
         # requirement later and start saving binary blobs with the datasaver,
         # but for now binary blob saving is referred to using the DataSet
         # API directly
-
         paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
