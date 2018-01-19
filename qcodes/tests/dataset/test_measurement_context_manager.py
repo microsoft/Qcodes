@@ -14,7 +14,8 @@ from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.instrument.parameter import ArrayParameter
-
+from qcodes.dataset.legacy_import import import_dat_file
+from qcodes.dataset.data_set import load_by_id
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
@@ -438,3 +439,46 @@ def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
                                  (spectrum, spectrum.get()))
 
     assert datasaver.points_written == N*M
+
+
+
+def test_load_legacy_files_2D(experiment):
+    location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
+    dir = os.path.dirname(__file__)
+    full_location = os.path.join(dir, location)
+    run_ids = import_dat_file(full_location)
+    run_id = run_ids[0]
+    data = load_by_id(run_id)
+    assert data.parameters == 'ch1,ch2,voltage'
+    assert data.number_of_results == 36
+    expected_names = ['ch1', 'ch2', 'voltage']
+    expected_labels = ['Gate ch1', 'Gate ch2', 'Gate voltage']
+    expected_units = ['V', 'V', 'V']
+    expected_depends_on = ['', '', 'ch1, ch2']
+    for i, parameter in enumerate(data.get_parameters()):
+        assert parameter.name == expected_names[i]
+        assert parameter.label == expected_labels[i]
+        assert parameter.unit == expected_units[i]
+        assert parameter.depends_on == expected_depends_on[i]
+        assert parameter.type == 'numeric'
+
+
+def test_load_legacy_files_1D(experiment):
+    location = 'fixtures/2018-01-17/#001_testsweep_15-42-57'
+    dir = os.path.dirname(__file__)
+    full_location = os.path.join(dir, location)
+    run_ids = import_dat_file(full_location)
+    run_id = run_ids[0]
+    data = load_by_id(run_id)
+    assert data.parameters == 'ch1,voltage'
+    assert data.number_of_results == 201
+    expected_names = ['ch1', 'voltage']
+    expected_labels = ['Gate ch1', 'Gate voltage']
+    expected_units = ['V', 'V']
+    expected_depends_on = ['', 'ch1']
+    for i, parameter in enumerate(data.get_parameters()):
+        assert parameter.name == expected_names[i]
+        assert parameter.label == expected_labels[i]
+        assert parameter.unit == expected_units[i]
+        assert parameter.depends_on == expected_depends_on[i]
+        assert parameter.type == 'numeric'
