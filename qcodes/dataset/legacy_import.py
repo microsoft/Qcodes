@@ -63,6 +63,6 @@ def import_dat_file(location: str):
     run_ids = []
     for arrayname, array in loaded_data.arrays.items():
         if not array.is_setpoint:
-            run_id = store_array_to_database_alt(meas, array)
+            run_id = store_array_to_database(meas, array)
             run_ids.append(run_id)
     return run_ids
