@@ -74,6 +74,7 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
+        res = list(res)  # ArrayParameters cause us to mutate the results
 
         # we iterate through the input twice in order to allow users to call
         # add_result with the arguments in any particular order, i.e. NOT
@@ -83,12 +84,15 @@ class DataSaver:
         input_size = 1
         params = []
         for partial_result in res:
-            param = str(partial_result[0])
-            params.append(param)
-            if param not in self._known_parameters:
-                raise ValueError(f'Can not add a result for {param}, no such'
-                                 ' parameter registered in this measurement.')
-            if self.parameters[param].type == 'array':
+            parameter = partial_result[0]
+            paramstr = str(partial_result[0])
+            value = partial_result[1]
+            params.append(paramstr)
+            if paramstr not in self._known_parameters:
+                raise ValueError(f'Can not add a result for {paramstr}, no '
+                                 'such parameter registered in this '
+                                 'measurement.')
+            if isinstance(value, np.ndarray):
                 value = cast(np.ndarray, partial_result[1])
                 array_size = len(value)
                 if input_size > 1 and input_size != array_size:
@@ -97,6 +101,15 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            if isinstance(parameter, ArrayParameter):
+                sps = parameter.setpoints[0]
+                if f'{paramstr}_setpoint' in self.parameters.keys():
+                    res.append((f'{paramstr}_setpoint', sps))
+                elif parameter.setpoint_names[0] in self.parameters.keys():
+                    res.append((parameter.setpoint_names[0], sps))
+                else:
+                    raise RuntimeError('No setpoints registered for '
+                                       f'ArrayParameter {paramstr}!')
 
         # Now check for missing setpoints
         for partial_result in res:
@@ -117,7 +130,9 @@ class DataSaver:
                 param = str(partial_result[0])
                 value = partial_result[1]
 
-                if self.parameters[param].type == 'array':
+                # For compatibility with the old Loop, setpoints are
+                # tuples of numbers (usually tuple(np.linspace(...))
+                if hasattr(value, '__len__') and not(isinstance(value, str)):
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -142,8 +157,8 @@ class DataSaver:
                 log.warning(f'Could not commit to database; {e}')
 
     @property
-    def id(self):
-        return self._dataset.id
+    def run_id(self):
+        return self._dataset.run_id
 
     @property
     def points_written(self):
@@ -199,12 +214,12 @@ class Runner:
             station = self.station
 
         if station:
-            self.ds.add_metadata('snapshot', json.dumps(station.snapshot()))
+            self.ds.add_metadata('snapshot', json.dumps({'station': station.snapshot()}))
 
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
 
-        print(f'Starting experimental run with id: {self.ds.id}')
+        print(f'Starting experimental run with id: {self.ds.run_id}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
@@ -335,12 +350,37 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        # the next one is tricky and deserves some thought
-        # TODO: How to handle types?
+
         if isinstance(parameter, ArrayParameter):
-            paramtype = 'array'
-        else:
-            paramtype = 'real'
+            if parameter.setpoint_names:
+                spname = (f'{parameter._instrument.name}_'
+                          f'{parameter.setpoint_names[0]}')
+            else:
+                spname = f'{name}_setpoint'
+            if parameter.setpoint_labels:
+                splabel = parameter.setpoint_labels[0]
+            else:
+                splabel = ''
+            if parameter.setpoint_units:
+                spunit = parameter.setpoint_units[0]
+            else:
+                spunit = ''
+
+            sp = ParamSpec(name=spname, paramtype='numeric',
+                           label=splabel, unit=spunit)
+
+            self.parameters[spname] = sp
+            setpoints = setpoints if setpoints else ()
+            setpoints += (spname,)
+
+        # We currently treat ALL parameters as 'numeric' and fail to add them
+        # to the dataset if they can not be unraveled to fit that description
+        # (except strings, we just let those through)
+        # this is indeed a limitation, but a sane one. We might loosen that
+        # requirement later and start saving binary blobs with the datasaver,
+        # but for now binary blob saving is referred to using the DataSet
+        # API directly
+        paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
 
@@ -372,7 +412,7 @@ class Measurement:
         log.info(f'Registered {name} in the Measurement.')
 
     def register_custom_parameter(
-            self, name: str, paramtype: str,
+            self, name: str,
             label: str=None, unit: str=None,
             basis: Sequence[Union[str, _BaseParameter]]=None,
             setpoints: Sequence[Union[str, _BaseParameter]]=None) -> None:
@@ -383,8 +423,6 @@ class Measurement:
             name: The name that this parameter will have in the dataset. Must
                 be unique (will overwrite an existing parameter with the same
                 name!)
-            paramtype: The SQL storage class of the parameter ('integer',
-                'real', 'array', or 'text')
             label: The label
             unit: The unit
             basis: A list of either QCoDeS Parameters or the names
@@ -409,7 +447,7 @@ class Measurement:
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)
 
-        parspec = ParamSpec(name=name, paramtype=paramtype,
+        parspec = ParamSpec(name=name, paramtype='numeric',
                             label=label, unit=unit,
                             inferred_from=inf_from,
                             depends_on=depends_on)

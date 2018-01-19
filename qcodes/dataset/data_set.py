@@ -61,12 +61,21 @@ DB = qcodes.config["core"]["db_location"]
 
 
 class Subscriber(Thread):
-    def __init__(self, dataSet, id: str,
+    """
+    Class to add a subscriber to a DataSet. The subscriber gets called
+    every time an insert is made to the results_table.
+
+    The Subscriber is not meant to be instantiated directly, but rather used
+    via the 'subscribe' method of the DataSet.
+
+    NOTE: A subscriber should be added *after* all parameters have added.
+    """
+    def __init__(self, dataSet, sub_id: str,
                  callback: Callable[..., None],
                  state: Optional[Any] = None, min_wait: int = 100,
                  min_count: int = 1,
                  callback_kwargs: Optional[Dict[str, Any]]=None) -> None:
-        self.sub_id = id
+        self.sub_id = sub_id
         # whether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
@@ -100,7 +109,7 @@ class Subscriber(Thread):
         super().__init__()
 
     def cache(self, *args) -> None:
-        self.log.debug(f"{self.callbackid} called with args:{args}")
+        self.log.debug(f"Args:{args} put into queue for {self.callbackid}")
         self.data.put(args)
         self._data_set_len += 1
         self._send_queue += 1
@@ -122,6 +131,7 @@ class Subscriber(Thread):
     def _send(self) -> List:
         result_list = self._exhaust_queue(self.data)
         self.callback(result_list, self._data_set_len, self.state)
+        self.log.debug(f"{self.callback} called.")
         return result_list
 
     def _loop(self) -> None:
@@ -129,7 +139,7 @@ class Subscriber(Thread):
             if self._stop_signal:
                 self._clean_up()
                 break
-            if self._send_queue > self.min_count:
+            if self._send_queue >= self.min_count:
                 self._send()
                 self._send_queue = 0
 
@@ -167,23 +177,23 @@ class DataSet(Sized):
         Actually perform all the side effects needed for
         the creation of a new dataset.
         """
-        counter, id, table_name = create_run(self.conn, exp_id, name,
-                                             specs, values, metadata)
+        _, run_id, _ = create_run(self.conn, exp_id, name,
+                                  specs, values, metadata)
 
         # this is really the UUID (an ever increasing count in the db)
-        self.id = id
+        self.run_id = run_id
         self.subscribers: Dict[str, Subscriber] = {}
         self._completed = False
 
     @property
     def name(self):
         return select_one_where(self.conn, "runs",
-                                "name", "run_id", self.id)
+                                "name", "run_id", self.run_id)
 
     @property
     def table_name(self):
         return select_one_where(self.conn, "runs",
-                                "result_table_name", "run_id", self.id)
+                                "result_table_name", "run_id", self.run_id)
 
     @property
     def number_of_results(self):
@@ -196,12 +206,12 @@ class DataSet(Sized):
     @property
     def counter(self):
         return select_one_where(self.conn, "runs",
-                                "result_counter", "run_id", self.id)
+                                "result_counter", "run_id", self.run_id)
 
     @property
     def parameters(self) -> str:
         return select_one_where(self.conn, "runs",
-                                "parameters", "run_id", self.id)
+                                "parameters", "run_id", self.run_id)
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
@@ -212,7 +222,7 @@ class DataSet(Sized):
     @property
     def exp_id(self):
         return select_one_where(self.conn, "runs",
-                                "exp_id", "run_id", self.id)
+                                "exp_id", "run_id", self.run_id)
 
     def toggle_debug(self):
         """
@@ -262,7 +272,7 @@ class DataSet(Sized):
         add_parameter(self.conn, self.table_name, spec)
 
     def get_parameters(self) -> SPECS:
-        return get_parameters(self.conn, self.id)
+        return get_parameters(self.conn, self.run_id)
 
     # TODO: deprecate
     def add_parameters(self, specs: SPECS):
@@ -280,9 +290,9 @@ class DataSet(Sized):
         """
         # TODO: this follows the spec but another option:
         # json_meta_data = json.dumps(metadata)
-        # add_meta_data(self.conn, self.id, {"metadata": json_meta_data})
+        # add_meta_data(self.conn, self.run_id, {"metadata": json_meta_data})
 
-        add_meta_data(self.conn, self.id, {tag: metadata})
+        add_meta_data(self.conn, self.run_id, {tag: metadata})
         # adding meta-data does not commit
         self.conn.commit()
 
@@ -293,7 +303,7 @@ class DataSet(Sized):
     @completed.setter
     def completed(self, value):
         self._completed = value
-        mark_run(self.conn, self.id, value)
+        mark_run(self.conn, self.run_id, value)
 
     def mark_complete(self) -> None:
         """Mark dataset as complete and thus read only and notify the
@@ -339,7 +349,7 @@ class DataSet(Sized):
         self.conn.commit()
         return index
 
-    def add_results(self, results: List[Dict[str, VALUES]]) -> int:
+    def add_results(self, results: List[Dict[str, VALUE]]) -> int:
         """
         Adds a sequence of results to the DataSet.
 
@@ -380,6 +390,9 @@ class DataSet(Sized):
         """
         if self.completed:
             raise CompletedError
+        for param in results.keys():
+            if param not in self.paramspecs.keys():
+                raise ValueError(f'No such parameter: {param}.')
         with atomic(self.conn):
             modify_values(self.conn, self.table_name, index,
                           list(results.keys()),
@@ -402,10 +415,22 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to modify a result in a completed DataSet.
         """
+        if self.completed:
+            raise CompletedError
+
         keys = [list(val.keys()) for val in updates]
         flattened_keys = [item for sublist in keys for item in sublist]
+
+        mod_params = set(flattened_keys)
+        old_params = set(self.paramspecs.keys())
+        if not mod_params.issubset(old_params):
+            raise ValueError('Can not modify values for parameter(s) '
+                             f'{mod_params.difference(old_params)}, '
+                             'no such parameter(s) in the dataset.')
+
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
+
         with atomic(self.conn):
             modify_many_values(self.conn,
                                self.table_name,
@@ -562,7 +587,7 @@ class DataSet(Sized):
 
     def __repr__(self) -> str:
         out = []
-        heading = f"{self.name} #{self.id}@{self.path_to_db}"
+        heading = f"{self.name} #{self.run_id}@{self.path_to_db}"
         out.append(heading)
         out.append("-" * len(heading))
         ps = self.get_parameters()
@@ -574,18 +599,18 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(id)->DataSet:
+def load_by_id(run_id)->DataSet:
     """ Load dataset by id
 
     Args:
-        id: id of the dataset
+        run_id: id of the dataset
 
     Returns:
         the datasets
 
     """
     d = DataSet(DB)
-    d.id = id
+    d.run_id = run_id
     return d
 
 
@@ -609,7 +634,7 @@ def load_by_counter(counter, exp_id):
       exp_id = ?
     """
     c = transaction(d.conn, sql, counter, exp_id)
-    d.id = one(c, 'run_id')
+    d.run_id = one(c, 'run_id')
     return d
 
 
