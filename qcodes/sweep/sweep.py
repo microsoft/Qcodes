@@ -32,12 +32,12 @@ class ParametersTable:
 
     def __repr__(self):
         def table_print(table):
-            s = "|".join([
-                ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in ["independent_parameters",
-                                                                             "dependent_parameters"]
+            s = " | ".join([
+                "\t".join(["{} [{}]".format(*a) for a in table[k]]) for k in ["independent_parameters",
+                                                                              "dependent_parameters"]
             ])
 
-            return s
+            return s.strip(" | ")
 
         return "\n".join([table_print(table) for table in self._table_list])
 
