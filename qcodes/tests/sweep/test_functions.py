@@ -101,7 +101,7 @@ def test_szip_measure_prior_to_set():
     previous_x = x()
 
     for count, i in enumerate(szip(m, sweep(x, v))):
-        assert i["m"]["value"] == 2 * previous_x  # Note that at this point, x should already have been incremented
+        assert i["m"] == 2 * previous_x  # Note that at this point, x should already have been incremented
         assert count < len(v)
         previous_x = x()
 
@@ -120,6 +120,6 @@ def test_szip_finiteness():
     y(1)
 
     for count, i in enumerate(szip(x, y)):
-        assert i["x"]["value"] == x()
-        assert i["y"]["value"] == y()
+        assert i["x"] == x()
+        assert i["y"] == y()
         assert count == 0

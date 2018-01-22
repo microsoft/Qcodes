@@ -7,6 +7,8 @@ from typing import AnyStr, Callable
 from hypothesis import strategies as st
 from qcodes import ManualParameter
 
+from qcodes.sweep import measurement, setter
+
 
 class MockIO:
     """
@@ -59,10 +61,12 @@ class TestMeasureFunction:
     def name(self)->str:
         return self._name
 
-    def __call__(self)->dict:
+    def caller(self):
         hs = hash(str(mock_io))
         mock_io.write("{} returns {}".format(self._name, hs))
-        return {self._name: {"unit": "hash", "value": hs, "independent_parameter": False}}
+
+    def __call__(self)->dict:
+        return measurement([(self._name, "hash")])(self.caller)()
 
 
 class TestSetFunction:
@@ -76,9 +80,12 @@ class TestSetFunction:
     def name(self)->str:
         return self._name
 
-    def __call__(self, value: float)->dict:
+    def caller(self, value)->dict:
         mock_io.write("Setting {} to {}".format(self._name, value))
-        return {self._name: {"unit": "none", "value": value, "independent_parameter": True}}
+        return {self._name: value}
+
+    def __call__(self):
+        return setter([(self._name, "none")])(self.caller)()
 
 
 def equivalence_test(test: Callable, compare: Callable)->None:

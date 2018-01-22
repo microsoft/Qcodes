@@ -1,31 +1,79 @@
-import time  # For defining a time trace sweep object type
+import itertools
+import numpy as np
 
 
-def parameter_log_format(parameter, value, setting=True):
+class ParametersTable:
+    def __init__(self, table_list=None, dependent_parameters=None, independent_parameters=None):
+
+        if not any([table_list, dependent_parameters, independent_parameters]):
+            raise ValueError("At least one argument should be a non-None")
+
+        dependent_parameters = [] if dependent_parameters is None else dependent_parameters
+        independent_parameters = [] if independent_parameters is None else independent_parameters
+
+        if table_list is None:
+            self._table_list = [{
+                "dependent_parameters": list(dependent_parameters),
+                "independent_parameters": list(independent_parameters)
+            }]
+        else:
+            self._table_list = list(table_list)
+
+    def copy(self):
+        return ParametersTable(self._table_list)
+
+    def __add__(self, other):
+        return ParametersTable(self._table_list + other.table_list)
+
+    def __mul__(self, other):
+        return ParametersTable([
+            {k: s[k] + o[k] for k in s.keys()} for s, o in itertools.product(self._table_list, other.table_list)
+        ])
+
+    def __repr__(self):
+        def table_print(table):
+            s = "|".join([
+                ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in ["independent_parameters",
+                                                                             "dependent_parameters"]
+            ])
+
+            return s
+
+        return "\n".join([table_print(table) for table in self._table_list])
+
+    @property
+    def table_list(self):
+        return self._table_list
+
+
+def measurement(param_list):
     """
-    The standard method of logging the setting or retrieving a parameter value
-
-    Parameters
-    ----------
-    parameter: qcodes.StandardParameter
-    value: float
-        Either the set or the get value of the parameter. As the sole responsibility of this function is to log
-        the setting or retrieving of parameter values, the setting and getting should have been done on the calling
-        side.
-    setting: bool, optional (True)
-        Are we setting a parameter or retrieving it? If we are setting it, the the parameters is coupled to an
-        independent measurement parameter. If we are retrieving it (measuring it), which means it is an dependent
-        parameter
+    A decorator to easily integrate arbitrary measurement functions in sweeps.
     """
-    if parameter._instrument is not None:  # TODO: Make a QCoDeS pull request to access this through a public
-        # interface
-        label = "{}_{}".format(parameter._instrument.name, parameter.label)
-    else:
-        label = parameter.label
+    def decorator(f):
+        def inner():
+            m = np.atleast_1d(f())
+            return {p[0]: im for p, im in zip(param_list, m)}
 
-    log_dict = {label: {"unit": parameter.unit, "value": value, "independent_parameter": setting}}
+        parameter_table = ParametersTable(dependent_parameters=param_list)
+        return lambda: (inner, parameter_table)
 
-    return log_dict
+    return decorator
+
+
+def setter(param_list):
+    """
+    A decorator to easily integrate arbitrary setter functions in sweeps
+    """
+    def decorator(f):
+        def inner(*value):
+            f(*value)
+            return {p[0]: im for p, im in zip(param_list, value)}
+
+        parameter_table = ParametersTable(independent_parameters=param_list)
+        return lambda: (inner, parameter_table)
+
+    return decorator
 
 
 class BaseSweepObject:
@@ -41,6 +89,7 @@ class BaseSweepObject:
         # The following attributes are determined when we begin iteration...
         self._param_setter = None  # A "param_setter" is an iterator which, when "next" is called a new value of the
         # independent parameter is set.
+        self._parameter_table = None  # A proper parameter table should be defined by the subclasses
 
     def _setter_factory(self):
         """
@@ -57,6 +106,10 @@ class BaseSweepObject:
             self._param_setter = self._setter_factory()
         return next(self._param_setter)
 
+    @property
+    def parameter_table(self):
+        return self._parameter_table
+
 
 class IteratorSweep(BaseSweepObject):
     """
@@ -71,8 +124,8 @@ class IteratorSweep(BaseSweepObject):
         effect of setting the independent parameters.
     """
     def __init__(self, iterator_function):
-        self._iterator_function = iterator_function
         super().__init__()
+        self._iterator_function = iterator_function
 
     def _setter_factory(self):
         for value in self._iterator_function():
@@ -100,9 +153,11 @@ class Nest(BaseSweepObject):
 
     Etc...
     """
+
     def __init__(self, sweep_objects):
         super().__init__()
         self._sweep_objects = sweep_objects
+        self._parameter_table = np.prod([so.parameter_table for so in sweep_objects])
 
     @staticmethod
     def _two_product(sweep_object1, sweep_object2):
@@ -116,6 +171,7 @@ class Nest(BaseSweepObject):
         -------
         BaseSweepObject
         """
+
         def inner():
             for result2 in sweep_object2:
                 for result1 in sweep_object1:
@@ -133,6 +189,21 @@ class Nest(BaseSweepObject):
         return prod
 
 
+class Chain(BaseSweepObject):
+    """
+    Chain a list of sweep object to run one after the other
+    """
+    def __init__(self, sweep_objects):
+        super().__init__()
+        self._sweep_objects = sweep_objects
+        self._parameter_table = np.sum([so.parameter_table for so in sweep_objects])
+
+    def _setter_factory(self):
+        for so in self._sweep_objects:
+            for result in so:
+                yield result
+
+
 class Zip(BaseSweepObject):
     """
     Zip multiple sweep objects. Unlike a nested sweep, we will produce a 1D sweep
@@ -140,6 +211,7 @@ class Zip(BaseSweepObject):
     def __init__(self, sweep_objects):
         super().__init__()
         self._sweep_objects = sweep_objects
+        self._parameter_table = np.prod([so.parameter_table for so in sweep_objects])
 
     @staticmethod
     def _combine_dictionaries(dictionaries):
@@ -153,20 +225,6 @@ class Zip(BaseSweepObject):
             yield Zip._combine_dictionaries(results)
 
 
-class Chain(BaseSweepObject):
-    """
-    Chain a list of sweep object to run one after the other
-    """
-    def __init__(self, sweep_objects):
-        super().__init__()
-        self._sweep_objects = sweep_objects
-
-    def _setter_factory(self):
-        for so in self._sweep_objects:
-            for result in so:
-                yield result
-
-
 class ParameterSweep(BaseSweepObject):
     """
     Sweep independent parameters by looping over set point values and setting a QCoDeS parameter to this value at
@@ -178,15 +236,17 @@ class ParameterSweep(BaseSweepObject):
     point_function: callable
         Unrolling this iterator returns to us set values of the parameter
     """
+
     def __init__(self, parameter, point_function):
+        super().__init__()
         self._parameter = parameter
         self._point_function = point_function
-        super().__init__()
+        self._parameter_table = ParametersTable(independent_parameters=[(parameter.full_name, parameter.unit)])
 
     def _setter_factory(self):
         for set_value in self._point_function():
             self._parameter.set(set_value)
-            yield parameter_log_format(self._parameter, set_value)
+            yield {self._parameter.full_name: set_value}
 
 
 class ParameterWrapper(BaseSweepObject):
@@ -201,36 +261,27 @@ class ParameterWrapper(BaseSweepObject):
         """
         Note: please use repeat=True carefully as this can easily lead to infinite loops.
         """
+        super().__init__()
+        self._parameter_table = ParametersTable(dependent_parameters=[(parameter.full_name, parameter.unit)])
         self._parameter = parameter
         self._repeat = repeat
-        super().__init__()
 
     def _setter_factory(self):
         stop = False
         while not stop:
             value = self._parameter()
-            yield parameter_log_format(self._parameter, value, setting=False)
+            yield {self._parameter.full_name: value}
             stop = not self._repeat
 
 
 class FunctionSweep(BaseSweepObject):
     """
-    Sweep independent parameters by looping over set point values and calling a set function
-
-    Parameters
-    ----------
-    set_function: callable
-        A callable of three parameters: station, namespace, set_value. This returns a dictionary containing arbitrary
-        information about the value set and any measurements performed (or it can contain any information that needs to
-        be added in the final dataset
-    point_function: callable
-        A callable of two parameters: station, namespace, returning an iterator. Unrolling this iterator returns to
-        us set values of the parameter
+    Use a function to set independent parameters instead of calling set methods directly
     """
     def __init__(self, set_function, point_function):
-        self._set_function = set_function
-        self._point_function = point_function
         super().__init__()
+        self._set_function, self._parameter_table = set_function()
+        self._point_function = point_function
 
     def _setter_factory(self):
         for set_value in self._point_function():
@@ -239,54 +290,18 @@ class FunctionSweep(BaseSweepObject):
 
 class FunctionWrapper(BaseSweepObject):
     """
-    A wrapper class which iterates once and returns the result of a function
-
-    Parameters
-    ----------
-    func: callable
-        callable of station, namespace
+    Use a function to measure dependent parameters instead of calling get methods directly
     """
-    def __init__(self, func, repeat=False):
+    def __init__(self, measure_function, repeat=False):
         """
         Note: please use repeat=True carefully as this can easily lead to infinite loops.
         """
-        self._func = func
-        self._repeat = repeat
         super().__init__()
+        self._measure_function, self._parameter_table = measure_function()
+        self._repeat = repeat
 
     def _setter_factory(self):
         stop = False
         while not stop:
-            yield self._func()
+            yield self._measure_function()
             stop = not self._repeat
-
-
-class TimeTrace(BaseSweepObject):
-    """
-    Make a "time sweep", that is, take a time trace
-
-    Parameter
-    ---------
-    measure: callable
-        callable of arguments  station, namespace, returning a dictionary with measurement results.
-    delay: float
-        The time in seconds between calling the measure function
-    total_time: float
-        The total duration of the time trace
-    """
-    def __init__(self, measure, delay, total_time):
-        self._measure = measure
-        self._delay = delay
-        self._total_time = total_time
-        super().__init__()
-
-    def _setter_factory(self):
-        t0 = time.time()
-        t = t0
-        while t - t0 < self._total_time:
-            msg = self._measure()
-            time_msg = {"time": {"unit": "s", "value": t, "independent_parameter": True}}
-            msg.update(time_msg)
-            yield msg
-            time.sleep(self._delay)
-            t = time.time()
