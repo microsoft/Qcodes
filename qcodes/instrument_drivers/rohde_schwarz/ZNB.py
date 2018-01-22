@@ -227,7 +227,7 @@ class ZNBChannel(InstrumentChannel):
 
     def _set_start(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:START {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:START {:.7f}'.format(channel, val))
         stop = self.stop()
         if val >= stop:
             raise ValueError(
@@ -245,7 +245,7 @@ class ZNBChannel(InstrumentChannel):
         if val <= start:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
-        self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:STOP {:.7f}'.format(channel, val))
         # we get stop as the vna may not be able to set it to the exact value provided
         stop = self.stop()
         if val != stop:
@@ -255,17 +255,17 @@ class ZNBChannel(InstrumentChannel):
 
     def _set_npts(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:SWE:POIN {:.4f}'.format(channel, val))
+        self.write('SENS{}:SWE:POIN {:.7f}'.format(channel, val))
         self._update_traces()
 
     def _set_span(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:SPAN {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:SPAN {:.7f}'.format(channel, val))
         self._update_traces()
 
     def _set_center(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:CENT {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:CENT {:.7f}'.format(channel, val))
         self._update_traces()
 
     def _update_traces(self):
