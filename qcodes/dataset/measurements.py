@@ -265,8 +265,9 @@ class Measurement:
 
         Args:
             exp: Specify the experiment to use. If not given
-                the default one is used
-            station: The QCoDeS station to snapshot
+                the default one is used.
+            station: The QCoDeS station to snapshot. If not given, the
+                default one is used.
         """
         self.exp = exp
         self.exitactions: List[Tuple[Callable, Sequence]] = []
