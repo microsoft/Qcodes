@@ -2,6 +2,7 @@ import pytest
 import tempfile
 import os
 from time import sleep
+import json
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -461,6 +462,10 @@ def test_load_legacy_files_2D(experiment):
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == 'numeric'
+    snapshot = json.loads(data.get_metadata('snapshot'))
+    assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
+                                             'formatter', 'io', 'location',
+                                             'loop', 'station']
 
 
 def test_load_legacy_files_1D(experiment):
@@ -482,3 +487,7 @@ def test_load_legacy_files_1D(experiment):
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == 'numeric'
+    snapshot = json.loads(data.get_metadata('snapshot'))
+    assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
+                                             'formatter', 'io', 'location',
+                                             'loop', 'station']
