@@ -407,7 +407,7 @@ def test_datasaver_arrays(empty_temp_db, N):
     assert datasaver.points_written == N
 
 
-@settings(max_examples=5, deadline=2500)
+@settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
 def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
