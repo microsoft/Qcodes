@@ -193,7 +193,8 @@ class Runner:
             self, enteractions: List, exitactions: List,
             experiment: Experiment=None, station: Station=None,
             write_period: float=None,
-            parameters: Dict[str, ParamSpec]=None) -> None:
+            parameters: Dict[str, ParamSpec]=None,
+            name: str='') -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -203,6 +204,7 @@ class Runner:
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = write_period if write_period is not None else 5
+        self.name = name if name else 'results'
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -216,10 +218,7 @@ class Runner:
         else:
             eid = None
 
-        # TODO: FIXME: WARNING: the name should be put in properly
-        # I guess this should be piped down from the Measurement
-        # and default to 'results'
-        self.ds = qc.new_data_set('name', eid)
+        self.ds = qc.new_data_set(self.name, eid)
 
         # .. and give it a snapshot as metadata
         if self.station is None:
@@ -258,6 +257,10 @@ class Runner:
 class Measurement:
     """
     Measurement procedure container
+
+    Attributes:
+        name (str): The name of this measurement/run. Is used by the dataset
+            to give a name to the results_table.
     """
     def __init__(self, exp: Experiment=None, station=None) -> None:
         """
@@ -276,6 +279,7 @@ class Measurement:
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
         self._write_period: Optional[Number] = None
+        self.name = ''
 
     @property
     def write_period(self):
@@ -543,4 +547,5 @@ class Measurement:
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
                       write_period=self._write_period,
-                      parameters=self.parameters)
+                      parameters=self.parameters,
+                      name=self.name)

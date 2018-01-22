@@ -256,6 +256,25 @@ def test_unregister_parameter(DAC, DMM):
     meas.unregister_parameter(DAC.ch2)
 
 
+def test_measurement_name(experiment, DAC, DMM):
+
+    fmt = experiment.format_string
+    exp_id = experiment.exp_id
+
+    name = 'yolo'
+
+    meas = Measurement()
+    meas.name = name
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+
+    with meas.run() as datasaver:
+        run_id = datasaver.run_id
+        expected_name = fmt.format(name, exp_id, run_id)
+        assert datasaver.dataset.table_name == expected_name
+
+
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 def test_setting_write_period(empty_temp_db, wp):
