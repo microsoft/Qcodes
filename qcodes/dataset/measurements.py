@@ -101,12 +101,22 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            # TODO (WilliamHPNielsen): The following code block is ugly and
+            # brittle and should be enough to convince us to abandon the
+            # design of ArrayParameters (possibly) containing (some of) their
+            # setpoints
             if isinstance(parameter, ArrayParameter):
                 sps = parameter.setpoints[0]
+                inst_name = getattr(parameter._instrument, 'name', '')
+                if inst_name:
+                    spname = f'{inst_name}_{parameter.setpoint_names[0]}'
+                else:
+                    spname = parameter.setpoint_names[0]
+
                 if f'{paramstr}_setpoint' in self.parameters.keys():
                     res.append((f'{paramstr}_setpoint', sps))
-                elif parameter.setpoint_names[0] in self.parameters.keys():
-                    res.append((parameter.setpoint_names[0], sps))
+                elif spname in self.parameters.keys():
+                        res.append((spname, sps))
                 else:
                     raise RuntimeError('No setpoints registered for '
                                        f'ArrayParameter {paramstr}!')
