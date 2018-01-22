@@ -384,6 +384,8 @@ class ZNB(VisaInstrument):
             num_ports, num_ports))
         self.add_function('display_single_window',
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
+        self.add_function('display_dual_window',
+                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
         self.reset()
@@ -419,6 +421,8 @@ class ZNB(VisaInstrument):
         self.channels.append(channel)
         if n_channels == 0:
             self.display_single_window()
+        if n_channels == 1:
+            self.display_dual_window()
 
     def _set_default_values(self):
         for channel in self.channels:
