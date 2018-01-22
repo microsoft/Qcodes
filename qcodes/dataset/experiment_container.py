@@ -36,6 +36,7 @@ class Experiment(Sized):
         """
         exp_id = ne(self.conn, name, sample_name, format_string)
         self.exp_id = exp_id
+        self.format_string = format_string
 
     @property
     def name(self) -> str:
