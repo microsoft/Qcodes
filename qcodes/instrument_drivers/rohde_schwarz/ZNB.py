@@ -310,13 +310,13 @@ class ZNBChannel(InstrumentChannel):
             # need to ensure averaged result is returned
             for avgcount in range(self.avg()):
                 self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
-                data_str = self.ask(
-                    'CALC{}:DATA? {}'.format(self._instrument_channel,
-                                             data_format_command))
-                data = np.array(data_str.rstrip().split(',')).astype('float64')
-                if self.format() in ['Polar', 'Complex',
-                                     'Smith', 'Inverse Smith']:
-                    data = data[0::2] + 1j * data[1::2]
+            data_str = self.ask(
+                'CALC{}:DATA? {}'.format(self._instrument_channel,
+                                         data_format_command))
+            data = np.array(data_str.rstrip().split(',')).astype('float64')
+            if self.format() in ['Polar', 'Complex',
+                                 'Smith', 'Inverse Smith']:
+                data = data[0::2] + 1j * data[1::2]
         finally:
             self._parent.cont_meas_on()
             self.status(initial_state)
