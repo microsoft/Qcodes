@@ -228,7 +228,8 @@ class Runner:
             station = self.station
 
         if station:
-            self.ds.add_metadata('snapshot', json.dumps({'station': station.snapshot()}))
+            self.ds.add_metadata('snapshot',
+                                 json.dumps({'station': station.snapshot()}))
 
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
