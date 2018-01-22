@@ -273,10 +273,10 @@ class ZNBChannel(InstrumentChannel):
         start = self.start()
         stop = self.stop()
         npts = self.npts()
-        for p in self.parameters:
-            if isinstance(p, ArrayParameter):
+        for _, parameter in self.parameters.items():
+            if isinstance(parameter, (ArrayParameter, MultiParameter)):
                 try:
-                    p.set_sweep(start, stop, npts)
+                    parameter.set_sweep(start, stop, npts)
                 except AttributeError:
                     pass
 
