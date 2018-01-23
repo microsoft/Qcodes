@@ -66,7 +66,8 @@ def setter(param_list):
     A decorator to easily integrate arbitrary setter functions in sweeps
     """
     def decorator(f):
-        def inner(*value):
+        def inner(value):
+            value = np.atleast_1d(value)
             f(*value)
             return {p[0]: im for p, im in zip(param_list, value)}
 
