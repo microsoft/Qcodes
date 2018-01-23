@@ -14,6 +14,8 @@ from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
 import qcodes.config
+from qcodes.data.data_array import DataArray
+
 
 class MatPlot(BasePlot):
     """
@@ -55,7 +57,7 @@ class MatPlot(BasePlot):
             subplots = max(len(args), 1)
 
         self._init_plot(subplots, figsize, num=num)
-        
+
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
             if isinstance(arg, Sequence):
@@ -417,11 +419,17 @@ class MatPlot(BasePlot):
             return "{0:g}".format(i * scale)
 
         for i, subplot in enumerate(self.subplots):
+            traces = [trace for trace in self.traces if trace['config'].get('subplot', None) == i+1]
+            if not traces:
+                continue
+            else:
+                # TODO: include all traces when calculating maxval etc.
+                trace = traces[0]
             for axis in 'x', 'y', 'z':
-                if self.traces[i]['config'].get(axis):
-                    unit = self.traces[i]['config'][axis].unit
-                    label = self.traces[i]['config'][axis].label
-                    maxval = abs(self.traces[i]['config'][axis].ndarray).max()
+                if axis in trace['config'] and isinstance(trace['config'][axis], DataArray):
+                    unit = trace['config'][axis].unit
+                    label = trace['config'][axis].label
+                    maxval = np.nanmax(abs(trace['config'][axis].ndarray))
                     units_to_scale = self.standardunits
 
                     # allow values up to a <1000. i.e. nV is used up to 1000 nV

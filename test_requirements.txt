@@ -3,3 +3,6 @@ pytest-cov
 pytest
 codacy-coverage
 hypothesis
+pyvisa-sim
+lxml
+codecov

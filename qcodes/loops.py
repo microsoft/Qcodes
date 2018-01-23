@@ -842,8 +842,9 @@ class ActiveLoop(Metadatable):
                 set_name = self.data_set.action_id_map[action_indices]
                 if hasattr(self.sweep_values, 'aggregate'):
                     value = self.sweep_values.aggregate(*set_val)
-                log.debug('Calling .store method of DataSet because '
-                          'sweep_values.parameters exist')
+                # below is useful but too verbose even at debug
+                # log.debug('Calling .store method of DataSet because '
+                #           'sweep_values.parameters exist')
                 self.data_set.store(new_indices, {set_name: value})
                 # set_val list of values to set [param1_setpoint, param2_setpoint ..]
                 for j, val in enumerate(set_val):
@@ -853,9 +854,9 @@ class ActiveLoop(Metadatable):
             else:
                 set_name = self.data_set.action_id_map[action_indices]
                 data_to_store[set_name] = value
-
-            log.debug('Calling .store method of DataSet because a sweep step'
-                      ' was taken')
+            # below is useful but too verbose even at debug
+            # log.debug('Calling .store method of DataSet because a sweep step'
+            #           ' was taken')
             self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
@@ -864,8 +865,9 @@ class ActiveLoop(Metadatable):
 
             try:
                 for f in callables:
-                    log.debug('Going through callables at this sweep step.'
-                              ' Calling {}'.format(f))
+                    # below is useful but too verbose even at debug
+                    # log.debug('Going through callables at this sweep step.'
+                    #           ' Calling {}'.format(f))
                     f(first_delay=delay,
                       loop_indices=new_indices,
                       current_values=new_values)
@@ -903,9 +905,9 @@ class ActiveLoop(Metadatable):
             self.bg_task()
 
         # the loop is finished - run the .then actions
-        log.debug('Finishing loop, running the .then actions...')
+        #log.debug('Finishing loop, running the .then actions...')
         for f in self._compile_actions(self.then_actions, ()):
-            log.debug('...running .then action {}'.format(f))
+            #log.debug('...running .then action {}'.format(f))
             f()
 
         # run the bg_final_task from the bg_task:
