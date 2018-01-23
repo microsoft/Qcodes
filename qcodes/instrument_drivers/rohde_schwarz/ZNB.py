@@ -124,7 +124,7 @@ class ZNBChannel(InstrumentChannel):
                            unit='dBm',
                            get_cmd='SOUR{}:POW?'.format(n),
                            set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
-                           get_parser=lambda x: int(round(float(x))),
+                           get_parser=float,
                            vals=vals.Numbers(self._min_source_power, 25))
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
