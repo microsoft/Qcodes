@@ -394,21 +394,16 @@ class ZNB(VisaInstrument):
                                snapshotable=True)
         self.add_submodule("channels", channels)
         if init_s_params:
-            n = 1
             for i in range(1, num_ports + 1):
                 for j in range(1, num_ports + 1):
                     ch_name = 'S' + str(i) + str(j)
                     self.add_channel(ch_name)
-                    n += 1
             self.channels.lock()
-
-        self.initialise()
-        self.connect_message()
-
-        if init_s_params:
             self.display_sij_split()
             self.channels.autoscale()
+            self.initialise()
 
+        self.connect_message()
     def display_grid(self, rows: int, cols: int):
         """
         Display a grid of channels rows by cols
@@ -432,13 +427,12 @@ class ZNB(VisaInstrument):
             channel.power(-50)
 
     def initialise(self):
-        for n in range(1, len(self.channels)):
+        for n in range(1, len(self.channels)+1):
             self.write('SENS{}:SWE:TYPE LIN'.format(n))
             self.write('SENS{}:SWE:TIME:AUTO ON'.format(n))
             self.write('TRIG{}:SEQ:SOUR IMM'.format(n))
             self.write('SENS{}:AVER:STAT ON'.format(n))
         self.update_display_on()
-        self._set_default_values()
         self.rf_off()
 
     def clear_channels(self):
