@@ -114,7 +114,7 @@ class ZNBChannel(InstrumentChannel):
         elif model == 'ZNB20':
             self._min_source_power = -60
 
-        self.add_parameter(name='vna_parameter',
+        self.add_parameter(name='channel_name',
                            label='VNA parameter',
                            get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
                                                                   self._tracename),
@@ -230,7 +230,7 @@ class ZNBChannel(InstrumentChannel):
         self.write('CALC{}:FORM {}'.format(channel, val))
         self.trace.unit = unit_mapping[val]
         self.trace.label = "{} {}".format(
-            self.vna_parameter(), label_mapping[val])
+            self.channel_name(), label_mapping[val])
 
     def _strip(self, var):
         "Strip newline and quotes from instrument reply"
@@ -297,7 +297,7 @@ class ZNBChannel(InstrumentChannel):
             log.warning("RF output is off when getting sweep data")
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
-        instrument_parameter = self.vna_parameter()
+        instrument_parameter = self.channel_name()
         if instrument_parameter != self._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._vna_parameter,
@@ -423,15 +423,15 @@ class ZNB(VisaInstrument):
         """
         self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
 
-    def add_channel(self, vna_parameter: str, **kwargs):
+    def add_channel(self, channel_name: str, **kwargs):
         i_channel = len(self.channels) + 1
-        channel = self.CHANNEL_CLASS(self, vna_parameter, i_channel, **kwargs)
+        channel = self.CHANNEL_CLASS(self, channel_name, i_channel, **kwargs)
         self.channels.append(channel)
         if i_channel == 1:
             self.display_single_window()
         if i_channel == 2:
             self.display_dual_window()
-
+        self.add_submodule(channel_name, channel)
         # initialising channel
         self.write('SENS{}:SWE:TYPE LIN'.format(i_channel))
         self.write('SENS{}:SWE:TIME:AUTO ON'.format(i_channel))
