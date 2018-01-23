@@ -431,7 +431,8 @@ class ZNB(VisaInstrument):
             self.display_single_window()
         if i_channel == 2:
             self.display_dual_window()
-        self.add_submodule(channel_name, channel)
+        # shortcut
+        setattr(self, channel_name, channel)
         # initialising channel
         self.write('SENS{}:SWE:TYPE LIN'.format(i_channel))
         self.write('SENS{}:SWE:TIME:AUTO ON'.format(i_channel))
