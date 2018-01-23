@@ -103,6 +103,17 @@ class ZNBChannel(InstrumentChannel):
                                                        self._tracename,
                                                        self._vna_parameter))
 
+        # source power is dependent on model, but not well documented.
+        # here we assume -60 dBm for ZNB20, the others are set,
+        # due to lack of knowledge, to -80 dBm as of before the edit
+        model = self._instrument.get_idn()['model'].split('-')[0]
+        if model == 'ZNB4':
+            self._min_source_power = -80
+        elif model == 'ZNB8':
+            self._min_source_power = -80
+        elif model == 'ZNB20':
+            self._min_source_power = -60
+
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
                            get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
@@ -114,7 +125,7 @@ class ZNBChannel(InstrumentChannel):
                            get_cmd='SOUR{}:POW?'.format(n),
                            set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
                            get_parser=lambda x: int(round(float(x))),
-                           vals=vals.Numbers(-60, 25))
+                           vals=vals.Numbers(self._min_source_power, 25))
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            unit='Hz',
