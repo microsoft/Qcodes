@@ -17,7 +17,7 @@ import logging
 import numpy as np
 import ctypes as ct
 from functools import partial
-from qcodes.utils.validators import Enum, Numbers, Anything
+from qcodes.utils.validators import Enum, Numbers, Anything, Ints
 from qcodes.instrument.base import Instrument
 
 log = logging.getLogger(__name__)
@@ -434,6 +434,15 @@ class M4i(Instrument):
                            vals=Enum(pyspcm.SPC_CM_INTPLL, pyspcm.SPC_CM_QUARTZ2,
                                      pyspcm.SPC_CM_EXTREFCLOCK, pyspcm.SPC_CM_PXIREFCLOCK),
                            docstring='defines the used clock mode or reads out the actual selected one')
+        self.add_parameter('reference_clock',
+                           label='frequency of external reference clock', unit='Hz',
+                           get_cmd=partial(self._param32bit,
+                                           pyspcm.SPC_REFERENCECLOCK),
+                           set_cmd=partial(self._set_param32bit,
+                                           pyspcm.SPC_REFERENCECLOCK),
+                           vals=Ints(),
+                           docstring='defines the frequency of the external reference clock')
+                           
         self.add_parameter('sample_rate',
                            label='sample rate',
                            get_cmd=partial(self._param32bit,
