@@ -1,10 +1,10 @@
-from typing import List, Union, cast, Sequence
-from qcodes.instrument.parameter import _BaseParameter
+from typing import Union, cast, Sequence
 
 
 # TODO: we should validate type somehow
 # we can't accept everything (or we can but crash at runtime?)
-# we only support the types in VALUES type
+# we only support the types in VALUES type, that is:
+# str, Number, List, ndarray, bool
 class ParamSpec():
     def __init__(self, name: str,
                  paramtype: str,
@@ -16,13 +16,25 @@ class ParamSpec():
         """
         Args:
             name: name of the parameter
-            type: type of the parameter
+            paramtype: type of the parameter, i.e. the SQL storage class
             label: label of the parameter
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
         """
+        allowed_types = ['array', 'numeric', 'text']
+        if not isinstance(paramtype, str):
+            raise ValueError('Paramtype must be a string.')
+        if paramtype.lower() not in allowed_types:
+            raise ValueError("Illegal paramtype. Must be 'array', 'numeric'"
+                             ", or 'text'.")
+        if not name.isidentifier():
+            raise ValueError(f'Invalid name: {name}. Only valid python '
+                             'identifier names are allowed (no spaces or '
+                             'punctuation marks, no prepended '
+                             'numbers, etc.)')
+
         self.name = name
-        self.type = paramtype
+        self.type = paramtype.lower()
         self.label = '' if label is None else label
         self.unit = '' if unit is None else unit
 
@@ -61,13 +73,3 @@ class ParamSpec():
 
     def __repr__(self):
         return f"{self.name} ({self.type})"
-
-
-def param_spec(parameter: _BaseParameter, paramtype: str) -> ParamSpec:
-    """ Generates a ParamSpec from a qcodes parameter
-
-    Args:
-        - parameter: the qcodes parameter to make a spec
-
-    """
-    return ParamSpec(parameter.name, paramtype, **parameter.metadata)

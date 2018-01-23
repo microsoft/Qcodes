@@ -2,13 +2,15 @@ import json
 import logging
 from time import monotonic
 from collections import OrderedDict
-from typing import Callable, Union, Dict, Tuple, List, Sequence, Type
+from typing import Callable, Union, Dict, Tuple, List, Sequence, cast, Optional
 from inspect import signature
+from numbers import Number
+
 import numpy as np
 
 import qcodes as qc
-from qcodes import Station, Parameter
-from qcodes.instrument.parameter import ArrayParameter
+from qcodes import Station
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -27,27 +29,40 @@ class DataSaver:
     """
 
     def __init__(self, dataset: DataSet, write_period: float,
-                 known_parameters: List[str]) -> None:
+                 parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
         self.write_period = write_period
-        self._known_parameters = known_parameters
+        self.parameters = parameters
+        self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
+        self._known_dependencies: Dict[str, str] = {}
+        for param, parspec in parameters.items():
+            if parspec.depends_on != '':
+                self._known_dependencies.update({str(param):
+                                                parspec.depends_on.split(', ')})
 
     def add_result(self,
-                  *res: Tuple[Union[Parameter, str],
-                              Union[str, int, float, np.ndarray]])-> None:
+                   *res: Tuple[Union[_BaseParameter, str],
+                               Union[str, int, float, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
         varying two voltages and measuring two currents, a measurement point
         is the four dimensional (v1, v2, c1, c2). The corresponding call
         to this function would be (e.g.)
-        >> add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+        >> datasaver.add_result((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
 
         For better performance, this function does not immediately write to
         the database, but keeps the results in memory. Writing happens every
         `write_period` seconds and during the __exit__ method if this class.
+
+        Regarding arrays: since arrays as binary blobs are (almost) worthless
+        in a relational database, this function "unravels" arrays passed to it.
+        That, in turn, forces us to impose rules on what can be saved in one
+        go. Any number of scalars and any number of arrays OF THE SAME LENGTH
+        can be passed to add_result. The scalars are duplicated to match the
+        arrays.
 
         Args:
             res: a dictionary with keys that are parameter names and items
@@ -59,13 +74,81 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        res_dict = {}
+        res = list(res)  # ArrayParameters cause us to mutate the results
 
+        # we iterate through the input twice in order to allow users to call
+        # add_result with the arguments in any particular order, i.e. NOT
+        # enforcing that setpoints come before dependent variables.
+        # Also, we pre-check that array dimensions are compatible before
+        # proceeding.
+        input_size = 1
+        params = []
         for partial_result in res:
-            # TODO: Here we again use the str(), which may not be terrific
-            res_dict.update({str(partial_result[0]): partial_result[1]})
+            parameter = partial_result[0]
+            paramstr = str(partial_result[0])
+            value = partial_result[1]
+            params.append(paramstr)
+            if paramstr not in self._known_parameters:
+                raise ValueError(f'Can not add a result for {paramstr}, no '
+                                 'such parameter registered in this '
+                                 'measurement.')
+            if isinstance(value, np.ndarray):
+                value = cast(np.ndarray, partial_result[1])
+                array_size = len(value)
+                if input_size > 1 and input_size != array_size:
+                    raise ValueError('Incompatible array dimensions. Trying to'
+                                     f' add arrays of dimension {input_size} '
+                                     f'and {array_size}')
+                else:
+                    input_size = array_size
+            # TODO (WilliamHPNielsen): The following code block is ugly and
+            # brittle and should be enough to convince us to abandon the
+            # design of ArrayParameters (possibly) containing (some of) their
+            # setpoints
+            if isinstance(parameter, ArrayParameter):
+                sps = parameter.setpoints[0]
+                inst_name = getattr(parameter._instrument, 'name', '')
+                if inst_name:
+                    spname = f'{inst_name}_{parameter.setpoint_names[0]}'
+                else:
+                    spname = parameter.setpoint_names[0]
 
-        self._results.append(res_dict)
+                if f'{paramstr}_setpoint' in self.parameters.keys():
+                    res.append((f'{paramstr}_setpoint', sps))
+                elif spname in self.parameters.keys():
+                        res.append((spname, sps))
+                else:
+                    raise RuntimeError('No setpoints registered for '
+                                       f'ArrayParameter {paramstr}!')
+
+        # Now check for missing setpoints
+        for partial_result in res:
+            param = str(partial_result[0])
+            value = partial_result[1]
+            if param in self._known_dependencies.keys():
+                stuffweneed = set(self._known_dependencies[param])
+                stuffwehave = set(params)
+                if not stuffweneed.issubset(stuffwehave):
+                    raise ValueError('Can not add this result; missing '
+                                     f'setpoint values for {param}:'
+                                     f' {stuffweneed}.'
+                                     f' Values only given for {params}.')
+
+        for index in range(input_size):
+            res_dict = {}
+            for partial_result in res:
+                param = str(partial_result[0])
+                value = partial_result[1]
+
+                # For compatibility with the old Loop, setpoints are
+                # tuples of numbers (usually tuple(np.linspace(...))
+                if hasattr(value, '__len__') and not(isinstance(value, str)):
+                    res_dict.update({param: value[index]})
+                else:
+                    res_dict.update({param: value})
+
+            self._results.append(res_dict)
+
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = monotonic()
@@ -84,8 +167,16 @@ class DataSaver:
                 log.warning(f'Could not commit to database; {e}')
 
     @property
-    def id(self):
-        return self._dataset.id
+    def run_id(self):
+        return self._dataset.run_id
+
+    @property
+    def points_written(self):
+        return self._dataset.number_of_results
+
+    @property
+    def dataset(self):
+        return self._dataset
 
 
 class Runner:
@@ -99,11 +190,11 @@ class Runner:
     and clean-up after the measurement.
     """
     def __init__(
-            self, enteractions: OrderedDict, exitactions: OrderedDict,
+            self, enteractions: List, exitactions: List,
             experiment: Experiment=None, station: Station=None,
             write_period: float=None,
             parameters: Dict[str, ParamSpec]=None,
-            saver_class: Type=DataSaver) -> None:
+            name: str='') -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -113,12 +204,12 @@ class Runner:
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = write_period if write_period is not None else 5
-        self._saver_class = saver_class
+        self.name = name if name else 'results'
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-        for func, args in self.enteractions.items():
+        for func, args in self.enteractions:
             func(*args)
 
         # next set up the "datasaver"
@@ -127,7 +218,7 @@ class Runner:
         else:
             eid = None
 
-        self.ds = qc.new_data_set('name', eid)
+        self.ds = qc.new_data_set(self.name, eid)
 
         # .. and give it a snapshot as metadata
         if self.station is None:
@@ -135,16 +226,18 @@ class Runner:
         else:
             station = self.station
 
-        self.ds.add_metadata('snapshot', json.dumps(station.snapshot()))
+        if station:
+            self.ds.add_metadata('snapshot',
+                                 json.dumps({'station': station.snapshot()}))
 
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
 
-        print(f'Starting experimental run with id: {self.ds.id}')
+        print(f'Starting experimental run with id: {self.ds.run_id}')
 
-        self.datasaver = self._saver_class(
-            self.ds, self.write_period, list(self.parameters.keys())
-        )
+        self.datasaver = DataSaver(dataset=self.ds,
+                                   write_period=self.write_period,
+                                   parameters=self.parameters)
 
         return self.datasaver
 
@@ -153,7 +246,7 @@ class Runner:
         self.datasaver.flush_data_to_database()
 
         # perform the "teardown" events
-        for func, args in self.exitactions.items():
+        for func, args in self.exitactions:
             func(*args)
 
         # and finally mark the dataset as closed, thus
@@ -164,6 +257,10 @@ class Runner:
 class Measurement:
     """
     Measurement procedure container
+
+    Attributes:
+        name (str): The name of this measurement/run. Is used by the dataset
+            to give a name to the results_table.
     """
     def __init__(self, exp: Experiment=None, station=None) -> None:
         """
@@ -171,20 +268,84 @@ class Measurement:
 
         Args:
             exp: Specify the experiment to use. If not given
-                the default one is used
-            station: The QCoDeS station to snapshot
+                the default one is used.
+            station: The QCoDeS station to snapshot. If not given, the
+                default one is used.
         """
         self.exp = exp
-        self.exitactions: Dict[Callable, Sequence] = OrderedDict()
-        self.enteractions: Dict[Callable, Sequence] = OrderedDict()
+        self.exitactions: List[Tuple[Callable, Sequence]] = []
+        self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
+        self._write_period: Optional[Number] = None
+        self.name = ''
+
+    @property
+    def write_period(self):
+        return self._write_period
+
+    @write_period.setter
+    def write_period(self, wp: Number) -> None:
+        if not isinstance(wp, Number):
+            raise ValueError('The write period must be a number (of seconds).')
+        wp_float = cast(float, wp)
+        if wp_float < 1e-3:
+            raise ValueError('The write period must be at least 1 ms.')
+        self._write_period = wp
+
+    def _registration_validation(
+            self, name: str, setpoints: Sequence[str]=None,
+            basis: Sequence[str]=None) -> Tuple[List[str], List[str]]:
+        """
+        Helper function to do all the validation in terms of dependencies
+        when adding parameters, e.g. that no setpoints have setpoints etc.
+
+        Called by register_parameter and register_custom_parameter
+
+        Args:
+            name: Name of the parameter to register
+            setpoints: name(s) of the setpoint parameter(s)
+            basis: name(s) of the parameter(s) that this parameter is
+                inferred from
+        """
+
+        # now handle setpoints
+        depends_on = []
+        if setpoints:
+            for sp in setpoints:
+                if sp not in list(self.parameters.keys()):
+                    raise ValueError(f'Unknown setpoint: {sp}.'
+                                     ' Please register that parameter first.')
+                elif sp == name:
+                    raise ValueError('A parameter can not have itself as '
+                                     'setpoint.')
+                elif self.parameters[sp].depends_on != '':
+                    raise ValueError("A parameter's setpoints can not have "
+                                     f"setpoints themselves. {sp} depends on"
+                                     f" {self.parameters[sp].depends_on}")
+                else:
+                    depends_on.append(sp)
+
+        # now handle inferred parameters
+        inf_from = []
+        if basis:
+            for inff in basis:
+                if inff not in list(self.parameters.keys()):
+                    raise ValueError(f'Unknown basis parameter: {inff}.'
+                                     ' Please register that parameter first.')
+                elif inff == name:
+                    raise ValueError('A parameter can not be inferred from'
+                                     'itself.')
+                else:
+                    inf_from.append(inff)
+
+        return (depends_on, inf_from)
 
     def register_parameter(
-            self, parameter: Parameter,
-            setpoints: Tuple[Parameter]=None,
-            basis: Tuple[Parameter]=None) -> None:
+            self, parameter: _BaseParameter,
+            setpoints: Tuple[_BaseParameter]=None,
+            basis: Tuple[_BaseParameter]=None) -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -200,7 +361,7 @@ class Measurement:
                 this should be left blank.
         """
         # input validation
-        if not isinstance(parameter, Parameter):
+        if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
@@ -209,37 +370,52 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        # the next one is tricky and deserves some thought
-        # TODO: How to handle types?
+
         if isinstance(parameter, ArrayParameter):
-            paramtype = 'array'
-        else:
-            paramtype = 'number'
+            if parameter.setpoint_names:
+                spname = (f'{parameter._instrument.name}_'
+                          f'{parameter.setpoint_names[0]}')
+            else:
+                spname = f'{name}_setpoint'
+            if parameter.setpoint_labels:
+                splabel = parameter.setpoint_labels[0]
+            else:
+                splabel = ''
+            if parameter.setpoint_units:
+                spunit = parameter.setpoint_units[0]
+            else:
+                spunit = ''
+
+            sp = ParamSpec(name=spname, paramtype='numeric',
+                           label=splabel, unit=spunit)
+
+            self.parameters[spname] = sp
+            setpoints = setpoints if setpoints else ()
+            setpoints += (spname,)
+
+        # We currently treat ALL parameters as 'numeric' and fail to add them
+        # to the dataset if they can not be unraveled to fit that description
+        # (except strings, we just let those through)
+        # this is indeed a limitation, but a sane one. We might loosen that
+        # requirement later and start saving binary blobs with the datasaver,
+        # but for now binary blob saving is referred to using the DataSet
+        # API directly
+        paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
 
-        # now handle setpoints
-        depends_on = []
         if setpoints:
-            for sp in setpoints:
-                if str(sp) not in list(self.parameters.keys()):
-                    raise ValueError(f'Unknown setpoint: {str(sp)}.'
-                                     ' Please register that parameter first.')
-                elif str(sp) == str(parameter):
-                    raise ValueError('A parameter can not have itself as '
-                                     'setpoint.')
-                else:
-                    depends_on.append(str(sp))
-
-        # now handle inferred parameters
-        inf_from = []
+            sp_strings = [str(sp) for sp in setpoints]
+        else:
+            sp_strings = []
         if basis:
-            for inff in basis:
-                if str(inff) not in list(self.parameters.keys()):
-                    raise ValueError(f'Unknown basis parameter: {str(inff)}.'
-                                     ' Please register that parameter first.')
-                else:
-                    inf_from.append(str(inff))
+            bs_strings = [str(bs) for bs in basis]
+        else:
+            bs_strings = []
+
+        # validate all dependencies
+        depends_on, inf_from = self._registration_validation(name, sp_strings,
+                                                             bs_strings)
 
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
@@ -248,7 +424,89 @@ class Measurement:
                               inferred_from=inf_from,
                               depends_on=depends_on)
 
+        # ensure the correct order
+        if name in self.parameters.keys():
+            self.parameters.pop(name)
+
         self.parameters[name] = paramspec
+        log.info(f'Registered {name} in the Measurement.')
+
+    def register_custom_parameter(
+            self, name: str,
+            label: str=None, unit: str=None,
+            basis: Sequence[Union[str, _BaseParameter]]=None,
+            setpoints: Sequence[Union[str, _BaseParameter]]=None) -> None:
+        """
+        Register a custom parameter with this measurement
+
+        Args:
+            name: The name that this parameter will have in the dataset. Must
+                be unique (will overwrite an existing parameter with the same
+                name!)
+            label: The label
+            unit: The unit
+            basis: A list of either QCoDeS Parameters or the names
+                of parameters already registered in the measurement that
+                this parameter is inferred from
+            setpoints: A list of either QCoDeS Parameters or the names of
+                of parameters already registered in the measurement that
+                are the setpoints of this parameter
+        """
+
+        # validate dependencies
+        if setpoints:
+            sp_strings = [str(sp) for sp in setpoints]
+        else:
+            sp_strings = []
+        if basis:
+            bs_strings = [str(bs) for bs in basis]
+        else:
+            bs_strings = []
+
+        # validate all dependencies
+        depends_on, inf_from = self._registration_validation(name, sp_strings,
+                                                             bs_strings)
+
+        parspec = ParamSpec(name=name, paramtype='numeric',
+                            label=label, unit=unit,
+                            inferred_from=inf_from,
+                            depends_on=depends_on)
+
+        # ensure the correct order
+        if name in self.parameters.keys():
+            self.parameters.pop(name)
+
+        self.parameters[name] = parspec
+
+    def unregister_parameter(self,
+                             parameter: Union[_BaseParameter, str]) -> None:
+        """
+        Remove a custom/QCoDeS parameter from the dataset produced by
+        running this measurement
+        """
+        if isinstance(parameter, _BaseParameter):
+            param = str(parameter)
+        elif isinstance(parameter, str):
+            param = parameter
+        else:
+            raise ValueError('Wrong input type. Must be a QCoDeS parameter or'
+                             ' the name (a string) of a parameter.')
+
+        if param not in self.parameters:
+            log.info(f'Tried to unregister {param}, but it was not'
+                     'registered.')
+            return
+
+        for name, paramspec in self.parameters.items():
+            if param in paramspec.depends_on:
+                raise ValueError(f'Can not unregister {param}, it is a '
+                                 f'setpoint for {name}')
+            if param in paramspec.inferred_from:
+                raise ValueError(f'Can not unregister {param}, it is a '
+                                 f'basis for {name}')
+
+        self.parameters.pop(param)
+        log.info(f'Removed {param} from Measurement.')
 
     def add_before_run(self, func: Callable, args: tuple) -> None:
         """
@@ -264,7 +522,7 @@ class Measurement:
             raise ValueError('Mismatch between function call signature and '
                              'the provided arguments.')
 
-        self.enteractions[func] = args
+        self.enteractions.append((func, args))
 
     def add_after_run(self, func: Callable, args: tuple) -> None:
         """
@@ -280,12 +538,14 @@ class Measurement:
             raise ValueError('Mismatch between function call signature and '
                              'the provided arguments.')
 
-        self.exitactions[func] = args
+        self.exitactions.append((func, args))
 
     def run(self):
         """
         Returns the context manager for the experimental run
         """
         return Runner(self.enteractions, self.exitactions,
-                      self.experiment,
-                      parameters=self.parameters)
+                      self.experiment, station=self.station,
+                      write_period=self._write_period,
+                      parameters=self.parameters,
+                      name=self.name)

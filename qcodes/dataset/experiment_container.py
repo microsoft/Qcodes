@@ -9,7 +9,7 @@ from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
 from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         get_run_counter, get_runs,
                                         get_last_run,
-                                        connect, transaction, one,
+                                        connect, transaction,
                                         get_last_experiment, get_experiments)
 from qcodes.dataset.sqlite_base import new_experiment as ne
 
@@ -17,6 +17,8 @@ DB = qcodes.config["core"]["db_location"]
 debug_db = qcodes.config["core"]["db_debug"]
 
 log = logging.getLogger(__name__)
+
+
 class Experiment(Sized):
     def __init__(self, path_to_db: str) -> None:
         self.path_to_db = path_to_db
@@ -32,32 +34,33 @@ class Experiment(Sized):
         Actually perform all the side effects needed for
         the creation of a new dataset.
         """
-        id = ne(self.conn, name, sample_name, format_string)
-        self.id = id
+        exp_id = ne(self.conn, name, sample_name, format_string)
+        self.exp_id = exp_id
+        self.format_string = format_string
 
     @property
     def name(self) -> str:
         return select_one_where(self.conn, "experiments",
-                                "name", "exp_id", self.id)
+                                "name", "exp_id", self.exp_id)
 
     @property
     def sample_name(self) -> str:
         return select_one_where(self.conn, "experiments",
-                                "sample_name", "exp_id", self.id)
+                                "sample_name", "exp_id", self.exp_id)
 
     @property
     def last_counter(self) -> int:
-        return get_run_counter(self.conn, self.id)
+        return get_run_counter(self.conn, self.exp_id)
 
     @property
     def started_at(self) -> int:
         return select_one_where(self.conn, "experiments",
-                                "exp_id", "start_time", self.id)
+                                "exp_id", "start_time", self.exp_id)
 
     @property
     def finished_at(self) -> int:
         return select_one_where(self.conn, "experiments",
-                                "exp_id", "end_time", self.id)
+                                "exp_id", "end_time", self.exp_id)
 
     def new_data_set(self, name, specs: SPECS = None, values=None,
                      metadata=None) -> DataSet:
@@ -69,7 +72,7 @@ class Experiment(Sized):
             values: the values to associate with the parameters
             metadata:  the values to associate with the dataset
         """
-        return new_data_set(name, self.id, specs, values, metadata)
+        return new_data_set(name, self.exp_id, specs, values, metadata)
 
     def data_set(self, counter: int) -> DataSet:
         """ Get dataset with the secified counter from this experiment
@@ -81,7 +84,7 @@ class Experiment(Sized):
             the dataset
 
         """
-        return load_by_counter(counter, self.id)
+        return load_by_counter(counter, self.exp_id)
 
     def data_sets(self) -> List[DataSet]:
         """ Get all the datasets
@@ -90,33 +93,35 @@ class Experiment(Sized):
             All the datasets of this experiment
 
         """
-        runs = get_runs(self.conn, self.id)
+        runs = get_runs(self.conn, self.exp_id)
         data_sets = []
         for run in runs:
             data_sets.append(load_by_id(run['run_id']))
         return data_sets
 
     def last_data_set(self) -> DataSet:
-        return load_by_id(get_last_run(self.conn, self.id))
+        return load_by_id(get_last_run(self.conn, self.exp_id))
 
     def finish(self) -> None:
         """
         Marks this experiment as finished
         """
-        finish_experiment(self.conn, self.id)
+        finish_experiment(self.conn, self.exp_id)
 
     def __len__(self) -> int:
         return len(self.data_sets())
 
     def __repr__(self) -> str:
         out = []
-        heading = f"{self.name}#{self.sample_name}#{self.id}@{self.path_to_db}"
+        heading = (f"{self.name}#{self.sample_name}#{self.exp_id}"
+                   f"@{self.path_to_db}")
         out.append(heading)
         out.append("-" * len(heading))
         ds = self.data_sets()
         if len(ds) > 0:
             for d in ds:
-                out.append(f"{d.id}-{d.name}-{d.counter}-{d.parameters}-{len(d)}")
+                out.append(f"{d.run_id}-{d.name}-{d.counter}"
+                           f"-{d.parameters}-{len(d)}")
 
         return "\n".join(out)
 
@@ -168,7 +173,7 @@ def load_experiment(exp_id: int) -> Experiment:
         experiment with the specified id
     """
     e = Experiment(DB)
-    e.id = exp_id
+    e.exp_id = exp_id
     return e
 
 
@@ -180,7 +185,7 @@ def load_last_experiment() -> Experiment:
         last experiment
     """
     e = Experiment(DB)
-    e.id = get_last_experiment(e.conn)
+    e.exp_id = get_last_experiment(e.conn)
     return e
 
 
@@ -234,5 +239,5 @@ def load_experiment_by_name(name: str,
         _repr = "\n".join(_repr)
         raise ValueError(f"Many experiments matching your request found {_repr}")
     else:
-        e.id = rows[0]['exp_id']
+        e.exp_id = rows[0]['exp_id']
     return e

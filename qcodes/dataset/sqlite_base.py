@@ -7,7 +7,9 @@ from numpy import ndarray
 import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
+from distutils.version import LooseVersion
 
+import qcodes as qc
 import unicodedata
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -279,7 +281,7 @@ def init_db(conn: sqlite3.Connection)->None:
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
-                  type: Optional[str] = None) -> None:
+                  paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
 
     Args:
@@ -288,9 +290,9 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
         name: column name
         type: sqlite type of the column
     """
-    if type:
+    if paramtype:
         transaction(conn,
-                    f'ALTER TABLE "{table}" ADD COLUMN "{name}" {type}')
+                    f'ALTER TABLE "{table}" ADD COLUMN "{name}" {paramtype}')
     else:
         transaction(conn,
                     f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
@@ -375,30 +377,72 @@ def insert_values(conn: sqlite3.Connection,
 def insert_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        columns: List[str],
-                       values: List[List[VALUES]],
+                       values: List[VALUES],
                        ) -> int:
     """
     Inserts many values for the specified columns.
 
+    Example input:
+    columns: ['xparam', 'yparam']
+    values: [[x1, y1], [x2, y2], [x3, y3]]
+
     NOTE this need to be committed before closing the connection.
     """
-    _columns = ",".join(columns)
-    # TODO: none of the code below is not form PRADA SS-2017
-    # [a, b] -> (?,?), (?,?)
-    # [[1,1], [2,2]]
-    _values = "(" + ",".join(["?"] * len(values[0])) + ")"
-    # NOTE: assume that all the values have same length
-    _values_x_params = ",".join([_values] * len(values))
+    # We demand that all values have the same length
+    lengths = [len(val) for val in values]
+    if len(np.unique(lengths)) > 1:
+        raise ValueError(f'Wrong input format for values. Must specify the '
+                         'same number of values for all columns. Received'
+                         ' lengths {lengths}.')
+    no_of_rows = len(lengths)
+    no_of_columns = lengths[0]
 
-    query = f"""INSERT INTO "{formatted_name}"
-        ({_columns})
-    VALUES
-        {_values_x_params}
-    """
-    # we need to make values a flat list from a list of list
-    flattened_values = [item for sublist in values for item in sublist]
-    c = transaction(conn, query, *flattened_values)
-    return c.lastrowid
+    # The TOTAL number of inserted values in one query
+    # must be less than the SQLITE_MAX_VARIABLE_NUMBER
+
+    # Version check cf.
+    # "https://stackoverflow.com/questions/9527851/sqlite-error-
+    #  too-many-terms-in-compound-select"
+    version = qc.SQLiteSettings.settings['VERSION']
+
+    # According to the SQLite changelog, the version number
+    # to check against below
+    # ought to be 3.7.11, but that fails on Travis
+    if LooseVersion(version) <= LooseVersion('3.8.2'):
+        max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
+    else:
+        max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+    rows_per_transaction = int(max_var/no_of_columns)
+
+    _columns = ",".join(columns)
+    _values = "(" + ",".join(["?"] * len(values[0])) + ")"
+
+    a, b = divmod(no_of_rows, rows_per_transaction)
+    chunks = a*[rows_per_transaction] + [b]
+    if chunks[-1] == 0:
+        chunks.pop()
+
+    start = 0
+    stop = 0
+
+    for ii, chunk in enumerate(chunks):
+        _values_x_params = ",".join([_values] * chunk)
+
+        query = f"""INSERT INTO "{formatted_name}"
+                    ({_columns})
+                    VALUES
+                    {_values_x_params}
+                 """
+        stop += chunk
+        # we need to make values a flat list from a list of list
+        flattened_values = [item for sublist in values[start:stop]
+                            for item in sublist]
+        c = transaction(conn, query, *flattened_values)
+        if ii == 0:
+            return_value = c.lastrowid
+        start += chunk
+
+    return return_value
 
 
 def modify_values(conn: sqlite3.Connection,
@@ -414,7 +458,7 @@ def modify_values(conn: sqlite3.Connection,
     If a column is mapped to None, it will be a null value.
     """
     name_val_template = []
-    for name, value in zip(columns, values):
+    for name in columns:
         name_val_template.append(f"{name}=?")
     name_val_templates = ",".join(name_val_template)
     query = f"""
@@ -432,7 +476,7 @@ def modify_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        start_index: int,
                        columns: List[str],
-                       values: List[VALUES],
+                       list_of_values: List[VALUES],
                        ) -> None:
     """
     Modify many values for the specified columns.
@@ -441,16 +485,16 @@ def modify_many_values(conn: sqlite3.Connection,
     If a column is mapped to None, it will be a null value.
     """
     _len = length(conn, formatted_name)
-    len_requested = start_index + len(values)
+    len_requested = start_index + len(list_of_values[0])
     available = _len - start_index
     if len_requested > _len:
         reason = f""""Modify operation Out of bounds.
-        Trying to modify {len(values)} results,
+        Trying to modify {len(list_of_values)} results,
         but therere are only {available} results.
         """
         raise ValueError(reason)
-    for value in values:
-        modify_values(conn, formatted_name, start_index, columns, value)
+    for values in list_of_values:
+        modify_values(conn, formatted_name, start_index, columns, values)
         start_index += 1
 
 
@@ -868,7 +912,7 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                            ",".join([p.name for p in parameters]),
                            False
                            )
-        c = _add_parameters_to_layout_and_deps(conn, formatted_name, *parameters)
+        _add_parameters_to_layout_and_deps(conn, formatted_name, *parameters)
 
     else:
         query = f"""
@@ -989,40 +1033,9 @@ def get_paramspec(conn: sqlite3.Connection,
     return parspec
 
 
-# TODO: Deprecate/replace with add_parameter_2
-def add_parameter_(conn: sqlite3.Connection,
-                   formatted_name: str,
-                   *parameter: ParamSpec):
-    """ Add parameters to the dataset
-
-    NOTE: two parameters with the same name are not allowed
-    Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
-        - parameter: the paraemters to add
-    """
-    p_names = []
-    for p in parameter:
-        insert_column(conn, formatted_name, p.name, p.type)
-        p_names.append(p.name)
-    # get old parameters column from run table
-    sql = f"""
-    SELECT parameters FROM runs
-    WHERE result_table_name=?
-    """
-    c = transaction(conn, sql, formatted_name)
-    old_parameters = one(c, 'parameters')
-    if old_parameters:
-        new_parameters = ",".join([old_parameters] + p_names)
-    else:
-        new_parameters = ",".join(p_names)
-    sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-    transaction(conn, sql, new_parameters, formatted_name)
-
-
-def add_parameter_2(conn: sqlite3.Connection,
-                    formatted_name: str,
-                    *parameter: ParamSpec):
+def add_parameter(conn: sqlite3.Connection,
+                  formatted_name: str,
+                  *parameter: ParamSpec):
     """ Add parameters to the dataset
 
     This will update the layouts and dependencies tables
@@ -1033,27 +1046,29 @@ def add_parameter_2(conn: sqlite3.Connection,
         - formatted_name: name of the table
         - parameter: the paraemters to add
     """
-    p_names = []
-    for p in parameter:
-        insert_column(conn, formatted_name, p.name, p.type)
-        p_names.append(p.name)
-    # get old parameters column from run table
-    sql = f"""
-    SELECT parameters FROM runs
-    WHERE result_table_name=?
-    """
-    c = transaction(conn, sql, formatted_name)
-    old_parameters = one(c, 'parameters')
-    if old_parameters:
-        new_parameters = ",".join([old_parameters] + p_names)
-    else:
-        new_parameters = ",".join(p_names)
-    sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-    transaction(conn, sql, new_parameters, formatted_name)
+    with atomic(conn):
+        p_names = []
+        for p in parameter:
+            insert_column(conn, formatted_name, p.name, p.type)
+            p_names.append(p.name)
+        # get old parameters column from run table
+        sql = f"""
+        SELECT parameters FROM runs
+        WHERE result_table_name=?
+        """
+        c = transaction(conn, sql, formatted_name)
+        old_parameters = one(c, 'parameters')
+        if old_parameters:
+            new_parameters = ",".join([old_parameters] + p_names)
+        else:
+            new_parameters = ",".join(p_names)
+        sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
+        transaction(conn, sql, new_parameters, formatted_name)
 
+        # Update the layouts table
+        c = _add_parameters_to_layout_and_deps(conn, formatted_name,
+                                               *parameter)
 
-    # Update the layouts table
-    c = _add_parameters_to_layout_and_deps(conn, formatted_name, *parameter)
 
 def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
                                        formatted_name: str,
@@ -1098,6 +1113,7 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
                 c = transaction(conn, sql, layout_id, dep_ind, ax_num)
     return c
 
+
 def _validate_table_name(table_name: str) -> bool:
     valid = True
     for i in table_name:
@@ -1106,19 +1122,6 @@ def _validate_table_name(table_name: str) -> bool:
             raise RuntimeError("Invalid table name "
                                "{} starting at {}".format(table_name, i))
     return valid
-
-def add_parameter(conn: sqlite3.Connection,
-                  formatted_name: str,
-                  *parameter: ParamSpec):
-    """ Add parameters to the dataset
-    NOTE: two parameters with the same name are not allowed
-    Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
-        - parameter: the parameters to add
-    """
-    with atomic(conn):
-        add_parameter_2(conn, formatted_name, *parameter)
 
 
 # (WilliamHPNielsen) This creates a result table, right?
@@ -1135,7 +1138,7 @@ def _create_run_table(conn: sqlite3.Connection,
         conn: database connection
         formatted_name: the name of the table to create
     """
-    table_valid = _validate_table_name(formatted_name)
+    _validate_table_name(formatted_name)
     if parameters and values:
         _parameters = ",".join([p.sql_repr() for p in parameters])
         query = f"""
@@ -1169,7 +1172,7 @@ def _create_run_table(conn: sqlite3.Connection,
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                parameters: List[ParamSpec],
                values:  List[Any] = None,
-               metadata: Optional[Dict[str, Any]] = None) -> Tuple[int, int, str]:
+               metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
 
@@ -1205,7 +1208,7 @@ def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
     return select_one_where(conn, "runs", tag,
-                             "result_table_name", table_name)
+                            "result_table_name", table_name)
 
 
 def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
@@ -1219,7 +1222,7 @@ def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
-    for key, value in metadata.items():
+    for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
 
@@ -1243,7 +1246,7 @@ def add_meta_data(conn: sqlite3.Connection,
                   metadata: Dict[str, Any],
                   table_name: Optional[str] = "runs") -> None:
     """
-    Add medata data (updates if exists, create otherwise).
+    Add metadata data (updates if exists, create otherwise).
 
     Args:
         - conn: the connection to the sqlite database
@@ -1260,3 +1263,15 @@ def add_meta_data(conn: sqlite3.Connection,
             update_meta_data(conn, row_id, table_name, metadata)
         else:
             raise e
+
+
+def get_user_version(conn: sqlite3.Connection) -> int:
+
+    curr = atomicTransaction(conn, 'PRAGMA user_version')
+    res = one(curr, 0)
+    return res
+
+
+def set_user_version(conn: sqlite3.Connection, version: int) -> None:
+
+    atomicTransaction(conn, 'PRAGMA user_version({})'.format(version))
