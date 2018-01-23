@@ -32,16 +32,14 @@ class ParametersTable:
             {k: s[k] + o[k] for k in s.keys()} for s, o in itertools.product(self._table_list, other.table_list)
         ])
 
-    def __repr__(self):
-        def table_print(table):
-            s = " | ".join([
-                "\t".join(["{} [{}]".format(*a) for a in table[k]]) for k in ["independent_parameters",
-                                                                              "dependent_parameters"]
-            ])
+    def flatten(self):
+        ind = {k: v for d in self._table_list for k, v in d["independent_parameters"]}
+        dep = {k: v for d in self._table_list for k, v in d["dependent_parameters"]}
+        return ind, dep
 
-            return s.strip(" | ")
-
-        return "\n".join([table_print(table) for table in self._table_list])
+    def symbols_list(self):
+        ind, dep = self.flatten()
+        return list(ind.keys()) + list(dep.keys())
 
     @property
     def table_list(self):
@@ -110,6 +108,7 @@ class BaseSweepObject:
         self._param_setter = None  # A "param_setter" is an iterator which, when "next" is called a new value of the
         # independent parameter is set.
         self._parameter_table = None  # A proper parameter table should be defined by the subclasses
+        self._symbols_list = None
 
     def _setter_factory(self):
         """
@@ -117,14 +116,26 @@ class BaseSweepObject:
         """
         raise NotImplementedError("Please subclass BaseSweepObject")
 
-    def __iter__(self):
+    def _start_iter(self):
         self._param_setter = self._setter_factory()
+        if self._parameter_table is not None:
+            self._symbols_list = self._parameter_table.symbols_list()
+        else:
+            self._symbols_list = []
+
+    def __iter__(self):
+        self._start_iter()
         return self
 
     def __next__(self):
         if self._param_setter is None:
-            self._param_setter = self._setter_factory()
-        return next(self._param_setter)
+            self._start_iter()
+
+        nxt = next(self._param_setter)
+        if len(nxt) and len(self._symbols_list):
+            nxt = {k: nxt[k] if k in nxt else None for k in self._symbols_list}
+
+        return nxt
 
     def __call__(self, *sweep_objects):
         return Nest([self, Chain(wrap_objects(*sweep_objects))])
