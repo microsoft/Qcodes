@@ -442,7 +442,7 @@ class M4i(Instrument):
                                            pyspcm.SPC_REFERENCECLOCK),
                            vals=Ints(),
                            docstring='defines the frequency of the external reference clock')
-                           
+
         self.add_parameter('sample_rate',
                            label='sample rate',
                            get_cmd=partial(self._param32bit,
