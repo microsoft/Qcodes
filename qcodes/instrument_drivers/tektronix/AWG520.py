@@ -18,13 +18,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
+from typing import List, Union
 import time
 import logging
 import numpy as np
 import struct
 from qcodes import VisaInstrument, validators as vals
 
+
+logger = logging.getLogger(__name__)
 
 class Tektronix_AWG520(VisaInstrument):
     '''
@@ -157,7 +159,8 @@ class Tektronix_AWG520(VisaInstrument):
         if reset:
             self.reset()
         else:
-            self.get_all()
+            self.snapshot(update=False)
+
         self.connect_message()
 
     # Functions
@@ -181,8 +184,17 @@ class Tektronix_AWG520(VisaInstrument):
         elif state.startswith('2'):
             return 'Running'
         else:
-            logging.error(__name__ + ' : AWG in undefined state')
+            logger.error('AWG in undefined state')
             return 'error'
+
+    def get_errors(self, max_requests=50):
+        errors = []
+        for k in range(max_requests):
+            error_msg = self.ask('SYSTem:ERRor?').rstrip('\n')
+            if 'No error' in error_msg:
+                break
+            errors.append(error_msg)
+        return errors
 
     def start(self):
         self.visa_handle.write('AWGC:RUN')
@@ -197,6 +209,9 @@ class Tektronix_AWG520(VisaInstrument):
     def get_current_folder_name(self):
         return self.visa_handle.ask('mmem:cdir?')
 
+    def delete_file(self, file):
+        return self.visa_handle.write(f'mmem:del "{file}"')
+
     def set_current_folder_name(self, file_path):
         self.visa_handle.write('mmem:cdir "%s"' % file_path)
 
@@ -207,21 +222,14 @@ class Tektronix_AWG520(VisaInstrument):
         self.visa_handle.write('mmem:cdir')
 
     def make_directory(self, dir, root):
-        '''
-        makes a directory
+        """ makes a directory
         if root = True, new dir in main folder
-        '''
+        """
         if root:
             self.goto_root()
             self.visa_handle.write('MMEMory:MDIRectory "{}"'.format(dir))
         else:
             self.visa_handle.write('MMEMory:MDIRectory "{}"'.format(dir))
-
-    def get_all(self, update=True):
-        # TODO: fix bug in snapshot where it tries to get setable only param
-        # return self.snapshot(update=update)
-
-        return self.snapshot(update=False)
 
     def clear_waveforms(self):
         '''
@@ -233,7 +241,7 @@ class Tektronix_AWG520(VisaInstrument):
         Output:
             None
         '''
-        logging.debug(__name__ + ' : Clear waveforms from channels')
+        logger.debug('Clear waveforms from channels')
         self.visa_handle.write('SOUR1:FUNC:USER ""')
         self.visa_handle.write('SOUR2:FUNC:USER ""')
 
@@ -299,19 +307,17 @@ class Tektronix_AWG520(VisaInstrument):
         Output:
             None
         '''
-        logging.debug(__name__ + ' : Trying to set numpoints to %s' % numpts)
+        logger.debug('Trying to set numpoints to %s' % numpts)
         if numpts != self._numpoints:
-            logging.warning(__name__ + ' : changing numpoints. This will clear all waveforms!')
+            logger.warning('changing numpoints. This will clear all waveforms!')
 
         response = 'yes'  # raw_input('type "yes" to continue')
         if response is 'yes':
-            logging.debug(__name__ + ' : Setting numpoints to %s' % numpts)
+            logger.debug('Setting numpoints to %s' % numpts)
             self._numpoints = numpts
             self.clear_waveforms()
         else:
             print('aborted')
-
-
 
     def set_setup_filename(self, fname, force_reload=False):
         if self._fname == fname and not force_reload:
@@ -352,17 +358,17 @@ class Tektronix_AWG520(VisaInstrument):
         Output:
             None
         '''
-        logging.debug(__name__ + ' : Try to set {} on channel {}'.format(
+        logger.debug('Try to set {} on channel {}'.format(
                       name, channel))
         exists = False
         if name in self._values['files']:
             exists = True
-            logging.debug(__name__ + ' : File exists in loacal memory')
+            logger.debug('File exists in loacal memory')
             self._values['recent_channel_%s' % channel] = self._values[
                 'files'][name]
             self._values['recent_channel_%s' % channel]['filename'] = name
         else:
-            logging.debug(__name__ + ' : File does not exist in memory, \
+            logger.debug('File does not exist in memory, \
             reading from instrument')
             lijst = self.visa_handle.ask('MMEM:CAT? "MAIN"')
             bool = False
@@ -379,7 +385,7 @@ class Tektronix_AWG520(VisaInstrument):
                     bestand = bestand + lijst[i]
         if exists:
             data = self.visa_handle.ask('MMEM:DATA? "%s"' %name)
-            logging.debug(__name__  + ' : File exists on instrument, loading \
+            logger.debug('File exists on instrument, loading \
             into local memory')
             # string alsvolgt opgebouwd: '#' <lenlen1> <len> 'MAGIC 1000\r\n' '#' <len waveform> 'CLOCK ' <clockvalue>
             len1 = int(data[1])
@@ -415,60 +421,71 @@ class Tektronix_AWG520(VisaInstrument):
             self._values['recent_channel_%s' %channel] = self._values['files'][name]
             self._values['recent_channel_%s' %channel]['filename'] = name
         else:
-            logging.error(__name__ + ' : Invalid filename specified %s' %name)
+            logger.error('Invalid filename specified %s' %name)
 
         if (self._numpoints==self._values['files'][name]['numpoints']):
-            logging.debug(__name__  + ' : Set file %s on channel %s' % (name, channel))
+            logger.debug('Set file %s on channel %s' % (name, channel))
             self.visa_handle.write('SOUR%s:FUNC:USER "%s","MAIN"' % (channel, name))
         else:
             self.visa_handle.write('SOUR%s:FUNC:USER "%s","MAIN"' % (channel, name))
-            logging.warning(__name__  + ' : Verkeerde lengte %s ipv %s'
+            logger.warning('Verkeerde lengte %s ipv %s'
                 %(self._values['files'][name]['numpoints'], self._numpoints))
 
-
-    #  Ask for string with filenames
     def get_filenames(self):
-        logging.debug(__name__ + ' : Read filenames from instrument')
+        """Ask for string with filenames"""
+        logger.debug('Read filenames from instrument')
         return self.visa_handle.ask('MMEM:CAT? "MAIN"')
 
-    def return_self(self):
-        return self
-    # Send waveform to the device
-
-    def send_waveform(self, w, m1, m2, filename, clock):
+    def send_waveform(self,
+                      waveform: List[float],
+                      marker1: List[bool],
+                      marker2: List[bool],
+                      filename: str,
+                      clock: float):
         '''
         Sends a complete waveform. All parameters need to be specified.
-        choose a file extension 'wfm' (must end with .pat)
-        See also: resend_waveform()
+        In contrast to a pattern, a waveform allows mathematical processing on
+        the waveform point, at the cost of slightly slower transferring.
 
-        Input:
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            filename (string)    : filename
-            clock (int)          : frequency (Hz)
+        Args:
+            waveform : Waveform array to send
+            marker1: Values for marker 1 output (1 is high, 0 is low)
+            marker2: Values for marker 2 output (1 is high, 0 is low)
+            filename: filename ending with ``.wfm``. If not provided,
+                automatically appended.
+            clock: frequency (Hz)
 
-        Output:
-            None
+        See also:
+            `resend_waveform`
+            `send_pattern`
         '''
-        logging.debug(__name__ + ' : Sending waveform %s to instrument' % filename)
+        logger.debug('Sending waveform %s to instrument' % filename)
 
-        # Check for errors
-        dim = len(w)
+        if '.' in filename:
+            if not filename.split('.')[1] == 'wfm':
+                raise SyntaxError('File must end with .wfm')
+        else:
+            filename += '.wfm'
 
-        if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
-            return 'error'
+        if not len(waveform) == len(marker1) == len(marker2):
+            raise SyntaxError('Lengths of waveforms and markers arent equal')
+        elif len(waveform) % 2:
+            raise SyntaxError('Waveform must have even number of points')
+        elif len(waveform) < 256:
+            raise SyntaxError('Waveform is too short')
+
         self._values['files'][filename] = {}
-        self._values['files'][filename]['w'] = w
-        self._values['files'][filename]['m1'] = m1
-        self._values['files'][filename]['m2'] = m2
+        self._values['files'][filename]['w'] = waveform
+        self._values['files'][filename]['m1'] = marker1
+        self._values['files'][filename]['m2'] = marker2
         self._values['files'][filename]['clock'] = clock
-        self._values['files'][filename]['numpoints'] = len(w)
+        self._values['files'][filename]['numpoints'] = len(waveform)
 
-        m = m1 + np.multiply(m2, 2)
-        ws = ''
-        for i in range(0, len(w)):
-            ws = ws + struct.pack('<fB', w[i], int(m[i]))
+        m = marker1 + np.multiply(marker2, 2)
+
+        ws = b''.join(struct.pack('<fB', waveform_elem, int(marker_elem))
+                      for waveform_elem, marker_elem in zip(waveform, m))
+
         s1 = 'MMEM:DATA "%s",' % filename
         s3 = 'MAGIC 1000\n'
         s5 = ws
@@ -478,43 +495,55 @@ class Tektronix_AWG520(VisaInstrument):
         lenlen = str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
         s2 = '#' + lenlen + str(len(s6) + len(s5) + len(s4) + len(s3))
 
-        mes = s1 + s2 + s3 + s4 + s5 + s6
-        self.visa_handle.write(mes)
+        mes = str.encode(s1+s2+s3+s4) + s5 + str.encode(s6)
+        self.visa_handle.write_raw(mes)
 
-    def send_pattern(self, w, m1, m2, filename, clock):
+    def send_pattern(self,
+                     waveform: List[float],
+                     marker1: List[bool],
+                     marker2: List[bool],
+                     filename: str,
+                     clock: float):
         '''
-        Sends a pattern file.
-        similar to waveform except diff file extension
-        number of poitns different. diff byte conversion
-        See also: resend_waveform()
+        Sends a pattern file. In contrast to a waveform, a pattern does not
+        allow mathematical processing on the waveform points, resulting in a
+        slight gain in transfer time. Also has a different byte conversion.
 
-        Input:
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            filename (string)    : filename
-            clock (int)          : frequency (Hz)
+        Args:
+            waveform : Waveform array to send
+            marker1: Values for marker 1 output (1 is high, 0 is low)
+            marker2: Values for marker 2 output (1 is high, 0 is low)
+            filename: filename ending with ``.pat``. If not provided,
+                automatically appended.
+            clock: frequency (Hz)
 
-        Output:
-            None
+        See also:
+            `resend_waveform`
+            `send_waveform`
         '''
-        logging.debug(__name__ + ' : Sending pattern %s to instrument' % filename)
+        logger.debug('Sending pattern %s to instrument' % filename)
+
+        if '.' in filename:
+            if not filename.split('.')[1] == 'pat':
+                raise SyntaxError('File must end with .pat')
+        else:
+            filename += '.pat'
 
         # Check for errors
-        dim = len(w)
-        if (not((len(w)==len(m1)) and ((len(m1)==len(m2))))):
+        dim = len(waveform)
+        if (not((len(waveform) == len(marker1)) and ((len(marker1) == len(marker2))))):
             return 'error'
         self._values['files'][filename]={}
-        self._values['files'][filename]['w']=w
-        self._values['files'][filename]['m1']=m1
-        self._values['files'][filename]['m2']=m2
+        self._values['files'][filename]['w']=waveform
+        self._values['files'][filename]['m1']=marker1
+        self._values['files'][filename]['m2']=marker2
         self._values['files'][filename]['clock']=clock
-        self._values['files'][filename]['numpoints']=len(w)
+        self._values['files'][filename]['numpoints']=len(waveform)
 
-        m = m1 + np.multiply(m2, 2)
-        ws = ''
-        for i in range(0, len(w)):
-            ws = ws + struct.pack('<fB', w[i], int(m[i]))
+        m = marker1 + np.multiply(marker2, 2)
+
+        ws = b''.join(struct.pack('<fB', waveform_elem, int(marker_elem))
+                      for waveform_elem, marker_elem in zip(waveform, m))
 
         s1 = 'MMEM:DATA "%s",' % filename
         s3 = 'MAGIC 2000\n'
@@ -522,14 +551,13 @@ class Tektronix_AWG520(VisaInstrument):
         s6 = 'CLOCK %.10e\n' % clock
 
         s4 = '#' + str(len(str(len(s5)))) + str(len(s5))
-        lenlen=str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
+        lenlen = str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
         s2 = '#' + lenlen + str(len(s6) + len(s5) + len(s4) + len(s3))
 
-        mes = s1 + s2 + s3 + s4 + s5 + s6
-        self.visa_handle.write(mes)
+        mes = str.encode(s1+s2+s3+s4) + s5 + str.encode(s6)
+        self.visa_handle.write_raw(mes)
 
-
-    def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=[]):
+    def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=1e9):
         '''
         Resends the last sent waveform for the designated channel
         Overwrites only the parameters specifiedta
@@ -547,8 +575,7 @@ class Tektronix_AWG520(VisaInstrument):
             None
         '''
         filename = self._values['recent_channel_%s' %channel]['filename']
-        logging.debug(__name__ + ' : Resending %s to channel %s' % (filename, channel))
-
+        logger.debug('Resending %s to channel %s' % (filename, channel))
 
         if (w==[]):
             w = self._values['recent_channel_%s' %channel]['w']
@@ -559,91 +586,106 @@ class Tektronix_AWG520(VisaInstrument):
         if (clock==[]):
             clock = self._values['recent_channel_%s' %channel]['clock']
 
-        if not ( (len(w) == self._numpoints) and (len(m1) == self._numpoints) and (len(m2) == self._numpoints)):
-            logging.error(__name__ + ' : one (or more) lengths of waveforms do not match with numpoints')
+        if not len(w) == len(m1) == len(m2) == self._numpoints:
+            logger.error('one (or more) lengths of waveforms do not match with numpoints')
 
         self.send_waveform(w, m1, m2, filename, clock)
         self.do_set_filename(filename, channel)
 
-    def delete_all_waveforms_from_list(self):
-        '''
-        for compatibillity with awg, is not relevant for AWG520 since it
-        has no waveform list
-        '''
-        pass
+    def send_equation(self, filename, equation, pre_code, points, clock=1e9, ):
 
-    def send_sequence(self, wfs, rep, wait, goto, logic_jump, filename):
+        start_msg = f'MMEM:DATA "{filename}",'
+
+        equation_msg = '\n'.join([f'clock={clock}',
+                                  f'size={points}',
+                                  f'{pre_code}',
+                                  f'"{filename}"={equation}'])
+
+        # Information about number of characters
+        msg_char_length = str(len(equation_msg))
+        length_chars = str(len(msg_char_length))
+        length_str = f'#{length_chars}{msg_char_length}'
+
+        self.visa_handle.write_raw(start_msg + length_str + equation_msg)
+
+    def send_sequence(self,
+                      filename: str,
+                      waveforms: Union[List[str], List[List[str]]],
+                      repetitions: List[int] = None,
+                      wait_trigger: List[bool] = None,
+                      goto_one: List[bool] = None,
+                      logic_jump: List[int] = None):
         '''
         Sends a sequence file (for the moment only for ch1)
 
         Args:
+            waveforms:  Waveform filenames to use. Can be either a list of
+                filenames, in which case they are output at channel 1, or
+                a list with two lists, each containing the filenames for the
+                respective channel.
+            repetitions: Repetitions for each waveform. 0 is infinite.
+            wait_trigger: Whether to wait for a trigger before continuing.
+                Default is False for each waveform.
+            goto_one: Whether to go back to the first line. If an event occurs,
+                logic_jump is used instead. Default is False for each waveform.
+            logic_jump: line number for the Logic-Jump.
+                0 is Off, –1 is Next, and –2 is Table-Jump. The default is Off.
+                Logic jump occurs after an event. Default is zero for each
+                waveform.
 
-           wfs:  list of filenames
+        TODO:
+            Check if wait trigger is for starting current waveform or
+            continuing to next
+            What does goto do?
 
-        Returs:
-
-            None
         '''
-        logging.debug(__name__ + ' : Sending sequence %s to instrument' % filename)
-        N = str(len(rep))
-        try:
-            wfs.remove(N*[None])
-        except ValueError:
-            pass
+        logger.debug('Sending sequence %s to instrument' % filename)
+
+        if '.' in filename:
+            if not filename.split('.')[1] == 'seq':
+                raise SyntaxError('File must end with .seq')
+        else:
+            filename += '.seq'
+
+        if isinstance(waveforms[0], str):
+            N_instructions = len(waveforms)
+        else:
+            N_instructions = len(waveforms[0])
+
+        if repetitions is None:
+            repetitions = np.ones(N_instructions)
+        if wait_trigger is None:
+            wait_trigger = np.zeros(N_instructions)
+        if goto_one is None:
+            goto_one = np.zeros(N_instructions)
+        if logic_jump is None:
+            logic_jump = np.zeros(N_instructions)
+
+        # Convert all args to integer arrays
+        repetitions = np.array(repetitions, dtype=int)
+        wait_trigger = np.array(wait_trigger, dtype=int)
+        goto_one = np.array(goto_one, dtype=int)
+        logic_jump = np.array(logic_jump, dtype=int)
+
         s1 = 'MMEM:DATA "%s",' % filename
 
-        if len(np.shape(wfs)) ==1:
+        if len(np.shape(waveforms)) == 1:
             s3 = 'MAGIC 3001\n'
-            s5 = ''
-            for k in range(len(rep)):
-                s5 = s5+ '"%s",%s,%s,%s,%s\n'%(wfs[k],rep[k],wait[k],goto[k],logic_jump[k])
+            instructions = [
+                f'"{waveforms[k]}",{repetitions[k]},{wait_trigger[k]},{goto_one[k]},{logic_jump[k]}'
+                for k in range(N_instructions)]
+            s5 = '\n'.join(instructions) + '\n'
 
         else:
             s3 = 'MAGIC 3002\n'
-            s5 = ''
-            for k in range(len(rep)):
-                s5 = s5+ '"%s","%s",%s,%s,%s,%s\n'%(wfs[0][k],wfs[1][k],rep[k],wait[k],goto[k],logic_jump[k])
+            instructions = [
+                f'"{waveforms[0][k]}","{waveforms[1][k]}",{repetitions[k]},{wait_trigger[k]},{goto_one[k]},{logic_jump[k]}'
+                for k in range(N_instructions)]
+            s5 = '\n'.join(instructions) + '\n'
 
-        s4 = 'LINES %s\n'%N
+        s4 = 'LINES %s\n' % N_instructions
         lenlen=str(len(str(len(s5) + len(s4) + len(s3))))
         s2 = '#' + lenlen + str(len(s5) + len(s4) + len(s3))
-
-
-        mes = s1 + s2 + s3 + s4 + s5
-        self.visa_handle.write(mes)
-
-    def send_sequence2(self,wfs1,wfs2,rep,wait,goto,logic_jump,filename):
-        '''
-        Sends a sequence file
-
-        Args:
-            wfs1:  list of filenames for ch1 (all must end with .pat)
-            wfs2: list of filenames for ch2 (all must end with .pat)
-            rep: list
-            wait: list
-            goto: list
-            logic_jump: list
-            filename: name of output file (must end with .seq)
-
-        Returns:
-            None
-        '''
-        logging.debug(__name__ + ' : Sending sequence %s to instrument' % filename)
-
-
-        N = str(len(rep))
-        s1 = 'MMEM:DATA "%s",' % filename
-        s3 = 'MAGIC 3002\n'
-        s4 = 'LINES %s\n'%N
-        s5 = ''
-
-
-        for k in range(len(rep)):
-            s5 = s5+ '"%s","%s",%s,%s,%s,%s\n'%(wfs1[k],wfs2[k],rep[k],wait[k],goto[k],logic_jump[k])
-
-        lenlen=str(len(str(len(s5) + len(s4) + len(s3))))
-        s2 = '#' + lenlen + str(len(s5) + len(s4) + len(s3))
-
 
         mes = s1 + s2 + s3 + s4 + s5
         self.visa_handle.write(mes)
@@ -664,3 +706,10 @@ class Tektronix_AWG520(VisaInstrument):
         self.send_sequence(wfs,rep,wait,goto,logic_jump,filename)
         self.set_sequence(filename)
 
+    # Unnecessary methods
+    def delete_all_waveforms_from_list(self):
+        '''
+        for compatibillity with awg, is not relevant for AWG520 since it
+        has no waveform list
+        '''
+        pass
