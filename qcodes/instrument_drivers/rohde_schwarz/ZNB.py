@@ -106,7 +106,7 @@ class ZNBChannel(InstrumentChannel):
         # source power is dependent on model, but not well documented.
         # here we assume -60 dBm for ZNB20, the others are set,
         # due to lack of knowledge, to -80 dBm as of before the edit
-        model = self._instrument.get_idn()['model'].split('-')[0]
+        model = self._parent.get_idn()['model'].split('-')[0]
         if model == 'ZNB4':
             self._min_source_power = -80
         elif model == 'ZNB8':
