@@ -401,9 +401,11 @@ class ZNB(VisaInstrument):
             self.channels.lock()
             self.display_sij_split()
             self.channels.autoscale()
-            self.initialise()
 
+        self.update_display_on()
+        self.rf_off()
         self.connect_message()
+
     def display_grid(self, rows: int, cols: int):
         """
         Display a grid of channels rows by cols
@@ -411,29 +413,19 @@ class ZNB(VisaInstrument):
         self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
 
     def add_channel(self, vna_parameter: str, **kwargs):
-        n_channels = len(self.channels)
-        channel = self.CHANNEL_CLASS(self, vna_parameter, n_channels + 1, **kwargs)
+        i_channel = len(self.channels) + 1
+        channel = self.CHANNEL_CLASS(self, vna_parameter, i_channel, **kwargs)
         self.channels.append(channel)
-        if n_channels == 0:
+        if i_channel == 1:
             self.display_single_window()
-        if n_channels == 1:
+        if i_channel == 2:
             self.display_dual_window()
 
-    def _set_default_values(self):
-        for channel in self.channels:
-            channel.start(1e6)
-            channel.stop(2e6)
-            channel.npts(10)
-            channel.power(-50)
-
-    def initialise(self):
-        for n in range(1, len(self.channels)+1):
-            self.write('SENS{}:SWE:TYPE LIN'.format(n))
-            self.write('SENS{}:SWE:TIME:AUTO ON'.format(n))
-            self.write('TRIG{}:SEQ:SOUR IMM'.format(n))
-            self.write('SENS{}:AVER:STAT ON'.format(n))
-        self.update_display_on()
-        self.rf_off()
+        # initialising channel
+        self.write('SENS{}:SWE:TYPE LIN'.format(i_channel))
+        self.write('SENS{}:SWE:TIME:AUTO ON'.format(i_channel))
+        self.write('TRIG{}:SEQ:SOUR IMM'.format(i_channel))
+        self.write('SENS{}:AVER:STAT ON'.format(i_channel))
 
     def clear_channels(self):
         """
