@@ -235,3 +235,18 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray,
     z_to_plot[y_index, x_index] = z
 
     return xrow, yrow, z_to_plot
+
+
+def get_shaped_data_by_runid(run_id: int) -> List:
+
+    mydata = get_data_by_id(run_id)
+
+    for independet in mydata:
+        if len(independet) == 3:
+            datatype = datatype_from_setpoints_2d([independet[0]['data'],
+                                                   independet[1]['data']])
+            if datatype in ('grid', 'equidistant'):
+                independet[0]['data'], independet[1]['data'], independet[2]['data'] = reshape_2D_data(independet[0]['data'],
+                                                                                                      independet[1]['data'],
+                                                                                                      independet[2]['data'])
+    return mydata
