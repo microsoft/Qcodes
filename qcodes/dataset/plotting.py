@@ -193,13 +193,14 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     # potentially slow method of filling in the data, should be optimised
     log.debug('Sorting data onto grid for plotting')
     z_to_plot = np.full((ny, nx), np.nan)
-    xrowlist = list(xrow)
-    yrowlist = list(yrow)
-    for (xp, yp, zp) in zip(x, y, z):
-        xind = xrowlist.index(xp)
-        yind = yrowlist.index(yp)
-        z_to_plot[yind, xind] = zp
+    x_index = np.zeros_like(x, dtype=np.int)
+    y_index = np.zeros_like(y, dtype=np.int)
+    for i, xval in enumerate(xrow):
+        x_index[np.where(x==xval)[0]] = i
+    for i, yval in enumerate(yrow):
+        y_index[np.where(y==yval)[0]] = i
 
+    z_to_plot[y_index, x_index] = z
     fig, ax = plt.subplots()
     ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
 
