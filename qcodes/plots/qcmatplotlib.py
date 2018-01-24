@@ -108,7 +108,7 @@ class MatPlot(BasePlot):
         # of the number of subplots.
         # However the qcodes api assumes that subplots is always a 1D array
         # so flatten here
-        self.subplots = self.subplots.symbols_list()
+        self.subplots = self.subplots.flatten()
 
         for k, subplot in enumerate(self.subplots):
             # Include `add` method to subplots, making it easier to add data to
