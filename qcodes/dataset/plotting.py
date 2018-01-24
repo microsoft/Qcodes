@@ -145,6 +145,7 @@ def plot_by_id(run_id: int) -> Figure:
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
                 ax.scatter(x=xpoints, y=ypoints, c=zpoints)
+                set_axis_labels(ax, data)
 
         else:
             raise ValueError('Multi-dimensional data encountered. '
@@ -192,9 +193,11 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     # potentially slow method of filling in the data, should be optimised
     log.debug('Sorting data onto grid for plotting')
     z_to_plot = np.full((ny, nx), np.nan)
+    xrowlist = list(xrow)
+    yrowlist = list(yrow)
     for (xp, yp, zp) in zip(x, y, z):
-        xind = list(xrow).index(xp)
-        yind = list(yrow).index(yp)
+        xind = xrowlist.index(xp)
+        yind = yrowlist.index(yp)
         z_to_plot[yind, xind] = zp
 
     fig, ax = plt.subplots()
@@ -203,7 +206,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     return fig
 
 
-def _rows_from_datapoints(setpoints: np.ndarray) -> List[np.ndarray]:
+def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
     """
     Cast the (potentially) unordered setpoints into rows
     of sorted, unique setpoint values. Because of the way they are ordered,
@@ -214,20 +217,32 @@ def _rows_from_datapoints(setpoints: np.ndarray) -> List[np.ndarray]:
         setpoints: The raw setpoints as a one-dimensional array
 
     Returns:
-        A list of the rowsg
+        A ndarray of the rows
     """
 
     rows = []
+    setpoints = inputsetpoints.copy()
+
+    # first check if there is only one unique array in which case we can avoid the
+    # potentially slow loop below
+    temp, inds, count = np.unique(setpoints, return_index=True,
+                                  return_counts=True)
+    num_repeats_array = np.unique(count)
+    if len(num_repeats_array) == 1 and count.sum() == len(inputsetpoints):
+        return np.tile(temp, (num_repeats_array[0], 1))
+    else:
+        rows.append(temp)
+        setpoints = np.delete(setpoints, inds)
 
     while len(setpoints) > 0:
         temp, inds = np.unique(setpoints, return_index=True)
         rows.append(temp)
         setpoints = np.delete(setpoints, inds)
 
-    return rows
+    return np.array(rows)
 
 
-def _all_in_group_or_subgroup(setpoints: np.ndarray) -> bool:
+def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     """
     Detects whether the setpoints correspond to two groups of
     of identical rows, one being contained in the other.
@@ -238,8 +253,7 @@ def _all_in_group_or_subgroup(setpoints: np.ndarray) -> bool:
     Note that each axis needs NOT be equidistantly spaced.
 
     Args:
-        setpoints: The setpoints for one dimension as a
-            potentially unordered one-dimensional array
+        rows: The output from _rows_from_datapoints
 
     Returns:
         A boolean indicating whether the setpoints meet the
@@ -247,7 +261,6 @@ def _all_in_group_or_subgroup(setpoints: np.ndarray) -> bool:
     """
 
     groups = 1
-    rows = _rows_from_datapoints(setpoints)
     comp_to = rows[0]
 
     aigos = True
@@ -327,11 +340,12 @@ def _plottype_from_setpoints(setpoints: Sequence[Sequence[Sequence[Any]]]) -> st
 
     # Now check if this is a simple rectangular sweep,
     # possibly interrupted in the middle of one row
-    x_check = _all_in_group_or_subgroup(xpoints)
-    y_check = _all_in_group_or_subgroup(ypoints)
 
     xrows = _rows_from_datapoints(xpoints)
     yrows = _rows_from_datapoints(ypoints)
+
+    x_check = _all_in_group_or_subgroup(xrows)
+    y_check = _all_in_group_or_subgroup(yrows)
 
     x_check = x_check and (len(xrows[0]) == len(yrows))
     y_check = y_check and (len(yrows[0]) == len(xrows))
