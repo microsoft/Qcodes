@@ -50,8 +50,12 @@ def test_nest():
     n = ManualParameter("n")
     n.get = lambda: np.cos(x()) + 2 * np.sin(y())
 
-    sweep_object = nest(sweep(x, sweep_values_x), chain(m, nest(sweep(y, sweep_values_y), n)))
-    # x * (m + y * n)
+    sweep_object = sweep(x, sweep_values_x)(
+        m,
+        sweep(y, sweep_values_y)(
+            n
+        )
+    )
 
     experiment = new_experiment("sweep_measure", sample_name="sine")
     station = Station()
