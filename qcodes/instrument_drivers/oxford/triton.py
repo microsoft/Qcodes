@@ -33,7 +33,6 @@ class Triton(IPInstrument):
 
         self._heater_range_auto = False
         self._heater_range_temp = [0.03, 0.1, 0.3, 1, 12, 40]
-
         self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
         self._control_channel = 5
 
@@ -230,8 +229,7 @@ class Triton(IPInstrument):
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' %
-                   self._get_control_channel())
+        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(self._get_control_channel()))
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
