@@ -22,10 +22,11 @@ def test_simple():
     experiment = new_experiment("sweep_measure", sample_name="sine")
     station = Station()
     meas = SweepMeasurement(exp=experiment, station=station)
+    meas.register_sweep(sweep_object)
 
     with meas.run() as datasaver:
         for data in sweep_object:
-            datasaver.add_result(data)
+            datasaver.add_result(*data.items())
 
     data_set = datasaver._dataset
     assert data_set.paramspecs["x"].depends_on == ""
@@ -36,12 +37,12 @@ def test_simple():
 
 
 def test_nest():
-    n = 100
+    n_sample_points = 100
     x = ManualParameter("x")
-    sweep_values_x = np.linspace(-1, 1, n) 
+    sweep_values_x = np.linspace(-1, 1, n_sample_points)
 
     y = ManualParameter("y")
-    sweep_values_y = np.linspace(-1, 1, n)
+    sweep_values_y = np.linspace(-1, 1, n_sample_points)
 
     m = ManualParameter("m")
     m.get = lambda: np.sin(x())
@@ -55,27 +56,28 @@ def test_nest():
     experiment = new_experiment("sweep_measure", sample_name="sine")
     station = Station()
     meas = SweepMeasurement(exp=experiment, station=station)
+    meas.register_sweep(sweep_object)
 
     with meas.run() as datasaver:
         for data in sweep_object:
-            datasaver.add_result(data)
+            datasaver.add_result(*data.items())
 
     data_set = datasaver._dataset
     assert data_set.paramspecs["x"].depends_on == ""
     assert data_set.paramspecs["y"].depends_on == ""
     assert data_set.paramspecs["m"].depends_on == "x"
-    assert data_set.paramspecs["n"].depends_on == "y, x"
+    assert data_set.paramspecs["n"].depends_on == "x, y"
 
     data_x = data_set.get_data('x')
     data_y = data_set.get_data('y')
 
-    assert data_x[::n + 1] == [[xi] for xi in sweep_values_x]
-    assert data_y[::n + 1] == [[None] for _ in sweep_values_x]
+    assert data_x[::n_sample_points + 1] == [[xi] for xi in sweep_values_x]
+    assert data_y[::n_sample_points + 1] == [[None] for _ in sweep_values_x]
 
     coordinate_layout = itertools.product(sweep_values_x, sweep_values_y)
     expected_x, expected_y = zip(*coordinate_layout)
-    assert [ix for c, ix in enumerate(data_x) if c % (n + 1)] == [[xi] for xi in expected_x]
-    assert [iy for c, iy in enumerate(data_y) if c % (n + 1)] == [[yi] for yi in expected_y]
+    assert [ix for c, ix in enumerate(data_x) if c % (n_sample_points + 1)] == [[xi] for xi in expected_x]
+    assert [iy for c, iy in enumerate(data_y) if c % (n_sample_points + 1)] == [[yi] for yi in expected_y]
 
 
 

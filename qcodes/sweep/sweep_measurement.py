@@ -1,95 +1,46 @@
 """
-The sweep measurement class that is designed to be used with sweep objects. Since with sweep objects we can
-automatically detect dependent and independent parameters, there is no need to register these explicitly
-
-Intended usage:
-
->>> from qcodes import new_experiment
->>> from qcodes.sweep import sweep, SweepMeasurement
->>> experiment = new_experiment()
->>> with SweepMeasurement(experiment).run() as data_saver:
->>>     for result_dict in sweep(obj, values):
->>>         data_saver.add_result(result_dict)
->>>
-
-
+A measurement subclass which is designed to work specifically with sweep objects. It simply adds a method to register
+parameters implicitly defined  in sweep objects.
 """
-from typing import List
-import logging
 
-from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.measurements import DataSaver, Measurement, Runner
-from qcodes.dataset.data_set import DataSet
+from collections import OrderedDict
+import itertools
 
-
-log = logging.getLogger(__name__)
-
-
-class SweepDataSaver(DataSaver):
-    def __init__(self, dataset: DataSet, write_period: float,
-                 known_parameters: List[str]) -> None:
-
-        super().__init__(dataset, write_period, known_parameters)
-        self._parameters = set()  # Parameter names encountered during the run
-
-    def _register_parameters_in_result_dict(self, result_dict):
-        # Make sure all parameters in a data line are registered in the QCoDeS data set
-        # first find all independent parameters in the data line and make sure they are registered
-        independent_parameters = []
-        dependent_parameters = []
-
-        for parameter_name in result_dict.keys():
-            if result_dict[parameter_name]["independent_parameter"]:
-                independent_parameters.append(parameter_name)
-
-                if parameter_name not in self._parameters:
-                    unit = result_dict[parameter_name]["unit"]
-                    self._add_to_data_set(parameter_name, unit, [])
-            else:
-                dependent_parameters.append(parameter_name)
-
-        # Then process all dependent parameters
-        for parameter_name in dependent_parameters:
-            if parameter_name not in self._parameters:
-                unit = result_dict[parameter_name]["unit"]
-                self._add_to_data_set(parameter_name, unit, independent_parameters)
-
-    def _add_to_data_set(self, parameter_name, unit, depends_on):
-        ty = "number"  # for now
-        param_spec = ParamSpec(parameter_name, ty, depends_on=depends_on, unit=unit)
-        self._dataset.add_parameters([param_spec])
-        self._parameters.add(parameter_name)
-
-    def add_result(self, result_dict: dict)->None:  # In the sweep version of the data saver we expect dictionaries
-        self._register_parameters_in_result_dict(result_dict)
-
-        result_list = [(name, result_dict[name]["value"]) for name in result_dict.keys()]
-        super().add_result(*result_list)
-
-    def flush_data_to_database(self):
-        """
-        Write the in-memory results to the database.
-        """
-        log.debug('Flushing to database')
-        if self._results != []:
-            try:
-                for result in self._results:
-                    self._dataset.add_result(result)  # add_results does not work when
-                    # individual results do not have the same number of columns. This happens when we are measuring
-                    # multiple parameters with different coordinate layouts.
-                log.debug(f'Successfully wrote data')
-                self._results = []
-            except Exception as e:
-                log.warning(f'Could not commit to database; {e}')
+from qcodes.dataset.measurements import Measurement
+from qcodes import ParamSpec
 
 
 class SweepMeasurement(Measurement):
-    def run(self):
-        """
-        Returns the context manager for the experimental run
-        """
-        return Runner(
-            self.enteractions, self.exitactions,
-            self.experiment, parameters=self.parameters,
-            saver_class=SweepDataSaver
-        )
+    def register_sweep(self, sweep_object):
+
+        independent_parameters = []
+        dependent_parameters = []
+
+        for parameters_dict in sweep_object.parameter_table.table_list:
+            local_independents = [
+                ParamSpec(
+                    name=name,
+                    paramtype='numeric',
+                    unit=unit
+                )
+                for name, unit in parameters_dict["independent_parameters"]
+            ]
+
+            dependent_parameters.extend([
+                ParamSpec(
+                    name=name,
+                    paramtype='numeric',
+                    unit=unit,
+                    depends_on=local_independents
+                )
+                for name, unit in parameters_dict["dependent_parameters"]
+            ])
+
+            independent_parameters.extend(local_independents)
+
+        if len(set(dependent_parameters)) != len(dependent_parameters):
+            raise RuntimeError("Duplicate dependent parameters detected!")
+
+        self.parameters = OrderedDict({
+            spec.name: spec for spec in itertools.chain(independent_parameters, dependent_parameters)
+        })
