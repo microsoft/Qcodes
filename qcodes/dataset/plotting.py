@@ -32,7 +32,59 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
     return dataarray
 
 
-def plot_by_id(run_id: int, **plot_kwargs: dict) -> Figure:
+def get_data_by_id(run_id: int) -> List:
+    """
+    Load data from database and reshapes into 1D arrays with minimal
+    name, unit and label metadata.
+    """
+
+    data = qc.load_by_id(run_id)
+    conn = data.conn
+    deps = get_dependents(conn, run_id)
+    output = []
+    for dep in deps:
+
+        dependencies = get_dependencies(conn, dep)
+        data_axis = get_layout(conn, dep)
+        rawdata = data.get_values(data_axis['name'])
+        data_axis['data'] = flatten_1D_data_for_plot(rawdata)
+        raw_setpoint_data = data.get_setpoints(data_axis['name'])
+        my_output = []
+
+        for i, dependency in enumerate(dependencies):
+            axis = get_layout(conn, dependency[0])
+            axis['data'] = flatten_1D_data_for_plot(raw_setpoint_data[i])
+            my_output.append(axis)
+
+        my_output.append(data_axis)
+        output.append(my_output)
+    return output
+
+
+def plot_by_id(run_id: int) -> Figure:
+    def set_axis_labels(ax, data):
+        if data[0]['label'] == '':
+            lbl = data[0]['name']
+        else:
+            lbl = data[0]['label']
+        if data[0]['unit'] == '':
+            unit = ''
+        else:
+            unit = data[0]['unit']
+            unit = f"({unit})"
+        ax.set_xlabel(f'{lbl} {unit}')
+
+        if data[1]['label'] == '':
+            lbl = data[1]['name']
+        else:
+            lbl = data[1]['label']
+        if data[1]['unit'] == '':
+            unit = ''
+        else:
+            unit = data[1]['unit']
+            unit = f'({unit})'
+        ax.set_ylabel(f'{lbl} {unit}')
+
     """
     Construct all plots for a given run
 
@@ -41,87 +93,24 @@ def plot_by_id(run_id: int, **plot_kwargs: dict) -> Figure:
        * 2D plots on filled out rectangular grids
     """
 
-    conn = DataSet(DB).conn
+    alldata = get_data_by_id(run_id)
 
-    data = qc.load_by_id(run_id)
-    deps = get_dependents(conn, run_id)
+    for data in alldata:
 
-    for dep in deps:
-        recipe = get_dependencies(conn, dep)
-
-        if len(recipe) == 1:  # 1D PLOTTING
+        if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
-            # get plotting info
 
-            # THE MEASURED AXIS
-            second_axis_layout = get_layout(conn, dep)
-            second_axis_name = second_axis_layout['name']
-            second_axis_label = second_axis_layout['label']
-            second_axis_unit = second_axis_layout['unit']
-            rawdata = data.get_values(second_axis_name)
-            second_axis_data = flatten_1D_data_for_plot(rawdata)
-
-            # THE SETPOINT AXIS
-            first_axis_layout = get_layout(conn, recipe[0][0])
-            first_axis_name = first_axis_layout['name']
-            first_axis_label = first_axis_layout['label']
-            first_axis_unit = first_axis_layout['unit']
-            rawdata = data.get_setpoints(second_axis_name)
-            first_axis_data = flatten_1D_data_for_plot(rawdata)
-
-            # perform plotting
             figure, ax = plt.subplots()
 
             # sort for plotting
-            order = first_axis_data.argsort()
+            order = data[0]['data'].argsort()
 
-            ax.plot(first_axis_data[order], second_axis_data[order], **plot_kwargs)
-
-            if first_axis_label == '':
-                lbl = first_axis_name
-            else:
-                lbl = first_axis_label
-            if first_axis_unit == '':
-                unit = ''
-            else:
-                unit = f'({first_axis_unit})'
-            ax.set_xlabel(f'{lbl} {unit}')
-
-            if second_axis_label == '':
-                lbl = second_axis_name
-            else:
-                lbl = second_axis_label
-            if second_axis_unit == '':
-                unit = ''
-            else:
-                unit = f'({second_axis_unit})'
-            ax.set_ylabel(f'{lbl} {unit}')
-
+            ax.plot(data[0]['data'][order], data[1]['data'][order])
+            set_axis_labels(ax, data)
             return figure
 
-        elif len(recipe) == 2:  # 2D PLOTTING
+        elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
-
-            heatmap_layout = get_layout(conn, dep)
-            heatmap_name = heatmap_layout['name']
-            # TODO: implement the colorbar and use the label and unit
-            # heatmap_label = heatmap_layout['label']
-            # heatmap_unit = heatmap_layout['unit']
-
-            setpoints = data.get_setpoints(heatmap_name)
-            heatmap_data = data.get_values(heatmap_name)
-
-            # FIRST SETPOINT AXIS
-            first_axis_layout = get_layout(conn, recipe[0][0])
-            first_axis_name = first_axis_layout['name']
-            first_axis_label = first_axis_layout['label']
-            first_axis_unit = first_axis_layout['unit']
-
-            # SECOND SETPOINT AXIS
-            second_axis_layout = get_layout(conn, recipe[1][0])
-            second_axis_name = second_axis_layout['name']
-            second_axis_label = second_axis_layout['label']
-            second_axis_unit = second_axis_layout['unit']
 
             # From the setpoints, figure out which 2D plotter to use
             # TODO: The "decision tree" for what gets plotted how and how
@@ -130,45 +119,32 @@ def plot_by_id(run_id: int, **plot_kwargs: dict) -> Figure:
                            'equidistant': plot_on_a_plain_grid}
 
             log.debug('Plotting by id, determining plottype')
-            plottype = _plottype_from_setpoints(setpoints)
-
+            try:
+                plottype = _plottype_from_setpoints([data[0]['data'],
+                                                     data[1]['data']])
+            except RuntimeError:
+                plottype = "unknown"
             if plottype in how_to_plot.keys():
                 log.debug('Plotting by id, doing the actual plot')
-                xpoints = flatten_1D_data_for_plot(setpoints[0])
-                ypoints = flatten_1D_data_for_plot(setpoints[1])
-                zpoints = flatten_1D_data_for_plot(heatmap_data)
+                xpoints = flatten_1D_data_for_plot(data[0]['data'])
+                ypoints = flatten_1D_data_for_plot(data[1]['data'])
+                zpoints = flatten_1D_data_for_plot(data[2]['data'])
                 figure = how_to_plot[plottype](xpoints, ypoints, zpoints)
 
                 ax = figure.axes[0]
-
-                if first_axis_label == '':
-                    lbl = first_axis_name
-                else:
-                    lbl = first_axis_label
-                if first_axis_unit == '':
-                    unit = ''
-                else:
-                    unit = f'({first_axis_unit})'
-                ax.set_xlabel(f'{lbl} {unit}')
-
-                if second_axis_label == '':
-                    lbl = second_axis_name
-                else:
-                    lbl = second_axis_label
-                if second_axis_unit == '':
-                    unit = ''
-                else:
-                    unit = f'({second_axis_unit})'
-                ax.set_ylabel(f'{lbl} {unit}')
-
+                set_axis_labels(ax, data)
                 # TODO: get a colorbar
 
                 return figure
 
             else:
-                raise NotImplementedError('2D data does not seem to be on a '
-                                          'grid. A plotting function for this'
-                                          ' does not exists yet.')
+                log.warning('2D data does not seem to be on a '
+                            'grid. Falling back to scatter plot')
+                fig, ax = plt.subplots(1,1)
+                xpoints = flatten_1D_data_for_plot(data[0]['data'])
+                ypoints = flatten_1D_data_for_plot(data[1]['data'])
+                zpoints = flatten_1D_data_for_plot(data[2]['data'])
+                ax.scatter(x=xpoints, y=ypoints, c=zpoints)
 
         else:
             raise ValueError('Multi-dimensional data encountered. '
