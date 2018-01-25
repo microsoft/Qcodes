@@ -138,17 +138,19 @@ class AMI430(IPInstrument):
                                          'tesla': 1})
 
         # Set programatic safety limits
+        self.add_parameter('current_ramp_limit',
+                            get_cmd=lambda: self._current_ramp_limit,
+                            set_cmd=self._update_ramp_rate_limit,
+                            unit="A/s")
+        self.add_parameter('field_ramp_limit',
+                            get_cmd=lambda: self.current_ramp_limit(),
+                            set_cmd=lambda x: self.current_ramp_limit(x),
+                            scale=1/float(self.ask("COIL?")),
+                            unit="T/s")
         if current_ramp_limit is None:
             self._update_ramp_rate_limit(AMI430._DEFAULT_CURRENT_RAMP_LIMIT, update=False)
         else:
             self._update_ramp_rate_limit(current_ramp_limit, update=False)
-        self.add_parameter('current_ramp_limit',
-                            get_cmd=lambda: self._current_ramp_limit,
-                            set_cmd=self._update_ramp_rate_limit)
-        self.add_parameter('field_ramp_limit',
-                            get_cmd=lambda: self.current_ramp_limit(),
-                            set_cmd=lambda x: self.current_ramp_limit(x),
-                            scale=1/float(self.ask("COIL?")))
 
         # Add solenoid parameters
         self.add_parameter('coil_constant',
