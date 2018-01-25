@@ -415,6 +415,7 @@ class AMI430(IPInstrument):
             self.current_ramp_limit.scale = 1/60
         else:
             self.current_ramp_limit.scale = 1
+        self._update_coil_constant()
 
 class AMI430_3D(Instrument):
     def __init__(self, name, instrument_x, instrument_y,
