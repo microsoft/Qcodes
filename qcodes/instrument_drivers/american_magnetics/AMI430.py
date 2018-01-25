@@ -11,6 +11,8 @@ from qcodes.utils.validators import Numbers, Anything
 
 log = logging.getLogger(__name__)
 
+class AMI430Exception(Exception):
+    pass
 
 class AMI430(IPInstrument):
     """
