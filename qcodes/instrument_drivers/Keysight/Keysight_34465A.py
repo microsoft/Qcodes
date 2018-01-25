@@ -231,8 +231,8 @@ class Keysight_34465A(VisaInstrument):
 
         self.add_parameter('autorange',
                            label='Autorange',
-                           set_cmd='SENSe:VOLtage:DC:RANGe:AUTO {}',
-                           get_cmd='SENSe:VOLtage:DC:RANGe:AUTO?',
+                           set_cmd='SENSe:VOLTage:DC:RANGe:AUTO {}',
+                           get_cmd='SENSe:VOLTage:DC:RANGe:AUTO?',
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
 
