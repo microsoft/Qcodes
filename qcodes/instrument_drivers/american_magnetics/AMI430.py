@@ -167,7 +167,7 @@ class AMI430(IPInstrument):
                             scale=1/float(self.ask("COIL?")))
 
         # Add current solenoid parameters
-        # Note that field is validated in _set_field
+        # Note that field is validated in set_field
         self.add_parameter('field',
                             get_cmd='FIELD:MAG?',
                             get_parser=float,
@@ -303,6 +303,9 @@ class AMI430(IPInstrument):
 
     def ramp_to(self, value, block=False):
         """ User accessible method to ramp to field """
+        # This function duplicates set_field, let's deprecate it...
+        warn("This method is deprecated. Use set_field with named parameter block=False instead.",
+                DeprecationWarning)
         if self._parent_instrument is not None:
             if not block:
                 msg = (": Initiating a blocking instead of non-blocking "
@@ -311,7 +314,7 @@ class AMI430(IPInstrument):
 
             self._parent_instrument._request_field_change(self, value)
         else:
-            self._set_field(value, block=False)
+            self.set_field(value, block=False)
 
     def _get_ramp_rate(self):
         """ Return the ramp rate of the first segment in Tesla per second """
