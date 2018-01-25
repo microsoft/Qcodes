@@ -14,6 +14,85 @@ log = logging.getLogger(__name__)
 class AMI430Exception(Exception):
     pass
 
+class AMI430SwitchHeater(InstrumentChannel):
+    class _Decorators:
+        @classmethod
+        def check_enabled(cls, f):
+            def check_enabled_decorator(self, *args, **kwargs):
+                if not self.check_enabled():
+                    raise AMI430Exception("Switch not enabled")
+                return f(self, *args, **kwargs)
+            return check_enabled_decorator
+
+    def __init__(self, parent: 'AMI430'):
+        super().__init__(parent, "SwitchHeater")
+
+        # Add state parameters
+        self.add_parameter('enabled',
+                    label='Switch Heater Enabled',
+                    get_cmd=self.check_enabled,
+                    set_cmd=lambda x: self.enable() if x else self.disable(),
+                    vals=Bool())
+        self.add_parameter('state',
+                    label='Switch Heater On',
+                    get_cmd=self.check_state,
+                    set_cmd=lambda x: self.on() if x else self.off(),
+                    vals=Bool())
+        self.add_parameter('in_persistent_mode',
+                    label='Persistent Mode',
+                    get_cmd="PERS?",
+                    val_mapping={True: 1, False: 0})
+
+        # Configuration Parameters
+        self.add_parameter('current',
+                    label='Switch Heater Current',
+                    unit='mA',
+                    get_cmd='PS:CURR?',
+                    get_parser=float,
+                    set_cmd='CONF:PS:CURR {}',
+                    vals=Numbers(0, 125))
+        self.add_parameter('heat_time',
+                    label='Heating Time',
+                    unit='s',
+                    get_cmd='PS:HTIME?',
+                    get_parser=int,
+                    set_cmd='CONF:PS:HTIME {}',
+                    vals=Ints(5, 120))
+        self.add_parameter('cool_time',
+                    label='Cooling Time',
+                    unit='s',
+                    get_cmd='PS:CTIME?',
+                    get_parser=int,
+                    set_cmd='CONF:PS:CTIME {}',
+                    vals=Ints(5, 3600))
+
+    def disable(self):
+        """Turn measurement off"""
+        self.write('CONF:PS 0')
+        self._enabled = False
+
+    def enable(self):
+        """Turn measurement on"""
+        self.write('CONF:PS 1')
+        self._enabled = True
+
+    def check_enabled(self):
+        return bool(self.ask('PS:INST?').strip())
+
+    @_Decorators.check_enabled
+    def on(self):
+        self.write("PS 1")
+        while self._parent.ramping_state() == "heating switch":
+            self._parent._sleep(0.5)
+    @_Decorators.check_enabled
+    def off(self):
+        self.write("PS 0")
+        while self._parent.ramping_state() == "cooling switch":
+            self._parent._sleep(0.5)
+    @_Decorators.check_enabled
+    def check_state(self):
+        return bool(self.ask("PS?").strip())
+
 class AMI430(IPInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer.
