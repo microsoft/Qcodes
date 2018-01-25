@@ -1,10 +1,26 @@
+"""
+This module defines sweep objects and convenience functions associated.
+
+TODO:
+1) Add proper docstrings in google format
+2) Add type hints
+"""
 import itertools
 import numpy as np
+import time
 
 import qcodes
 
 
 class ParametersTable:
+    """
+    A parameters table is how sweep objects keep track of which parameters have been defined and how they relate to each
+    other. Please have a look at the following notebook for a better understanding:
+    https://github.com/sohailc/Qcodes/blob/sweep_integration/docs/examples/sweep/sweep_basic_example.ipynb
+
+    When a sweep object is registered by the SweepMeasurement class (see sweep_measurement.py), this table is used
+    to create the ParamSpecs.
+    """
     def __init__(self, table_list=None, dependent_parameters=None, independent_parameters=None):
 
         if not any([table_list, dependent_parameters, independent_parameters]):
@@ -31,6 +47,17 @@ class ParametersTable:
         return ParametersTable([
             {k: s[k] + o[k] for k in s.keys()} for s, o in itertools.product(self._table_list, other.table_list)
         ])
+
+    def __repr__(self):
+        def table_print(table):
+            s = "|".join([
+                ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in ["independent_parameters",
+                                                                             "dependent_parameters"]
+            ])
+
+            return s
+
+        return "\n".join([table_print(table) for table in self._table_list])
 
     def flatten(self):
         ind = {k: v for d in self._table_list for k, v in d["independent_parameters"]}
@@ -107,7 +134,8 @@ class BaseSweepObject:
         # The following attributes are determined when we begin iteration...
         self._param_setter = None  # A "param_setter" is an iterator which, when "next" is called a new value of the
         # independent parameter is set.
-        self._parameter_table = None  # A proper parameter table should be defined by the subclasses
+        self._parameter_table = None  # A proper parameter table should be defined by the subclasses. This is an
+        # instance of ParametersTable
         self._symbols_list = None
 
     def _setter_factory(self):
@@ -341,6 +369,25 @@ class FunctionWrapper(BaseSweepObject):
             stop = not self._repeat
 
 
+class TimeTrace(BaseSweepObject):
+    def __init__(self, total_time, interval_time):
+        super().__init__()
+
+        self._parameter_table = ParametersTable(
+            independent_parameters=[("time", "s")]
+        )
+        self._total_time = total_time
+        self._interval_time = interval_time
+
+    def _setter_factory(self):
+        t0 = time.time()
+        t = t0
+        while t - t0 < self._total_time:
+            yield {"time": (t - t0)}
+            time.sleep(self._interval_time)
+            t = time.time()
+
+
 def sweep(obj, sweep_points):
     """
     A convenience function to create a 1D sweep object
@@ -397,3 +444,11 @@ def szip(*objects):
         # and functions will be called as often as the length of the sweep object.
         repeat = True
     return Zip(wrap_objects(*objects, repeat=repeat))
+
+
+def time_trace(measurement_object, total_time, interval_time):
+    """
+    Make time trace sweep object to monitor the return value of the measurement object over a certain time period.
+    """
+    tt_sweep = TimeTrace(total_time, interval_time)
+    return szip(measurement_object, tt_sweep)
