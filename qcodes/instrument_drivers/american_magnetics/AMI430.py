@@ -327,7 +327,7 @@ class AMI430(IPInstrument):
         """ Set the ramp rate of the first segment in Tesla per second """
         if rate > self.field_ramp_limit():
             raise ValueError("{} {} is above the ramp rate limit of {} {}".format(
-                rate, self.ramp_rate.unit, 
+                rate, self.ramp_rate.unit,
                 self.field_ramp_limit(), self.field_ramp_limit.unit))
         self.write('CONF:RAMP:RATE:SEG 1')
         self.write('CONF:RAMP:RATE:FIELD 1,{},0'.format(rate))
