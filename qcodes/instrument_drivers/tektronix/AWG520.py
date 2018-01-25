@@ -61,6 +61,7 @@ class Tektronix_AWG520(VisaInstrument):
             None
         '''
         super().__init__(name, address, **kw)
+        self.set_terminator('\n')
 
         self._address = address
         self._values = {}
@@ -176,7 +177,7 @@ class Tektronix_AWG520(VisaInstrument):
 
     # get state AWG
     def get_state(self):
-        state = self.visa_handle.ask('AWGC:RSTATE?')
+        state = self.ask('AWGC:RSTATE?')
         if state.startswith('0'):
             return 'Idle'
         elif state.startswith('1'):
@@ -190,36 +191,56 @@ class Tektronix_AWG520(VisaInstrument):
     def get_errors(self, max_requests=50):
         errors = []
         for k in range(max_requests):
-            error_msg = self.ask('SYSTem:ERRor?').rstrip('\n')
+            error_msg = self.ask('SYSTem:ERRor?')
             if 'No error' in error_msg:
                 break
             errors.append(error_msg)
         return errors
 
     def start(self):
-        self.visa_handle.write('AWGC:RUN')
+        self.write('AWGC:RUN')
         return
 
     def stop(self):
-        self.visa_handle.write('AWGC:STOP')
+        self.write('AWGC:STOP')
 
-    def get_folder_contents(self):
-        return self.visa_handle.ask('mmem:cat?')
+    def get_folder_contents(self, return_filesizes=False):
+        # Retrieve folder contents as one large string
+        contents = self.ask('mmem:cat?')
+        # Remove first part of string containing information about directory
+        contents = contents.split(',"', 1)[1]
+
+        if contents == ',,"':
+            # Empty folder
+            return [], []
+
+        # Separate the elements
+        contents = contents.split('","')
+        # Each element has form
+        contents = [elem.split(',') for elem in contents]
+
+        folders = [elem[0] for elem in contents if elem[1] == 'DIR']
+        if return_filesizes:
+            files = [elem[0::2] for elem in contents if not elem[1]]
+        else:
+            files = [elem[0] for elem in contents if not elem[1]]
+
+        return files, folders
 
     def get_current_folder_name(self):
-        return self.visa_handle.ask('mmem:cdir?')
+        return self.ask('mmem:cdir?').strip('"')
 
     def delete_file(self, file):
-        return self.visa_handle.write(f'mmem:del "{file}"')
+        return self.write(f'mmem:del "{file}"')
 
     def set_current_folder_name(self, file_path):
-        self.visa_handle.write('mmem:cdir "%s"' % file_path)
+        self.write('mmem:cdir "%s"' % file_path)
 
     def change_folder(self, dir):
-        self.visa_handle.write('mmem:cdir "%s"' % dir)
+        self.write('mmem:cdir "%s"' % dir)
 
     def goto_root(self):
-        self.visa_handle.write('mmem:cdir')
+        self.write('mmem:cdir')
 
     def make_directory(self, dir, root):
         """ makes a directory
@@ -227,9 +248,20 @@ class Tektronix_AWG520(VisaInstrument):
         """
         if root:
             self.goto_root()
-            self.visa_handle.write('MMEMory:MDIRectory "{}"'.format(dir))
+            self.write('MMEMory:MDIRectory "{}"'.format(dir))
         else:
-            self.visa_handle.write('MMEMory:MDIRectory "{}"'.format(dir))
+            self.write('MMEMory:MDIRectory "{}"'.format(dir))
+
+    def delete_file(self, filename):
+        self.write('MMemory:delete "{}"'.format(filename))
+
+    def delete_all_files(self, root=False):
+        if root:
+            self.goto_root()
+        print('Deleting all files')
+        files, _ = self.get_folder_contents()
+        for elem in files:
+            self.delete_file(elem)
 
     def clear_waveforms(self):
         '''
@@ -242,8 +274,7 @@ class Tektronix_AWG520(VisaInstrument):
             None
         '''
         logger.debug('Clear waveforms from channels')
-        self.visa_handle.write('SOUR1:FUNC:USER ""')
-        self.visa_handle.write('SOUR2:FUNC:USER ""')
+        self.write('SOUR2:FUNC:USER ""')
 
     def force_trigger(self):
         '''
@@ -251,7 +282,7 @@ class Tektronix_AWG520(VisaInstrument):
 
         Ron
         '''
-        return self.visa_handle.write('TRIG:SEQ:IMM')
+        return self.write('TRIG:SEQ:IMM')
 
     def force_logicjump(self):
         '''
@@ -262,7 +293,7 @@ class Tektronix_AWG520(VisaInstrument):
 
         Ron
         '''
-        return self.visa_handle.write('AWGC:EVEN:SEQ:IMM')
+        return self.write('AWGC:EVEN:SEQ:IMM')
 
     def set_jumpmode(self, mode):
         '''
@@ -274,7 +305,7 @@ class Tektronix_AWG520(VisaInstrument):
 
         Ron
         '''
-        return self.visa_handle.write('AWGC:ENH:SEQ:JMOD %s' % mode)
+        return self.write('AWGC:ENH:SEQ:JMOD %s' % mode)
 
     def get_jumpmode(self, mode):
         '''
@@ -282,7 +313,7 @@ class Tektronix_AWG520(VisaInstrument):
 
         Ron
         '''
-        return self.visa_handle.ask('AWGC:ENH:SEQ:JMOD?')
+        return self.ask('AWGC:ENH:SEQ:JMOD?')
 
     def _do_get_numpoints(self):
         '''
@@ -370,7 +401,7 @@ class Tektronix_AWG520(VisaInstrument):
         else:
             logger.debug('File does not exist in memory, \
             reading from instrument')
-            lijst = self.visa_handle.ask('MMEM:CAT? "MAIN"')
+            lijst = self.ask('MMEM:CAT? "MAIN"')
             bool = False
             bestand = ""
             for i in range(len(lijst)):
@@ -384,7 +415,7 @@ class Tektronix_AWG520(VisaInstrument):
                 elif bool:
                     bestand = bestand + lijst[i]
         if exists:
-            data = self.visa_handle.ask('MMEM:DATA? "%s"' %name)
+            data = self.ask('MMEM:DATA? "%s"' %name)
             logger.debug('File exists on instrument, loading \
             into local memory')
             # string alsvolgt opgebouwd: '#' <lenlen1> <len> 'MAGIC 1000\r\n' '#' <len waveform> 'CLOCK ' <clockvalue>
@@ -425,16 +456,9 @@ class Tektronix_AWG520(VisaInstrument):
 
         if (self._numpoints==self._values['files'][name]['numpoints']):
             logger.debug('Set file %s on channel %s' % (name, channel))
-            self.visa_handle.write('SOUR%s:FUNC:USER "%s","MAIN"' % (channel, name))
-        else:
-            self.visa_handle.write('SOUR%s:FUNC:USER "%s","MAIN"' % (channel, name))
+            self.write('SOUR%s:FUNC:USER "%s","MAIN"' % (channel, name))
             logger.warning('Verkeerde lengte %s ipv %s'
                 %(self._values['files'][name]['numpoints'], self._numpoints))
-
-    def get_filenames(self):
-        """Ask for string with filenames"""
-        logger.debug('Read filenames from instrument')
-        return self.visa_handle.ask('MMEM:CAT? "MAIN"')
 
     def send_waveform(self,
                       waveform: List[float],
@@ -469,7 +493,7 @@ class Tektronix_AWG520(VisaInstrument):
 
         if not len(waveform) == len(marker1) == len(marker2):
             raise SyntaxError('Lengths of waveforms and markers arent equal')
-        elif len(waveform) % 2:
+        elif len(waveform) % 4:
             raise SyntaxError('Waveform must have even number of points')
         elif len(waveform) < 256:
             raise SyntaxError('Waveform is too short')
@@ -667,6 +691,8 @@ class Tektronix_AWG520(VisaInstrument):
         goto_one = np.array(goto_one, dtype=int)
         logic_jump = np.array(logic_jump, dtype=int)
 
+        assert max(repetitions) <= 65536, "Repetitions must be max 65536"
+
         s1 = 'MMEM:DATA "%s",' % filename
 
         if len(np.shape(waveforms)) == 1:
@@ -674,30 +700,30 @@ class Tektronix_AWG520(VisaInstrument):
             instructions = [
                 f'"{waveforms[k]}",{repetitions[k]},{wait_trigger[k]},{goto_one[k]},{logic_jump[k]}'
                 for k in range(N_instructions)]
-            s5 = '\n'.join(instructions) + '\n'
+            s5 = '\n'.join(instructions)
 
         else:
             s3 = 'MAGIC 3002\n'
             instructions = [
                 f'"{waveforms[0][k]}","{waveforms[1][k]}",{repetitions[k]},{wait_trigger[k]},{goto_one[k]},{logic_jump[k]}'
                 for k in range(N_instructions)]
-            s5 = '\n'.join(instructions) + '\n'
+            s5 = '\n'.join(instructions)
 
         s4 = 'LINES %s\n' % N_instructions
         lenlen=str(len(str(len(s5) + len(s4) + len(s3))))
         s2 = '#' + lenlen + str(len(s5) + len(s4) + len(s3))
 
         mes = s1 + s2 + s3 + s4 + s5
-        self.visa_handle.write(mes)
+        self.write(mes)
 
-    def set_sequence(self,filename):
+    def set_sequence(self,filename, ch=1):
         '''
         loads a sequence file on all channels.
         Waveforms/patterns to be executed on respective channel
         must be defined inside the sequence file itself
         make sure to send all waveforms before setting a seq
         '''
-        self.visa_handle.write('SOUR%s:FUNC:USER "%s","MAIN"' % (1, filename))
+        self.write('SOUR%s:FUNC:USER "%s","MAIN"' % (ch, filename))
 
     def load_and_set_sequence(self,wfs,rep,wait,goto,logic_jump,filename):
         '''
