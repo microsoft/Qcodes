@@ -550,20 +550,20 @@ class SR830(VisaInstrument):
         mode = self._N_TO_INPUT_CONFIG[int(s)]
 
         if mode in ['a', 'a-b']:
-            self.sensitivity.set_validator(self._VOLT_ENUM)
+            self.sensitivity.vals = self._VOLT_ENUM
             self._set_units('V')
         else:
-            self.sensitivity.set_validator(self._CURR_ENUM)
+            self.sensitivity.vals = self._CURR_ENUM
             self._set_units('A')
 
         return mode
 
     def _set_input_config(self, s):
         if s in ['a', 'a-b']:
-            self.sensitivity.set_validator(self._VOLT_ENUM)
+            self.sensitivity.vals = self._VOLT_ENUM
             self._set_units('V')
         else:
-            self.sensitivity.set_validator(self._CURR_ENUM)
+            self.sensitivity.vals = self._CURR_ENUM
             self._set_units('A')
 
         return self._INPUT_CONFIG_TO_N[s]
