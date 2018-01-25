@@ -148,7 +148,7 @@ class Triton(IPInstrument):
 
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
-            self._get_temp_channels(tmpfile)
+        self._get_temp_channels()
         self._get_pressure_channels()
 
         try:
@@ -333,23 +333,17 @@ class Triton(IPInstrument):
                 name = config.get(section, '"m_lpszname"').strip("\"")
                 self.chan_temp_names[chan] = {'name': name, 'value': None}
 
-    def _get_temp_channels(self, file):
-        config = configparser.ConfigParser()
-        with open(file, 'r', encoding='utf16') as f:
-            next(f)
-            config.read_file(f)
 
-        for section in config.sections():
-            options = config.options(section)
-            namestr = '"m_lpszname"'
-            if namestr in options:
-                chan = 'T' + section.split('\\')[-1].split('[')[-1]
-                name = config.get(section, '"m_lpszname"').strip("\"")
-                self.chan_temps[chan] = {'name': name, 'value': None}
-                self.add_parameter(name=chan,
-                                   unit='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
-                                   get_parser=self._parse_temp)
+    def _get_temp_channels(self):
+        self.chan_temps = []
+        for i in range(1, 17):
+            chan = 'T%d' % i
+            self.chan_temps.append(chan)
+            self.add_parameter(name=chan,
+                               unit = 'K',
+                               get_cmd = 'READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                               get_parser = self._parse_temp)
+        self.chan_temps = set(self.chan_temps)
 
     def _parse_action(self, msg):
         """ Parse message and return action as a string
