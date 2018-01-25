@@ -144,7 +144,6 @@ class Triton(IPInstrument):
 
         self.chan_alias = {}
         self.chan_temp_names = {}
-        self.chan_temps = {}
 
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
