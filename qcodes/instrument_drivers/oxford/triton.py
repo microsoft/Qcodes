@@ -228,7 +228,8 @@ class Triton(IPInstrument):
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(self._get_control_channel()))
+        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(
+            self._get_control_channel()))
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
@@ -332,16 +333,15 @@ class Triton(IPInstrument):
                 name = config.get(section, '"m_lpszname"').strip("\"")
                 self.chan_temp_names[chan] = {'name': name, 'value': None}
 
-
     def _get_temp_channels(self):
         self.chan_temps = []
         for i in range(1, 17):
             chan = 'T%d' % i
             self.chan_temps.append(chan)
             self.add_parameter(name=chan,
-                               unit = 'K',
-                               get_cmd = 'READ:DEV:%s:TEMP:SIG:TEMP' % chan,
-                               get_parser = self._parse_temp)
+                               unit='K',
+                               get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                               get_parser=self._parse_temp)
         self.chan_temps = set(self.chan_temps)
 
     def _parse_action(self, msg):
