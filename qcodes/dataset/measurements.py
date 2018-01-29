@@ -101,12 +101,22 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            # TODO (WilliamHPNielsen): The following code block is ugly and
+            # brittle and should be enough to convince us to abandon the
+            # design of ArrayParameters (possibly) containing (some of) their
+            # setpoints
             if isinstance(parameter, ArrayParameter):
                 sps = parameter.setpoints[0]
+                inst_name = getattr(parameter._instrument, 'name', '')
+                if inst_name:
+                    spname = f'{inst_name}_{parameter.setpoint_names[0]}'
+                else:
+                    spname = parameter.setpoint_names[0]
+
                 if f'{paramstr}_setpoint' in self.parameters.keys():
                     res.append((f'{paramstr}_setpoint', sps))
-                elif parameter.setpoint_names[0] in self.parameters.keys():
-                    res.append((parameter.setpoint_names[0], sps))
+                elif spname in self.parameters.keys():
+                        res.append((spname, sps))
                 else:
                     raise RuntimeError('No setpoints registered for '
                                        f'ArrayParameter {paramstr}!')
@@ -164,6 +174,10 @@ class DataSaver:
     def points_written(self):
         return self._dataset.number_of_results
 
+    @property
+    def dataset(self):
+        return self._dataset
+
 
 class Runner:
     """
@@ -179,7 +193,8 @@ class Runner:
             self, enteractions: List, exitactions: List,
             experiment: Experiment=None, station: Station=None,
             write_period: float=None,
-            parameters: Dict[str, ParamSpec]=None) -> None:
+            parameters: Dict[str, ParamSpec]=None,
+            name: str='') -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -189,6 +204,7 @@ class Runner:
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = write_period if write_period is not None else 5
+        self.name = name if name else 'results'
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -202,10 +218,7 @@ class Runner:
         else:
             eid = None
 
-        # TODO: FIXME: WARNING: the name should be put in properly
-        # I guess this should be piped down from the Measurement
-        # and default to 'results'
-        self.ds = qc.new_data_set('name', eid)
+        self.ds = qc.new_data_set(self.name, eid)
 
         # .. and give it a snapshot as metadata
         if self.station is None:
@@ -214,7 +227,8 @@ class Runner:
             station = self.station
 
         if station:
-            self.ds.add_metadata('snapshot', json.dumps({'station': station.snapshot()}))
+            self.ds.add_metadata('snapshot',
+                                 json.dumps({'station': station.snapshot()}))
 
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
@@ -243,6 +257,10 @@ class Runner:
 class Measurement:
     """
     Measurement procedure container
+
+    Attributes:
+        name (str): The name of this measurement/run. Is used by the dataset
+            to give a name to the results_table.
     """
     def __init__(self, exp: Experiment=None, station=None) -> None:
         """
@@ -250,8 +268,9 @@ class Measurement:
 
         Args:
             exp: Specify the experiment to use. If not given
-                the default one is used
-            station: The QCoDeS station to snapshot
+                the default one is used.
+            station: The QCoDeS station to snapshot. If not given, the
+                default one is used.
         """
         self.exp = exp
         self.exitactions: List[Tuple[Callable, Sequence]] = []
@@ -260,6 +279,7 @@ class Measurement:
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
         self._write_period: Optional[Number] = None
+        self.name = ''
 
     @property
     def write_period(self):
@@ -527,4 +547,5 @@ class Measurement:
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
                       write_period=self._write_period,
-                      parameters=self.parameters)
+                      parameters=self.parameters,
+                      name=self.name)
