@@ -86,11 +86,16 @@ class RawTrace(ArrayParameter):
         # TODO: check numner of points
         # check if requested number of points is less than 500 million
 
-        # get intrument state
-        state = instr.ask(':RSTate?')
+        # get intrument state (run/stop) to restore it after the acquisition
+        model = self.IDN()['model']
+        if model == 'MSO8104A':
+            # the MSO8104A does not support the :RSTate command
+            state = None
+        else:
+            state = instr.ask(':RSTate?')
         # realtime mode: only one trigger is used
         instr.acquire_mode('RTIMe')
-            # acquire the data
+        # acquire the data
         # ---------------------------------------------------------------------
 
         # digitize is a blocking call, so the instr will not respond to any visa
