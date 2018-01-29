@@ -4,11 +4,16 @@ from qcodes import ParamSpec, new_data_set, new_experiment
 
 
 class TimeSuite:
+    """
+    Make a moderately large data set and investigate insertion time.
+    """
+    inseration_size = 2000
 
     def __init__(self):
         self._data_set = None
 
     def setup(self):
+        new_experiment("profile", "profile")
         self._data_set = new_data_set("stress_test_simple")
         t1 = ParamSpec('t', 'numeric', label='time', unit='s')
         x = ParamSpec('x', 'numeric', label='voltage', unit='v', depends_on=[t1])
