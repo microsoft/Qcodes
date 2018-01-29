@@ -11,29 +11,4 @@
     "env_dir": ".asv/env",
     "results_dir": ".asv/results",
     "html_dir": ".asv/html",
-    "wheel_cache_size": 1
-
-    // The commits after which the regression search in `asv publish`
-    // should start looking for regressions. Dictionary whose keys are
-    // regexps matching to benchmark names, and values corresponding to
-    // the commit (exclusive) after which to start looking for
-    // regressions.  The default is to start from the first commit
-    // with results. If the commit is `null`, regression detection is
-    // skipped for the matching benchmark.
-    //
-    // "regressions_first_commits": {
-    //    "some_benchmark": "352cdf",  // Consider regressions only after this commit
-    //    "another_benchmark": null,   // Skip regression detection altogether
-    // }
-
-    // The thresholds for relative change in results, after which `asv
-    // publish` starts reporting regressions. Dictionary of the same
-    // form as in ``regressions_first_commits``, with values
-    // indicating the thresholds.  If multiple entries match, the
-    // maximum is taken. If no entry matches, the default is 5%.
-    //
-    // "regressions_thresholds": {
-    //    "some_benchmark": 0.01,     // Threshold of 1%
-    //    "another_benchmark": 0.5,   // Threshold of 50%
-    // }
 }
