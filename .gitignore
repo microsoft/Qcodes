@@ -71,6 +71,7 @@ target/
 *.dat
 *.hdf5
 *.json
+!asv.conf.json
 
 # Temporary files
 *.md~
@@ -83,3 +84,6 @@ docs/examples/data/*
 
 # Mac files
 .DS_Store
+
+# Benchmark results and environments
+.asv
