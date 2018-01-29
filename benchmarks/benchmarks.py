@@ -1,3 +1,14 @@
+"""
+Bench mark suite intended to run with Airspeed-velocity:
+http://asv.readthedocs.io/en/latest/
+
+To run the benchmark, type:
+asv run --python=same --quick --show-stderr --dry-run
+
+in the command prompt. Make sure the environment you are running this in has the current Master installed as a package
+
+"""
+
 import os
 from shutil import copyfile
 import numpy as np
@@ -40,7 +51,9 @@ class TimeSuiteInsertion:
 class TimeSuiteExtraction:
     """
     Monitor how the data retrieval time evolves in time. Specifically, we do not want the retrieval time to increase
-    unacceptably when the data set becomes really large
+    unacceptably when the data set becomes really large.
+
+    TODO: It is known that this suite fails.
     """
 
     def time_range(self):
