@@ -139,9 +139,10 @@ class RawTrace(ArrayParameter):
         data = instr.visa_handle.query_binary_values(
             'WAV:DATA?', datatype='h', is_big_endian=False)
         if len(data) != self.shape[0]:
-            raise TraceSetPointsChanged('{} points have been aquired and {} \
-            set points have been prepared in \
-            prepare_curvedata'.format(len(data), self.shape[0]))
+            raise TraceSetPointsChanged(('{} points have been aquired and {} '
+                                         'set points have been prepared in '
+                                         'prepare_curvedata'
+                                         ).format(len(data), self.shape[0]))
         # check x data scaling
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
@@ -149,14 +150,17 @@ class RawTrace(ArrayParameter):
         error = self.xorigin - xorigin
         # this is a bad workaround
         if error > xincrem:
-            raise TraceSetPointsChanged('{} is the prepared x origin and {} \
-            is the x origin after the measurement.'.format(self.xorigin,
-                                                           xorigin))
+            raise TraceSetPointsChanged(
+                ('{} is the prepared x origin and {} is '
+                 'the x origin after the measurement.'
+                ).format(self.xorigin, xorigin)
+            )
         error = (self.xincrem - xincrem) / xincrem
         if error > 1e-6:
-            raise TraceSetPointsChanged('{} is the prepared x increment and {} \
-            is the x increment after the measurement.'.format(self.xincrem,
-                                                              xincrem))
+            raise TraceSetPointsChanged(
+                ('{} is the prepared x increment and {}'
+                 'is the x increment after the measurement.'
+                 ).format(self.xincrem, xincrem))
         # y data scaling
         yorigin = float(instr.ask(":WAVeform:YORigin?"))
         yinc = float(instr.ask(":WAVeform:YINCrement?"))
