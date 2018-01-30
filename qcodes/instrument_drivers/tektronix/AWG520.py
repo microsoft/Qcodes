@@ -230,13 +230,17 @@ class Tektronix_AWG520(VisaInstrument):
     def get_current_folder_name(self):
         return self.ask('mmem:cdir?').strip('"')
 
-    def delete_file(self, file):
-        return self.write(f'mmem:del "{file}"')
-
     def set_current_folder_name(self, file_path):
         self.write('mmem:cdir "%s"' % file_path)
 
-    def change_folder(self, dir):
+    def change_folder(self, dir, create_if_necessary=False):
+        # Create silq folder to place waveforms and sequences in
+        if create_if_necessary and dir[0] == '/' and \
+                        self.get_current_folder_name() != dir:
+            self.change_folder('/')
+            _, folders = self.get_folder_contents()
+            if dir[1:] not in folders:
+                self.make_directory(dir[1:], root=True)
         self.write('mmem:cdir "%s"' % dir)
 
     def goto_root(self):
@@ -258,7 +262,7 @@ class Tektronix_AWG520(VisaInstrument):
     def delete_all_files(self, root=False):
         if root:
             self.goto_root()
-        print('Deleting all files')
+        logger.info('Deleting all files')
         files, _ = self.get_folder_contents()
         for elem in files:
             self.delete_file(elem)
