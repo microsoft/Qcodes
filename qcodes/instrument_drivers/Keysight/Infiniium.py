@@ -140,7 +140,7 @@ class RawTrace(ArrayParameter):
         data = instr.visa_handle.query_binary_values(
             'WAV:DATA?', datatype='h', is_big_endian=False)
         if len(data) != self.shape[0]:
-            raise TraceSetPointsChanged(('{} points have been aquired and {} '
+            raise TraceSetPointsChanged(('{} points have been acquired and {} '
                                          'set points have been prepared in '
                                          'prepare_curvedata'
                                          ).format(len(data), self.shape[0]))
@@ -273,18 +273,16 @@ class Infiniium(VisaInstrument):
             'MSO8104A': 4e9,
             'MSOS104A': 20e9,
         }
-        allowed_aquisition_rates = {
-            'MSO8104A': vals.Enum(
-+                               *np.append([5e7, 1e8, 1.25e8, 2e8, 2.5e8, 5e8,
-                                            1e9, 2e9, 4e9],
-+                                          np.kron([0.5, 1, 2, 2.5, 4],
-+                                                  10**np.arange(8)))),
+        allowed_acquisition_rates = {
+            'MSO8104A': vals.Enum(*np.sort(
+                np.append([5e7, 1e8, 1.25e8, 2e8, 2.5e8, 5e8,
+                           1e9, 2e9, 4e9],
+                          np.kron([0.5, 1, 2, 2.5, 4],
+                                  10**np.arange(8))))),
         }
         self._max_acquisition_rate = max_acquisition_rate.get(model, inf)
-        self._allowed_acquisition_rates =
-            allowed_acquisition_rates.get(model,
-                                          Numbers(0,
-                                                  self.max_acquisition_rate))
+        self._allowed_acquisition_rates = allowed_acquisition_rates.get(
+            model, Numbers(0, self._max_acquisition_rate))
         self.connect_message()
 
         # Scope trace boolean
@@ -375,7 +373,7 @@ class Infiniium(VisaInstrument):
                            get_parser=float,
                            vals=Numbers(),
                            )
-        # Aquisition
+        # Acquisition
         # If sample points, rate and timebase_scale are set in an
         # incomensurate way, the scope only displays part of the waveform
         self.add_parameter('acquire_points',
@@ -394,8 +392,7 @@ class Infiniium(VisaInstrument):
                            unit='Sa/s',
                            get_parser=float
                            )
-
-        def set_acquistiion_rate(desired_rate:float) -> None:
+        def set_acquisition_rate(desired_rate:float) -> None:
             old_rate = self._raw_acquire_sample_rate()
             self._raw_acquire_sample_rate(desired_rate)
             new_rate = self._raw_acquire_sample_rate()
@@ -422,7 +419,7 @@ class Infiniium(VisaInstrument):
                            label='sample rate',
                            get_cmd='ACQ:SRAT?',
                            set_cmd=set_acquisition_rate,
-                           val=self._allowed_acquisition_rates,
+                           vals=self._allowed_acquisition_rates,
                            unit='Sa/s',
                            get_parser=float
                            )
@@ -443,7 +440,7 @@ class Infiniium(VisaInstrument):
                            )
 
 
-        # this parameter gets used internally for data aquisition. For now it
+        # this parameter gets used internally for data acquisition. For now it
         # should not be used manually
         self.add_parameter('data_source',
                            label='Waveform Data source',
