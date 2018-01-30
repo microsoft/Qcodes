@@ -8,6 +8,7 @@ from qcodes.config.config import DotDict
 from qcodes.instrument.parameter import _BaseParameter, Parameter
 from qcodes.instrument.function import Function
 
+
 logger = logging.getLogger(__name__)
 
 
