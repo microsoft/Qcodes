@@ -1,5 +1,6 @@
 import logging
 import time
+from math import inf
 from typing import Dict, Callable
 from functools import partial
 
@@ -78,7 +79,7 @@ class RawTrace(ArrayParameter):
                                 'the scope for acquiring a trace.')
 
         # shorthand
-        instr =  self._instrument._parent
+        instr = self._instrument._parent
 
         # set up the instrument
         # ---------------------------------------------------------------------
@@ -87,7 +88,7 @@ class RawTrace(ArrayParameter):
         # check if requested number of points is less than 500 million
 
         # get intrument state (run/stop) to restore it after the acquisition
-        model = self.IDN()['model']
+        model = instr.IDN()['model']
         if model == 'MSO8104A':
             # the MSO8104A does not support the :RSTate command
             state = None
@@ -266,6 +267,24 @@ class Infiniium(VisaInstrument):
 
         super().__init__(name, address, timeout=timeout,
                          terminator='\n', **kwargs)
+
+        model = self.IDN()['model']
+        max_acquisition_rate = {
+            'MSO8104A': 4e9,
+            'MSOS104A': 20e9,
+        }
+        allowed_aquisition_rates = {
+            'MSO8104A': vals.Enum(
++                               *np.append([5e7, 1e8, 1.25e8, 2e8, 2.5e8, 5e8,
+                                            1e9, 2e9, 4e9],
++                                          np.kron([0.5, 1, 2, 2.5, 4],
++                                                  10**np.arange(8)))),
+        }
+        self._max_acquisition_rate = max_acquisition_rate.get(model, inf)
+        self._allowed_acquisition_rates =
+            allowed_acquisition_rates.get(model,
+                                          Numbers(0,
+                                                  self.max_acquisition_rate))
         self.connect_message()
 
         # Scope trace boolean
@@ -368,10 +387,42 @@ class Infiniium(VisaInstrument):
                            vals=vals.Numbers(min_value=1, max_value=100e6)
                            )
 
-        self.add_parameter('acquire_sample_rate',
+        self.add_parameter('_raw_acquire_sample_rate',
                            label='sample rate',
                            get_cmd='ACQ:SRAT?',
                            set_cmd=self._cmd_and_invalidate('ACQ:SRAT {}'),
+                           unit='Sa/s',
+                           get_parser=float
+                           )
+
+        def set_acquistiion_rate(desired_rate:float) -> None:
+            old_rate = self._raw_acquire_sample_rate()
+            self._raw_acquire_sample_rate(desired_rate)
+            new_rate = self._raw_acquire_sample_rate()
+            if new_rate != desired_rate:
+                self._raw_acquire_sample_rate(old_rate)
+                final_rate = self._raw_acquire_sample_rate()
+                if final_rate != old_rate:
+                    raise RuntimeError((
+                        'Error trying to restablish old sampling rate:\n'
+                        'Original sample rate: {} Hz\n'
+                        'Tried to set: {} Hz\n'
+                        'got instead: {} Hz\n'
+                        'got after resetting original rate: {} Hz\n')
+                        .format(old_rate, desired_rate, new_rate, final_rate)
+                    )
+                raise RuntimeError((
+                    'The desired sample rate of {} Hz could not be set, '
+                    'because it is not supported by the device. The next best '
+                    'supported sample rate is {} Hz.'
+                ).format(desired_rate, new_rate)
+                )
+
+        self.add_parameter('acquire_sample_rate',
+                           label='sample rate',
+                           get_cmd='ACQ:SRAT?',
+                           set_cmd=set_acquisition_rate,
+                           val=self._allowed_acquisition_rates,
                            unit='Sa/s',
                            get_parser=float
                            )
