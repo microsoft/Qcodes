@@ -135,7 +135,7 @@ class IVVI(VisaInstrument):
                 vals=vals.Numbers(self.pol_num[i - 1],
                                   self.pol_num[i - 1] + self.Fullrange),
                 step=dac_step,
-                delay=dac_delay,
+                inter_delay=dac_delay,
                 max_val_age=10)
 
         self._update_time = 5  # seconds

@@ -2,6 +2,7 @@ import time
 import logging
 import numpy as np
 from functools import partial
+from math import sqrt
 
 from typing import Callable, List, Union
 
@@ -513,6 +514,9 @@ class Scope(MultiParameter):
             ValueError: If the scope has not been prepared by running the
                 prepare_scope function.
         """
+        t_start = time.monotonic()
+        log.info('Scope get method called')
+
         if not self._instrument.scope_correctly_built:
             raise ValueError('Scope not properly prepared. Please run '
                              'prepare_scope before measuring.')
@@ -616,6 +620,10 @@ class Scope(MultiParameter):
             finally:
                 # cleanup and make ready for next scope acquisition
                 scope.finish()
+
+        t_stop = time.monotonic()
+        log.info('scope get method returning after {} s'.format(t_stop -
+                                                                t_start))
         return data
 
     @staticmethod
