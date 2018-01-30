@@ -221,6 +221,15 @@ class InfiniiumChannel(InstrumentChannel):
                            get_parser=float,
                            vals=vals.Numbers()
                            )
+
+        # input mode sets impedance, coupling and lf/hf reject
+        self.add_parameter(name='input',
+                           label='Channel {} input mode'.format(channel),
+                           unit='',
+                           set_cmd=':CHAN{}:INP {{}}'.format(channel),
+                           get_cmd=':CHAN{}:INP?'.format(channel),
+                           vals=vals.Enum('DC', 'DC50', 'AC', 'LFR1', 'LFR2')
+                           )
         # trigger
         self.add_parameter(
             'trigger_level',
