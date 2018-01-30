@@ -126,13 +126,19 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
                            get_parser=float,
                            vals=vals.Numbers(self._min_source_power, 25))
+        # there is an 'increased bandwidth option' (p. 4 of manual) that does
+        # not get taken into account here
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            unit='Hz',
                            get_cmd='SENS{}:BAND?'.format(n),
                            set_cmd='SENS{}:BAND {{:.4f}}'.format(n),
                            get_parser=int,
-                           vals=vals.Numbers(1, 1e6))
+                           vals=vals.Enum(
+                               *np.append(10**6,
+                                          np.kron([1, 1.5, 2, 3, 5, 7],
+                                                  10**np.arange(6))))
+                           )
         self.add_parameter(name='avg',
                            label='Averages',
                            unit='',
