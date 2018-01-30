@@ -156,7 +156,7 @@ class RawTrace(ArrayParameter):
                 ).format(self.xorigin, xorigin)
             )
         error = (self.xincrem - xincrem) / xincrem
-        if error > 1e-6:
+        if error > 1e-5:
             raise TraceSetPointsChanged(
                 ('{} is the prepared x increment and {}'
                  'is the x increment after the measurement.'
