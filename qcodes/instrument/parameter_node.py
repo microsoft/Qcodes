@@ -78,12 +78,6 @@ class ParameterNode(Metadatable, DelegateAttributes):
         else:
             super().__setattr__(attr, val)
 
-    # def __dir__(self):
-    #     # Add parameters to dir
-    #     items = super().__dir__()
-    #     items.extend(self.parameters.keys())
-    #     return items
-
     def add_function(self, name: str, **kwargs):
         """ Bind one Function to this parameter node.
 
