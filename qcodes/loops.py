@@ -859,7 +859,7 @@ class ActiveLoop(Metadatable):
                 # run(), but it is saved to the metadata
                 ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 self.data_set.add_metadata({'loop': {'ts_end': ts}})
-                self.data_set.finalize(save_metadata=save_metadata)
+                self.data_set.finalize(write_metadata=save_metadata)
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
