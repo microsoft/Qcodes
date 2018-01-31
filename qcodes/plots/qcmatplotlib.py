@@ -62,14 +62,15 @@ class MatPlot(BasePlot):
     max_subplot_columns = 3
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
-                 colorbar=True, **kwargs):
+                 colorbar=True, sharex=False, sharey=False, **kwargs):
         super().__init__(interval)
 
         if subplots is None:
             # Subplots is equal to number of args, or 1 if no args provided
             subplots = max(len(args), 1)
 
-        self._init_plot(subplots, figsize, num=num)
+        self._init_plot(subplots, figsize, num=num,
+                        sharex=sharex, sharey=sharey)
 
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
@@ -103,11 +104,13 @@ class MatPlot(BasePlot):
         """
         return self.subplots[key]
 
-    def _init_plot(self, subplots=None, figsize=None, num=None):
+    def _init_plot(self, subplots=None, figsize=None, num=None,
+                   sharex=False, sharey=False):
         if isinstance(subplots, Mapping):
             if figsize is None:
                 figsize = (6, 4)
-            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, squeeze=False, **subplots)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, squeeze=False,
+                                                   sharex=sharex, sharey=sharey, **subplots)
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
@@ -127,7 +130,9 @@ class MatPlot(BasePlot):
 
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize,
-                                                   squeeze=False)
+                                                   squeeze=False,
+                                                   sharex=sharex,
+                                                   sharey=sharey, )
 
         # squeeze=False ensures that subplots is always a 2D array independent
         # of the number of subplots.
