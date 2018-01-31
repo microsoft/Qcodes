@@ -3,7 +3,7 @@
     "project": "QCoDeS",
     "project_url": "https://github.com/QCoDeS/Qcodes/",
     "repo": ".",
-    "branches": ["master"],
+    "branches": ["feature/dataset"],
     "environment_type": "conda",
     "show_commit_url": "https://github.com/QCoDeS/Qcodes/commit/",
     "pythons": ["3.6"],
@@ -19,6 +19,7 @@
         "QtPy": [""],
         "sip": [""],
         "pyqt": ["5.6.0"],
-        "numpy": [""]
+        "numpy": [""],
+        "pyzmq": ["16.0.2"]
     }
 }
