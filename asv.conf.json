@@ -3,7 +3,7 @@
     "project": "QCoDeS",
     "project_url": "https://github.com/QCoDeS/Qcodes/",
     "repo": ".",
-    "branches": ["feature/dataset"],
+    "branches": ["data_set_profiling"],
     "environment_type": "conda",
     "show_commit_url": "https://github.com/QCoDeS/Qcodes/commit/",
     "pythons": ["3.6"],
