@@ -235,6 +235,7 @@ html-api:
 	mkdir -p api/generated/
 	mkdir -p _notebooks
 	mkdir -p _notebooks/DataSet
+	mkdir -p _notebooks/DataSet/Real_instruments
 	mkdir -p _notebooks/driver_examples
 	mkdir -p _notebooks/benchmarking
 	cp _auto/qcodes.instrument_drivers.* api/generated/
