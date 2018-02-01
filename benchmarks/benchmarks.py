@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import inspect
 
 from qcodes import ParamSpec, new_data_set, new_experiment
+from qcodes.dataset.measurements import Measurement
+from qcodes.instrument.parameter import ManualParameter
 
 
 class TimeSuiteAddResults:
@@ -44,6 +46,35 @@ class TimeSuiteAddResults:
         t_values = np.linspace(-1, 1, insertion_size)
         results = [{"t": t, "x": 2 * t ** 2 + 1} for t in t_values]
         self._data_set.add_results(results)
+
+
+class TimeSuiteAddResultContext:
+    params = [200, 500, 1000, 1500, 2000]
+    repeats = 10
+
+    def __init__(self, insertion_size):
+        self._meas = None
+        self._x = None
+        self._m = None
+
+    def setup(self, insertion_size):
+        new_experiment("profile", "profile")
+        self._meas = Measurement()
+        x = ManualParameter("x")
+        m = ManualParameter("m")
+
+        self._meas.register_parameter(x)
+        self._meas.register_parameter(m, setpoints=(x,))
+
+        self._x = x
+        self._m = m
+
+    def time_range(self, insertion_size):
+        self._x(0)
+        self._m.get = lambda: np.arange(insertion_size)
+
+        with self._meas.run() as datasaver:
+            datasaver.add_result((self._x, self._x()), (self._m, self._m()))
 
 
 class TimeSuiteAddResult:
@@ -139,9 +170,11 @@ def make_report():
 
     report = "Benchmark results \n=================\n"
 
-    suites = [TimeSuiteAddResults, TimeSuiteAddResult, TimeSuiteAddArrayResults]
+    suites = [TimeSuiteAddResultContext, TimeSuiteAddResults, TimeSuiteAddResult, TimeSuiteAddArrayResults]
+
     for suite in suites:
-        result_plot_file_name = run_suite(suite)
+        #result_plot_file_name = run_suite(suite)
+        result_plot_file_name = "{}.png".format(suite.__name__)
 
         code = inspect.getsource(suite.time_range)
 
