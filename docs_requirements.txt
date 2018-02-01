@@ -3,4 +3,4 @@ sphinx_rtd_theme
 sphinxcontrib-jsonschema
 nbconvert
 ipython
-jupyter_client
+jupyter
