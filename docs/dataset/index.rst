@@ -7,4 +7,5 @@ DataSet
    :maxdepth: 2
 
    spec
+   dataset_design
    interdependentparams

@@ -1,5 +1,9 @@
 .. highlight:: python
 
+=========================
+Interdependent Parameters
+=========================
+
 .. _sec:introduction:
 
 Introduction
