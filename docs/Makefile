@@ -235,13 +235,15 @@ html-api:
 	mkdir -p api/generated/
 	mkdir -p _notebooks
 	mkdir -p _notebooks/DataSet
+	mkdir -p _notebooks/DataSet_scripts
 	mkdir -p _notebooks/DataSet/Real_instruments
 	mkdir -p _notebooks/driver_examples
 	mkdir -p _notebooks/benchmarking
 	cp _auto/qcodes.instrument_drivers.* api/generated/
 	jupyter-nbconvert --to rst 'examples/*.ipynb' --output-dir=_notebooks
 	jupyter-nbconvert --to rst 'examples/DataSet/Real_instruments/*.ipynb' --output-dir=_notebooks/DataSet/Real_instruments
-	jupyter-nbconvert --to rst --execute 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
+	jupyter-nbconvert --to python 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet_scripts
+	jupyter-nbconvert --to rst 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
 	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir=_notebooks/driver_examples
 	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
 	make html
