@@ -35,6 +35,7 @@ before_script: # configure a headless display to test plot generation
 
 script:
     - cd qcodes
+    - jupyter-kernelspec list
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     # build docs with warnings as errors
     - |
