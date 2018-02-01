@@ -72,7 +72,7 @@ up the measurement like
 This is shown graphically in :numref:`fig_gen`.
 
 .. _fig_gen:
-.. figure:: dependencies_01.svg
+.. figure:: figures/dependencies_01.svg
    :alt: A drawing of the general setting
    :align: center
    :width: 60.0%
@@ -111,7 +111,7 @@ measurement like
 Graphically:
 
 .. _fig_dep_02:
-.. figure:: dependencies_02.svg
+.. figure:: figures/dependencies_02.svg
    :alt: A heatmap
    :align: center
    :width: 60.0%
@@ -194,7 +194,7 @@ trees shown in :numref:`bad_trees` are therefore
 all invalid and can **not** be stored in the dataset.
 
 .. _bad_trees:
-.. figure:: bad_trees.svg
+.. figure:: figures/bad_trees.svg
    :alt: Not acceptable direct dependencies
    :align: center
    :width: 75.0%
@@ -236,7 +236,7 @@ versus :math:`D`. The total number of trees and plots per dataset is
 treated in the next section.
 
 .. _bad_trees_remedied:
-.. figure:: bad_trees_remedied.svg
+.. figure:: figures/bad_trees_remedied.svg
    :alt: Acceptable recastings of the dependencies of :numref:`bad_trees`. The pathological tree 1 is omitted.
    :align: center
    :width: 85.0%
@@ -259,7 +259,7 @@ omitted. What this means in practice is illustrated in
 :numref:`good_trees_complex`.
 
 .. _good_trees_complex:
-.. figure:: good_trees_complex.svg
+.. figure:: figures/good_trees_complex.svg
    :alt: A more complex sweep example. The blue rectangles represent the results table in the database.
    :align: center
    :width: 85.0%
@@ -330,7 +330,7 @@ down elsewhere [5]_. The converse also holds: anything that *does*
 change during a run really *should* be saved along.
 
 .. _example1_conductance:
-.. figure:: example1_conductance.svg
+.. figure:: figures/example1_conductance.svg
    :alt: Conductance measurement.
    :align: center
    :width: 40.0%
@@ -369,7 +369,7 @@ tree of :numref:`example2_compensation_A` is the correct
 representation.
 
 .. _example2_compensation_A:
-.. figure:: example2_compensation_A.svg
+.. figure:: figures/example2_compensation_A.svg
    :alt: Sweeping a voltage with compensation in the background. :math:`A` is :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`, :math:`C` is :math:`\alpha`, and :math:`E` is :math:`\beta`.
    :align: center
    :width: 30.0%
@@ -399,7 +399,7 @@ space. After all, this is what is :math:`physically` happening,
 :numref:`example2_compensation_B` emerges.
 
 .. _example2_compensation_B:
-.. figure:: example2_compensation_B.svg
+.. figure:: figures/example2_compensation_B.svg
    :alt: Sweeping along a path in voltage space. :math:`A` is :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`, :math:`C` is :math:`\alpha`, :math:`E` is :math:`\beta`, and :math:`F` is :math:`V_3`.
    :align: center
    :width: 30.0%
