@@ -4,3 +4,4 @@ sphinxcontrib-jsonschema
 nbconvert
 ipython
 jupyter
+scipy
