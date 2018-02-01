@@ -1,16 +1,4 @@
-===================================================
-Interdependent parameters in the new dataset, v 1.0
-===================================================
-
-:Author: WHPN
-
-.. role:: math(raw)
-   :format: html latex
-..
-
-.. raw:: latex
-
-   \maketitle
+.. highlight:: python
 
 .. _sec:introduction:
 
@@ -81,14 +69,12 @@ up the measurement like
       meas.register_parameter(B, depends_on=(A,),
                               inferred_from=(y1, y2, y3))
 
-This is shown graphically in Figure `[fig:gen] <#fig:gen>`__.
+This is shown graphically in :numref:`fig_gen`.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: dependencies_01.pdf
+.. _fig_gen:
+.. figure:: dependencies_01.svg
    :alt: A drawing of the general setting
+   :align: center
    :width: 60.0%
 
    A drawing of the general setting
@@ -124,12 +110,10 @@ measurement like
 
 Graphically:
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: dependencies_02.pdf
+.. _fig_dep_02:
+.. figure:: dependencies_02.svg
    :alt: A heatmap
+   :align: center
    :width: 60.0%
 
    A heatmap
@@ -204,22 +188,18 @@ Now that we have established a language for describing connections
 between parameters, and also described our aim in terms of plotting and
 metadat, let us review what the dataset does and does not allow.
 
-It follows from the consideration of section `6 <#sec:plotting>`__ that
+It follows from the consideration of section :ref:`sec:plotting` that
 the dataset allows for a *single* layer of direct dependencies. The
-trees shown in Figure `[fig:bad_trees] <#fig:bad_trees>`__ are therefore
+trees shown in :numref:`bad_trees` are therefore
 all invalid and can **not** be stored in the dataset.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: bad_trees.pdf
+.. _bad_trees:
+.. figure:: bad_trees.svg
    :alt: Not acceptable direct dependencies
+   :align: center
    :width: 75.0%
 
    Not acceptable direct dependencies
-
-[fig:bad_trees]
 
 A few words explaining why are in place.
 
@@ -240,14 +220,14 @@ A few words explaining why are in place.
    be plotted against.
 
 It is perhaps instructive to see how the above trees could be remedied.
-In Figure `[fig:bad_trees_remedied] <#fig:bad_trees_remedied>`__ we show
+In :numref:`bad_trees_remedied` we show
 all possible valid reconfigurations that neither invert any arrows nor
 leave any parameters completely decoupled [2]_. The fact that each tree
-of Figure `[fig:bad_trees] <#fig:bad_trees>`__ has several valid
+of :numref:`bad_trees` has several valid
 reconfigurations exactly illustrates the ambiguity of those trees [3]_.
 
-In column **c** of Figure
-`[fig:bad_trees_remedied] <#fig:bad_trees_remedied>`__ we see two
+In column **c** of
+:numref:`bad_trees_remedied` we see two
 somewhat new graphs. In **2c**, we allow two variables to depend on a
 third one. There is no ambiguity here, two plots will result from this
 measurement: :math:`A` versus :math:`B` and :math:`C` versus :math:`B`.
@@ -255,21 +235,15 @@ Similarly, in **3c** we’ll get :math:`A` versus :math:`B` and :math:`C`
 versus :math:`D`. The total number of trees and plots per dataset is
 treated in the next section.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: bad_trees_remedied.pdf
-   :alt: Acceptable recastings of the dependencies of Figure
-   `[fig:bad_trees] <#fig:bad_trees>`__. The pathological tree 1 is
-   omitted.
+.. _bad_trees_remedied:
+.. figure:: bad_trees_remedied.svg
+   :alt: Acceptable recastings of the dependencies of :numref:`bad_trees`. The pathological tree 1 is omitted.
+   :align: center
    :width: 85.0%
 
-   Acceptable recastings of the dependencies of Figure
-   `[fig:bad_trees] <#fig:bad_trees>`__. The pathological tree 1 is
+   Acceptable recastings of the dependencies of
+   :numref:`bad_trees`. The pathological tree 1 is
    omitted.
-
-[fig:bad_trees_remedied]
 
 .. _sec:number-trees-per:
 
@@ -281,27 +255,22 @@ meaning parameters with arrows only going out of them, parameters on
 which nothing depends. At each step of the experiment, all parameters
 that such a top-level parameter points to must be assigned values, if
 the top-level parameter gets assigned a value. Otherwise, they may be
-omitted. What this means in practice is illustrated in Figure
-`[fig:two_trees] <#fig:two_trees>`__.
+omitted. What this means in practice is illustrated in
+:numref:`good_trees_complex`.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: good_trees_complex.pdf
-   :alt: A more complex sweep example. The blue rectangles represent the
-   results table in the database.
+.. _good_trees_complex:
+.. figure:: good_trees_complex.svg
+   :alt: A more complex sweep example. The blue rectangles represent the results table in the database.
+   :align: center
    :width: 85.0%
 
    A more complex sweep example. The blue rectangles represent the
    results table in the database.
 
-[fig:two_trees]
-
 We may say that this dataset de facto contains two trees, one
 :math:`A-B-D` tree and one :math:`C-B` tree [4]_ . One dataset can hold
-as many such trees as desired. In code, Figure
-`[fig:two_trees] <#fig:two_trees>`__ might take the following form:
+as many such trees as desired. In code,
+:numref:`good_trees_complex` might take the following form:
 
 ::
 
@@ -350,8 +319,8 @@ according to
 
 .. math:: g = \frac{X}{V_\text{drive}G_{IV}}.
 
- The corresponding parameter tree is shown in Figure
-`[fig:conductance] <#fig:conductance>`__, where :math:`A` is :math:`g`,
+The corresponding parameter tree is shown in
+:numref:`example1_conductance`, where :math:`A` is :math:`g`,
 :math:`B` is :math:`V_\text{gate}`, and :math:`C` is :math:`X`. One
 could of course argue that :math:`V_\text{drive}` and :math:`G_{IV}`
 should also be parameters that :math:`g` is inferred from. We suggest
@@ -360,12 +329,10 @@ throughout the *entire* run can be omitted from the dataset and written
 down elsewhere [5]_. The converse also holds: anything that *does*
 change during a run really *should* be saved along.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: example1_conductance.pdf
+.. _example1_conductance:
+.. figure:: example1_conductance.svg
    :alt: Conductance measurement.
+   :align: center
    :width: 40.0%
 
    Conductance measurement.
@@ -384,7 +351,7 @@ same time. :math:`V_2` changes with :math:`V_1` according to
 
 .. math:: V_2 = \alpha V_1 + \beta.
 
- Since both :math:`\alpha` and :math:`\beta` might change during the run
+Since both :math:`\alpha` and :math:`\beta` might change during the run
 via some feedback mechanism, we have four parameters aprt from :math:`S`
 to sort out.
 
@@ -398,32 +365,26 @@ Decoupling
 If the experimentalist really insists that the interesting plot for this
 measurement is that of :math:`S` versus :math:`V_1` and the compensation
 is just some unfortunate but necessary circumstance, then the unusual
-tree of Figure `[fig:comp-A] <#fig:comp-A>`__ is the correct
+tree of :numref:`example2_compensation_A` is the correct
 representation.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: example2_compensation_A.pdf
-   :alt: Sweeping a voltage with compensation in the background.
-   :math:`A` is :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is
-   :math:`V_2`, :math:`C` is :math:`\alpha`, and :math:`E` is
-   :math:`\beta`.
+.. _example2_compensation_A:
+.. figure:: example2_compensation_A.svg
+   :alt: Sweeping a voltage with compensation in the background. :math:`A` is :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`, :math:`C` is :math:`\alpha`, and :math:`E` is :math:`\beta`.
+   :align: center
    :width: 30.0%
 
    Sweeping a voltage with compensation in the background. :math:`A` is
    :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`,
    :math:`C` is :math:`\alpha`, and :math:`E` is :math:`\beta`.
 
-The tree of Figure `[fig:comp-A] <#fig:comp-A>`__ does fit into the
-scheme of Figure `[fig:gen] <#fig:gen>`__, the scheme we promised to
+The tree of:numref:`example2_compensation_A` does fit into the
+scheme of :numref:`fig_gen`, the scheme we promised to
 represent the most general setting. There are now two possibilities.
 Either *we* were initially wrong and no dependencies save for those
 specifying the default plot can be defined for this measurement. Else
 *the experimentalist* is wrong, and has an untrue representation of the
-experiment in mind. We explore that idea in section
-`9.2.2 <#sec:restructuring>`__.
+experiment in mind. We explore that idea in below in  :ref:`sec:restructuring`.
 
 .. _sec:restructuring:
 
@@ -435,17 +396,12 @@ physical interpretation [6]_, it might make more sense to define a new
 parameter, :math:`V_3` that represents the path swept along in that
 space. After all, this is what is :math:`physically` happening,
 :math:`S` is measured as a function of :math:`V_3`. Then the tree of
-Figure `[fig:comp-B] <#fig:comp-B>`__ emerges.
+:numref:`example2_compensation_B` emerges.
 
-.. raw:: latex
-
-   \centering
-
-.. figure:: example2_compensation_B.pdf
-   :alt: Sweeping along a path in voltage space. :math:`A` is
-   :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`,
-   :math:`C` is :math:`\alpha`, :math:`E` is :math:`\beta`, and
-   :math:`F` is :math:`V_3`.
+.. _example2_compensation_B:
+.. figure:: example2_compensation_B.svg
+   :alt: Sweeping along a path in voltage space. :math:`A` is :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`, :math:`C` is :math:`\alpha`, :math:`E` is :math:`\beta`, and :math:`F` is :math:`V_3`.
+   :align: center
    :width: 30.0%
 
    Sweeping along a path in voltage space. :math:`A` is :math:`V_1`,
