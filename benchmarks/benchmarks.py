@@ -7,9 +7,10 @@ asv run
 
 in the command prompt.
 
-It is also possible to run this file as a standalone script without the need to have airspeed-velocity installed.
-Running the main function will automatically generate a report in reStructuredText format. The report will show
-benchmark of the various defined in this file.
+It is also possible to run this file as a standalone script without the need
+to have airspeed-velocity installed. Running the main function will
+automatically generate a report in reStructuredText format. The report will
+show benchmark of the various defined in this file.
 """
 import numpy as np
 import timeit
@@ -23,10 +24,11 @@ from qcodes.instrument.parameter import ManualParameter
 
 class TimeSuiteAddResults:
     """
-    Make a moderately large data set and investigate insertion time. We make a single large results list and insert
-    in one SQL command. Notice the plural in "Results"
+    Make a moderately large data set and investigate insertion time. We make a
+    single large results list and insert in one SQL command. Notice the plural
+    in "Results"
     """
-    params = [200, 500, 1000, 1500, 2000]
+    params = [200, 500, 1000, 1500, 2000, 2500, 3000]
     repeats = 1000
 
     def __init__(self, insertion_size):
@@ -37,15 +39,18 @@ class TimeSuiteAddResults:
         self._data_set = new_data_set("stress_test_simple")
 
         t1 = ParamSpec('t', 'numeric', label='time', unit='s')
-        x = ParamSpec('x', 'numeric', label='voltage', unit='v', depends_on=[t1])
+        x = ParamSpec(
+            'x', 'numeric', label='voltage', unit='v', depends_on=[t1]
+        )
 
         self._data_set.add_parameter(t1)
         self._data_set.add_parameter(x)
 
     def time_range(self, insertion_size):
         """
-        We test the insertion time as a function of the number of results we generate. Add all results in one sql
-        command using the "add_results" method (notice the plural "s")
+        We test the insertion time as a function of the number of results we
+        generate. Add all results in one sql command using the "add_results"
+        method (notice the plural "s")
         """
         t_values = np.linspace(-1, 1, insertion_size)
         results = [{"t": t, "x": 2 * t ** 2 + 1} for t in t_values]
@@ -54,10 +59,11 @@ class TimeSuiteAddResults:
 
 class TimeSuiteAddResult:
     """
-    Make a moderately large data set and investigate insertion time. We make a lot of single results and insert one by
+    Make a moderately large data set and investigate insertion time. We make a
+    lot of single results and insert one by
     one. Notice the singular in "Result".
     """
-    params = [20, 50, 100, 150, 200]
+    params = [20, 50, 100, 150, 200, 250, 300]
     repeats = 10
 
     def __init__(self, insertion_size):
@@ -68,16 +74,19 @@ class TimeSuiteAddResult:
         self._data_set = new_data_set("stress_test_simple")
 
         t1 = ParamSpec('t', 'numeric', label='time', unit='s')
-        x = ParamSpec('x', 'numeric', label='voltage', unit='v', depends_on=[t1])
+        x = ParamSpec(
+            'x', 'numeric', label='voltage', unit='v', depends_on=[t1]
+        )
 
         self._data_set.add_parameter(t1)
         self._data_set.add_parameter(x)
 
     def time_range(self, insertion_size):
         """
-        We test the insertion time as a function of the number of results we generate. Then, add the results in one by
-        one on a loop by calling "add_result". Contrast this with the plot "TimeSuiteAddResults"; we see that this
-        method is ~200 times slower!
+        We test the insertion time as a function of the number of results we
+        generate. Then, add the results in one by one on a loop by calling
+        "add_result". Contrast this with the plot "TimeSuiteAddResults"; we
+        see that this method is ~200 times slower!
         """
         t_values = np.linspace(-1, 1, insertion_size)
         results = [{"t": t, "x": 2 * t ** 2 + 1} for t in t_values]
@@ -87,7 +96,7 @@ class TimeSuiteAddResult:
 
 
 class TimeSuiteAddResultContext:
-    params = [20, 50, 100, 150, 200]
+    params = [20, 50, 100, 150, 200, 250, 300]
     repeats = 100
 
     def __init__(self, insertion_size):
@@ -109,10 +118,10 @@ class TimeSuiteAddResultContext:
 
     def time_range(self, insertion_size):
         """
-        Use the context manager to add results in a data set. Compare this result with the "TimeSuiteAddResult" and
-        "TimeSuiteAddResults". We see that although it is not as slow as the former, it is still much slower then the
-        latter.
-        TODO: We should find out why this is so much slower.
+        Use the context manager to add results in a data set. Compare this
+        result with the "TimeSuiteAddResult" and "TimeSuiteAddResults". We see
+        that although it is not as slow as the former, it is still much slower
+        then the latter. TODO: We should find out why this is so much slower.
         """
         with self._meas.run() as datasaver:
             for ix, im in zip(range(insertion_size), range(insertion_size)):
@@ -121,10 +130,11 @@ class TimeSuiteAddResultContext:
 
 class TimeSuiteAddArrayResults:
     """
-    Make a moderately large data set and investigate insertion time. We make a single large results list and insert
-    in one SQL command. Notice the plural in "Results". The dependent parameters shall be arrays
+    Make a moderately large data set and investigate insertion time. We make a
+    single large results list and insert in one SQL command. Notice the plural
+    in "Results". The dependent parameters shall be arrays
     """
-    params = [200, 500, 1000, 1500, 2000]
+    params = [200, 500, 1000, 1500, 2000, 2500, 3000]
     repeats = 100
 
     def __init__(self, insertion_size):
@@ -142,20 +152,22 @@ class TimeSuiteAddArrayResults:
 
     def time_range(self, insertion_size):
         """
-        Insert arrayed valued values. Each result contains a 1x2 array. Again we see that this is much slower then
-        inserting single valued results.
+        Insert arrayed valued values. Each result contains a 1x2 array. Again
+        we see that this is much slower then inserting single valued results.
         """
         t_values = np.linspace(-1, 1, insertion_size)
-        results = [{"t": t, "x": np.array([2 * t**2 + 1, t**3 - 1])} for t in t_values]
+        results = [{"t": t, "x": np.array([2 * t**2 + 1, t**3 - 1])} for t in
+                   t_values]
         self._data_set.add_results(results)
 
 
 class TimeSuiteAddArrayResultsII:
     """
-    Make a moderately large data set and investigate insertion time. We make a single large results list and insert
-    in one SQL command. Notice the plural in "Results". The dependent parameters shall be arrays
+    Make a moderately large data set and investigate insertion time. We make a
+    single large results list and insert in one SQL command. Notice the plural
+    in "Results". The dependent parameters shall be arrays
     """
-    params = [200, 500, 1000, 1500, 2000]
+    params = [200, 500, 1000, 1500, 2000, 2500, 3000]
     repeats = 100
 
     def __init__(self, insertion_size):
@@ -173,15 +185,57 @@ class TimeSuiteAddArrayResultsII:
 
     def time_range(self, insertion_size):
         """
-        Insert arrayed valued values. The dimensionality of the array increases along the x-axis.
+        Insert arrayed valued values. The dimensionality of the array increases
+        along the x-axis.
         """
         t_values = np.linspace(-1, 1, 1000)
-        results = [{"t": t, "x": np.random.uniform(0, 1, (1, insertion_size))} for t in t_values]
+        results = [{"t": t, "x": np.random.uniform(0, 1, (1, insertion_size))}
+                   for t in t_values]
+        self._data_set.add_results(results)
+
+
+class TimeSuiteParamCount:
+    params = [2, 5, 10, 20, 50, 70, 100]
+    repeats = 10
+
+    def __init__(self, insertion_size):
+        self._data_set = None
+        self._results = None
+
+    def setup(self, insertion_size):
+        new_experiment("profile", "profile")
+        self._data_set = new_data_set("stress_test_simple")
+
+        t = ParamSpec('t', 'numeric', label='time', unit='s')
+        self._data_set.add_parameter(t)
+
+        for x in [
+            ParamSpec(
+                "x_{n}".format(n=str(n)), "numeric",
+                label="x_{n}".format(n=str(n)), unit="V", depends_on=[t]
+            )
+            for n in range(insertion_size)
+        ]:
+            self._data_set.add_parameter(x)
+
+    def time_range(self, insertion_size):
+        """
+        Investigate the insertion time as a function of the number of
+        parameters
+        """
+        results = []
+        xdict = {"x_{n}".format(n=str(n)): 0 for n in range(insertion_size)}
+
+        for t in np.linspace(-1, 1, 1000):
+            r = {"t": t}
+            r.update(xdict)
+            results.append(r)
+
         self._data_set.add_results(results)
 
 
 class TimeSuiteAddArrayResultsContext:
-    params = [200, 500, 1000, 1500, 2000]
+    params = [200, 500, 1000, 1500, 2000, 2500, 3000]
     repeats = 100
 
     def __init__(self, insertion_size):
@@ -223,17 +277,23 @@ def run_suite(suite_cls):
 
     for p in params:
 
+        setup_str = ";".join([
+            f"from __main__ import {suite_name} as suite_cls",
+            f"suite = suite_cls({p})",
+            f"suite.setup({p})"
+        ])
+
         t = timeit.timeit(
-            "suite.time_range(p)",
-            setup="from __main__ import {name} as suite_cls; "
-                  "p={p}; suite = suite_cls(p); suite.setup(p)".format(p=p, name=suite_name),
-            number=repeats)
+            f"suite.time_range({p})",
+            setup=setup_str,
+            number=repeats
+        )
 
         t_at_param = t / repeats
         t_per_param.append(t_at_param)
 
     fig, ax = plt.subplots()
-    ax.plot(params, t_per_param)
+    ax.plot(params, t_per_param, ".-")
     ax.set_xlabel("insertion_size")
     ax.set_ylabel("timeit [s]")
     ax.set_title("{}".format(suite_name))
@@ -248,14 +308,24 @@ def make_report():
 
     report = "Benchmark results \n=================\n"
 
-    suites = [TimeSuiteAddResults, TimeSuiteAddResult, TimeSuiteAddResultContext,
-              TimeSuiteAddArrayResults, TimeSuiteAddArrayResultsII, TimeSuiteAddArrayResultsContext]
+    suites = [
+        TimeSuiteAddResults, TimeSuiteAddResult, TimeSuiteAddResultContext,
+        TimeSuiteAddArrayResults, TimeSuiteAddArrayResultsII,
+        TimeSuiteAddArrayResultsContext, TimeSuiteParamCount
+    ]
 
     for suite in suites:
         result_plot_file_name = run_suite(suite)
         code = inspect.getsource(suite.time_range)
-        report += f".. image:: {result_plot_file_name}\n\t:width: 1000px\n\t:align: center\n\t:height: 800px"
-        report += f"\n\n.. code-block:: python\n\n{code}"
+
+        report += "\n\t".join([
+            f".. image:: {result_plot_file_name}",
+            ":width: 1000px",
+            ":align: center",
+            ":height: 800px",
+            "\n.. code-block:: python",
+            f"\n{code}"
+        ])
 
     with open("report.rst", "w") as fh:
         fh.write(report)
