@@ -356,7 +356,7 @@ same time. :math:`V_2` changes with :math:`V_1` according to
 .. math:: V_2 = \alpha V_1 + \beta.
 
 Since both :math:`\alpha` and :math:`\beta` might change during the run
-via some feedback mechanism, we have four parameters aprt from :math:`S`
+via some feedback mechanism, we have four parameters apart from :math:`S`
 to sort out.
 
 There are two ways to go about this.
@@ -382,7 +382,7 @@ representation.
    :math:`V_1`, :math:`B` is :math:`S`, :math:`D` is :math:`V_2`,
    :math:`C` is :math:`\alpha`, and :math:`E` is :math:`\beta`.
 
-The tree of:numref:`example2_compensation_A` does fit into the
+The tree of :numref:`example2_compensation_A` does fit into the
 scheme of :numref:`fig_gen`, the scheme we promised to
 represent the most general setting. There are now two possibilities.
 Either *we* were initially wrong and no dependencies save for those
