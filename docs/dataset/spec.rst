@@ -115,20 +115,20 @@ ParamSpec
 
 A ParamSpec object specifies a single parameter in a DataSet.
 
-ParamSpec(name, type, metadata=)
+``ParamSpec(name, type, metadata=)``
     Creates a parameter specification with the given name and type.
     The type should be a NumPy dtype object.
 
     If metadata is provided, it is included in the overall metadata of the DataSet.
     The metadata can be any JSON-able object.
 
-ParamSpec.name
+``ParamSpec.name``
     The name of this parameter.
 
-ParamSpec.type
+``ParamSpec.type``
     The dtype of this parameter.
 
-ParamSpec.metadata
+``ParamSpec.metadata``
     The metadata of this parameter.
     This should be an empty dictionary as a default.
 
@@ -141,16 +141,16 @@ DataSet
 Construction
 ------------
 
-DataSet(name)
+``DataSet(name)``
     Creates a DataSet with no parameters.
     The name should be a short string that will be part of the DataSet's identifier.
 
-DataSet(name, specs)
+``DataSet(name, specs)``
     Creates a DataSet for the provided list of parameter specifications.
     The name should be a short string that will be part of the DataSet's identifier.
     Each item in the list should be a ParamSpec object.
 
-DataSet(name, specs, values)
+``DataSet(name, specs, values)``
     Creates a DataSet for the provided list of parameter specifications and values.
     The name should be a short string that will be part of the DataSet's identifier.
     Each item in the specs list should be a ParamSpec object.
@@ -159,21 +159,21 @@ DataSet(name, specs, values)
     All of the arrays/lists in the values list should have the same length.
     The values list may intermix NumPy arrays and Python lists.
 
-DataSet.add_parameter(spec)
+``DataSet.add_parameter(spec)``
     Adds a parameter to the DataSet.
     The spec should be a ParamSpec object.
     If the DataSet is not empty, then existing results will have the type-appropriate null value for the new parameter.
 
     It is an error to add parameters to a completed DataSet.
 
-DataSet.add_parameters(specs)
+``DataSet.add_parameters(specs)``
     Adds a list of parameters to the DataSet.
     Each item in the list should be a ParamSpec object.
     If the DataSet is not empty, then existing results will have the type-appropriate null value for the new parameters.
 
     It is an error to add parameters to a completed DataSet.
 
-DataSet.add_metadata(tag=, metadata=)
+``DataSet.add_metadata(tag=, metadata=)``
     Adds metadata to the DataSet.
     The metadata is stored under the provided tag.
     If there is already metadata under the provided tag, the new metadata replaces the old metadata.
@@ -182,7 +182,7 @@ DataSet.add_metadata(tag=, metadata=)
 Writing
 -------
 
-DataSet.add_result(**kwargs)
+``DataSet.add_result(**kwargs)``
     Adds a result to the DataSet.
     Keyword parameters should have the name of a parameter as the keyword and the value to associate as the value.
     If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to parameter value.
@@ -193,7 +193,7 @@ DataSet.add_result(**kwargs)
 
     It is an error to add a result to a completed DataSet.
 
-DataSet.add_results(args)
+``DataSet.add_results(args)``
     Adds a sequence of results to the DataSet.
     The single argument should be a sequence of dictionaries, where each dictionary provides the values for all of the parameters in that result.
     See the add_result method for a description of such a dictionary.
@@ -205,7 +205,7 @@ DataSet.add_results(args)
 
     It is an error to add results to a completed DataSet.
 
-DataSet.modify_result(index, **kwargs)
+``DataSet.modify_result(index, **kwargs)``
     Modifies a result in the DataSet.
     The index should be the zero-based index of the result to be modified.
     Keyword parameters should have the name of a parameter as the keyword and the updated value to associate as the value.
@@ -220,7 +220,7 @@ DataSet.modify_result(index, **kwargs)
 
     It is an error to modify a result in a completed DataSet.
 
-DataSet.modify_results(start_index, updates)
+``DataSet.modify_results(start_index, updates)``
     Modifies a sequence of results in the DataSet.
     The start_index should be the zero-based index of the first result of the sequence to be modified.
     The updates argument should be a sequence of dictionaries, where each dictionary provides modified values for parameters
@@ -237,35 +237,35 @@ DataSet.modify_results(start_index, updates)
 
     It is an error to modify results in a completed DataSet.
 
-DataSet.add_parameter_values(spec, values)
+``DataSet.add_parameter_values(spec, values)``
     Adds a parameter to the DataSet and associates result values with the new parameter.
     The values must be a NumPy array or a Python list, with each element holding a single result value that matches the parameter's data type.
     If the DataSet is not empty, then the count of provided values must equal the current count of results in the DataSet, or an error will result.
 
     It is an error to add parameters to a completed DataSet.
 
-DataSet.mark_complete()
+``DataSet.mark_complete()``
     Marks the DataSet as completed.
 
 Access
 ------
 
-DataSet.id
+``DataSet.id``
     Returns the unique identifying string for this DataSet.
     This string will include the date and time that the DataSet was created and the name supplied to the constructor,
     as well as additional content to ensure uniqueness.
 
-DataSet.length
+``DataSet.length``
     This attribute holds the current number of results in the DataSet.
 
-DataSet.is_empty
+``DataSet.is_empty``
     This attribute will be true if the DataSet is empty (has no results), or false if at least one result has been added to the DataSet.
     It is equivalent to testing if the length is zero.
 
-DataSet.is_marked_complete
+``DataSet.is_marked_complete``
     This attribute will be true if the DataSet has been marked as complete or false if it is in progress.
 
-DataSet.get_data(*params, start=, end=)
+``DataSet.get_data(*params, start=, end=)``
     Returns the values stored in the DataSet for the specified parameters.
     The values are returned as a list of parallel NumPy arrays, one array per parameter.
     The data type of each array is based on the data type provided when the DataSet was created.
@@ -278,10 +278,10 @@ DataSet.get_data(*params, start=, end=)
     If the range is empty -- that is, if the end is less than or equal to the start, or if start is after the current end of the DataSet –
     then a list of empty arrays is returned.
 
-DataSet.get_parameters()
+``DataSet.get_parameters()``
     Returns a list of ParamSpec objects that describe the parameters stored in this DataSet.
 
-DataSet.get_metadata(tag=)
+``DataSet.get_metadata(tag=)``
     Returns metadata for this DataSet.
 
     If a tag string is provided, only metadata stored under that tag is returned.
@@ -290,7 +290,7 @@ DataSet.get_metadata(tag=)
 Subscribing
 ----------------
 
-DataSet.subscribe(callback, min_wait=, min_count=, state=)
+``DataSet.subscribe(callback, min_wait=, min_count=, state=)``
     Subscribes the provided callback function to result additions to the DataSet.
     As results are added to the DataSet, the subscriber is notified by having the callback invoked.
 
@@ -304,7 +304,7 @@ DataSet.subscribe(callback, min_wait=, min_count=, state=)
 
     This method returns an opaque subscription identifier.
 
-DataSet.unsubscribe(subid)
+``DataSet.unsubscribe(subid)``
     Removes the indicated subscription.
     The subid must be the same object that was returned from a DataSet.subscribe call.
 
