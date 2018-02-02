@@ -35,6 +35,8 @@ class SRValidator(Validator):
         elif self.awg.model == '70002A':
             self._internal_validator = vals.Numbers(1.49e3, 25e9)
             self._freq_multiplier = 2
+        elif self.awg.model == '5208':
+            self._internal_validator = vals.Numbers(1.49e3, 2.5e9)
         # no other models are possible, since the __init__ of
         # the AWG70000A raises an error if anything else is given
 
@@ -293,7 +295,7 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A']:
+        if self.model not in ['70001A', '70002A', '5208']:
             raise ValueError('Unknown model type: {}. Are you using '
                              'the right driver for your instrument?'
                              ''.format(self.model))
