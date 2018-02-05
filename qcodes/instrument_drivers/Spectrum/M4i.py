@@ -315,7 +315,8 @@ class M4i(Instrument):
                                    pyspcm, 'SPC_AMP{}'.format(i))),
                                vals=Enum(200, 500, 1000, 2000,
                                          2500, 5000, 10000),
-                               docstring='Set and get input range of channel {}'.format(i))
+                               unit = 'mV',
+                               docstring='Set and get input range of channel {} (in mV)'.format(i))
 
             # input termination functions
             self.add_parameter('termination_{}'.format(i),
@@ -812,7 +813,7 @@ class M4i(Instrument):
         """ Acquire a single data trace
 
         Args:
-            mV_range
+            mV_range (float): range in mV
             memsize (int): size of data trace
             posttrigger_size (int): size of data trace after triggering
         Returns:
@@ -879,9 +880,6 @@ class M4i(Instrument):
             voltages (array): if multiple channels are read, then the data is interleaved
         """
         # self.available_card_modes()
-        if nr_averages < 2:
-            raise Exception('averaging for less than 2 times is not supported')
-        self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)  # single
         memsize = self.data_memory_size()
         self.segment_size(memsize)
 
@@ -895,14 +893,21 @@ class M4i(Instrument):
 
         self._check_buffers()
 
-        self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
-        numch = self._num_channels()
-
         if verbose:
             print('blockavg_hardware_trigger_acquisition: errors %s' %
                   (self.get_error_info32bit(), ))
             print('blockavg_hardware_trigger_acquisition: card_status %s' %
                   (self.card_status(), ))
+
+        if nr_averages == 1:
+            # special case since SPC_AVERAGES cannot handle 1
+            if verbose:
+                print('blockavg_hardware_trigger_acquisition: pass to single_trigger_acquisition')
+            return self.single_trigger_acquisition(mV_range=mV_range, memsize=memsize, posttrigger_size=post_trigger)
+
+        self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)  
+        self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
+        numch = self._num_channels()
 
         self.external_trigger_mode(pyspcm.SPC_TM_POS)
         self.trigger_or_mask(pyspcm.SPC_TMASK_EXT0)
