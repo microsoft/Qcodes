@@ -281,7 +281,7 @@ class Infiniium(VisaInstrument):
                                   10**np.arange(8))))),
         }
         self._max_acquisition_rate = max_acquisition_rate.get(model, inf)
-        self._allowed_acquisition_rates = allowed_acquisition_rates.get(
+        self._acquisition_rate_validator = allowed_acquisition_rates.get(
             model, Numbers(0, self._max_acquisition_rate))
         self.connect_message()
 
@@ -392,6 +392,7 @@ class Infiniium(VisaInstrument):
                            unit='Sa/s',
                            get_parser=float
                            )
+
         def set_acquisition_rate(desired_rate:float) -> None:
             old_rate = self._raw_acquire_sample_rate()
             self._raw_acquire_sample_rate(desired_rate)
@@ -419,7 +420,7 @@ class Infiniium(VisaInstrument):
                            label='sample rate',
                            get_cmd='ACQ:SRAT?',
                            set_cmd=set_acquisition_rate,
-                           vals=self._allowed_acquisition_rates,
+                           vals=self._acquisition_rate_validator,
                            unit='Sa/s',
                            get_parser=float
                            )
