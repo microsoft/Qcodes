@@ -1,3 +1,4 @@
+import builtins
 import io
 import json
 import logging
@@ -456,16 +457,11 @@ def get_last_input_cells(cells=3):
     Returns:
         last cell input if successful, else None
     """
-    for k in range(50):
-        try:
-            frame = sys._getframe(k)
-            global_vars = frame.f_globals
-            if 'In' in global_vars:
-                return global_vars['In'][-cells:]
-                break
-        except ValueError:
-            logging.warning('No input cells found in first 50 frames')
-            break
+    global In
+    if 'In' in globals() or hasattr(builtins, 'In'):
+        return In[-cells:]
+    else:
+        logging.warning('No input cells found')
 
 
 def foreground_qt_window(window):

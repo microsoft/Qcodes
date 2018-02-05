@@ -81,6 +81,28 @@ except RuntimeError as e:
 import atexit
 atexit.register(Instrument.close_all)
 
+def register_IPython_In_out():
+    """ Register IPython's In and Out such that it can be saved"""
+    import builtins
+    import sys
+    import logging
+    for k in range(50):
+        try:
+            frame = sys._getframe(k)
+            global_vars = frame.f_globals
+            if 'In' in global_vars and 'Out' in global_vars:
+                builtins.In = global_vars['In']
+                builtins.Out = global_vars['Out']
+                break
+        except ValueError:
+            logging.warning("Could not register IPython's In and Out")
+            break
+    else:
+        logging.warning("Could not register IPython's In and Out")
+
+register_IPython_In_out()
+
+
 # Patch matplotlib webagg backend to add delay when refreshing.
 # Otherwise, any event (such as moving mouse over plot) can temporarily create
 # a blank figure. Adding a small sleep fixes this
