@@ -711,7 +711,7 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.segment_size(seg_size)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
@@ -744,7 +744,7 @@ class M4i(Instrument):
         # set memsize and posttrigger
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
@@ -782,7 +782,7 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.pretrigger_memory_size(pretrigger_size)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
@@ -822,7 +822,7 @@ class M4i(Instrument):
 
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         # start/enable trigger/wait ready
         self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
@@ -860,6 +860,10 @@ class M4i(Instrument):
         if pretrigger > 2**13:
             raise Exception('value of SPC_PRETRIGGER is invalid')
 
+    def _num_channels(self):
+        """ Return number of channels that is enabled """
+        return bin(self.enable_channels()).count("1")
+    
     def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10,
                                               verbose=0, post_trigger=None):
         """ Acquire data using block averaging and hardware triggering
@@ -892,7 +896,7 @@ class M4i(Instrument):
         self._check_buffers()
 
         self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         if verbose:
             print('blockavg_hardware_trigger_acquisition: errors %s' %
