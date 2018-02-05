@@ -2,7 +2,8 @@ import numpy as np
 import collections
 import warnings
 
-from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
+from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units, \
+    smooth
 
 
 class DataArray(DelegateAttributes):
@@ -444,6 +445,35 @@ class DataArray(DelegateAttributes):
                              is_setpoint=self.is_setpoint,
                              preset_data=sub_array,
                              set_arrays=sub_set_arrays)
+
+    def smooth(self, window_size, axis=-1, order=3, deriv=0, rate=1):
+        if len(self.shape) == 1:
+            smoothed_array = smooth(self.ndarray,
+                                    window_size=window_size,
+                                    order=order,
+                                    deriv=deriv,
+                                    rate=rate)
+
+
+        elif len(self.shape) == 2:
+            if axis == 0:
+                arr = self.ndarray.transpose()
+            else:
+                arr = self.ndarray
+            smoothed_array = np.array([smooth(row,
+                                              window_size=window_size,
+                                              order=order,
+                                              deriv=deriv,
+                                              rate=rate)
+                                       for row in arr])
+        else:
+            raise RuntimeError('Smoothing works for up to 2 dimensional arrays,'
+                               f'not {len(self.shape)}')
+
+        return DataArray(name=self.name, label=self.label, unit=self.unit,
+                         is_setpoint=self.is_setpoint,
+                         preset_data=smoothed_array,
+                         set_arrays=self.set_arrays)
 
     def unroll(self, *axes):
         """ Return  a list containing all elements along an axis.
