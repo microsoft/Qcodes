@@ -89,11 +89,17 @@ class FrequencySweep(ArrayParameter):
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent, name, channel, vna_parameter: str=None):
+        """
+        Args:
+            vna_parameter: if left empty name is used
+        """
         n = channel
         self._instrument_channel = channel
         self._tracename = "Trc{}".format(channel)
-        self._vna_parameter = name
+        if vna_parameter is None:
+            vna_parameter = name
+        self._vna_parameter = vna_parameter
         super().__init__(parent, name)
 
         # map hardware channel to measurement
