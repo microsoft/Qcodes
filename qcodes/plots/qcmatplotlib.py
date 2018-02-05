@@ -19,7 +19,7 @@ from .base import BasePlot
 from qcodes.utils.threading import UpdaterThread
 import qcodes.config
 from qcodes.data.data_array import DataArray
-
+import numbers
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,8 @@ class MatPlot(BasePlot):
 
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
-            if isinstance(arg, Sequence):
+            if (isinstance(arg, Sequence) and len(arg) > 1
+                and not isinstance(arg[0], numbers.Number)):
                 # Arg consists of multiple elements, add all to same subplot
                 for subarg in arg:
                     self[k].add(subarg, colorbar=colorbar, **kwargs)
@@ -257,7 +258,7 @@ class MatPlot(BasePlot):
         """
         if not isinstance(subplots, tuple):
             raise TypeError('Subplots {} must be a tuple'.format(subplots))
-        return (min(3 + 3 * subplots[1], 14), 1 + 3 * subplots[0])
+        return (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
 
     def update_plot(self):
         """
@@ -338,6 +339,9 @@ class MatPlot(BasePlot):
                          nticks=None,
                          colorbar=True,
                          **kwargs):
+        # Remove all kwargs that are meant for line plots
+        for lineplot_kwarg in ['marker', 'linestyle', 'ms']:
+            kwargs.pop(lineplot_kwarg, None)
 
         # Add labels if DataArray is passed
         if 'label' not in kwargs and isinstance(z, DataArray):
