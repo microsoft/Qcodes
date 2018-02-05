@@ -691,7 +691,7 @@ class ActiveLoop(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, thread=False, use_threads=False, quiet=False, station=None,
+    def run(self, thread=False, use_threads=False, quiet=True, station=None,
             progress_interval=False, set_active=True, save_metadata=True,
             stop=True, *args, **kwargs):
         """
@@ -962,7 +962,6 @@ class ActiveLoop(Metadatable):
                         self.bg_task()
                     except _QcodesBreak:
                         log.error('QCodes break raise, stopping')
-                        print('print: QCodes break raise, stopping')
                         break
                     except Exception:
                         if self.last_task_failed:
@@ -974,8 +973,8 @@ class ActiveLoop(Metadatable):
 
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
+            log.debug('Running the background task one last time.')
             try:
-                log.debug('Running the background task one last time.')
                 self.bg_task()
             except _QcodesBreak:
                 pass
