@@ -693,7 +693,7 @@ class ActiveLoop(Metadatable):
 
     def run(self, thread=False, use_threads=False, quiet=False, station=None,
             progress_interval=False, set_active=True, save_metadata=True,
-            *args, **kwargs):
+            stop=True, *args, **kwargs):
         """
         Execute this loop.
 
@@ -708,6 +708,7 @@ class ActiveLoop(Metadatable):
                 seconds. If provided here, will override any interval provided
                 with the Loop definition
             save_metadata: save metadata of dataset
+            stop: stop Layout at the end (only used in SilQ).
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`
@@ -799,7 +800,8 @@ class ActiveLoop(Metadatable):
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             data_set.active = True
-            self._run_wrapper(set_active=set_active, save_metadata=save_metadata)
+            self._run_wrapper(set_active=set_active, save_metadata=save_metadata,
+                              stop=stop)
             ds = self.data_set
         except:
             log.exception('Loop exception')
