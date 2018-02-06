@@ -2,6 +2,8 @@ from contextlib import contextmanager
 import logging
 import sqlite3
 import time
+import uuid
+
 from numbers import Number
 from numpy import ndarray
 import numpy as np
@@ -84,6 +86,14 @@ CREATE TABLE IF NOT EXISTS dependencies (
     dependent INTEGER,
     independent INTEGER,
     axis_num INTEGER
+);
+"""
+
+_uuid_table_schema = """
+CREATE TABLE IF NOT EXISTS uuids (
+    uuid TEXT PRIMARY KEY,
+    run_id INTEGER,
+    exp_id INTEGER
 );
 """
 
@@ -199,7 +209,41 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
 
     if debug:
         conn.set_trace_callback(print)
+
+    perform_db_upgrade(conn)
     return conn
+
+def perform_db_upgrade(conn: sqlite3.Connection) -> None:
+    """
+    This is intended to perform all upgrades as needed to bring the
+    db from version 0 to the most current version
+
+    """
+    version = get_user_version(conn)
+    if version < 1:
+        log.info("Performing upgrade of database from version 0 to 1")
+        perform_db_upgrade_0_to_1(conn)
+
+
+def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> None:
+    start_version = get_user_version(conn)
+    if start_version != 0:
+        return
+
+    atomicTransaction(conn, _uuid_table_schema)
+    cur = atomicTransaction(conn, 'select run_id, exp_id from runs')
+    data = many_many(cur, 'run_id', 'exp_id')
+
+    for run_id, exp_id in data:
+        cur = atomicTransaction(conn,
+                                'SELECT uuid, run_id, exp_id FROM uuids WHERE run_id=? and exp_id=?',
+                                run_id, exp_id)
+        data = many_many(cur, 'uuid', 'run_id', 'exp_id')
+        if len(data) == 0:
+            with atomic(conn):
+                insert_values(conn, 'uuids', ['uuid', 'run_id', 'exp_id'],
+                              [uuid.uuid4().hex, run_id, exp_id])
+    set_user_version(conn, 1)
 
 
 def transaction(conn: sqlite3.Connection,
@@ -278,6 +322,7 @@ def init_db(conn: sqlite3.Connection)->None:
         transaction(conn, _runs_table_schema)
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
+        transaction(conn, _uuid_table_schema)
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
@@ -929,7 +974,15 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                            time.time(),
                            False
                            )
-    return run_counter, formatted_name, curr.lastrowid
+    run_id = curr.lastrowid
+    query = f"""
+    INSERT INTO uuids
+        (uuid, run_id, exp_id)
+    VALUES
+        (?,?,?)
+    """
+    transaction(conn, query, uuid.uuid4().hex, run_id, exp_id)
+    return run_counter, formatted_name, run_id
 
 
 def _update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
