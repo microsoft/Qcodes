@@ -21,11 +21,12 @@ class FrequencySweepMagPhase(MultiParameter):
         self._channel = channel
         self.names = ('magnitude',
                       'phase')
-        self.labels = ('{} magnitude'.format(instrument._vna_parameter),
-                       '{} phase'.format(instrument._vna_parameter))
+        self.labels = ('{} magnitude'.format(instrument.short_name),
+                       '{} phase'.format(instrument.short_name))
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
-        self.setpoint_names = (('frequency',), ('frequency',))
+        self.setpoint_labels = (('{} frequency'.format(instrument.short_name),), ('{} frequency'.format(instrument.short_name),))
+        self.setpoint_names = (('{}_frequency'.format(instrument.short_name),), ('{}_frequency'.format(instrument.short_name),))
 
     def set_sweep(self, start, stop, npts):
         #  needed to update config of the software parameter on sweep change
@@ -66,9 +67,10 @@ class FrequencySweep(ArrayParameter):
                          instrument=instrument,
                          unit='dB',
                          label='{} magnitude'.format(
-                             instrument._vna_parameter),
+                             instrument.short_name),
                          setpoint_units=('Hz',),
-                         setpoint_names=('{}_frequency'.format(instrument._vna_parameter),))
+                         setpoint_labels=('{} frequency'.format(instrument.short_name),),
+                         setpoint_names=('{}_frequency'.format(instrument.short_name),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -120,7 +122,7 @@ class ZNBChannel(InstrumentChannel):
         elif model == 'ZNB20':
             self._min_source_power = -60
 
-        self.add_parameter(name='channel_name',
+        self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
                            get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
                                                                   self._tracename),
@@ -242,7 +244,7 @@ class ZNBChannel(InstrumentChannel):
         self.write('CALC{}:FORM {}'.format(channel, val))
         self.trace.unit = unit_mapping[val]
         self.trace.label = "{} {}".format(
-            self.channel_name(), label_mapping[val])
+            self.short_name, label_mapping[val])
 
     def _strip(self, var):
         "Strip newline and quotes from instrument reply"
@@ -309,7 +311,7 @@ class ZNBChannel(InstrumentChannel):
             log.warning("RF output is off when getting sweep data")
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
-        instrument_parameter = self.channel_name()
+        instrument_parameter = self.vna_parameter()
         if instrument_parameter != self._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._vna_parameter,
