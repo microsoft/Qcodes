@@ -535,7 +535,7 @@ class Instrument(InstrumentBase):
             The instance to remove
         """
         wr = weakref.ref(instance)
-        if wr in cls._instances:
+        if wr in getattr(cls, "_instances", []):
             cls._instances.remove(wr)
 
         # remove from all_instruments too, but don't depend on the
