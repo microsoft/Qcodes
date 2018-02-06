@@ -369,7 +369,7 @@ class DataArray(DelegateAttributes):
         # Generate new set arrays
         sub_set_arrays = []
         for k, set_array in enumerate(self.set_arrays):
-            if set_array == self:
+            if set_array is self:
                 sub_set_array = self
             else:
                 sub_set_array = set_array[loop_indices[:set_array.ndim]]
