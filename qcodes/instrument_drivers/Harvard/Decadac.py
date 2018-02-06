@@ -26,13 +26,13 @@ class DacReader(object):
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
-        if volt < self.min_val or volt >= self.max_val:
+        if volt < self.physical_min_val or volt >= self.physical_max_val:
             raise ValueError('Cannot convert voltage {} V '.format(volt) +
                              'to a voltage code, value out of range '
-                             '({} V - {} V).'.format(self.min_val,
-                                                     self.max_val))
+                             '({} V - {} V).'.format(self.physical_min_val,
+                                                     self.physical_max_val))
 
-        frac = (volt - self.min_val) / (self.max_val - self.min_val)
+        frac = (volt - self.physical_min_val) / (self.max_val - self.physical_min_val)
         val = int(round(frac * 65536))
         # extra check to be absolutely sure that the instrument does nothing
         # receive an out-of-bounds value
@@ -49,7 +49,7 @@ class DacReader(object):
         Midrange is 32768.
         """
         frac = code/65536.0
-        return (frac * (self.max_val - self.min_val)) + self.min_val
+        return (frac * (self.physical_max_val - self.physical_min_val)) + self.physical_min_val
 
     def _set_slot(self):
         """
@@ -159,7 +159,18 @@ class DacChannel(InstrumentChannel, DacReader):
     """
     _CHANNEL_VAL = vals.Ints(0, 3)
 
-    def __init__(self, parent, name, channel, min_val=-5, max_val=5):
+    def __init__(self, parent, name, channel, min_val: float=-10,
+                 max_val: float=10, physical_range: int=None):
+        """
+        Args:
+            min_val/max_val: minimum and maximum voltage for the dac channel.
+                             These values are used for validating the input.
+            physical_range: The actually possible range of the DAC. Values can
+                            be:  1 -> +10..  0
+                                 0 -> +10..-10
+                                -1 ->   0..-10
+                            if 'None' the range is inferred from min/max_val
+        """
         super().__init__(parent, name)
 
         # Validate slot and channel values
@@ -180,6 +191,8 @@ class DacChannel(InstrumentChannel, DacReader):
         assert(min_val < max_val)
         self.min_val = min_val
         self.max_val = max_val
+
+        self.set_physical_range(physical_range)
 
         # Add channel parameters
         # Note we will use the older addresses to read the value from the dac rather than the newer
@@ -225,6 +238,40 @@ class DacChannel(InstrumentChannel, DacReader):
                                get_parser=self._dac_code_to_v,
                                set_cmd=partial(self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
                                set_parser=self._dac_v_to_code, vals=vals.Numbers(self.min_val, self.max_val))
+
+    def set_physical_range(self, physical_range=None):
+        """
+        Sets the physical range of the channel, according to the switch on
+        the front panel.
+        Args:
+            physical_range: The actually possible range of the DAC. Values can
+                            be:  1 -> +10..  0
+                                 0 -> +10..-10
+                                -1 ->   0..-10
+                            if 'None' the range is inferred from min/max_val
+        """
+        if physical_range is None:
+            if self.min_val >= 0:
+                self.physical_range = 1
+            elif self.max_val <= 0:
+                self.physical_range = -1
+            else:
+                self.physical_range = 0
+        else:
+
+            self.physical_range = physical_range
+        if self.physical_range == 1:
+            self.physical_min_val = 0
+            self.physical_max_val = 10
+        elif self.physical_range == -1:
+            self.physical_min_val = -10
+            self.physical_max_val = 0
+        elif self.physical_range == 0:
+            self.physical_min_val = -10
+            self.physical_max_val = 10
+        else:
+            raise RuntimeError("physical_range must be -1,0,1 not {}".format(
+                self.physical_range))
 
     def _ramp(self, val, rate, block=True):
         """
@@ -302,7 +349,7 @@ class DacSlot(InstrumentChannel, DacReader):
     _SLOT_VAL = vals.Ints(0, 4)
     SLOT_MODE_DEFAULT = "Coarse"
 
-    def __init__(self, parent, name, slot, min_val=-5, max_val=5):
+    def __init__(self, parent, name, slot, min_val=-10, max_val=10):
         super().__init__(parent, name)
 
         # Validate slot and channel values
@@ -377,7 +424,7 @@ class Decadac(VisaInstrument, DacReader):
     DAC_CHANNEL_CLASS = DacChannel
     DAC_SLOT_CLASS = DacSlot
 
-    def __init__(self, name, address, min_val=-5, max_val=5, **kwargs):
+    def __init__(self, name, address, min_val=-10, max_val=10, **kwargs):
         """
 
         Creates an instance of the Decadac instrument corresponding to one slot
