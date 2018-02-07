@@ -103,6 +103,15 @@ devices:
           q: "RAMP"
           r: OK
 
+      current rating:
+        default: 3
+        getter:
+          q: "CURR:RATING?"
+          r: "{}"
+        setter:
+          q: "CONF:CURR:RATING {}"
+          r: OK
+
 
 resources:  # we always need three power supplies; one for each axis. For the testing we add a few more
   GPIB::1::INSTR:
