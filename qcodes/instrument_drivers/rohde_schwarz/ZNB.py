@@ -97,7 +97,11 @@ class ZNBChannel(InstrumentChannel):
     def __init__(self, parent, name, channel, vna_parameter: str=None):
         """
         Args:
-            vna_parameter: if left empty name is used
+            parent: Instrument that this channel is bound to.
+            name: Name to use for this channel.
+            vna_parameter: Name of parameter on the vna that this should
+                measure such as S12. If left empty this will fall back to
+                `name`.
         """
         n = channel
         self._instrument_channel = channel
