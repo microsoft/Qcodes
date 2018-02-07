@@ -106,6 +106,7 @@ class IPInstrument(Instrument):
         except ConnectionRefusedError:
             self._socket.close()
             self._socket = None
+            raise
 
     def _disconnect(self):
         if getattr(self, '_socket', None) is None:
