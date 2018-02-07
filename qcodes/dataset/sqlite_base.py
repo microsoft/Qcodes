@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import logging
 import sqlite3
 import time
-import uuid
+import bson
 
 from numbers import Number
 from numpy import ndarray
@@ -242,7 +242,7 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> None:
         if len(data) == 0:
             with atomic(conn):
                 insert_values(conn, 'uuids', ['uuid', 'run_id', 'exp_id'],
-                              [uuid.uuid4().hex, run_id, exp_id])
+                              [str(bson.objectid.ObjectId()), run_id, exp_id])
     set_user_version(conn, 1)
 
 
@@ -981,7 +981,7 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
     VALUES
         (?,?,?)
     """
-    transaction(conn, query, uuid.uuid4().hex, run_id, exp_id)
+    transaction(conn, query, str(bson.objectid.ObjectId()), run_id, exp_id)
     return run_counter, formatted_name, run_id
 
 
