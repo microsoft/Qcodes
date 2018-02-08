@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence)
+                    MutableMapping, MutableSequence, Optional)
 from inspect import signature
 from numbers import Number
 
@@ -44,8 +44,8 @@ class DataSaver:
                                                 parspec.depends_on.split(', ')})
 
     def add_result(self,
-                   *res: Tuple[Union[_BaseParameter, str],
-                               Union[str, int, float, np.ndarray]])-> None:
+                   *res_tuple: Tuple[Union[_BaseParameter, str],
+                                     Union[str, int, float, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -75,7 +75,7 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        res = list(res)  # ArrayParameters cause us to mutate the results
+        res = list(res_tuple)  # ArrayParameters cause us to mutate the results
 
         # we iterate through the input twice in order to allow users to call
         # add_result with the arguments in any particular order, i.e. NOT
@@ -277,7 +277,8 @@ class Measurement:
         name (str): The name of this measurement/run. Is used by the dataset
             to give a name to the results_table.
     """
-    def __init__(self, exp: Experiment=None, station=None) -> None:
+    def __init__(self, exp: Optional[Experiment]=None,
+                 station: Optional[qc.Station]=None) -> None:
         """
         Init
 
