@@ -368,7 +368,7 @@ def test_subscriptions(experiment, DAC, DMM):
         assert res_dict == {}
         assert lt7s == []
 
-        for num in range(11):
+        for num in range(5):
 
             (a, b) = 5*np.random.randn(2)
             expected_list += [c for c in (a, b) if c > 7]
@@ -378,6 +378,7 @@ def test_subscriptions(experiment, DAC, DMM):
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
     assert len(datasaver._dataset.subscribers) == 0
+
 
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
