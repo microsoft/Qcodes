@@ -131,7 +131,9 @@ class Subscriber(Thread):
     def _send(self) -> List:
         result_list = self._exhaust_queue(self.data)
         self.callback(result_list, self._data_set_len, self.state)
-        self.log.debug(f"{self.callback} called.")
+        self.log.debug(f"{self.callback} called with "
+                       f"result_list: {result_list}.")
+        # TODO (WilliamHPNielsen): why does this method return smth?
         return result_list
 
     def _loop(self) -> None:
