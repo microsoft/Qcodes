@@ -79,7 +79,7 @@ class QCoDeSMagic(Magics):
             return
 
         # Parse line, get measurement name and any possible options
-        options, msmt_name = self.parse_options(line, 'pd:l:x')
+        options, msmt_name = self.parse_options(line, 'psd:l:x')
         data_name = options.get('d', 'data')
         loop_name = options.get('l', 'loop')
 
@@ -148,6 +148,8 @@ class QCoDeSMagic(Magics):
 
         # Add dataset
         contents += f"{data_name} = {loop_name}.get_data_set(name='{msmt_name}')"
+        if 's' not in options:
+            contents += f"\nprint({data_name})"
 
         for line in lines[k+1:]:
             contents += '\n' + line
