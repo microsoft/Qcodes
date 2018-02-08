@@ -358,7 +358,7 @@ def test_subscriptions(experiment, DAC, DMM):
     meas.add_subscriber(subscriber2, state=lt7s)
     assert len(meas.subscribers) == 2
 
-    meas.write_period = 0.05
+    meas.write_period = 0.2
 
     expected_list = []
 
@@ -368,7 +368,7 @@ def test_subscriptions(experiment, DAC, DMM):
         assert res_dict == {}
         assert lt7s == []
 
-        for num in range(27):
+        for num in range(11):
 
             (a, b) = 5*np.random.randn(2)
             expected_list += [c for c in (a, b) if c > 7]
