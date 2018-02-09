@@ -1,3 +1,5 @@
+.. _dataset-spec:
+
 =====================
 DataSet Specification
 =====================
