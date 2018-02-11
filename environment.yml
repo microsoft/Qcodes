@@ -18,3 +18,4 @@ dependencies:
  - pytest
  - pytest-runner
  - spyder
+ - pymongo
