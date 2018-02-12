@@ -79,7 +79,7 @@ class QCoDeSMagic(Magics):
             return
 
         # Parse line, get measurement name and any possible options
-        options, msmt_name = self.parse_options(line, 'psd:l:x')
+        options, msmt_name = self.parse_options(line, 'psrd:l:x')
         data_name = options.get('d', 'data')
         loop_name = options.get('l', 'loop')
 
@@ -153,6 +153,9 @@ class QCoDeSMagic(Magics):
 
         for line in lines[k+1:]:
             contents += '\n' + line
+
+        if 'r' in options:
+            contents += f'\n{loop_name}.run(thread=True)'
 
         if 'p' in options:
             print(contents)
