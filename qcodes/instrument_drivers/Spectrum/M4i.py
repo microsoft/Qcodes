@@ -763,7 +763,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER)
 
-        return {'memsize': memsize, 'numch': numch}
+        return {'memsize': memsize, 'numch': numch, 'mV_range': mV_range}
 
     def _transfer_buffer_numpy(self, memsize, numch):
         """ Transfer buffer to numpy array """
@@ -797,6 +797,7 @@ class M4i(Instrument):
 
         memsize = trace['memsize']
         numch = trace['numch']
+        mV_range = trace['mV_range']
 
         self.general_command(pyspcm.M2CMD_CARD_WAITREADY)
         output = self._transfer_buffer_numpy(memsize, numch)
