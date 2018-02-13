@@ -738,6 +738,72 @@ class M4i(Instrument):
 
         return voltages
 
+    def start_acquisition(self, mV_range, memsize, posttrigger_size = None, verbose=0):
+        """ Start data acquisition of a single data trace
+
+        The resulting data can be acquired with the function retrieve_data.
+        
+        Args:
+            mV_range (float): range in mV
+            memsize (int): size of data trace
+            posttrigger_size (int or None): size of data trace after triggering
+        Returns:
+            trace (dict): data concerning the trace
+        """
+        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
+
+        self.data_memory_size(memsize)
+        if posttrigger_size is None:
+            posttrigger_size = memsize-16
+        self.posttrigger_memory_size(posttrigger_size)
+        numch = self._num_channels()
+
+        # start/enable trigger/wait ready
+        self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
+        self.general_command(pyspcm.M2CMD_CARD_START |
+                             pyspcm.M2CMD_CARD_ENABLETRIGGER)
+
+        return  {'memsize': memsize, 'numch': numch}
+    
+    def retrieve_data(self, trace):
+        """ Retrieve data from the digitizer
+        
+        The data acquisition must have been started by start_acquisition.
+        
+        Args:
+            
+        
+        Returns:
+            voltages (array)
+        """
+
+        memsize = trace['memsize']
+        numch = trace['numch']
+        
+        self.general_command(pyspcm.M2CMD_CARD_WAITREADY)
+        logger.info('data acquisition complete %.3f' % (time.time()-t0))
+
+        # setup software buffer
+        buffer_size = ct.c_int16 * memsize * numch
+        data_buffer = (buffer_size)()
+        data_pointer = ct.cast(data_buffer, ct.c_void_p)
+
+        # data acquisition
+        self._def_transfer64bit(
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
+        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
+                             pyspcm.M2CMD_DATA_WAITDMA)
+
+        # convert buffer to numpy array
+        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
+        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        self._debug = output
+        self._stop_acquisition()
+
+        voltages = self.convert_to_voltage(output, mV_range / 1000)
+
+        return voltages
+    
     def single_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
 
         self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
