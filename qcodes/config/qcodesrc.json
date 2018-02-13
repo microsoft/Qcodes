@@ -2,7 +2,9 @@
     "core":{
         "loglevel": "DEBUG",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
-        "register_magic": true
+        "register_magic": true,
+        "db_location": "./experiments.db",
+        "db_debug": false
     },
     "gui" :{
         "notebook": true,
