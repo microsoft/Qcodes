@@ -764,6 +764,24 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER)
 
         return  {'memsize': memsize, 'numch': numch}
+
+    def _transfer_buffer_numpy(self, memsize, numch):
+        """ Transfer buffer to numpy array """
+        # setup software buffer
+        buffer_size = ct.c_int16 * memsize * numch
+        data_buffer = (buffer_size)()
+        data_pointer = ct.cast(data_buffer, ct.c_void_p)
+
+        # data acquisition
+        self._def_transfer64bit(
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
+        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
+                             pyspcm.M2CMD_DATA_WAITDMA)
+
+        # convert buffer to numpy array
+        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
+        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        return output
     
     def retrieve_data(self, trace):
         """ Retrieve data from the digitizer
@@ -781,22 +799,7 @@ class M4i(Instrument):
         numch = trace['numch']
         
         self.general_command(pyspcm.M2CMD_CARD_WAITREADY)
-        logger.info('data acquisition complete %.3f' % (time.time()-t0))
-
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        output = self._transfer_buffer_numpy(memsize, numch)
         self._debug = output
         self._stop_acquisition()
 
@@ -816,21 +819,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
-
+        output = self._transfer_buffer_numpy(memsize, numch)
         self._stop_acquisition()
 
         voltages = self.convert_to_voltage(output, mV_range / 1000)
@@ -854,20 +843,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        output = self._transfer_buffer_numpy(memsize, numch)
 
         self._stop_acquisition()
 
@@ -896,20 +872,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        output = self._transfer_buffer_numpy(memsize, numch)
         self._debug = output
         self._stop_acquisition()
 
