@@ -14,14 +14,18 @@ import qcodes
 
 class ParametersTable:
     """
-    A parameters table is how sweep objects keep track of which parameters have been defined and how they relate to each
-    other. Please have a look at the following notebook for a better understanding:
-    https://github.com/sohailc/Qcodes/blob/sweep_integration/docs/examples/sweep/sweep_basic_example.ipynb
+    A parameters table is how sweep objects keep track of which parameters
+    have been defined and how they relate to each
+    other. Please have a look at the following notebook for a better
+    understanding, please have a look at the sweep_basic_example.ipynb notebook
+    in docs/examples/sweep
 
-    When a sweep object is registered by the SweepMeasurement class (see sweep_measurement.py), this table is used
-    to create the ParamSpecs.
+    When a sweep object is registered by the SweepMeasurement class
+    (see sweep_measurement.py), this table is used to create the ParamSpecs.
     """
-    def __init__(self, table_list=None, dependent_parameters=None, independent_parameters=None):
+
+    def __init__(self, table_list=None, dependent_parameters=None,
+                 independent_parameters=None):
 
         if not any([table_list, dependent_parameters, independent_parameters]):
             raise ValueError("At least one argument should be a non-None")
@@ -45,14 +49,16 @@ class ParametersTable:
 
     def __mul__(self, other):
         return ParametersTable([
-            {k: s[k] + o[k] for k in s.keys()} for s, o in itertools.product(self._table_list, other.table_list)
+            {k: s[k] + o[k] for k in s.keys()} for s, o in
+            itertools.product(self._table_list, other.table_list)
         ])
 
     def __repr__(self):
         def table_print(table):
             s = "|".join([
-                ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in ["independent_parameters",
-                                                                             "dependent_parameters"]
+                ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in
+                ["independent_parameters",
+                 "dependent_parameters"]
             ])
 
             return s
@@ -60,8 +66,10 @@ class ParametersTable:
         return "\n".join([table_print(table) for table in self._table_list])
 
     def flatten(self):
-        ind = {k: v for d in self._table_list for k, v in d["independent_parameters"]}
-        dep = {k: v for d in self._table_list for k, v in d["dependent_parameters"]}
+        ind = {k: v for d in self._table_list for k, v in
+               d["independent_parameters"]}
+        dep = {k: v for d in self._table_list for k, v in
+               d["dependent_parameters"]}
         return ind, dep
 
     def symbols_list(self):
@@ -77,6 +85,7 @@ def measurement(param_list):
     """
     A decorator to easily integrate arbitrary measurement functions in sweeps.
     """
+
     def decorator(f):
         def inner():
             m = np.atleast_1d(f())
@@ -92,6 +101,7 @@ def setter(param_list):
     """
     A decorator to easily integrate arbitrary setter functions in sweeps
     """
+
     def decorator(f):
         def inner(value):
             value = np.atleast_1d(value)
@@ -105,7 +115,6 @@ def setter(param_list):
 
 
 def wrap_objects(*objects, repeat=False):
-
     def wrapper(obj):
         if isinstance(obj, qcodes.Parameter):
             new_obj = ParameterWrapper(obj, repeat=repeat)
@@ -185,6 +194,7 @@ class IteratorSweep(BaseSweepObject):
         A callable with no parameters, returning an iterator. Unrolling this iterator has the
         effect of setting the independent parameters.
     """
+
     def __init__(self, iterator_function):
         super().__init__()
         self._iterator_function = iterator_function
@@ -219,7 +229,8 @@ class Nest(BaseSweepObject):
     def __init__(self, sweep_objects):
         super().__init__()
         self._sweep_objects = sweep_objects
-        self._parameter_table = np.prod([so.parameter_table for so in sweep_objects])
+        self._parameter_table = np.prod(
+            [so.parameter_table for so in sweep_objects])
 
     @staticmethod
     def _two_product(sweep_object1, sweep_object2):
@@ -255,10 +266,12 @@ class Chain(BaseSweepObject):
     """
     Chain a list of sweep object to run one after the other
     """
+
     def __init__(self, sweep_objects):
         super().__init__()
         self._sweep_objects = sweep_objects
-        self._parameter_table = np.sum([so.parameter_table for so in sweep_objects])
+        self._parameter_table = np.sum(
+            [so.parameter_table for so in sweep_objects])
 
     def _setter_factory(self):
         for so in self._sweep_objects:
@@ -270,10 +283,12 @@ class Zip(BaseSweepObject):
     """
     Zip multiple sweep objects. Unlike a nested sweep, we will produce a 1D sweep
     """
+
     def __init__(self, sweep_objects):
         super().__init__()
         self._sweep_objects = sweep_objects
-        self._parameter_table = np.prod([so.parameter_table for so in sweep_objects])
+        self._parameter_table = np.prod(
+            [so.parameter_table for so in sweep_objects])
 
     @staticmethod
     def _combine_dictionaries(dictionaries):
@@ -303,7 +318,8 @@ class ParameterSweep(BaseSweepObject):
         super().__init__()
         self._parameter = parameter
         self._point_function = point_function
-        self._parameter_table = ParametersTable(independent_parameters=[(parameter.full_name, parameter.unit)])
+        self._parameter_table = ParametersTable(
+            independent_parameters=[(parameter.full_name, parameter.unit)])
 
     def _setter_factory(self):
         for set_value in self._point_function():
@@ -319,12 +335,14 @@ class ParameterWrapper(BaseSweepObject):
     ----------
     parameter: qcodes.StandardParameter
     """
+
     def __init__(self, parameter, repeat=False):
         """
         Note: please use repeat=True carefully as this can easily lead to infinite loops.
         """
         super().__init__()
-        self._parameter_table = ParametersTable(dependent_parameters=[(parameter.full_name, parameter.unit)])
+        self._parameter_table = ParametersTable(
+            dependent_parameters=[(parameter.full_name, parameter.unit)])
         self._parameter = parameter
         self._repeat = repeat
 
@@ -340,6 +358,7 @@ class FunctionSweep(BaseSweepObject):
     """
     Use a function to set independent parameters instead of calling set methods directly
     """
+
     def __init__(self, set_function, point_function):
         super().__init__()
         self._set_function, self._parameter_table = set_function()
@@ -354,6 +373,7 @@ class FunctionWrapper(BaseSweepObject):
     """
     Use a function to measure dependent parameters instead of calling get methods directly
     """
+
     def __init__(self, measure_function, repeat=False):
         """
         Note: please use repeat=True carefully as this can easily lead to infinite loops.
@@ -412,7 +432,8 @@ def sweep(obj, sweep_points):
 
     if not isinstance(obj, qcodes.Parameter):
         if not callable(obj):
-            raise ValueError("The object to sweep over needs to either be a QCoDeS parameter or a function")
+            raise ValueError(
+                "The object to sweep over needs to either be a QCoDeS parameter or a function")
 
         return FunctionSweep(obj, point_function)
     else:
@@ -439,7 +460,8 @@ def szip(*objects):
     Zip operator loops until the shortest sweep object is exhausted
     """
     repeat = False
-    if any([isinstance(i, BaseSweepObject) for i in objects]):  # If any of the objects is a sweep object it (probably)
+    if any([isinstance(i, BaseSweepObject) for i in
+            objects]):  # If any of the objects is a sweep object it (probably)
         # has a finite length and therefore wrapping functions and parameters with repeat=True is save. These parameters
         # and functions will be called as often as the length of the sweep object.
         repeat = True
