@@ -2,7 +2,8 @@ import json
 import logging
 from time import monotonic
 from collections import OrderedDict
-from typing import Callable, Union, Dict, Tuple, List, Sequence, cast, Optional
+from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
+                    MutableMapping, MutableSequence, Optional)
 from inspect import signature
 from numbers import Number
 
@@ -43,8 +44,8 @@ class DataSaver:
                                                 parspec.depends_on.split(', ')})
 
     def add_result(self,
-                   *res: Tuple[Union[_BaseParameter, str],
-                               Union[str, int, float, np.ndarray]])-> None:
+                   *res_tuple: Tuple[Union[_BaseParameter, str],
+                                     Union[str, int, float, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -74,7 +75,7 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        res = list(res)  # ArrayParameters cause us to mutate the results
+        res = list(res_tuple)  # ArrayParameters cause us to mutate the results
 
         # we iterate through the input twice in order to allow users to call
         # add_result with the arguments in any particular order, i.e. NOT
@@ -165,6 +166,8 @@ class DataSaver:
                 self._results = []
             except Exception as e:
                 log.warning(f'Could not commit to database; {e}')
+        else:
+            log.debug('No results to flush')
 
     @property
     def run_id(self):
@@ -194,10 +197,12 @@ class Runner:
             experiment: Experiment=None, station: Station=None,
             write_period: float=None,
             parameters: Dict[str, ParamSpec]=None,
-            name: str='') -> None:
+            name: str='',
+            subscribers: List=[]) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
+        self.subscribers = subscribers
         self.experiment = experiment
         self.station = station
         self.parameters = parameters
@@ -220,7 +225,7 @@ class Runner:
 
         self.ds = qc.new_data_set(self.name, eid)
 
-        # .. and give it a snapshot as metadata
+        # .. and give the dataset a snapshot as metadata
         if self.station is None:
             station = qc.Station.default
         else:
@@ -232,6 +237,14 @@ class Runner:
 
         for paramspec in self.parameters.values():
             self.ds.add_parameter(paramspec)
+
+        # register all subscribers
+        for (callble, state) in self.subscribers:
+            # We register with minimal waiting time.
+            # That should make all subscribers be called when data is flushed
+            # to the database
+            log.debug(f'Subscribing callable {callble} with state {state}')
+            self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
         print(f'Starting experimental run with id: {self.ds.run_id}')
 
@@ -249,6 +262,8 @@ class Runner:
         for func, args in self.exitactions:
             func(*args)
 
+        self.ds.unsubscribe_all()
+
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_complete()
@@ -262,7 +277,8 @@ class Measurement:
         name (str): The name of this measurement/run. Is used by the dataset
             to give a name to the results_table.
     """
-    def __init__(self, exp: Experiment=None, station=None) -> None:
+    def __init__(self, exp: Optional[Experiment]=None,
+                 station: Optional[qc.Station]=None) -> None:
         """
         Init
 
@@ -275,6 +291,8 @@ class Measurement:
         self.exp = exp
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
+        self.subscribers: List[Tuple[Callable, Union[MutableSequence,
+                                                     MutableMapping]]] = []
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
@@ -540,6 +558,23 @@ class Measurement:
 
         self.exitactions.append((func, args))
 
+    def add_subscriber(self,
+                       func: Callable,
+                       state: Union[MutableSequence, MutableMapping]) -> None:
+        """
+        Add a subscriber to the dataset of the measurement.
+
+        Args:
+            name: The name of the subscriber.
+            func: A function taking three positional arguments: a list of
+                tuples of parameter values, an integer, a mutable variable
+                (list or dict) to hold state/writes updates to.
+            state: The variable to hold the state.
+        """
+        # TODO: Should we protect users from registering two subscribers
+        # with the same state?
+        self.subscribers.append((func, state))
+
     def run(self):
         """
         Returns the context manager for the experimental run
@@ -548,4 +583,5 @@ class Measurement:
                       self.experiment, station=self.station,
                       write_period=self._write_period,
                       parameters=self.parameters,
-                      name=self.name)
+                      name=self.name,
+                      subscribers=self.subscribers)

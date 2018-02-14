@@ -331,6 +331,55 @@ def test_enter_and_exit_actions(experiment, DAC, words):
         meas.add_after_run(action, testlist)
 
 
+def test_subscriptions(experiment, DAC, DMM):
+
+    def subscriber1(results, length, state):
+        """
+        A dict of all results
+        """
+        state[length] = results
+
+    def subscriber2(results, length, state):
+        """
+        A list of all parameter values larger than 7
+        """
+        for res in results:
+            state += [pres for pres in res if pres > 7]
+
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+
+    res_dict = {}
+    lt7s = []
+
+    meas.add_subscriber(subscriber1, state=res_dict)
+    assert len(meas.subscribers) == 1
+    meas.add_subscriber(subscriber2, state=lt7s)
+    assert len(meas.subscribers) == 2
+
+    meas.write_period = 0.2
+
+    expected_list = []
+
+    with meas.run() as datasaver:
+
+        assert len(datasaver._dataset.subscribers) == 2
+        assert res_dict == {}
+        assert lt7s == []
+
+        for num in range(5):
+
+            (a, b) = 5*np.random.randn(2)
+            expected_list += [c for c in (a, b) if c > 7]
+            sleep(meas.write_period)
+            datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
+            assert lt7s == expected_list
+            assert list(res_dict.keys()) == [n for n in range(1, num+2)]
+
+    assert len(datasaver._dataset.subscribers) == 0
+
+
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
 @settings(max_examples=5, deadline=None)
