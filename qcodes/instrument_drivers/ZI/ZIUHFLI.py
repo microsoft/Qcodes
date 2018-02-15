@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from functools import partial
 from math import sqrt
-from distutils.version import LooseVersion
+from distutils.version import StrictVersion
 
 from typing import Callable, List, Union
 
@@ -106,6 +106,153 @@ class AUXOutputChannel(InstrumentChannel):
                                            channum - 1, 0, 'outputselect'),
                            val_mapping=outputvalmapping
                            )
+
+
+class DataAcquisitionArray(MultiParameter):
+    def __init__(self, name, instrument, **kwargs):
+        # The __init__ requires that we supply names and shapes,
+        # but there is no way to know what they could be known at this time.
+        # They are updated via build_data_arrays.
+        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
+        self._instrument = instrument
+
+    def build_data_arrays(self):
+        # todo setpoints and handle more than one signal correctly
+        self.names = ('foobar',)
+        self.labels = ('Foo Bar', )
+        self.units = ('v or something',)
+
+        n_signals = 1
+        ncols = self._instrument.columns()
+        self.shapes = ((ncols,),)*n_signals
+
+    def get(self):
+        # todo map this to parameters. Try to match both the
+        # scope api and the zi api as much as possible
+        trigger_demod_index = 0
+        triggerpath = '/{}/demods/{}/sample.{}'.format(self._instrument._parent.device,
+                                                       self._instrument.trigger_demodulator.get_raw(),
+                                                       self._instrument.trigger_input.get())
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/triggernode', triggerpath)
+        # trigger_duration = 35e-3
+        # The length of time to record the data for each time we trigger.
+        # self._parent.data_acquisition_module.set('dataAcquisitionModule/duration', trigger_duration)
+        trigger_delay = -0.01e-3
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/delay', trigger_delay)
+        # Do not return overlapped trigger events.
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/holdoff/time', 200e-3)
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/holdoff/count', 0)
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/mode', 4)
+        # dataAcquisitionModule/grid/repetitions (int)
+        #   The number of times to average.
+        repetitions = 1
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/repetitions', repetitions)
+        # dataAcquisitionModule/grid/cols (int)
+        #   Specify the number of columns in the grid's matrix. The data from each
+        #     row is interpolated onto a grid with the specified number of columns.
+        # num_cols = 512
+        # self._parent.data_acquisition_module.set('dataAcquisitionModule/grid/cols', num_cols)
+        # dataAcquisitionModule/grid/rows (int)
+        #   Specify the number of rows in the grid's matrix. Each row is the data
+        #   recorded from one trigger.
+        num_rows = 1
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/rows', num_rows)
+        # dataAcquisitionModule/grid/direction (int)
+        #   Specify the ordering of the data stored in the grid's matrix.
+        #     0: Forward - the data in each row is ordered chronologically, e.g., the
+        #       first data point in each row corresponds to the first timestamp in the
+        #       trigger data.
+        #     1: Reverse - the data in each row is ordered reverse chronologically,
+        #       e.g., the first data point in each row corresponds to the last
+        #       timestamp in the trigger data.
+        #     2: Bidirectional - the ordering of the data alternates between Forward
+        #        and Backward ordering from row-to-row. The first row is Forward ordered.
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/direction', 0)
+
+            # The number of grids to record (if not running in endless mode).
+            # In grid mode, we will obtain dataAcquisitionModule/count grids. The total
+            # number of triggers is equal to n = dataAcquisitionModule/count *
+            # dataAcquisitionModule/grid/rows * dataAcquisitionModule/grid/repetitions
+        num_grids = 1
+        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/count', num_grids)
+
+        datapath = '/{}/demods/{}/sample.r.avg'.format(self._instrument._parent.device, trigger_demod_index)
+        data = {}
+        data[triggerpath] = []
+
+        self._instrument._parent.data_acquisition_module.subscribe(datapath)
+        self._instrument._parent.data_acquisition_module.execute()
+
+        # todo calculate meaning full timeout and handle correctly
+        timeout = 10  # [s]
+        t0 = time.time()
+
+        while not self._instrument._parent.data_acquisition_module.finished():
+            time.sleep(0.05)
+            if time.time() - t0 > timeout:
+                print('timed out')
+                break
+        return_flat_data_dict = True
+        data_read = self._instrument._parent.data_acquisition_module.read(return_flat_data_dict)
+        data = data_read[datapath]
+        return data[0]['value'][0]
+
+
+class DataAcquisitionModule(InstrumentChannel):
+    def __init__(self, parent: 'ZIUHFLI', name: str) -> None:
+        super().__init__(parent, name)
+        self.data_acquisition_module = self._parent.data_acquisition_module
+
+        self.add_parameter('trigger_type',
+                           label='Trigger type',
+                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/type'),
+                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/type'),
+                           val_mapping={'NO_TRIGGER': 0,
+                                        'EDGE_TRIGGER': 1,
+                                        'DIGITAL_TRIGGER': 2,
+                                        'PULSE_TRIGGER':3,
+                                        'TRACKING_TRIGGER':4,
+                                        'HW_TRIGGER':6,
+                                        'TRACKING_PULSE_TRIGGER':7,
+                                        'EVENT_COUNT_TRIGGER':8})
+
+        self.add_parameter('trigger_edge_type',
+                           label='Trigger edge type',
+                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/edge'),
+                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/edge'),
+                           val_mapping={'POS_EDGE': 1,
+                                        'NEG_EDGE': 2,
+                                        'BOTH_EDGE': 3})
+
+        self.add_parameter('trigger_demodulator',
+                           label='Trigger demodulator',
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=1,
+                           get_parser=lambda x: x+1,
+                           set_parser=lambda x: x-1,
+                           vals=vals.Ints(1,8))
+
+        self.add_parameter('trigger_input',
+                           label='Trigger input',
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='X',
+                           vals=vals.Enum('X', 'Y', 'R', 'THETA', 'AUXIN0', 'AUXIN1', 'DIO',
+                                          'TRIGIN1', 'TRIGIN2', 'TRIGIN3', 'TRIGIN4',
+                                          'TRIGOUT1', 'TRIGOUT2', 'TRIGOUT3', 'TRIGOUT4',
+                                          'TRIGDEMOD4PHASE', 'TRIGDEMOD8PHASE'
+                                          ))
+
+        self.add_parameter('columns',
+                           label='Columns',
+                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/grid/cols'),
+                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/cols'),
+                           vals=vals.Ints(1))
+
+        self.add_parameter('data',
+                           parameter_class=DataAcquisitionArray)
+
 
 class Sweep(MultiParameter):
     """
@@ -684,20 +831,31 @@ class ZIUHFLI(Instrument):
         self.api_level = 6
         zisession = zhinst.utils.create_api_session(device_ID, self.api_level)
         (self.daq, self.device, self.props) = zisession
-        if not LooseVersion(self.props['serverversion']) > LooseVersion('17.06.00000'):
+        myversion = StrictVersion(self.props['serverversion'])
+        minversion = '17.06.00000'
+        mindaqversion = '17.12.00000'
+        if myversion < minversion:
             raise RuntimeError('This driver requires at least version 17.06 of LabOne along with '
                                'matching Python driver')
+        self.has_data_acquisition_module = False
+        if myversion > mindaqversion:
+            self.has_data_acquisition_module = True
         # check that python driver matches dataserver version
         # raise if that is not the case
         if not zhinst.utils.api_server_version_check(self.daq):
             raise RuntimeError('ZI python driver version does not match ZI LabOne version')
 
         self.daq.setDebugLevel(3)
+        self.daq.sync()
         # create (instantiate) an instance of each module we will use
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
         self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
+        if self.has_data_acquisition_module:
+            self.data_acquisition_module = self.daq.dataAcquisitionModule()
+            self.data_acquisition_module.set('dataAcquisitionModule/device', self.device)
+            self.add_submodule('daqmodule', DataAcquisitionModule(self, 'daqmodule'))
         ########################################
         # INSTRUMENT PARAMETERS
 
@@ -2184,4 +2342,6 @@ class ZIUHFLI(Instrument):
         self.scope.clear()
         self.sweeper.clear()
         self.daq.disconnect()
+        self.data_acquisition_module.finish()
+        self.data_acquisition_module.clear()
         super().close()
