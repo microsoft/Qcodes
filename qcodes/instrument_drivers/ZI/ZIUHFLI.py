@@ -3,6 +3,7 @@ import logging
 import numpy as np
 from functools import partial
 from math import sqrt
+from distutils.version import LooseVersion
 
 from typing import Callable, List, Union
 
@@ -680,9 +681,16 @@ class ZIUHFLI(Instrument):
         """
 
         super().__init__(name, **kwargs)
-        self.api_level = 5
+        self.api_level = 6
         zisession = zhinst.utils.create_api_session(device_ID, self.api_level)
         (self.daq, self.device, self.props) = zisession
+        if not LooseVersion(self.props['serverversion']) > LooseVersion('17.06.00000'):
+            raise RuntimeError('This driver requires at least version 17.06 of LabOne along with '
+                               'matching Python driver')
+        # check that python driver matches dataserver version
+        # raise if that is not the case
+        if not zhinst.utils.api_server_version_check(self.daq):
+            raise RuntimeError('ZI python driver version does not match ZI LabOne version')
 
         self.daq.setDebugLevel(3)
         # create (instantiate) an instance of each module we will use
