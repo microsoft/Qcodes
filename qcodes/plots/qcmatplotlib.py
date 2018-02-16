@@ -79,7 +79,7 @@ class MatPlot(BasePlot):
                 # Arg consists of multiple elements, add all to same subplot
                 for subarg in arg:
                     self[k].add(subarg, colorbar=colorbar, **kwargs)
-            else:
+            elif len(arg) > 0:
                 # Arg is single element, add to subplot
                 self[k].add(arg, colorbar=colorbar, **kwargs)
         if args:
@@ -314,7 +314,9 @@ class MatPlot(BasePlot):
                    zlabel=None,
                    xunit=None,
                    yunit=None,
-                    zunit=None,
+                   zunit=None,
+                   xerr=None,
+                   yerr=None,
                    **kwargs):
         # Add labels if DataArray is passed
         if 'label' not in kwargs and isinstance(y, DataArray):
@@ -326,7 +328,11 @@ class MatPlot(BasePlot):
         # stay part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
 
-        line, = ax.plot(*args, **kwargs)
+        if xerr is None and yerr is None:
+            line, = ax.plot(*args, **kwargs)
+        else:
+            line = ax.errorbar(*args, xerr=xerr, yerr=yerr, **kwargs)
+
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,

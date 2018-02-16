@@ -422,13 +422,15 @@ class DataArray(DelegateAttributes):
             if isinstance(axis, int):
                 sub_array = np.nanmean(arr, axis=axis, dtype=dtype, out=out, **kwargs)
                 axis = (axis, )
-            else:
+            elif axis is not None:
                 for k, ax in enumerate(axis):
                     arr = np.rollaxis(arr, ax, k)
                 reshaped_arr = np.reshape(arr, (-1,) + arr.shape[len(axis):])
                 sub_array = np.nanmean(reshaped_arr, axis=0, dtype=dtype, out=out, **kwargs)
 
-        if not isinstance(sub_array, np.ndarray):
+        if axis is None:
+            return np.nanmean(arr)
+        elif not isinstance(sub_array, np.ndarray):
             return sub_array
         else:
             sub_set_arrays = []
