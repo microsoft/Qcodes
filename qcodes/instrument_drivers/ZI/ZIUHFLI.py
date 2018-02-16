@@ -125,7 +125,7 @@ class DataAcquisitionArray(MultiParameter):
         ncols = self._instrument.columns()
         for sig in signals:
             parts =  sig.split('/')
-            name = parts[-1].split('.')[-1]
+            name = parts[-1].split('.')[-2]
             demod = int(parts[3])+1
             names.append(name)
             units.append(sigunits[name])
@@ -202,7 +202,7 @@ class DataAcquisitionArray(MultiParameter):
         # todo calculate meaning full timeout and handle correctly
         tracelength = max(max(max(self._instrument._parent.daqmodule.data.setpoints)))
         # we set timeout somewhat abitrary as 2 times the total measuring time
-        timeout = 2 * tracelength * self._instrument.repetitions()  # [s]
+        timeout = 2 * tracelength * self._instrument.repetitions() + 1 # [s]
         t0 = time.time()
 
         while not self._instrument._parent.data_acquisition_module.finished():
@@ -295,7 +295,7 @@ class DataAcquisitionModule(InstrumentChannel):
                              ('{}, '*len(valid_attributes)).format(*valid_attributes))
 
         signalstring = ('/' + self._parent.device +
-                        '/demods/{}/sample.{}'.format(demodulator-1,
+                        '/demods/{}/sample.{}.avg'.format(demodulator-1,
                                                       attribute))
         if signalstring not in self._daq_signals:
             self._daq_signals.append(signalstring)
