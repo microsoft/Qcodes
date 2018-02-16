@@ -117,16 +117,35 @@ class DataAcquisitionArray(MultiParameter):
         self._instrument = instrument
 
     def build_data_arrays(self):
-        # todo setpoints and handle more than one signal correctly
-        self.names = ('foobar',)
-        self.labels = ('Foo Bar', )
-        self.units = ('v or something',)
-
-        n_signals = 1
+        signals = self._instrument._daq_signals
+        sigunits = {'x': 'V', 'y': 'V', 'r': 'Vrms', 'phase': 'degrees'}
+        names = []
+        units = []
+        setpoints = []
         ncols = self._instrument.columns()
-        self.shapes = ((ncols,),)*n_signals
+        for sig in signals:
+            parts =  sig.split('/')
+            name = parts[-1].split('.')[-1]
+            demod = int(parts[3])+1
+            names.append(name)
+            units.append(sigunits[name])
+            samplerate = self._instrument._parent.parameters['demod{}_samplerate'.format(demod)]()
+            setpointarray = np.linspace(0, 1 / samplerate * ncols, ncols)
+            setpoints.append((tuple(setpointarray),))
 
-    def get(self):
+        self.names = tuple(names)
+        self.units = tuple(units)
+        self.labels = tuple(names)  # TODO: What are good labels?
+        self.setpoints = setpoints
+
+        self.setpoint_names = (('time',),)*len(signals)
+        self.setpoint_labels = (('Time',),)*len(signals)
+        self.setpoint_units = (('s',),)*len(signals)
+        self.shapes = ((ncols,),)*len(self._instrument._daq_signals)
+
+    def get_raw(self):
+        if len(self._instrument._daq_signals) == 0:
+            raise RuntimeError("No signals selected")
         # todo map this to parameters. Try to match both the
         # scope api and the zi api as much as possible
         trigger_demod_index = 0
@@ -143,16 +162,7 @@ class DataAcquisitionArray(MultiParameter):
         self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/holdoff/time', 200e-3)
         self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/holdoff/count', 0)
         self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/mode', 4)
-        # dataAcquisitionModule/grid/repetitions (int)
-        #   The number of times to average.
-        repetitions = 1
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/repetitions', repetitions)
-        # dataAcquisitionModule/grid/cols (int)
-        #   Specify the number of columns in the grid's matrix. The data from each
-        #     row is interpolated onto a grid with the specified number of columns.
-        # num_cols = 512
-        # self._parent.data_acquisition_module.set('dataAcquisitionModule/grid/cols', num_cols)
-        # dataAcquisitionModule/grid/rows (int)
+
         #   Specify the number of rows in the grid's matrix. Each row is the data
         #   recorded from one trigger.
         num_rows = 1
@@ -176,26 +186,36 @@ class DataAcquisitionArray(MultiParameter):
         num_grids = 1
         self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/count', num_grids)
 
-        datapath = '/{}/demods/{}/sample.r.avg'.format(self._instrument._parent.device, trigger_demod_index)
         data = {}
         data[triggerpath] = []
-
-        self._instrument._parent.data_acquisition_module.subscribe(datapath)
+        for samplestring in self._instrument._daq_signals:
+            self._instrument._parent.data_acquisition_module.subscribe(samplestring)
+        self._instrument._parent.data_acquisition_module.subscribe(triggerpath)
+        # Below is from ZI example but the intention is somewhat unclear. Is it just
+        # that subscripe should be the last action that we do or that we must subscripe to
+        # trigger last.
+        # Note: We subscribe to the trigger signal path last to ensure that we obtain
+        # complete data on the other paths (known limitation). We must subscribe to
+        # the trigger signal path.
         self._instrument._parent.data_acquisition_module.execute()
 
         # todo calculate meaning full timeout and handle correctly
-        timeout = 10  # [s]
+        tracelength = max(max(max(self._instrument._parent.daqmodule.data.setpoints)))
+        # we set timeout somewhat abitrary as 2 times the total measuring time
+        timeout = 2 * tracelength * self._instrument.repetitions()  # [s]
         t0 = time.time()
 
         while not self._instrument._parent.data_acquisition_module.finished():
             time.sleep(0.05)
             if time.time() - t0 > timeout:
-                print('timed out')
-                break
+                raise RuntimeError("Measurement timed out, check your trigger")
         return_flat_data_dict = True
         data_read = self._instrument._parent.data_acquisition_module.read(return_flat_data_dict)
-        data = data_read[datapath]
-        return data[0]['value'][0]
+        for samplestring in self._instrument._daq_signals:
+            self._instrument._parent.data_acquisition_module.unsubscribe(samplestring)
+        self._instrument._parent.data_acquisition_module.unsubscribe(triggerpath)
+        data = tuple(data_read[samplestring][0]['value'][0] for samplestring in self._instrument._daq_signals)
+        return data
 
 
 class DataAcquisitionModule(InstrumentChannel):
@@ -250,8 +270,48 @@ class DataAcquisitionModule(InstrumentChannel):
                            get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/cols'),
                            vals=vals.Ints(1))
 
+        self.add_parameter('repetitions',
+                           label='Repetitions',
+                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/grid/repetitions'),
+                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/repetitions'),
+                           vals=vals.Ints(1))
+
         self.add_parameter('data',
                            parameter_class=DataAcquisitionArray)
+
+        self._daq_signals = []
+
+    def add_signal_to_daq(self, demodulator, attribute):
+        valid_attributes = ['x', 'y', 'r', 'phase']
+        # Validation
+        if demodulator not in range(1, 9):
+            raise ValueError('Can not select demodulator' +
+                             ' {}. Only '.format(demodulator) +
+                             'demodulators 1-8 are available.')
+        if attribute not in valid_attributes:
+            raise ValueError('Can not select attribute:'+
+                             '{}. Only the following attributes are' +
+                             ' available: ' +
+                             ('{}, '*len(valid_attributes)).format(*valid_attributes))
+
+        signalstring = ('/' + self._parent.device +
+                        '/demods/{}/sample.{}'.format(demodulator-1,
+                                                      attribute))
+        if signalstring not in self._daq_signals:
+            self._daq_signals.append(signalstring)
+
+
+    def remove_signal_from_daq(self, demodulator, attribute):
+
+        signalstring = ('/' + self._parent.device +
+                        '/demods/{}/sample.{}'.format(demodulator-1,
+                                                      attribute))
+        if signalstring not in self._daq_signals:
+            log.warning('Can not remove signal with {} of'.format(attribute) +
+                        ' demodulator {}, since it was'.format(demodulator) +
+                        ' not previously added.')
+        else:
+            self._daq_signals.remove(signalstring)
 
 
 class Sweep(MultiParameter):
