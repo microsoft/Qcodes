@@ -25,6 +25,11 @@ class IPInstrument(Instrument):
 
         terminator (str): Character(s) to terminate each send. Default '\n'.
 
+        read_terminator: Character(s) to look for at the end of each read.
+            Defaults to None in which case only one recv is done
+            Otherwise keeps reading until it gets the termination
+            char(s).
+
         persistent (bool): Whether to leave the socket open between calls.
             Default True.
 
@@ -40,6 +45,7 @@ class IPInstrument(Instrument):
 
     def __init__(self, name, address=None, port=None, timeout=5,
                  terminator='\n', persistent=True, write_confirmation=True,
+                 read_terminator=None,
                  **kwargs):
         super().__init__(name, **kwargs)
 
@@ -47,6 +53,8 @@ class IPInstrument(Instrument):
         self._port = port
         self._timeout = timeout
         self._terminator = terminator
+        self._read_terminator = read_terminator
+
         self._confirmation = write_confirmation
 
         self._ensure_connection = EnsureConnection(self)
@@ -55,6 +63,22 @@ class IPInstrument(Instrument):
         self._socket = None
 
         self.set_persistent(persistent)
+
+    @property
+    def write_terminator(self):
+        return self._terminator
+
+    @write_terminator.setter
+    def write_terminator(self, value):
+        self._terminator = value
+
+    @property
+    def read_terminator(self):
+        return self._read_terminator
+
+    @read_terminator.setter
+    def read_terminator(self, value):
+        self._read_terminator = value
 
     def set_address(self, address=None, port=None):
         """
@@ -142,10 +166,18 @@ class IPInstrument(Instrument):
         self._socket.sendall(data.encode())
 
     def _recv(self):
-        result = self._socket.recv(self._buffer_size)
-        if result == b'':
-            log.warning("Got empty response from Socket recv() "
-                        "Connection broken.")
+        got_read_terminator = False
+        rtl = len(self.read_terminator)
+        result = b''
+        while not got_read_terminator:
+            partresult = self._socket.recv(self._buffer_size)
+            result += partresult
+            if partresult == b'':
+                log.warning("Got empty response from Socket recv() "
+                            "Connection broken.")
+            elif (partresult[-rtl:] == self.read_terminator or
+                  self.read_terminator is None):
+                got_read_terminator = True
         return result.decode()
 
     def close(self):
@@ -183,7 +215,7 @@ class IPInstrument(Instrument):
     def __del__(self):
         self.close()
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False, params_to_skip_update=None):
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -194,7 +226,8 @@ class IPInstrument(Instrument):
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update)
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
 
         snap['port'] = self._port
         snap['confirmation'] = self._confirmation

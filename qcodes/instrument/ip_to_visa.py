@@ -33,6 +33,7 @@ class IPToVisa(VisaInstrument, IPInstrument):
 
     def __init__(self, name, address, port, visalib,
                  metadata=None, device_clear=False, terminator='\n',
+                 read_terminator=None,
                  timeout=3, **kwargs):
 
         # remove IPInstrument-specific kwargs
