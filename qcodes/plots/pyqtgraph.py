@@ -581,8 +581,8 @@ class QtPlot(BasePlot):
                     arrmin = None
                     arrmax = None
                     if setarr is not None and not np.all(np.isnan(setarr)):
-                        arrmax = setarr.max()
-                        arrmin = setarr.min()
+                        arrmax = np.nanmax(setarr)
+                        arrmin = np.nanmin(setarr)
                     elif startranges is not None:
                         try:
                             paramname = self.traces[i]['config'][axis].full_name
