@@ -11,7 +11,6 @@ addons:
     - pandoc
 
 python:
-  - "3.5"
   - "3.6"
   # whitelist
 branches:
@@ -26,7 +25,7 @@ install:
     - pip install -r docs_requirements.txt
 # Install a new version of Sphinx that correctly handles forward refs once 1.7.0 is out that should
 # be used instead
-    - pip install git+https://github.com/jenshnielsen/sphinx.git@working_forward_ref --upgrade
+    - pip install sphinx==1.7.0b2
     - pip install -e .
 
 before_script: # configure a headless display to test plot generation
