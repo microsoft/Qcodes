@@ -114,9 +114,11 @@ class AMI430(IPInstrument):
 
     def __init__(self, name, address=None, port=None,
                  reset=False, terminator='\r\n',
+                 read_terminator='\r\n',
                  current_ramp_limit=None, **kwargs):
 
         super().__init__(name, address, port, terminator=terminator,
+                         read_terminator=read_terminator,
                          write_confirmation=False, **kwargs)
         self._parent_instrument = None
 
