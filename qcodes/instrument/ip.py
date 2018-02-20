@@ -166,18 +166,25 @@ class IPInstrument(Instrument):
         self._socket.sendall(data.encode())
 
     def _recv(self):
-        got_read_terminator = False
-        rtl = len(self.read_terminator)
         result = b''
-        while not got_read_terminator:
+        while True:
             partresult = self._socket.recv(self._buffer_size)
             result += partresult
             if partresult == b'':
                 log.warning("Got empty response from Socket recv() "
                             "Connection broken.")
-            elif (partresult[-rtl:] == self.read_terminator or
-                  self.read_terminator is None):
-                got_read_terminator = True
+            if self.read_terminator == None:
+                break
+            rtl = len(self.read_terminator)
+            rtloc = result.find(self.read_terminator)
+            if rtloc >= 0:
+                if rtloc + rtl < len(result):
+                    log.warning("Multiple (partial) results received. "
+                                "All but the first result will be discarded. "
+                                "Discarding {}".format(result[rtloc+rtl:]))
+                result = result[0:rtloc]
+                break
+
         return result.decode()
 
     def close(self):
