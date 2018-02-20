@@ -1,11 +1,12 @@
 from functools import partial
 import re
 import time
-import logging
 import numpy as np
 
 from qcodes import IPInstrument, MultiParameter
 from qcodes.utils.validators import Enum, Bool
+
+import logging
 
 log = logging.getLogger(__name__)
 
@@ -208,7 +209,11 @@ class MercuryiPS(IPInstrument):
 
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
         self._set_fld(ax, cmd, setpoint)
-        self.rtos()
+        if 'CLMP' in [getattr(self, a.lower() + '_ACTN')() for a in ax]:
+            raise RuntimeError('Trying to ramp a clamped axis. Please unclamp first')
+        for a in ax:
+            getattr(self, a.lower() + '_ACTN')('RTOS')
+
         if self.hold_after_set():
             try:
                 while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
@@ -309,10 +314,10 @@ class MercuryiPS(IPInstrument):
         for axis in axes:
             msglist.append(fmt.format(axis, cmd))
         msg = '\n'.join(msglist)
-        log.info("Writing {} to Mercury".format(msg))
+        log.info("Writing '{}' to Mercury".format(msg))
         self._send(msg)
         rep = self._recv()
-        log.info("Got {} from Mercury".format(rep))
+        log.info("Read '{}' from Mercury".format(rep))
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -329,7 +334,7 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
-            log.info("Got {} from Mercury".format(rep))
+            log.info("Read '{}' from Mercury".format(rep))
         return data
 
     def _write_cmd(self, cmd, axes, setpoint, fmt=None, parser=None):
@@ -341,10 +346,10 @@ class MercuryiPS(IPInstrument):
         for ix, axis in enumerate(axes):
             msglist.append(fmt.format(axis, cmd, setpoint[ix]))
         msg = '\n'.join(msglist)
-        log.info("Writing {} to Mercury".format(msg))
+        log.info("Writing '{}' to Mercury".format(msg))
         self._send(msg)
         rep = self._recv()
-        log.info("Got {} from Mercury".format(rep))
+        log.info("Read '{}' from Mercury".format(rep))
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -361,10 +366,12 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
-            log.info("Got {} from Mercury".format(rep))
+            log.info("Read '{}' from Mercury".format(rep))
 
     def _get_cmd(self, question, parser=None):
+        log.info("Writing '{}' to Mercury".format(question))
         rep = self.ask(question)
+        log.info("Read '{}' from Mercury".format(rep))
         self._latest_response = rep
         msg = rep[len(question):]
         # How would one match this without specifying the units?
@@ -379,7 +386,9 @@ class MercuryiPS(IPInstrument):
         return msg.strip()
 
     def write(self, msg):
+        log.info("Writing '{}' to Mercury".format(msg))
         rep = self.ask(msg)
+        log.info("Read '{}' from Mercury".format(rep))
         self._latest_response = rep
         if 'INVALID' in rep:
             print('warning', msg, rep)
