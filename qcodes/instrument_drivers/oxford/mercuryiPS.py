@@ -1,10 +1,13 @@
 from functools import partial
 import re
 import time
+import logging
 import numpy as np
 
 from qcodes import IPInstrument, MultiParameter
 from qcodes.utils.validators import Enum, Bool
+
+log = logging.getLogger(__name__)
 
 class MercuryiPSArray(MultiParameter):
     """
@@ -306,8 +309,10 @@ class MercuryiPS(IPInstrument):
         for axis in axes:
             msglist.append(fmt.format(axis, cmd))
         msg = '\n'.join(msglist)
+        log.info("Writing {} to Mercury".format(msg))
         self._send(msg)
         rep = self._recv()
+        log.info("Got {} from Mercury".format(rep))
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -324,6 +329,7 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
+            log.info("Got {} from Mercury".format(rep))
         return data
 
     def _write_cmd(self, cmd, axes, setpoint, fmt=None, parser=None):
@@ -335,8 +341,10 @@ class MercuryiPS(IPInstrument):
         for ix, axis in enumerate(axes):
             msglist.append(fmt.format(axis, cmd, setpoint[ix]))
         msg = '\n'.join(msglist)
+        log.info("Writing {} to Mercury".format(msg))
         self._send(msg)
         rep = self._recv()
+        log.info("Got {} from Mercury".format(rep))
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -353,6 +361,7 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
+            log.info("Got {} from Mercury".format(rep))
 
     def _get_cmd(self, question, parser=None):
         rep = self.ask(question)
