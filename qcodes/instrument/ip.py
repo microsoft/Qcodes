@@ -12,6 +12,10 @@ class IPInstrument(Instrument):
     r"""
     Bare socket ethernet instrument implementation.
 
+    Before using the IPInstrument you should strongly consider if you can
+    use Visa over raw sockets connecting to an address in the form:
+    `TCPIP[board]::host address::port::SOCKET`
+
     Args:
         name (str): What this instrument is called locally.
 
