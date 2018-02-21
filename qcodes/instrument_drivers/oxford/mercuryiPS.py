@@ -236,11 +236,14 @@ class MercuryiPS(IPInstrument):
 
         if self.hold_after_set():
             try:
-                while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
+                while not all([getattr(self, a.lower() + '_ACTN')() in ['HOLD', 'CLMP'] for a in ax]):
                     time.sleep(0.1)
             except KeyboardInterrupt:
                 self.hold()
                 raise KeyboardInterrupt
+            finally:
+                if 'CLMP' in [getattr(self, a.lower() + '_ACTN')() for a in ax]:
+                    log.warning("One or more of the ramped axis have been clamped")
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3
