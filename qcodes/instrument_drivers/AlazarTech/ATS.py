@@ -379,6 +379,7 @@ class AlazarTech_ATS(Instrument):
             clock_source:
             sample_rate:
             clock_edge:
+            external_sample_rate:
             decimation:
             coupling:
             channel_range:
@@ -397,6 +398,8 @@ class AlazarTech_ATS(Instrument):
             external_trigger_range:
             trigger_delay:
             timeout_ticks:
+            aux_io_mode:
+            aux_io_param:
 
         Returns:
             None
@@ -440,12 +443,23 @@ class AlazarTech_ATS(Instrument):
         # We use the matching one and mark the order one
         # as up to date since it's not being pushed to
         # the instrument at any time and is never used
+        if sample_rate is not None and external_sample_rate is not None:
+            raise RuntimeError("Both sample_rate and external_sample_rate supplied")
+
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
+            if sample_rate is not None:
+                logger.warning("Using external 10 MHz ref clock "
+                               "but internal sample rate supplied. "
+                               "Please use 'external_sample_rate'")
             sample_rate = self.external_sample_rate
             if 'sample_rate' in self.parameters:
                 self.parameters['sample_rate']._set_updated()
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
+            if external_sample_rate is not None:
+                logger.warning("Using internal clock "
+                               "but external sample rate supplied. "
+                               "Please use 'external_sample_rate'")
             if 'external_sample_rate' in self.parameters:
                 self.parameters['external_sample_rate']._set_updated()
 
@@ -453,17 +467,16 @@ class AlazarTech_ATS(Instrument):
                        self._handle, self.clock_source, sample_rate,
                        self.clock_edge, self.decimation)
 
-        channel_mapping = [2**n for n in range(16)]
         # see table page 175 in sdk manual
         for i in range(1, self.channels + 1):
             self._call_dll('AlazarInputControl',
-                           self._handle, channel_mapping[i-1],
+                           self._handle, 2**(i-1),
                            self.parameters['coupling' + str(i)],
                            self.parameters['channel_range' + str(i)],
                            self.parameters['impedance' + str(i)])
             if bwlimit is not None:
                 self._call_dll('AlazarSetBWLimit',
-                               self._handle, i,
+                               self._handle, 2**(i-1),
                                self.parameters['bwlimit' + str(i)])
 
         self._call_dll('AlazarSetTriggerOperation',
@@ -593,9 +606,9 @@ class AlazarTech_ATS(Instrument):
         elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
                 logger.warning('buffers_per_acquisition is not a divisor of '
-                                'samples per record which it should be in '
-                                'Ts mode, rounding down in samples per buffer '
-                                'calculation')
+                               'samples per record which it should be in '
+                               'Ts mode, rounding down in samples per buffer '
+                               'calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
             if self.records_per_buffer._get_byte() != 1:
@@ -649,8 +662,8 @@ class AlazarTech_ATS(Instrument):
         if (self.allocated_buffers._get_byte() >
                 self.buffers_per_acquisition._get_byte()):
             logger.warning("'allocated_buffers' should be <= "
-                            "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                            " to " + str(self.buffers_per_acquisition._get_byte()))
+                           "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
+                           " to " + str(self.buffers_per_acquisition._get_byte()))
             self.allocated_buffers._set(
                 self.buffers_per_acquisition._get_byte())
 
@@ -860,7 +873,7 @@ class AlazarTech_ATS(Instrument):
             the number of samples (per channel) per second
         """
         if (self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF'
-            and 'external_sample_rate' in self.parameters):
+                and 'external_sample_rate' in self.parameters):
             rate = self.external_sample_rate.get()
             # if we are using an external ref clock the sample rate
             # is set as an integer and not value mapped so we use a different
@@ -909,6 +922,7 @@ class AlazarTech_ATS(Instrument):
             return 16
         else:
             raise RuntimeError('Invalid channel configuration supplied')
+
 
 class AlazarParameter(Parameter):
     """
@@ -1084,7 +1098,7 @@ class Buffer:
         if os.name == 'nt':
             MEM_RELEASE = 0x8000
             ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
-            ctypes.windll.kernel32.VirtualFree(ctypes.c_void_p(self.addr), 0, MEM_RELEASE);
+            ctypes.windll.kernel32.VirtualFree(ctypes.c_void_p(self.addr), 0, MEM_RELEASE)
         else:
             self._allocated = True
             raise Exception("Unsupported OS")
@@ -1165,6 +1179,7 @@ class AcquisitionController(Instrument):
 
         Args:
             buffer: np.array with the data from the Alazar card
+            buffer_number: counter for which buffer we are handling
 
         Returns:
             something, it is ignored in any case

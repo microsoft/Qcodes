@@ -51,6 +51,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf _auto
 	rm -rf _notebooks
+	rm -rf api/generated
 
 .PHONY: html
 html:
@@ -228,18 +229,24 @@ dummy:
 	@echo
 	@echo "Build finished. Dummy builder generates no files."
 
+.PHONY: html-api
 html-api:
-	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py  ../qcodes/instrument_drivers/Spectrum/py_header/h2py.py
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
 	mkdir -p _notebooks
+	mkdir -p _notebooks/DataSet
+	mkdir -p _notebooks/DataSet/Real_instruments
 	mkdir -p _notebooks/driver_examples
 	mkdir -p _notebooks/benchmarking
 	cp _auto/qcodes.instrument_drivers.* api/generated/
 	jupyter-nbconvert --to rst 'examples/*.ipynb' --output-dir=_notebooks
+	jupyter-nbconvert --to rst 'examples/DataSet/Real_instruments/*.ipynb' --output-dir=_notebooks/DataSet/Real_instruments
+	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --execute 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
 	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir=_notebooks/driver_examples
 	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
 	make html
 
+.PHONY: gh-pages
 gh-pages:
 	git config --global user.email "bot@travics.com"
 	git config --global user.name "Documentation Bot"
