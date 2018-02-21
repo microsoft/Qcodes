@@ -197,20 +197,40 @@ class MercuryiPS(IPInstrument):
 
     def hold(self):
         for ax in self.axes:
-            self.parameters[ax.lower() + '_ACTN'].set('HOLD')
+            actn = self.parameters[ax.lower() + '_ACTN'].get()
+            if actn == 'CLMP':
+                log.warning("Skipping: Trying to set clamped axis {} to HOLD: "
+                            "If you really want to HOLD the clamped axis use "
+                            "mercury.ACTN('HOLD')".format(ax))
+            else:
+                self.parameters[ax.lower() + '_ACTN'].set('HOLD')
 
     def rtos(self):
         for ax in self.axes:
-            self.parameters[ax.lower() + '_ACTN'].set('RTOS')
+            actn = self.parameters[ax.lower() + '_ACTN'].get()
+            if actn == 'CLMP':
+                log.warning("Skipping: Trying to set clamped axis {} to RTOS: "
+                            "If you really want to use the clamped axis use "
+                            "mercury.{}_ACTN('HOLD') to unclamp"
+                            "first".format(ax, ax))
+            else:
+                self.parameters[ax.lower() + '_ACTN'].set('RTOS')
 
     def to_zero(self):
         for ax in self.axes:
-            self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
+            actn = self.parameters[ax.lower() + '_ACTN'].get()
+            if actn == 'CLMP':
+                log.warning("Skipping: Trying to set clamped axis {} to zero:"
+                            "If you really want to use the clamped axis use "
+                            "mercury.{}_ACTN('HOLD') to unclamp"
+                            "first".format(ax, ax))
+            else:
+                self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
 
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
-        self._set_fld(ax, cmd, setpoint)
         if 'CLMP' in [getattr(self, a.lower() + '_ACTN')() for a in ax]:
             raise RuntimeError('Trying to ramp a clamped axis. Please unclamp first')
+        self._set_fld(ax, cmd, setpoint)
         for a in ax:
             getattr(self, a.lower() + '_ACTN')('RTOS')
 
