@@ -199,9 +199,9 @@ class MercuryiPS(IPInstrument):
         for ax in self.axes:
             actn = self.parameters[ax.lower() + '_ACTN'].get()
             if actn == 'CLMP':
-                log.warning("Skipping: Trying to set clamped axis {} to HOLD: "
-                            "If you really want to HOLD the clamped axis use "
-                            "mercury.ACTN('HOLD')".format(ax))
+                log.info("Skipping: Trying to set clamped axis {} to HOLD: "
+                         "If you really want to HOLD the clamped axis use "
+                         "mercury.ACTN('HOLD')".format(ax))
             else:
                 self.parameters[ax.lower() + '_ACTN'].set('HOLD')
 
@@ -209,7 +209,7 @@ class MercuryiPS(IPInstrument):
         for ax in self.axes:
             actn = self.parameters[ax.lower() + '_ACTN'].get()
             if actn == 'CLMP':
-                log.warning("Skipping: Trying to set clamped axis {} to RTOS: "
+                log.info("Skipping: Trying to set clamped axis {} to RTOS: "
                             "If you really want to use the clamped axis use "
                             "mercury.{}_ACTN('HOLD') to unclamp"
                             "first".format(ax, ax))
@@ -220,10 +220,10 @@ class MercuryiPS(IPInstrument):
         for ax in self.axes:
             actn = self.parameters[ax.lower() + '_ACTN'].get()
             if actn == 'CLMP':
-                log.warning("Skipping: Trying to set clamped axis {} to zero:"
-                            "If you really want to use the clamped axis use "
-                            "mercury.{}_ACTN('HOLD') to unclamp"
-                            "first".format(ax, ax))
+                log.info("Skipping: Trying to set clamped axis {} to zero:"
+                         "If you really want to use the clamped axis use "
+                         "mercury.{}_ACTN('HOLD') to unclamp"
+                         "first".format(ax, ax))
             else:
                 self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
 
