@@ -440,12 +440,23 @@ class AlazarTech_ATS(Instrument):
         # We use the matching one and mark the order one
         # as up to date since it's not being pushed to
         # the instrument at any time and is never used
+        if sample_rate is not None and external_sample_rate is not None:
+            raise RuntimeError("Both sample_rate and external_sample_rate supplied")
+
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
+            if sample_rate is not None:
+                logger.warning("Using external 10 MHz ref clock "
+                               "but internal sample rate supplied. "
+                               "Please use 'external_sample_rate'")
             sample_rate = self.external_sample_rate
             if 'sample_rate' in self.parameters:
                 self.parameters['sample_rate']._set_updated()
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
+            if external_sample_rate is not None:
+                logger.warning("Using internal clock "
+                               "but external sample rate supplied. "
+                               "Please use 'external_sample_rate'")
             if 'external_sample_rate' in self.parameters:
                 self.parameters['external_sample_rate']._set_updated()
 
