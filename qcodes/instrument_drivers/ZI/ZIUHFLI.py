@@ -1205,6 +1205,27 @@ class ZIUHFLI(Instrument):
                                                 outputampenable[sigout]),
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
+            if 'MF' in self.props['options']:
+                for modeout in range(1,9):
+
+                  self.add_parameter('signal_output{}_amplitude{}'.format(sigout,modeout),
+                                      label='Signal output amplitude',
+                                      set_cmd=partial(self._sigout_setter,
+                                                      sigout-1, 1, 'amplitudes', output_mode = modeout-1), #outputamps[sigout]),
+                                      get_cmd=partial(self._sigout_getter,
+                                                     sigout-1, 1, 'amplitudes', output_mode = modeout-1), #outputamps[sigout]),
+                                      unit='V')
+
+                  self.add_parameter('signal_output{}_enable{}'.format(sigout,modeout),
+                                      label="Enable signal output's amplitude.",
+                                      set_cmd=partial(self._sigout_setter,
+                                                      sigout-1, 0,
+                                                      'enables', output_mode = modeout-1), #outputampenable[sigout]),
+                                      get_cmd=partial(self._sigout_getter,
+                                                      sigout-1, 0,
+                                                      'enables', output_mode = modeout-1), #outputampenable[sigout]),
+                                      val_mapping={'ON': 1, 'OFF': 0},
+                                      vals=vals.Enum('ON', 'OFF') )
 
         auxoutputchannels = ChannelList(self, "AUXOutputChannels", AUXOutputChannel,
                                snapshotable=False)
@@ -1860,12 +1881,11 @@ class ZIUHFLI(Instrument):
         datadict['phi'] = np.angle(datadict['x'] + 1j * datadict['y'], deg=True)
         return datadict[demod_param]
 
-    def _sigout_setter(self, number, mode, setting, value):
+    def _sigout_setter(self, number, mode, setting, value, output_mode=None):
         """
         Function to set signal output's settings. A specific setter function is
         needed as parameters depend on each other and need to be checked and
         updated accordingly.
-
         Args:
             number (int):
             mode (bool): Indicating whether we are asking for an int or double
@@ -1908,7 +1928,7 @@ class ZIUHFLI(Instrument):
             nonlocal number
             range_val = params['signal_output{}_range'.format(number+1)].get()
             range_val = round(range_val, 3)
-            amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
+            amp_val = params['signal_output{}_amplitude1'.format(number+1)].get()
             amp_val = round(amp_val, 3)
             if -range_val< value+amp_val > range_val:
                 raise ValueError('Signal Output: Offset too high for '
@@ -1944,14 +1964,13 @@ class ZIUHFLI(Instrument):
 
         dynamic_validation = {'range': range_valid,
                               'ampdef': ampdef_valid,
-                              'amplitudes/3': amp_valid,
-                              'amplitudes/7': amp_valid,
+                              'amplitudes': amp_valid,
                               'offset': offset_valid}
 
         def update_range_offset_amp():
             range_val = params['signal_output{}_range'.format(number+1)].get()
             offset_val = params['signal_output{}_offset'.format(number+1)].get()
-            amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
+            amp_val = params['signal_output{}_amplitude1'.format(number+1)].get()
             if -range_val < offset_val + amp_val > range_val:
                 #The GUI would allow higher values but it would clip the signal.
                 raise ValueError('Signal Output: Amplitude and/or '
@@ -1961,7 +1980,7 @@ class ZIUHFLI(Instrument):
             self.parameters['signal_output{}_offset'.format(number+1)].get()
 
         def update_amp():
-            self.parameters['signal_output{}_amplitude'.format(number+1)].get()
+            self.parameters['signal_output{}_amplitude{}'.format(number+1,output_mode+1)].get()
 
         def update_range():
             self.parameters['signal_output{}_autorange'.format(number+1)].get()
@@ -1970,12 +1989,13 @@ class ZIUHFLI(Instrument):
         changing_param = {'imp50': [update_range_offset_amp, update_range],
                           'autorange': [update_range],
                           'range': [update_offset, update_amp],
-                          'amplitudes/3': [update_range, update_amp],
-                          'amplitudes/7': [update_range, update_amp],
+                          'amplitudes': [update_range, update_amp],
                           'offset': [update_range]
                          }
 
         setstr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
+        if output_mode:
+          setstr += '/{}'.format(output_mode)
 
         if setting in dynamic_validation:
             dynamic_validation[setting]()
@@ -1988,12 +2008,11 @@ class ZIUHFLI(Instrument):
         if setting in changing_param:
             [f() for f in changing_param[setting]]
 
-    def _sigout_getter(self, number, mode, setting):
+    def _sigout_getter(self, number, mode, setting, output_mode = None):
         """
         Function to query the settings of signal outputs. Specific setter
         function is needed as parameters depend on each other and need to be
         checked and updated accordingly.
-
         Args:
             number (int):
             mode (bool): Indicating whether we are asking for an int or double
