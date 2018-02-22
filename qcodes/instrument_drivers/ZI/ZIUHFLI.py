@@ -123,15 +123,24 @@ class DataAcquisitionArray(MultiParameter):
         units = []
         setpoints = []
         ncols = self._instrument.columns()
+        # find the highest sample rate.
+        # this determins the time axis
+        # according to the manual
+        max_sample_rate = 0
         for sig in signals:
             parts =  sig.split('/')
             name = parts[-1].split('.')[-2]
             demod = int(parts[3])+1
+            samplerate = self._instrument._parent.parameters['demod{}_samplerate'.format(demod)]()
+            max_sample_rate = max(samplerate, max_sample_rate)
             names.append(name)
             units.append(sigunits[name])
-            samplerate = self._instrument._parent.parameters['demod{}_samplerate'.format(demod)]()
-            setpointarray = np.linspace(0, 1 / samplerate * ncols, ncols)
-            setpoints.append((tuple(setpointarray),))
+
+        setpointarray = np.linspace(0, 1 / max_sample_rate * ncols, ncols)
+        setpointarray = setpointarray + self._instrument.trigger_delay()
+        nested_setpoints = ((tuple(setpointarray),),)
+
+        setpoints = nested_setpoints*len(signals)
 
         self.names = tuple(names)
         self.units = tuple(units)
@@ -157,36 +166,14 @@ class DataAcquisitionArray(MultiParameter):
                                                        self._instrument.trigger_demodulator.get_raw(),
                                                        self._instrument.trigger_input.get())
         self._instrument.data_acquisition_module.set('dataAcquisitionModule/triggernode', triggerpath)
-        # trigger_duration = 35e-3
-        # The length of time to record the data for each time we trigger.
-        # self._parent.data_acquisition_module.set('dataAcquisitionModule/duration', trigger_duration)
-        trigger_delay = -0.01e-3
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/delay', trigger_delay)
-        # Do not return overlapped trigger events.
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/holdoff/time', 200e-3)
-        self._instrument.data_acquisition_module.set('dataAcquisitionModule/holdoff/count', 0)
+
         self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/mode', 4)
 
-        #   Specify the number of rows in the grid's matrix. Each row is the data
-        #   recorded from one trigger.
+        # for now we dont support different grid directions or multiple rows or grids
+        # so set that explicitly here
         num_rows = 1
         self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/rows', num_rows)
-        # dataAcquisitionModule/grid/direction (int)
-        #   Specify the ordering of the data stored in the grid's matrix.
-        #     0: Forward - the data in each row is ordered chronologically, e.g., the
-        #       first data point in each row corresponds to the first timestamp in the
-        #       trigger data.
-        #     1: Reverse - the data in each row is ordered reverse chronologically,
-        #       e.g., the first data point in each row corresponds to the last
-        #       timestamp in the trigger data.
-        #     2: Bidirectional - the ordering of the data alternates between Forward
-        #        and Backward ordering from row-to-row. The first row is Forward ordered.
         self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/direction', 0)
-
-            # The number of grids to record (if not running in endless mode).
-            # In grid mode, we will obtain dataAcquisitionModule/count grids. The total
-            # number of triggers is equal to n = dataAcquisitionModule/count *
-            # dataAcquisitionModule/grid/rows * dataAcquisitionModule/grid/repetitions
         num_grids = 1
         self._instrument.data_acquisition_module.set('dataAcquisitionModule/count', num_grids)
 
@@ -281,6 +268,24 @@ class DataAcquisitionModule(InstrumentChannel):
                            set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/grid/repetitions'),
                            get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/repetitions'),
                            vals=vals.Ints(1))
+
+        self.add_parameter('trigger_delay',
+                           label='Trigger Delay',
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/delay'),
+                           get_cmd=partial(self.data_acquisition_module.getDouble, 'dataAcquisitionModule/delay'),
+                           vals=vals.Numbers())
+
+        self.add_parameter('holdoff',
+                           label='Holdoff Time',
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/holdoff/time'),
+                           get_cmd=partial(self.data_acquisition_module.getDouble, 'dataAcquisitionModule/holdoff/time'),
+                           vals=vals.Numbers(0))
+
+        self.add_parameter('holdoff_count',
+                           label='Holdoff count',
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/holdoff/count'),
+                           get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/holdoff/count'),
+                           vals=vals.Ints(0))
 
         self.add_parameter('data',
                            parameter_class=DataAcquisitionArray)
