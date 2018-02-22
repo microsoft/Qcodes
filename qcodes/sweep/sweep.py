@@ -16,9 +16,8 @@ class ParametersTable:
     """
     A parameters table is how sweep objects keep track of which parameters
     have been defined and how they relate to each
-    other. Please have a look at the following notebook for a better
-    understanding, please have a look at the sweep_basic_example.ipynb notebook
-    in docs/examples/sweep
+    other. Please have a look at the sweep_basic_example.ipynb notebook
+    in docs/examples/sweep for a better understanding
 
     When a sweep object is registered by the SweepMeasurement class
     (see sweep_measurement.py), this table is used to create the ParamSpecs.
@@ -30,8 +29,11 @@ class ParametersTable:
         if not any([table_list, dependent_parameters, independent_parameters]):
             raise ValueError("At least one argument should be a non-None")
 
-        dependent_parameters = [] if dependent_parameters is None else dependent_parameters
-        independent_parameters = [] if independent_parameters is None else independent_parameters
+        if dependent_parameters is None:
+            dependent_parameters = []
+
+        if independent_parameters is None:
+            independent_parameters = []
 
         if table_list is None:
             self._table_list = [{
@@ -133,23 +135,26 @@ def wrap_objects(*objects, repeat=False):
 class BaseSweepObject:
     """
     A sweep object is defined as follows:
-    1) It is iterable and looping over a sweep object shall result in independent measurement parameters being set
-    at each iteration
-    2) At each iteration a dictionary is returned containing information about the parameters set and measurements that
-    have been performed.
+    1) It is iterable and looping over a sweep object shall result in
+    independent measurement parameters being set at each iteration
+    2) At each iteration a dictionary is returned containing information about
+    the parameters set and measurements that have been performed.
     """
 
     def __init__(self):
-        # The following attributes are determined when we begin iteration...
-        self._param_setter = None  # A "param_setter" is an iterator which, when "next" is called a new value of the
-        # independent parameter is set.
-        self._parameter_table = None  # A proper parameter table should be defined by the subclasses. This is an
-        # instance of ParametersTable
+        # A "param_setter" is an iterator which, when "next" is called a new
+        # value of the independent parameter is set.
+        self._param_setter = None
+
+        # A proper parameter table should be defined by the subclasses. This
+        # is an instance of ParametersTable
+        self._parameter_table = None
         self._symbols_list = None
 
     def _setter_factory(self):
         """
-        When called, this method returns the param setter iterable appropriate for this measurement
+        When called, this method returns the param setter iterable appropriate
+        for this measurement
         """
         raise NotImplementedError("Please subclass BaseSweepObject")
 
@@ -184,15 +189,16 @@ class BaseSweepObject:
 
 class IteratorSweep(BaseSweepObject):
     """
-    Sweep independent parameters by unrolling an iterator. This class is useful if we have "bare" parameter set iterator
-    and need to create a proper sweep object as defined in the BaseSweepObject docstring. See the "Nest"
-    subclass for an example.
+    Sweep independent parameters by unrolling an iterator. This class is useful
+    if we have "bare" parameter set iterator
+    and need to create a proper sweep object as defined in the BaseSweepObject
+    docstring. See the "Nest" subclass for an example.
 
     Parameters
     ----------
     iterator_function: callable
-        A callable with no parameters, returning an iterator. Unrolling this iterator has the
-        effect of setting the independent parameters.
+        A callable with no parameters, returning an iterator. Unrolling this
+        iterator has the effect of setting the independent parameters.
     """
 
     def __init__(self, iterator_function):
@@ -206,12 +212,15 @@ class IteratorSweep(BaseSweepObject):
 
 class Nest(BaseSweepObject):
     """
-    Nest multiple sweep objects. This is for example very useful when performing two or higher dimensional scans
-    (e.g. sweep two gate voltages and measure a current at each coordinate (gate1, gate2).
+    Nest multiple sweep objects. This is for example very useful when
+    performing two or higher dimensional scans
+    (e.g. sweep two gate voltages and measure a current at each coordinate
+    (gate1, gate2).
 
     Notes
     -----
-    We produce a nested sweep object of arbitrary depth by first defining a function which nests just two sweep objects
+    We produce a nested sweep object of arbitrary depth by first defining a
+    function which nests just two sweep objects
 
         product = two_product(so1, so2)
 
@@ -281,7 +290,8 @@ class Chain(BaseSweepObject):
 
 class Zip(BaseSweepObject):
     """
-    Zip multiple sweep objects. Unlike a nested sweep, we will produce a 1D sweep
+    Zip multiple sweep objects. Unlike a nested sweep, we will produce a 1D
+    sweep
     """
 
     def __init__(self, sweep_objects):
@@ -304,8 +314,8 @@ class Zip(BaseSweepObject):
 
 class ParameterSweep(BaseSweepObject):
     """
-    Sweep independent parameters by looping over set point values and setting a QCoDeS parameter to this value at
-    each iteration
+    Sweep independent parameters by looping over set point values and setting
+    a QCoDeS parameter to this value at each iteration
 
     Parameters
     ----------
@@ -329,7 +339,8 @@ class ParameterSweep(BaseSweepObject):
 
 class ParameterWrapper(BaseSweepObject):
     """
-    A wrapper class which iterates once ans returns the value of a QCoDeS parameter
+    A wrapper class which iterates once ans returns the value of a QCoDeS
+    parameter
 
     Parameters
     ----------
@@ -338,7 +349,8 @@ class ParameterWrapper(BaseSweepObject):
 
     def __init__(self, parameter, repeat=False):
         """
-        Note: please use repeat=True carefully as this can easily lead to infinite loops.
+        Note: please use repeat=True carefully as this can easily lead to
+        infinite loops.
         """
         super().__init__()
         self._parameter_table = ParametersTable(
@@ -356,7 +368,8 @@ class ParameterWrapper(BaseSweepObject):
 
 class FunctionSweep(BaseSweepObject):
     """
-    Use a function to set independent parameters instead of calling set methods directly
+    Use a function to set independent parameters instead of calling set
+    methods directly
     """
 
     def __init__(self, set_function, point_function):
@@ -371,12 +384,14 @@ class FunctionSweep(BaseSweepObject):
 
 class FunctionWrapper(BaseSweepObject):
     """
-    Use a function to measure dependent parameters instead of calling get methods directly
+    Use a function to measure dependent parameters instead of calling get
+    methods directly
     """
 
     def __init__(self, measure_function, repeat=False):
         """
-        Note: please use repeat=True carefully as this can easily lead to infinite loops.
+        Note: please use repeat=True carefully as this can easily lead to
+        infinite loops.
         """
         super().__init__()
         self._measure_function, self._parameter_table = measure_function()
@@ -414,11 +429,11 @@ def sweep(obj, sweep_points):
 
     Parameters
     ----------
-    obj: qcodes.StandardParameter or callable
-        If callable, it shall be a callable of three parameters: station, namespace, set_value and shall return a
-        dictionary
+    obj: qcodes.Parameter or callable
+        If callable, it shall be a callable of one parameter: set_value and
+        shall return a dictionary
     sweep_points: iterable or callable returning a iterable
-        If callable, it shall be a callable of two parameters: station, namespace and shall return an iterable
+        If callable, it shall be a callable of no parameters
 
     Returns
     -------
@@ -433,7 +448,9 @@ def sweep(obj, sweep_points):
     if not isinstance(obj, qcodes.Parameter):
         if not callable(obj):
             raise ValueError(
-                "The object to sweep over needs to either be a QCoDeS parameter or a function")
+                "The object to sweep over needs to either be a QCoDeS "
+                "parameter or a function"
+            )
 
         return FunctionSweep(obj, point_function)
     else:
@@ -454,23 +471,24 @@ def szip(*objects):
 
     >>> szip(therometer.t, sweep(source.voltage, [0, 1, 2]))
 
-    The idea is to measure the temperature *before* going to each voltage set point. The parameter "thermometer.t" needs
-    to be wrapped by the ParameterWrapper in such a way that the get method of the parameter is called repeatedly. An
-    infinite loop is prevented because the sweep object "sweep(source.voltage, [0, 1, 2])"  has a finite length and the
+    The idea is to measure the temperature *before* going to each voltage set
+    point. The parameter "thermometer.t" needs to be wrapped by the
+    ParameterWrapper in such a way that the get method of the parameter is
+    called repeatedly. An infinite loop is prevented because
+    "sweep(source.voltage, [0, 1, 2])"  has a finite length and the
     Zip operator loops until the shortest sweep object is exhausted
     """
     repeat = False
-    if any([isinstance(i, BaseSweepObject) for i in
-            objects]):  # If any of the objects is a sweep object it (probably)
-        # has a finite length and therefore wrapping functions and parameters with repeat=True is save. These parameters
-        # and functions will be called as often as the length of the sweep object.
+    if any([isinstance(i, BaseSweepObject) for i in objects]):
         repeat = True
+
     return Zip(wrap_objects(*objects, repeat=repeat))
 
 
 def time_trace(measurement_object, total_time, interval_time):
     """
-    Make time trace sweep object to monitor the return value of the measurement object over a certain time period.
+    Make time trace sweep object to monitor the return value of the measurement
+    object over a certain time period.
     """
     tt_sweep = TimeTrace(total_time, interval_time)
     return szip(measurement_object, tt_sweep)
