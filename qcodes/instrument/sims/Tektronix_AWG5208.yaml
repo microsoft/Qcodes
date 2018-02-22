@@ -1,0 +1,26 @@
+# SIMULATED INSTRUMENT FOR TEKTRONIX AWG 5208
+spec: "1.0"
+
+devices:
+  device 1:  # AWG 70001A
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, AWG5208, 1000, 0.1"
+
+    properties:
+      sample rate:
+        default: 5e6
+        getter:
+          q: "CLOCk:SRATe?"
+          r: "{}"
+        setter:
+          q: "CLOCk:SRATe {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
