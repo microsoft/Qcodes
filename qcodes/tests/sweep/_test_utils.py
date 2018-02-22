@@ -80,9 +80,8 @@ class TestSetFunction:
     def name(self)->str:
         return self._name
 
-    def caller(self, value)->dict:
+    def caller(self, value)->None:
         mock_io.write("Setting {} to {}".format(self._name, value))
-        return {self._name: value}
 
     def __call__(self):
         return setter([(self._name, "none")])(self.caller)()

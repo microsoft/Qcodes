@@ -1,6 +1,7 @@
 """
-A measurement subclass which is designed to work specifically with sweep objects. It simply adds a method to register
-parameters implicitly defined  in sweep objects.
+A measurement subclass which is designed to work specifically with sweep
+objects. It simply adds a method to register parameters implicitly defined
+in sweep objects.
 """
 
 from collections import OrderedDict
@@ -42,5 +43,7 @@ class SweepMeasurement(Measurement):
             raise RuntimeError("Duplicate dependent parameters detected!")
 
         self.parameters = OrderedDict({
-            spec.name: spec for spec in itertools.chain(independent_parameters, dependent_parameters)
+            spec.name: spec for spec in itertools.chain(
+                independent_parameters, dependent_parameters
+            )
         })

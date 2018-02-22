@@ -59,8 +59,7 @@ class ParametersTable:
         def table_print(table):
             s = "|".join([
                 ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in
-                ["independent_parameters",
-                 "dependent_parameters"]
+                ["independent_parameters", "dependent_parameters"]
             ])
 
             return s
@@ -99,19 +98,41 @@ def measurement(param_list):
     return decorator
 
 
-def setter(param_list):
+def setter(param_list, inferred_parameters=None):
     """
     A decorator to easily integrate arbitrary setter functions in sweeps
     """
+    if inferred_parameters is None:
+        inferred_parameters = []
+        inferred_symbols = []
+    else:
+        inferred_symbols, _ = list(zip(*inferred_parameters))
+
+    # Do not do >>> param_list += inferred_from ; lists are mutable
+    param_list = param_list + inferred_parameters
+    parameter_symbols, _ = list(zip(*param_list))
 
     def decorator(f):
         def inner(value):
             value = np.atleast_1d(value)
-            f(*value)
+            inferred_values = f(*value)
+
+            if inferred_values is not None:
+                value = np.append(value, np.atleast_1d(inferred_values))
+
+            if len(param_list) != len(value):
+                raise ValueError("The number of supplied inferred parameters "
+                                 "does not match the number returned by the "
+                                 "setter function")
+
             return {p[0]: im for p, im in zip(param_list, value)}
 
         parameter_table = ParametersTable(independent_parameters=param_list)
-        return lambda: (inner, parameter_table)
+
+        inferred_from_list = [{inferred_symbol: parameter_symbols} for
+                              inferred_symbol in inferred_symbols]
+
+        return lambda: (inner, parameter_table, inferred_from_list)
 
     return decorator
 
@@ -239,7 +260,8 @@ class Nest(BaseSweepObject):
         super().__init__()
         self._sweep_objects = sweep_objects
         self._parameter_table = np.prod(
-            [so.parameter_table for so in sweep_objects])
+            [so.parameter_table for so in sweep_objects]
+        )
 
     @staticmethod
     def _two_product(sweep_object1, sweep_object2):
@@ -280,7 +302,8 @@ class Chain(BaseSweepObject):
         super().__init__()
         self._sweep_objects = sweep_objects
         self._parameter_table = np.sum(
-            [so.parameter_table for so in sweep_objects])
+            [so.parameter_table for so in sweep_objects]
+        )
 
     def _setter_factory(self):
         for so in self._sweep_objects:
@@ -298,7 +321,8 @@ class Zip(BaseSweepObject):
         super().__init__()
         self._sweep_objects = sweep_objects
         self._parameter_table = np.prod(
-            [so.parameter_table for so in sweep_objects])
+            [so.parameter_table for so in sweep_objects]
+        )
 
     @staticmethod
     def _combine_dictionaries(dictionaries):
@@ -329,7 +353,8 @@ class ParameterSweep(BaseSweepObject):
         self._parameter = parameter
         self._point_function = point_function
         self._parameter_table = ParametersTable(
-            independent_parameters=[(parameter.full_name, parameter.unit)])
+            independent_parameters=[(parameter.full_name, parameter.unit)]
+        )
 
     def _setter_factory(self):
         for set_value in self._point_function():
@@ -354,7 +379,8 @@ class ParameterWrapper(BaseSweepObject):
         """
         super().__init__()
         self._parameter_table = ParametersTable(
-            dependent_parameters=[(parameter.full_name, parameter.unit)])
+            dependent_parameters=[(parameter.full_name, parameter.unit)]
+        )
         self._parameter = parameter
         self._repeat = repeat
 
@@ -374,7 +400,7 @@ class FunctionSweep(BaseSweepObject):
 
     def __init__(self, set_function, point_function):
         super().__init__()
-        self._set_function, self._parameter_table = set_function()
+        self._set_function, self._parameter_table, _ = set_function()
         self._point_function = point_function
 
     def _setter_factory(self):
