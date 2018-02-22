@@ -143,7 +143,11 @@ class DataAcquisitionArray(MultiParameter):
         self.setpoint_units = (('s',),)*len(signals)
         self.shapes = ((ncols,),)*len(self._instrument._daq_signals)
 
+        self._instrument._daq_prepared = True
+
     def get_raw(self):
+        if not self._instrument._daq_prepared:
+            raise RuntimeError("Please run build_data_arrays before getting data")
         if len(self._instrument._daq_signals) == 0:
             raise RuntimeError("No signals selected")
         # todo map this to parameters. Try to match both the
@@ -221,12 +225,13 @@ class DataAcquisitionArray(MultiParameter):
 class DataAcquisitionModule(InstrumentChannel):
     def __init__(self, parent: 'ZIUHFLI', name: str) -> None:
         super().__init__(parent, name)
+        self._daq_prepared = False
         self.data_acquisition_module = self._parent.daq.dataAcquisitionModule()
         self.data_acquisition_module.set('dataAcquisitionModule/device', self._parent.device)
 
         self.add_parameter('trigger_type',
                            label='Trigger type',
-                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/type'),
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/type'),
                            get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/type'),
                            val_mapping={'NO_TRIGGER': 0,
                                         'EDGE_TRIGGER': 1,
@@ -239,7 +244,7 @@ class DataAcquisitionModule(InstrumentChannel):
 
         self.add_parameter('trigger_edge_type',
                            label='Trigger edge type',
-                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/edge'),
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/edge'),
                            get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/edge'),
                            val_mapping={'POS_EDGE': 1,
                                         'NEG_EDGE': 2,
@@ -267,13 +272,13 @@ class DataAcquisitionModule(InstrumentChannel):
 
         self.add_parameter('columns',
                            label='Columns',
-                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/grid/cols'),
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/grid/cols'),
                            get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/cols'),
                            vals=vals.Ints(1))
 
         self.add_parameter('repetitions',
                            label='Repetitions',
-                           set_cmd=partial(self.data_acquisition_module.set, 'dataAcquisitionModule/grid/repetitions'),
+                           set_cmd=partial(self._daq_setter, 'dataAcquisitionModule/grid/repetitions'),
                            get_cmd=partial(self.data_acquisition_module.getInt, 'dataAcquisitionModule/grid/repetitions'),
                            vals=vals.Ints(1))
 
@@ -314,6 +319,10 @@ class DataAcquisitionModule(InstrumentChannel):
         else:
             self._daq_signals.remove(signalstring)
 
+
+    def _daq_setter(self, settingstr, data):
+        self._daq_prepared = False
+        self.data_acquisition_module.set(settingstr, data)
 
 class Sweep(MultiParameter):
     """
