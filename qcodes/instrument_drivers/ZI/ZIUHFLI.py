@@ -152,21 +152,21 @@ class DataAcquisitionArray(MultiParameter):
         triggerpath = '/{}/demods/{}/sample.{}'.format(self._instrument._parent.device,
                                                        self._instrument.trigger_demodulator.get_raw(),
                                                        self._instrument.trigger_input.get())
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/triggernode', triggerpath)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/triggernode', triggerpath)
         # trigger_duration = 35e-3
         # The length of time to record the data for each time we trigger.
         # self._parent.data_acquisition_module.set('dataAcquisitionModule/duration', trigger_duration)
         trigger_delay = -0.01e-3
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/delay', trigger_delay)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/delay', trigger_delay)
         # Do not return overlapped trigger events.
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/holdoff/time', 200e-3)
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/holdoff/count', 0)
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/mode', 4)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/holdoff/time', 200e-3)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/holdoff/count', 0)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/mode', 4)
 
         #   Specify the number of rows in the grid's matrix. Each row is the data
         #   recorded from one trigger.
         num_rows = 1
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/rows', num_rows)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/rows', num_rows)
         # dataAcquisitionModule/grid/direction (int)
         #   Specify the ordering of the data stored in the grid's matrix.
         #     0: Forward - the data in each row is ordered chronologically, e.g., the
@@ -177,43 +177,43 @@ class DataAcquisitionArray(MultiParameter):
         #       timestamp in the trigger data.
         #     2: Bidirectional - the ordering of the data alternates between Forward
         #        and Backward ordering from row-to-row. The first row is Forward ordered.
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/grid/direction', 0)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/grid/direction', 0)
 
             # The number of grids to record (if not running in endless mode).
             # In grid mode, we will obtain dataAcquisitionModule/count grids. The total
             # number of triggers is equal to n = dataAcquisitionModule/count *
             # dataAcquisitionModule/grid/rows * dataAcquisitionModule/grid/repetitions
         num_grids = 1
-        self._instrument._parent.data_acquisition_module.set('dataAcquisitionModule/count', num_grids)
+        self._instrument.data_acquisition_module.set('dataAcquisitionModule/count', num_grids)
 
         data = {}
         data[triggerpath] = []
         for samplestring in self._instrument._daq_signals:
-            self._instrument._parent.data_acquisition_module.subscribe(samplestring)
-        self._instrument._parent.data_acquisition_module.subscribe(triggerpath)
+            self._instrument.data_acquisition_module.subscribe(samplestring)
+        self._instrument.data_acquisition_module.subscribe(triggerpath)
         # Below is from ZI example but the intention is somewhat unclear. Is it just
         # that subscripe should be the last action that we do or that we must subscripe to
         # trigger last.
         # Note: We subscribe to the trigger signal path last to ensure that we obtain
         # complete data on the other paths (known limitation). We must subscribe to
         # the trigger signal path.
-        self._instrument._parent.data_acquisition_module.execute()
+        self._instrument.data_acquisition_module.execute()
 
         # todo calculate meaning full timeout and handle correctly
-        tracelength = max(max(max(self._instrument._parent.daqmodule.data.setpoints)))
+        tracelength = max(max(max(self.setpoints)))
         # we set timeout somewhat abitrary as 2 times the total measuring time
         timeout = 2 * tracelength * self._instrument.repetitions() + 1 # [s]
         t0 = time.time()
 
-        while not self._instrument._parent.data_acquisition_module.finished():
+        while not self._instrument.data_acquisition_module.finished():
             time.sleep(0.05)
             if time.time() - t0 > timeout:
                 raise RuntimeError("Measurement timed out, check your trigger")
         return_flat_data_dict = True
-        data_read = self._instrument._parent.data_acquisition_module.read(return_flat_data_dict)
+        data_read = self._instrument.data_acquisition_module.read(return_flat_data_dict)
         for samplestring in self._instrument._daq_signals:
-            self._instrument._parent.data_acquisition_module.unsubscribe(samplestring)
-        self._instrument._parent.data_acquisition_module.unsubscribe(triggerpath)
+            self._instrument.data_acquisition_module.unsubscribe(samplestring)
+        self._instrument.data_acquisition_module.unsubscribe(triggerpath)
         data = tuple(data_read[samplestring][0]['value'][0] for samplestring in self._instrument._daq_signals)
         return data
 
@@ -221,7 +221,8 @@ class DataAcquisitionArray(MultiParameter):
 class DataAcquisitionModule(InstrumentChannel):
     def __init__(self, parent: 'ZIUHFLI', name: str) -> None:
         super().__init__(parent, name)
-        self.data_acquisition_module = self._parent.data_acquisition_module
+        self.data_acquisition_module = self._parent.daq.dataAcquisitionModule()
+        self.data_acquisition_module.set('dataAcquisitionModule/device', self._parent.device)
 
         self.add_parameter('trigger_type',
                            label='Trigger type',
@@ -913,9 +914,7 @@ class ZIUHFLI(Instrument):
         self.scope = self.daq.scopeModule()
         self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
         if self.has_data_acquisition_module:
-            self.data_acquisition_module = self.daq.dataAcquisitionModule()
-            self.data_acquisition_module.set('dataAcquisitionModule/device', self.device)
-            self.add_submodule('daqmodule', DataAcquisitionModule(self, 'daqmodule'))
+            self.add_submodule('data_acquisition', DataAcquisitionModule(self, 'data_acquisition'))
         ########################################
         # INSTRUMENT PARAMETERS
 
@@ -2447,7 +2446,8 @@ class ZIUHFLI(Instrument):
         self.scope.unsubscribe('/{}/scopes/0/wave'.format(self.device))
         self.scope.clear()
         self.sweeper.clear()
+        if self.has_data_acquisition_module:
+            self.data_acquisition.data_acquisition_module.finish()
+            self.data_acquisition.data_acquisition_module.clear()
         self.daq.disconnect()
-        self.data_acquisition_module.finish()
-        self.data_acquisition_module.clear()
         super().close()
