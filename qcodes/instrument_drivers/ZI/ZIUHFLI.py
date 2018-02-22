@@ -109,6 +109,14 @@ class AUXOutputChannel(InstrumentChannel):
 
 
 class DataAcquisitionArray(MultiParameter):
+    """
+    Parameter class to hold one or more Arrays of data from the Data Acquisition Module.
+
+    The shapes needs to be calculated at any change to the number of data arrays or
+    if any
+
+
+    """
     def __init__(self, name, instrument, **kwargs):
         # The __init__ requires that we supply names and shapes,
         # but there is no way to know what they could be known at this time.
@@ -121,10 +129,9 @@ class DataAcquisitionArray(MultiParameter):
         sigunits = {'x': 'V', 'y': 'V', 'r': 'Vrms', 'phase': 'degrees'}
         names = []
         units = []
-        setpoints = []
         ncols = self._instrument.columns()
         # find the highest sample rate.
-        # this determins the time axis
+        # this determines the time axis
         # according to the manual
         max_sample_rate = 0
         for sig in signals:
@@ -159,9 +166,6 @@ class DataAcquisitionArray(MultiParameter):
             raise RuntimeError("Please run build_data_arrays before getting data")
         if len(self._instrument._daq_signals) == 0:
             raise RuntimeError("No signals selected")
-        # todo map this to parameters. Try to match both the
-        # scope api and the zi api as much as possible
-        trigger_demod_index = 0
         triggerpath = '/{}/demods/{}/sample.{}'.format(self._instrument._parent.device,
                                                        self._instrument.trigger_demodulator.get_raw(),
                                                        self._instrument.trigger_input.get())
@@ -210,6 +214,16 @@ class DataAcquisitionArray(MultiParameter):
 
 
 class DataAcquisitionModule(InstrumentChannel):
+    """"
+    Submodule to hold settings related to the Data Acquisition Module. This
+    module replaces both the Software Trigger and Spectrum Module which will not
+    be supported. This module is intended for acquiring one or more traces of demodulated
+    data at a given sample rate with one trigger per trace.
+
+
+    Todos:
+        * Add FFT support
+    """
     def __init__(self, parent: 'ZIUHFLI', name: str) -> None:
         super().__init__(parent, name)
         self._daq_prepared = False
@@ -292,7 +306,11 @@ class DataAcquisitionModule(InstrumentChannel):
 
         self._daq_signals = []
 
-    def add_signal_to_daq(self, demodulator, attribute):
+    def add_signal_to_daq(self, demodulator: int, attribute: str):
+        """
+        Add an additional attribute to acquire.
+        """
+        self._daq_prepared = False
         valid_attributes = ['x', 'y', 'r', 'phase']
         # Validation
         if demodulator not in range(1, 9):
@@ -312,8 +330,11 @@ class DataAcquisitionModule(InstrumentChannel):
             self._daq_signals.append(signalstring)
 
 
-    def remove_signal_from_daq(self, demodulator, attribute):
-
+    def remove_signal_from_daq(self, demodulator: int, attribute: str):
+        """
+        Remove an attribute from signals to acquire.
+        """
+        self._daq_prepared = False
         signalstring = ('/' + self._parent.device +
                         '/demods/{}/sample.{}'.format(demodulator-1,
                                                       attribute))
@@ -392,7 +413,27 @@ class Sweep(MultiParameter):
         self.labels = tuple(names)  # TODO: What are good labels?
 
         # TODO: what are good set point names?
-        spnamedict = {'auxouts/0/offset': 'Volts',
+        spnamedict = {'auxouts/0/offset': 'offset',
+                      'auxouts/1/offset': 'offset',
+                      'auxouts/2/offset': 'offset',
+                      'auxouts/3/offset': 'offset',
+                      'demods/0/phaseshift': 'phaseshift',
+                      'demods/1/phaseshift': 'phaseshift',
+                      'demods/2/phaseshift': 'phaseshift',
+                      'demods/3/phaseshift': 'phaseshift',
+                      'demods/4/phaseshift': 'phaseshift',
+                      'demods/5/phaseshift': 'phaseshift',
+                      'demods/6/phaseshift': 'phaseshift',
+                      'demods/7/phaseshift': 'phaseshift',
+                      'oscs/0/freq': 'frequency',
+                      'oscs/1/freq': 'frequency',
+                      'sigouts/0/amplitudes/3': 'amplitude',
+                      'sigouts/0/offset': 'offset',
+                      'sigouts/1/amplitudes/7': 'amplitude',
+                      'sigouts/1/offset': 'amplitude'
+                      }
+
+        spunitdict = {'auxouts/0/offset': 'Volts',
                       'auxouts/1/offset': 'Volts',
                       'auxouts/2/offset': 'Volts',
                       'auxouts/3/offset': 'Volts',
@@ -412,8 +453,9 @@ class Sweep(MultiParameter):
                       'sigouts/1/offset': 'Volts'
                       }
         sp_name = spnamedict[sweepdict['gridnode']]
-
+        sp_unit = spunitdict[sweepdict['gridnode']]
         self.setpoint_names = ((sp_name,),)*len(signals)
+        self.setpoint_units = ((sp_unit,),)*len(signals)
         start = sweepdict['start']
         stop = sweepdict['stop']
         npts = sweepdict['samplecount']
@@ -438,7 +480,7 @@ class Sweep(MultiParameter):
 
         self._instrument.sweep_correctly_built = True
 
-    def get(self):
+    def get_raw(self):
         """
         Execute the sweeper and return the data corresponding to the
         subscribed signals.
@@ -725,7 +767,7 @@ class Scope(MultiParameter):
         self._instrument.daq.sync()
         self._instrument.scope_correctly_built = True
 
-    def get(self):
+    def get_raw(self):
         """
         Acquire data from the scope.
 
@@ -889,8 +931,6 @@ class ZIUHFLI(Instrument):
     Furthermore, the Data Server and Web Server must be running and a connection
     between the two must be made.
 
-    TODOs:
-        * Add zoom-FFT
     """
 
     def __init__(self, name: str, device_ID: str, **kwargs) -> None:
