@@ -63,14 +63,16 @@ def test_inferred():
             datasaver.add_result(*data.items())
 
     data_set = datasaver._dataset
-    pass
-    #assert data_set.paramspecs["x"].depends_on == ""
-    #assert data_set.paramspecs["xmv"].depends_on == ""
+    assert data_set.paramspecs["x"].depends_on == ""
+    # The following is due to a bug in the dataset module in QCoDeS.
+    # A fix is underway
+    assert data_set.paramspecs["x"].inferred_from == "x, m, v" # Should be "xmv"
+    assert data_set.paramspecs["xmv"].depends_on == ""
 
-    #assert data_set.paramspecs["m"].depends_on == "x"
+    assert data_set.paramspecs["m"].depends_on == "x"
 
-    #expected_x = [[xi] for xi in sweep_values]
-    #assert data_set.get_data('x') == expected_x
+    expected_x = [[xi] for xi in sweep_values]
+    assert data_set.get_data('xmv') == expected_x
 
 
 def test_nest():

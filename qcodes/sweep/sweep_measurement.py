@@ -63,14 +63,17 @@ class SweepMeasurement(Measurement):
                 inferred_parameters
             )
 
-            l = []
-            for il in inferred_parameters.values():
-                l += il
+            # The dependent parameters are dependent on the independent
+            # parameters, except those that are used
+            dependency_black_list = []
+            for param in inferred_parameters.values():
+                dependency_black_list += param
 
             dependents = self._make_param_spec_list(
                 table_list["dependent_parameters"],
                 inferred_parameters,
-                depends_on=[i for i in local_independents if i.name not in l]
+                depends_on=[i for i in local_independents
+                            if i.name not in dependency_black_list]
             )
 
             independent_parameters.extend(local_independents)
