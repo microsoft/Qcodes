@@ -6,7 +6,7 @@ import numpy as np
 import itertools
 
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.sweep import sweep, nest, chain, SweepMeasurement
+from qcodes.sweep import sweep, nest, chain, SweepMeasurement, setter
 from qcodes import new_experiment, Station
 
 
@@ -34,6 +34,43 @@ def test_simple():
 
     expected_x = [[xi] for xi in sweep_values]
     assert data_set.get_data('x') == expected_x
+
+
+def test_inferred():
+
+    x = ManualParameter("x", unit="V")
+
+    @setter([("xmv", "mV")], inferred_parameters=[("x", "V")])
+    def xsetter(milivolt_value):
+        volt_value = milivolt_value / 1000.0  # From mV to V
+        x.set(volt_value)
+        return volt_value
+
+    m = ManualParameter("m")
+    m.get = lambda: np.sin(x())
+
+    sweep_values = np.linspace(-1000, 1000, 100)  # We sweep in mV
+
+    sweep_object = nest(sweep(xsetter, sweep_values), m)
+
+    experiment = new_experiment("sweep_measure", sample_name="sine")
+    station = Station()
+    meas = SweepMeasurement(exp=experiment, station=station)
+    meas.register_sweep(sweep_object)
+
+    with meas.run() as datasaver:
+        for data in sweep_object:
+            datasaver.add_result(*data.items())
+
+    data_set = datasaver._dataset
+    pass
+    #assert data_set.paramspecs["x"].depends_on == ""
+    #assert data_set.paramspecs["xmv"].depends_on == ""
+
+    #assert data_set.paramspecs["m"].depends_on == "x"
+
+    #expected_x = [[xi] for xi in sweep_values]
+    #assert data_set.get_data('x') == expected_x
 
 
 def test_nest():

@@ -24,7 +24,7 @@ class ParametersTable:
     """
 
     def __init__(self, table_list=None, dependent_parameters=None,
-                 independent_parameters=None):
+                 independent_parameters=None, inferred_from_dict=None):
 
         if not any([table_list, dependent_parameters, independent_parameters]):
             raise ValueError("At least one argument should be a non-None")
@@ -43,17 +43,33 @@ class ParametersTable:
         else:
             self._table_list = list(table_list)
 
+        self._inferred_from_dict = {}
+        if inferred_from_dict is not None:
+            self._inferred_from_dict = dict(inferred_from_dict)
+
     def copy(self):
-        return ParametersTable(self._table_list)
+        return ParametersTable(
+            self._table_list,
+            inferred_from_dict=self._inferred_from_dict
+        )
 
     def __add__(self, other):
-        return ParametersTable(self._table_list + other.table_list)
+        inferred_from_dict = dict(self._inferred_from_dict)
+        inferred_from_dict.update(other.inferred_from_dict)
+
+        return ParametersTable(
+            self._table_list + other.table_list,
+            inferred_from_dict=inferred_from_dict
+        )
 
     def __mul__(self, other):
+        inferred_from_dict = dict(self._inferred_from_dict)
+        inferred_from_dict.update(other.inferred_from_dict)
+
         return ParametersTable([
             {k: s[k] + o[k] for k in s.keys()} for s, o in
             itertools.product(self._table_list, other.table_list)
-        ])
+        ], inferred_from_dict=inferred_from_dict)
 
     def __repr__(self):
         def table_print(table):
@@ -64,7 +80,11 @@ class ParametersTable:
 
             return s
 
-        return "\n".join([table_print(table) for table in self._table_list])
+        repr = self.inferred_symbols_list() + "\n" + "\n".join([
+            table_print(table) for table in self._table_list
+        ])
+
+        return repr
 
     def flatten(self):
         ind = {k: v for d in self._table_list for k, v in
@@ -77,9 +97,19 @@ class ParametersTable:
         ind, dep = self.flatten()
         return list(ind.keys()) + list(dep.keys())
 
+    def inferred_symbols_list(self):
+        return "\n".join(["{symbol} inferred from {inferrees}".format(
+            symbol=symbol, inferrees=",".join(inferrees))
+            for symbol, inferrees in self._inferred_from_dict.items()]
+        )
+
     @property
     def table_list(self):
         return self._table_list
+
+    @property
+    def inferred_from_dict(self):
+        return self._inferred_from_dict
 
 
 def measurement(param_list):
@@ -108,9 +138,9 @@ def setter(param_list, inferred_parameters=None):
     else:
         inferred_symbols, _ = list(zip(*inferred_parameters))
 
+    symbols_not_inferred, _ = [list(i) for i in zip(*param_list)]
     # Do not do >>> param_list += inferred_from ; lists are mutable
     param_list = param_list + inferred_parameters
-    parameter_symbols, _ = list(zip(*param_list))
 
     def decorator(f):
         def inner(value):
@@ -127,12 +157,15 @@ def setter(param_list, inferred_parameters=None):
 
             return {p[0]: im for p, im in zip(param_list, value)}
 
-        parameter_table = ParametersTable(independent_parameters=param_list)
+        inferred_from_dict = {inferred_symbol: symbols_not_inferred for
+                              inferred_symbol in inferred_symbols}
 
-        inferred_from_list = [{inferred_symbol: parameter_symbols} for
-                              inferred_symbol in inferred_symbols]
+        parameter_table = ParametersTable(
+            independent_parameters=param_list,
+            inferred_from_dict=inferred_from_dict
+        )
 
-        return lambda: (inner, parameter_table, inferred_from_list)
+        return lambda: (inner, parameter_table)
 
     return decorator
 
@@ -400,7 +433,7 @@ class FunctionSweep(BaseSweepObject):
 
     def __init__(self, set_function, point_function):
         super().__init__()
-        self._set_function, self._parameter_table, _ = set_function()
+        self._set_function, self._parameter_table = set_function()
         self._point_function = point_function
 
     def _setter_factory(self):
