@@ -12,15 +12,6 @@ devices:
       - q: "*IDN?"
         r: "QCoDeS, AWG5208, 1000, 0.1"
 
-    properties:
-      sample rate:
-        default: 5000000
-        getter:
-          q: "CLOCk:SRATe?"
-          r: "{}"
-        setter:
-          q: "CLOCk:SRATe {}"
-
 resources:
   GPIB::1::INSTR:
     device: device 1

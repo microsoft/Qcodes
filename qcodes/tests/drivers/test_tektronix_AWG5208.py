@@ -20,8 +20,3 @@ def test_init_awg(awg):
     idn_dict = awg.IDN()
 
     assert idn_dict['vendor'] == 'QCoDeS'
-
-
-def test_sample_rate(awg):
-
-    assert awg.sample_rate() == 5e6
