@@ -1011,7 +1011,12 @@ def get_paramspec(conn: sqlite3.Connection,
     resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
                 'inferred_from')
 
-    (layout_id, _, _, label, unit, inferred_from) = resp
+    (layout_id, _, _, label, unit, inferred_from_string) = resp
+
+    if inferred_from_string:
+        inferred_from = inferred_from_string.split(', ')
+    else:
+        inferred_from = []
 
     deps = get_dependencies(conn, layout_id)
     depends_on: Optional[List[str]]
@@ -1029,7 +1034,8 @@ def get_paramspec(conn: sqlite3.Connection,
             depends_on.append(one(c, 'parameter'))
 
     parspec = ParamSpec(param_name, param_type, label, unit,
-                        inferred_from, depends_on)
+                        inferred_from,
+                        depends_on)
     return parspec
 
 
