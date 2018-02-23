@@ -65,8 +65,23 @@ from qcodes.instrument.parameter import (
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators
-
+from qcodes.utils.zmq_helpers import Publisher
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
+
+from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id
+from qcodes.dataset.experiment_container import new_experiment, load_experiment, load_experiment_by_name, \
+    load_last_experiment, experiments
+from qcodes.dataset.sqlite_settings import SQLiteSettings
+from qcodes.dataset.param_spec import ParamSpec
+# TODO: do we want this?
+from qcodes.dataset.sqlite_base import connect as _connect
+from qcodes.dataset.sqlite_base import init_db as _init_db
+
+_c = _connect(config["core"]["db_location"], config["core"]["db_debug"])
+# init is actually idempotent so it's safe to always call!
+_init_db(_c)
+_c.close()
+del _c
 
 try:
     get_ipython() # Check if we are in iPython

@@ -1,0 +1,286 @@
+{
+    "station": {
+        "instruments": {
+            "dac": {
+                "functions": {},
+                "submodules": {},
+                "__class__": "qcodes.tests.instrument_mocks.DummyInstrument",
+                "parameters": {
+                    "IDN": {
+                        "value": {
+                            "vendor": null,
+                            "model": "dac",
+                            "serial": null,
+                            "firmware": null
+                        },
+                        "ts": "2018-01-17 15:42:38",
+                        "raw_value": {
+                            "vendor": null,
+                            "model": "dac",
+                            "serial": null,
+                            "firmware": null
+                        },
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dac_IDN",
+                        "vals": "<Anything>",
+                        "label": "IDN",
+                        "name": "IDN",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dac",
+                        "post_delay": 0,
+                        "unit": ""
+                    },
+                    "ch1": {
+                        "value": 20.0,
+                        "ts": "2018-01-17 15:43:04",
+                        "raw_value": 20.0,
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dac_ch1",
+                        "vals": "<Numbers -800<=v<=400>",
+                        "label": "Gate ch1",
+                        "name": "ch1",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dac",
+                        "post_delay": 0,
+                        "unit": "V"
+                    },
+                    "ch2": {
+                        "value": 0,
+                        "ts": "2018-01-17 15:42:38",
+                        "raw_value": 0,
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dac_ch2",
+                        "vals": "<Numbers -800<=v<=400>",
+                        "label": "Gate ch2",
+                        "name": "ch2",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dac",
+                        "post_delay": 0,
+                        "unit": "V"
+                    },
+                    "verbose_channel": {
+                        "value": 5,
+                        "ts": "2018-01-17 15:42:50",
+                        "raw_value": 5,
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dac_verbose_channel",
+                        "label": "Verbose Channel",
+                        "name": "verbose_channel",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dac",
+                        "post_delay": 0,
+                        "unit": "V"
+                    }
+                },
+                "name": "dac"
+            },
+            "dmm": {
+                "functions": {},
+                "submodules": {},
+                "__class__": "qcodes.tests.instrument_mocks.DummyInstrument",
+                "parameters": {
+                    "IDN": {
+                        "value": {
+                            "vendor": null,
+                            "model": "dmm",
+                            "serial": null,
+                            "firmware": null
+                        },
+                        "ts": "2018-01-17 15:42:38",
+                        "raw_value": {
+                            "vendor": null,
+                            "model": "dmm",
+                            "serial": null,
+                            "firmware": null
+                        },
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dmm_IDN",
+                        "vals": "<Anything>",
+                        "label": "IDN",
+                        "name": "IDN",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dmm",
+                        "post_delay": 0,
+                        "unit": ""
+                    },
+                    "voltage": {
+                        "value": 0,
+                        "ts": "2018-01-17 15:42:38",
+                        "raw_value": 0,
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dmm_voltage",
+                        "vals": "<Numbers -800<=v<=400>",
+                        "label": "Gate voltage",
+                        "name": "voltage",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dmm",
+                        "post_delay": 0,
+                        "unit": "V"
+                    }
+                },
+                "name": "dmm"
+            }
+        },
+        "parameters": {},
+        "components": {},
+        "default_measurement": []
+    },
+    "loop": {
+        "__class__": "qcodes.loops.ActiveLoop",
+        "sweep_values": {
+            "parameter": {
+                "value": 20.0,
+                "ts": "2018-01-17 15:43:04",
+                "raw_value": 20.0,
+                "__class__": "qcodes.instrument.parameter.Parameter",
+                "full_name": "dac_ch1",
+                "vals": "<Numbers -800<=v<=400>",
+                "label": "Gate ch1",
+                "name": "ch1",
+                "inter_delay": 0,
+                "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                "instrument_name": "dac",
+                "post_delay": 0,
+                "unit": "V"
+            },
+            "values": [
+                {
+                    "first": 0.0,
+                    "last": 5.0,
+                    "num": 6,
+                    "type": "linear"
+                }
+            ]
+        },
+        "delay": 0.1,
+        "actions": [
+            {
+                "__class__": "qcodes.loops.ActiveLoop",
+                "sweep_values": {
+                    "parameter": {
+                        "value": 0,
+                        "ts": "2018-01-17 15:42:38",
+                        "raw_value": 0,
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dac_ch2",
+                        "vals": "<Numbers -800<=v<=400>",
+                        "label": "Gate ch2",
+                        "name": "ch2",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dac",
+                        "post_delay": 0,
+                        "unit": "V"
+                    },
+                    "values": [
+                        {
+                            "first": 0.0,
+                            "last": 5.0,
+                            "num": 6,
+                            "type": "linear"
+                        }
+                    ]
+                },
+                "delay": 0.1,
+                "actions": [
+                    {
+                        "value": 0,
+                        "ts": "2018-01-17 15:42:38",
+                        "raw_value": 0,
+                        "__class__": "qcodes.instrument.parameter.Parameter",
+                        "full_name": "dmm_voltage",
+                        "vals": "<Numbers -800<=v<=400>",
+                        "label": "Gate voltage",
+                        "name": "voltage",
+                        "inter_delay": 0,
+                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument_name": "dmm",
+                        "post_delay": 0,
+                        "unit": "V"
+                    }
+                ],
+                "then_actions": []
+            }
+        ],
+        "then_actions": [],
+        "ts_start": "2018-01-17 15:43:15",
+        "use_threads": false,
+        "ts_end": "2018-01-17 15:43:20"
+    },
+    "__class__": "qcodes.data.data_set.DataSet",
+    "location": "data/2018-01-17/#002_2D_test_15-43-14",
+    "arrays": {
+        "dac_ch1_set": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "raw_value": 20.0,
+            "full_name": "dac_ch1",
+            "vals": "<Numbers -800<=v<=400>",
+            "label": "Gate ch1",
+            "name": "ch1",
+            "inter_delay": 0,
+            "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+            "instrument_name": "dac",
+            "post_delay": 0,
+            "unit": "V",
+            "array_id": "dac_ch1_set",
+            "shape": [
+                6
+            ],
+            "action_indices": [],
+            "is_setpoint": true
+        },
+        "dac_ch2_set": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "raw_value": 0,
+            "full_name": "dac_ch2",
+            "vals": "<Numbers -800<=v<=400>",
+            "label": "Gate ch2",
+            "name": "ch2",
+            "inter_delay": 0,
+            "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+            "instrument_name": "dac",
+            "post_delay": 0,
+            "unit": "V",
+            "array_id": "dac_ch2_set",
+            "shape": [
+                6,
+                6
+            ],
+            "action_indices": [
+                0
+            ],
+            "is_setpoint": true
+        },
+        "dmm_voltage": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "raw_value": 0,
+            "full_name": "dmm_voltage",
+            "vals": "<Numbers -800<=v<=400>",
+            "label": "Gate voltage",
+            "name": "voltage",
+            "inter_delay": 0,
+            "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+            "instrument_name": "dmm",
+            "post_delay": 0,
+            "unit": "V",
+            "array_id": "dmm_voltage",
+            "shape": [
+                6,
+                6
+            ],
+            "action_indices": [
+                0,
+                0
+            ],
+            "is_setpoint": false
+        }
+    },
+    "formatter": "qcodes.data.gnuplot_format.GNUPlotFormat",
+    "io": "<DiskIO, base_location='/Users/jhn/src/Qcodes/docs/examples'>"
+}
