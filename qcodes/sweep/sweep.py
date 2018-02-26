@@ -112,17 +112,41 @@ class ParametersTable:
         return self._inferred_from_dict
 
 
-def measurement(param_list):
+def getter(param_list, inferred_parameters=None):
     """
     A decorator to easily integrate arbitrary measurement functions in sweeps.
     """
+    if inferred_parameters is None:
+        inferred_parameters = []
+        inferred_symbols = []
+    else:
+        inferred_symbols, _ = list(zip(*inferred_parameters))
+
+    symbols_not_inferred, _ = [list(i) for i in zip(*param_list)]
+    # Do not do >>> param_list += inferred_from ; lists are mutable
+    param_list = param_list + inferred_parameters
 
     def decorator(f):
         def inner():
-            m = np.atleast_1d(f())
-            return {p[0]: im for p, im in zip(param_list, m)}
+            value = np.atleast_1d(f())
 
-        parameter_table = ParametersTable(dependent_parameters=param_list)
+            if len(value) != len(param_list + inferred_parameters):
+                raise ValueError(
+                    "The number of supplied inferred parameters "
+                    "does not match the number returned by the "
+                    "getter function"
+                )
+
+            return {p[0]: im for p, im in zip(param_list, value)}
+
+        inferred_from_dict = {inferred_symbol: symbols_not_inferred for
+                              inferred_symbol in inferred_symbols}
+
+        parameter_table = ParametersTable(
+            dependent_parameters=param_list,
+            inferred_from_dict=inferred_from_dict
+        )
+
         return lambda: (inner, parameter_table)
 
     return decorator

@@ -64,15 +64,15 @@ def test_inferred():
 
     data_set = datasaver._dataset
     assert data_set.paramspecs["x"].depends_on == ""
-    # The following is due to a bug in the dataset module in QCoDeS.
-    # A fix is underway
-    assert data_set.paramspecs["x"].inferred_from == "x, m, v" # Should be "xmv"
+    assert data_set.paramspecs["x"].inferred_from == "xmv"
     assert data_set.paramspecs["xmv"].depends_on == ""
-
     assert data_set.paramspecs["m"].depends_on == "x"
 
-    expected_x = [[xi] for xi in sweep_values]
-    assert data_set.get_data('xmv') == expected_x
+    expected_xmv = [[xi] for xi in sweep_values]
+    expected_x = [[xi / 1000] for xi in sweep_values]
+
+    assert data_set.get_data('xmv') == expected_xmv
+    assert data_set.get_data('x') == expected_x
 
 
 def test_nest():
@@ -119,8 +119,11 @@ def test_nest():
 
     coordinate_layout = itertools.product(sweep_values_x, sweep_values_y)
     expected_x, expected_y = zip(*coordinate_layout)
-    assert [ix for c, ix in enumerate(data_x) if c % (n_sample_points + 1)] == [[xi] for xi in expected_x]
-    assert [iy for c, iy in enumerate(data_y) if c % (n_sample_points + 1)] == [[yi] for yi in expected_y]
+    assert [ix for c, ix in enumerate(data_x)
+            if c % (n_sample_points + 1)] == [[xi] for xi in expected_x]
+
+    assert [iy for c, iy in enumerate(data_y)
+            if c % (n_sample_points + 1)] == [[yi] for yi in expected_y]
 
 
 

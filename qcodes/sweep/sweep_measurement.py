@@ -63,8 +63,11 @@ class SweepMeasurement(Measurement):
                 inferred_parameters
             )
 
-            # The dependent parameters are dependent on the independent
-            # parameters, except those that are used
+            # Independent parameters that are used to infer other independent
+            # parameters never occur in the "depends_on" list
+            # Thus if a voltage x is inferred from xmv, then a current y
+            # which is measured is said to depend on x only, even though
+            # xmv is also independent
             dependency_black_list = []
             for param in inferred_parameters.values():
                 dependency_black_list += param

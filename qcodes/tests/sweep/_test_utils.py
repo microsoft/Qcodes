@@ -7,7 +7,7 @@ from typing import AnyStr, Callable
 from hypothesis import strategies as st
 from qcodes import ManualParameter
 
-from qcodes.sweep import measurement, setter
+from qcodes.sweep import getter, setter
 
 
 class MockIO:
@@ -66,7 +66,7 @@ class TestMeasureFunction:
         mock_io.write("{} returns {}".format(self._name, hs))
 
     def __call__(self)->dict:
-        return measurement([(self._name, "hash")])(self.caller)()
+        return getter([(self._name, "hash")])(self.caller)()
 
 
 class TestSetFunction:

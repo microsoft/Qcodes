@@ -35,10 +35,11 @@ from ._test_utils import (
 )
 
 
-@given(parameter_list(1), sweep_values_list(1))  # This test requires one parameter
+@given(parameter_list(1), sweep_values_list(1))
 def test_parameter_sweep(parameters, sweep_values):
     """
-    Basic sanity test. Sweeping with a sweep object should produce the same result as looping over the sweep values and
+    Basic sanity test. Sweeping with a sweep object should produce the same
+    result as looping over the sweep values and
     manually setting parameters
     """
     def test():
@@ -48,7 +49,9 @@ def test_parameter_sweep(parameters, sweep_values):
         sweep_object = ParameterSweep(p, lambda: v)
         parameter_table = sweep_object.parameter_table
 
-        assert parameter_table.table_list[0]["independent_parameters"][0] == (p.full_name, p.unit)
+        assert parameter_table.table_list[0]["independent_parameters"][0] == (
+            p.full_name, p.unit
+        )
 
         for i in ParameterSweep(p, lambda: v):
             assert i[p.name] == p()
@@ -63,7 +66,7 @@ def test_parameter_sweep(parameters, sweep_values):
     equivalence_test(test, compare)
 
 
-@given(parameter_list(3), sweep_values_list(3))  # This test requires three parameters
+@given(parameter_list(3), sweep_values_list(3))
 def test_nesting(parameters, sweep_values):
     """
     Test the nesting functionality
@@ -71,10 +74,15 @@ def test_nesting(parameters, sweep_values):
 
     def test():
         # Recasting a sweep object to list unrolls the sweep object
-        sweep_object = Nest([ParameterSweep(p, lambda v=v: v) for p, v in zip(parameters, sweep_values)])
+        sweep_object = Nest([
+            ParameterSweep(p, lambda v=v: v)
+            for p, v in zip(parameters, sweep_values)
+        ])
+
         assert all([
-            sweep_object.parameter_table.table_list[0]["independent_parameters"] ==
-            [(p.full_name, p.unit) for p in parameters]
+            sweep_object.parameter_table.table_list[0][
+                "independent_parameters"] == [(p.full_name, p.unit) for p in
+                                              parameters]
         ])
 
         list(sweep_object)
