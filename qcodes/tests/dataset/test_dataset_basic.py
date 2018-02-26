@@ -103,17 +103,23 @@ def test_add_paramspec(dataset):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
-    parameter_a = ParamSpec("a", "NUMERIC")
-    parameter_b = ParamSpec("b", "NUMERIC", key="value", number=1)
-    parameter_c = ParamSpec("c", "array")
+    parameter_a = ParamSpec("a_param", "NUMERIC")
+    parameter_b = ParamSpec("b_param", "NUMERIC", key="value", number=1)
+    parameter_c = ParamSpec("c_param", "array", inferred_from=[parameter_a,
+                                                               parameter_b])
     dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+
+    # Now retrieve the paramspecs
+
     paramspecs = dataset.paramspecs
-    expected_keys = ['a', 'b', 'c']
+    expected_keys = ['a_param', 'b_param', 'c_param']
     keys = sorted(list(paramspecs.keys()))
     assert keys == expected_keys
     for expected_param_name in expected_keys:
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
+
+    assert paramspecs['c_param'].inferred_from == 'a_param, b_param'
 
 
 def test_add_paramspec_one_by_one(dataset):
