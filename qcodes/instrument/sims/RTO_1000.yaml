@@ -26,7 +26,6 @@ devices:
           r: "{}"
         setter:
           q: "TRIGger1:SOURce? {}"
-          r: "OK"
 
       trigger level 1:
         default: 0
@@ -35,7 +34,6 @@ devices:
           r: "{}"
         setter:
           q: "TRIGger1:LEVel1 {}"
-          r: "OK"
 
       channel range 1:
         default: 5
@@ -50,7 +48,6 @@ devices:
           r: "{}"
         setter:
           q: "CHANnel1:OFFSet {}"
-          r: "OK"
 
 resources:
   GPIB::1::INSTR:

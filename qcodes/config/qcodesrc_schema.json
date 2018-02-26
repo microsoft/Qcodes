@@ -31,9 +31,19 @@
                         {"type": "array"}
                     ],
                     "default": true
+                },
+                "db_debug": {
+                    "description": "Use debugging mode in sqlite ",
+                    "type" : "boolean",
+                    "default": false
+                },
+                "db_location": {
+                    "type": "string",
+                    "description": "location of the database",
+                    "default": "./experiments.db"
                 }
             },
-            "required":["loglevel" ]
+            "required":["loglevel", "db_location"]
         },
         "gui" : {
             "type" : "object",
