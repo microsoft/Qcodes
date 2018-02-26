@@ -20,7 +20,6 @@ devices:
           r: "{}"
         setter:
           q: "MMEMory:CDIRectory {}"
-          r: OK
 
   device 2:  # AWG 70002A
     eom:
@@ -39,7 +38,6 @@ devices:
           r: "{}"
         setter:
           q: "MMEMory:CDIRectory {}"
-          r: OK
 
 resources:
   GPIB::1::INSTR:

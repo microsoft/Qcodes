@@ -15,6 +15,15 @@ Basic examples
 
 
 
+DataSet
+-------
+
+.. toctree::
+    :glob:
+
+    ../_notebooks/DataSet/*
+    ../_notebooks/DataSet/Real_instruments/*
+
 Drivers
 -------
 
