@@ -2032,11 +2032,18 @@ class ZIUHFLI(Instrument):
         def update_range_offset_amp():
             range_val = params['signal_output{}_range'.format(number+1)].get()
             offset_val = params['signal_output{}_offset'.format(number+1)].get()
-            amp_val = params['signal_output{}_amplitude1'.format(number+1)].get()
-            if -range_val < offset_val + amp_val > range_val:
-                #The GUI would allow higher values but it would clip the signal.
-                raise ValueError('Signal Output: Amplitude and/or '
-                                 'offset out of range.')
+
+            if 'MF' in self.props['options']:
+                amps_val = [params['signal_output{}_amplitude{}'.format(
+                    number + 1, output)].get() for output in range(1,9)]
+            else:
+                amps_val = [params['signal_output{}_amplitude'.format(
+                    number+1)].get()]
+            for amp_val in amps_val:
+                if -range_val < offset_val + amp_val > range_val:
+                    #The GUI would allow higher values but it would clip the signal.
+                    raise ValueError('Signal Output: Amplitude and/or '
+                                     'offset out of range.')
 
         def update_offset():
             self.parameters['signal_output{}_offset'.format(number+1)].get()
