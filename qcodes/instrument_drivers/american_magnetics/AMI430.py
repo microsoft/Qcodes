@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 class AMI430Exception(Exception):
     pass
 
+class AMI430Warning(UserWarning):
+    pass
+
 class AMI430SwitchHeater(InstrumentChannel):
     class _Decorators:
         @classmethod
@@ -360,7 +363,7 @@ class AMI430(IPInstrument):
                                " any magnet. Change this value at your own "
                                "responsibility after consulting the specs of "
                                "your particular magnet")
-            warn(warning_message)
+            warn(warning_message, category=AMI430Warning)
 
         # Update ramp limit
         self._current_ramp_limit = new_current_rate_limit
