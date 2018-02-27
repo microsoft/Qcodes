@@ -11,7 +11,7 @@ from dateutil.tz import time
 from typing import List, Sequence
 
 from qcodes import Instrument, VisaInstrument, validators as vals
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
@@ -35,6 +35,8 @@ class SRValidator(Validator):
         elif self.awg.model == '70002A':
             self._internal_validator = vals.Numbers(1.49e3, 25e9)
             self._freq_multiplier = 2
+        elif self.awg.model == '5208':
+            self._internal_validator = vals.Numbers(1.49e3, 2.5e9)
         # no other models are possible, since the __init__ of
         # the AWG70000A raises an error if anything else is given
 
@@ -293,7 +295,7 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A']:
+        if self.model not in ['70001A', '70002A', '5208']:
             raise ValueError('Unknown model type: {}. Are you using '
                              'the right driver for your instrument?'
                              ''.format(self.model))
@@ -338,10 +340,21 @@ class AWG70000A(VisaInstrument):
                            unit='Hz',
                            vals=vals.Numbers(6.25e9, 12.5e9))
 
+        # We deem 2 channels too few for a channel list
+        if self.num_channels > 2:
+            chanlist = ChannelList(self, 'Channels', AWGChannel,
+                                   snapshotable=False)
+
         for ch_num in range(1, num_channels+1):
             ch_name = 'ch{}'.format(ch_num)
             channel = AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
+            if self.num_channels > 2:
+                chanlist.append(channel)
+
+        if self.num_channels > 2:
+            chanlist.lock()
+            self.add_submodule('channels', chanlist)
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
