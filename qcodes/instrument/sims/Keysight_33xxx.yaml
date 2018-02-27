@@ -20,7 +20,6 @@ devices:
           r: "{}"
         setter:
           q: "OUTPut:SYNC {}"
-          r: OK
 
       sync output source:
         default: CH1
@@ -29,7 +28,6 @@ devices:
           r: "{}"
         setter:
           q: "OUTPut:SYNC:SOURce {}"
-          r: "OK"
 
       chan1 function type:
         default: SIN
@@ -38,7 +36,6 @@ devices:
           r: "{}"
         setter:
           q: "SOURce1:FUNCtion {}"
-          r: "OK"
 
       chan1 burst ncycles:
         default: 1
@@ -47,7 +44,6 @@ devices:
           r: "{}"
         setter:
           q: "SOURce1:BURSt:NCYCles {}"
-          r: "OK"
 
 resources:
   GPIB::1::INSTR:
