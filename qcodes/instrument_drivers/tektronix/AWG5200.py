@@ -1,6 +1,6 @@
 import logging
 import array as arr
-
+import warnings
 
 log = logging.getLogger(__name__)
 
@@ -11,10 +11,9 @@ from qcodes import validators as vals
 
 class Tektronix_AWG5200(Tektronix_AWG5014):
     """
-    This is the QCoDeS driver for the Tektronix AWG5200
-    Arbitrary Waveform Generator.
-
-    It inherits from the AWG5014 driver, which is largely compatible.
+    This driver was a quick hack, but we now have another, more
+    appropriate driver, namely the AWG5208 driver. Please refer to
+    That one instead.
 
     """
 
@@ -32,6 +31,11 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         Returns:
             None
         """
+
+        warnings.warn('This driver, Tektronix_AWG5200, is deprecated and will '
+                      'be removed in the future. Please use the AWG5208 driver'
+                      ' instead.')
+
         super().__init__(name, address, timeout=timeout, num_channels=num_channels, **kwargs)
 
         for i in range(1, self.num_channels + 1):
