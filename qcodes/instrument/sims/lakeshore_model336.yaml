@@ -36,7 +36,6 @@ devices:
           r: "{}"
         setter:
           q: "INNAME A,\"{}\""
-          r: OK
 resources:
   GPIB::9::INSTR:
     device: device 1
