@@ -506,6 +506,26 @@ class TimeTrace(BaseSweepObject):
             t = time.time()
 
 
+class While(BaseSweepObject):
+    """
+    Return values from a measurement function until a None is returned
+    """
+
+    def __init__(self, measure_function):
+        super().__init__()
+        self._measure_function, self._parameter_table = measure_function()
+
+    def _setter_factory(self):
+
+        while True:
+            measure_value = self._measure_function()
+
+            if None not in measure_value.values():
+                yield measure_value
+            else:
+                break
+
+
 def sweep(obj, sweep_points):
     """
     A convenience function to create a 1D sweep object
