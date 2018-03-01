@@ -274,7 +274,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
                        5: "Auto-run-down",
                        6: "Auto-run-down",
                        7: "Auto-run-down"}
-        return val_mapping[int(result[6])]
+        print(val_mapping[int(result[6])])
+        return int(result[6])
 
     def _set_remote_status(self, mode):
         """
@@ -320,7 +321,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
                   2: "Over Heated",
                   3: "Warming Up",
                   4: "Fault"}
-        return status[int(result[1])]
+        print(status[int(result[1])])
+        return int(result[1])
 
     def _get_system_status2(self):
         """
@@ -341,7 +343,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
                   2: "On negative voltage limit",
                   3: "Outside negative current limit",
                   4: "Outside positive current limit"}
-        return status[int(result[2])]
+        print(status[int(result[2])])
+        return int(result[2])
 
     def _get_current(self):
         """
@@ -609,7 +612,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
             1: "To set point",
             2: "To zero"
         }
-        return status[int(result[4])]
+        print(status[int(result[4])])
+        return int(result[4])
 
     def _set_activity(self, mode):
         """
@@ -672,7 +676,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
             2: "Off magnet at field (switch closed)",
             5: "Heater fault (heater is on but current is low)",
             8: "No switch fitted"}
-        return status[int(result[8])]
+        print(status[int(result[8])])
+        return int(result[8])
 
     def _set_switch_heater(self, mode):
         """
@@ -697,7 +702,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             self._execute('H%s' % mode)
             print("Setting switch heater... (wait 40s)")
             self.local()
-            sleep(40)
+            sleep(40) # this blocks the ipython console ...
         else:
             print('Invalid mode inserted.')
         sleep(0.1)
@@ -829,7 +834,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
                   1: "Tesla, Magnet sweep: fast",
                   4: "Amps, Magnet sweep: slow",
                   5: "Tesla, Magnet sweep: slow"}
-        return status[int(result[10])]
+        print(status[int(result[10])])
+        return int(result[10])
 
     def _get_mode2(self):
         """
@@ -847,7 +853,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
                   1: "Sweeping",
                   2: "Sweep limiting",
                   3: "Sweeping & sweep limiting"}
-        return status[int(result[11])]
+        print(status[int(result[11])])
+        return int(result[11])
 
     def _set_mode(self, mode):
         """
