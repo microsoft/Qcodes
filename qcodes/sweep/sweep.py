@@ -488,12 +488,16 @@ class FunctionWrapper(BaseSweepObject):
 
 
 class TimeTrace(BaseSweepObject):
-    def __init__(self, total_time, interval_time):
+    def __init__(self, interval_time, total_time=None):
         super().__init__()
 
         self._parameter_table = ParametersTable(
             independent_parameters=[("time", "s")]
         )
+
+        if total_time is None:
+            total_time = np.inf
+
         self._total_time = total_time
         self._interval_time = interval_time
 
@@ -519,7 +523,6 @@ class While(BaseSweepObject):
 
         while True:
             measure_value = self._measure_function()
-
             if None not in measure_value.values():
                 yield measure_value
             else:
@@ -588,10 +591,10 @@ def szip(*objects):
     return Zip(wrap_objects(*objects, repeat=repeat))
 
 
-def time_trace(measurement_object, total_time, interval_time):
+def time_trace(measurement_object, interval_time, total_time):
     """
     Make time trace sweep object to monitor the return value of the measurement
     object over a certain time period.
     """
-    tt_sweep = TimeTrace(total_time, interval_time)
+    tt_sweep = TimeTrace(interval_time, total_time)
     return szip(measurement_object, tt_sweep)
