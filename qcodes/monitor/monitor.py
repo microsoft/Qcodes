@@ -79,16 +79,18 @@ def _handler(parameters, interval: int):
                 except ValueError as e:
                     log.exception(e)
                     break
-                log.debug("sending..")
+                log.debug(f"sending.. to {websocket}")
                 try:
                     await websocket.send(json.dumps(meta))
-                # mute browser discconects
+                # mute browser disconnects
                 except websockets.exceptions.ConnectionClosed as e:
                     log.debug(e)
                 await asyncio.sleep(interval)
             except CancelledError:
+                log.debug("Got CancelledError")
                 break
-        log.debug("closing sever")
+
+        log.debug("Stopping Websocket handler")
 
     return serverFunc
 
@@ -109,28 +111,31 @@ class Monitor(Thread):
         time.sleep(0.01)
         super().__init__()
         self.loop = None
-        self._monitor(*parameters, interval=1)
+        self._monitor(*parameters, interval=5)
+        Monitor.running = self
 
     def run(self):
         """
         Start the event loop and run forever
         """
+        log.debug("running server")
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        Monitor.running = self
+        server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
+        self.server = self.loop.run_until_complete(server_start)
         self.loop.run_forever()
 
     def stop(self):
         """
         Shutdown the server, close the event loop and join the thread
         """
-        # this contains the server
-        # or any exception
-        server = self.future_restult.result()
-        # server.close()
+        log.debug("Shutting down server")
+        server = self.server
         self.loop.call_soon_threadsafe(server.close)
+        self.loop.call_soon_threadsafe(server.wait_closed)
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.join()
+        log.debug("Server is stopped.")
         Monitor.running = None
 
     @staticmethod
@@ -150,9 +155,8 @@ class Monitor(Thread):
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
     def _monitor(self, *parameters, interval=1):
-        handler = _handler(parameters, interval=interval)
+        self.handler = _handler(parameters, interval=interval)
         # TODO (giulioungaretti) read from config
-        server = websockets.serve(handler, '127.0.0.1', 5678)
 
         log.debug("Start monitoring thread")
 
@@ -165,30 +169,7 @@ class Monitor(Thread):
 
         # let the thread start
         time.sleep(0.01)
-
         log.debug("Start monitoring server")
-        self._add_task(server)
-
-    def _create_task(self, future, coro):
-        task = self.loop.create_task(coro)
-        future.set_result(task)
-
-    def _add_task(self, coro):
-        future = Future()
-        self.task = coro
-        p = functools.partial(self._create_task, future, coro)
-        self.loop.call_soon_threadsafe(p)
-        # this stores the result of the future
-        self.future_restult = future.result()
-        self.future_restult.add_done_callback(_log_result)
-
-
-def _log_result(future):
-    try:
-        future.result()
-        log.debug("Started server loop")
-    except:
-        log.exception("Could not start server loop")
 
 
 class Server():
@@ -202,17 +183,16 @@ class Server():
     def run(self):
         os.chdir(self.static_dir)
         log.debug("serving directory %s", self.static_dir)
-        log.info("Open broswer at http://localhost::{}".format(self.port))
+        log.info("Open browser at http://localhost::{}".format(self.port))
         self.httpd.serve_forever()
 
     def stop(self):
         self.httpd.shutdown()
-        self.join()
 
 
 if __name__ == "__main__":
     server = Server(SERVER_PORT)
-    print("Open broswer at http://localhost:{}".format(server.port))
+    print("Open browser at http://localhost:{}".format(server.port))
     try:
         webbrowser.open("http://localhost:{}".format(server.port))
         server.run()
