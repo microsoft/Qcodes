@@ -1,13 +1,13 @@
 from enum import Enum
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Enum as QCEnum, Strings
+from qcodes.utils import validators
 
 class ChannelDescriptor(Enum):
-    a = 1
-    b = 2
-    c = 3
-    d = 4
+    A = 1
+    B = 2
+    C = 3
+    D = 4
 
 class SensorChannel(InstrumentChannel):
     """
@@ -15,7 +15,7 @@ class SensorChannel(InstrumentChannel):
     """
 
     # _CHANNEL_VAL = Enum("A", "B", "C", "D")
-    _CHANNEL_VAL = QCEnum([c.value for c in list(ChannelDescriptor)])
+    _CHANNEL_VAL = validators.Enum(*(c.name for c in list(ChannelDescriptor)))
 
 
     def __init__(self, parent, name, channel):
@@ -51,12 +51,12 @@ class SensorChannel(InstrumentChannel):
         self.add_parameter('range_id',
                            get_cmd='range? {}'.format(self._channel),
                            set_cmd='range {},{{}}'.format(self._channel),
-                           get_parser=QCEnum(1,2,3),
+                           get_parser=validators.Enum(1,2,3),
                            label = 'Range ID',
                            unit='K')
 
         self.add_parameter('sensor_name', get_cmd='INNAME? {}'.format(self._channel),
-                           get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=Strings(15),
+                           get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=validators.Strings(15),
                            label='Sensor_Name')
 
 
@@ -80,9 +80,7 @@ class Model_336(VisaInstrument):
     Controlled via sockets
     """
 
-    def __init__(self, name, address, **kwargs):
-        if 'terminator' not in kwargs:
-            kwargs['terminator'] = "\r\n"
+    def __init__(self, name, address, terminator="\r\n", **kwargs):
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('temperature_limits',
@@ -100,12 +98,11 @@ class Model_336(VisaInstrument):
         # refer to the same parameter.
         self.channels = ChannelList(self, "TempSensors", SensorChannel, snapshotable=False)
         for c in list(ChannelDescriptor):
-            channel = SensorChannel(self, 'Chan{}'.format(c.name), c.value)
+            channel = SensorChannel(self, 'Chan{}'.format(c.name), c.name)
             self.channels.append(channel)
             self.add_submodule(c.name, channel)
-        channels.lock()
+        self.channels.lock()
         self.add_submodule("channels", self.channels)
-
         self.connect_message()
 
     def set_temperature_limits(self, T):
