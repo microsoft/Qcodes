@@ -37,7 +37,7 @@ class DataSaver:
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
-        self._known_dependencies: Dict[str, str] = {}
+        self._known_dependencies: Dict[str, List[str]] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
                 self._known_dependencies.update({str(param):
@@ -144,6 +144,7 @@ class DataSaver:
                 # For compatibility with the old Loop, setpoints are
                 # tuples of numbers (usually tuple(np.linspace(...))
                 if hasattr(value, '__len__') and not(isinstance(value, str)):
+                    value = cast(Union[Sequence,np.ndarray], value)
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -219,7 +220,7 @@ class Runner:
 
         # next set up the "datasaver"
         if self.experiment:
-            eid = self.experiment.id
+            eid = self.experiment.exp_id
         else:
             eid = None
 
@@ -390,6 +391,7 @@ class Measurement:
         name = str(parameter)
 
         if isinstance(parameter, ArrayParameter):
+            parameter = cast(ArrayParameter, parameter)
             if parameter.setpoint_names:
                 spname = (f'{parameter._instrument.name}_'
                           f'{parameter.setpoint_names[0]}')
