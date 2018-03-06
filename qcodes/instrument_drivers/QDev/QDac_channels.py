@@ -161,7 +161,12 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
-    def __init__(self, name, address, num_chans=48, update_currents=True):
+    def __init__(self,
+                 name,
+                 address,
+                 num_chans=48,
+                 update_currents=True,
+                 **kwargs):
         """
         Instantiates the instrument.
 
@@ -175,7 +180,7 @@ class QDac(VisaInstrument):
         Returns:
             QDac object
         """
-        super().__init__(name, address)
+        super().__init__(name, address, **kwargs)
         self._output_n_lines = 50
         handle = self.visa_handle
         self._get_status_performed = False

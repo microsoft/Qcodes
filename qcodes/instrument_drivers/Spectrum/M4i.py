@@ -315,7 +315,8 @@ class M4i(Instrument):
                                    pyspcm, 'SPC_AMP{}'.format(i))),
                                vals=Enum(200, 500, 1000, 2000,
                                          2500, 5000, 10000),
-                               docstring='Set and get input range of channel {}'.format(i))
+                               unit='mV',
+                               docstring='Set and get input range of channel {} (in mV)'.format(i))
 
             # input termination functions
             self.add_parameter('termination_{}'.format(i),
@@ -711,7 +712,7 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.segment_size(seg_size)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
@@ -737,18 +738,35 @@ class M4i(Instrument):
 
         return voltages
 
-    def single_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+    def start_acquisition(self, mV_range, memsize, posttrigger_size=None, verbose=0):
+        """ Start data acquisition of a single data trace
 
+        The resulting data can be acquired with the function retrieve_data.
+
+        Args:
+            mV_range (float): range in mV
+            memsize (int): size of data trace
+            posttrigger_size (int or None): size of data trace after triggering
+        Returns:
+            trace (dict): data concerning the trace
+        """
         self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
 
-        # set memsize and posttrigger
         self.data_memory_size(memsize)
+        if posttrigger_size is None:
+            posttrigger_size = memsize - 16
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
+        # start/enable trigger/wait ready
+        self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
         self.general_command(pyspcm.M2CMD_CARD_START |
-                             pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
+                             pyspcm.M2CMD_CARD_ENABLETRIGGER)
 
+        return {'memsize': memsize, 'numch': numch, 'mV_range': mV_range}
+
+    def _transfer_buffer_numpy(self, memsize, numch):
+        """ Transfer buffer to numpy array """
         # setup software buffer
         buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
@@ -763,7 +781,46 @@ class M4i(Instrument):
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
         output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        return output
 
+    def retrieve_data(self, trace):
+        """ Retrieve data from the digitizer
+
+        The data acquisition must have been started by start_acquisition.
+
+        Args:
+
+
+        Returns:
+            voltages (array)
+        """
+
+        memsize = trace['memsize']
+        numch = trace['numch']
+        mV_range = trace['mV_range']
+
+        self.general_command(pyspcm.M2CMD_CARD_WAITREADY)
+        output = self._transfer_buffer_numpy(memsize, numch)
+        self._debug = output
+        self._stop_acquisition()
+
+        voltages = self.convert_to_voltage(output, mV_range / 1000)
+
+        return voltages
+
+    def single_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+
+        self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
+
+        # set memsize and posttrigger
+        self.data_memory_size(memsize)
+        self.posttrigger_memory_size(posttrigger_size)
+        numch = self._num_channels()
+
+        self.general_command(pyspcm.M2CMD_CARD_START |
+                             pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
+
+        output = self._transfer_buffer_numpy(memsize, numch)
         self._stop_acquisition()
 
         voltages = self.convert_to_voltage(output, mV_range / 1000)
@@ -782,25 +839,12 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.pretrigger_memory_size(pretrigger_size)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        output = self._transfer_buffer_numpy(memsize, numch)
 
         self._stop_acquisition()
 
@@ -812,7 +856,7 @@ class M4i(Instrument):
         """ Acquire a single data trace
 
         Args:
-            mV_range
+            mV_range (float): range in mV
             memsize (int): size of data trace
             posttrigger_size (int): size of data trace after triggering
         Returns:
@@ -822,27 +866,14 @@ class M4i(Instrument):
 
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
-        numch = bin(self.enable_channels()).count("1")
+        numch = self._num_channels()
 
         # start/enable trigger/wait ready
         self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        output = self._transfer_buffer_numpy(memsize, numch)
         self._debug = output
         self._stop_acquisition()
 
@@ -860,6 +891,10 @@ class M4i(Instrument):
         if pretrigger > 2**13:
             raise Exception('value of SPC_PRETRIGGER is invalid')
 
+    def _num_channels(self):
+        """ Return number of channels that is enabled """
+        return bin(self.enable_channels()).count("1")
+
     def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10,
                                               verbose=0, post_trigger=None):
         """ Acquire data using block averaging and hardware triggering
@@ -875,9 +910,6 @@ class M4i(Instrument):
             voltages (array): if multiple channels are read, then the data is interleaved
         """
         # self.available_card_modes()
-        if nr_averages < 2:
-            raise Exception('averaging for less than 2 times is not supported')
-        self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)  # single
         memsize = self.data_memory_size()
         self.segment_size(memsize)
 
@@ -891,14 +923,22 @@ class M4i(Instrument):
 
         self._check_buffers()
 
-        self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
-        numch = bin(self.enable_channels()).count("1")
-
         if verbose:
             print('blockavg_hardware_trigger_acquisition: errors %s' %
                   (self.get_error_info32bit(), ))
             print('blockavg_hardware_trigger_acquisition: card_status %s' %
                   (self.card_status(), ))
+
+        if nr_averages == 1:
+            # special case since SPC_AVERAGES cannot handle 1
+            if verbose:
+                print(
+                    'blockavg_hardware_trigger_acquisition: pass to single_trigger_acquisition')
+            return self.single_trigger_acquisition(mV_range=mV_range, memsize=memsize, posttrigger_size=post_trigger)
+
+        self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)
+        self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
+        numch = self._num_channels()
 
         self.external_trigger_mode(pyspcm.SPC_TM_POS)
         self.trigger_or_mask(pyspcm.SPC_TMASK_EXT0)

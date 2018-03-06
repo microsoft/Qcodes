@@ -499,13 +499,19 @@ class Decadac(VisaInstrument, DacReader):
 
         # Check whether we can set startup values for the DAC.
         # This requires access to the EEPROM on each slot
+
+        # note from DV: the value never gets set to True in this driver.
+        # To avoid an error of a non existing attribute, here I set it to
+        # False by default
+        self._VERSA_EEPROM_available = False
+
         try:
             # Let's temporarily pretend to be slot 0
             self._slot = 0
             self._query_address(6, versa_eeprom=True)
             del self._slot
         except DACException:
-            self._VERSA_EEPROM_available = False
+            pass
 
         # Check whether calibration is supported
         try:

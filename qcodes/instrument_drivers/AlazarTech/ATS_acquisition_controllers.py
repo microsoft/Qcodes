@@ -88,7 +88,7 @@ class Demodulation_AcquisitionController(AcquisitionController):
         # Alazar card starts listening for a trigger pulse
         pass
 
-    def handle_buffer(self, data):
+    def handle_buffer(self, data, buffer_number=None):
         """
         See AcquisitionController
         :return:

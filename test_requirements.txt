@@ -1,9 +1,9 @@
-coverage
+coverage!=4.5.0
 pytest-cov
 pytest
 codacy-coverage
 hypothesis
 mypy
-pyvisa-sim
+git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml
 codecov
