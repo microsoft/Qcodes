@@ -94,7 +94,7 @@ class FrequencySweep(ArrayParameter):
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel, vna_parameter: str=None):
+    def __init__(self, parent, name, channel, vna_parameter: str=None) -> None:
         """
         Args:
             parent: Instrument that this channel is bound to.
