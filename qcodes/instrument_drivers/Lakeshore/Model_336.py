@@ -32,6 +32,7 @@ class SensorChannel(InstrumentChannel):
                            get_parser=float,
                            label='Temerature',
                            unit='K')
+
         self.add_parameter('sensor_raw', get_cmd='SRDG? {}'.format(self._channel),
                            get_parser=float,
                            label='Raw_Reading',
@@ -81,7 +82,7 @@ class Model_336(VisaInstrument):
     """
 
     def __init__(self, name, address, terminator="\r\n", **kwargs):
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('temperature_limits',
                             set_cmd=self.set_temperature_limits,

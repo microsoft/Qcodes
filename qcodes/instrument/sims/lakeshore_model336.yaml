@@ -37,6 +37,23 @@ devices:
         setter:
           q: "INNAME A,\"{}\""
 
+      sensor_setpoint_A:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_A:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
       temperature_B:
         default: 100.0
         getter:
@@ -62,6 +79,23 @@ devices:
           r: "{}"
         setter:
           q: "INNAME B,\"{}\""
+
+      sensor_setpoint_B:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_B:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
 
 
       temperature_C:
@@ -90,6 +124,23 @@ devices:
         setter:
           q: "INNAME C,\"{}\""
 
+      sensor_setpoint_C:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_C:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
 
       temperature_D:
         default: 100.0
@@ -116,6 +167,24 @@ devices:
           r: "{}"
         setter:
           q: "INNAME D,\"{}\""
+
+      sensor_setpoint_D:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_D:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
 resources:
-  GPIB::9::INSTR:
+  GPIB::2::INSTR:
     device: device 1
