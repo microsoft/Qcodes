@@ -13,6 +13,7 @@ import qcodes.dataset.experiment_container
 import pytest
 import tempfile
 import os
+import re
 
 n_experiments = 0
 
@@ -58,6 +59,21 @@ def test_tabels_exists(empty_temp_db):
     conn.close()
 
 
+def strip_counter(name, frmt="(.*)(_[0-9]*)$"):
+    """
+    Since data set names are unique, the given data set name to the
+    "new_data_set" function is not guaranteed to be honoured. For instance,
+    "new_data_set('some_name')"  is not guaranteed to produce a data set with
+    name 'some_name'. Instead, this *can* be named 'some_name_<counter>' where
+    counter is an integer. This function strips the counter from the name.
+    """
+    result = re.search(frmt, name)
+    if result is None:
+        return name, ""
+    else:
+        return result.groups()
+
+
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
@@ -79,20 +95,33 @@ def test_add_experiments(empty_temp_db, experiment_name,
     dsid = dataset.run_id
     loaded_dataset = load_by_id(dsid)
     expected_ds_counter = 1
-    assert loaded_dataset.name == dataset_name
+
+    loaded_dataset_name, dataset_counter = strip_counter(loaded_dataset.name)
+
+    assert loaded_dataset_name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
-                                                          exp.exp_id,
-                                                          loaded_dataset.counter)
+    assert loaded_dataset.table_name == "{}{}-{}-{}".format(
+        dataset_name,
+        dataset_counter,
+        exp.exp_id,
+        loaded_dataset.counter
+    )
+
     expected_ds_counter += 1
     dataset = new_data_set(dataset_name)
     dsid = dataset.run_id
     loaded_dataset = load_by_id(dsid)
-    assert loaded_dataset.name == dataset_name
+
+    loaded_dataset_name, dataset_counter = strip_counter(loaded_dataset.name)
+
+    assert loaded_dataset_name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
-                                                          exp.exp_id,
-                                                          loaded_dataset.counter)
+    assert loaded_dataset.table_name == "{}{}-{}-{}".format(
+        dataset_name,
+        dataset_counter,
+        exp.exp_id,
+        loaded_dataset.counter
+    )
 
 
 def test_add_paramspec(dataset):
