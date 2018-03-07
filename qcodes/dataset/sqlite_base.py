@@ -1175,7 +1175,7 @@ def _create_run_table(conn: sqlite3.Connection,
         transaction(conn, query)
 
 
-def get_all_names(conn: sqlite3.Connection):
+def _get_all_names(conn: sqlite3.Connection):
 
     sql = "SELECT name FROM runs"
     curr = transaction(conn, sql)
@@ -1184,8 +1184,8 @@ def get_all_names(conn: sqlite3.Connection):
     return [r["name"] for r in res]
 
 
-def make_unique_name(conn: sqlite3.Connection, base_name: str):
-    all_names = get_all_names(conn)
+def _make_unique_name(conn: sqlite3.Connection, base_name: str):
+    all_names = _get_all_names(conn)
     name = base_name
     counter = 0
 
@@ -1221,7 +1221,7 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - run_id: the row id of the newly created run
         - formatted_name: the name of the newly created table
     """
-    name = make_unique_name(conn, name)
+    name = _make_unique_name(conn, name)
 
     with atomic(conn):
         run_counter, formatted_name, run_id = _insert_run(conn,
