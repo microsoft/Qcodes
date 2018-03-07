@@ -63,7 +63,7 @@ def test_default_callback(experiment):
         DataSaver.default_callback = {
             'run_tables_subscription_callback': callback,
             'run_tables_subscription_min_wait': 1,
-            'run_tables_subscription_min_count': 1,
+            'run_tables_subscription_min_count': 2,
         }
         test_set = qc.new_data_set("test-dataset")
         test_set.add_metadata('snapshot', 123)
