@@ -2,8 +2,6 @@ import pytest
 import os
 import tempfile
 import qcodes as qc
-import qcodes.dataset.experiment_container
-import qcodes.dataset.data_set
 from qcodes.dataset.measurements import DataSaver
 from qcodes.dataset.sqlite_base import connect, init_db
 
