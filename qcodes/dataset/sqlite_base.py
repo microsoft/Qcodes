@@ -1175,6 +1175,27 @@ def _create_run_table(conn: sqlite3.Connection,
         transaction(conn, query)
 
 
+def get_all_names(conn: sqlite3.Connection):
+
+    sql = "SELECT name FROM runs"
+    curr = transaction(conn, sql)
+    res = curr.fetchall()
+
+    return [r["name"] for r in res]
+
+
+def make_unique_name(conn: sqlite3.Connection, base_name: str):
+    all_names = get_all_names(conn)
+    name = base_name
+    counter = 0
+
+    while name in all_names:
+        counter += 1
+        name = base_name + f"_{counter}"
+
+    return name
+
+
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                parameters: List[ParamSpec],
                values:  List[Any] = None,
@@ -1188,7 +1209,9 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
     Args:
         - conn: the connection to the sqlite database
         - exp_id: the experiment id we want to create the run into
-        - name: a friendly name for this run
+        - name: a friendly name for this run. Note that names in the data set
+            are unique. If a particular name already exists, the name string
+            is appended by "_<counter>", where counter is an integer
         - parameters: optional list of parameters this run has
         - values:  optional list of values for the parameters
         - metadata: optional metadata dictionary
@@ -1198,6 +1221,8 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - run_id: the row id of the newly created run
         - formatted_name: the name of the newly created table
     """
+    name = make_unique_name(conn, name)
+
     with atomic(conn):
         run_counter, formatted_name, run_id = _insert_run(conn,
                                                           exp_id,
