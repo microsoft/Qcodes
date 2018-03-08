@@ -125,15 +125,20 @@ class Monitor(Thread):
         self.server = self.loop.run_until_complete(server_start)
         self.loop.run_forever()
 
-    def stop(self):
+    def stop(self) -> None:
         """
-        Shutdown the server, close the event loop and join the thread
+        Shutdown the server, close the event loop and join the thread.
+        Setting active Monitor to None
         """
         self.join()
         log.debug("Thread has joined")
         Monitor.running = None
 
-    def join(self):
+    def join(self) -> None:
+        """
+        Overwrite Thread.join to make sure server is stopped before
+        joining avoiding a potential deadlock.
+        """
         log.debug("Shutting down server")
         server = self.server
         self.loop.call_soon_threadsafe(server.close)
