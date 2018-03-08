@@ -132,7 +132,7 @@ class Monitor(Thread):
         log.debug("Thread has joined")
         Monitor.running = None
 
-    def join(self) -> None:
+    def join(self, timeout=None) -> None:
         """
         Overwrite Thread.join to make sure server is stopped before
         joining avoiding a potential deadlock.
@@ -143,7 +143,7 @@ class Monitor(Thread):
         self.loop.call_soon_threadsafe(server.wait_closed)
         self.loop.call_soon_threadsafe(self.loop.stop)
         log.debug("Server is stopped")
-        super().join()
+        super().join(timeout=timeout)
 
     @staticmethod
     def show():
