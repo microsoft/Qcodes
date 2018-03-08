@@ -23,9 +23,7 @@ from copy import deepcopy
 
 from threading import Thread
 from typing import Dict
-from concurrent.futures import Future
-from concurrent.futures import CancelledError
-import functools
+from asyncio import CancelledError
 
 import websockets
 
@@ -111,7 +109,7 @@ class Monitor(Thread):
         time.sleep(0.01)
         super().__init__()
         self.loop = None
-        self._monitor(*parameters, interval=5)
+        self._monitor(*parameters, interval=interval)
         Monitor.running = self
 
     def run(self):
