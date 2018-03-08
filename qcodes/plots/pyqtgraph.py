@@ -10,6 +10,7 @@ from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import qcodes.utils.helpers
 
 import warnings
+import logging
 from collections import namedtuple, deque
 
 from .base import BasePlot
@@ -18,6 +19,7 @@ import qcodes.config
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
+log = logging.getLogger(__name__)
 
 class QtPlot(BasePlot):
     """
@@ -82,10 +84,12 @@ class QtPlot(BasePlot):
             self.qc_helpers = qcodes.utils.helpers
         try:
             self.win = self.rpg.GraphicsWindow(title=window_title)
-        except ClosedError as err:
+        except (ClosedError, ConnectionResetError) as err:
             # the remote process may have crashed. In that case try restarting
             # it
             if remote:
+                log.warning("Remote plot responded with {} \n"
+                            "Restarting remote plot".format(err))
                 self._init_qt()
                 self.win = self.rpg.GraphicsWindow(title=window_title)
             else:
@@ -581,8 +585,8 @@ class QtPlot(BasePlot):
                     arrmin = None
                     arrmax = None
                     if setarr is not None and not np.all(np.isnan(setarr)):
-                        arrmax = setarr.max()
-                        arrmin = setarr.min()
+                        arrmax = np.nanmax(setarr)
+                        arrmin = np.nanmin(setarr)
                     elif startranges is not None:
                         try:
                             paramname = self.traces[i]['config'][axis].full_name
