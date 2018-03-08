@@ -368,9 +368,11 @@ def test_subscriptions(experiment, DAC, DMM):
         assert res_dict == {}
         assert lt7s == []
 
+        as_and_bs = list(zip(range(5), range(3, 8)))
+
         for num in range(5):
 
-            (a, b) = 5*np.random.randn(2)
+            (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
             sleep(meas.write_period)
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
