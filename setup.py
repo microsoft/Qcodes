@@ -58,7 +58,7 @@ setup(name='qcodes',
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
                                'monitor/dist/css/*', 'config/*.json']},
       install_requires=[
-          'numpy>=1.10',
+          'numpy>=1.10,<1.14',
           'pyvisa>=1.8',
           'h5py>=2.6',
           'websockets>=3.2,<3.4',
