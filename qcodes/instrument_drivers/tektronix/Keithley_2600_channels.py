@@ -117,6 +117,13 @@ class KeithleyChannel(InstrumentChannel):
                            label='Current',
                            unit='A')
 
+        self.add_parameter('res',
+                           get_cmd='measure.r()',
+                           get_parser=float,
+                           set_cmd=False,
+                           label='Resistance',
+                           unit='Ohm')
+
         self.add_parameter('mode',
                            get_cmd='{}.source.func'.format(channel),
                            get_parser=float,
