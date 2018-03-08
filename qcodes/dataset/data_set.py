@@ -616,6 +616,34 @@ def load_by_id(run_id)->DataSet:
     return d
 
 
+def load_by_name(name):
+    """
+    Load a data set given its name.
+    Args:
+        name: string
+
+    Returns:
+        the dataset
+    
+    Notes:
+        This function relies on the fact that the data set name is unique.
+        As this is a later modification, it is possible that some older data
+        bases have duplicate data set names. Calling this function on a
+        data base where the name is duplicate will raise an exception.
+    """
+    d = DataSet(DB)
+    sql = """
+    SELECT run_id
+    FROM
+      runs
+    WHERE
+      name= ? 
+    """
+    curr = transaction(d.conn, sql, name)
+    d.run_id = one(curr, 'run_id')
+    return d
+
+
 def load_by_counter(counter, exp_id):
     """
     Load a dataset given its counter in one experiment
