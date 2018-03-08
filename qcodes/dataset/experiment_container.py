@@ -240,4 +240,5 @@ def load_experiment_by_name(name: str,
         raise ValueError(f"Many experiments matching your request found {_repr}")
     else:
         e.exp_id = rows[0]['exp_id']
+        e.id = rows[0]['exp_id']  # Fix for issue 996
     return e
