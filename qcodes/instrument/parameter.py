@@ -74,7 +74,7 @@ from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
 if TYPE_CHECKING:
-    from .base import Instrument
+    from .base import Instrument, InstrumentBase
 
 
 class _BaseParameter(Metadatable, DeferredOperations):
@@ -619,9 +619,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
         else:
             raise TypeError('vals must be a Validator')
 
-    def get_root_instrument(self) -> InstrumentBase:
+    def get_root_instrument(self) -> 'InstrumentBase':
         if self._instrument is not None:
-            return self._instr.get_root_instrument()
+            return self._instrument.get_root_instrument()
         else:
             return None
 

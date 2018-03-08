@@ -243,7 +243,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             else:
                 submodule.print_readable_snapshot(update, max_chars)
 
-    def get_root_instrument(self) -> InstrumentBase:
+    def get_root_instrument(self) -> 'InstrumentBase':
         return self
     #
     # shortcuts to parameters & setters & getters                           #
