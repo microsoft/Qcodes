@@ -16,6 +16,10 @@ import os
 import re
 
 n_experiments = 0
+# A data set name has the format <basename>_n<number>, where the
+# _n<number> part is optional and serves to make the name unique
+# if the basename occurs already.
+dataset_name_format = "(.*)(_n[0-9]*)$"
 
 
 @pytest.fixture(scope="function")
@@ -59,25 +63,26 @@ def test_tabels_exists(empty_temp_db):
     conn.close()
 
 
-def strip_counter(name, frmt="(.*)(_[0-9]*)$"):
+def strip_counter(name):
     """
-    Since data set names are unique, the given data set name to the
-    "new_data_set" function is not guaranteed to be honoured. For instance,
-    "new_data_set('some_name')"  is not guaranteed to produce a data set with
-    name 'some_name'. Instead, this *can* be named 'some_name_<counter>' where
-    counter is an integer. This function strips the counter from the name.
+    Strip the counter for the base name *if* it is found
     """
-    result = re.search(frmt, name)
+    result = re.search(dataset_name_format, name)
     if result is None:
         return name, ""
     else:
         return result.groups()
 
 
-@given(experiment_name=hst.text(min_size=1),
-       sample_name=hst.text(min_size=1),
-       dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
-                             min_size=1))
+@given(
+    experiment_name=hst.text(min_size=1),
+    sample_name=hst.text(min_size=1),
+    dataset_name=hst.text(
+        hst.characters(whitelist_categories=_unicode_categories),
+        min_size=1
+    ).filter(lambda name: strip_counter(name)[1] == "")  # only examples with
+                                                         # no name counter
+)
 def test_add_experiments(empty_temp_db, experiment_name,
                          sample_name, dataset_name):
     global n_experiments
@@ -96,13 +101,15 @@ def test_add_experiments(empty_temp_db, experiment_name,
     loaded_dataset = load_by_id(dsid)
     expected_ds_counter = 1
 
-    loaded_dataset_name, dataset_counter = strip_counter(loaded_dataset.name)
+    loaded_dataset_name, dataset_name_counter = strip_counter(
+        loaded_dataset.name
+    )
 
     assert loaded_dataset_name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
     assert loaded_dataset.table_name == "{}{}-{}-{}".format(
         dataset_name,
-        dataset_counter,
+        dataset_name_counter,
         exp.exp_id,
         loaded_dataset.counter
     )
@@ -112,13 +119,21 @@ def test_add_experiments(empty_temp_db, experiment_name,
     dsid = dataset.run_id
     loaded_dataset = load_by_id(dsid)
 
-    loaded_dataset_name, dataset_counter = strip_counter(loaded_dataset.name)
+    loaded_dataset_name, new_dataset_name_counter = strip_counter(
+        loaded_dataset.name
+    )
+
+    if dataset_name_counter == "":
+        assert new_dataset_name_counter == "_n1"
+    else:
+        assert int(new_dataset_name_counter.strip("_n")) == \
+               int(dataset_name_counter.strip("_n")) + 1
 
     assert loaded_dataset_name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
     assert loaded_dataset.table_name == "{}{}-{}-{}".format(
         dataset_name,
-        dataset_counter,
+        new_dataset_name_counter,
         exp.exp_id,
         loaded_dataset.counter
     )

@@ -1191,7 +1191,7 @@ def _make_unique_name(conn: sqlite3.Connection, base_name: str):
 
     while name in all_names:
         counter += 1
-        name = base_name + f"_{counter}"
+        name = base_name + f"_n{counter}"
 
     return name
 
