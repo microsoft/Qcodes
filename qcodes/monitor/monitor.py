@@ -129,14 +129,18 @@ class Monitor(Thread):
         """
         Shutdown the server, close the event loop and join the thread
         """
+        self.join()
+        log.debug("Thread has joined")
+        Monitor.running = None
+
+    def join(self):
         log.debug("Shutting down server")
         server = self.server
         self.loop.call_soon_threadsafe(server.close)
         self.loop.call_soon_threadsafe(server.wait_closed)
         self.loop.call_soon_threadsafe(self.loop.stop)
-        self.join()
-        log.debug("Server is stopped.")
-        Monitor.running = None
+        log.debug("Server is stopped")
+        super().join()
 
     @staticmethod
     def show():
@@ -162,7 +166,7 @@ class Monitor(Thread):
 
         if Monitor.running:
             # stop the old server
-            log.debug("Stoppging and restarting server")
+            log.debug("Stopping and restarting server")
             Monitor.running.stop()
 
         self.start()
