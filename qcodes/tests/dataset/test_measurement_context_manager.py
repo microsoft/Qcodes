@@ -380,6 +380,44 @@ def test_subscriptions(experiment, DAC, DMM):
     assert len(datasaver._dataset.subscribers) == 0
 
 
+@settings(deadline=None, max_examples=5)
+@given(N=hst.integers(min_value=2000, max_value=3000))
+def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
+
+    def sub_get_x_vals(results, length, state):
+        """
+        A list of all x values
+        """
+        state += [res[0] for res in results]
+
+    def sub_get_y_vals(results, length, state):
+        """
+        A list of all y values
+        """
+        state += [res[1] for res in results]
+
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+
+    xvals = []
+    yvals = []
+
+    meas.add_subscriber(sub_get_x_vals, state=xvals)
+    meas.add_subscriber(sub_get_y_vals, state=yvals)
+
+    given_xvals = range(N)
+    given_yvals = range(1, N+1)
+
+    with meas.run() as datasaver:
+
+        for x, y in zip(given_xvals, given_yvals):
+            datasaver.add_result((DAC.ch1, x), (DMM.v1, y))
+
+    assert xvals == list(given_xvals)
+    assert yvals == list(given_yvals)
+
+
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
 @settings(max_examples=5, deadline=None)
