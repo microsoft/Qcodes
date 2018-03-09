@@ -410,8 +410,10 @@ class Measurement:
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
-            setpoints = setpoints if setpoints else ()
-            setpoints += (spname,)
+            my_setpoints: Tuple[Union[_BaseParameter, str], ...] = setpoints if setpoints else ()
+            my_setpoints += (spname,)
+        else:
+            my_setpoints = setpoints
 
         # We currently treat ALL parameters as 'numeric' and fail to add them
         # to the dataset if they can not be unraveled to fit that description
@@ -424,8 +426,8 @@ class Measurement:
         label = parameter.label
         unit = parameter.unit
 
-        if setpoints:
-            sp_strings = [str(sp) for sp in setpoints]
+        if my_setpoints:
+            sp_strings = [str(sp) for sp in my_setpoints]
         else:
             sp_strings = []
         if basis:
