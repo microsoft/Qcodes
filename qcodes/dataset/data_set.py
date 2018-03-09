@@ -440,7 +440,7 @@ class DataSet(Sized):
                                flattened_keys,
                                flattened_values)
 
-    def add_parameter_values(self, spec: ParamSpec, values: List[VALUES]):
+    def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
         Add a parameter to the DataSet and associates result values with the
         new parameter.
