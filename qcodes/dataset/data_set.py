@@ -179,8 +179,8 @@ class DataSet(Sized):
         Actually perform all the side effects needed for
         the creation of a new dataset.
         """
-        _, run_id, _ = create_run(self.conn, exp_id, name,
-                                  specs, values, metadata)
+        _, run_id, __ = create_run(self.conn, exp_id, name,
+                                   specs, values, metadata)
 
         # this is really the UUID (an ever increasing count in the db)
         self.run_id = run_id
