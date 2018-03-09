@@ -11,7 +11,7 @@ import numpy as np
 
 import qcodes as qc
 from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, Parameter
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -422,6 +422,7 @@ class Measurement:
         # requirement later and start saving binary blobs with the datasaver,
         # but for now binary blob saving is referred to using the DataSet
         # API directly
+        parameter = cast(Union[Parameter, ArrayParameter], parameter)
         paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
