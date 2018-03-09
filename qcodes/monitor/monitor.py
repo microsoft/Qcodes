@@ -116,12 +116,15 @@ class Monitor(Thread):
         """
         Start the event loop and run forever
         """
-        log.debug("running server")
+        log.debug("Running Websocket server")
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
         self.server = self.loop.run_until_complete(server_start)
         self.loop.run_forever()
+        log.debug("loop stopped")
+        self.loop.close()
+        log.debug("loop closed")
 
     def stop(self) -> None:
         """
@@ -129,7 +132,6 @@ class Monitor(Thread):
         Setting active Monitor to None
         """
         self.join()
-        log.debug("Thread has joined")
         Monitor.running = None
 
     def join(self, timeout=None) -> None:
@@ -142,8 +144,13 @@ class Monitor(Thread):
         self.loop.call_soon_threadsafe(server.close)
         self.loop.call_soon_threadsafe(server.wait_closed)
         self.loop.call_soon_threadsafe(self.loop.stop)
-        log.debug("Server is stopped")
+        while not self.loop.is_closed():
+            log.debug("waiting for loop to stop and close")
+            time.sleep(0.01)
+
+        log.debug("Loop reported closed")
         super().join(timeout=timeout)
+        log.debug("Monitor Thread has joined")
 
     @staticmethod
     def show():
