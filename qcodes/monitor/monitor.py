@@ -118,12 +118,19 @@ class Monitor(Thread):
         """
         log.debug("Running Websocket server")
         self.loop = asyncio.new_event_loop()
+        self.loop_is_closed = False
         asyncio.set_event_loop(self.loop)
         server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
         self.server = self.loop.run_until_complete(server_start)
         self.loop.run_forever()
         log.debug("loop stopped")
+        log.debug("Pending tasks at close: {}".format(
+            asyncio.Task.all_tasks(self.loop)))
         self.loop.close()
+        while not self.loop.is_closed():
+            log.debug("waiting for loop to stop and close")
+            time.sleep(0.01)
+        self.loop_is_closed = True
         log.debug("loop closed")
 
     def stop(self) -> None:
@@ -134,17 +141,23 @@ class Monitor(Thread):
         self.join()
         Monitor.running = None
 
+    async def __stop_server(self):
+        log.debug("asking server to close")
+        self.server.close()
+        log.debug("waiting for server to close")
+        await self.loop.create_task(self.server.wait_closed())
+        log.debug("stopping loop")
+        log.debug("Pending tasks at stop: {}".format(asyncio.Task.all_tasks(self.loop)))
+        self.loop.stop()
+
     def join(self, timeout=None) -> None:
         """
         Overwrite Thread.join to make sure server is stopped before
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
-        server = self.server
-        self.loop.call_soon_threadsafe(server.close)
-        self.loop.call_soon_threadsafe(server.wait_closed)
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        while not self.loop.is_closed():
+        asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+        while not self.loop_is_closed:
             log.debug("waiting for loop to stop and close")
             time.sleep(0.01)
 
