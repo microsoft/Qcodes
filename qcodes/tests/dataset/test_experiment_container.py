@@ -3,7 +3,6 @@ import tempfile
 import os
 
 import qcodes as qc
-from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_experiment_by_name, \
     new_experiment
 from qcodes.dataset.sqlite_base import connect, init_db
@@ -29,11 +28,7 @@ def empty_temp_db():
 
 def test_run_loaded_experiment(empty_temp_db):
     """
-    Test whether issue 996 as reported here:
-
-    https://github.com/QCoDeS/Qcodes/issues/996
-
-    is solved.
+    Test that we can resume a measurement after loading by name
     """
     new_experiment("test", "test1")
     exp_loaded = load_experiment_by_name("test", "test1")
