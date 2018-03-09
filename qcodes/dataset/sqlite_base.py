@@ -107,7 +107,7 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def one(curr: sqlite3.Cursor, column: str) -> Any:
+def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     """Get the value of one column from one row
     Args:
         curr: cursor to operate on
