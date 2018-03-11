@@ -62,7 +62,8 @@ class MatPlot(BasePlot):
     max_subplot_columns = 3
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
-                 colorbar=True, sharex=False, sharey=False, **kwargs):
+                 colorbar=True, sharex=False, sharey=False, gridspec_kw=None,
+                 **kwargs):
         super().__init__(interval)
 
         if subplots is None:
@@ -70,16 +71,16 @@ class MatPlot(BasePlot):
             subplots = max(len(args), 1)
 
         self._init_plot(subplots, figsize, num=num,
-                        sharex=sharex, sharey=sharey)
+                        sharex=sharex, sharey=sharey, gridspec_kw=gridspec_kw)
 
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
-            if (isinstance(arg, Sequence) and len(arg) > 0
-                and not isinstance(arg[0], numbers.Number)):
-                # Arg consists of multiple elements, add all to same subplot
-                for subarg in arg:
-                    self[k].add(subarg, colorbar=colorbar, **kwargs)
-            elif len(arg) > 0:
+            if isinstance(arg, Sequence):
+                if len(arg) and not isinstance(arg[0], numbers.Number):
+                    # Arg consists of multiple elements, add all to same subplot
+                    for subarg in arg:
+                        self[k].add(subarg, colorbar=colorbar, **kwargs)
+            else:
                 # Arg is single element, add to subplot
                 self[k].add(arg, colorbar=colorbar, **kwargs)
         if args:
@@ -106,12 +107,14 @@ class MatPlot(BasePlot):
         return self.subplots[key]
 
     def _init_plot(self, subplots=None, figsize=None, num=None,
-                   sharex=False, sharey=False):
+                   sharex=False, sharey=False, gridspec_kw=None):
         if isinstance(subplots, Mapping):
             if figsize is None:
                 figsize = (6, 4)
-            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, squeeze=False,
-                                                   sharex=sharex, sharey=sharey, **subplots)
+            self.fig, self.subplots = plt.subplots(
+                figsize=figsize, num=num, squeeze=False,
+                sharex=sharex, sharey=sharey, gridspec_kw=gridspec_kw,
+                **subplots)
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
@@ -133,7 +136,8 @@ class MatPlot(BasePlot):
                                                    figsize=figsize,
                                                    squeeze=False,
                                                    sharex=sharex,
-                                                   sharey=sharey, )
+                                                   sharey=sharey,
+                                                   gridspec_kw=gridspec_kw)
 
         # squeeze=False ensures that subplots is always a 2D array independent
         # of the number of subplots.
@@ -332,7 +336,6 @@ class MatPlot(BasePlot):
             line, = ax.plot(*args, **kwargs)
         else:
             line = ax.errorbar(*args, xerr=xerr, yerr=yerr, **kwargs)
-
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
@@ -346,7 +349,7 @@ class MatPlot(BasePlot):
                          colorbar=True,
                          **kwargs):
         # Remove all kwargs that are meant for line plots
-        for lineplot_kwarg in ['marker', 'linestyle', 'ms']:
+        for lineplot_kwarg in ['marker', 'linestyle', 'ms', 'xerr', 'yerr']:
             kwargs.pop(lineplot_kwarg, None)
 
         # Add labels if DataArray is passed
