@@ -63,7 +63,7 @@ from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
 from functools import partial, wraps
 import numpy
 
-from qcodes.utils.deferred_operations import DeferredOperations
+
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
@@ -77,7 +77,7 @@ if TYPE_CHECKING:
     from .base import Instrument
 
 
-class _BaseParameter(Metadatable, DeferredOperations):
+class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
