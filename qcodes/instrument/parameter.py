@@ -1167,7 +1167,7 @@ class MultiParameter(_BaseParameter):
         return self.names
 
 
-class GetLatest(DelegateAttributes, DeferredOperations):
+class GetLatest(DelegateAttributes):
     """
     Wrapper for a Parameter that just returns the last set or measured value
     stored in the Parameter itself.
