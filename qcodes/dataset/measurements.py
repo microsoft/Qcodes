@@ -219,7 +219,7 @@ class Runner:
 
         # next set up the "datasaver"
         if self.experiment:
-            eid = self.experiment.id
+            eid = self.experiment.exp_id
         else:
             eid = None
 
