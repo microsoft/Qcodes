@@ -1,6 +1,7 @@
 import operator
 from asyncio import iscoroutinefunction
 from inspect import signature
+import warnings
 
 
 def is_function(f, arg_count, coroutine=False):
@@ -53,6 +54,9 @@ def is_function(f, arg_count, coroutine=False):
 
 class DeferredOperations:
     """
+    NOTE: This class is DEPRECATED and you should not use it. You can
+    achieve the same functionality using good ole lambdas.
+
     Make math and logic operations return callables to defer execution
     of arbitrary formulae.
 
@@ -86,6 +90,10 @@ class DeferredOperations:
         boolean operators. We DO NOT short-circuit them; the right side is
         always evaluated.
     """
+
+    warnings.warn("DeferredOperations has been deprecated and will be removed "
+                  "in the not-too-distant future.")
+
     def __init__(self, call_func, args=(), call_parts=()):
         self._validate_callable(call_func, len(args))
         self.call_func = call_func
