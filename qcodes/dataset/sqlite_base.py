@@ -232,9 +232,9 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> None:
 
     atomicTransaction(conn, _uuid_table_schema)
     cur = atomicTransaction(conn, 'select run_id, exp_id from runs')
-    data = many_many(cur, 'run_id', 'exp_id')
+    run_and_exp_ids = many_many(cur, 'run_id', 'exp_id')
 
-    for run_id, exp_id in data:
+    for run_id, exp_id in run_and_exp_ids:
         cur = atomicTransaction(conn,
                                 'SELECT uuid, run_id, exp_id FROM uuids WHERE run_id=? and exp_id=?',
                                 run_id, exp_id)
