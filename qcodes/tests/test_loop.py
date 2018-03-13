@@ -532,8 +532,6 @@ class TestMetaData(TestCase):
         # then test snapshot on an ActiveLoop
         breaker = BreakIf(lambda: p1.get_latest() > 3)
         self.assertEqual(breaker.snapshot()['type'], 'BreakIf')
-        # TODO: once we have reprs for DeferredOperations, test that
-        # the right thing shows up in breaker.snapshot()['condition']
         loop = loop.each(p1, breaker)
         expected['__class__'] = 'qcodes.loops.ActiveLoop'
         expected['actions'] = [p1.snapshot(), breaker.snapshot()]
