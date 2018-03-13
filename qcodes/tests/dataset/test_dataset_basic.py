@@ -7,7 +7,7 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
+from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction, perform_db_upgrade_0_to_1
 from qcodes.dataset.data_set import CompletedError
 import qcodes.dataset.experiment_container
 import pytest
@@ -52,7 +52,7 @@ def test_tabels_exists(empty_temp_db):
     print(qc.config["core"]["db_location"])
     conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
     cursor = conn.execute("select sql from sqlite_master where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies', 'uuids']
     for row, expected_table in zip(cursor, expected_tables):
         assert expected_table in row['sql']
     conn.close()
@@ -325,11 +325,25 @@ def test_database_upgrade(empty_temp_db):
     connection = connect(qc.config["core"]["db_location"],
                  qc.config["core"]["db_debug"])
     userversion = get_user_version(connection)
-    if userversion != 0:
+    if userversion != 1:
         raise RuntimeError("trying to upgrade from version 0"
                            " but your database is version"
                            " {}".format(userversion))
     sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
 
     atomicTransaction(connection, sql)
-    set_user_version(connection, 1)
+    set_user_version(connection, userversion + 1)
+    upgraded_userversion = get_user_version(connection)
+    assert upgraded_userversion == userversion + 1
+
+
+def test_perform_actual_upgrade_0_to_1(dataset):
+    connection = connect(qc.config["core"]["db_location"],
+                 qc.config["core"]["db_debug"])
+    userversion = get_user_version(connection)
+    set_user_version(connection, 0)
+    atomicTransaction(connection, 'drop table uuids')
+    perform_db_upgrade_0_to_1(connection)
+    assert get_user_version(connection) == 1
+    cur = atomicTransaction(connection, "SELECT name FROM sqlite_master WHERE type='table' AND name='uuids'")
+    assert len(cur.fetchall()) ==  1
