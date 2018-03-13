@@ -138,7 +138,7 @@ def one_column(curr: sqlite3.Cursor, column: str) -> List[Any]:
         the values
     """
     res = curr.fetchall()
-    res = [r[0] for r in res]
+    res = [r[column] for r in res]
     return res
 
 
