@@ -106,6 +106,8 @@ class DeferredOperations:
                 '{}, type {}'.format(repr(other), repr(type(other))))
 
     def __eq__(self, other):
+        if id(self) == id(other):
+            return True
         return self._binary(operator.eq, other)
 
     def __ne__(self, other):
