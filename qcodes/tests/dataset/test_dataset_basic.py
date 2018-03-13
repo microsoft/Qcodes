@@ -340,7 +340,6 @@ def test_database_upgrade(empty_temp_db):
 def test_perform_actual_upgrade_0_to_1(dataset):
     connection = connect(qc.config["core"]["db_location"],
                  qc.config["core"]["db_debug"])
-    userversion = get_user_version(connection)
     set_user_version(connection, 0)
     atomicTransaction(connection, 'drop table uuids')
     perform_db_upgrade_0_to_1(connection)
