@@ -3,11 +3,13 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+
+from asyncio import iscoroutinefunction
+from inspect import signature
 
 import numpy as np
 
@@ -110,6 +112,48 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         elif types is not None and not isinstance(item, types):
             return False
     return True
+
+
+def is_function(f, arg_count, coroutine=False):
+    """
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form
+
+    Args:
+        f (callable): function to check
+        arg_count (int): number of argument f should accept
+        coroutine (bool): is a coroutine. Default: False
+
+    Return:
+        bool: is function and accepts the specified number of arguments
+
+    """
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 def full_class(obj):
@@ -450,6 +494,7 @@ def compare_dictionaries(dict_1, dict_2,
 def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
 
 def foreground_qt_window(window):
     """

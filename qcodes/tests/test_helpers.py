@@ -14,7 +14,7 @@ from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   LogCapture, strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder)
-from qcodes.utils.deferred_operations import is_function
+from qcodes.utils.helpers import is_function
 
 
 class TestIsFunction(TestCase):
