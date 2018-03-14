@@ -124,7 +124,8 @@ class DataAcquisitionArray(MultiParameter):
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
 
-    def build_data_arrays(self):
+    def build_data_arrays(self, setpoints_name=None, setpoints_unit=None, setpoints_label=None,
+                          setpoints_start=None, setpoints_stop=None):
         signals = self._instrument._daq_signals
         sigunits = {'x': 'V', 'y': 'V', 'r': 'Vrms', 'phase': 'degrees'}
         names = []
@@ -143,8 +144,13 @@ class DataAcquisitionArray(MultiParameter):
             names.append(name)
             units.append(sigunits[name])
 
-        setpointarray = np.linspace(0, 1 / max_sample_rate * ncols, ncols)
-        setpointarray = setpointarray + self._instrument.trigger_delay()
+        if setpoints_start is not None and setpoints_stop is not None:
+            setpointarray = np.linspace(setpoints_start, setpoints_stop, ncols)
+        elif setpoints_start is None and setpoints_stop is None:
+            setpointarray = np.linspace(0, 1 / max_sample_rate * ncols, ncols)
+            setpointarray = setpointarray + self._instrument.trigger_delay()
+        else:
+            raise RuntimeError("Must either supply both start and stop or neither")
         nested_setpoints = ((tuple(setpointarray),),)
 
         setpoints = nested_setpoints*len(signals)
@@ -154,9 +160,12 @@ class DataAcquisitionArray(MultiParameter):
         self.labels = tuple(names)  # TODO: What are good labels?
         self.setpoints = setpoints
 
-        self.setpoint_names = (('time',),)*len(signals)
-        self.setpoint_labels = (('Time',),)*len(signals)
-        self.setpoint_units = (('s',),)*len(signals)
+        base_setpoint_name = setpoints_name or 'time'
+        base_setpoint_label = setpoints_label or setpoints_name or 'Time'
+        base_setpoint_unit = setpoints_unit or 's'
+        self.setpoint_names = ((base_setpoint_name,),)*len(signals)
+        self.setpoint_labels = ((base_setpoint_label,),)*len(signals)
+        self.setpoint_units = ((base_setpoint_unit,),)*len(signals)
         self.shapes = ((ncols,),)*len(self._instrument._daq_signals)
 
         self._instrument._daq_prepared = True
