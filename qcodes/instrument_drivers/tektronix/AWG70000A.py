@@ -8,7 +8,7 @@ import logging
 from functools import partial
 
 from dateutil.tz import time
-from typing import List, Sequence, Dict, Union
+from typing import List, Sequence, Dict, Union, Optional
 
 from qcodes import Instrument, VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -731,7 +731,8 @@ class AWG70000A(VisaInstrument):
     def makeSEQXFileFromForgedSequence(
             seq: Dict[str, Dict],
             amplitudes: List[float],
-            channel_mapping: Dict[Union[str, int], int]) -> bytes:
+            channel_mapping: Optional[Dict[Union[str, int],
+                                           int]]=None) -> bytes:
         """
         Make a .seqx from a forged broadbean sequence.
         Supports subsequences.
@@ -760,6 +761,9 @@ class AWG70000A(VisaInstrument):
                 for ch in seq[pos1]['content'][pos2]['data'].keys():
                     if ch not in chan_list:
                         chan_list.append(ch)
+
+        if channel_mapping is None:
+            channel_mapping = {ch: ch for ch in chan_list}
 
         if len(set(chan_list)) != len(amplitudes):
             raise ValueError('Incorrect number of amplitudes provided.')
