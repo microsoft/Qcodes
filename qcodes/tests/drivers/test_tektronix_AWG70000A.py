@@ -40,13 +40,13 @@ def forged_sequence():
         """
         Return an element with random values
 
-        200 points long
+        2400 points long, the minimum allowed by the instrument
         """
         data = {n: {} for n in range(1, 1 + num_chans)}
         for key in data.keys():
-            data[key] = {'wfm': np.random.randn(200),
-                         'm1': np.random.randint(0, 2, 200),
-                         'm2': np.random.randint(0, 2, 200)}
+            data[key] = {'wfm': np.random.randn(2400),
+                         'm1': np.random.randint(0, 2, 2400),
+                         'm2': np.random.randint(0, 2, 2400)}
 
         return data
 
@@ -138,5 +138,13 @@ def test_seqxfilefromfs_failing(forged_sequence):
     with pytest.raises(ValueError):
         make_seqx(forged_sequence, [1, 1, 1],
                   channel_mapping={1: 10, 2: 8, 3: -1})
+
+
+def test_seqxfilefromfs(forged_sequence):
+
+    # typing convenience
+    make_seqx = AWG70000A.makeSEQXFileFromForgedSequence
+
+    seqx = make_seqx(forged_sequence, [10, 10, 10])
 
 # TODO: Add some failing tests for inproper input

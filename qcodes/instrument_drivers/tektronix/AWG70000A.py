@@ -798,8 +798,8 @@ class AWG70000A(VisaInstrument):
                     else:
                         wfm_data = wfm
                     awgchan = channel_mapping[ch]
-                    wfmx = AWG70000A.makeWFMXFile((wfm_data,
-                                                   amplitudes[awgchan-1]))
+                    wfmx = AWG70000A.makeWFMXFile(wfm_data,
+                                                  amplitudes[awgchan-1])
                     wfmx_files.append(wfmx)
                     wfmx_filenames.append(f'wfm_{pos1}_{pos2}_{awgchan}.wfmx')
 
@@ -812,22 +812,37 @@ class AWG70000A(VisaInstrument):
 
         for pos1 in seq.keys():
             if seq[pos1]['type'] == 'subsequence':
+
+                ss_wfm_names: List[List[str]] = []
+
                 # we need to "flatten" all the individual dicts of element
                 # sequence options into one dict of lists of sequencing options
-                seqings = List[Dict[str, int]] = []
+                # and we must also provide default values if nothing
+                # is specified
+                seqings: List[Dict[str, int]] = []
                 for pos2 in (seq[pos1]['content'].keys()):
-                    seqings.append([pos1]['content'][pos2]['sequencing'])
-                seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+                    pos_seqs = seq[pos1]['content'][pos2]['sequencing']
+                    pos_seqs['twait'] = pos_seqs.get('twait', 0)
+                    pos_seqs['nrep'] = pos_seqs.get('nrep', 1)
+                    pos_seqs['jump_input'] = pos_seqs.get('jump_input', 0)
+                    pos_seqs['jump_target'] = pos_seqs.get('jump_target', 0)
+                    pos_seqs['goto'] = pos_seqs.get('goto', 0)
+                    seqings.append(pos_seqs)
+
+                    ss_wfm_names.append([n for n in wfmx_filenames
+                                      if f'wfm_{pos1}_{pos2}' in n])
+
+                seqing = {k: [d[k] for d in seqings]
+                          for k in seqings[0].keys()}
 
                 subseqname = f'subsequence_{pos1}'
-                wfm_names = [n for n in wfmx_filenames if f'wfm_{pos1}' in n]
 
                 subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                                    nreps=seqing['nrep'],
                                                    event_jumps=seqing['jump_input'],
                                                    event_jump_to=seqing['jump_target'],
                                                    go_to=seqing['goto'],
-                                                   elem_names=wfm_names,
+                                                   elem_names=ss_wfm_names,
                                                    seqname=subseqname)
 
                 subseqsml_files.append(subseqsml)
@@ -838,10 +853,17 @@ class AWG70000A(VisaInstrument):
         # Make the main .sml file
 
         asset_names: List[List[str]] = []
-        seqings = List[Dict[str, int]] = []
+        seqings: List[Dict[str, int]] = []
         subseq_positions: List[int] = []
         for pos1 in seq.keys():
-            seqings.append(seq[pos1]['sequencing'])
+            pos_seqs = seq[pos1]['sequencing']
+
+            pos_seqs['twait'] = pos_seqs.get('twait', 0)
+            pos_seqs['nrep'] = pos_seqs.get('nrep', 1)
+            pos_seqs['jump_input'] = pos_seqs.get('jump_input', 0)
+            pos_seqs['jump_target'] = pos_seqs.get('jump_target', 0)
+            pos_seqs['goto'] = pos_seqs.get('goto', 0)
+            seqings.append(pos_seqs)
             if seq[pos1]['type'] == 'subsequence':
                 subseq_positions.append(pos1)
                 asset_names.append([sn for sn in subseqsml_filenames
@@ -851,13 +873,15 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
+        print(asset_names)
+
         mainseqname = 'main'
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                             nreps=seqing['nrep'],
                                             event_jumps=seqing['jump_input'],
                                             event_jump_to=seqing['jump_target'],
                                             go_to=seqing['goto'],
-                                            elem_names=wfm_names,
+                                            elem_names=asset_names,
                                             seqname=mainseqname,
                                             subseq_positions=subseq_positions)
 
@@ -1063,10 +1087,6 @@ class AWG70000A(VisaInstrument):
 
         if lstlens[0] == 0:
             raise ValueError('Received empty sequence option lengths!')
-
-        # hackish check of wmfs dimensions
-        if len(np.shape(elem_names)) != 2:
-            raise ValueError('Wrong shape of elem_names input argument.')
 
         if lstlens[0] != np.shape(elem_names)[0]:
             raise ValueError('Mismatch between number of waveforms and'
