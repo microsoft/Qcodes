@@ -1,4 +1,6 @@
-from io import StringIO
+from io import StringIO, BytesIO
+import zipfile
+import os
 
 import pytest
 import numpy as np
@@ -13,6 +15,23 @@ import qcodes.instrument.sims as sims
 from broadbean.broadbean import InvalidForgedSequenceError
 
 visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG70000A.yaml@sim')
+
+
+def strip_outer_tags(sml: str) -> str:
+    """
+    Helper function to strip the outer tags of an SML file so that it
+    complies with the schema provided by tektronix
+    """
+    # make function idempotent
+    if not sml[1:9] == 'DataFile':
+        print('Incorrect file format or outer tags '
+              'already stripped')
+        return sml
+
+    ind1 = sml.find('>\r\n')
+    sml = sml[ind1+3:]  # strip off the opening DataFile tag
+    sml = sml[:-24]  # remove the </Setup> and closing tag
+    return sml
 
 
 @pytest.fixture(scope='function')
@@ -140,11 +159,36 @@ def test_seqxfilefromfs_failing(forged_sequence):
                   channel_mapping={1: 10, 2: 8, 3: -1})
 
 
-def test_seqxfilefromfs(forged_sequence):
+def test_seqxfile_from_fs(forged_sequence):
 
     # typing convenience
     make_seqx = AWG70000A.makeSEQXFileFromForgedSequence
 
+    path_to_schema = os.path.join('auxiliary_files', 'awgSeqDataSets.xsd')
+
+    with open(path_to_schema, 'r') as fid:
+        raw_schema = fid.read()
+
+    schema = etree.XMLSchema(etree.XML(raw_schema.encode('utf-8')))
+    parser = etree.XMLParser(schema=schema)
+
     seqx = make_seqx(forged_sequence, [10, 10, 10])
+
+    zf = zipfile.ZipFile(BytesIO(seqx))
+
+    # Check for double/missing file extensions
+    for filename in zf.namelist():
+        assert filename.count('.') == 1
+
+    # validate the SML files (describing sequences)
+    seq_names = [fn for fn in zf.namelist() if 'Sequences/' in fn]
+
+    for seq_name in seq_names:
+        with zf.open(seq_name) as fid:
+            raw_seq_sml = fid.read()
+            str_seq_sml = strip_outer_tags(raw_seq_sml.decode())
+            # the next line parses using the schema and will raise
+            # XMLSyntaxError if something is wrong
+            etree.XML(str_seq_sml, parser=parser)
 
 # TODO: Add some failing tests for inproper input
