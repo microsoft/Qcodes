@@ -801,7 +801,7 @@ class AWG70000A(VisaInstrument):
                     wfmx = AWG70000A.makeWFMXFile(wfm_data,
                                                   amplitudes[awgchan-1])
                     wfmx_files.append(wfmx)
-                    wfmx_filenames.append(f'wfm_{pos1}_{pos2}_{awgchan}.wfmx')
+                    wfmx_filenames.append(f'wfm_{pos1}_{pos2}_{awgchan}')
 
         ##########
         # STEP 2:
@@ -846,7 +846,7 @@ class AWG70000A(VisaInstrument):
                                                    seqname=subseqname)
 
                 subseqsml_files.append(subseqsml)
-                subseqsml_filenames.append(f'{subseqname}.sml')
+                subseqsml_filenames.append(f'{subseqname}')
 
         ##########
         # STEP 3:
@@ -872,8 +872,6 @@ class AWG70000A(VisaInstrument):
                 asset_names.append([wn for wn in wfmx_filenames
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
-
-        print(asset_names)
 
         mainseqname = 'main'
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
