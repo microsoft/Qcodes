@@ -471,11 +471,14 @@ class Instrument(InstrumentBase):
         Examples:
             >>> atexit.register(qc.Instrument.close_all())
         """
+        log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
                 inst = cls.find_instrument(inststr)
+                log.info(f"Closing {inststr}")
                 inst.close()
             except KeyError:
+                log.info(f"Failed to close {inststr}, ignored")
                 pass
 
     @classmethod
