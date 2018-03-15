@@ -619,9 +619,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
         else:
             raise TypeError('vals must be a Validator')
 
-    def get_root_instrument(self) -> 'InstrumentBase':
+    @property
+    def root_instrument(self) -> Optional['InstrumentBase']:
         if self._instrument is not None:
-            return self._instrument.get_root_instrument()
+            return self._instrument.root_instrument
         else:
             return None
 
