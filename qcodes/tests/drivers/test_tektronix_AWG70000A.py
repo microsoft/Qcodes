@@ -11,6 +11,7 @@ from lxml import etree
 from qcodes.instrument_drivers.tektronix.AWG70002A import AWG70002A
 from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
 import qcodes.instrument.sims as sims
+import qcodes.tests.drivers.auxiliary_files as auxfiles
 
 from broadbean.broadbean import InvalidForgedSequenceError
 
@@ -164,7 +165,8 @@ def test_seqxfile_from_fs(forged_sequence):
     # typing convenience
     make_seqx = AWG70000A.makeSEQXFileFromForgedSequence
 
-    path_to_schema = os.path.join('auxiliary_files', 'awgSeqDataSets.xsd')
+    path_to_schema = auxfiles.__file__.replace('__init__.py',
+                                               'awgSeqDataSets.xsd')
 
     with open(path_to_schema, 'r') as fid:
         raw_schema = fid.read()
