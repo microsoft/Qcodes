@@ -123,6 +123,7 @@ class DataAcquisitionArray(MultiParameter):
         # They are updated via build_data_arrays.
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
+        self._tracelength = None
 
     def build_data_arrays(self, setpoints_name=None, setpoints_unit=None, setpoints_label=None,
                           setpoints_start=None, setpoints_stop=None):
@@ -144,10 +145,12 @@ class DataAcquisitionArray(MultiParameter):
             names.append(name)
             units.append(sigunits[name])
 
+
+        self._tracelength = 1 / max_sample_rate * ncols
         if setpoints_start is not None and setpoints_stop is not None:
             setpointarray = np.linspace(setpoints_start, setpoints_stop, ncols)
         elif setpoints_start is None and setpoints_stop is None:
-            setpointarray = np.linspace(0, 1 / max_sample_rate * ncols, ncols)
+            setpointarray = np.linspace(0, self._tracelength, ncols)
             setpointarray = setpointarray + self._instrument.trigger_delay()
         else:
             raise RuntimeError("Must either supply both start and stop or neither")
@@ -204,9 +207,8 @@ class DataAcquisitionArray(MultiParameter):
         self._instrument.data_acquisition_module.execute()
 
         # todo calculate meaning full timeout and handle correctly
-        tracelength = max(max(max(self.setpoints)))
-        # we set timeout somewhat abitrary as 2 times the total measuring time
-        timeout = 2 * tracelength * self._instrument.repetitions() + 1 # [s]
+        # we set timeout somewhat arbitrary as 2 times the total measuring time
+        timeout = 2 * self._tracelength * self._instrument.repetitions() + 1 # [s]
         t0 = time.time()
 
         while not self._instrument.data_acquisition_module.finished():
