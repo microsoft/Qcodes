@@ -777,7 +777,7 @@ class AWG70000A(VisaInstrument):
                              'channel_mapping maps from the channels '
                              f'{set(channel_mapping.keys())}')
 
-        if list(channel_mapping.values()) != list(range(1, 1+len(chan_list))):
+        if set(channel_mapping.values()) != set(range(1, 1+len(chan_list))):
             raise ValueError('Invalid channel_mapping. Must map onto '
                              f'{list(range(1, 1+len(chan_list)))}')
 
