@@ -84,7 +84,6 @@ def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotl
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
                 figure = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
 
-                ax = figure.axes[0]
                 set_axis_labels(ax, data)
                 # TODO: get a colorbar
                 return ax
