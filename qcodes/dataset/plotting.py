@@ -1,8 +1,10 @@
 from typing import List, Any, Sequence
 import logging
+from typing import Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from matplotlib.figure import Figure
 
 import qcodes as qc
@@ -14,7 +16,7 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 
-def plot_by_id(run_id: int) -> Figure:
+def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotlib.axes.Axes:
     def set_axis_labels(ax, data):
         if data[0]['label'] == '':
             lbl = data[0]['name']
@@ -50,17 +52,17 @@ def plot_by_id(run_id: int) -> Figure:
 
     for data in alldata:
 
+        if ax is None:
+            figure, ax = plt.subplots()
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
-
-            figure, ax = plt.subplots()
 
             # sort for plotting
             order = data[0]['data'].argsort()
 
             ax.plot(data[0]['data'][order], data[1]['data'][order])
             set_axis_labels(ax, data)
-            return figure
+            return ax
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -80,23 +82,22 @@ def plot_by_id(run_id: int) -> Figure:
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                figure = how_to_plot[plottype](xpoints, ypoints, zpoints)
+                figure = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
 
                 ax = figure.axes[0]
                 set_axis_labels(ax, data)
                 # TODO: get a colorbar
-
-                return figure
+                return ax
 
             else:
                 log.warning('2D data does not seem to be on a '
                             'grid. Falling back to scatter plot')
-                fig, ax = plt.subplots(1,1)
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
                 ax.scatter(x=xpoints, y=ypoints, c=zpoints)
                 set_axis_labels(ax, data)
+                return ax
 
         else:
             raise ValueError('Multi-dimensional data encountered. '
@@ -106,7 +107,8 @@ def plot_by_id(run_id: int) -> Figure:
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
-                         z: np.ndarray) -> Figure:
+                         z: np.ndarray,
+                         ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -139,7 +141,6 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
 
-    fig, ax = plt.subplots()
     ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
 
-    return fig
+    return ax
