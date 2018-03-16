@@ -1,6 +1,5 @@
 from io import StringIO, BytesIO
 import zipfile
-import os
 
 import pytest
 import numpy as np
