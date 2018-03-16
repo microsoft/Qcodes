@@ -111,6 +111,7 @@ def plot_by_id(run_id: int,
                        f'parameter {data[-1].name} depends on '
                        f'{len(data-1)} parameters, cannot plot '
                        f'that.')
+    return axes
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
