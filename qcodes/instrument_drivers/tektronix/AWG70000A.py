@@ -559,7 +559,7 @@ class AWG70000A(VisaInstrument):
         are loaded into the sequence list.
 
         Args:
-            filename: The name of the sequence file
+            filename: The name of the sequence file INCLUDING the extension
             path: Path to load from. If omitted, the default path
                 (self.seqxFileFolder) is used.
         """
@@ -731,6 +731,7 @@ class AWG70000A(VisaInstrument):
     def makeSEQXFileFromForgedSequence(
             seq: Dict[str, Dict],
             amplitudes: List[float],
+            seqname: str,
             channel_mapping: Optional[Dict[Union[str, int],
                                            int]]=None) -> bytes:
         """
@@ -744,6 +745,8 @@ class AWG70000A(VisaInstrument):
             channel_mapping: A mapping from what the channel is called
                 in the broadbean sequence to the integer describing the
                 physical channel it should be assigned to.
+            seqname: The name that the sequence will have in the AWG's
+                sequence list. Used for loading the sequence.
 
         Returns:
             The binary .seqx file contents. Can be sent directly to the
@@ -873,7 +876,7 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
-        mainseqname = 'main'
+        mainseqname = seqname
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                             nreps=seqing['nrep'],
                                             event_jumps=seqing['jump_input'],

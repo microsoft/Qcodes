@@ -142,20 +142,23 @@ def test_seqxfilefromfs_failing(forged_sequence):
     # the input dict (first argument) is not a valid forged
     # sequence dict
     with pytest.raises(InvalidForgedSequenceError):
-        make_seqx({}, [], {})
+        make_seqx({}, [], 'yolo', {})
 
     # wrong number of channel amplitudes
     with pytest.raises(ValueError):
-        make_seqx(forged_sequence, amplitudes=[1, 1], channel_mapping=chan_map)
+        make_seqx(forged_sequence, amplitudes=[1, 1],
+                  seqname='dummyname', channel_mapping=chan_map)
 
     # wrong channel mapping keys
     with pytest.raises(ValueError):
         make_seqx(forged_sequence, [1, 1, 1],
+                  seqname='dummyname',
                   channel_mapping={1: None, 3: None})
 
     # wrong channel mapping values
     with pytest.raises(ValueError):
         make_seqx(forged_sequence, [1, 1, 1],
+                  seqname='dummyname',
                   channel_mapping={1: 10, 2: 8, 3: -1})
 
 
@@ -173,7 +176,7 @@ def test_seqxfile_from_fs(forged_sequence):
     schema = etree.XMLSchema(etree.XML(raw_schema.encode('utf-8')))
     parser = etree.XMLParser(schema=schema)
 
-    seqx = make_seqx(forged_sequence, [10, 10, 10])
+    seqx = make_seqx(forged_sequence, [10, 10, 10], 'myseq')
 
     zf = zipfile.ZipFile(BytesIO(seqx))
 
