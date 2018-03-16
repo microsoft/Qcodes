@@ -1,11 +1,9 @@
-from typing import List, Any, Sequence
 import logging
-from typing import Optional
+from typing import Optional, List, Sequence, Union
 
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
-from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 import qcodes as qc
 
@@ -15,8 +13,11 @@ from .data_export import datatype_from_setpoints_2d, reshape_2D_data
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
+mplaxes = matplotlib.axes.Axes
 
-def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotlib.axes.Axes:
+def plot_by_id(run_id: int,
+               axes: Optional[Union[mplaxes,
+                                  Sequence[mplaxes]]]=None) -> List[mplaxes]:
     def set_axis_labels(ax, data):
         if data[0]['label'] == '':
             lbl = data[0]['name']
@@ -47,13 +48,23 @@ def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotl
        * 1D plots
        * 2D plots on filled out rectangular grids
     """
-
     alldata = get_data_by_id(run_id)
+    nplots = len(alldata)
+    if isinstance(axes, mplaxes):
+        axes = [axes]
 
-    for data in alldata:
+    if axes is None:
+        axes = []
+        for i in range(nplots):
+            fig, ax = plt.subplots(1,1)
+            axes.append(ax)
+    else:
+        if len(axes) != nplots:
+            raise RuntimeError(f"Trying to plot {nplots} but "
+                               f"supplied {len(axes)} axes")
 
-        if ax is None:
-            figure, ax = plt.subplots()
+    for data, ax in zip(alldata, axes):
+
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
 
@@ -62,7 +73,6 @@ def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotl
 
             ax.plot(data[0]['data'][order], data[1]['data'][order])
             set_axis_labels(ax, data)
-            return ax
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -86,7 +96,6 @@ def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotl
 
                 set_axis_labels(ax, data)
                 # TODO: get a colorbar
-                return ax
 
             else:
                 log.warning('2D data does not seem to be on a '
@@ -96,18 +105,17 @@ def plot_by_id(run_id: int, ax: Optional[matplotlib.axes.Axes]=None) -> matplotl
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
                 ax.scatter(x=xpoints, y=ypoints, c=zpoints)
                 set_axis_labels(ax, data)
-                return ax
 
         else:
-            raise ValueError('Multi-dimensional data encountered. '
-                             f'parameter {data[-1].name} depends on '
-                             f'{len(data-1)} parameters, cannot plot '
-                             f'that.')
+            log.warning('Multi-dimensional data encountered. '
+                       f'parameter {data[-1].name} depends on '
+                       f'{len(data-1)} parameters, cannot plot '
+                       f'that.')
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                          z: np.ndarray,
-                         ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
+                         ax: mplaxes) -> mplaxes:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
