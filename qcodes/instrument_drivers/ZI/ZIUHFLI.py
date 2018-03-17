@@ -322,7 +322,7 @@ class DataAcquisitionModule(InstrumentChannel):
         Add an additional attribute to acquire.
         """
         self._daq_prepared = False
-        valid_attributes = ['x', 'y', 'r', 'phase']
+        valid_attributes = ['x', 'y', 'r', 'theta']
         # Validation
         if demodulator not in range(1, 9):
             raise ValueError('Can not select demodulator' +
