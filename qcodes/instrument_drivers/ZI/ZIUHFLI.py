@@ -2078,7 +2078,7 @@ class ZIUHFLI(Instrument):
                          }
 
         setstr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
-        if output_mode:
+        if output_mode is not None:
           setstr += '/{}'.format(output_mode)
 
         if setting in dynamic_validation:
@@ -2102,19 +2102,22 @@ class ZIUHFLI(Instrument):
         if setting in changing_param:
             [f() for f in changing_param[setting]]
 
-    def _sigout_getter(self, number, mode, setting, output_mode = None):
+    def _sigout_getter(self, number: int, mode: bool, setting: str,
+                       output_mode: Optional[int] = None):
         """
         Function to query the settings of signal outputs. Specific setter
         function is needed as parameters depend on each other and need to be
         checked and updated accordingly.
         Args:
-            number (int):
-            mode (bool): Indicating whether we are asking for an int or double
-            setting (str): The module's setting to set.
+            number:
+            mode: Indicating whether we are asking for an int or double
+            setting: The module's setting to set.
+            output_mode: Some options may take an extra int to indicate which of the 8
+                         demodulators this acts on
         """
 
         querystr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
-        if output_mode:
+        if output_mode is not None:
             querystr += '/{}'.format(output_mode)
         if mode == 0:
             value = self.daq.getInt(querystr)
