@@ -7,10 +7,10 @@
 from qcodes.config import Config
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 
+# we dont want spyder to reload qcodes as this will overwrite the default station
+# instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
 config = Config()
-
-
 
 from qcodes.version import __version__
 
