@@ -6,6 +6,7 @@ import numbers
 import sys
 import time
 import logging
+import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
@@ -499,14 +500,15 @@ def add_to_spyder_UMR_excludelist(modulename: str):
     is not found. TODO is there a better way to detect if we are in spyder?
     """
 
-    import os
-    try:
-        from spyder.utils.site.sitecustomize import UserModuleReloader
-        global __umr__
-        excludednamelist = os.environ.get('SPY_UMR_NAMELIST').split(',')
-        if modulename not in excludednamelist:
-            log.info("adding {} to excluded modules".format(modulename))
-            excludednamelist.append(modulename)
-        __umr__ = UserModuleReloader(namelist=excludednamelist)
-    except ImportError:
-        pass
+
+    if any('SPYDER' in name for name in os.environ):
+        try:
+            from spyder.utils.site.sitecustomize import UserModuleReloader
+            global __umr__
+            excludednamelist = os.environ.get('SPY_UMR_NAMELIST').split(',')
+            if modulename not in excludednamelist:
+                log.info("adding {} to excluded modules".format(modulename))
+                excludednamelist.append(modulename)
+            __umr__ = UserModuleReloader(namelist=excludednamelist)
+        except ImportError:
+            pass
