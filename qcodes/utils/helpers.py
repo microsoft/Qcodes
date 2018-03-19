@@ -5,6 +5,7 @@ import math
 import numbers
 import sys
 import time
+import logging
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
@@ -13,6 +14,7 @@ import numpy as np
 
 _tprint_times = {}
 
+log = logging.getLogger(__name__)
 
 class NumpyJSONEncoder(json.JSONEncoder):
     """Return numpy types as standard types."""
@@ -483,3 +485,28 @@ def foreground_qt_window(window):
     window.show()
     window.raise_()
     window.activateWindow()
+
+
+def add_to_spyder_UMR_excludelist(modulename: str):
+    """
+    Spyder tries to reload any user module. This does not work well for
+    qcodes because it overwrites Class variables. QCoDeS uses these to
+    store global atributes such as default station, monitor and list of
+    instruments. This "feature" can be disabled by the
+    gui. Unfortunatly this cannot be disabled in a natrual way programatically
+    so in this hack we replace the global __umr__ instance with a new one
+    containing the module we want to exclude. This will do nothing if spyder
+    is not found. TODO is there a better way to detect if we are in spyder?
+    """
+
+    import os
+    try:
+        from spyder.utils.site.sitecustomize import UserModuleReloader
+        global __umr__
+        excludednamelist = os.environ.get('SPY_UMR_NAMELIST').split(',')
+        if modulename not in excludednamelist:
+            log.info("adding {} to excluded modules".format(modulename))
+            excludednamelist.append(modulename)
+        __umr__ = UserModuleReloader(namelist=excludednamelist)
+    except ImportError:
+        pass
