@@ -5,8 +5,12 @@
 # config
 
 from qcodes.config import Config
+from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 
+add_to_spyder_UMR_excludelist('qcodes')
 config = Config()
+
+
 
 from qcodes.version import __version__
 
