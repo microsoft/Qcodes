@@ -17,8 +17,8 @@ class AbacoDAC(IPInstrument):
     FILENAME = "test_{}.{}"
 
     def __init__(cls, *args, **kwargs) -> None:
-        # super().__init__(*args, **kwargs, persistent=False, terminator='')
-        # cls.ask("init_state")
+        super().__init__(*args, **kwargs, persistent=False, terminator='')
+        cls.ask("init_state")
         # time.sleep(1)
         # cls.ask("config_state")
         # glWaveFileMask=test_
@@ -29,7 +29,7 @@ class AbacoDAC(IPInstrument):
         res = cls._makeTextDataFile(data, dformat)
         if dfomart == 1:
             file_access = 'w'
-        elif:
+        else:
             file_access = 'wb'
         # write files to disk
         for i in range(2):
@@ -39,11 +39,11 @@ class AbacoDAC(IPInstrument):
 
     @classmethod
     def create_txt_file(cls, data: List[np.ndarray]):
-        cls._create_file(data: List[np.ndarray], dformat=1)
+        cls._create_file(data, dformat=1)
 
     @classmethod
     def create_dat_file(cls, data: List[np.ndarray]):
-        cls._create_file(data: List[np.ndarray], dformat=2)
+        cls._create_file(data, dformat=2)
 
     @classmethod
     def _makeTextDataFile(cls, data: List[np.ndarray], dformat: int) -> str:
