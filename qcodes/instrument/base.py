@@ -174,7 +174,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             try:
                 snap['parameters'][name] = param.snapshot(update=update)
             except:
-                log.debug("Snapshot: Could not update parameter:"
+                log.warning("Snapshot: Could not update parameter:"
                           "{}".format(name))
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
