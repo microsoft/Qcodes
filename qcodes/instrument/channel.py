@@ -59,6 +59,9 @@ class InstrumentChannel(InstrumentBase):
     def ask_raw(self, cmd):
         return self._parent.ask_raw(cmd)
 
+    @property
+    def root_instrument(self) -> InstrumentBase:
+        return self._parent.root_instrument
 
 class MultiChannelInstrumentParameter(MultiParameter):
     """
