@@ -85,15 +85,14 @@ def plot_by_id(run_id: int,
 
             log.debug('Plotting by id, determining plottype')
             plottype = datatype_from_setpoints_2d([data[0]['data'],
-                                                        data[1]['data']])
+                                                   data[1]['data']])
 
             if plottype in how_to_plot.keys():
                 log.debug('Plotting by id, doing the actual plot')
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                figure = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
-
+                ax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
                 set_axis_labels(ax, data)
                 # TODO: get a colorbar
 
