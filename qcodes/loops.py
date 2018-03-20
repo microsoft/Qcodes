@@ -51,9 +51,12 @@ import logging
 import time
 import numpy as np
 
+from pyqtgraph.multiprocess.remoteproxy import ClosedError
+
 from qcodes.station import Station
 from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
+from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.utils.helpers import wait_secs, full_class, tprint
 from qcodes.utils.metadata import Metadatable
 
@@ -891,11 +894,23 @@ class ActiveLoop(Metadatable):
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
-                    except Exception:
+                        self.last_task_failed = False
+                    except (ClosedError, ConnectionResetError) as err:
+                        # old qt process dead, we spawn a new
+                        log.error("Remote QT process "
+                                  "crashed, restarting:")
+                        log.exception(err)
+
+
+
+                        if isinstance(self.bg_task.__self__, QtPlot):
+                            self.bg_task.__self__._init_qt()
+                    except Exception as err:
                         if self.last_task_failed:
                             self.bg_task = None
                         self.last_task_failed = True
-                        log.exception("Failed to execute bg task")
+                        log.error("Failed to execute bg task")
+                        log.exception(err)
 
                     last_task = t
 
