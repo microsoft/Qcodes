@@ -60,8 +60,8 @@ def plot_by_id(run_id: int,
             axes.append(ax)
     else:
         if len(axes) != nplots:
-            raise RuntimeError(f"Trying to plot {nplots} but "
-                               f"supplied {len(axes)} axes")
+            raise RuntimeError(f"Trying to make {nplots} plots, but"
+                               f"received {len(axes)} axes objects.")
 
     for data, ax in zip(alldata, axes):
 
