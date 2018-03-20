@@ -174,8 +174,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             try:
                 snap['parameters'][name] = param.snapshot(update=update)
             except:
+                # really log this twice. Once verbose for the UI and once
+                # at lower level with more info for file based loggers
+                log.info("Snapshot: Could not update parameter:"
+                         "{}".format(name), exec_info=True)
                 log.warning("Snapshot: Could not update parameter:"
-                          "{}".format(name))
+                            "{}".format(name))
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
