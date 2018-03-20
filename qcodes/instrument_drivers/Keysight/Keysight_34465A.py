@@ -57,7 +57,7 @@ class ArrayMeasurement(ArrayParameter):
 
         self.properly_prepared = True
 
-    def get(self):
+    def get_raw(self):
 
         if not self.properly_prepared:
             raise ValueError('ArrayMeasurement not properly_prepared. '
