@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import numpy as np
 import io
 from typing import List
@@ -8,6 +9,7 @@ import time
 from qcodes.instrument.ip import IPInstrument
 
 
+
 class AbacoDAC(IPInstrument):
     V_PP_DC = 1.7  # Data sheet FMC144 user manual p. 14
     V_PP_AC = 1.0  # Data sheet FMC144 user manual p. 14
@@ -16,13 +18,24 @@ class AbacoDAC(IPInstrument):
     # FILENAME = r"\\PCX79470-0001RG\Users\4DSP-PCIX490-0001\OneDrive - Microsoft\4DSP\sw_23_10_2017_sandbox\PRJ0161_WorkstationApp\waveform\test2_{}.txt"
     FILENAME = "test_{}.{}"
 
-    def __init__(cls, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, persistent=False, terminator='')
-        cls.ask("init_state")
+        with self.temporary_timeout(11):
+            print("asked returned {}".format(self.ask("init_state\n")))
+            print("asked returned {}".format(self.ask("init_state\n")))
+        # cls.ask("init_state")
         # time.sleep(1)
         # cls.ask("config_state")
         # glWaveFileMask=test_
         pass
+
+    @contextmanager
+    def temporary_timeout(self, timeout):
+        old_timeout = self._timeout
+        self.set_timeout(timeout)
+        yield
+        self.set_timeout(old_timeout)
+
 
     @classmethod
     def _create_file(cls, data: List[np.ndarray], dformat):

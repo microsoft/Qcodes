@@ -17,20 +17,20 @@ class Server(Thread):
         self.start()
 
     def run(self):
+        connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        connection.settimeout(None)
+        connection.bind(('0.0.0.0', PORT))
+        connection.listen(0)
         while True:
-            connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            connection.settimeout(1)
-            connection.bind(('0.0.0.0', PORT))
-            connection.listen(10)
             try:
                 current_connection, address = connection.accept()
                 data = current_connection.recv(2048)
                 current_connection.send(data)
-                self.run_command(data)
-                print(data)
-                current_connection.shutdown(1)
+
+                current_connection.shutdown(socket.SHUT_RDWR)
                 current_connection.close()
+                self.run_command(data)
             except socket.timeout:
                 if self.dostop:
                     return
@@ -45,19 +45,23 @@ class Server(Thread):
         time.sleep(1)
         self.join()
 
-    def run_command(input:str) -> None:
-        if input == 'init_state':
-            time.sleep(5)
+    def run_command(self, input:str) -> None:
+        # if input == 'init_state':
+        print('started command {}'.format(input))
+        time.sleep(0.5)
+        print('finished command {}'.format(input))
 
 
 
 from qcodes.instrument_drivers.Abaco.AbacoDac import AbacoDAC
 s = Server()
+try:
+    abaco = AbacoDAC('abaco', 'localhost', port=PORT)
+    abaco.close()
+finally:
+    s.stop()
 
-abaco = AbacoDAC('abaco', 'localhost', port=PORT)
-abaco.close()
-s.stop()
-
+del s
 
 
         # # this contains the server
