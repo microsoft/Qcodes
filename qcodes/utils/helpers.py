@@ -5,7 +5,6 @@ import math
 import numbers
 import sys
 import time
-import logging
 import os
 
 from collections import Iterator, Sequence, Mapping
@@ -492,12 +491,13 @@ def add_to_spyder_UMR_excludelist(modulename: str):
     """
     Spyder tries to reload any user module. This does not work well for
     qcodes because it overwrites Class variables. QCoDeS uses these to
-    store global atributes such as default station, monitor and list of
+    store global attributes such as default station, monitor and list of
     instruments. This "feature" can be disabled by the
-    gui. Unfortunatly this cannot be disabled in a natrual way programatically
-    so in this hack we replace the global __umr__ instance with a new one
-    containing the module we want to exclude. This will do nothing if spyder
-    is not found. TODO is there a better way to detect if we are in spyder?
+    gui. Unfortunately this cannot be disabled in a natural way
+    programmatically so in this hack we replace the global __umr__ instance
+    with a new one containing the module we want to exclude. This will do
+    nothing if Spyder is not found.
+    TODO is there a better way to detect if we are in spyder?
     """
 
 
