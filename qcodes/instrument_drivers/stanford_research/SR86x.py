@@ -149,7 +149,7 @@ class SR86xBuffer(InstrumentChannel):
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because
         # it can only be read after a completed capture and will
-        # timeout otherwise when the snapshot is updated, I.e at
+        # timeout otherwise when the snapshot is updated, e.g. at
         # station creation time
         params_to_skip_update.append('count_capture_kilobytes')
 
