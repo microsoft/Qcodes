@@ -272,6 +272,7 @@ class BasePlot:
                 any_updates = True
 
         self.update_plot()
+
         # once all updaters report they're finished (by returning exactly
         # False) we stop updating the plot.
         if any_updates is False:

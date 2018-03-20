@@ -900,9 +900,6 @@ class ActiveLoop(Metadatable):
                         log.error("Remote QT process "
                                   "crashed, restarting:")
                         log.exception(err)
-
-
-
                         if isinstance(self.bg_task.__self__, QtPlot):
                             self.bg_task.__self__._init_qt()
                     except Exception as err:
