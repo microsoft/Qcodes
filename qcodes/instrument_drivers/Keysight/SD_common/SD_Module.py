@@ -36,16 +36,15 @@ def result_parser(value, name='result', verbose=False):
     """
     if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
         if isinstance(value, ndarray):
-            logger.debug('{}: {} pts'.format(name, len(value)))
+            logger.debug(f'{name}: {len(value)} pts')
         else:
-            logger.debug('{}: {}'.format(name, value))
+            logger.debug(f'{name}: {value}')
 
         if verbose:
-            print('{}: {}'.format(name, value))
+            print(f'{name}: {value}')
         return value
     else:
-        raise Exception('Error in call to SD_Module '
-                        'error code {}'.format(value))
+        raise Exception(f'Error in call to SD_Module error code {value}')
 
 
 class SD_Module(Instrument):
@@ -74,11 +73,9 @@ class SD_Module(Instrument):
         if isinstance(module_name, str):
             result_code = self.SD_module.openWithSlot(module_name, chassis, slot)
             if result_code <= 0:
-                raise Exception('Could not open SD_Module '
-                                'error code {}'.format(result_code))
+                raise Exception('Could not open SD_Module error code {result_code}')
         else:
-            raise Exception('No SD Module found at '
-                            'chassis {}, slot {}'.format(chassis, slot))
+            raise Exception('No SD Module found at chassis {chassis}, slot {slot}')
 
         for i in range(triggers):
             self.add_parameter('pxi_trigger_number_{}'.format(i),
