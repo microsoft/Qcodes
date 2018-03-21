@@ -97,3 +97,7 @@ except NameError:
     pass
 except RuntimeError as e:
     print(e)
+
+# ensure to close all isntruments when interpreter is closed
+import atexit
+atexit.register(Instrument.close_all)
