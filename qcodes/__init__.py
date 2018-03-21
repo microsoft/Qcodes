@@ -116,3 +116,8 @@ def _new_refresh_all(self):
     sleep(self._sleep_duration)
     _original_refresh_all(self)
 _FigureManagerWebAgg.refresh_all = _new_refresh_all
+
+
+# Ignore deprecation warnings from pyvisa.ask
+import warnings
+warnings.filterwarnings("ignore", message="ask is deprecated")
