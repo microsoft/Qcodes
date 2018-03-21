@@ -16,6 +16,17 @@ from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
 
+# some settings differ between series
+_fg_path_val_map = {'5208': {'DC High BW': "DCHB",
+                             'DC High Voltage': "DCHV",
+                             'AC Direct': "ACD"},
+                    '70001A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'}}
+
 
 class SRValidator(Validator):
     """
@@ -122,10 +133,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} {} signal path'.format(channel, fg),
                            set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
                            get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
-                           val_mapping={'direct': 'DIR',
-                                        'DCamplified': 'DCAM',
-                                        'AC': 'AC'}
-                           )
+                           val_mapping=_fg_path_val_map[self._parent.model])
 
         self.add_parameter('fgen_period',
                            label='Channel {} {} period'.format(channel, fg),
