@@ -16,6 +16,17 @@ from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
 
+# some settings differ between series
+_fg_path_val_map = {'5208': {'DC High BW': "DCHB",
+                             'DC High Voltage': "DCHV",
+                             'AC Direct': "ACD"},
+                    '70001A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'}}
+
 
 class SRValidator(Validator):
     """
@@ -69,7 +80,7 @@ class AWGChannel(InstrumentChannel):
 
         self.channel = channel
 
-        num_channels = self._parent.num_channels
+        num_channels = self.root_instrument.num_channels
 
         fg = 'function generator'
 
@@ -122,10 +133,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} {} signal path'.format(channel, fg),
                            set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
                            get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
-                           val_mapping={'direct': 'DIR',
-                                        'DCamplified': 'DCAM',
-                                        'AC': 'AC'}
-                           )
+                           val_mapping=_fg_path_val_map[self.root_instrument.model])
 
         self.add_parameter('fgen_period',
                            label='Channel {} {} period'.format(channel, fg),
@@ -241,8 +249,8 @@ class AWGChannel(InstrumentChannel):
                              'Hz, minimum is 1 Hz'.format(channel, frequency,
                                                           functype, max_freq))
         else:
-            self._parent.write('FGEN:CHANnel{}:FREQuency {}'.format(channel,
-                                                                    frequency))
+            self.root_instrument.write(f'FGEN:CHANnel{channel}:'
+                                       f'FREQuency {frequency}')
 
     def setWaveform(self, name: str) -> None:
         """
@@ -251,11 +259,10 @@ class AWGChannel(InstrumentChannel):
         Args:
             name: The name of the waveform
         """
-        if name not in self._parent.waveformList:
+        if name not in self.root_instrument.waveformList:
             raise ValueError('No such waveform in the waveform list')
 
-        self._parent.write('SOURce{}:CASSet:WAVeform "{}"'.format(self.channel,
-                                                                  name))
+        self.root_instrument.write(f'SOURce{channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -265,8 +272,10 @@ class AWGChannel(InstrumentChannel):
             seqname: Name of the sequence in the sequence list
             tracknr: Which track to use (1 or 2)
         """
-        args = (self.channel, seqname, tracknr)
-        self._parent.write('SOURCE{}:CASSet:SEQuence "{}", {}'.format(*args))
+
+        self.root_instrument.write(f'SOURCE{self.channel}:'
+                                   f'CASSet:SEQuence "{seqname}"'
+                                   f', {tracknr}')
 
 
 class AWG70000A(VisaInstrument):
