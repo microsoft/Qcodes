@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List, Sequence, Union
+from typing import Optional, List, Sequence, Union, Tuple
 
 import numpy as np
 import matplotlib
@@ -17,8 +17,9 @@ mplaxes = matplotlib.axes.Axes
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[mplaxes,
-                                  Sequence[mplaxes]]]=None) -> List[mplaxes]:
-    def set_axis_labels(ax, data):
+                     Sequence[mplaxes]]]=None) -> Tuple[List[mplaxes],
+                                                        List[mplaxes]]:
+    def set_axis_labels(ax, data, cax=None):
         if data[0]['label'] == '':
             lbl = data[0]['name']
         else:
@@ -40,6 +41,18 @@ def plot_by_id(run_id: int,
             unit = data[1]['unit']
             unit = f'({unit})'
         ax.set_ylabel(f'{lbl} {unit}')
+        if cax is not None and len(data)>2:
+            if data[2]['label'] == '':
+                lbl = data[2]['name']
+            else:
+                lbl = data[2]['label']
+            if data[2]['unit'] == '':
+                unit = ''
+            else:
+                unit = data[2]['unit']
+                unit = f'({unit})'
+            cax.set_label(f'{lbl} {unit}')
+
 
     """
     Construct all plots for a given run
@@ -63,6 +76,7 @@ def plot_by_id(run_id: int,
             raise RuntimeError(f"Trying to make {nplots} plots, but"
                                f"received {len(axes)} axes objects.")
 
+    caxes = []
     for data, ax in zip(alldata, axes):
 
         if len(data) == 2:  # 1D PLOTTING
@@ -92,9 +106,9 @@ def plot_by_id(run_id: int,
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                ax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
-                set_axis_labels(ax, data)
-                # TODO: get a colorbar
+                ax, cax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
+                caxes.append(cax)
+                set_axis_labels(ax, data, cax)
 
             else:
                 log.warning('2D data does not seem to be on a '
@@ -102,20 +116,22 @@ def plot_by_id(run_id: int,
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                ax.scatter(x=xpoints, y=ypoints, c=zpoints)
-                set_axis_labels(ax, data)
+                mappable = ax.scatter(x=xpoints, y=ypoints, c=zpoints)
+                cax = ax.figure.colorbar(mappable, ax=ax)
+                caxes.append(cax)
+                set_axis_labels(ax, data, cax)
 
         else:
             log.warning('Multi-dimensional data encountered. '
                        f'parameter {data[-1].name} depends on '
                        f'{len(data-1)} parameters, cannot plot '
                        f'that.')
-    return axes
+    return axes,caxes
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                          z: np.ndarray,
-                         ax: mplaxes) -> mplaxes:
+                         ax: mplaxes) -> Tuple[mplaxes, mplaxes]:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -129,9 +145,10 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
         x: The x values
         y: The y values
         z: The z values
+        ax: Optional the axis to plot into
 
     Returns:
-        The matplotlib figure handle
+        The matplotlib axes handle for plot and colorbar
     """
 
     xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
@@ -148,6 +165,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
 
-    ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
+    colormesh = ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
+    cax = ax.figure.colorbar(colormesh, ax=ax)
 
-    return ax
+    return ax, cax
