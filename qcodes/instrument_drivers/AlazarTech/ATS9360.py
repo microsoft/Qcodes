@@ -172,8 +172,9 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            label='Trigger Delay',
                            unit='Sample clock cycles',
                            value=0,
-                           vals=validators.Ints(min_value=0))
-
+                           vals=validators.Multiples(divisor=8, min_value=0))
+        # See Table 3 - Trigger Delay Alignment
+        # TODO: this is either 8 or 16 dependent on the  number of channels in use
         # NOTE: The board will wait for a for this amount of time for a
         # trigger event.  If a trigger event does not arrive, then the
         # board will automatically trigger. Set the trigger timeout value
