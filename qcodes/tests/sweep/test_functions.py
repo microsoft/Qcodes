@@ -1,6 +1,6 @@
 """
-This module tests the convenience functions to create sweep objects. We test that the function create the expected
-sweep objects.
+This module tests the convenience functions to create sweep objects. We test
+that the function create the expected sweep objects.
 """
 
 from hypothesis import given
@@ -30,7 +30,8 @@ from ._test_utils import (
 @given(parameter_list(1), sweep_values_list(1))
 def test_parameters_sweep(parameters, sweep_values):
     """
-    The "sweep" function should detect whether a ParameterSweep object should be created or a FunctionSweep object
+    The "sweep" function should detect whether a ParameterSweep object should
+    be created or a FunctionSweep object
     """
     p = parameters[0]
     v = sweep_values[0]
@@ -40,7 +41,8 @@ def test_parameters_sweep(parameters, sweep_values):
 @given(set_function_list(1), sweep_values_list(1))
 def test_setfunction_sweep(set_functions, sweep_values):
     """
-    The "sweep" function should detect whether a ParameterSweep object should be created or a FunctionSweep object
+    The "sweep" function should detect whether a ParameterSweep object should
+    be created or a FunctionSweep object
     """
     f = set_functions[0]
     v = sweep_values[0]
@@ -50,7 +52,8 @@ def test_setfunction_sweep(set_functions, sweep_values):
 @given(parameter_list(1), sweep_values_list(1), measurement_parameter_list(1))
 def test_wrap_parameters(parameters, sweep_values, measurements):
     """
-    The "nest" operator should detect how to wrap objects in its arguments list to create valid sweep objects. For
+    The "nest" operator should detect how to wrap objects in its arguments list
+    to create valid sweep objects. For
     instance, a QCoDeS parameter should be wrapped with "ParameterWrapper".
     """
     p = parameters[0]
@@ -69,8 +72,9 @@ def test_wrap_parameters(parameters, sweep_values, measurements):
 @given(parameter_list(1), sweep_values_list(1), measure_function_list(1))
 def test_wrap_callable(parameters, sweep_values, measurements):
     """
-    The "nest" operator should detect how to wrap objects in its arguments list to create valid sweep objects. For
-    instance, a callable should be wrapped with "FunctionWrapper".
+    The "nest" operator should detect how to wrap objects in its arguments list
+    to create valid sweep objects. For instance, a callable should be wrapped
+    with "FunctionWrapper".
     """
     p = parameters[0]
     v = sweep_values[0]
@@ -84,12 +88,14 @@ def test_wrap_callable(parameters, sweep_values, measurements):
 
     equivalence_test(test, compare)
 
-# Since the chain operator use the same wrapping function as nest, so we will not test this separately.
+# Since the chain operator use the same wrapping function as nest, so we will
+# not test this separately.
 
 
 def test_szip_measure_prior_to_set():
     """
-    We can use szip to perform a measurement before setting sweep set points.  Test this scenario
+    We can use szip to perform a measurement before setting sweep set points.
+    Test this scenario
     """
     x = ManualParameter("x")
     v = range(1, 10)
@@ -101,7 +107,8 @@ def test_szip_measure_prior_to_set():
     previous_x = x()
 
     for count, i in enumerate(szip(m, sweep(x, v))):
-        assert i["m"] == 2 * previous_x  # Note that at this point, x should already have been incremented
+        # Note that at this point, x should already have been incremented
+        assert i["m"] == 2 * previous_x
         assert count < len(v)
         previous_x = x()
 
@@ -110,8 +117,9 @@ def test_szip_measure_prior_to_set():
 
 def test_szip_finiteness():
     """
-    Test that if only parameters and/or functions are given to szip, we do not end up in infinite loops but instead
-    iterate once returning the value of the parameter/function
+    Test that if only parameters and/or functions are given to szip, we do not
+    end up in infinite loops but instead iterate once returning the value of
+    the parameter/function
     """
     x = ManualParameter("x")
     y = ManualParameter("y")

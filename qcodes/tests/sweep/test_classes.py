@@ -109,7 +109,9 @@ def test_set_function(set_functions, sweep_values):
 
     def test():
         sweep_object = FunctionSweep(set_function, lambda: values)
-        assert sweep_object.parameter_table.table_list[0]["independent_parameters"][0] == (set_function.name, "none")
+        assert \
+        sweep_object.parameter_table.table_list[0]["independent_parameters"][
+            0] == (set_function.name, "none")
         list(sweep_object)
 
     def compare():
@@ -125,13 +127,18 @@ def test_chain(parameters, sweep_values):
     Test the chaining functionality
     """
     def test():
-        sweep_object = Chain([ParameterSweep(p, lambda v=v: v) for p, v in zip(parameters, sweep_values)])
+        sweep_object = Chain([ParameterSweep(p, lambda v=v: v) for p, v in
+                              zip(parameters, sweep_values)])
 
-        assert sweep_object.parameter_table.table_list[0]["independent_parameters"][0] == (
+        assert \
+        sweep_object.parameter_table.table_list[0]["independent_parameters"][
+            0] == (
             parameters[0].full_name, parameters[0].unit
         )
 
-        assert sweep_object.parameter_table.table_list[1]["independent_parameters"][0] == (
+        assert \
+        sweep_object.parameter_table.table_list[1]["independent_parameters"][
+            0] == (
             parameters[1].full_name, parameters[1].unit
         )
 
@@ -158,13 +165,16 @@ def test_measure_parameter(parameters, measure_param, sweep_values):
     v0, v1 = sweep_values
 
     def test():
-        sweep_object = Nest([ParameterSweep(p0, lambda: v0), ParameterWrapper(m), ParameterSweep(p1, lambda: v1)])
+        sweep_object = Nest(
+            [ParameterSweep(p0, lambda: v0), ParameterWrapper(m),
+             ParameterSweep(p1, lambda: v1)])
         parameter_table = sweep_object.parameter_table
 
         assert parameter_table.table_list[0]["independent_parameters"] == [
             (p0.full_name, p0.unit), (p1.full_name, p1.unit)
         ]
-        assert parameter_table.table_list[0]["dependent_parameters"][0] == (m.full_name, m.unit)
+        assert parameter_table.table_list[0]["dependent_parameters"][0] == (
+        m.full_name, m.unit)
 
         list(sweep_object)
 
@@ -189,12 +199,15 @@ def test_measurement_function(parameters, measurements, sweep_values):
     v0, v1 = sweep_values
 
     def test():
-        sweep_object = Nest([ParameterSweep(p0, lambda: v0), FunctionWrapper(m), ParameterSweep(p1, lambda: v1)])
+        sweep_object = Nest(
+            [ParameterSweep(p0, lambda: v0), FunctionWrapper(m),
+             ParameterSweep(p1, lambda: v1)])
         parameter_table = sweep_object.parameter_table
         assert parameter_table.table_list[0]["independent_parameters"] == [
             (p0.full_name, p0.unit), (p1.full_name, p1.unit)
         ]
-        assert parameter_table.table_list[0]["dependent_parameters"][0] == (m.name, "hash")
+        assert parameter_table.table_list[0]["dependent_parameters"][0] == (
+        m.name, "hash")
 
         list(sweep_object)
 
@@ -215,7 +228,8 @@ def test_zip(parameters, sweep_values):
     Test the Zip operator
     """
     def test():
-        sweep_object = Zip([ParameterSweep(p, lambda v=v: v) for p, v in zip(parameters, sweep_values)])
+        sweep_object = Zip([ParameterSweep(p, lambda v=v: v) for p, v in
+                            zip(parameters, sweep_values)])
         parameter_table = sweep_object.parameter_table
         assert parameter_table.table_list[0]["independent_parameters"] == [
             (parameters[0].full_name, parameters[0].unit),

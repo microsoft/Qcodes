@@ -33,7 +33,9 @@ class TestParameter(ManualParameter):
     """
     A Manual Parameter subclass to test against
     """
-    def __init__(self, name: str, unit: str, independent_parameter: bool=False)->None:
+    def __init__(
+            self, name: str, unit: str, independent_parameter: bool=False
+    )->None:
         super().__init__(name, unit=unit)
         self._independent_parameter = independent_parameter
 
@@ -44,7 +46,8 @@ class TestParameter(ManualParameter):
     def get_raw(self)->int:
         if self._independent_parameter:
             raw_value = hash(str(mock_io))
-            mock_io.write("Current value of {} is {}".format(self.name, str(raw_value)))
+            mock_io.write(
+                "Current value of {} is {}".format(self.name, str(raw_value)))
         else:
             raw_value = self.raw_value
         return raw_value
@@ -52,7 +55,8 @@ class TestParameter(ManualParameter):
 
 class TestMeasureFunction:
     """
-    We can use measurement function instead of qcodes parameters to measure dependent parameters.
+    We can use measurement function instead of qcodes parameters to measure
+    dependent parameters.
     """
     def __init__(self, name: str)->None:
         self._name = name
@@ -71,7 +75,8 @@ class TestMeasureFunction:
 
 class TestSetFunction:
     """
-    We can use set functions instead of qcodes parameters to set independent parameters
+    We can use set functions instead of qcodes parameters to set independent
+    parameters
     """
     def __init__(self, name: str)->None:
         self._name = name
@@ -105,7 +110,8 @@ def equivalence_test(test: Callable, compare: Callable)->None:
 
 def parameter_list(list_size: int)->st.lists:
     """
-    Return a list of independent parameters useful for testing through the hypothesis module.
+    Return a list of independent parameters useful for testing through the
+    hypothesis module.
     """
     a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
 
@@ -123,9 +129,10 @@ def parameter_list(list_size: int)->st.lists:
 
 def measurement_parameter_list(list_size: int)->st.lists:
     """
-    Return a list of dependent parameters useful for testing through the hypothesis module. The difference between
-    dependent and independent parameters in this context is that the latter will be verbose on getting the current
-    parameter value
+    Return a list of dependent parameters useful for testing through the
+    hypothesis module. The difference between dependent and independent
+    parameters in this context is that the latter will be verbose on getting
+    the current parameter value
     """
     a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
 
@@ -144,7 +151,8 @@ def measurement_parameter_list(list_size: int)->st.lists:
 
 def measure_function_list(list_size: int)->st.lists:
     """
-    Return a list of measurement functions useful for testing through the hypothesis module.
+    Return a list of measurement functions useful for testing through the
+    hypothesis module.
     """
     a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
 
@@ -161,7 +169,8 @@ def measure_function_list(list_size: int)->st.lists:
 
 def set_function_list(list_size: int)->st.lists:
     """
-    Return a list of set functions useful for testing through the hypothesis module.
+    Return a list of set functions useful for testing through the hypothesis
+    module.
     """
     a_to_z = [chr(i) for i in range(ord("a"), ord("z"))]
 
@@ -178,8 +187,8 @@ def set_function_list(list_size: int)->st.lists:
 
 def sweep_values_list(list_size: int, sweep_value_sizes=(3, 6))->st.lists:
     """
-    Return a list of sweep values useful for testing through the hypothesis module. Sweep values are themselves lists
-    of floats.
+    Return a list of sweep values useful for testing through the hypothesis
+    module. Sweep values are themselves lists of floats.
     """
     return st.lists(
         st.lists(
