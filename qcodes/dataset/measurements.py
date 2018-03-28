@@ -29,9 +29,17 @@ class DataSaver:
     datasaving to the database
     """
 
+    default_callback = None
+
     def __init__(self, dataset: DataSet, write_period: float,
                  parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
+        if DataSaver.default_callback is not None and 'run_tables_subscription_callback' in DataSaver.default_callback:
+            callback = DataSaver.default_callback['run_tables_subscription_callback']
+            min_wait = DataSaver.default_callback['run_tables_subscription_min_wait']
+            min_count = DataSaver.default_callback['run_tables_subscription_min_count']
+            snapshot = dataset.get_metadata('snapshot')
+            self._dataset.subscribe(callback, min_wait= min_wait, min_count= min_count, state={}, callback_kwargs={'run_id': self._dataset.run_id, 'snapshot': snapshot })
         self.write_period = write_period
         self.parameters = parameters
         self._known_parameters = list(parameters.keys())

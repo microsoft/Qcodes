@@ -120,7 +120,7 @@ class KeithleyChannel(InstrumentChannel):
                            unit='A')
 
         self.add_parameter('res',
-                           get_cmd='measure.r()',
+                           get_cmd='{}.measure.r()'.format(channel),
                            get_parser=float,
                            set_cmd=False,
                            label='Resistance',

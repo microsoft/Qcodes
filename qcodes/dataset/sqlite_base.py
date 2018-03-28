@@ -1010,7 +1010,6 @@ def get_paramspec(conn: sqlite3.Connection,
     c = conn.execute(sql)
     resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
                 'inferred_from')
-
     (layout_id, _, _, label, unit, inferred_from_string) = resp
 
     if inferred_from_string:

@@ -63,6 +63,11 @@ class MockVisaHandle:
             raise ValueError("I'm out of fingers")
         return self.state
 
+    def query(self, cmd):
+        if self.state > 10:
+            raise ValueError("I'm out of fingers")
+        return self.state
+
 
 class TestVisaInstrument(TestCase):
     # error args for set(-10)

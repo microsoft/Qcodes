@@ -126,7 +126,7 @@ class Experiment(Sized):
         return "\n".join(out)
 
 
-# pulbic api
+# public api
 
 def experiments()->List[Experiment]:
     """
@@ -204,7 +204,7 @@ def load_experiment_by_name(name: str,
         the requested experiment
 
     Raises:
-        ValueErorr if the name is not unique and sample name is None.
+        ValueError if the name is not unique and sample name is None.
     """
     e = Experiment(DB)
     if sample:
