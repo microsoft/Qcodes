@@ -39,7 +39,7 @@ class MockVisaHandle:
         # make it an error to ask or write after close
         self.write = None
         self.ask = None
-        self.quert = None
+        self.query = None
 
     def write(self, cmd):
         num = float(cmd.split(':')[-1])
