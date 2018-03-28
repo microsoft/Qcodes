@@ -5,7 +5,7 @@ TODO:
 1) Add proper docstrings in google format
 2) Add type hints
 """
-from typing import Callable, Any, Iterable, Iterator, Tuple, Union
+from typing import Callable, Any, Iterable, Iterator, Tuple, Union, Sized, List
 import itertools
 import numpy as np
 import time
@@ -61,17 +61,7 @@ class ParametersTable:
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-    def copy(self)->"ParametersTable":
-        """
-        Copy this table
-
-        Returns:
-            ParametersTable
-        """
-        return ParametersTable(
-            self._table_list,
-            inferred_from_dict=self._inferred_from_dict
-        )
+        self._independent_parameter_lengths = {}
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -150,6 +140,64 @@ class ParametersTable:
             symbol=symbol, inferrees=",".join(inferrees))
             for symbol, inferrees in self._inferred_from_dict.items()]
         )
+
+    def set_axis_lengths(self, length: int,  param_names: List=None)->None:
+        """
+        If these are known, we can set the axis length of independent
+        parameters
+        """
+        if param_names is None:
+            ind, _ = self.flatten()
+            param_names = list(ind.keys())
+
+        for param_name in param_names:
+            self._independent_parameter_lengths[param_name] = length
+
+    def get_axis_lengths(self, param_names=None):
+
+        if param_names is None:
+            ind, _ = self.flatten()
+            param_names = list(ind.keys())
+
+        lengths = [
+            self._independent_parameter_lengths.get(param_name, -1)
+            for param_name in param_names
+        ]
+
+        return lengths
+
+    def get_data_shape(self, param_name):
+
+        table = None
+        for table in self._table_list:
+            if param_name in table["dependent_parameters"]:
+                break
+
+        if table is None:
+            raise ValueError(
+                f"Parameter f{param_name} not known or not an "
+                f"dependent parameter"
+            )
+
+        independent_parameters = table["independent_parameters"]
+        return tuple(self.get_axis_lengths(independent_parameters))
+
+    def copy(self) -> "ParametersTable":
+        """
+        Copy this table
+
+        Returns:
+            ParametersTable
+        """
+        new_table = ParametersTable(
+            self._table_list,
+            inferred_from_dict=self._inferred_from_dict
+        )
+
+        for item in self._independent_parameter_lengths.items():
+            new_table.set_axis_length(*item)  # TODO: <<<<< LEFT OFF HERE
+
+        return new_table
 
     @property
     def table_list(self)->list:
@@ -665,7 +713,7 @@ class While(BaseSweepObject):
 
 def sweep(
         obj: Union[Parameter, Callable],
-        sweep_points: Union[Iterable, Callable]
+        sweep_points: Union[Sized, Iterable, Callable]
 )->BaseSweepObject:
     """
     A convenience function to create a 1D sweep object
@@ -679,9 +727,11 @@ def sweep(
     Returns:
         FunctionSweep or ParameterSweep
     """
-
+    length = -1
     if not callable(sweep_points):
         point_function = lambda: sweep_points
+        if hasattr(sweep_points, "__len__"):
+            length = len(sweep_points)
     else:
         point_function = sweep_points
 
