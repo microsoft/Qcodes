@@ -273,6 +273,8 @@ class Config():
         with open(path, "r") as fp:
             config = json.load(fp)
 
+        logger.debug(f'Loading config from {path}')
+
         config = DotDict(config)
         self.current_config_path = path
         return config
