@@ -4,19 +4,39 @@ objects. It simply adds a method to register parameters implicitly defined
 in sweep objects.
 """
 
-from collections import OrderedDict, defaultdict
+from typing import List, Tuple, Dict
+from collections import OrderedDict
 import itertools
 
 from qcodes.dataset.measurements import Measurement
+from qcodes.sweep.sweep import BaseSweepObject
 from qcodes import ParamSpec
 
 
 class SweepMeasurement(Measurement):
 
     @staticmethod
-    def _make_param_spec_list(symbols_list, inferred_parameters,
-                              depends_on=None):
+    def _make_param_spec_list(
+            symbols_list: List[Tuple],
+            inferred_parameters: Dict,
+            depends_on: List=None
+    )->List[ParamSpec]:
+        """
+        Args:
+            symbols_list (list):
+                A list of tuples (<name>, <unit>) where the name and unit are
+                strings.
+            inferred_parameters (dict):
+                The keys in the dictionary are the symbols which are inferred.
+                The values are lists of symbol names from which we perform the
+                inference (e.g. {A: [B, C]} means A is inferred from B and C)
+            depends_on (list):
+                A list of symbol names which all symbols in the symbols_list
+                depend on
 
+        Returns:
+            A list of ParamSpec objects
+        """
         param_spec_list = {}
 
         if depends_on is None:
@@ -48,7 +68,13 @@ class SweepMeasurement(Measurement):
 
         return list(param_spec_list.values())
 
-    def register_sweep(self, sweep_object):
+    def register_sweep(self, sweep_object: BaseSweepObject)->None:
+        """
+        Args:
+            sweep_object:
+                Make and add param specs from the parameters table in the
+                sweep object
+        """
 
         table = sweep_object.parameter_table
         inferred_parameters = table.inferred_from_dict
