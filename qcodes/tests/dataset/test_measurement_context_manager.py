@@ -17,6 +17,8 @@ from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.database import initialise_database
+
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
@@ -24,15 +26,7 @@ def empty_temp_db():
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"],
-                     qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
