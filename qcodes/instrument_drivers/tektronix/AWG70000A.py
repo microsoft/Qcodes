@@ -11,10 +11,21 @@ from dateutil.tz import time
 from typing import List, Sequence
 
 from qcodes import Instrument, VisaInstrument, validators as vals
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
+
+# some settings differ between series
+_fg_path_val_map = {'5208': {'DC High BW': "DCHB",
+                             'DC High Voltage': "DCHV",
+                             'AC Direct': "ACD"},
+                    '70001A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'}}
 
 
 class SRValidator(Validator):
@@ -35,6 +46,8 @@ class SRValidator(Validator):
         elif self.awg.model == '70002A':
             self._internal_validator = vals.Numbers(1.49e3, 25e9)
             self._freq_multiplier = 2
+        elif self.awg.model == '5208':
+            self._internal_validator = vals.Numbers(1.49e3, 2.5e9)
         # no other models are possible, since the __init__ of
         # the AWG70000A raises an error if anything else is given
 
@@ -67,7 +80,7 @@ class AWGChannel(InstrumentChannel):
 
         self.channel = channel
 
-        num_channels = self._parent.num_channels
+        num_channels = self.root_instrument.num_channels
 
         fg = 'function generator'
 
@@ -120,10 +133,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} {} signal path'.format(channel, fg),
                            set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
                            get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
-                           val_mapping={'direct': 'DIR',
-                                        'DCamplified': 'DCAM',
-                                        'AC': 'AC'}
-                           )
+                           val_mapping=_fg_path_val_map[self.root_instrument.model])
 
         self.add_parameter('fgen_period',
                            label='Channel {} {} period'.format(channel, fg),
@@ -239,8 +249,8 @@ class AWGChannel(InstrumentChannel):
                              'Hz, minimum is 1 Hz'.format(channel, frequency,
                                                           functype, max_freq))
         else:
-            self._parent.write('FGEN:CHANnel{}:FREQuency {}'.format(channel,
-                                                                    frequency))
+            self.root_instrument.write(f'FGEN:CHANnel{channel}:'
+                                       f'FREQuency {frequency}')
 
     def setWaveform(self, name: str) -> None:
         """
@@ -249,11 +259,10 @@ class AWGChannel(InstrumentChannel):
         Args:
             name: The name of the waveform
         """
-        if name not in self._parent.waveformList:
+        if name not in self.root_instrument.waveformList:
             raise ValueError('No such waveform in the waveform list')
 
-        self._parent.write('SOURce{}:CASSet:WAVeform "{}"'.format(self.channel,
-                                                                  name))
+        self.root_instrument.write(f'SOURce{channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -263,8 +272,10 @@ class AWGChannel(InstrumentChannel):
             seqname: Name of the sequence in the sequence list
             tracknr: Which track to use (1 or 2)
         """
-        args = (self.channel, seqname, tracknr)
-        self._parent.write('SOURCE{}:CASSet:SEQuence "{}", {}'.format(*args))
+
+        self.root_instrument.write(f'SOURCE{self.channel}:'
+                                   f'CASSet:SEQuence "{seqname}"'
+                                   f', {tracknr}')
 
 
 class AWG70000A(VisaInstrument):
@@ -293,7 +304,7 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A']:
+        if self.model not in ['70001A', '70002A', '5208']:
             raise ValueError('Unknown model type: {}. Are you using '
                              'the right driver for your instrument?'
                              ''.format(self.model))
@@ -338,10 +349,21 @@ class AWG70000A(VisaInstrument):
                            unit='Hz',
                            vals=vals.Numbers(6.25e9, 12.5e9))
 
+        # We deem 2 channels too few for a channel list
+        if self.num_channels > 2:
+            chanlist = ChannelList(self, 'Channels', AWGChannel,
+                                   snapshotable=False)
+
         for ch_num in range(1, num_channels+1):
             ch_name = 'ch{}'.format(ch_num)
             channel = AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
+            if self.num_channels > 2:
+                chanlist.append(channel)
+
+        if self.num_channels > 2:
+            chanlist.lock()
+            self.add_submodule('channels', chanlist)
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
