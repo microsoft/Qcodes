@@ -57,7 +57,8 @@ class CompletedError(RuntimeError):
     pass
 
 
-DB = qcodes.config["core"]["db_location"]
+def get_DB() -> str:
+    return qcodes.config["core"]["db_location"]
 
 
 class Subscriber(Thread):
@@ -611,7 +612,7 @@ def load_by_id(run_id)->DataSet:
         the datasets
 
     """
-    d = DataSet(DB)
+    d = DataSet(get_DB())
     d.run_id = run_id
     return d
 
@@ -626,7 +627,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    d = DataSet(DB)
+    d = DataSet(get_DB())
     sql = """
     SELECT run_id
     FROM
@@ -654,7 +655,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
         values: the values to associate with the parameters
         metadata:  the values to associate with the dataset
     """
-    d = DataSet(DB)
+    d = DataSet(get_DB())
     if exp_id is None:
         if len(get_experiments(d.conn)) > 0:
             exp_id = get_last_experiment(d.conn)
