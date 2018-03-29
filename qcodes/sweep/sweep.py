@@ -34,6 +34,15 @@ class ParametersTable:
             parameters and the values are the parameters from which this is
             inferred
     """
+    # Minus one values are unknown. Currently the only way to fill these in
+    # with sensible values is by using the "sweep" method defined in this
+    # module
+    default_axis_properties = {
+        "min": -1,
+        "max": -1,
+        "length": -1,
+        "steps": -1
+    }
 
     def __init__(
             self, table_list: list=None, dependent_parameters: list=None,
@@ -61,7 +70,7 @@ class ParametersTable:
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-        self._axis_info = {}
+        self._axis_info = dict()
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -125,6 +134,13 @@ class ParametersTable:
 
         return repr
 
+    def _inferees_black_list(self):
+        black_list = []
+        for values in self._inferred_from_dict.values():
+            black_list += values
+
+        return black_list
+
     def flatten(self)->tuple:
         """
         Return a flattened list of dependent and independent parameters.
@@ -137,6 +153,14 @@ class ParametersTable:
         dep = {k: v for d in self._table_list for k, v in
                d["dependent_parameters"]}
         return ind, dep
+
+    def get_independents(self, exclude_inferees=False):
+        black_list = []
+        if exclude_inferees:
+            black_list = self._inferees_black_list()
+
+        ind, _ = self.flatten()
+        return {k: v for k, v in ind.items() if k not in black_list}
 
     def symbols_list(self)->list:
         """
@@ -176,9 +200,12 @@ class ParametersTable:
             )
 
         independent_parameters = table["independent_parameters"]
+        black_list = self._inferees_black_list()
+
         return {
             name: self._axis_info[name]
             for name, unit in independent_parameters
+            if name not in black_list
         }
 
     def copy(self) -> "ParametersTable":
@@ -710,21 +737,16 @@ class While(BaseSweepObject):
             else:
                 break
 
-# TODO REFACTOR THE FUNCTIONS BELOW
+# TODO: REFACTOR THE FUNCTIONS BELOW
 
 
-def infer_axis_properties(axis):
+def infer_axis_properties(axis, length_only=False):
     class _Dict(dict):
         def dset(self, name, value):
             self[name] = value
             return self
 
-    properties = {
-        "min": -1,
-        "max": -1,
-        "length": -1,
-        "steps": -1
-    }
+    properties = dict(ParametersTable.default_axis_properties)
 
     if not hasattr(axis, "__len__"):
         return properties
@@ -732,30 +754,28 @@ def infer_axis_properties(axis):
     properties["length"] = len(axis)
 
     array = np.array(axis)
-    if array.dtype == np.dtype("O"):
+    if len(array.shape) == 1:
+        array = array[:, None]
+
+    properties = [_Dict(properties) for _ in array.T]
+
+    if array.dtype == np.dtype("O") or length_only:
         return properties
 
-    if len(array.shape) == 1:
-        properties["min"] = min(array)
-        properties["max"] = max(array)
+    axis_min = np.min(array, axis=0)
+    axis_max = np.max(array, axis=0)
 
-        steps = np.unique(np.diff(array))
-        if len(steps) == 1:
-            properties["steps"] = steps[0]
+    steps = [
+        np.unique(i)
+        for i in zip(*np.diff(array, axis=0).round(decimals=10))
+    ]
 
-    else:
-        axis_min = np.min(array, axis=0)
-        axis_max = np.max(array, axis=0)
-        steps = [np.unique(i) for i in zip(*np.diff(array, axis=0))]
-        steps = [step[0] if len(step) == 1 else -1 for step in steps]
+    steps = [step[0] if len(step) == 1 else -1 for step in steps]
 
-        properties = [
-            _Dict(properties).dset("min", mn).dset("max", mx).dset("steps", s)
-            for mn, mx, s in zip(axis_min, axis_max, steps)
-        ]
-
-    return np.atleast_1d(properties)
-
+    return [
+        p.dset("min", mn).dset("max", mx).dset("steps", s)
+        for p, mn, mx, s in zip(properties, axis_min, axis_max, steps)
+    ]
 
 def sweep(
         obj: Union[Parameter, Callable],
@@ -774,8 +794,6 @@ def sweep(
         FunctionSweep or ParameterSweep
     """
 
-    axis_properties = infer_axis_properties(sweep_points)
-
     if not callable(sweep_points):
         point_function = lambda: sweep_points
     else:
@@ -792,7 +810,14 @@ def sweep(
     else:
         so = ParameterSweep(obj, point_function)
 
-    ind, _ = so.parameter_table.flatten()
+    ind = so.parameter_table.get_independents(exclude_inferees=True)
+    has_inferred = True if len(so.parameter_table.inferred_symbols_list()) \
+        else False
+
+    axis_properties = infer_axis_properties(
+        sweep_points, length_only=has_inferred
+    )
+
     axis_properties = {
         name: props for name, props in zip(ind, axis_properties)
     }

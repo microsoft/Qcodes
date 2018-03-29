@@ -3,6 +3,7 @@ This module tests the convenience functions to create sweep objects. We test
 that the function create the expected sweep objects.
 """
 
+import numpy as np
 from hypothesis import given
 
 from qcodes.instrument.parameter import ManualParameter
@@ -15,7 +16,7 @@ from qcodes.sweep.sweep import (
     ParameterWrapper
 )
 
-from qcodes.sweep import sweep, nest, szip
+from qcodes.sweep import sweep, nest, szip, setter
 
 from ._test_utils import (
     parameter_list,
@@ -131,3 +132,125 @@ def test_szip_finiteness():
         assert i["x"] == x()
         assert i["y"] == y()
         assert count == 0
+
+
+def test_layout_info():
+
+    x = ManualParameter("x")
+    y = ManualParameter("y")
+    z = ManualParameter("z")
+
+    m = ManualParameter("m")
+    n = ManualParameter("n")
+    o = ManualParameter("o")
+
+    sweep_values_1 = np.linspace(0, 1, 10)
+    sweep_values_2 = np.linspace(2, 20, 11)
+    sweep_values_3 = np.random.uniform(0, 1, 10)
+
+    so = sweep(x, sweep_values_1)(
+        m,
+        sweep(y, sweep_values_2)(
+            n,
+            sweep(z, sweep_values_3)(
+                o
+            )
+        )
+    )
+
+    assert so.parameter_table.layout_info("m") == {
+        "x": {
+            "min": min(sweep_values_1),
+            "max": max(sweep_values_1),
+            "length": len(sweep_values_1),
+            "steps": (sweep_values_1[1] - sweep_values_1[0]).round(10)
+        }
+    }
+
+    assert so.parameter_table.layout_info("n") == {
+        "x": {
+            "min": min(sweep_values_1),
+            "max": max(sweep_values_1),
+            "length": len(sweep_values_1),
+            "steps": (sweep_values_1[1] - sweep_values_1[0]).round(10)
+        },
+        "y": {
+            "min": min(sweep_values_2),
+            "max": max(sweep_values_2),
+            "length": len(sweep_values_2),
+            "steps": (sweep_values_2[1] - sweep_values_2[0]).round(10)
+        }
+    }
+
+    assert so.parameter_table.layout_info("o") == {
+        "x": {
+            "min": min(sweep_values_1),
+            "max": max(sweep_values_1),
+            "length": len(sweep_values_1),
+            "steps": (sweep_values_1[1] - sweep_values_1[0]).round(10)
+        },
+        "y": {
+            "min": min(sweep_values_2),
+            "max": max(sweep_values_2),
+            "length": len(sweep_values_2),
+            "steps": (sweep_values_2[1] - sweep_values_2[0]).round(10)
+        },
+        "z": {
+            "min": min(sweep_values_3),
+            "max": max(sweep_values_3),
+            "length": len(sweep_values_3),
+            "steps": -1
+        }
+    }
+
+
+def test_layout_info_setter():
+
+    @setter([("BB", "V"), ("AB", "V")])
+    def setter_function1(v1, v2):
+        return
+
+    @setter(
+        [("BB", "V"), ("AB", "V")],
+        inferred_parameters=[("bb", "mV"), ("ab", "mV")]
+    )
+    def setter_function2(v1, v2):
+        return 0, 0
+
+    m = ManualParameter("m")
+
+    s1 = [0, 1, 2]
+    s2 = [1, 3, 5]
+    sweep_values = list(zip(s1, s2))
+
+    so = sweep(setter_function1, sweep_values)(m)
+    assert so.parameter_table.layout_info("m") == {
+        "BB": {
+            "min": min(s1),
+            "max": max(s1),
+            "length": len(s1),
+            "steps": s1[1] - s1[0]
+        },
+        "AB": {
+            "min": min(s2),
+            "max": max(s2),
+            "length": len(s2),
+            "steps": s2[1] - s2[0]
+        }
+    }
+
+    so = sweep(setter_function2, sweep_values)(m)
+    assert so.parameter_table.layout_info("m") == {
+        "bb": {
+            "min": -1,
+            "max": -1,
+            "length": len(s1),
+            "steps": -1
+        },
+        "ab": {
+            "min": -1,
+            "max": -1,
+            "length": len(s2),
+            "steps": -1
+        }
+    }
