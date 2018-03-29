@@ -61,7 +61,7 @@ class ParametersTable:
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-        self._independent_parameter_lengths = {}
+        self._axis_info = {}
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -74,14 +74,20 @@ class ParametersTable:
         inferred_from_dict = dict(self._inferred_from_dict)
         inferred_from_dict.update(other.inferred_from_dict)
 
-        return ParametersTable(
+        axis_info = dict(self._axis_info)
+        axis_info.update(other._axis_info)
+
+        ptable = ParametersTable(
             self._table_list + other.table_list,
             inferred_from_dict=inferred_from_dict
         )
+        ptable._axis_info = axis_info
+
+        return ptable
 
     def __mul__(self, other: "ParametersTable")->"ParametersTable":
         """
-        Multiply this table with another table. We mul
+        Multiply this table with another table.
 
         Returns:
             ParametersTable
@@ -89,10 +95,17 @@ class ParametersTable:
         inferred_from_dict = dict(self._inferred_from_dict)
         inferred_from_dict.update(other.inferred_from_dict)
 
-        return ParametersTable([
+        axis_info = dict(self._axis_info)
+        axis_info.update(other._axis_info)
+
+        ptable = ParametersTable([
             {k: s[k] + o[k] for k in s.keys()} for s, o in
             itertools.product(self._table_list, other.table_list)
         ], inferred_from_dict=inferred_from_dict)
+
+        ptable._axis_info = axis_info
+
+        return ptable
 
     def __repr__(self):
         """
@@ -141,46 +154,32 @@ class ParametersTable:
             for symbol, inferrees in self._inferred_from_dict.items()]
         )
 
-    def set_axis_lengths(self, length: int,  param_names: List=None)->None:
+    def set_axis_info(self, axis_info)->None:
         """
         If these are known, we can set the axis length of independent
         parameters
         """
-        if param_names is None:
-            ind, _ = self.flatten()
-            param_names = list(ind.keys())
+        self._axis_info.update(axis_info)
 
-        for param_name in param_names:
-            self._independent_parameter_lengths[param_name] = length
-
-    def get_axis_lengths(self, param_names=None):
-
-        if param_names is None:
-            ind, _ = self.flatten()
-            param_names = list(ind.keys())
-
-        lengths = [
-            self._independent_parameter_lengths.get(param_name, -1)
-            for param_name in param_names
-        ]
-
-        return lengths
-
-    def get_data_shape(self, param_name):
+    def layout_info(self, param_name):
 
         table = None
-        for table in self._table_list:
-            if param_name in table["dependent_parameters"]:
+        for t in self._table_list:
+            if param_name in list(zip(*t["dependent_parameters"]))[0]:
+                table = t
                 break
 
         if table is None:
             raise ValueError(
-                f"Parameter f{param_name} not known or not an "
+                f"Parameter {param_name} not known or not an "
                 f"dependent parameter"
             )
 
         independent_parameters = table["independent_parameters"]
-        return tuple(self.get_axis_lengths(independent_parameters))
+        return {
+            name: self._axis_info[name]
+            for name, unit in independent_parameters
+        }
 
     def copy(self) -> "ParametersTable":
         """
@@ -194,8 +193,9 @@ class ParametersTable:
             inferred_from_dict=self._inferred_from_dict
         )
 
-        for item in self._independent_parameter_lengths.items():
-            new_table.set_axis_length(*item)  # TODO: <<<<< LEFT OFF HERE
+        new_table._axis_info = dict(
+            self._axis_info
+        )
 
         return new_table
 
@@ -710,6 +710,52 @@ class While(BaseSweepObject):
             else:
                 break
 
+# TODO REFACTOR THE FUNCTIONS BELOW
+
+
+def infer_axis_properties(axis):
+    class _Dict(dict):
+        def dset(self, name, value):
+            self[name] = value
+            return self
+
+    properties = {
+        "min": -1,
+        "max": -1,
+        "length": -1,
+        "steps": -1
+    }
+
+    if not hasattr(axis, "__len__"):
+        return properties
+
+    properties["length"] = len(axis)
+
+    array = np.array(axis)
+    if array.dtype == np.dtype("O"):
+        return properties
+
+    if len(array.shape) == 1:
+        properties["min"] = min(array)
+        properties["max"] = max(array)
+
+        steps = np.unique(np.diff(array))
+        if len(steps) == 1:
+            properties["steps"] = steps[0]
+
+    else:
+        axis_min = np.min(array, axis=0)
+        axis_max = np.max(array, axis=0)
+        steps = [np.unique(i) for i in zip(*np.diff(array, axis=0))]
+        steps = [step[0] if len(step) == 1 else -1 for step in steps]
+
+        properties = [
+            _Dict(properties).dset("min", mn).dset("max", mx).dset("steps", s)
+            for mn, mx, s in zip(axis_min, axis_max, steps)
+        ]
+
+    return np.atleast_1d(properties)
+
 
 def sweep(
         obj: Union[Parameter, Callable],
@@ -727,11 +773,11 @@ def sweep(
     Returns:
         FunctionSweep or ParameterSweep
     """
-    length = -1
+
+    axis_properties = infer_axis_properties(sweep_points)
+
     if not callable(sweep_points):
         point_function = lambda: sweep_points
-        if hasattr(sweep_points, "__len__"):
-            length = len(sweep_points)
     else:
         point_function = sweep_points
 
@@ -742,9 +788,17 @@ def sweep(
                 "parameter or a function"
             )
 
-        return FunctionSweep(obj, point_function)
+        so = FunctionSweep(obj, point_function)
     else:
-        return ParameterSweep(obj, point_function)
+        so = ParameterSweep(obj, point_function)
+
+    ind, _ = so.parameter_table.flatten()
+    axis_properties = {
+        name: props for name, props in zip(ind, axis_properties)
+    }
+    so.parameter_table.set_axis_info(axis_properties)
+
+    return so
 
 
 def nest(*objects: BaseSweepObject)->BaseSweepObject:
