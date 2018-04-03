@@ -4,12 +4,15 @@ objects. It simply adds a method to register parameters implicitly defined
 in sweep objects.
 """
 
+import numpy as np
 from typing import List, Tuple, Dict
 from collections import OrderedDict
 import itertools
 
+from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.measurements import Measurement
-from qcodes.sweep.sweep import BaseSweepObject
+from qcodes.dataset.plotting import plot_by_id
+from qcodes.sweep.base_sweep import BaseSweepObject
 from qcodes import ParamSpec
 
 
@@ -117,3 +120,63 @@ class SweepMeasurement(Measurement):
             )
         })
 
+
+class _DataExtractor:
+    """
+    A convenience class to quickly extract data from a data saver instance
+    """
+    def __init__(self, datasaver):
+        self._run_id = datasaver.run_id
+        self._dataset = datasaver.dataset
+
+    def __getitem__(self, layout):
+
+        def is_subset(smaller, larger):
+            return smaller == larger[:len(smaller)]
+
+        layout = sorted(layout.split(","))
+        all_data = get_data_by_id(self._run_id)
+        data_layouts = [sorted([d["name"] for d in ad]) for ad in all_data]
+
+        i = np.array(
+            [is_subset(layout, data_layout) for data_layout in data_layouts]
+        )
+
+        ind = np.flatnonzero(i)
+        if len(ind) == 0:
+            raise ValueError(f"No such layout {layout}")
+
+        data = all_data[ind[0]]
+        return {d["name"]: d["data"] for d in data}
+
+    def plot(self):
+        plot_by_id(self._run_id)
+
+    @property
+    def run_id(self):
+        return self._run_id
+
+
+def dowith(f):
+    def inner(*args):
+        return f, args
+    f.dowith = inner
+    return f
+
+
+def run(setup, sweep_object, cleanup, experiment=None, station=None):
+
+    meas = SweepMeasurement(exp=experiment, station=station)
+    meas.register_sweep(sweep_object)
+
+    for f, args in setup:
+        meas.add_before_run(f, args)
+
+    for f, args in cleanup:
+        meas.add_after_run(f, args)
+
+    with meas.run() as datasaver:
+        for data in sweep_object:
+            datasaver.add_result(*data.items())
+
+    return _DataExtractor(datasaver)

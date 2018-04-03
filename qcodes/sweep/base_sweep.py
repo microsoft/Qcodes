@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple
+from typing import Callable, Any, Iterator, Tuple, Optional
 import itertools
 import numpy as np
 import time
