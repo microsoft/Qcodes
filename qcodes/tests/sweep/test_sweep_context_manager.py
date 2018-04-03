@@ -6,7 +6,7 @@ import numpy as np
 import itertools
 
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.sweep import sweep, nest, chain, SweepMeasurement, setter
+from qcodes.sweep import sweep, nest, SweepMeasurement, setter
 from qcodes import new_experiment, Station
 
 

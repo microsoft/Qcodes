@@ -8,7 +8,7 @@ from hypothesis import given
 
 from qcodes.instrument.parameter import ManualParameter
 
-from qcodes.sweep.sweep import (
+from qcodes.sweep.base_sweep import (
     ParameterSweep,
     FunctionSweep,
     Nest,

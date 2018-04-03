@@ -15,7 +15,7 @@ NB: For debugging, use the decorator "@settings(use_coverage=False)"
 """
 from hypothesis import given
 
-from qcodes.sweep.sweep import (
+from qcodes.sweep.base_sweep import (
     ParameterSweep,
     FunctionSweep,
     Nest,
