@@ -505,7 +505,8 @@ def add_to_spyder_UMR_excludelist(modulename: str):
         try:
             from spyder.utils.site.sitecustomize import UserModuleReloader
             global __umr__
-            excludednamelist = os.environ.get('SPY_UMR_NAMELIST').split(',')
+            excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                              '').split(',')
             if modulename not in excludednamelist:
                 log.info("adding {} to excluded modules".format(modulename))
                 excludednamelist.append(modulename)
