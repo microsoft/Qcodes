@@ -1,6 +1,6 @@
 {
     "core":{
-        "loglevel": "DEBUG",
+        "loglevel": "WARNING",
         "file_loglevel": "INFO",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
         "register_magic": true,
