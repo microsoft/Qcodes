@@ -18,7 +18,7 @@ mplaxes = matplotlib.axes.Axes
 def plot_by_id(run_id: int,
                axes: Optional[Union[mplaxes,
                      Sequence[mplaxes]]]=None) -> Tuple[List[mplaxes],
-                                                        List[mplaxes]]:
+                                                        List[Optional[mplaxes]]]:
     def set_axis_labels(ax, data, cax=None):
         if data[0]['label'] == '':
             lbl = data[0]['name']
@@ -60,6 +60,21 @@ def plot_by_id(run_id: int,
     Implemented so far:
        * 1D plots
        * 2D plots on filled out rectangular grids
+
+    The function can optionally be supplied with a matplotlib axes
+    or a list of axes that will be used for plotting. The user should ensure
+    that the number of axes matches the number of datasets to plot. To plot
+    several (1D) dataset in the same axes supply it several times. Colorbar
+    axes are created dynamically and cannot be supplied.
+
+    Args:
+        run_id: ID of the dataset to plot
+        axes: Matplotlib axes to plot on
+
+    Returns:
+        a list of axes and a list of colorbar axes of the same length.
+        The colorbar axes may be None if no colorbar is created (e.g. for
+        1D plots)
     """
     alldata = get_data_by_id(run_id)
     nplots = len(alldata)
@@ -76,7 +91,7 @@ def plot_by_id(run_id: int,
             raise RuntimeError(f"Trying to make {nplots} plots, but"
                                f"received {len(axes)} axes objects.")
 
-    caxes = []
+    cbaxes = []
     for data, ax in zip(alldata, axes):
 
         if len(data) == 2:  # 1D PLOTTING
@@ -87,6 +102,7 @@ def plot_by_id(run_id: int,
 
             ax.plot(data[0]['data'][order], data[1]['data'][order])
             set_axis_labels(ax, data)
+            cbaxes.append(None)
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -106,9 +122,9 @@ def plot_by_id(run_id: int,
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                ax, cax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
-                caxes.append(cax)
-                set_axis_labels(ax, data, cax)
+                ax, cbax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
+                cbaxes.append(cbax)
+                set_axis_labels(ax, data, cbax)
 
             else:
                 log.warning('2D data does not seem to be on a '
@@ -117,16 +133,17 @@ def plot_by_id(run_id: int,
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
                 mappable = ax.scatter(x=xpoints, y=ypoints, c=zpoints)
-                cax = ax.figure.colorbar(mappable, ax=ax)
-                caxes.append(cax)
-                set_axis_labels(ax, data, cax)
+                cbax = ax.figure.colorbar(mappable, ax=ax)
+                cbaxes.append(cbax)
+                set_axis_labels(ax, data, cbax)
 
         else:
             log.warning('Multi-dimensional data encountered. '
                        f'parameter {data[-1].name} depends on '
                        f'{len(data-1)} parameters, cannot plot '
                        f'that.')
-    return axes,caxes
+            cbaxes.append(None)
+    return axes,cbaxes
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
