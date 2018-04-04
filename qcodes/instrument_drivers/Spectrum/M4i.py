@@ -31,9 +31,9 @@ try:
         sys.path.append(header_dir)
     import pyspcm
 except (ImportError, OSError) as ex:
-    log.exception(ex)
-    raise ImportError(
-        'to use the M4i driver install the pyspcm module and the M4i libs')
+    info_str = 'to use the M4i driver install the pyspcm module and the M4i libs'
+    log.exception(info_str)
+    raise ImportError(info_str)
 
 #%% Helper functions
 
