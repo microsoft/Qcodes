@@ -4,17 +4,20 @@ import logging
 import math
 import numbers
 import time
+import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+from typing import Dict, List
 
 from asyncio import iscoroutinefunction
 from inspect import signature
 
 import numpy as np
 
-_tprint_times = {}
+_tprint_times= {} # type: Dict[str, float]
 
+log = logging.getLogger(__name__)
 
 class NumpyJSONEncoder(json.JSONEncoder):
     """Return numpy types as standard types."""
@@ -351,9 +354,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = []
-    delegate_attr_objects = []
-    omit_delegate_attrs = []
+    delegate_attr_dicts = [] # type: List[str]
+    delegate_attr_objects = [] # type: List[str]
+    omit_delegate_attrs = [] # type: List[str]
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -528,3 +531,30 @@ def foreground_qt_window(window):
     window.show()
     window.raise_()
     window.activateWindow()
+
+
+def add_to_spyder_UMR_excludelist(modulename: str):
+    """
+    Spyder tries to reload any user module. This does not work well for
+    qcodes because it overwrites Class variables. QCoDeS uses these to
+    store global attributes such as default station, monitor and list of
+    instruments. This "feature" can be disabled by the
+    gui. Unfortunately this cannot be disabled in a natural way
+    programmatically so in this hack we replace the global __umr__ instance
+    with a new one containing the module we want to exclude. This will do
+    nothing if Spyder is not found.
+    TODO is there a better way to detect if we are in spyder?
+    """
+
+
+    if any('SPYDER' in name for name in os.environ):
+        try:
+            from spyder.utils.site import sitecustomize
+            excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                              '').split(',')
+            if modulename not in excludednamelist:
+                log.info("adding {} to excluded modules".format(modulename))
+                excludednamelist.append(modulename)
+                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
+        except ImportError:
+            pass

@@ -94,7 +94,7 @@ class FrequencySweep(ArrayParameter):
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel, vna_parameter: str=None):
+    def __init__(self, parent, name, channel, vna_parameter: str=None) -> None:
         """
         Args:
             parent: Instrument that this channel is bound to.
@@ -372,10 +372,11 @@ class ZNB(VisaInstrument):
     TODO:
     - check initialisation settings and test functions
     """
+
     CHANNEL_CLASS = ZNBChannel
 
 
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
+    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 
@@ -384,7 +385,11 @@ class ZNB(VisaInstrument):
         # See page 1025 in the manual. 7.3.15.10 for details of max/min freq
         # no attempt to support ZNB40, not clear without one how the format
         # is due to variants
-        model = self.get_idn()['model'].split('-')[0]
+        fullmodel = self.get_idn()['model']
+        if fullmodel is not None:
+            model = fullmodel.split('-')[0]
+        else:
+            raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
         if model == 'ZNB4':
             self._max_freq = 4.5e9
@@ -395,6 +400,8 @@ class ZNB(VisaInstrument):
         elif model == 'ZNB20':
             self._max_freq = 20e9
             self._min_freq = 100e3
+        else:
+            raise RuntimeError("Unsupported ZNB model {}".format(model))
         self.add_parameter(name='num_ports',
                            get_cmd='INST:PORT:COUN?',
                            get_parser=int)

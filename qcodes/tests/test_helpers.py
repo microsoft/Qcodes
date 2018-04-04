@@ -104,7 +104,7 @@ class TestIsFunction(TestCase):
 
 
 class TestIsSequence(TestCase):
-    def a_func():
+    def a_func(self):
         raise RuntimeError('this function shouldn\'t get called')
 
     class AClass():
