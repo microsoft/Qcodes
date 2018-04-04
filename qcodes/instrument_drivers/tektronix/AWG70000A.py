@@ -262,7 +262,7 @@ class AWGChannel(InstrumentChannel):
         if name not in self.root_instrument.waveformList:
             raise ValueError('No such waveform in the waveform list')
 
-        self.root_instrument.write(f'SOURce{channel}:CASSet:WAVeform "{name}"')
+        self.root_instrument.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
