@@ -504,13 +504,12 @@ def add_to_spyder_UMR_excludelist(modulename: str):
 
     if any('SPYDER' in name for name in os.environ):
         try:
-            from spyder.utils.site.sitecustomize import UserModuleReloader
-            global __umr__
+            from spyder.utils.site import sitecustomize
             excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
                                               '').split(',')
             if modulename not in excludednamelist:
                 log.info("adding {} to excluded modules".format(modulename))
                 excludednamelist.append(modulename)
-            __umr__ = UserModuleReloader(namelist=excludednamelist)
+                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
