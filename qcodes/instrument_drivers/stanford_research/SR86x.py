@@ -150,6 +150,7 @@ class SR86xBuffer(InstrumentChannel):
         # it can only be read after a completed capture and will
         # timeout otherwise when the snapshot is updated, e.g. at
         # station creation time
+        params_to_skip_update = list(params_to_skip_update)
         params_to_skip_update.append('count_capture_kilobytes')
 
         snapshot = super().snapshot_base(update, params_to_skip_update)
