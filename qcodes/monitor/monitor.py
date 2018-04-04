@@ -168,7 +168,7 @@ class Monitor(Thread):
         except RuntimeError as e:
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
-            log.exception(e)
+            log.exception("Could not close loop")
         while not self.loop_is_closed:
             log.debug("waiting for loop to stop and close")
             time.sleep(0.01)
