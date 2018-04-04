@@ -39,6 +39,7 @@ class MockVisaHandle:
         # make it an error to ask or write after close
         self.write = None
         self.ask = None
+        self.query = None
 
     def write(self, cmd):
         num = float(cmd.split(':')[-1])
@@ -55,6 +56,11 @@ class MockVisaHandle:
         return len(cmd), ret_code
 
     def ask(self, cmd):
+        if self.state > 10:
+            raise ValueError("I'm out of fingers")
+        return self.state
+
+    def query(self, cmd):
         if self.state > 10:
             raise ValueError("I'm out of fingers")
         return self.state
