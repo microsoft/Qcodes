@@ -126,7 +126,7 @@ class Experiment(Sized):
         return "\n".join(out)
 
 
-# pulbic api
+# public api
 
 def experiments()->List[Experiment]:
     """
@@ -204,7 +204,7 @@ def load_experiment_by_name(name: str,
         the requested experiment
 
     Raises:
-        ValueErorr if the name is not unique and sample name is None.
+        ValueError if the name is not unique and sample name is None.
     """
     e = Experiment(DB)
     if sample:
@@ -236,8 +236,8 @@ def load_experiment_by_name(name: str,
         for row in rows:
             s = f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']}) started at({row['start_time']})"
             _repr.append(s)
-        _repr = "\n".join(_repr)
-        raise ValueError(f"Many experiments matching your request found {_repr}")
+        _repr_str = "\n".join(_repr)
+        raise ValueError(f"Many experiments matching your request found {_repr_str}")
     else:
         e.exp_id = rows[0]['exp_id']
     return e

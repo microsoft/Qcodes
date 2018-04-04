@@ -107,7 +107,7 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def one(curr: sqlite3.Cursor, column: str) -> Any:
+def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     """Get the value of one column from one row
     Args:
         curr: cursor to operate on
@@ -408,11 +408,11 @@ def insert_many_values(conn: sqlite3.Connection,
     # According to the SQLite changelog, the version number
     # to check against below
     # ought to be 3.7.11, but that fails on Travis
-    if LooseVersion(version) <= LooseVersion('3.8.2'):
+    if LooseVersion(str(version)) <= LooseVersion('3.8.2'):
         max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
     else:
         max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
-    rows_per_transaction = int(max_var/no_of_columns)
+    rows_per_transaction = int(int(max_var)/no_of_columns)
 
     _columns = ",".join(columns)
     _values = "(" + ",".join(["?"] * len(values[0])) + ")"
@@ -1010,7 +1010,6 @@ def get_paramspec(conn: sqlite3.Connection,
     c = conn.execute(sql)
     resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
                 'inferred_from')
-
     (layout_id, _, _, label, unit, inferred_from_string) = resp
 
     if inferred_from_string:
