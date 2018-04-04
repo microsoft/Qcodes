@@ -29,7 +29,7 @@ class DataSaver:
     datasaving to the database
     """
 
-    default_callback = None
+    default_callback: Optional[dict] = None
 
     def __init__(self, dataset: DataSet, write_period: float,
                  parameters: Dict[str, ParamSpec]) -> None:
