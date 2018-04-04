@@ -157,13 +157,6 @@ class _DataExtractor:
         return self._run_id
 
 
-def dowith(f):
-    def inner(*args):
-        return f, args
-    f.dowith = inner
-    return f
-
-
 def run(setup, sweep_object, cleanup, experiment=None, station=None):
 
     meas = SweepMeasurement(exp=experiment, station=station)

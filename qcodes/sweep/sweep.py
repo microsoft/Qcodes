@@ -21,7 +21,7 @@ def _infer_axis_properties(axis, length_only=False):
     properties = dict(ParametersTable.default_axis_properties)
 
     if not hasattr(axis, "__len__"):
-        return properties
+        return [properties]
 
     properties["length"] = len(axis)
 
@@ -42,7 +42,7 @@ def _infer_axis_properties(axis, length_only=False):
         for i in zip(*np.diff(array, axis=0).round(decimals=10))
     ]
 
-    steps = [step[0] if len(step) == 1 else -1 for step in steps]
+    steps = [step[0] if len(step) == 1 else "?" for step in steps]
 
     return [
         p.dset("min", mn).dset("max", mx).dset("steps", s)

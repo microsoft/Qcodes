@@ -36,10 +36,10 @@ class ParametersTable:
     # with sensible values is by using the "sweep" method defined in this
     # module
     default_axis_properties = {
-        "min": -1,
-        "max": -1,
-        "length": -1,
-        "steps": -1
+        "min": "?",
+        "max": "?",
+        "length": "?",
+        "steps": "?"
     }
 
     def __init__(

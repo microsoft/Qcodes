@@ -199,7 +199,7 @@ def test_layout_info():
             "min": min(sweep_values_3),
             "max": max(sweep_values_3),
             "length": len(sweep_values_3),
-            "steps": -1
+            "steps": "?"
         }
     }
 
@@ -242,15 +242,15 @@ def test_layout_info_setter():
     so = sweep(setter_function2, sweep_values)(m)
     assert so.parameter_table.layout_info("m") == {
         "bb": {
-            "min": -1,
-            "max": -1,
+            "min": "?",
+            "max": "?",
             "length": len(s1),
-            "steps": -1
+            "steps": "?"
         },
         "ab": {
-            "min": -1,
-            "max": -1,
+            "min": "?",
+            "max": "?",
             "length": len(s2),
-            "steps": -1
+            "steps": "?"
         }
     }
