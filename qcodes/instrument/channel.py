@@ -171,13 +171,13 @@ class ChannelList(Metadatable):
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
 
-        self._channel_mapping = {} # type: Dict[str, InstrumentChannel]
+        self._channel_mapping: Dict[str, InstrumentChannel] = {}
         # provide lookup of channels by name
         # If a list of channels is not provided, define a list to store
         # channels. This will eventually become a locked tuple.
         if chan_list is None:
             self._locked = False
-            self._channels = [] # type: Union[List[InstrumentChannel],Tuple[InstrumentChannel, ...]]
+            self._channels: Union[List[InstrumentChannel],Tuple[InstrumentChannel, ...]] = []
         else:
             self._locked = True
             self._channels = tuple(chan_list)

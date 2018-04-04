@@ -88,8 +88,8 @@ class Config():
     defaults = None
     defaults_schema = None
 
-    _diff_config = {} # type: Dict[str, dict]
-    _diff_schema = {} # type: Dict[str, dict]
+    _diff_config: Dict[str, dict] = {}
+    _diff_schema: Dict[str, dict] = {}
 
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()

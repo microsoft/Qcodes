@@ -5,8 +5,6 @@ import warnings
 import weakref
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING, cast
 
-
-from typing import Dict, Sequence
 import numpy as np
 if TYPE_CHECKING:
     from qcodes.instrumet.channel import ChannelList
