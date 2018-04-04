@@ -121,18 +121,24 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         self.loop_is_closed = False
         asyncio.set_event_loop(self.loop)
-        server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
-        self.server = self.loop.run_until_complete(server_start)
-        self.loop.run_forever()
-        log.debug("loop stopped")
-        log.debug("Pending tasks at close: {}".format(
-            asyncio.Task.all_tasks(self.loop)))
-        self.loop.close()
-        while not self.loop.is_closed():
-            log.debug("waiting for loop to stop and close")
-            time.sleep(0.01)
-        self.loop_is_closed = True
-        log.debug("loop closed")
+        try:
+            server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
+            self.server = self.loop.run_until_complete(server_start)
+            self.loop.run_forever()
+        except OSError as e:
+            # The code above may throw an OSError
+            # if the socket cannot be bound
+            log.exception(e)
+        finally:
+            log.debug("loop stopped")
+            log.debug("Pending tasks at close: {}".format(
+                asyncio.Task.all_tasks(self.loop)))
+            self.loop.close()
+            while not self.loop.is_closed():
+                log.debug("waiting for loop to stop and close")
+                time.sleep(0.01)
+            self.loop_is_closed = True
+            log.debug("loop closed")
 
     def stop(self) -> None:
         """
@@ -157,11 +163,15 @@ class Monitor(Thread):
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
-        asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+        try:
+            asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+        except RuntimeError as e:
+            # the above may throw a runtime error if the loop is already
+            # stopped in which case there is nothing more to do
+            log.exception(e)
         while not self.loop_is_closed:
             log.debug("waiting for loop to stop and close")
             time.sleep(0.01)
-
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
