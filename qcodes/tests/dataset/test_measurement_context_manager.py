@@ -374,7 +374,7 @@ def test_subscriptions(experiment, DAC, DMM):
 
             (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
-            sleep(meas.write_period)
+            sleep(1.2*meas.write_period)
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
@@ -382,7 +382,7 @@ def test_subscriptions(experiment, DAC, DMM):
     assert len(datasaver._dataset.subscribers) == 0
 
 
-@settings(deadline=None, max_examples=5)
+@settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))
 def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
 

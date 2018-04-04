@@ -206,7 +206,7 @@ class VisaInstrument(Instrument):
             str: The instrument's response.
         """
         log.debug("Querying instrument {}: {}".format(self.name, cmd))
-        return self.visa_handle.ask(cmd)
+        return self.visa_handle.query(cmd)
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str] = None):
