@@ -129,7 +129,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd='VOLTAGE {:.8f}',
             get_parser=float,
             vals=vals.Numbers(50e-3, 0.5),
-            docstring='Waveform amplitude when routed through the DC path')
+            docstring='Waveform amplitude when routed through the DAC path')
 
         self.add_parameter(
             'voltage_DC',
@@ -138,7 +138,7 @@ class AWGChannel(InstrumentChannel):
             set_cmd='VOLTAGE:DAC {:.8f}',
             get_parser=float,
             vals=vals.Numbers(50e-3, 2),
-            docstring='Waveform amplitude when routed through the DAC path')
+            docstring='Waveform amplitude when routed through the DC path')
 
         self.add_parameter(
             'voltage_offset',
@@ -492,6 +492,8 @@ class AWGChannel(InstrumentChannel):
         self.uploaded_sequence(sequence)
 
 class Keysight_81180A(VisaInstrument):
+    waveform_max_length = 16000000
+
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
 
