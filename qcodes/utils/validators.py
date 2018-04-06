@@ -1,5 +1,5 @@
 import math
-from typing import Union, Tuple, cast
+from typing import Union, Tuple, cast, Optional
 
 import numpy as np
 
@@ -385,7 +385,7 @@ class PermissiveMultiples(Validator):
         self.precision = precision
         self._numval = Numbers()
         if isinstance(divisor, int):
-            self._mulval = Multiples(divisor=abs(divisor))
+            self._mulval = Multiples(divisor=abs(divisor)) # type: Optional[Multiples]
         else:
             self._mulval = None
         self._valid_values = [divisor]
@@ -407,7 +407,7 @@ class PermissiveMultiples(Validator):
             # multiply our way out of the problem by constructing true
             # multiples in the relevant range and see if `value` is one
             # of them (within rounding errors)
-            divs = int(divmod(value, self.divisor)[0])
+            divs = int(divmod(value, self.divisor)[0]) # type: ignore
             true_vals = np.array([n*self.divisor for n in range(divs, divs+2)])
             abs_errs = [abs(tv-value) for tv in true_vals]
             if min(abs_errs) > self.precision:

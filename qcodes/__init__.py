@@ -10,7 +10,7 @@ from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
-config = Config()
+config = Config() # type: Config
 
 from qcodes.version import __version__
 
@@ -88,7 +88,7 @@ _c.close()
 del _c
 
 try:
-    get_ipython() # Check if we are in iPython
+    get_ipython() # type: ignore # Check if we are in iPython
     from qcodes.utils.magic import register_magic_class
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:

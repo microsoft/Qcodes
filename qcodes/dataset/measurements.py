@@ -11,7 +11,7 @@ import numpy as np
 
 import qcodes as qc
 from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, Parameter
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -29,7 +29,7 @@ class DataSaver:
     datasaving to the database
     """
 
-    default_callback = None
+    default_callback: Optional[dict] = None
 
     def __init__(self, dataset: DataSet, write_period: float,
                  parameters: Dict[str, ParamSpec]) -> None:
@@ -45,7 +45,7 @@ class DataSaver:
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
-        self._known_dependencies: Dict[str, str] = {}
+        self._known_dependencies: Dict[str, List[str]] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
                 self._known_dependencies.update({str(param):
@@ -152,6 +152,7 @@ class DataSaver:
                 # For compatibility with the old Loop, setpoints are
                 # tuples of numbers (usually tuple(np.linspace(...))
                 if hasattr(value, '__len__') and not(isinstance(value, str)):
+                    value = cast(Union[Sequence,np.ndarray], value)
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -398,6 +399,7 @@ class Measurement:
         name = str(parameter)
 
         if isinstance(parameter, ArrayParameter):
+            parameter = cast(ArrayParameter, parameter)
             if parameter.setpoint_names:
                 spname = (f'{parameter._instrument.name}_'
                           f'{parameter.setpoint_names[0]}')
@@ -416,8 +418,10 @@ class Measurement:
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
-            setpoints = setpoints if setpoints else ()
-            setpoints += (spname,)
+            my_setpoints: Tuple[Union[_BaseParameter, str], ...] = setpoints if setpoints else ()
+            my_setpoints += (spname,)
+        else:
+            my_setpoints = setpoints
 
         # We currently treat ALL parameters as 'numeric' and fail to add them
         # to the dataset if they can not be unraveled to fit that description
@@ -426,12 +430,13 @@ class Measurement:
         # requirement later and start saving binary blobs with the datasaver,
         # but for now binary blob saving is referred to using the DataSet
         # API directly
+        parameter = cast(Union[Parameter, ArrayParameter], parameter)
         paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
 
-        if setpoints:
-            sp_strings = [str(sp) for sp in setpoints]
+        if my_setpoints:
+            sp_strings = [str(sp) for sp in my_setpoints]
         else:
             sp_strings = []
         if basis:
