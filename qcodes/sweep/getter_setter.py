@@ -5,12 +5,13 @@ appropriate functions
 """
 
 import numpy as np
-from typing import Callable
+from typing import Callable, Optional, List, Tuple
 
 from qcodes.sweep.base_sweep import ParametersTable
 
 
-def getter(param_list: list, inferred_parameters: list=None)->Callable:
+def getter(param_list: List[Tuple[str, str]],
+           inferred_parameters: List[Tuple[str, str]]=None)->Callable:
     """
     A decorator to easily integrate arbitrary measurement functions in sweeps.
 
@@ -32,6 +33,7 @@ def getter(param_list: list, inferred_parameters: list=None)->Callable:
         More elaborate examples are available in getters_and_setters.ipynb
         in the folder  docs/examples/sweep.
     """
+    inferred_symbols: Optional[List[Tuple[str, ...]]]
     if inferred_parameters is None:
         inferred_parameters = []
         inferred_symbols = []
@@ -68,7 +70,8 @@ def getter(param_list: list, inferred_parameters: list=None)->Callable:
     return decorator
 
 
-def setter(param_list: list, inferred_parameters: list=None)->Callable:
+def setter(param_list: List[Tuple[str, str]],
+           inferred_parameters: List[Tuple[str, str]]=None)->Callable:
     """
     A decorator to easily integrate arbitrary setter functions in sweeps
 
@@ -82,6 +85,7 @@ def setter(param_list: list, inferred_parameters: list=None)->Callable:
         decorator (Callable).
 
     """
+    inferred_symbols: Optional[List[Tuple[str, ...]]]
     if inferred_parameters is None:
         inferred_parameters = []
         inferred_symbols = []

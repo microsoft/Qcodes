@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence
 import itertools
 import numpy as np
 import time
@@ -43,8 +43,10 @@ class ParametersTable:
     }
 
     def __init__(
-            self, table_list: list=None, dependent_parameters: list=None,
-            independent_parameters: list=None, inferred_from_dict: dict=None
+            self, table_list: List[Dict[str, List[Tuple[str,str]]]]=None,
+            dependent_parameters: List[Tuple[str, str]]=None,
+            independent_parameters: List[Tuple[str, str]]=None,
+            inferred_from_dict: Dict[str,str]=None
     )->None:
 
         if not any([table_list, dependent_parameters, independent_parameters]):
@@ -64,11 +66,11 @@ class ParametersTable:
         else:
             self._table_list = list(table_list)
 
-        self._inferred_from_dict = {}
+        self._inferred_from_dict: Dict[str,str] = {}
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-        self._axis_info = dict()
+        self._axis_info: Dict[str, str] = dict()
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -160,7 +162,7 @@ class ParametersTable:
         ind, _ = self.flatten()
         return {k: v for k, v in ind.items() if k not in black_list}
 
-    def symbols_list(self)->list:
+    def symbols_list(self)->List[str]:
         """
         Return a list of parameter names
         """
@@ -273,12 +275,12 @@ class BaseSweepObject:
     def __init__(self)->None:
         # A "param_setter" is an iterator which, when "next" is called a new
         # value of the independent parameter is set.
-        self._param_setter = None
+        self._param_setter: Optional[Iterator] = None
 
         # A proper parameter table should be defined by the subclasses. This
         # is an instance of ParametersTable
-        self._parameter_table = None
-        self._symbols_list = None
+        self._parameter_table: Optional[ParametersTable] = None
+        self._symbols_list: Optional[List[str]] = None
 
     def _setter_factory(self)->Iterator:
         """
@@ -338,7 +340,7 @@ class IteratorSweep(BaseSweepObject):
         iterator has the effect of setting the independent parameters.
     """
 
-    def __init__(self, iterator_function: callable)->None:
+    def __init__(self, iterator_function: Callable)->None:
         super().__init__()
         self._iterator_function = iterator_function
 
@@ -440,7 +442,7 @@ class Zip(BaseSweepObject):
     sweep
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
@@ -452,7 +454,7 @@ class Zip(BaseSweepObject):
         )
 
     @staticmethod
-    def _combine_dictionaries(dictionaries: Tuple[Any])->dict:
+    def _combine_dictionaries(dictionaries: Sequence[dict])->dict:
         combined = {}
         for d in dictionaries:
             combined.update(d)

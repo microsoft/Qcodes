@@ -40,7 +40,7 @@ class SweepMeasurement(Measurement):
         Returns:
             A list of ParamSpec objects
         """
-        param_spec_list = {}
+        param_spec_dict:Dict[str, ParamSpec] = {}
 
         if depends_on is None:
             depends_on = []
@@ -58,18 +58,18 @@ class SweepMeasurement(Measurement):
         # are encountered first in the loop
         for name, unit in sorted_symbols:
 
-            param_spec_list[name] = ParamSpec(
+            param_spec_dict[name] = ParamSpec(
                 name=name,
                 paramtype='numeric',
                 unit=unit,
                 depends_on=depends_on,
                 inferred_from=[
-                    param_spec_list[n]
+                    param_spec_dict[n]
                     for n in inferred_parameters.get(name, [])
                 ]
             )
 
-        return list(param_spec_list.values())
+        return list(param_spec_dict.values())
 
     def register_sweep(self, sweep_object: BaseSweepObject)->None:
         """
@@ -97,7 +97,7 @@ class SweepMeasurement(Measurement):
             # Thus if a voltage x is inferred from xmv, then a current y
             # which is measured is said to depend on x only, even though
             # xmv is also independent
-            dependency_black_list = []
+            dependency_black_list: List[str] = []
             for param in inferred_parameters.values():
                 dependency_black_list += param
 

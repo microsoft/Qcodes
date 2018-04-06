@@ -12,6 +12,8 @@ from qcodes.sweep.base_sweep import ParametersTable, BaseSweepObject, \
     FunctionSweep, ParameterSweep, Nest, wrap_objects, TimeTrace, Chain, Zip
 
 
+sw_objects = Union[Callable, Parameter, BaseSweepObject]
+
 def _infer_axis_properties(axis, length_only=False):
     class _Dict(dict):
         def dset(self, name, value):
@@ -71,7 +73,7 @@ def sweep(
         point_function = lambda: sweep_points
     else:
         point_function = sweep_points
-
+    so: BaseSweepObject
     if not isinstance(obj, qcodes.Parameter):
         if not callable(obj):
             raise ValueError(
@@ -125,7 +127,7 @@ def chain(*objects:  BaseSweepObject)->BaseSweepObject:
     return Chain(wrap_objects(*objects))
 
 
-def szip(*objects:  BaseSweepObject)->BaseSweepObject:
+def szip(*objects:  sw_objects)->BaseSweepObject:
     """
     A plausible scenario for using szip is the following:
 
@@ -152,7 +154,7 @@ def szip(*objects:  BaseSweepObject)->BaseSweepObject:
 
 
 def time_trace(
-        measurement_object: [Callable, Parameter, BaseSweepObject],
+        measurement_object: sw_objects,
         interval_time: float,
         total_time: float
 ):
