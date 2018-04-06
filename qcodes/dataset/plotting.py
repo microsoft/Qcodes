@@ -142,6 +142,10 @@ def plot_by_id(run_id: int,
                        f'{len(data-1)} parameters, cannot plot '
                        f'that.')
             cbaxes.append(None)
+
+    if len(axes) != len(cbaxes):
+        raise RuntimeError("Non equal number of axes. Perhaps cbaxes is missing"
+                           "from one of the cases above")
     return axes,cbaxes
 
 
