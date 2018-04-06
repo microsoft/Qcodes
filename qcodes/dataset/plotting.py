@@ -90,7 +90,7 @@ def plot_by_id(run_id: int,
             raise RuntimeError(f"Trying to make {nplots} plots, but"
                                f"received {len(axes)} axes objects.")
 
-    cbaxes = []
+    cbaxes: List[Optional[matplotlib.axes.Axes]] = []
     for data, ax in zip(alldata, axes):
 
         if len(data) == 2:  # 1D PLOTTING
