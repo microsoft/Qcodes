@@ -13,12 +13,11 @@ from .data_export import datatype_from_setpoints_2d, reshape_2D_data
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
-mplaxes = matplotlib.axes.Axes
 
 def plot_by_id(run_id: int,
-               axes: Optional[Union[mplaxes,
-                     Sequence[mplaxes]]]=None) -> Tuple[List[mplaxes],
-                                                        List[Optional[mplaxes]]]:
+               axes: Optional[Union[matplotlib.axes.Axes,
+                     Sequence[matplotlib.axes.Axes]]]=None) -> Tuple[List[matplotlib.axes.Axes],
+                                                        List[Optional[matplotlib.axes.Axes]]]:
     def set_axis_labels(ax, data, cax=None):
         if data[0]['label'] == '':
             lbl = data[0]['name']
@@ -78,7 +77,7 @@ def plot_by_id(run_id: int,
     """
     alldata = get_data_by_id(run_id)
     nplots = len(alldata)
-    if isinstance(axes, mplaxes):
+    if isinstance(axes, matplotlib.axes.Axes):
         axes = [axes]
 
     if axes is None:
@@ -148,7 +147,7 @@ def plot_by_id(run_id: int,
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                          z: np.ndarray,
-                         ax: mplaxes) -> Tuple[mplaxes, mplaxes]:
+                         ax: matplotlib.axes.Axes) -> Tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular

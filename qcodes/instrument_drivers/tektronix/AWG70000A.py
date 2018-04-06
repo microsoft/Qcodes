@@ -7,7 +7,7 @@ import zipfile as zf
 import logging
 from functools import partial
 
-from dateutil.tz import time
+import time
 from typing import List, Sequence
 
 from qcodes import Instrument, VisaInstrument, validators as vals
@@ -262,7 +262,7 @@ class AWGChannel(InstrumentChannel):
         if name not in self.root_instrument.waveformList:
             raise ValueError('No such waveform in the waveform list')
 
-        self.root_instrument.write(f'SOURce{channel}:CASSet:WAVeform "{name}"')
+        self.root_instrument.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -420,10 +420,10 @@ class AWG70000A(VisaInstrument):
         """
         Return the waveform list as a list of strings
         """
-        resp = self.ask("WLISt:LIST?")
-        resp = resp.strip()
-        resp = resp.replace('"', '')
-        resp = resp.split(',')
+        respstr = self.ask("WLISt:LIST?")
+        respstr = respstr.strip()
+        respstr = respstr.replace('"', '')
+        resp = respstr.split(',')
 
         return resp
 
@@ -798,7 +798,7 @@ class AWG70000A(VisaInstrument):
                      for ch in range(1, chans+1)]
 
         # generate wfmx files for the waveforms
-        flat_wfmxs = []
+        flat_wfmxs = [] # type: List[bytes]
         for amplitude, wfm_lst in zip(amplitudes, wfms):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]

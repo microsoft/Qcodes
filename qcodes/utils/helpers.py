@@ -9,10 +9,11 @@ import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+from typing import Dict, List
 
 import numpy as np
 
-_tprint_times = {}
+_tprint_times= {} # type: Dict[str, float]
 
 log = logging.getLogger(__name__)
 
@@ -309,9 +310,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = []
-    delegate_attr_objects = []
-    omit_delegate_attrs = []
+    delegate_attr_dicts = [] # type: List[str]
+    delegate_attr_objects = [] # type: List[str]
+    omit_delegate_attrs = [] # type: List[str]
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -503,13 +504,12 @@ def add_to_spyder_UMR_excludelist(modulename: str):
 
     if any('SPYDER' in name for name in os.environ):
         try:
-            from spyder.utils.site.sitecustomize import UserModuleReloader
-            global __umr__
+            from spyder.utils.site import sitecustomize
             excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
                                               '').split(',')
             if modulename not in excludednamelist:
                 log.info("adding {} to excluded modules".format(modulename))
                 excludednamelist.append(modulename)
-            __umr__ = UserModuleReloader(namelist=excludednamelist)
+                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
