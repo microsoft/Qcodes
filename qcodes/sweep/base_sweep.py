@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence
 import itertools
 import numpy as np
 import time
@@ -66,11 +66,11 @@ class ParametersTable:
         else:
             self._table_list = list(table_list)
 
-        self._inferred_from_dict = {}
+        self._inferred_from_dict: Dict[str,str] = {}
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-        self._axis_info = dict()
+        self._axis_info: Dict[str, str] = dict()
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -442,7 +442,7 @@ class Zip(BaseSweepObject):
     sweep
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
@@ -454,7 +454,7 @@ class Zip(BaseSweepObject):
         )
 
     @staticmethod
-    def _combine_dictionaries(dictionaries: Tuple[Any])->dict:
+    def _combine_dictionaries(dictionaries: Sequence[dict])->dict:
         combined = {}
         for d in dictionaries:
             combined.update(d)
