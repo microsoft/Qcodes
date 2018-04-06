@@ -242,7 +242,8 @@ def get_shaped_data_by_runid(run_id: int) -> List:
     mydata = get_data_by_id(run_id)
 
     for independet in mydata:
-        if len(independet) == 3:
+        data_length_long_enough = len(independet) == 3 and len(independet[0]['data']) > 0 and len(independet[1]['data']) > 0
+        if data_length_long_enough:
             datatype = datatype_from_setpoints_2d([independet[0]['data'],
                                                    independet[1]['data']])
             if datatype in ('grid', 'equidistant'):

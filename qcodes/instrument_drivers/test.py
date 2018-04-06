@@ -1,5 +1,5 @@
 import unittest
-
+from typing import Optional
 '''
 This module defines:
 
@@ -26,7 +26,8 @@ Using `DriverTestCase` is pretty easy:
 
 
 class DriverTestCase(unittest.TestCase):
-    driver = None  # override this in a subclass
+    # override this in a subclass
+    driver = None  # type: Optional[type]
 
     @classmethod
     def setUpClass(cls):

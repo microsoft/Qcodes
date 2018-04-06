@@ -16,7 +16,7 @@ class UnboundedPublisher:
     def __init__(self,
                  topic: str,
                  interface_or_socket: str="tcp://localhost:5559",
-                 context: zmq.Context = None):
+                 context: zmq.Context = None) -> None:
         """
 
         Args:
@@ -49,7 +49,7 @@ class Publisher(UnboundedPublisher):
     def __init__(self, topic: str,
                  interface_or_socket: str="tcp://localhost:5559",
                  timeout: int = _LINGER*10,
-                 hwm: int = _ZMQ_HWM*5,  context: zmq.Context = None):
+                 hwm: int = _ZMQ_HWM*5,  context: zmq.Context = None) -> None:
         """
 
         Args:

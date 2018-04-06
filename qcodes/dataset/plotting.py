@@ -1,9 +1,9 @@
-from typing import List, Any, Sequence
 import logging
+from typing import Optional, List, Sequence, Union
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 
 import qcodes as qc
 
@@ -14,7 +14,9 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 
-def plot_by_id(run_id: int) -> Figure:
+def plot_by_id(run_id: int,
+               axes: Optional[Union[matplotlib.axes.Axes,
+                                    Sequence[matplotlib.axes.Axes]]]=None) -> List[matplotlib.axes.Axes]:
     def set_axis_labels(ax, data):
         if data[0]['label'] == '':
             lbl = data[0]['name']
@@ -45,22 +47,31 @@ def plot_by_id(run_id: int) -> Figure:
        * 1D plots
        * 2D plots on filled out rectangular grids
     """
-
     alldata = get_data_by_id(run_id)
+    nplots = len(alldata)
+    if isinstance(axes, matplotlib.axes.Axes):
+        axes = [axes]
 
-    for data in alldata:
+    if axes is None:
+        axes = []
+        for i in range(nplots):
+            fig, ax = plt.subplots(1,1)
+            axes.append(ax)
+    else:
+        if len(axes) != nplots:
+            raise RuntimeError(f"Trying to make {nplots} plots, but"
+                               f"received {len(axes)} axes objects.")
+
+    for data, ax in zip(alldata, axes):
 
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
-
-            figure, ax = plt.subplots()
 
             # sort for plotting
             order = data[0]['data'].argsort()
 
             ax.plot(data[0]['data'][order], data[1]['data'][order])
             set_axis_labels(ax, data)
-            return figure
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -73,25 +84,20 @@ def plot_by_id(run_id: int) -> Figure:
 
             log.debug('Plotting by id, determining plottype')
             plottype = datatype_from_setpoints_2d([data[0]['data'],
-                                                        data[1]['data']])
+                                                   data[1]['data']])
 
             if plottype in how_to_plot.keys():
                 log.debug('Plotting by id, doing the actual plot')
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                figure = how_to_plot[plottype](xpoints, ypoints, zpoints)
-
-                ax = figure.axes[0]
+                ax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
                 set_axis_labels(ax, data)
                 # TODO: get a colorbar
-
-                return figure
 
             else:
                 log.warning('2D data does not seem to be on a '
                             'grid. Falling back to scatter plot')
-                fig, ax = plt.subplots(1,1)
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
@@ -99,14 +105,16 @@ def plot_by_id(run_id: int) -> Figure:
                 set_axis_labels(ax, data)
 
         else:
-            raise ValueError('Multi-dimensional data encountered. '
-                             f'parameter {data[-1].name} depends on '
-                             f'{len(data-1)} parameters, cannot plot '
-                             f'that.')
+            log.warning('Multi-dimensional data encountered. '
+                       f'parameter {data[-1].name} depends on '
+                       f'{len(data-1)} parameters, cannot plot '
+                       f'that.')
+    return axes
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
-                         z: np.ndarray) -> Figure:
+                         z: np.ndarray,
+                         ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -139,7 +147,6 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
 
-    fig, ax = plt.subplots()
     ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
 
-    return fig
+    return ax
