@@ -5,7 +5,7 @@ in sweep objects.
 """
 
 import numpy as np
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Union
 from collections import OrderedDict
 import itertools
 
@@ -21,8 +21,9 @@ class SweepMeasurement(Measurement):
     @staticmethod
     def _make_param_spec_list(
             symbols_list: List[Tuple[str,str]],
+            # TODO should inferred_parameters also be able to take ParamSpecs as depends_on can
             inferred_parameters: Dict[str,List[str]],
-            depends_on: List=None
+            depends_on: List[Union['ParamSpec', str]]=None
     )->List[ParamSpec]:
         """
         Args:
@@ -40,7 +41,7 @@ class SweepMeasurement(Measurement):
         Returns:
             A list of ParamSpec objects
         """
-        param_spec_dict:Dict[str, ParamSpec] = {}
+        param_spec_dict: Dict[str, ParamSpec] = {}
 
         if depends_on is None:
             depends_on = []
