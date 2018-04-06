@@ -2,7 +2,6 @@ from qcodes.instrument_drivers.Keysight.M3300A import Keysight_M3300A_FPGA
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Bool, Ints
 
-import struct
 import numpy as np
 
 try:
@@ -26,8 +25,7 @@ class PCDDS(Instrument):
         self.n_op_bits = 10
         self.n_phase_bits = 45
         self.n_accum_bits = 45
-        self.n_amp_bits = 45
-        self.n_dac_bits = 16
+        self.n_amp_bits = 16
         self.clk = 100e6
         self.v_max = 3.0
         self.f_max = 200e6
@@ -87,7 +85,7 @@ class PCDDS(Instrument):
         """ Sends the reset signal to the FPGA """
         self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.RESET_PULSE)
 
-    def write_pulse(self, pulse, phase, frequency, amplitude, next_pulse):
+    def write_sine_pulse(self, pulse, phase, frequency, amplitude, next_pulse):
         """
         Write a normal sinusoidal pulse with the desired properties to the pulse memory.
         :param pulse: (Int) The location in pulse memory that this is to be written to
@@ -97,22 +95,123 @@ class PCDDS(Instrument):
         :param next_pulse: (Int) The next pulse that the system is to go to after this one
         :return: None
         """
+        if not isinstance(pulse, int):
+            raise TypeError('Incorrect type for function input pulse. It should be an int')
+        if not isinstance(next_pulse, int):
+            raise TypeError('Incorrect type for function input next_pulse. It should be an int')
+        # Convert all the pulse parameters to the correct register values
         phase_val = self.phase2val(phase)
         freq_val = self.freq2val(frequency)
-        accum = 0
+        accum_val = 0
         amplitude_val = self.amp2val(amplitude)
+        self.write_pulse(pulse, phase_val, freq_val, accum_val, amplitude_val, next_pulse)
 
-    def write_dc_pulse(self):
-        pass
+    def write_dc_pulse(self, pulse, voltage, next_pulse):
+        """
+        Write a DC pulse to memory. This sets up a pulse with a phase offset of 90 degrees, 0 frequency
+        and a certain amplitude
+        :param pulse: (Int) The location in pulse memory that this is to be written to
+        :param voltage: (Float) The desired DC voltage
+        :param next_pulse: (Int) The next pulse that the system is to go to after this one
+        :return:
+        """
+        # TODO: This requires a hardware fix. The phase coherent nature of the switching causes this pulse not to sit at
+        # a constant phase
+        if not isinstance(pulse, int):
+            raise TypeError('Incorrect type for function input pulse. It should be an int')
+        if not isinstance(next_pulse, int):
+            raise TypeError('Incorrect type for function input next_pulse. It should be an int')
+        # Convert the voltage to the correct register value
+        amplitude_val = self.amp2val(voltage)
+        phase_val = self.phase2val(90.0)
+        accum_val = 0
+        freq_val = 0
+        self.write_pulse(pulse, phase_val, freq_val, accum_val, amplitude_val, next_pulse)
 
-    def write_chirp_pulse(self):
-        pass
+    def write_chirp_pulse(self, pulse, phase, frequency, frequency_accumulation, amplitude, next_pulse):
+        """
+        Write a pulse to pulse memory which contains a frequency sweep
+        :param pulse: (Int) The location in pulse memory that this is to be written to
+        :param phase: (Float) The phase value for this pulse in degrees
+        :param frequency: (Float) The frequency value for this pulse in Hz
+        :param frequency_accumulation: (Float) The frequency accumulation for this pulse in Hz/s
+        :param amplitude: (Float) The amplitude for this pulse in V
+        :param next_pulse: (Int) The pulse that the system is to go to after this one
+        :return: None
+        """
+        if not isinstance(pulse, int):
+            raise TypeError('Incorrect type for function input pulse. It should be an int')
+        if not isinstance(next_pulse, int):
+            raise TypeError('Incorrect type for function input next_pulse. It should be an int')
+        phase_val = self.phase2val(phase)
+        freq_val = self.freq2val(frequency)
+        accum_val = self.accum2val(frequency_accumulation)
+        amplitude_val = self.amp2val(amplitude)
+        self.write_pulse(pulse, phase_val, freq_val, accum_val, amplitude_val, next_pulse)
 
-    def set_next_pulse(self):
-        pass
+    def write_pulse(self, pulse, phase, frequency, frequency_accumulation, amplitude, next_pulse):
+        """
+        Function to write a pulse with given register values to a given location in pulse memory
+        :param pulse: (Int) The location in pulse memory that this is to be written to
+        :param phase: (Int) The phase register value for this pulse
+        :param frequency: (Int) The frequency register value for this pulse
+        :param frequency_accumulation: (Int) The frequency accumulation register for this pulse
+        :param amplitude: (Int) The amplitude register for this pulse
+        :param next_pulse: (Int) The pulse that the system is to go to after this one
+        :return: None
+        """
+        # Construct the initial instruction to write a new pulse to memory
+        operation = int('0000100000', 2)
+        instr = self.construct_instruction(operation, pulse)
+        # Construct the pulse parameter to be written to memory
+        pulse_data = phase
+        pulse_data += (frequency << self.n_phase_bits)
+        pulse_data += (frequency_accumulation << 2 * self.n_phase_bits)
+        pulse_data += (amplitude << 2 * self.n_phase_bits + self.n_accum_bits)
+        pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits + self.n_amp_bits)
+        pulse_data = self.split_value(pulse_data)
+        self.fpga.set_fpga_pc_port(
+            self.port,
+            [instr, pulse_data[4], pulse_data[3], pulse_data[2], pulse_data[1], pulse_data[0]],
+            0, 0, 1)
+
+    @staticmethod
+    def split_value(value):
+        """
+        Splits a 20 byte message up into 5x 32 bit messages
+        :param value: (Int) The message that is to be split
+        :return: (List of Ints) List of 32 bit length ints to be sent as messages
+        """
+        if not isinstance(value, int):
+            raise TypeError('Incorrect type passed to split_value')
+        return [int(value & 0xFFFFFFFF),
+                int((value >> 32) & 0xFFFFFFFF),
+                int((value >> 64) & 0xFFFFFFFF),
+                int((value >> 96) & 0xFFFFFFFF),
+                int((value >> 128) & 0xFFFFFFFF)]
+
+    def set_next_pulse(self, pulse, update):
+        """
+        Function to set the next pulse to be played. It is also possible to update to this new pulse
+        via this function
+        :param pulse: (Int) Next pulse to be played
+        :param update: (Bool) Should the system update right now
+        :return: None
+        """
+        operation = int('0000000010', 2)
+        if update:
+            operation += int('1000000000', 2)
+        instr = self.construct_instruction(operation, pulse)
+        self.fpga.set_fpga_pc_port(self.port, instr, 0, 0, 1)
 
     def send_trigger(self):
-        pass
+        """
+        Send a trigger signal to the FPGA
+        :return: None
+        """
+        operation = int('1000000000', 2)
+        instr = self.construct_instruction(operation, 0)
+        self.fpga.set_fpga_pc_port(self.port, instr, 0, 0, 1)
 
     def phase2val(self, phase):
         """
@@ -120,7 +219,7 @@ class PCDDS(Instrument):
         :param phase: (Float) The desired phase in degrees.
         :return: (Int) The register value for the desired phase
         """
-        # TODO: Add angle wrapping
+        phase = phase % 360.0
         return int(np.round((2 ** self.n_phase_bits / 360.0) * phase))
 
     def freq2val(self, freq):
@@ -130,7 +229,7 @@ class PCDDS(Instrument):
         :return: (Int) The register value for the desired frequency
         """
         if freq > self.f_max or freq < 0:
-            raise ValueError('Frequency of {} is outside of allowed values [0, {}MHz]'.format(freq, self.f_max/1e6))
+            raise ValueError('Frequency of {0} is outside of allowed values [0, {1}MHz]'.format(freq, self.f_max/1e6))
         return int(np.round((2 ** self.n_phase_bits / (5*self.clk)) * freq))
 
     def accum2val(self, accum):
@@ -140,7 +239,7 @@ class PCDDS(Instrument):
         :return: (Int) The register value for the desired accumulation
         """
         if accum < 0 or accum > (5*self.clk ** 2):
-            raise ValueError('Frequency Accumulation of {} is outside of allowed values [0,{}Hz/s]'.format(
+            raise ValueError('Frequency Accumulation of {0} is outside of allowed values [0,{1}Hz/s]'.format(
                 accum, (5*self.clk ** 2)))
         return int(np.round(accum * 2 ** self.n_accum_bits / (5*self.clk) ** 2))
 
@@ -151,5 +250,5 @@ class PCDDS(Instrument):
         :return: (Int) The register value for the desired amplitude
         """
         if amp < 0 or amp > self.v_max:
-            raise ValueError('Amplitude of {} is outside of allowed values [0, {}V'.format(amp, self.v_max))
-        return int(np.round(2**self.n_dac_bits * amp/self.v_max))
+            raise ValueError('Amplitude of {0} is outside of allowed values [0, {1}V'.format(amp, self.v_max))
+        return int(np.round((2**self.n_amp_bits-1) * amp/self.v_max))
