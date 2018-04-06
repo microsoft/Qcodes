@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence, Iterable
 import itertools
 import numpy as np
 import time
@@ -141,7 +141,7 @@ class ParametersTable:
 
         return black_list
 
-    def flatten(self)->tuple:
+    def flatten(self)->Tuple[dict, dict]:
         """
         Return a flattened list of dependent and independent parameters.
         Dependency information is lost by flattening (that is, if e.g.
@@ -154,7 +154,7 @@ class ParametersTable:
                d["dependent_parameters"]}
         return ind, dep
 
-    def get_independents(self, exclude_inferees=False):
+    def get_independents(self, exclude_inferees =False):
         black_list = []
         if exclude_inferees:
             black_list = self._inferees_black_list()
@@ -185,7 +185,7 @@ class ParametersTable:
         """
         self._axis_info.update(axis_info)
 
-    def layout_info(self, param_name):
+    def layout_info(self, param_name: str):
 
         table = None
         for t in self._table_list:
@@ -340,7 +340,7 @@ class IteratorSweep(BaseSweepObject):
         iterator has the effect of setting the independent parameters.
     """
 
-    def __init__(self, iterator_function: Callable)->None:
+    def __init__(self, iterator_function: Callable[[], Iterable])->None:
         super().__init__()
         self._iterator_function = iterator_function
 
@@ -374,7 +374,7 @@ class Nest(BaseSweepObject):
     Etc...
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
@@ -419,7 +419,7 @@ class Chain(BaseSweepObject):
     Chain a list of sweep object to run one after the other
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
