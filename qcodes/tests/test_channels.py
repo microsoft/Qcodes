@@ -257,5 +257,12 @@ class TestChannelsLoop(TestCase):
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 
+    def test_root_instrument(self):
+        assert self.instrument.root_instrument is self.instrument
+        for channel in self.instrument.channels:
+            assert channel.root_instrument is self.instrument
+            for parameter in channel.parameters.values():
+                assert parameter.root_instrument is self.instrument
+
 if __name__ == '__main__':
     unittest.main()
