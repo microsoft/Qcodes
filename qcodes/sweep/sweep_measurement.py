@@ -40,7 +40,7 @@ class SweepMeasurement(Measurement):
         Returns:
             A list of ParamSpec objects
         """
-        param_spec_list = {}
+        param_spec_dict:Dict[str, ParamSpec] = {}
 
         if depends_on is None:
             depends_on = []
@@ -58,18 +58,18 @@ class SweepMeasurement(Measurement):
         # are encountered first in the loop
         for name, unit in sorted_symbols:
 
-            param_spec_list[name] = ParamSpec(
+            param_spec_dict[name] = ParamSpec(
                 name=name,
                 paramtype='numeric',
                 unit=unit,
                 depends_on=depends_on,
                 inferred_from=[
-                    param_spec_list[n]
+                    param_spec_dict[n]
                     for n in inferred_parameters.get(name, [])
                 ]
             )
 
-        return list(param_spec_list.values())
+        return list(param_spec_dict.values())
 
     def register_sweep(self, sweep_object: BaseSweepObject)->None:
         """
