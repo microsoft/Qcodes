@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List
 import itertools
 import numpy as np
 import time
@@ -160,7 +160,7 @@ class ParametersTable:
         ind, _ = self.flatten()
         return {k: v for k, v in ind.items() if k not in black_list}
 
-    def symbols_list(self)->list:
+    def symbols_list(self)->List[str]:
         """
         Return a list of parameter names
         """
@@ -273,12 +273,12 @@ class BaseSweepObject:
     def __init__(self)->None:
         # A "param_setter" is an iterator which, when "next" is called a new
         # value of the independent parameter is set.
-        self._param_setter = None
+        self._param_setter: Optional[Iterator] = None
 
         # A proper parameter table should be defined by the subclasses. This
         # is an instance of ParametersTable
-        self._parameter_table = None
-        self._symbols_list = None
+        self._parameter_table: Optional[ParametersTable] = None
+        self._symbols_list: Optional[List[str]] = None
 
     def _setter_factory(self)->Iterator:
         """
