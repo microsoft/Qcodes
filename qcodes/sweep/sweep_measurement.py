@@ -97,7 +97,7 @@ class SweepMeasurement(Measurement):
             # Thus if a voltage x is inferred from xmv, then a current y
             # which is measured is said to depend on x only, even though
             # xmv is also independent
-            dependency_black_list = []
+            dependency_black_list: List[str] = []
             for param in inferred_parameters.values():
                 dependency_black_list += param
 
