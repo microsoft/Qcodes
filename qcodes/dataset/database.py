@@ -9,8 +9,8 @@ def get_DB_location() -> str:
     return qcodes.config["core"]["db_location"]
 
 
-def get_DB_debug() -> str:
-    return qcodes.config["core"]["db_debug"]
+def get_DB_debug() -> bool:
+    return bool(qcodes.config["core"]["db_debug"])
 
 
 def initialise_database() -> None:
@@ -21,7 +21,7 @@ def initialise_database() -> None:
     Args:
         config: An instance of the config object
     """
-    conn = _connect(get_DB_location(), get_DB_debug)
+    conn = _connect(get_DB_location(), get_DB_debug())
     # init is actually idempotent so it's safe to always call!
     _init_db(conn)
     conn.close()
