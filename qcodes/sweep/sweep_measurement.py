@@ -20,8 +20,8 @@ class SweepMeasurement(Measurement):
 
     @staticmethod
     def _make_param_spec_list(
-            symbols_list: List[Tuple],
-            inferred_parameters: Dict,
+            symbols_list: List[Tuple[str,str]],
+            inferred_parameters: Dict[str,List[str]],
             depends_on: List=None
     )->List[ParamSpec]:
         """
