@@ -43,8 +43,10 @@ class ParametersTable:
     }
 
     def __init__(
-            self, table_list: list=None, dependent_parameters: list=None,
-            independent_parameters: list=None, inferred_from_dict: dict=None
+            self, table_list: List[Dict[str, List[Tuple[str,str]]]]=None,
+            dependent_parameters: List[Tuple[str, str]]=None,
+            independent_parameters: List[Tuple[str, str]]=None,
+            inferred_from_dict: Dict[str,str]=None
     )->None:
 
         if not any([table_list, dependent_parameters, independent_parameters]):
