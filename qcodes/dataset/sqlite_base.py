@@ -124,7 +124,7 @@ def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     else:
         return res[0][column]
 
- 
+
 # TODO: This is just a special case of many_many, isn't it?
 def one_column(curr: sqlite3.Cursor, column: str) -> List[Any]:
     """
@@ -202,10 +202,10 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
         np.int, np.int8, np.int16, np.int32, np.int64,
         np.uint, np.uint8, np.uint16, np.uint32, np.uint64
     ]:
-        sqlite3.register_adapter(numpy_int, lambda val: int(val))
+        sqlite3.register_adapter(numpy_int, int)
 
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
-        sqlite3.register_adapter(numpy_float, lambda val: float(val))
+        sqlite3.register_adapter(numpy_float, float)
 
     if debug:
         conn.set_trace_callback(print)
