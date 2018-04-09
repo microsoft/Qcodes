@@ -7,7 +7,7 @@ import zipfile as zf
 import logging
 from functools import partial
 
-from dateutil.tz import time
+import time
 from typing import List, Sequence
 
 from qcodes import Instrument, VisaInstrument, validators as vals
@@ -15,6 +15,31 @@ from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
+
+##################################################
+#
+# MODEL DEPENDENT SETTINGS
+#
+
+_fg_path_val_map = {'5208': {'DC High BW': "DCHB",
+                             'DC High Voltage': "DCHV",
+                             'AC Direct': "ACD"},
+                    '70001A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'}}
+
+# number of markers per channel
+_num_of_markers_map = {'5208': 4,
+                       '70001A': 2,
+                       '70002A': 2}
+
+# channel resolution
+_chan_resolutions = {'5208': [12, 13, 14, 15, 16],
+                     '70001A': [8, 9, 10],
+                     '70002A': [8, 9, 10]}
 
 
 class SRValidator(Validator):
@@ -69,7 +94,8 @@ class AWGChannel(InstrumentChannel):
 
         self.channel = channel
 
-        num_channels = self._parent.num_channels
+        num_channels = self.root_instrument.num_channels
+        self.model = self.root_instrument.model
 
         fg = 'function generator'
 
@@ -122,10 +148,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} {} signal path'.format(channel, fg),
                            set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
                            get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
-                           val_mapping={'direct': 'DIR',
-                                        'DCamplified': 'DCAM',
-                                        'AC': 'AC'}
-                           )
+                           val_mapping=_fg_path_val_map[self.root_instrument.model])
 
         self.add_parameter('fgen_period',
                            label='Channel {} {} period'.format(channel, fg),
@@ -180,7 +203,7 @@ class AWGChannel(InstrumentChannel):
             vals=vals.Numbers(0.250, 0.500))
 
         # markers
-        for mrk in range(1, 3):
+        for mrk in range(1, _num_of_markers_map[self.model]+1):
 
             self.add_parameter(
                 'marker{}_high'.format(mrk),
@@ -216,7 +239,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} bit resolution'.format(channel),
                            get_cmd='SOURce{}:DAC:RESolution?'.format(channel),
                            set_cmd='SOURce{}:DAC:RESolution {{}}'.format(channel),
-                           vals=vals.Enum(8, 9, 10),
+                           vals=vals.Enum(*_chan_resolutions[self.model]),
                            get_parser=int,
                            docstring=("""
                                       8 bit resolution allows for two
@@ -241,8 +264,8 @@ class AWGChannel(InstrumentChannel):
                              'Hz, minimum is 1 Hz'.format(channel, frequency,
                                                           functype, max_freq))
         else:
-            self._parent.write('FGEN:CHANnel{}:FREQuency {}'.format(channel,
-                                                                    frequency))
+            self.root_instrument.write(f'FGEN:CHANnel{channel}:'
+                                       f'FREQuency {frequency}')
 
     def setWaveform(self, name: str) -> None:
         """
@@ -251,11 +274,10 @@ class AWGChannel(InstrumentChannel):
         Args:
             name: The name of the waveform
         """
-        if name not in self._parent.waveformList:
+        if name not in self.root_instrument.waveformList:
             raise ValueError('No such waveform in the waveform list')
 
-        self._parent.write('SOURce{}:CASSet:WAVeform "{}"'.format(self.channel,
-                                                                  name))
+        self.root_instrument.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -265,8 +287,10 @@ class AWGChannel(InstrumentChannel):
             seqname: Name of the sequence in the sequence list
             tracknr: Which track to use (1 or 2)
         """
-        args = (self.channel, seqname, tracknr)
-        self._parent.write('SOURCE{}:CASSet:SEQuence "{}", {}'.format(*args))
+
+        self.root_instrument.write(f'SOURCE{self.channel}:'
+                                   f'CASSet:SEQuence "{seqname}"'
+                                   f', {tracknr}')
 
 
 class AWG70000A(VisaInstrument):
@@ -411,10 +435,10 @@ class AWG70000A(VisaInstrument):
         """
         Return the waveform list as a list of strings
         """
-        resp = self.ask("WLISt:LIST?")
-        resp = resp.strip()
-        resp = resp.replace('"', '')
-        resp = resp.split(',')
+        respstr = self.ask("WLISt:LIST?")
+        respstr = respstr.strip()
+        respstr = respstr.replace('"', '')
+        resp = respstr.split(',')
 
         return resp
 
@@ -789,7 +813,7 @@ class AWG70000A(VisaInstrument):
                      for ch in range(1, chans+1)]
 
         # generate wfmx files for the waveforms
-        flat_wfmxs = []
+        flat_wfmxs = [] # type: List[bytes]
         for amplitude, wfm_lst in zip(amplitudes, wfms):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]
