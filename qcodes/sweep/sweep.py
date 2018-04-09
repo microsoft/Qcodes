@@ -8,8 +8,10 @@ from typing import Callable, Iterable, Union, Sized
 
 import qcodes
 from qcodes import Parameter
-from qcodes.sweep.base_sweep import ParametersTable, BaseSweepObject, \
-    FunctionSweep, ParameterSweep, Nest, wrap_objects, TimeTrace, Chain, Zip
+from qcodes.sweep.base_sweep import (
+    ParametersTable, BaseSweepObject, FunctionSweep, ParameterSweep, Nest,
+    wrap_objects, TimeTrace, Chain, Zip, While
+)
 
 
 def _infer_axis_properties(axis, length_only=False):
@@ -169,3 +171,7 @@ def time_trace(
     """
     tt_sweep = TimeTrace(interval_time, total_time)
     return szip(measurement_object, tt_sweep)
+
+
+def sweep_while(measure_function):
+    return While(measure_function)
