@@ -11,7 +11,7 @@ import time
 import qcodes
 from qcodes import Parameter
 
-
+paramtabletype = Dict[str, List[Tuple[str,str]]]
 class ParametersTable:
     """
     A parameters table is how sweep objects keep track of which parameters
@@ -43,7 +43,7 @@ class ParametersTable:
     }
 
     def __init__(
-            self, table_list: List[Dict[str, List[Tuple[str,str]]]]=None,
+            self, table_list: List[paramtabletype]=None,
             dependent_parameters: List[Tuple[str, str]]=None,
             independent_parameters: List[Tuple[str, str]]=None,
             inferred_from_dict: Dict[str,str]=None
@@ -116,11 +116,11 @@ class ParametersTable:
 
         return ptable
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Return the string representation of the table
         """
-        def table_print(table):
+        def table_print(table: paramtabletype) -> str:
             s = "|".join([
                 ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in
                 ["independent_parameters", "dependent_parameters"]
@@ -134,14 +134,14 @@ class ParametersTable:
 
         return repr
 
-    def _inferees_black_list(self):
-        black_list = []
+    def _inferees_black_list(self) -> List[str]:
+        black_list: List[str] = []
         for values in self._inferred_from_dict.values():
             black_list += values
 
         return black_list
 
-    def flatten(self)->Tuple[dict, dict]:
+    def flatten(self)->Tuple[Dict[str, str], Dict[str,str]]:
         """
         Return a flattened list of dependent and independent parameters.
         Dependency information is lost by flattening (that is, if e.g.
