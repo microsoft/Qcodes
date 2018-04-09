@@ -124,7 +124,7 @@ def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     else:
         return res[0][column]
 
-
+ 
 # TODO: This is just a special case of many_many, isn't it?
 def one_column(curr: sqlite3.Cursor, column: str) -> List[Any]:
     """
