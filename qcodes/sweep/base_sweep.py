@@ -302,7 +302,7 @@ class BaseSweepObject:
         self._start_iter()
         return self
 
-    def __next__(self)->dict:
+    def __next__(self)->Dict[str,Optional[Iterator]]:
         """
         At each iteration a dictionary is returned containing information about
         the parameters set and measurements that have been performed.
