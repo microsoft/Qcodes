@@ -14,24 +14,20 @@ from qcodes.sweep.base_sweep import ParametersTable, BaseSweepObject, \
 
 sw_objects = Union[Callable, Parameter, BaseSweepObject]
 
-def _infer_axis_properties(axis, length_only=False):
-    class _Dict(dict):
-        def dset(self, name, value):
-            self[name] = value
-            return self
+def _infer_axis_properties(axis, length_only: bool=False)->List[Dict[str,Union[int,str]]]:
 
-    properties = dict(ParametersTable.default_axis_properties)
+    property = dict(ParametersTable.default_axis_properties)
 
     if not hasattr(axis, "__len__"):
-        return [properties]
+        return [property]
 
-    properties["length"] = len(axis)
+    property["length"] = len(axis)
 
     array = np.array(axis)
     if len(array.shape) == 1:
         array = array[:, None]
 
-    properties = [_Dict(properties) for _ in array.T]
+    properties: List[Dict] = [dict(property) for _ in array.T]
 
     if array.dtype == np.dtype("O") or length_only:
         return properties
@@ -46,10 +42,11 @@ def _infer_axis_properties(axis, length_only=False):
 
     steps = [step[0] if len(step) == 1 else "?" for step in steps]
 
-    return [
-        p.dset("min", mn).dset("max", mx).dset("steps", s)
-        for p, mn, mx, s in zip(properties, axis_min, axis_max, steps)
-    ]
+    for p, mn, mx, s in zip(properties, axis_min, axis_max, steps):
+        p['min'] = mn
+        p['max'] = mx
+        p['steps'] = s
+    return properties
 
 
 def sweep(
