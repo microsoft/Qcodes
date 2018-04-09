@@ -46,7 +46,7 @@ class ParametersTable:
             self, table_list: List[paramtabletype]=None,
             dependent_parameters: List[Tuple[str, str]]=None,
             independent_parameters: List[Tuple[str, str]]=None,
-            inferred_from_dict: Dict[str,str]=None
+            inferred_from_dict: Dict[str,List[str]]=None
     )->None:
 
         if not any([table_list, dependent_parameters, independent_parameters]):
@@ -66,7 +66,7 @@ class ParametersTable:
         else:
             self._table_list = list(table_list)
 
-        self._inferred_from_dict: Dict[str,str] = {}
+        self._inferred_from_dict: Dict[str,List[str]] = {}
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
@@ -154,8 +154,8 @@ class ParametersTable:
                d["dependent_parameters"]}
         return ind, dep
 
-    def get_independents(self, exclude_inferees =False):
-        black_list = []
+    def get_independents(self, exclude_inferees: bool =False) -> Dict[str,str]:
+        black_list: List[str] = []
         if exclude_inferees:
             black_list = self._inferees_black_list()
 
@@ -178,14 +178,14 @@ class ParametersTable:
             for symbol, inferrees in self._inferred_from_dict.items()]
         )
 
-    def set_axis_info(self, axis_info)->None:
+    def set_axis_info(self, axis_info: Dict[str,str])->None:
         """
         If these are known, we can set the axis length of independent
         parameters
         """
         self._axis_info.update(axis_info)
 
-    def layout_info(self, param_name: str):
+    def layout_info(self, param_name: str) -> Dict[str, str]:
 
         table = None
         for t in self._table_list:
@@ -227,11 +227,11 @@ class ParametersTable:
         return new_table
 
     @property
-    def table_list(self)->list:
+    def table_list(self)->List[paramtabletype]:
         return self._table_list
 
     @property
-    def inferred_from_dict(self)->dict:
+    def inferred_from_dict(self)->Dict[str,List[str]]:
         return self._inferred_from_dict
 
 
