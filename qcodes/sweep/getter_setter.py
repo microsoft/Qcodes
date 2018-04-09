@@ -5,7 +5,7 @@ appropriate functions
 """
 
 import numpy as np
-from typing import Callable, Optional, List, Tuple
+from typing import Callable, Optional, List, Tuple, Sequence
 
 from qcodes.sweep.base_sweep import ParametersTable
 
@@ -33,7 +33,7 @@ def getter(param_list: List[Tuple[str, str]],
         More elaborate examples are available in getters_and_setters.ipynb
         in the folder  docs/examples/sweep.
     """
-    inferred_symbols: Optional[List[Tuple[str, ...]]]
+    inferred_symbols: Optional[Sequence[str]]
     if inferred_parameters is None:
         inferred_parameters = []
         inferred_symbols = []
@@ -44,7 +44,7 @@ def getter(param_list: List[Tuple[str, str]],
     # Do not do >>> param_list += inferred_from ; lists are mutable
     param_list = param_list + inferred_parameters
 
-    def decorator(f):
+    def decorator(f: Callable) -> Callable:
         def inner():
             value = np.atleast_1d(f())
 
@@ -85,7 +85,7 @@ def setter(param_list: List[Tuple[str, str]],
         decorator (Callable).
 
     """
-    inferred_symbols: Optional[List[Tuple[str, ...]]]
+    inferred_symbols: Optional[Sequence[str]]
     if inferred_parameters is None:
         inferred_parameters = []
         inferred_symbols = []
@@ -96,7 +96,7 @@ def setter(param_list: List[Tuple[str, str]],
     # Do not do >>> param_list += inferred_from ; lists are mutable
     param_list = param_list + inferred_parameters
 
-    def decorator(f):
+    def decorator(f: Callable) -> Callable:
         def inner(value):
             value = np.atleast_1d(value)
             inferred_values = f(*value)
