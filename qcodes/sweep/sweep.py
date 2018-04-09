@@ -4,7 +4,7 @@ sweep objects.
 """
 
 import numpy as np
-from typing import Callable, Iterable, Union, Sized
+from typing import Callable, Iterable, Union, Sized, List, Dict
 
 import qcodes
 from qcodes import Parameter
@@ -93,10 +93,10 @@ def sweep(
         sweep_points, length_only=has_inferred
     )
 
-    axis_properties = {
+    axis_info = {
         name: props for name, props in zip(ind, axis_properties)
     }
-    so.parameter_table.set_axis_info(axis_properties)
+    so.parameter_table.set_axis_info(axis_info)
 
     return so
 
@@ -157,7 +157,7 @@ def time_trace(
         measurement_object: sw_objects,
         interval_time: float,
         total_time: float
-):
+)->BaseSweepObject:
     """
     Make time trace sweep object to monitor the return value of the measurement
     object over a certain time period.

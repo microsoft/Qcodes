@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence, Iterable
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence, Iterable, Union
 import itertools
 import numpy as np
 import time
@@ -35,7 +35,7 @@ class ParametersTable:
     # Minus one values are unknown. Currently the only way to fill these in
     # with sensible values is by using the "sweep" method defined in this
     # module
-    default_axis_properties = {
+    default_axis_properties: Dict[str,Union[str,int]] = {
         "min": "?",
         "max": "?",
         "length": "?",
@@ -70,7 +70,7 @@ class ParametersTable:
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-        self._axis_info: Dict[str, str] = dict()
+        self._axis_info: Dict[str, Dict[str, Union[str,int]]] = dict()
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -178,14 +178,14 @@ class ParametersTable:
             for symbol, inferrees in self._inferred_from_dict.items()]
         )
 
-    def set_axis_info(self, axis_info: Dict[str,str])->None:
+    def set_axis_info(self, axis_info: Dict[str,Dict[str,Union[str,int]]])->None:
         """
         If these are known, we can set the axis length of independent
         parameters
         """
         self._axis_info.update(axis_info)
 
-    def layout_info(self, param_name: str) -> Dict[str, str]:
+    def layout_info(self, param_name: str) -> Dict[str, Dict[str,Union[str,int]]]:
 
         table = None
         for t in self._table_list:
