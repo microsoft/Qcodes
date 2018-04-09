@@ -197,6 +197,16 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     # sqlite3 options
     conn.row_factory = sqlite3.Row
 
+    # Make sure numpy ints and floats types are inserted properly
+    for numpy_int in [
+        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
+    ]:
+        sqlite3.register_adapter(numpy_int, lambda val: int(val))
+
+    for numpy_float in [np.float, np.float16, np.float32, np.float64]:
+        sqlite3.register_adapter(numpy_float, lambda val: float(val))
+
     if debug:
         conn.set_trace_callback(print)
     return conn
