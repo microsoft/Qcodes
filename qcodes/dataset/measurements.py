@@ -276,6 +276,7 @@ class Runner:
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_complete()
+        self.ds.conn.close()
 
 
 class Measurement:
