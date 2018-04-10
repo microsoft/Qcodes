@@ -9,6 +9,8 @@ from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
 from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
 from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.database import initialise_database
+
 import qcodes.dataset.experiment_container
 import pytest
 import tempfile
@@ -23,14 +25,7 @@ def empty_temp_db():
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qcodes.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
