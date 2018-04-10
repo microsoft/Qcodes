@@ -232,7 +232,11 @@ class Runner:
         else:
             eid = None
 
-        self.ds = qc.new_data_set(self.name, eid)
+        if self.experiment is not None:
+            self.ds = qc.new_data_set(self.name, eid,
+                                      conn=self.experiment.conn)
+        else:
+            self.ds = qc.new_data_set(self.name, eid)
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
@@ -276,7 +280,6 @@ class Runner:
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_complete()
-        self.ds.conn.close()
 
 
 class Measurement:
