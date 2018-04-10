@@ -16,7 +16,11 @@ from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
 
-# some settings differ between series
+##################################################
+#
+# MODEL DEPENDENT SETTINGS
+#
+
 _fg_path_val_map = {'5208': {'DC High BW': "DCHB",
                              'DC High Voltage': "DCHV",
                              'AC Direct': "ACD"},
@@ -26,6 +30,16 @@ _fg_path_val_map = {'5208': {'DC High BW': "DCHB",
                     '70002A': {'direct': 'DIR',
                                'DCamplified': 'DCAM',
                                'AC': 'AC'}}
+
+# number of markers per channel
+_num_of_markers_map = {'5208': 4,
+                       '70001A': 2,
+                       '70002A': 2}
+
+# channel resolution
+_chan_resolutions = {'5208': [12, 13, 14, 15, 16],
+                     '70001A': [8, 9, 10],
+                     '70002A': [8, 9, 10]}
 
 
 class SRValidator(Validator):
@@ -81,6 +95,7 @@ class AWGChannel(InstrumentChannel):
         self.channel = channel
 
         num_channels = self.root_instrument.num_channels
+        self.model = self.root_instrument.model
 
         fg = 'function generator'
 
@@ -188,7 +203,7 @@ class AWGChannel(InstrumentChannel):
             vals=vals.Numbers(0.250, 0.500))
 
         # markers
-        for mrk in range(1, 3):
+        for mrk in range(1, _num_of_markers_map[self.model]+1):
 
             self.add_parameter(
                 'marker{}_high'.format(mrk),
@@ -224,7 +239,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} bit resolution'.format(channel),
                            get_cmd='SOURce{}:DAC:RESolution?'.format(channel),
                            set_cmd='SOURce{}:DAC:RESolution {{}}'.format(channel),
-                           vals=vals.Enum(8, 9, 10),
+                           vals=vals.Enum(*_chan_resolutions[self.model]),
                            get_parser=int,
                            docstring=("""
                                       8 bit resolution allows for two
