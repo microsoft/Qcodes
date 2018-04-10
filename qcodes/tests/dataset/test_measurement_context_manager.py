@@ -392,7 +392,7 @@ def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
         """
         state += [res[1] for res in results]
 
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
