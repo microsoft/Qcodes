@@ -100,4 +100,26 @@ def test_get_dependents(experiment):
 
     deps = mut.get_dependents(experiment.conn, run_id)
 
-    assert deps == [3]
+    layout_id = mut.get_layout_id(experiment.conn,
+                                  'y', run_id)
+
+    assert deps == [layout_id]
+
+    # more parameters, more complicated dependencies
+
+    x_raw = ParamSpec('x_raw', 'numeric')
+    x_cooked = ParamSpec('x_cooked', 'numeric', inferred_from=['x_raw'])
+    z = ParamSpec('z', 'numeric', depends_on=['x_cooked'])
+
+    (rc, run_id, fmt_name) = mut.create_run(experiment.conn,
+                                            experiment.exp_id,
+                                            name='testrun',
+                                            parameters=[x, t, x_raw,
+                                                        x_cooked, y, z])
+
+    deps = mut.get_dependents(experiment.conn, run_id)
+
+    expected_deps = [mut.get_layout_id(experiment.conn, 'y', run_id),
+                     mut.get_layout_id(experiment.conn, 'z', run_id)]
+
+    assert deps == expected_deps
