@@ -102,18 +102,23 @@ except RuntimeError as e:
 import atexit
 atexit.register(Instrument.close_all)
 
-def test(*args, **kwargs):
+def test(**kwargs):
     """
     Run QCoDeS tests. This requires the test requirements given
     in test_requirements.txt to be installed.
     All arguments are forwarded to pytest.main
     """
+    args = ['--pyargs']
     try:
         import pytest
     except ImportError:
         print("Need pytest to run tests")
         return
-    retcode = pytest.main(*args, **kwargs)
+
+    default_test_modules = ['qcodes.tests']
+
+    args.append(default_test_modules)
+    retcode = pytest.main(args, **kwargs)
     return retcode
 
 
