@@ -163,14 +163,11 @@ class Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str=None, conn=None) -> None:
+    def __init__(self, path_to_db: str, conn=None) -> None:
         # TODO: handle fail here by defaulting to
         # a standard db
+        self.path_to_db = path_to_db
         if conn is None:
-            if path_to_db is None:
-                raise ValueError("Either path to data base has to be given "
-                                 "or a connection to data base")
-            self.path_to_db = path_to_db
             self.conn = connect(self.path_to_db)
         else:
             self.conn = conn
@@ -658,10 +655,11 @@ def new_data_set(name, exp_id: Optional[int] = None, conn=None,
         values: the values to associate with the parameters
         metadata:  the values to associate with the dataset
     """
+    path_to_db = get_DB_location()
     if conn is not None:
-        d = DataSet(conn=conn)
+        d = DataSet(path_to_db, conn=conn)
     else:
-        d = DataSet(path_to_db=get_DB_location())
+        d = DataSet(path_to_db)
 
     if exp_id is None:
         if len(get_experiments(d.conn)) > 0:
