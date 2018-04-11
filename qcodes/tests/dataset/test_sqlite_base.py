@@ -12,7 +12,8 @@ import unicodedata
 
 import qcodes as qc
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
-from qcodes.database.database import initialise_database
+from qcodes.dataset.database import initialise_database
+from qcodes.dataset.param_spec import ParamSpec
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -83,3 +84,20 @@ def test__validate_table_raises(table_name):
             mut._validate_table_name(table_name)
     else:
         assert mut._validate_table_name(table_name)
+
+
+def test_get_dependents(experiment):
+
+    x = ParamSpec('x', 'numeric')
+    t = ParamSpec('t', 'numeric')
+    y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
+
+    # Make a dataset
+    (rc, run_id, fmt_name) = mut.create_run(experiment.conn,
+                                            experiment.exp_id,
+                                            name='testrun',
+                                            parameters=[x, t, y])
+
+    deps = mut.get_dependents(experiment.conn, run_id)
+
+    assert deps == [3]
