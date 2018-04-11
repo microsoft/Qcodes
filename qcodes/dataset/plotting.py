@@ -144,8 +144,8 @@ def plot_by_id(run_id: int,
             cbaxes.append(None)
 
     if len(axes) != len(cbaxes):
-        raise RuntimeError("Non equal number of axes. Perhaps cbaxes is missing"
-                           "from one of the cases above")
+        raise RuntimeError("Non equal number of axes. Perhaps cbaxes is "
+                           "missing from one of the cases above")
     return axes,cbaxes
 
 

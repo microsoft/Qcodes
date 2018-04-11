@@ -304,7 +304,7 @@ class Tektronix_AWG520(VisaInstrument):
             logging.warning(__name__ + ' : changing numpoints. This will clear all waveforms!')
 
         response = 'yes'  # raw_input('type "yes" to continue')
-        if response is 'yes':
+        if response == 'yes':
             logging.debug(__name__ + ' : Setting numpoints to %s' % numpts)
             self._numpoints = numpts
             self.clear_waveforms()
