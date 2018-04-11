@@ -340,7 +340,7 @@ def test_subscriptions(experiment, DAC, DMM):
         for res in results:
             state += [pres for pres in res if pres > 7]
 
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
@@ -392,7 +392,7 @@ def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
         """
         state += [res[1] for res in results]
 
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
@@ -441,7 +441,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
         assert datasaver._dataset.number_of_results == 0
-        sleep(write_period)
+        sleep(write_period * 1.1)
         datasaver.add_result((DAC.ch1, set_values[breakpoint]),
                              (DMM.v1, get_values[breakpoint]))
         assert datasaver.points_written == breakpoint + 1
