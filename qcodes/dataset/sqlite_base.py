@@ -682,6 +682,39 @@ def get_layout(conn: sqlite3.Connection,
     return res
 
 
+def get_layout_id(conn: sqlite3.Connection,
+                  parameter: Union[ParamSpec, str],
+                  run_id: int) -> int:
+    """
+    Get the layout id of a parameter in a given run
+
+    Args:
+        conn: The database connection
+        parameter: A ParamSpec or the name of the parameter
+        run_id: The run_id of the run in question
+    """
+    # get the parameter layout id
+    sql = """
+    SELECT layout_id FROM layouts
+    WHERE parameter = ?
+    and run_id = ?
+    """
+
+    if isinstance(parameter, ParamSpec):
+        name = parameter.name
+    elif isinstance(parameter, str):
+        name = parameter
+    else:
+        raise ValueError('Wrong parameter type, must be ParamSpec or str, '
+                         f'received {type(parameter)}.')
+
+    with atomic(conn):
+        c = transaction(conn, sql, name, run_id)
+        res = one(c, 'layout_id')
+
+    return res
+
+
 def get_dependents(conn: sqlite3.Connection,
                    run_id: int) -> List[int]:
     """
