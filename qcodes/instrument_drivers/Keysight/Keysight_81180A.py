@@ -2,7 +2,7 @@ import array
 import warnings
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList, \
-    StandardParameter, ManualParameter
+    Parameter, ManualParameter
 from qcodes import validators as vals
 
 
@@ -15,7 +15,7 @@ class EnumVisa(vals.Enum):
                             for val in values}
 
 
-class ChannelVisaParameter(StandardParameter):
+class ChannelVisaParameter(Parameter):
     def __init__(self, name, channel_id,
                  vals=None, val_mapping=None, **kwargs):
         if isinstance(vals, EnumVisa):
@@ -25,12 +25,12 @@ class ChannelVisaParameter(StandardParameter):
 
         self.channel_id = channel_id
 
-    def get(self):
-        # Set active channel to current channel if necessary
-        active_channel = self._instrument._parent.active_channel.get_latest()
-        if active_channel != self.channel_id:
-            self._instrument._parent.active_channel(self.channel_id)
-        return super().get()
+    # def get(self):
+    #     # Set active channel to current channel if necessary
+    #     active_channel = self._instrument._parent.active_channel.get_latest()
+    #     if active_channel != self.channel_id:
+    #         self._instrument._parent.active_channel(self.channel_id)
+    #     return super().get()
 
 
 class AWGChannel(InstrumentChannel):
@@ -283,6 +283,14 @@ class AWGChannel(InstrumentChannel):
                       'Repeat sequence when completed.')
 
         self.add_parameter(
+            'sequence_once_count',
+            get_cmd='SEQUENCE:ONCE:COUNT?',
+            set_cmd='SEQUENCE:ONCE:COUNT {}',
+            vals=vals.Ints(1, 1048575),
+            docstring='Determines the number of times a waveform sequence will'
+                      'be repeated.')
+
+        self.add_parameter(
             'sequence_jump',
             get_cmd='SEQUENCE:JUMP?',
             set_cmd='SEQUENCE:JUMP {}',
@@ -315,6 +323,15 @@ class AWGChannel(InstrumentChannel):
                       'c\toherent: transition once current sequence is done.\n'
                       '\timmediate: abort current sequence and progress to '
                       'next')
+
+        self.add_parameter(
+            'sequence_pre_step',
+            get_cmd='SEQUENCE:PRESTEP?',
+            set_cmd = 'SEQUENCE:PRESTEP {}',
+            vals=EnumVisa('WAVE', 'DC'),
+            docstring= 'Choose to play a blank DC segment while waiting for an '
+                       'event signal to initiate or continue a sequence.'
+        )
 
 
         # Functions
