@@ -12,6 +12,7 @@ import unicodedata
 
 import qcodes as qc
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
+from qcodes.database.database import initialise_database
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -21,16 +22,8 @@ def empty_temp_db():
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = False
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = mut.connect(qc.config["core"]["db_location"],
-                         qc.config["core"]["db_debug"])
-        mut.init_db(_c)
-        _c.close()
+        qc.config["core"]["db_debug"] = True
+        initialise_database()
         yield
 
 
