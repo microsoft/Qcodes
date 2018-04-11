@@ -641,9 +641,9 @@ def load_by_counter(counter, exp_id):
     return d
 
 
-def new_data_set(name, exp_id: Optional[int] = None, conn=None,
+def new_data_set(name, exp_id: Optional[int] = None,
                  specs: SPECS = None, values=None,
-                 metadata=None) -> DataSet:
+                 metadata=None, conn=None) -> DataSet:
     """ Create a new dataset.
     If exp_id is not specified the last experiment will be loaded by default.
 
