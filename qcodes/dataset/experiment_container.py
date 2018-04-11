@@ -12,9 +12,8 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         connect, transaction,
                                         get_last_experiment, get_experiments)
 from qcodes.dataset.sqlite_base import new_experiment as ne
+from qcodes.dataset.database import get_DB_location, get_DB_debug
 
-DB = qcodes.config["core"]["db_location"]
-debug_db = qcodes.config["core"]["db_debug"]
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ log = logging.getLogger(__name__)
 class Experiment(Sized):
     def __init__(self, path_to_db: str) -> None:
         self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db, debug_db)
+        self.conn = connect(self.path_to_db, get_DB_debug())
         self._debug = False
 
     def _new(self,
@@ -136,8 +135,8 @@ def experiments()->List[Experiment]:
         All the experiments in the container
 
     """
-    log.info("loading experiments from {}".format(DB))
-    rows = get_experiments(connect(DB, debug_db))
+    log.info("loading experiments from {}".format(get_DB_location()))
+    rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
     experiments = []
     for row in rows:
         experiments.append(load_experiment(row['exp_id']))
@@ -157,8 +156,8 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
-    log.info("creating new experiment in {}".format(DB))
-    e = Experiment(DB)
+    log.info("creating new experiment in {}".format(get_DB_location()))
+    e = Experiment(get_DB_location())
     e._new(name, sample_name, format_string)
     return e
 
@@ -172,7 +171,7 @@ def load_experiment(exp_id: int) -> Experiment:
     Returns:
         experiment with the specified id
     """
-    e = Experiment(DB)
+    e = Experiment(get_DB_location())
     e.exp_id = exp_id
     return e
 
@@ -184,7 +183,7 @@ def load_last_experiment() -> Experiment:
     Returns:
         last experiment
     """
-    e = Experiment(DB)
+    e = Experiment(get_DB_location())
     e.exp_id = get_last_experiment(e.conn)
     return e
 
@@ -206,7 +205,7 @@ def load_experiment_by_name(name: str,
     Raises:
         ValueError if the name is not unique and sample name is None.
     """
-    e = Experiment(DB)
+    e = Experiment(get_DB_location())
     if sample:
         sql = """
         SELECT
