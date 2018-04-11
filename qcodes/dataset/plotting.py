@@ -1,9 +1,9 @@
-from typing import List, Any, Sequence
 import logging
+from typing import Optional, List, Sequence, Union, Tuple
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 
 import qcodes as qc
 
@@ -14,8 +14,11 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 
-def plot_by_id(run_id: int) -> Figure:
-    def set_axis_labels(ax, data):
+def plot_by_id(run_id: int,
+               axes: Optional[Union[matplotlib.axes.Axes,
+                     Sequence[matplotlib.axes.Axes]]]=None) -> Tuple[List[matplotlib.axes.Axes],
+                                                        List[Optional[matplotlib.axes.Axes]]]:
+    def set_axis_labels(ax, data, cax=None):
         if data[0]['label'] == '':
             lbl = data[0]['name']
         else:
@@ -37,6 +40,18 @@ def plot_by_id(run_id: int) -> Figure:
             unit = data[1]['unit']
             unit = f'({unit})'
         ax.set_ylabel(f'{lbl} {unit}')
+        if cax is not None and len(data)>2:
+            if data[2]['label'] == '':
+                lbl = data[2]['name']
+            else:
+                lbl = data[2]['label']
+            if data[2]['unit'] == '':
+                unit = ''
+            else:
+                unit = data[2]['unit']
+                unit = f'({unit})'
+            cax.set_label(f'{lbl} {unit}')
+
 
     """
     Construct all plots for a given run
@@ -44,23 +59,49 @@ def plot_by_id(run_id: int) -> Figure:
     Implemented so far:
        * 1D plots
        * 2D plots on filled out rectangular grids
+
+    The function can optionally be supplied with a matplotlib axes
+    or a list of axes that will be used for plotting. The user should ensure
+    that the number of axes matches the number of datasets to plot. To plot
+    several (1D) dataset in the same axes supply it several times. Colorbar
+    axes are created dynamically and cannot be supplied.
+
+    Args:
+        run_id: ID of the dataset to plot
+        axes: Matplotlib axes to plot on
+
+    Returns:
+        a list of axes and a list of colorbar axes of the same length.
+        The colorbar axes may be None if no colorbar is created (e.g. for
+        1D plots)
     """
-
     alldata = get_data_by_id(run_id)
+    nplots = len(alldata)
+    if isinstance(axes, matplotlib.axes.Axes):
+        axes = [axes]
 
-    for data in alldata:
+    if axes is None:
+        axes = []
+        for i in range(nplots):
+            fig, ax = plt.subplots(1,1)
+            axes.append(ax)
+    else:
+        if len(axes) != nplots:
+            raise RuntimeError(f"Trying to make {nplots} plots, but"
+                               f"received {len(axes)} axes objects.")
+
+    cbaxes: List[Optional[matplotlib.axes.Axes]] = []
+    for data, ax in zip(alldata, axes):
 
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
-
-            figure, ax = plt.subplots()
 
             # sort for plotting
             order = data[0]['data'].argsort()
 
             ax.plot(data[0]['data'][order], data[1]['data'][order])
             set_axis_labels(ax, data)
-            return figure
+            cbaxes.append(None)
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -73,40 +114,44 @@ def plot_by_id(run_id: int) -> Figure:
 
             log.debug('Plotting by id, determining plottype')
             plottype = datatype_from_setpoints_2d([data[0]['data'],
-                                                        data[1]['data']])
+                                                   data[1]['data']])
 
             if plottype in how_to_plot.keys():
                 log.debug('Plotting by id, doing the actual plot')
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                figure = how_to_plot[plottype](xpoints, ypoints, zpoints)
-
-                ax = figure.axes[0]
-                set_axis_labels(ax, data)
-                # TODO: get a colorbar
-
-                return figure
+                ax, cbax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
+                cbaxes.append(cbax)
+                set_axis_labels(ax, data, cbax)
 
             else:
                 log.warning('2D data does not seem to be on a '
                             'grid. Falling back to scatter plot')
-                fig, ax = plt.subplots(1,1)
                 xpoints = flatten_1D_data_for_plot(data[0]['data'])
                 ypoints = flatten_1D_data_for_plot(data[1]['data'])
                 zpoints = flatten_1D_data_for_plot(data[2]['data'])
-                ax.scatter(x=xpoints, y=ypoints, c=zpoints)
-                set_axis_labels(ax, data)
+                mappable = ax.scatter(x=xpoints, y=ypoints, c=zpoints)
+                cbax = ax.figure.colorbar(mappable, ax=ax)
+                cbaxes.append(cbax)
+                set_axis_labels(ax, data, cbax)
 
         else:
-            raise ValueError('Multi-dimensional data encountered. '
-                             f'parameter {data[-1].name} depends on '
-                             f'{len(data-1)} parameters, cannot plot '
-                             f'that.')
+            log.warning('Multi-dimensional data encountered. '
+                       f'parameter {data[-1].name} depends on '
+                       f'{len(data-1)} parameters, cannot plot '
+                       f'that.')
+            cbaxes.append(None)
+
+    if len(axes) != len(cbaxes):
+        raise RuntimeError("Non equal number of axes. Perhaps cbaxes is missing"
+                           "from one of the cases above")
+    return axes,cbaxes
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
-                         z: np.ndarray) -> Figure:
+                         z: np.ndarray,
+                         ax: matplotlib.axes.Axes) -> Tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -120,9 +165,10 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
         x: The x values
         y: The y values
         z: The z values
+        ax: Optional the axis to plot into
 
     Returns:
-        The matplotlib figure handle
+        The matplotlib axes handle for plot and colorbar
     """
 
     xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
@@ -139,7 +185,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
 
-    fig, ax = plt.subplots()
-    ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
+    colormesh = ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
+    cax = ax.figure.colorbar(colormesh, ax=ax)
 
-    return fig
+    return ax, cax
