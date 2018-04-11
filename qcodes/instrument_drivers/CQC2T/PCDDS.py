@@ -54,7 +54,8 @@ class PCDDS(Instrument):
         if output_enable:
             operation += int('0001000000', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, instr, 0, 0, 1)
+        print(hex(instr))
+        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def _set_load_delay(self, delay):
         """
@@ -65,7 +66,8 @@ class PCDDS(Instrument):
         operation = int('0000010000', 2) + delay
         # Construct and send instruction
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, instr, 0, 0, 1)
+        print(hex(instr))
+        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def construct_instruction(self, operation, pointer):
         """
@@ -83,7 +85,7 @@ class PCDDS(Instrument):
 
     def reset(self):
         """ Sends the reset signal to the FPGA """
-        self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.RESET_PULSE)
+        self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.PULSE)
 
     def write_sine_pulse(self, pulse, phase, frequency, amplitude, next_pulse):
         """
@@ -170,10 +172,18 @@ class PCDDS(Instrument):
         pulse_data += (amplitude << 2 * self.n_phase_bits + self.n_accum_bits)
         pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits + self.n_amp_bits)
         pulse_data = self.split_value(pulse_data)
-        self.fpga.set_fpga_pc_port(
-            self.port,
-            [instr, pulse_data[4], pulse_data[3], pulse_data[2], pulse_data[1], pulse_data[0]],
-            0, 0, 1)
+        print(hex(instr))
+        print([hex(i) for i in pulse_data])
+        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.port, [pulse_data[4]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.port, [pulse_data[3]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.port, [pulse_data[2]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.port, [pulse_data[1]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.port, [pulse_data[0]], 0, 0, 1)
+        # self.fpga.set_fpga_pc_port(
+        #     self.port,
+        #     [instr, pulse_data[4], pulse_data[3], pulse_data[2], pulse_data[1], pulse_data[0]],
+        #     0, 0, 1)
 
     @staticmethod
     def split_value(value):
@@ -202,7 +212,8 @@ class PCDDS(Instrument):
         if update:
             operation += int('1000000000', 2)
         instr = self.construct_instruction(operation, pulse)
-        self.fpga.set_fpga_pc_port(self.port, instr, 0, 0, 1)
+        print(hex(instr))
+        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def send_trigger(self):
         """
@@ -211,7 +222,8 @@ class PCDDS(Instrument):
         """
         operation = int('1000000000', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, instr, 0, 0, 1)
+        print(hex(instr))
+        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def phase2val(self, phase):
         """
