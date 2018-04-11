@@ -656,10 +656,7 @@ def new_data_set(name, exp_id: Optional[int] = None, conn=None,
         metadata:  the values to associate with the dataset
     """
     path_to_db = get_DB_location()
-    if conn is not None:
-        d = DataSet(path_to_db, conn=conn)
-    else:
-        d = DataSet(path_to_db)
+    d = DataSet(path_to_db, conn=conn)
 
     if exp_id is None:
         if len(get_experiments(d.conn)) > 0:
