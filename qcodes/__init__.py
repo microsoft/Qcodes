@@ -108,16 +108,12 @@ def test(**kwargs):
     in test_requirements.txt to be installed.
     All arguments are forwarded to pytest.main
     """
-    args = ['--pyargs']
     try:
         import pytest
     except ImportError:
         print("Need pytest to run tests")
         return
-
-    default_test_modules = ['qcodes.tests']
-
-    args.append(default_test_modules)
+    args = ['--pyargs', 'qcodes.tests']
     retcode = pytest.main(args, **kwargs)
     return retcode
 
