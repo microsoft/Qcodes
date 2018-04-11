@@ -289,6 +289,7 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
     else:
         transaction(conn,
                     f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
+    conn.commit()
 
 
 def select_one_where(conn: sqlite3.Connection, table: str, column: str,
@@ -343,7 +344,8 @@ def update_where(conn: sqlite3.Connection, table: str,
     WHERE
         {where_column} = ?
     """
-    transaction(conn, query, *values, where_value)
+    with atomic(conn):
+        transaction(conn, query, *values, where_value)
 
 
 def insert_values(conn: sqlite3.Connection,
@@ -363,7 +365,8 @@ def insert_values(conn: sqlite3.Connection,
     VALUES
         ({_values})
     """
-    c = transaction(conn, query, *values)
+    with atomic(conn):
+        c = transaction(conn, query, *values)
     return c.lastrowid
 
 
@@ -430,7 +433,9 @@ def insert_many_values(conn: sqlite3.Connection,
         # we need to make values a flat list from a list of list
         flattened_values = [item for sublist in values[start:stop]
                             for item in sublist]
-        c = transaction(conn, query, *flattened_values)
+        with atomic(conn):
+            c = transaction(conn, query, *flattened_values)
+
         if ii == 0:
             return_value = c.lastrowid
         start += chunk
@@ -461,7 +466,8 @@ def modify_values(conn: sqlite3.Connection,
     WHERE
         rowid = {index+1}
     """
-    c = transaction(conn, query, *values)
+    with atomic(conn):
+        c = transaction(conn, query, *values)
     return c.rowcount
 
 
@@ -562,7 +568,8 @@ def get_data(conn: sqlite3.Connection,
         SELECT {_columns}
         FROM "{table_name}"
         """
-    c = transaction(conn, query)
+    with atomic(conn):
+        c = transaction(conn, query)
     res = many_many(c, *columns)
 
     return res
@@ -586,7 +593,8 @@ def get_values(conn: sqlite3.Connection,
     SELECT {param_name} FROM "{table_name}"
     WHERE {param_name} IS NOT NULL
     """
-    c = transaction(conn, sql)
+    with atomic(conn):
+        c = transaction(conn, sql)
     res = many_many(c, param_name)
 
     return res
@@ -615,7 +623,8 @@ def get_setpoints(conn: sqlite3.Connection,
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
     """
-    c = transaction(conn, sql, table_name)
+    with atomic(conn):
+        c = transaction(conn, sql, table_name)
     run_id = one(c, 'run_id')
 
     # get the parameter layout id
@@ -624,7 +633,9 @@ def get_setpoints(conn: sqlite3.Connection,
     WHERE parameter = ?
     and run_id = ?
     """
-    c = transaction(conn, sql, param_name, run_id)
+
+    with atomic(conn):
+        c = transaction(conn, sql, param_name, run_id)
     layout_id = one(c, 'layout_id')
 
     # get the setpoint layout ids
@@ -632,7 +643,9 @@ def get_setpoints(conn: sqlite3.Connection,
     SELECT independent FROM dependencies
     WHERE dependent = ?
     """
-    c = transaction(conn, sql, layout_id)
+
+    with atomic(conn):
+        c = transaction(conn, sql, layout_id)
     indeps = many_many(c, 'independent')
     indeps = [idp[0] for idp in indeps]
 
@@ -654,7 +667,8 @@ def get_setpoints(conn: sqlite3.Connection,
         FROM "{table_name}"
         WHERE {param_name} IS NOT NULL
         """
-        c = transaction(conn, sql)
+        with atomic(conn):
+            c = transaction(conn, sql)
         sps = many_many(c, sp_name)
         output.append(sps)
 
@@ -676,7 +690,8 @@ def get_layout(conn: sqlite3.Connection,
     sql = """
     SELECT parameter, label, unit FROM layouts WHERE layout_id=?
     """
-    c = transaction(conn, sql, layout_id)
+    with atomic(conn):
+        c = transaction(conn, sql, layout_id)
     t_res = many(c, 'parameter', 'label', 'unit')
     res = dict(zip(['name', 'label', 'unit'], t_res))
     return res
@@ -725,7 +740,9 @@ def get_dependents(conn: sqlite3.Connection,
     SELECT layout_id FROM layouts
     WHERE run_id=? and layout_id in (SELECT dependent FROM dependencies)
     """
-    c = transaction(conn, sql, run_id)
+
+    with atomic(conn):
+        c = transaction(conn, sql, run_id)
     res = [d[0] for d in many_many(c, 'layout_id')]
     return res
 
@@ -743,7 +760,8 @@ def get_dependencies(conn: sqlite3.Connection,
     sql = """
     SELECT independent, axis_num FROM dependencies WHERE dependent=?
     """
-    c = transaction(conn, sql, layout_id)
+    with atomic(conn):
+        c = transaction(conn, sql, layout_id)
     res = many_many(c, 'independent', 'axis_num')
     return res
 
@@ -847,7 +865,9 @@ def get_experiments(conn: sqlite3.Connection) -> List[sqlite3.Row]:
     sql = """
     SELECT * FROM experiments
     """
-    c = transaction(conn, sql)
+    with atomic(conn):
+        c = transaction(conn, sql)
+
     return c.fetchall()
 
 
@@ -875,12 +895,14 @@ def get_runs(conn: sqlite3.Connection,
         SELECT * FROM runs
         where exp_id = ?
         """
-        c = transaction(conn, sql, exp_id)
+        with atomic(conn):
+            c = transaction(conn, sql, exp_id)
     else:
         sql = """
         SELECT * FROM runs
         """
-        c = transaction(conn, sql)
+        with atomic(conn):
+            c = transaction(conn, sql)
     return c.fetchall()
 
 
@@ -890,7 +912,8 @@ def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
     FROM runs
     WHERE exp_id = ?;
     """
-    c = transaction(conn, query, exp_id)
+    with atomic(conn):
+        c = transaction(conn, query, exp_id)
     return one(c, 'run_id')
 
 
@@ -905,7 +928,8 @@ def data_sets(conn: sqlite3.Connection) -> List[sqlite3.Row]:
     sql = """
     SELECT * FROM runs
     """
-    c = transaction(conn, sql)
+    with atomic(conn):
+        c = transaction(conn, sql)
     return c.fetchall()
 
 
@@ -929,15 +953,16 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
         VALUES
             (?,?,?,?,?,?,?)
         """
-        curr = transaction(conn, query,
-                           name,
-                           exp_id,
-                           formatted_name,
-                           run_counter,
-                           time.time(),
-                           ",".join([p.name for p in parameters]),
-                           False
-                           )
+        with atomic(conn):
+            curr = transaction(conn, query,
+                               name,
+                               exp_id,
+                               formatted_name,
+                               run_counter,
+                               time.time(),
+                               ",".join([p.name for p in parameters]),
+                               False)
+
         _add_parameters_to_layout_and_deps(conn, formatted_name, *parameters)
 
     else:
@@ -947,14 +972,15 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
         VALUES
             (?,?,?,?,?,?)
         """
-        curr = transaction(conn, query,
-                           name,
-                           exp_id,
-                           formatted_name,
-                           run_counter,
-                           time.time(),
-                           False
-                           )
+        with atomic(conn):
+            curr = transaction(conn, query,
+                               name,
+                               exp_id,
+                               formatted_name,
+                               run_counter,
+                               time.time(),
+                               False)
+
     return run_counter, formatted_name, curr.lastrowid
 
 
@@ -965,7 +991,8 @@ def _update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
     SET run_counter = ?
     WHERE exp_id = ?
     """
-    transaction(conn, query, run_counter, exp_id)
+    with atomic(conn):
+        transaction(conn, query, run_counter, exp_id)
 
 
 def get_parameters(conn: sqlite3.Connection,
@@ -1087,14 +1114,16 @@ def add_parameter(conn: sqlite3.Connection,
         SELECT parameters FROM runs
         WHERE result_table_name=?
         """
-        c = transaction(conn, sql, formatted_name)
+        with atomic(conn):
+            c = transaction(conn, sql, formatted_name)
         old_parameters = one(c, 'parameters')
         if old_parameters:
             new_parameters = ",".join([old_parameters] + p_names)
         else:
             new_parameters = ",".join(p_names)
         sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-        transaction(conn, sql, new_parameters, formatted_name)
+        with atomic(conn):
+            transaction(conn, sql, new_parameters, formatted_name)
 
         # Update the layouts table
         c = _add_parameters_to_layout_and_deps(conn, formatted_name,
@@ -1147,7 +1176,8 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
                 INSERT INTO dependencies (dependent, independent, axis_num)
                 VALUES (?,?,?)
                 """
-                c = transaction(conn, sql, layout_id, dep_ind, ax_num)
+                with atomic(conn):
+                    c = transaction(conn, sql, layout_id, dep_ind, ax_num)
     return c
 
 
@@ -1161,15 +1191,12 @@ def _validate_table_name(table_name: str) -> bool:
     return valid
 
 
-# (WilliamHPNielsen) This creates a result table, right?
 def _create_run_table(conn: sqlite3.Connection,
                       formatted_name: str,
                       parameters: Optional[List[ParamSpec]] = None,
                       values: Optional[VALUES] = None
                       ) -> None:
     """Create run table with formatted_name as name
-
-    NOTE this need to be committed before closing the connection.
 
     Args:
         conn: database connection
@@ -1196,14 +1223,16 @@ def _create_run_table(conn: sqlite3.Connection,
             {_parameters}
         );
         """
-        transaction(conn, query)
+        with atomic(conn):
+            transaction(conn, query)
     else:
         query = f"""
         CREATE TABLE "{formatted_name}" (
             id INTEGER PRIMARY KEY
         );
         """
-        transaction(conn, query)
+        with atomic(conn):
+            transaction(conn, query)
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
