@@ -18,7 +18,7 @@ install:
   - set PATH=%CONDA_INSTALL_LOCATION%;%CONDA_INSTALL_LOCATION%\scripts;%PATH%;
   - conda config --set always_yes true  # else AppVeyor will hang forever waiting for user ([y]/n)
   - conda update -n base conda
-  - conda create -q -f environment.yml python=3.6
+  - conda env create -q -f environment.yml python=3.6
   - activate qcodes
   - python -m pip install --upgrade pip
   - pip install .
