@@ -710,7 +710,7 @@ def get_dependents(conn: sqlite3.Connection,
     WHERE run_id=? and layout_id in (SELECT dependent FROM dependencies)
     """
     c = transaction(conn, sql, run_id)
-    res = one_column(c, 'layout_id')
+    res = many_many(c, 'layout_id')[0]
     return res
 
 
