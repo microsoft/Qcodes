@@ -726,7 +726,7 @@ def get_dependents(conn: sqlite3.Connection,
     WHERE run_id=? and layout_id in (SELECT dependent FROM dependencies)
     """
     c = transaction(conn, sql, run_id)
-    res = many_many(c, 'layout_id')[0]
+    res = [d[0] for d in many_many(c, 'layout_id')]
     return res
 
 
@@ -1122,20 +1122,26 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
     INSERT INTO layouts (run_id, parameter, label, unit, inferred_from)
     VALUES {placeholder}
     """
-    c = transaction(conn, sql, *layout_args)
-    layout_id = c.lastrowid
 
-    # TODO: how to manage the axis_num?
+    with atomic(conn):
+        c = transaction(conn, sql, *layout_args)
+
     for p in parameter:
+
         if p.depends_on != '':
+
+            layout_id = get_layout_id(conn, p, run_id)
+
             deps = p.depends_on.split(', ')
             for ax_num, dp in enumerate(deps):
+
                 sql = """
                 SELECT layout_id FROM layouts
                 WHERE run_id=? and parameter=?;
                 """
-                c = transaction(conn, sql, run_id, dp)
-                dep_ind = one(c, 'layout_id')
+                with atomic(conn):
+                    c = transaction(conn, sql, run_id, dp)
+                    dep_ind = one(c, 'layout_id')
 
                 sql = """
                 INSERT INTO dependencies (dependent, independent, axis_num)
