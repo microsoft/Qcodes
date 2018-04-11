@@ -125,23 +125,6 @@ def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
         return res[0][column]
 
 
-# TODO: This is just a special case of many_many, isn't it?
-def one_column(curr: sqlite3.Cursor, column: str) -> List[Any]:
-    """
-    Get the value of one column, all its rows
-
-    Args:
-        curr: cursor to operate on
-        column: name of the column
-
-    Returns:
-        the values
-    """
-    res = curr.fetchall()
-    res = [r[0] for r in res]
-    return res
-
-
 def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
     """Get the values of many columns from one row
     Args:
