@@ -227,12 +227,12 @@ class Runner:
             func(*args)
 
         # next set up the "datasaver"
-        if self.experiment:
-            eid = self.experiment.exp_id
+        if self.experiment is not None:
+            self.ds = qc.new_data_set(
+                self.name, self.experiment.exp_id, conn=self.experiment.conn
+            )
         else:
-            eid = None
-
-        self.ds = qc.new_data_set(self.name, eid)
+            self.ds = qc.new_data_set(self.name)
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
