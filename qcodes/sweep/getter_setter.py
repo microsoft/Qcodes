@@ -10,6 +10,22 @@ from typing import Callable
 from qcodes.sweep.base_sweep import ParametersTable
 
 
+def class_agnostic(f):
+    """
+    This decorator of decorators will make the latter decorator class agnostic
+    This means it does not matter if the function being decorated is a class
+    method or a stand alone function
+    """
+    def inner(self=None, *args, **kwargs):
+        if self is None:
+            return f(*args, **kwargs)
+        else:
+            return f(self, *args, **kwargs)
+
+    return inner
+
+
+@class_agnostic
 def getter(param_list: list, inferred_parameters: list=None)->Callable:
     """
     A decorator to easily integrate arbitrary measurement functions in sweeps.
@@ -68,6 +84,7 @@ def getter(param_list: list, inferred_parameters: list=None)->Callable:
     return decorator
 
 
+@class_agnostic
 def setter(param_list: list, inferred_parameters: list=None)->Callable:
     """
     A decorator to easily integrate arbitrary setter functions in sweeps
