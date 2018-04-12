@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping, Iterable, Sequence
+import pyperclip
 import os
 from functools import partial
 import logging
@@ -94,6 +95,12 @@ class MatPlot(BasePlot):
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
             self.fig.canvas.mpl_connect('close_event', self.halt)
+
+        # ctrl+c copies current x, y coords
+        def handle_key_press(event):
+            if event.key == 'ctrl+c':
+                pyperclip.copy(f'({event.xdata}, {event.ydata})')
+        self.fig.canvas.mpl_connect('key_press_event', handle_key_press)
 
     def __getitem__(self, key):
         """
@@ -404,7 +411,8 @@ class MatPlot(BasePlot):
                     arr_pad = arr_pad[:-1]
                     # C is allowed to be masked in pcolormesh but x and y are
                     # not so replace any empty data with nans
-                args.append(np.ma.filled(arr_pad, fill_value=np.nan))
+                arr_pad[np.isnan(arr_pad)] = np.nanmax(arr_pad)
+                args.append(arr_pad)
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask
