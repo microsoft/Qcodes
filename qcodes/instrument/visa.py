@@ -81,7 +81,7 @@ class VisaInstrument(Instrument):
         except Exception as e:
             log.info(f"Could not connect to {name} instrument at {address}")
             self.close()
-            raise Exception(f"Could not connect to {name} instrument at {address}")
+            raise e
 
         if device_clear:
             self.device_clear()
