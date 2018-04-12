@@ -191,13 +191,11 @@ class BreakIf:
     Args:
         condition (callable): a callable taking no arguments.
             Can be a simple function that returns truthy when it's time to quit
-            May also be constructed by deferred operations on `Parameter`.
     Raises:
         TypeError: if condition is not a callable with no aguments.
 
     Examples:
-            >>> BreakIf(gates.chan1 >= 3)
-            >>> BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
+            >>> BreakIf(lambda: gates.chan1.get() >= 3)
     """
 
     def __init__(self, condition):
@@ -211,7 +209,6 @@ class BreakIf:
             raise _QcodesBreak
 
     def snapshot(self, update=False):
-        # TODO: make nice reprs for DeferredOperations
         """
         Snapshots breakif action
         Args:

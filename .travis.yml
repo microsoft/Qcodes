@@ -35,7 +35,10 @@ script:
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     # build docs with warnings as errors
     - |
-      cd ../docs
+      cd ..
+      mypy qcodes --ignore-missing-imports
+    - |
+      cd docs
       make SPHINXOPTS="-W" html-api
     - cd ..
 

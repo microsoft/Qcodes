@@ -5,6 +5,7 @@ import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
+from typing import Dict, Callable
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
@@ -168,7 +169,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions = OrderedDict()
+    background_functions: Dict[str, Callable] = OrderedDict()
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):

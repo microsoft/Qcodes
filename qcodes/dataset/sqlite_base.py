@@ -107,7 +107,7 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def one(curr: sqlite3.Cursor, column: str) -> Any:
+def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     """Get the value of one column from one row
     Args:
         curr: cursor to operate on
@@ -196,6 +196,16 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     # sqlite3 options
     conn.row_factory = sqlite3.Row
+
+    # Make sure numpy ints and floats types are inserted properly
+    for numpy_int in [
+        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
+    ]:
+        sqlite3.register_adapter(numpy_int, int)
+
+    for numpy_float in [np.float, np.float16, np.float32, np.float64]:
+        sqlite3.register_adapter(numpy_float, float)
 
     if debug:
         conn.set_trace_callback(print)
@@ -408,11 +418,11 @@ def insert_many_values(conn: sqlite3.Connection,
     # According to the SQLite changelog, the version number
     # to check against below
     # ought to be 3.7.11, but that fails on Travis
-    if LooseVersion(version) <= LooseVersion('3.8.2'):
+    if LooseVersion(str(version)) <= LooseVersion('3.8.2'):
         max_var = qc.SQLiteSettings.limits['MAX_COMPOUND_SELECT']
     else:
         max_var = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
-    rows_per_transaction = int(max_var/no_of_columns)
+    rows_per_transaction = int(int(max_var)/no_of_columns)
 
     _columns = ",".join(columns)
     _values = "(" + ",".join(["?"] * len(values[0])) + ")"

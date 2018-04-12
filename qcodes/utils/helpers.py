@@ -3,16 +3,19 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
 import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+from typing import Dict, List
+
+from asyncio import iscoroutinefunction
+from inspect import signature
 
 import numpy as np
 
-_tprint_times = {}
+_tprint_times= {} # type: Dict[str, float]
 
 log = logging.getLogger(__name__)
 
@@ -112,6 +115,48 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         elif types is not None and not isinstance(item, types):
             return False
     return True
+
+
+def is_function(f, arg_count, coroutine=False):
+    """
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form
+
+    Args:
+        f (callable): function to check
+        arg_count (int): number of argument f should accept
+        coroutine (bool): is a coroutine. Default: False
+
+    Return:
+        bool: is function and accepts the specified number of arguments
+
+    """
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 def full_class(obj):
@@ -309,9 +354,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = []
-    delegate_attr_objects = []
-    omit_delegate_attrs = []
+    delegate_attr_dicts = [] # type: List[str]
+    delegate_attr_objects = [] # type: List[str]
+    omit_delegate_attrs = [] # type: List[str]
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -453,6 +498,7 @@ def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
+
 def foreground_qt_window(window):
     """
     Try as hard as possible to bring a qt window to the front. This
@@ -503,13 +549,12 @@ def add_to_spyder_UMR_excludelist(modulename: str):
 
     if any('SPYDER' in name for name in os.environ):
         try:
-            from spyder.utils.site.sitecustomize import UserModuleReloader
-            global __umr__
+            from spyder.utils.site import sitecustomize
             excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
                                               '').split(',')
             if modulename not in excludednamelist:
                 log.info("adding {} to excluded modules".format(modulename))
                 excludednamelist.append(modulename)
-            __umr__ = UserModuleReloader(namelist=excludednamelist)
+                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
