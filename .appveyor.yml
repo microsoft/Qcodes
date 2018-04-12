@@ -21,6 +21,7 @@ install:
   - conda env create -q -f environment.yml python=3.6
   - activate qcodes
   - pip install -r test_requirements.txt
+  - pip install -r docs_requirements.txt
   - python -m pip install --upgrade pip
   - pip install .
 
