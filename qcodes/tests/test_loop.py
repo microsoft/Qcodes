@@ -187,7 +187,9 @@ class TestLoop(TestCase):
         # TODO: On Mac delay is always at least the time you waited, but on
         # Windows it is sometimes less? need to investigate the precision here.
         self.assertGreaterEqual(delay, 0.04)
-        self.assertLessEqual(delay, 0.06)
+        # On slow CI machines, there can be a significant additional delay.
+        # So what are we even testing here..?
+        self.assertLessEqual(delay, 0.07)
 
     def test_composite_params(self):
         # this one has names and shapes
