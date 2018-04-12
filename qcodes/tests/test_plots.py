@@ -60,11 +60,11 @@ class TestQtPlot(TestCase):
                             ylabel='Amplitude', yunit='V',
                             subplot=j+1,
                             symbol='o', symbolSize=5)
+
     def test_return_handle(self):
         plotQ = QtPlot(remote=False)
         return_handle = plotQ.add([1, 2, 3])
         self.assertIs(return_handle, plotQ.subplots[0].items[0])
-
 
 @skipIf(noMatPlot, '***matplotlib plotting cannot be tested***')
 class TestMatPlot(TestCase):
