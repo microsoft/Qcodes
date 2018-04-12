@@ -29,7 +29,7 @@ test_script:
   - cd qcodes
   - cd tests
   - pytest
-  - cd ..
+  - cd ..\..
   - mypy qcodes --ignore-missing-imports
-  - cd ..\docs
+  - cd docs
   - execute_notebooks.cmd
