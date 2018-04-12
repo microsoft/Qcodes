@@ -9,6 +9,8 @@ from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
 from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
 from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.database import initialise_database
+
 import qcodes.dataset.experiment_container
 import pytest
 import tempfile
@@ -23,14 +25,7 @@ def empty_temp_db():
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qcodes.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
@@ -333,3 +328,35 @@ def test_database_upgrade(empty_temp_db):
 
     atomicTransaction(connection, sql)
     set_user_version(connection, 1)
+
+
+def test_numpy_ints(dataset):
+    """
+     Test that we can insert numpy integers in the data set
+    """
+    xparam = ParamSpec('x', 'numeric')
+    dataset.add_parameters([xparam])
+
+    numpy_ints = [
+        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
+    ]
+
+    results = [{"x": tp(1)} for tp in numpy_ints]
+    dataset.add_results(results)
+    expected_result = len(numpy_ints) * [[1]]
+    assert dataset.get_data("x") == expected_result
+
+
+def test_numpy_floats(dataset):
+    """
+    Test that we can insert numpy floats in the data set
+    """
+    float_param = ParamSpec('y', 'numeric')
+    dataset.add_parameters([float_param])
+
+    numpy_floats = [np.float, np.float16, np.float32, np.float64]
+    results = [{"y": tp(1.2)} for tp in numpy_floats]
+    dataset.add_results(results)
+    expected_result = [[tp(1.2)] for tp in numpy_floats]
+    assert dataset.get_data("y") == expected_result
