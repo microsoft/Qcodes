@@ -46,9 +46,6 @@ class TestQtPlot(TestCase):
         plotQ.add_subplot()
 
     def test_simple_plot(self):
-        plotQ = QtPlot(remote=False, show_window=False, interval=0)
-        plotQ.add_subplot()
-
         main_QtPlot = QtPlot(
             window_title='Main plotmon of TestQtPlot',
             figsize=(600, 400))
