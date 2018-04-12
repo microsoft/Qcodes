@@ -87,3 +87,5 @@ class TestMatPlot(TestCase):
         returned_handle = plotM.add([1,2,3])
         line_handle = plotM[0].get_lines()[0]
         self.assertIs(returned_handle, line_handle)
+        plotM.clear()
+        plt.close(plotM.fig)
