@@ -1,6 +1,6 @@
 from qcodes import VisaInstrument, validators as vals
 
-class SMF100(VisaInstrument):
+class SMF100A(VisaInstrument):
     """
     qcodes driver for the Rohde & Schwarz SMF100A Signal Generator.
 
@@ -8,7 +8,6 @@ class SMF100(VisaInstrument):
         name: instrument name
         address: VISA resource name of the instrument in format
                  'TCPIP0::192.168.15.100::inst0::INSTR'
-        init_s_params: Automatically setup channels matching S parameters
         **kwargs: passed to base class
 
     TODO:
