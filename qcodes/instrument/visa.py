@@ -78,10 +78,11 @@ class VisaInstrument(Instrument):
 
         try:
             self.set_address(address)
-        except Exception as e:
+        #except Exception as e:
+        except:
             log.info(f"Could not connect to {name} instrument at {address}")
             super().close()
-            raise e
+            raise Exception(f"Could not connect to {name} instrument at {address}")
 
         if device_clear:
             self.device_clear()
