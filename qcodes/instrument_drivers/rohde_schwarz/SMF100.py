@@ -2,12 +2,12 @@ from qcodes import VisaInstrument, validators as vals
 
 class SMF100(VisaInstrument):
     """
-    qcodes driver for the Rohde & Schwarz SMF100 Signal Generator.
+    qcodes driver for the Rohde & Schwarz SMF100A Signal Generator.
 
     Args:
         name: instrument name
-        address: Address of instrument probably in format
-            'TCPIP0::192.168.15.100::inst0::INSTR'
+        address: VISA resource name of the instrument in format
+                 'TCPIP0::192.168.15.100::inst0::INSTR'
         init_s_params: Automatically setup channels matching S parameters
         **kwargs: passed to base class
 
@@ -15,10 +15,9 @@ class SMF100(VisaInstrument):
     - check initialisation settings and test functions
     """
 
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
-        model = self.get_idn()['model'].split('-')[0]
 
         self.add_parameter('frequency', unit='Hz',
                             set_cmd='SOUR:FREQ {:.6f}',
@@ -42,19 +41,24 @@ class SMF100(VisaInstrument):
                             set_cmd='PULM:STAT {}',
                             get_cmd='MOD?',
                             vals=vals.OnOff(),
-                            get_parser=self.parse_on_off)
+                            get_parser=self.parse_on_off,
+                            docstring='Modulation')
 
         self.add_parameter('pulm_polarity',
                             set_cmd='PULM:POL {}',
                             get_cmd='PULM:POL?',
                             val_mapping={'Normal':'NORM', 'Inverted':'INV'},
-                            get_parser=self.parse_str)
+                            get_parser=self.parse_str,
+                            docstring='Pulse Modulation Input Polarity \
+                                       Mode: "Normal" or "Inverted"')
 
         self.add_parameter('pulm_video_polarity',
                             set_cmd='PULM:OUTP:VID:POL {}',
                             get_cmd='PULM:OUTP:VID:POL?',
                             val_mapping={'Normal':'NORM', 'Inverted':'INV'},
-                            get_parser=self.parse_str)
+                            get_parser=self.parse_str,
+                            docstring='Pulse Modulation Video Output Polarity \
+                                       Mode: "Normal" or "Inverted"')
 
         self.add_parameter('pulm_sync',
                             set_cmd='PULN:SYNC {}',
@@ -75,6 +79,8 @@ class SMF100(VisaInstrument):
                             val_mapping={'50 Ohm' : 'G50', '10 kOhm' : 'G10K'},
                             get_parser=self.parse_str)
 
+        self.add_function('reset', call_cmd='*RST')
+
     def parse_on_off(self, stat):
         if stat.startswith('0'):
             stat = 'off'
@@ -87,12 +93,12 @@ class SMF100(VisaInstrument):
 
     def toggle_pulm_polarity(self):
         '''
-        Toggles the PUlse Modulation Polarity.
+        Toggles the Pulse Modulation Polarity.
         '''
-        if self.get_pulm_polarity() == 'Normal':
-            self.set_pulm_polarity('Inverted')
+        if self.pulm_polarity() == 'Normal':
+            self.pulm_polarity('Inverted')
         else:
-            self.set_pulm_polarity('Normal')
+            self.pulm_polarity('Normal')
 
     def pulse_mod_on(self, polarity = 'Normal',
                      sync = 'off',
