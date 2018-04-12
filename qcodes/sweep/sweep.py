@@ -4,7 +4,7 @@ sweep objects.
 """
 
 import numpy as np
-from typing import Callable, Iterable, Union, Sized
+from typing import Callable, Iterable, Union, Sized, List, Dict
 
 import qcodes
 from qcodes import Parameter
@@ -14,24 +14,22 @@ from qcodes.sweep.base_sweep import (
 )
 
 
-def _infer_axis_properties(axis, length_only=False):
-    class _Dict(dict):
-        def dset(self, name, value):
-            self[name] = value
-            return self
+sw_objects = Union[Callable, Parameter, BaseSweepObject]
 
-    properties = dict(ParametersTable.default_axis_properties)
+def _infer_axis_properties(axis, length_only: bool=False)->List[Dict[str,Union[int,str]]]:
+
+    property = dict(ParametersTable.default_axis_properties)
 
     if not hasattr(axis, "__len__"):
-        return [properties]
+        return [property]
 
-    properties["length"] = len(axis)
+    property["length"] = len(axis)
 
     array = np.array(axis)
     if len(array.shape) == 1:
         array = array[:, None]
 
-    properties = [_Dict(properties) for _ in array.T]
+    properties: List[Dict] = [dict(property) for _ in array.T]
 
     if array.dtype == np.dtype("O") or length_only:
         return properties
@@ -46,10 +44,11 @@ def _infer_axis_properties(axis, length_only=False):
 
     steps = [step[0] if len(step) == 1 else "?" for step in steps]
 
-    return [
-        p.dset("min", mn).dset("max", mx).dset("steps", s)
-        for p, mn, mx, s in zip(properties, axis_min, axis_max, steps)
-    ]
+    for p, mn, mx, s in zip(properties, axis_min, axis_max, steps):
+        p['min'] = mn
+        p['max'] = mx
+        p['steps'] = s
+    return properties
 
 
 def sweep(
@@ -73,7 +72,7 @@ def sweep(
         point_function = lambda: sweep_points
     else:
         point_function = sweep_points
-
+    so: BaseSweepObject
     if not isinstance(obj, qcodes.Parameter):
         if not callable(obj):
             raise ValueError(
@@ -93,10 +92,10 @@ def sweep(
         sweep_points, length_only=has_inferred
     )
 
-    axis_properties = {
+    axis_info = {
         name: props for name, props in zip(ind, axis_properties)
     }
-    so.parameter_table.set_axis_info(axis_properties)
+    so.parameter_table.set_axis_info(axis_info)
 
     return so
 
@@ -127,7 +126,7 @@ def chain(*objects:  BaseSweepObject)->BaseSweepObject:
     return Chain(wrap_objects(*objects))
 
 
-def szip(*objects:  BaseSweepObject)->BaseSweepObject:
+def szip(*objects:  sw_objects)->BaseSweepObject:
     """
     A plausible scenario for using szip is the following:
 
@@ -154,10 +153,10 @@ def szip(*objects:  BaseSweepObject)->BaseSweepObject:
 
 
 def time_trace(
-        measurement_object: [Callable, Parameter, BaseSweepObject],
+        measurement_object: sw_objects,
         interval_time: float,
         total_time: float
-):
+)->BaseSweepObject:
     """
     Make time trace sweep object to monitor the return value of the measurement
     object over a certain time period.

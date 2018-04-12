@@ -17,7 +17,7 @@ class MockIO:
     def __init__(self)->None:
         self._buffer = ""
 
-    def write(self, string: AnyStr)->None:
+    def write(self, string: str)->None:
         self._buffer += "\n" + string
 
     def __repr__(self)->str:

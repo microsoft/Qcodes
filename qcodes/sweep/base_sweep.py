@@ -3,7 +3,7 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence, Iterable, Union
 import itertools
 import numpy as np
 import time
@@ -11,7 +11,7 @@ import time
 import qcodes
 from qcodes import Parameter
 
-
+paramtabletype = Dict[str, List[Tuple[str,str]]]
 class ParametersTable:
     """
     A parameters table is how sweep objects keep track of which parameters
@@ -35,7 +35,7 @@ class ParametersTable:
     # Minus one values are unknown. Currently the only way to fill these in
     # with sensible values is by using the "sweep" method defined in this
     # module
-    default_axis_properties = {
+    default_axis_properties: Dict[str,Union[str,int]] = {
         "min": "?",
         "max": "?",
         "length": "?",
@@ -43,8 +43,10 @@ class ParametersTable:
     }
 
     def __init__(
-            self, table_list: list=None, dependent_parameters: list=None,
-            independent_parameters: list=None, inferred_from_dict: dict=None
+            self, table_list: List[paramtabletype]=None,
+            dependent_parameters: List[Tuple[str, str]]=None,
+            independent_parameters: List[Tuple[str, str]]=None,
+            inferred_from_dict: Dict[str,List[str]]=None
     )->None:
 
         if not any([table_list, dependent_parameters, independent_parameters]):
@@ -64,11 +66,11 @@ class ParametersTable:
         else:
             self._table_list = list(table_list)
 
-        self._inferred_from_dict = {}
+        self._inferred_from_dict: Dict[str,List[str]] = {}
         if inferred_from_dict is not None:
             self._inferred_from_dict = dict(inferred_from_dict)
 
-        self._axis_info = dict()
+        self._axis_info: Dict[str, Dict[str, Union[str,int]]] = dict()
 
     def __add__(self, other: "ParametersTable")->"ParametersTable":
         """
@@ -114,11 +116,11 @@ class ParametersTable:
 
         return ptable
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Return the string representation of the table
         """
-        def table_print(table):
+        def table_print(table: paramtabletype) -> str:
             s = "|".join([
                 ",".join(["{} [{}]".format(*a) for a in table[k]]) for k in
                 ["independent_parameters", "dependent_parameters"]
@@ -132,14 +134,14 @@ class ParametersTable:
 
         return repr
 
-    def _inferees_black_list(self):
-        black_list = []
+    def _inferees_black_list(self) -> List[str]:
+        black_list: List[str] = []
         for values in self._inferred_from_dict.values():
             black_list += values
 
         return black_list
 
-    def flatten(self)->tuple:
+    def flatten(self)->Tuple[Dict[str, str], Dict[str,str]]:
         """
         Return a flattened list of dependent and independent parameters.
         Dependency information is lost by flattening (that is, if e.g.
@@ -152,15 +154,15 @@ class ParametersTable:
                d["dependent_parameters"]}
         return ind, dep
 
-    def get_independents(self, exclude_inferees=False):
-        black_list = []
+    def get_independents(self, exclude_inferees: bool =False) -> Dict[str,str]:
+        black_list: List[str] = []
         if exclude_inferees:
             black_list = self._inferees_black_list()
 
         ind, _ = self.flatten()
         return {k: v for k, v in ind.items() if k not in black_list}
 
-    def symbols_list(self)->list:
+    def symbols_list(self)->List[str]:
         """
         Return a list of parameter names
         """
@@ -176,14 +178,14 @@ class ParametersTable:
             for symbol, inferrees in self._inferred_from_dict.items()]
         )
 
-    def set_axis_info(self, axis_info)->None:
+    def set_axis_info(self, axis_info: Dict[str,Dict[str,Union[str,int]]])->None:
         """
         If these are known, we can set the axis length of independent
         parameters
         """
         self._axis_info.update(axis_info)
 
-    def layout_info(self, param_name):
+    def layout_info(self, param_name: str) -> Dict[str, Dict[str,Union[str,int]]]:
 
         table = None
         for t in self._table_list:
@@ -225,11 +227,11 @@ class ParametersTable:
         return new_table
 
     @property
-    def table_list(self)->list:
+    def table_list(self)->List[paramtabletype]:
         return self._table_list
 
     @property
-    def inferred_from_dict(self)->dict:
+    def inferred_from_dict(self)->Dict[str,List[str]]:
         return self._inferred_from_dict
 
 
@@ -273,12 +275,12 @@ class BaseSweepObject:
     def __init__(self)->None:
         # A "param_setter" is an iterator which, when "next" is called a new
         # value of the independent parameter is set.
-        self._param_setter = None
+        self._param_setter: Optional[Iterator] = None
 
         # A proper parameter table should be defined by the subclasses. This
         # is an instance of ParametersTable
-        self._parameter_table = None
-        self._symbols_list = None
+        self._parameter_table: Optional[ParametersTable] = None
+        self._symbols_list: Optional[List[str]] = None
 
     def _setter_factory(self)->Iterator:
         """
@@ -300,7 +302,7 @@ class BaseSweepObject:
         self._start_iter()
         return self
 
-    def __next__(self)->dict:
+    def __next__(self)->Dict[str,Optional[Iterator]]:
         """
         At each iteration a dictionary is returned containing information about
         the parameters set and measurements that have been performed.
@@ -338,7 +340,7 @@ class IteratorSweep(BaseSweepObject):
         iterator has the effect of setting the independent parameters.
     """
 
-    def __init__(self, iterator_function: callable)->None:
+    def __init__(self, iterator_function: Callable[[], Iterable])->None:
         super().__init__()
         self._iterator_function = iterator_function
 
@@ -372,7 +374,7 @@ class Nest(BaseSweepObject):
     Etc...
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
@@ -417,7 +419,7 @@ class Chain(BaseSweepObject):
     Chain a list of sweep object to run one after the other
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
@@ -440,7 +442,7 @@ class Zip(BaseSweepObject):
     sweep
     """
 
-    def __init__(self, sweep_objects: list)->None:
+    def __init__(self, sweep_objects: List[BaseSweepObject])->None:
         """
         Args:
             sweep_objects (list): A list of sweep objects
@@ -452,7 +454,7 @@ class Zip(BaseSweepObject):
         )
 
     @staticmethod
-    def _combine_dictionaries(dictionaries: Tuple[Any])->dict:
+    def _combine_dictionaries(dictionaries: Sequence[dict])->dict:
         combined = {}
         for d in dictionaries:
             combined.update(d)
