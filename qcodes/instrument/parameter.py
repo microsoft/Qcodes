@@ -409,6 +409,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     t0 = time.perf_counter()
 
                     set_function(parsed_scaled_mapped_value, **kwargs)
+
+                    # Register if value changed
+                    val_changed = self.raw_value != parsed_scaled_mapped_value
+
                     self.raw_value = parsed_scaled_mapped_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
@@ -416,7 +420,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
 
-                    if self._snapshot_value:
+                    if self._snapshot_value and val_changed:
                         # Add to log
                         log_msg = f'parameter set to {val_step}'
                         if mapped_value != val_step:
