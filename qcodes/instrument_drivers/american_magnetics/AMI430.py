@@ -125,11 +125,13 @@ class AMI430(IPInstrument):
 
     def __init__(self, name, address=None, port=None,
                  reset=False, terminator='\r\n',
-                 current_ramp_limit=None, **kwargs):
+                 current_ramp_limit=None, has_current_rating=False,
+                 **kwargs):
 
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
         self._parent_instrument = None
+        self.has_current_rating = has_current_rating
 
         # Add reset function
         self.add_function('reset', call_cmd='*RST')
@@ -171,16 +173,29 @@ class AMI430(IPInstrument):
                            get_cmd=self._update_coil_constant,
                            set_cmd=self._update_coil_constant,
                            vals=Numbers(0.001, 999.99999))
-        self.add_parameter('current_rating',
-                           get_cmd="CURR:RATING?",
-                           get_parser=float,
-                           set_cmd="CONF:CURR:RATING {}",
+
+        # TODO: Not all AMI430s expose this setting. Currently, we
+        # don't know why, but this most likely a firmware version issue,
+        # so eventually the following condition will be smth like
+        # if firmware_version > XX
+        if has_current_rating:
+            self.add_parameter('current_rating',
+                               get_cmd="CURR:RATING?",
+                               get_parser=float,
+                               set_cmd="CONF:CURR:RATING {}",
+                               unit="A",
+                               vals=Numbers(0.001, 9999.9999))
+
+            self.add_parameter('field_rating',
+                               get_cmd=lambda: self.current_rating(),
+                               set_cmd=lambda x: self.current_rating(x),
+                               scale=1/float(self.ask("COIL?")))
+
+        self.add_parameter('current_limit',
                            unit="A",
-                           vals=Numbers(0.001, 9999.9999))
-        self.add_parameter('field_rating',
-                           get_cmd=lambda: self.current_rating(),
-                           set_cmd=lambda x: self.current_rating(x),
-                           scale=1/float(self.ask("COIL?")))
+                           set_cmd="CONF:CURR:LIMIT {}",
+                           get_cmd='CURR:LIMIT?',
+                           vals=Numbers(0, 80))  # what are good numbers here?
 
         # Add current solenoid parameters
         # Note that field is validated in set_field
@@ -279,9 +294,10 @@ class AMI430(IPInstrument):
                 checks.
         """
         # Check we aren't violating field limits
-        if np.abs(value) > self.field_rating():
+        field_lim = float(self.ask("COIL?"))*self.current_limit()
+        if np.abs(value) > field_lim:
             msg = 'Aborted _set_field; {} is higher than limit of {}'
-            raise ValueError(msg.format(value, self.field_rating()))
+            raise ValueError(msg.format(value, field_lim))
 
         # If part of a parent driver, set the value using that driver
         if self._parent_instrument is not None and perform_safety_check:
@@ -403,8 +419,9 @@ class AMI430(IPInstrument):
             self.write("CONF:COIL {}".format(new_coil_constant))
 
         # Update scaling factors
-        self.field_ramp_limit.scale = 1/new_coil_constant
-        self.field_rating.scale = 1/new_coil_constant
+        if self.has_current_rating:
+            self.field_ramp_limit.scale = 1/new_coil_constant
+            self.field_rating.scale = 1/new_coil_constant
 
         # Return new coil constant
         return new_coil_constant
