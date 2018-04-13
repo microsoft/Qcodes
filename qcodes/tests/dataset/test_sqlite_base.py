@@ -42,13 +42,13 @@ def test_one_raises(experiment):
         mut.one(conn.cursor(), column='Something_you_dont_have')
 
 
-def test_atomicTransaction_raises(experiment):
+def test_atomic_transaction_raises(experiment):
     conn = experiment.conn
 
     bad_sql = '""'
 
     with pytest.raises(OperationalError):
-        mut.atomicTransaction(conn, bad_sql)
+        mut.atomic_transaction(conn, bad_sql)
 
 
 def test_atomic_raises(experiment):
