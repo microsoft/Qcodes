@@ -195,6 +195,7 @@ class AMI430(IPInstrument):
                            unit="A",
                            set_cmd="CONF:CURR:LIMIT {}",
                            get_cmd='CURR:LIMIT?',
+                           get_parser=float,
                            vals=Numbers(0, 80))  # what are good numbers here?
 
         # Add current solenoid parameters
