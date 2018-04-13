@@ -371,8 +371,8 @@ class Measurement:
 
     def register_parameter(
             self, parameter: _BaseParameter,
-            setpoints: Tuple[_BaseParameter]=None,
-            basis: Tuple[_BaseParameter]=None) -> None:
+            setpoints: Sequence[_BaseParameter]=None,
+            basis: Sequence[_BaseParameter]=None) -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -397,7 +397,7 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-
+        my_setpoints: Sequence[Union[str,_BaseParameter]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
             if parameter.setpoint_names:
@@ -418,8 +418,8 @@ class Measurement:
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
-            my_setpoints: Tuple[Union[_BaseParameter, str], ...] = setpoints if setpoints else ()
-            my_setpoints += (spname,)
+            my_setpoints = list(setpoints) if setpoints else []
+            my_setpoints += [spname]
         else:
             my_setpoints = setpoints
 
