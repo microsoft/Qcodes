@@ -1,0 +1,25 @@
+{
+    "version": 1,
+    "project": "QCoDeS",
+    "project_url": "https://github.com/QCoDeS/Qcodes/",
+    "repo": ".",
+    "branches": ["feature/dataset"],
+    "environment_type": "conda",
+    "show_commit_url": "https://github.com/QCoDeS/Qcodes/commit/",
+    "pythons": ["3.6"],
+    "benchmark_dir": "benchmarks",
+    "env_dir": ".asv/env",
+    "results_dir": ".asv/results",
+    "html_dir": ".asv/html",
+    "matrix": {
+        "h5py": [],
+        "matplotlib": ["2.0.2"],
+        "pyqtgraph": [""],
+        "jsonschema": [""],
+        "QtPy": [""],
+        "sip": [""],
+        "pyqt": ["5.6.0"],
+        "numpy": [""],
+        "pyzmq": ["16.0.2"]
+    }
+}
