@@ -537,7 +537,8 @@ class FunctionSweep(BaseSweepObject):
                 iteration represents a set point
         """
         super().__init__()
-        self._set_function, self._parameter_table = set_function()
+        self._set_function = set_function
+        self._parameter_table = set_function.parameter_table
         self._point_function = point_function
 
     def _setter_factory(self)->Iterator:
@@ -562,7 +563,8 @@ class FunctionWrapper(BaseSweepObject):
                 can easily lead to infinite loops.
         """
         super().__init__()
-        self._measure_function, self._parameter_table = measure_function()
+        self._measure_function = measure_function
+        self._parameter_table = measure_function.parameter_table
         self._repeat = repeat
 
     def _setter_factory(self)->Iterator:

@@ -10,22 +10,6 @@ from typing import Callable
 from qcodes.sweep.base_sweep import ParametersTable
 
 
-def class_agnostic(f):
-    """
-    This decorator of decorators will make the latter decorator class agnostic
-    This means it does not matter if the function being decorated is a class
-    method or a stand alone function
-    """
-    def inner(self=None, *args, **kwargs):
-        if self is None:
-            return f(*args, **kwargs)
-        else:
-            return f(self, *args, **kwargs)
-
-    return inner
-
-
-@class_agnostic
 def getter(param_list: list, inferred_parameters: list=None)->Callable:
     """
     A decorator to easily integrate arbitrary measurement functions in sweeps.
@@ -59,8 +43,8 @@ def getter(param_list: list, inferred_parameters: list=None)->Callable:
     param_list = param_list + inferred_parameters
 
     def decorator(f):
-        def inner():
-            value = np.atleast_1d(f())
+        def inner(*args):
+            value = np.atleast_1d(f(*args))
 
             if len(value) != len(param_list + inferred_parameters):
                 raise ValueError(
@@ -79,12 +63,12 @@ def getter(param_list: list, inferred_parameters: list=None)->Callable:
             inferred_from_dict=inferred_from_dict
         )
 
-        return lambda: (inner, parameter_table)
+        inner.parameter_table = parameter_table
+        return inner
 
     return decorator
 
 
-@class_agnostic
 def setter(param_list: list, inferred_parameters: list=None)->Callable:
     """
     A decorator to easily integrate arbitrary setter functions in sweeps
@@ -110,10 +94,16 @@ def setter(param_list: list, inferred_parameters: list=None)->Callable:
     param_list = param_list + inferred_parameters
 
     def decorator(f):
-        def inner(value):
-            value = np.atleast_1d(value)
-            inferred_values = f(*value)
+        def inner(*args):
+            inferred_values = f(*args)
 
+            if len(args) == 2:  # f can be a class method, in which case
+                # args[0] = self
+                value = args[1]
+            else:
+                value = args[0]
+
+            value = np.atleast_1d(value)
             if inferred_values is not None:
                 value = np.append(value, np.atleast_1d(inferred_values))
 
@@ -132,6 +122,7 @@ def setter(param_list: list, inferred_parameters: list=None)->Callable:
             inferred_from_dict=inferred_from_dict
         )
 
-        return lambda: (inner, parameter_table)
+        inner.parameter_table = parameter_table
+        return inner
 
     return decorator

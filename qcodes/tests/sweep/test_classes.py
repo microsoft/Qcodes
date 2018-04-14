@@ -116,7 +116,7 @@ def test_set_function(set_functions, sweep_values):
 
     def compare():
         for v in values:
-            set_function()[0](v)
+            set_function(v)
 
     equivalence_test(test, compare)
 
@@ -215,7 +215,7 @@ def test_measurement_function(parameters, measurements, sweep_values):
 
         for value0 in v0:
             p0.set(value0)
-            m()[0]()
+            m()
             for value1 in v1:
                 p1.set(value1)
 

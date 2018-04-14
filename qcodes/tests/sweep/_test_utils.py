@@ -60,17 +60,20 @@ class TestMeasureFunction:
     """
     def __init__(self, name: str)->None:
         self._name = name
+        self._execute = getter([(self._name, "hash")])(self._call)
+        self.parameter_table = self._execute.parameter_table
 
     @property
     def name(self)->str:
         return self._name
 
-    def caller(self):
+    def _call(self):
         hs = hash(str(mock_io))
         mock_io.write("{} returns {}".format(self._name, hs))
+        return hs
 
-    def __call__(self)->dict:
-        return getter([(self._name, "hash")])(self.caller)()
+    def __call__(self):
+        return self._execute()
 
 
 class TestSetFunction:
@@ -80,16 +83,18 @@ class TestSetFunction:
     """
     def __init__(self, name: str)->None:
         self._name = name
+        self._execute = setter([(self._name, "none")])(self._call)
+        self.parameter_table = self._execute.parameter_table
 
     @property
     def name(self)->str:
         return self._name
 
-    def caller(self, value)->None:
+    def _call(self, value):
         mock_io.write("Setting {} to {}".format(self._name, value))
 
-    def __call__(self):
-        return setter([(self._name, "none")])(self.caller)()
+    def __call__(self, value):
+        return self._execute(value)
 
 
 def equivalence_test(test: Callable, compare: Callable)->None:
