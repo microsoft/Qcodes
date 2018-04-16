@@ -148,11 +148,12 @@ class DataSaver:
             for partial_result in res:
                 param = str(partial_result[0])
                 value = partial_result[1]
-                value = np.atleast_1d(value)
                 # For compatibility with the old Loop, setpoints are
                 # tuples of numbers (usually tuple(np.linspace(...))
                 if hasattr(value, '__len__') and not(isinstance(value, str)):
                     value = cast(Union[Sequence,np.ndarray], value)
+                    if isinstance(value, np.ndarray):
+                        value = np.atleast_1d(value)
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
