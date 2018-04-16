@@ -242,8 +242,9 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
-    def test_scale_and_offset_raw_value(self):
-        number = 43
+
+    @given(hst.one_of(hst.integers(), hst.floats()))
+    def test_scale_and_offset_raw_value(self, number):
         p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
         p(number)
         self.assertEqual(p.raw_value, number)
@@ -252,10 +253,10 @@ class TestParameter(TestCase):
         p.offset = 1
         # test get
         self.assertEqual(p.raw_value, number) # No set/get cmd performed
-        self.assertEqual(p(), (number-offset)/p.scale)
+        self.assertEqual(p(), (number-p.offset)/p.scale)
 
         p(number)
-        self.assertEqual(p.raw_value, number*scale+offset)
+        self.assertEqual(p.raw_value, number*p.scale+p.offset)
         self.assertEqual(p(), number)
 
 
