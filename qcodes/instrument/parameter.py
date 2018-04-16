@@ -59,7 +59,7 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable
 from functools import partial, wraps
 import numpy
 
@@ -76,6 +76,7 @@ from qcodes.data.data_array import DataArray
 if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
+Number = Union[float, int]
 
 class _BaseParameter(Metadatable, DeferredOperations):
     """
@@ -109,6 +110,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
         scale (Optional[float]): Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
+
+        offset: Compensate for a parameter specific offset. (just as scale)
+            get value = raw value + offset.
+            set value = argument - offset.
+            If offset and scale are used in combination, when getting a value,
+            first an offset is added, then the scale is applied.
 
         inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
@@ -157,8 +164,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Union[int, float]]=None,
-                 scale: Optional[Union[int, float]]=None,
-                 offset: Optional[Union[int, float]]=None,
+                 scale: Optional[Union[Number, Iterable[Number]]]=None,
+                 offset: Optional[Union[Number, Iterable[Number]]]=None,
                  inter_delay: Union[int, float]=0,
                  post_delay: Union[int, float]=0,
                  val_mapping: Optional[dict]=None,
