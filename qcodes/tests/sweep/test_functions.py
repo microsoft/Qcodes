@@ -16,7 +16,7 @@ from qcodes.sweep.base_sweep import (
     ParameterWrapper
 )
 
-from qcodes.sweep import sweep, nest, szip, setter
+from qcodes.sweep import sweep, nest, szip, setter, getter
 
 from ._test_utils import (
     parameter_list,
@@ -204,53 +204,3 @@ def test_layout_info():
     }
 
 
-def test_layout_info_setter():
-
-    @setter([("BB", "V"), ("AB", "V")])
-    def setter_function1(v1, v2):
-        return
-
-    @setter(
-        [("BB", "V"), ("AB", "V")],
-        inferred_parameters=[("bb", "mV"), ("ab", "mV")]
-    )
-    def setter_function2(v1, v2):
-        return 0, 0
-
-    m = ManualParameter("m")
-
-    s1 = [0, 1, 2]
-    s2 = [1, 3, 5]
-    sweep_values = list(zip(s1, s2))
-
-    so = sweep(setter_function1, sweep_values)(m)
-    assert so.parameter_table.layout_info("m") == {
-        "BB": {
-            "min": min(s1),
-            "max": max(s1),
-            "length": len(s1),
-            "steps": s1[1] - s1[0]
-        },
-        "AB": {
-            "min": min(s2),
-            "max": max(s2),
-            "length": len(s2),
-            "steps": s2[1] - s2[0]
-        }
-    }
-
-    so = sweep(setter_function2, sweep_values)(m)
-    assert so.parameter_table.layout_info("m") == {
-        "bb": {
-            "min": "?",
-            "max": "?",
-            "length": len(s1),
-            "steps": "?"
-        },
-        "ab": {
-            "min": "?",
-            "max": "?",
-            "length": len(s2),
-            "steps": "?"
-        }
-    }

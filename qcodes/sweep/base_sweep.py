@@ -3,10 +3,12 @@ This module defines sweep objects. It is anticipated that most users will
 not access this module directly but instead shall use the qcodes.sweep.sweep
 module to access convenience functions.
 """
-from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, Sequence, Iterable, Union
+from typing import Callable, Any, Iterator, Tuple, Optional, Dict, List, \
+    Sequence, Iterable, Union
 import itertools
 import numpy as np
 import time
+import collections
 
 import qcodes
 from qcodes import Parameter
@@ -543,7 +545,11 @@ class FunctionSweep(BaseSweepObject):
 
     def _setter_factory(self)->Iterator:
         for set_value in self._point_function():
-            yield self._set_function(set_value)
+
+            if not isinstance(set_value, collections.Iterable):
+                set_value = (set_value,)
+
+            yield self._set_function(*set_value)
 
 
 class FunctionWrapper(BaseSweepObject):

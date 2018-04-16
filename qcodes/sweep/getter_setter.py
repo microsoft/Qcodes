@@ -97,11 +97,10 @@ def setter(param_list: list, inferred_parameters: list=None)->Callable:
         def inner(*args):
             inferred_values = f(*args)
 
-            if len(args) == 2:  # f can be a class method, in which case
-                # args[0] = self
-                value = args[1]
-            else:
-                value = args[0]
+            value = args
+            if len(args) == len(param_list) + 1:
+                # f can be a class method, in which case args[0] = self
+                value = args[1:]
 
             value = np.atleast_1d(value)
             if inferred_values is not None:
