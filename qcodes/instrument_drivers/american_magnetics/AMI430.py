@@ -198,6 +198,11 @@ class AMI430(IPInstrument):
                            get_parser=float,
                            vals=Numbers(0, 80))  # what are good numbers here?
 
+        self.add_parameter('field_limit',
+                           set_cmd=self.current_limit.set,
+                           get_cmd=self.current_limit.get,
+                           scale=1/float(self.ask("COIL?")))
+
         # Add current solenoid parameters
         # Note that field is validated in set_field
         self.add_parameter('field',
@@ -446,6 +451,7 @@ class AMI430(IPInstrument):
 
         # And update all units
         self.coil_constant.unit = "{}/A".format(field_units)
+        self.field_limit.unit = f"{field_units}"
         self.field.unit = "{}".format(field_units)
         self.setpoint.unit = "{}".format(field_units)
         self.ramp_rate.unit = "{}/{}".format(field_units, ramp_rate_units)
