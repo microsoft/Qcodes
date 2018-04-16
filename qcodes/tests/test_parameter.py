@@ -242,6 +242,23 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
+    def test_scale_and_offset_raw_value(self):
+        number = 43
+        p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
+        p(number)
+        self.assertEqual(p.raw_value, number)
+
+        p.scale = 2
+        p.offset = 1
+        # test get
+        self.assertEqual(p.raw_value, number) # No set/get cmd performed
+        self.assertEqual(p(), (number-offset)/p.scale)
+
+        p(number)
+        self.assertEqual(p.raw_value, number*scale+offset)
+        self.assertEqual(p(), number)
+
+
     def test_latest_value(self):
         p = MemoryParameter(name='test_latest_value', get_cmd=lambda: 21)
 

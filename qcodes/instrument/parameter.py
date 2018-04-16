@@ -112,8 +112,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             `raw_value`. Can account for a voltage divider.
 
         offset: Compensate for a parameter specific offset. (just as scale)
-            get value = raw value + offset.
-            set value = argument - offset.
+            get value = raw value - offset.
+            set value = argument + offset.
             If offset and scale are used in combination, when getting a value,
             first an offset is added, then the scale is applied.
 
@@ -342,13 +342,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     # offset values
                     if isinstance(self.offset, collections.Iterable):
                         # offset contains multiple elements, one for each value
-                        value = tuple(value + offset for value, offset
+                        value = tuple(value - offset for value, offset
                                       in zip(value, self.offset))
                     elif isinstance(value, collections.Iterable):
                         # Use single offset for all values
-                        value = tuple(value + self.offset for value in value)
+                        value = tuple(value - self.offset for value in value)
                     else:
-                        value += self.offset
+                        value -= self.offset
 
                 # scale second
                 if self.scale is not None:
@@ -413,17 +413,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     if self.offset is not None:
                         if isinstance(self.offset, collections.Iterable):
                             # offset contains multiple elements, one for each value
-                            raw_value = tuple(val - offset for val, offset
+                            raw_value = tuple(val + offset for val, offset
                                               in zip(raw_value, self.offset))
                         else:
                             # Use single offset for all values
-                            raw_value -= self.offset
+                            raw_value += self.offset
 
                     # parser last
                     if self.set_parser is not None:
                         raw_value = self.set_parser(raw_value)
 
-            
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
                     if t_elapsed < self.inter_delay:
