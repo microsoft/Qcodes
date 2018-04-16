@@ -55,7 +55,7 @@ if os.name == 'nt':
         # for unknown reasons c_void_p gets messed up on Win7/64bit, but this works:
         drv_handle = POINTER(c_uint64)
     else:
-        drv_handle = c_void_p
+        drv_handle = c_void_p # type: ignore
 
     # Load DLL into memory.
     # use windll because all driver access functions use _stdcall calling convention under windows
@@ -157,7 +157,7 @@ elif os.name == 'posix':
     sys.stdout.write("Linux found")
 
     # define card handle type
-    drv_handle = c_void_p
+    drv_handle = c_void_p # type: ignore
 
     # Load DLL into memory.
     # use cdll because all driver access functions use cdecl calling convention under linux 
