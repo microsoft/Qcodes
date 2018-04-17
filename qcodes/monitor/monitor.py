@@ -111,6 +111,7 @@ class Monitor(Thread):
         time.sleep(0.01)
         super().__init__()
         self.loop = None
+        self._parameters = parameters
         self._monitor(*parameters, interval=interval)
         Monitor.running = self
 
