@@ -83,13 +83,18 @@ class BasePlot:
                              ylabel= "Amplitude",
                              yunit ="V")
 
+        Returns:
+            Plot handle for trace
+
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
         """
         # TODO(giulioungaretti): replace with an explicit version, see expand trace
         self.expand_trace(args, kwargs)
-        self.add_to_plot(**kwargs)
+        plot_object = self.add_to_plot(**kwargs)
         self.add_updater(updater, kwargs)
+
+        return plot_object
 
     def add_to_plot(self, **kwargs):
         """

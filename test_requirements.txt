@@ -1,5 +1,9 @@
-coverage
+coverage!=4.5.0
 pytest-cov
 pytest
 codacy-coverage
 hypothesis
+mypy!=0.570 # due to https://github.com/python/mypy/issues/4674
+git+https://github.com/QCoDeS/pyvisa-sim.git
+lxml
+codecov

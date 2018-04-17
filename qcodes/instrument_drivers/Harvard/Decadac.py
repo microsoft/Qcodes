@@ -1,6 +1,6 @@
 from time import time
 from functools import partial
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList, ManualParameter
+from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
 
@@ -26,12 +26,20 @@ class DacReader(object):
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
+        if volt < self.min_val or volt >= self.max_val:
+            raise ValueError('Cannot convert voltage {} V '.format(volt) +
+                             'to a voltage code, value out of range '
+                             '({} V - {} V).'.format(self.min_val,
+                                                     self.max_val))
+
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
         val = int(round(frac * 65536))
-        if val >= 65536:  # Check limits. For example setting max_val will cause an overflow
-            return 65535
-        if val < 0:  # Ensure no negative values
-            return 0
+        # extra check to be absolutely sure that the instrument does nothing
+        # receive an out-of-bounds value
+        if val > 65535 or val < 0:
+            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
+                             ', which is not within the allowed range.'
+                             ''.format(volt, val))
         return val
 
     def _dac_code_to_v(self, code):
@@ -180,7 +188,7 @@ class DacChannel(InstrumentChannel, DacReader):
         self.add_parameter("volt", get_cmd=partial(self._query_address, self._base_addr+9, 1),
                            get_parser=self._dac_code_to_v,
                            set_cmd=self._set_dac, set_parser=self._dac_v_to_code, vals=self._volt_val,
-                           label="Voltage", unit="V")
+                           label="channel {}".format(channel+self._slot*4), unit="V")
         # The limit commands are used to sweep dac voltages. They are not safety features.
         self.add_parameter("lower_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+5),
                            get_parser=self._dac_code_to_v,
@@ -199,9 +207,9 @@ class DacChannel(InstrumentChannel, DacReader):
 
         # Manual parameters to control whether DAC channels should ramp to voltages or jump
         self._ramp_val = vals.Numbers(0, 10)
-        self.add_parameter("enable_ramp", parameter_class=ManualParameter, initial_value=False,
+        self.add_parameter("enable_ramp", get_cmd=None, set_cmd=None, initial_value=False,
                            vals=vals.Bool())
-        self.add_parameter("ramp_rate", parameter_class=ManualParameter, initial_value=0.1,
+        self.add_parameter("ramp_rate", get_cmd=None, set_cmd=None, initial_value=0.1,
                            vals=self._ramp_val, unit="V/s")
 
         # Add ramp function to the list of functions
@@ -257,8 +265,8 @@ class DacChannel(InstrumentChannel, DacReader):
 
     def _set_dac(self, code):
         """
-        Set the voltage on the dac channel, ramping if the enable_rate parameter is set for this
-        channel.
+        Set the voltage on the dac channel, ramping if the enable_rate
+        parameter is set for this channel.
 
         Params:
             code (int): the DAC code to set the voltage to
@@ -291,7 +299,8 @@ class DacSlot(InstrumentChannel, DacReader):
     """
     A single DAC Slot of the DECADAC
     """
-    _SLOT_VAL = vals.Ints(0, 5)
+    _SLOT_VAL = vals.Ints(0, 4)
+    SLOT_MODE_DEFAULT = "Coarse"
 
     def __init__(self, parent, name, slot, min_val=-5, max_val=5):
         super().__init__(parent, name)
@@ -304,9 +313,9 @@ class DacSlot(InstrumentChannel, DacReader):
         self._VERSA_EEPROM_available = self._parent._VERSA_EEPROM_available
 
         # Create a list of channels in the slot
-        channels = ChannelList(self, "Slot_Channels", DacChannel)
+        channels = ChannelList(self, "Slot_Channels", parent.DAC_CHANNEL_CLASS)
         for i in range(4):
-            channels.append(DacChannel(self, "Chan{}".format(i), i,
+            channels.append(parent.DAC_CHANNEL_CLASS(self, "Chan{}".format(i), i,
                                        min_val=min_val, max_val=max_val))
         self.add_submodule("channels", channels)
         # Set the slot mode. Valid modes are:
@@ -327,7 +336,7 @@ class DacSlot(InstrumentChannel, DacReader):
                            val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
-        self.slot_mode.set("Coarse")
+        self.slot_mode.set(self.SLOT_MODE_DEFAULT)
 
     def write(self, cmd):
         """
@@ -365,6 +374,8 @@ class Decadac(VisaInstrument, DacReader):
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.
     """
+    DAC_CHANNEL_CLASS = DacChannel
+    DAC_SLOT_CLASS = DacSlot
 
     def __init__(self, name, address, min_val=-5, max_val=5, **kwargs):
         """
@@ -394,10 +405,10 @@ class Decadac(VisaInstrument, DacReader):
         self._feature_detect()
 
         # Create channels
-        channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
-        slots = ChannelList(self, "Slots", DacSlot)
-        for i in range(6):  # Create the 6 DAC slots
-            slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
+        channels = ChannelList(self, "Channels", self.DAC_CHANNEL_CLASS, snapshotable=False)
+        slots = ChannelList(self, "Slots", self.DAC_SLOT_CLASS)
+        for i in range(5):  # Create the 6 DAC slots
+            slots.append(self.DAC_SLOT_CLASS(self, "Slot{}".format(i), i, min_val, max_val))
             channels.extend(slots[i].channels)
         slots.lock()
         channels.lock()
@@ -488,13 +499,19 @@ class Decadac(VisaInstrument, DacReader):
 
         # Check whether we can set startup values for the DAC.
         # This requires access to the EEPROM on each slot
+
+        # note from DV: the value never gets set to True in this driver.
+        # To avoid an error of a non existing attribute, here I set it to
+        # False by default
+        self._VERSA_EEPROM_available = False
+
         try:
             # Let's temporarily pretend to be slot 0
             self._slot = 0
             self._query_address(6, versa_eeprom=True)
             del self._slot
         except DACException:
-            self._VERSA_EEPROM_available = False
+            pass
 
         # Check whether calibration is supported
         try:
