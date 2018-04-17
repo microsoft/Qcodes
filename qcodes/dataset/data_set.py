@@ -12,6 +12,7 @@ from threading import Thread
 import time
 import logging
 import hashlib
+import uuid
 from queue import Queue, Empty
 
 import qcodes.config
@@ -547,7 +548,7 @@ class DataSet(Sized):
                   state: Optional[Any] = None,
                   callback_kwargs: Optional[Dict[str, Any]] = None,
                   subscriber_class=Subscriber) -> str:
-        sub_id = hash_from_parts(str(time.time()))
+        sub_id = uuid.uuid4().hex
         sub = Subscriber(self, sub_id, callback, state, min_wait, min_count,
                          callback_kwargs)
         self.subscribers[sub_id] = sub
