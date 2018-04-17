@@ -20,6 +20,7 @@ import socketserver
 import webbrowser
 import datetime
 from copy import deepcopy
+from contextlib import suppress
 
 from threading import Thread
 from typing import Dict, Any
@@ -139,6 +140,12 @@ class Monitor(Thread):
                 time.sleep(0.01)
             self.loop_is_closed = True
             log.debug("loop closed")
+
+    def update_all(self):
+        for p in self._parameters:
+            # call get if it can be called without arguments
+            with suppress(TypeError):
+                p.get()
 
     def stop(self) -> None:
         """
