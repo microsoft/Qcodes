@@ -338,7 +338,11 @@ class DataSet(DelegateAttributes):
         data_array.data_set = self
 
     def remove_array(self, array_id):
-        """ Remove an array from a dataset """
+        """ Remove an array from a dataset 
+        
+        Args:
+            array_id (str): array_id of array to be removed
+        """
         for a in self.arrays:
             sa = self.arrays[a].set_arrays
             if array_id in [a.array_id for a in sa]:
