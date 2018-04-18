@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import qcodes as qc
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
-from .data_export import datatype_from_setpoints_2d, reshape_2D_data
+from .data_export import (datatype_from_setpoints_1d,
+                          datatype_from_setpoints_2d, reshape_2D_data)
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
@@ -86,7 +87,7 @@ def plot_by_id(run_id: int,
     if axes is None:
         axes = []
         for i in range(nplots):
-            fig, ax = plt.subplots(1,1)
+            fig, ax = plt.subplots(1, 1)
             axes.append(ax)
     else:
         if len(axes) != nplots:
@@ -101,8 +102,18 @@ def plot_by_id(run_id: int,
 
             # sort for plotting
             order = data[0]['data'].argsort()
+            xpoints = data[0]['data'][order]
+            ypoints = data[1]['data'][order]
 
-            ax.plot(data[0]['data'][order], data[1]['data'][order])
+            plottype = datatype_from_setpoints_1d(xpoints)
+
+            if plottype == 'line':
+                ax.plot(xpoints, ypoints)
+            elif plottype == 'point':
+                ax.scatter(xpoints, ypoints)
+            else:
+                raise ValueError('Unknown plottype. Something is way wrong.')
+
             set_axis_labels(ax, data)
             cbaxes.append(None)
 
