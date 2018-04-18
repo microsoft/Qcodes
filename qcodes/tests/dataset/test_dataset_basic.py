@@ -21,6 +21,8 @@ n_experiments = 0
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
+    global n_experiments
+    n_experiments = 0
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')

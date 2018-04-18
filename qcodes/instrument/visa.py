@@ -76,7 +76,13 @@ class VisaInstrument(Instrument):
 
         self.visabackend = None
 
-        self.set_address(address)
+        try:
+            self.set_address(address)
+        except Exception as e:
+            log.info(f"Could not connect to {name} instrument at {address}")
+            self.close()
+            raise e
+
         if device_clear:
             self.device_clear()
 
