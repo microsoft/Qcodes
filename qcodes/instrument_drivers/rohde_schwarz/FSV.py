@@ -123,14 +123,16 @@ class FSV(VisaInstrument):
                            get_parser=self._parse_on_off,
                            vals=vals.OnOff())
 
-    def _parse_on_off(self,  stat):
+    @staticmethod
+    def _parse_on_off(stat):
         if stat.startswith('0'):
             stat = 'off'
         elif stat.startswith('1'):
             stat = 'on'
         return stat
 
-    def _parse_str(self, string):
+    @staticmethod
+    def _parse_str(string):
         return string.strip().upper()
 
     def _set_start(self, val):
