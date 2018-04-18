@@ -30,7 +30,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
                                         get_values,
                                         get_setpoints,
                                         get_metadata, one)
-
+from qcodes.dataset.database import get_DB_location
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
@@ -55,9 +55,6 @@ SPECS = List[ParamSpec]
 
 class CompletedError(RuntimeError):
     pass
-
-
-DB = qcodes.config["core"]["db_location"]
 
 
 class Subscriber(Thread):
@@ -166,11 +163,15 @@ class Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str) -> None:
+    def __init__(self, path_to_db: str, conn=None) -> None:
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db)
+        if conn is None:
+            self.conn = connect(self.path_to_db)
+        else:
+            self.conn = conn
+
         self._debug = False
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
@@ -611,7 +612,7 @@ def load_by_id(run_id)->DataSet:
         the datasets
 
     """
-    d = DataSet(DB)
+    d = DataSet(get_DB_location())
     d.run_id = run_id
     return d
 
@@ -626,7 +627,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    d = DataSet(DB)
+    d = DataSet(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -642,7 +643,7 @@ def load_by_counter(counter, exp_id):
 
 def new_data_set(name, exp_id: Optional[int] = None,
                  specs: SPECS = None, values=None,
-                 metadata=None) -> DataSet:
+                 metadata=None, conn=None) -> DataSet:
     """ Create a new dataset.
     If exp_id is not specified the last experiment will be loaded by default.
 
@@ -654,7 +655,9 @@ def new_data_set(name, exp_id: Optional[int] = None,
         values: the values to associate with the parameters
         metadata:  the values to associate with the dataset
     """
-    d = DataSet(DB)
+    path_to_db = get_DB_location()
+    d = DataSet(path_to_db, conn=conn)
+
     if exp_id is None:
         if len(get_experiments(d.conn)) > 0:
             exp_id = get_last_experiment(d.conn)

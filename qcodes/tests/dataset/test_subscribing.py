@@ -10,6 +10,7 @@ from numpy import ndarray
 import qcodes as qc
 import qcodes.dataset.sqlite_base as mut
 from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.database import initialise_database
 
 VALUE = Union[str, Number, List, ndarray, bool]
 
@@ -20,15 +21,7 @@ def empty_temp_db():
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = mut.connect(qc.config["core"]["db_location"],
-                         qc.config["core"]["db_debug"])
-        mut.init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 

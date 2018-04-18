@@ -4,26 +4,21 @@ import tempfile
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
 from qcodes.dataset.sqlite_base import connect, init_db
+from qcodes.dataset.database import initialise_database
 
 CALLBACK_COUNT = 0
 CALLBACK_RUN_ID = None
 CALLBACK_SNAPSHOT = None
 
-# These fixture can't be imported from test_dataset_basic because Codacy/PR Quality Review will think they are unused.
+# These fixture can't be imported from test_dataset_basic because
+# Codacy/PR Quality Review will think they are unused.
 @pytest.fixture(scope="function")
 def empty_temp_db():
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
