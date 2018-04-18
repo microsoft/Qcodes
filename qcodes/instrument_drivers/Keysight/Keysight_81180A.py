@@ -22,15 +22,29 @@ class ChannelVisaParameter(Parameter):
             val_mapping = vals.val_mapping
 
         super().__init__(name, vals=vals, val_mapping=val_mapping, **kwargs)
-
         self.channel_id = channel_id
+        self.get_raw = self._wrap_channel_get(self.get_raw)
+        self.set_raw = self._wrap_channel_set(self.set_raw)
 
-    # def get(self):
-    #     # Set active channel to current channel if necessary
-    #     active_channel = self._instrument._parent.active_channel.get_latest()
-    #     if active_channel != self.channel_id:
-    #         self._instrument._parent.active_channel(self.channel_id)
-    #     return super().get()
+    def _wrap_channel_get(self, get_raw):
+        def channel_get_wrapper():
+            # Set active channel to current channel if necessary
+            active_channel = self._instrument._parent.active_channel.get_latest()
+            if active_channel != self.channel_id:
+                print(f'changing channel to {self.channel_id}')
+                self._instrument._parent.active_channel(self.channel_id)
+            return get_raw()
+        return channel_get_wrapper
+
+    def _wrap_channel_set(self, set_raw):
+        def channel_set_wrapper(*args, **kwargs):
+            # Set active channel to current channel if necessary
+            active_channel = self._instrument._parent.active_channel.get_latest()
+            if active_channel != self.channel_id:
+                print(f'changing channel to {self.channel_id}')
+                self._instrument._parent.active_channel(self.channel_id)
+            return set_raw(*args, **kwargs)
+        return channel_set_wrapper
 
 
 class AWGChannel(InstrumentChannel):
@@ -41,6 +55,13 @@ class AWGChannel(InstrumentChannel):
 
         self.write = self._parent.write
         self.visa_handle = self._parent.visa_handle
+
+        self.add_parameter(
+            'run_mode',
+            get_cmd='INITIATE:CONTINUOUS?',
+            set_cmd='INITIATE:CONTINUOUS {}',
+            vals=EnumVisa('ON', 'OFF'),
+            docstring='Choose to run in continuous mode (1) or triggered and gated mode (0)')
 
         self.add_parameter(
             'enable_mode',
@@ -72,7 +93,7 @@ class AWGChannel(InstrumentChannel):
             docstring='Set the frequency of standard waveforms')
 
         self.add_parameter(
-            'run_mode',
+            'function_mode',
             get_cmd='FUNCTION:MODE?',
             set_cmd='FUNCTION:MODE {}',
             vals=EnumVisa('FIXed', 'USER', 'SEQuenced', 'ASEQuenced',
@@ -229,7 +250,7 @@ class AWGChannel(InstrumentChannel):
         self.add_parameter(
             'trigger_delay',
             get_cmd='TRIGGER:DELAY?',
-            set_cmd='TRIGGER:DELAY {.4f}',
+            set_cmd='TRIGGER:DELAY {:.4f}',
             get_parser=float,
             unit='1/sample rate',
             vals=vals.Multiples(min_value=0, max_value=8000000, divisor=8))
@@ -326,13 +347,12 @@ class AWGChannel(InstrumentChannel):
 
         self.add_parameter(
             'sequence_pre_step',
-            get_cmd='SEQUENCE:PRESTEP?',
-            set_cmd = 'SEQUENCE:PRESTEP {}',
+            get_cmd='SEQUENCE:PREStep?',
+            set_cmd = 'SEQUENCE:PREStep {}',
             vals=EnumVisa('WAVE', 'DC'),
             docstring= 'Choose to play a blank DC segment while waiting for an '
                        'event signal to initiate or continue a sequence.'
         )
-
 
         # Functions
         self.add_function(
@@ -484,11 +504,11 @@ class AWGChannel(InstrumentChannel):
         if self._parent.active_channel.get_latest() != self.id:
             self._parent.active_channel(self.id)
 
-        run_mode = self.run_mode()
-        if run_mode == 'sequenced':
+        function_mode = self.function_mode()
+        if function_mode == 'sequenced':
             # Temporarily change run mode, as the sequence is restarted
             # after every SEQ:DEFINE command.
-            self.run_mode('user')
+            self.function_mode('user')
 
         # Delete any previous sequence
         self.write('SEQUENCE:DELETE:ALL')
@@ -502,9 +522,9 @@ class AWGChannel(InstrumentChannel):
             step += 1 # Step is 1-based
             self.write(f'SEQ:DEFINE {step},{segment_number},{loop},{jump}')
 
-        if run_mode == 'sequenced':
+        if function_mode == 'sequenced':
             # Restore sequenced run mode
-            self.run_mode(run_mode)
+            self.function_mode(function_mode)
 
         self.uploaded_sequence(sequence)
 
@@ -532,6 +552,26 @@ class Keysight_81180A(VisaInstrument):
             get_cmd='SYSTEM:ERROR?',
             get_parser=str.rstrip,
             docstring='Get oldest error.')
+
+        self.add_parameter(
+            'couple_state',
+            get_cmd='INSTrument:COUPle:STATe?',
+            set_cmd='INSTrument:COUPle:STATe {}',
+            vals=EnumVisa('OFF', 'ON'),
+            docstring='Sets or queries the couple state of the synchronized channels. \
+                       When enabled, the sample clock of channel 1 will feed the channel 2 and the start phase of \
+                       the channel 2 channels will lock to the channel 1 waveform.'
+        )
+
+        self.add_parameter(
+            'channel_skew',
+            get_cmd='INSTrument:COUPle:SKEW(?)',
+            set_cmd='INSTrument:COUPle:SKEW {}',
+            vals= vals.Numbers(-3e-9, 3e-9),
+            docstring='When couple state is ON, this command sets or queries the skew between the two channels. \
+                       Skew defines fine offset between channels in units of time. Only channel 2 has the skew is \
+                       computed in reference to channel 1.'
+        )
 
         self.add_function(
             'reset',
