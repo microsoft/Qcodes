@@ -1,4 +1,4 @@
-from .deferred_operations import is_function
+from qcodes.utils.helpers import is_function
 
 
 class NoCommandError(Exception):
