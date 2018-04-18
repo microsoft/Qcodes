@@ -40,7 +40,7 @@ def plot_by_id(run_id: int,
             unit = data[1]['unit']
             unit = f'({unit})'
         ax.set_ylabel(f'{lbl} {unit}')
-        if cax is not None and len(data)>2:
+        if cax is not None and len(data) > 2:
             if data[2]['label'] == '':
                 lbl = data[2]['name']
             else:
@@ -51,7 +51,6 @@ def plot_by_id(run_id: int,
                 unit = data[2]['unit']
                 unit = f'({unit})'
             cax.set_label(f'{lbl} {unit}')
-
 
     """
     Construct all plots for a given run
