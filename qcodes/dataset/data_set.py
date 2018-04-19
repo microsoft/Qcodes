@@ -14,6 +14,7 @@ import logging
 import hashlib
 import uuid
 from queue import Queue, Empty
+import warnings
 
 import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
@@ -678,5 +679,8 @@ def hash_from_parts(*parts: str) -> str:
     Returns:
         hash created with the given parts
     """
+    warnings.warn("hash_from_parts has been deprecated and will be removed. "
+                  "Use stdlib uuid4 instead",
+                  stacklevel=2)
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()
