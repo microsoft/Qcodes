@@ -774,7 +774,7 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str = instrument.ask if instrument else None
+                exec_str = getattr(instrument, 'ask', None)
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
             self.get = self._wrap_get(self.get_raw)
 
@@ -782,7 +782,7 @@ class Parameter(_BaseParameter):
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)
             else:
-                exec_str = instrument.write if instrument else None
+                exec_str = getattr(instrument, 'write', None)
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
             self.set = self._wrap_set(self.set_raw)
 
