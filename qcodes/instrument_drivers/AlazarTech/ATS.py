@@ -6,7 +6,8 @@ import os
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-from qcodes.utils import validators
+# imported for backwards compat only
+from .utils import TrivialDictionary, AlazarParameter
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +242,7 @@ class AlazarTech_ATS(Instrument):
             self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path or self.dll_path)
         else:
             raise Exception("Unsupported OS")
-
+        self._parameters_synced = False
         self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
                                                               board_id)
         if not self._handle:
@@ -255,6 +256,11 @@ class AlazarTech_ATS(Instrument):
         self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
                                                         ctypes.c_uint32,
                                                         ctypes.c_long,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_uint32]
+        self._ATS_dll.AlazarSetCaptureClock.argtypes = [ctypes.c_uint32,
                                                         ctypes.c_uint32,
                                                         ctypes.c_uint32,
                                                         ctypes.c_uint32,
@@ -452,7 +458,9 @@ class AlazarTech_ATS(Instrument):
                                "but internal sample rate supplied. "
                                "Please use 'external_sample_rate'")
             sample_rate = self.external_sample_rate
-            if 'sample_rate' in self.parameters:
+            if ('sample_rate' in self.parameters and
+                    isinstance(self.parameters['sample_rate'],
+                               AlazarParameter)):
                 self.parameters['sample_rate']._set_updated()
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
@@ -460,8 +468,21 @@ class AlazarTech_ATS(Instrument):
                 logger.warning("Using internal clock "
                                "but external sample rate supplied. "
                                "Please use 'external_sample_rate'")
-            if 'external_sample_rate' in self.parameters:
+            if ('external_sample_rate' in self.parameters and
+                    isinstance(self.parameters['external_sample_rate'],
+                               AlazarParameter)):
                 self.parameters['external_sample_rate']._set_updated()
+
+        self.sync_settings_to_card()
+
+    def sync_settings_to_card(self):
+        """
+        Syncs all parameters to Alazar card
+        """
+        if self.clock_source() == 'EXTERNAL_CLOCK_10MHz_REF':
+            sample_rate = self.external_sample_rate
+        else:
+            sample_rate = self.sample_rate
 
         self._call_dll('AlazarSetCaptureClock',
                        self._handle, self.clock_source, sample_rate,
@@ -473,7 +494,7 @@ class AlazarTech_ATS(Instrument):
                            self.parameters['coupling' + str(i)],
                            self.parameters['channel_range' + str(i)],
                            self.parameters['impedance' + str(i)])
-            if bwlimit is not None:
+            if self.parameters.get('bwlimit' + str(i), None) is not None:
                 self._call_dll('AlazarSetBWLimit',
                                self._handle, 2**(i-1),
                                self.parameters['bwlimit' + str(i)])
@@ -498,6 +519,7 @@ class AlazarTech_ATS(Instrument):
         self._call_dll('AlazarConfigureAuxIO',
                        self._handle, self.aux_io_mode,
                        self.aux_io_param)
+        self._parameters_synced = True
 
     def _get_channel_info(self, handle):
         bps = ctypes.c_uint8(0)  # bps bits per sample
@@ -543,6 +565,10 @@ class AlazarTech_ATS(Instrument):
             Whatever is given by acquisition_controller.post_acquire method
         """
         # region set parameters from args
+        if self._parameters_synced == False:
+            raise RuntimeError("You must sync parameters to Alazar card "
+                               "before calling acquire by calling "
+                               "sync_parameters_to_card")
         self._set_if_present('mode', mode)
         self._set_if_present('samples_per_record', samples_per_record)
         self._set_if_present('records_per_buffer', records_per_buffer)
@@ -560,7 +586,8 @@ class AlazarTech_ATS(Instrument):
         self._set_if_present('buffer_timeout', buffer_timeout)
 
         # endregion
-        self.mode._set_updated()
+        if isinstance(self.mode, AlazarParameter):
+            self.mode._set_updated()
         mode = self.mode.get()
         if mode not in ('TS', 'NPT'):
             raise Exception("Only the 'TS' and 'NPT' modes are implemented "
@@ -571,68 +598,72 @@ class AlazarTech_ATS(Instrument):
         # Abort any previous measurement
         self._call_dll('AlazarAbortAsyncRead', self._handle)
 
+        buffers_per_acquisition = self.buffers_per_acquisition.get()
+        samples_per_record = self.samples_per_record.get()
         # Set record size for NPT mode
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
-            post_trigger_size = self.samples_per_record._get_byte()
+            post_trigger_size = self.samples_per_record.get()
             self._call_dll('AlazarSetRecordSize',
                            self._handle, pretriggersize,
                            post_trigger_size)
 
         # set acquisition parameters here for NPT, TS mode
         samples_per_buffer = 0
-        buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
-        samples_per_record = self.samples_per_record._get_byte()
-        acquire_flags = (self.mode._get_byte() |
-                         self.external_startcapture._get_byte() |
-                         self.enable_record_headers._get_byte() |
-                         self.alloc_buffers._get_byte() |
-                         self.fifo_only_streaming._get_byte() |
-                         self.interleave_samples._get_byte() |
-                         self.get_processed_data._get_byte())
+
+        acquire_flags = (self.mode.raw_value |
+                         self.external_startcapture.raw_value |
+                         self.enable_record_headers.raw_value |
+                         self.alloc_buffers.raw_value |
+                         self.fifo_only_streaming.raw_value |
+                         self.interleave_samples.raw_value |
+                         self.get_processed_data.raw_value)
 
         if mode == 'NPT':
-            records_per_buffer = self.records_per_buffer._get_byte()
+            records_per_buffer = self.records_per_buffer.get()
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
             samples_per_buffer = samples_per_record * records_per_buffer
             self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection,
-                           self.transfer_offset, samples_per_record,
+                           self._handle, self.channel_selection.raw_value,
+                           self.transfer_offset.get(), samples_per_record,
                            records_per_buffer, records_per_acquisition,
                            acquire_flags)
 
         elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
                 logger.warning('buffers_per_acquisition is not a divisor of '
-                               'samples per record which it should be in '
-                               'Ts mode, rounding down in samples per buffer '
-                               'calculation')
+                                'samples per record which it should be in '
+                                'Ts mode, rounding down in samples per buffer '
+                                'calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
-            if self.records_per_buffer._get_byte() != 1:
+            if self.records_per_buffer.get() != 1:
                 logger.warning('records_per_buffer should be 1 in TS mode, '
                                 'defauling to 1')
-                self.records_per_buffer._set(1)
-            records_per_buffer = self.records_per_buffer._get_byte()
+                self.records_per_buffer.set(1)
+            records_per_buffer = self.records_per_buffer.get()
 
             self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection,
-                           self.transfer_offset, samples_per_buffer,
-                           self.records_per_buffer, buffers_per_acquisition,
+                           self._handle, self.channel_selection.raw_value,
+                           self.transfer_offset.get(), samples_per_buffer,
+                           records_per_buffer, buffers_per_acquisition,
                            acquire_flags)
 
-        self.samples_per_record._set_updated()
-        self.records_per_buffer._set_updated()
-        self.buffers_per_acquisition._set_updated()
-        self.channel_selection._set_updated()
-        self.transfer_offset._set_updated()
-        self.external_startcapture._set_updated()
-        self.enable_record_headers._set_updated()
-        self.alloc_buffers._set_updated()
-        self.fifo_only_streaming._set_updated()
-        self.interleave_samples._set_updated()
-        self.get_processed_data._set_updated()
+        # bytes per sample
+        max_s, bps = self._get_channel_info(self._handle)
+        # TODO(JHN) Why +7 I guess its to do ceil division?
+        bytes_per_sample = (bps + 7) // 8
+        # bytes per record
+        bytes_per_record = bytes_per_sample * samples_per_record
+
+        # channels
+        channels_binrep = self.channel_selection.raw_value
+        number_of_channels = self.get_num_channels(channels_binrep)
+
+        # bytes per buffer
+        bytes_per_buffer = (bytes_per_record *
+                            records_per_buffer * number_of_channels)
 
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
@@ -658,15 +689,15 @@ class AlazarTech_ATS(Instrument):
 
         self.clear_buffers()
         # make sure that allocated_buffers <= buffers_per_acquisition
-        if (self.allocated_buffers._get_byte() >
-                self.buffers_per_acquisition._get_byte()):
+        if (self.allocated_buffers.get() >
+                self.buffers_per_acquisition.get()):
             logger.warning("'allocated_buffers' should be <= "
-                           "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                           " to " + str(self.buffers_per_acquisition._get_byte()))
-            self.allocated_buffers._set(
-                self.buffers_per_acquisition._get_byte())
+                            "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
+                            " to " + str(self.buffers_per_acquisition.get()))
+            self.allocated_buffers.set(
+                self.buffers_per_acquisition.get())
 
-        allocated_buffers = self.allocated_buffers._get_byte()
+        allocated_buffers = self.allocated_buffers.get()
 
         for k in range(allocated_buffers):
             try:
@@ -680,7 +711,8 @@ class AlazarTech_ATS(Instrument):
             for buf in self.buffer_list:
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
-            self.allocated_buffers._set_updated()
+            if isinstance(self.allocated_buffers, AlazarParameter):
+                self.allocated_buffers._set_updated()
 
             # -----start capture here-----
             acquisition_controller.pre_start_capture()
@@ -693,13 +725,14 @@ class AlazarTech_ATS(Instrument):
             # buffer handling from acquisition
             buffers_completed = 0
             bytes_transferred = 0
-            buffer_timeout = self.buffer_timeout._get_byte()
-            self.buffer_timeout._set_updated()
+            buffer_timeout = self.buffer_timeout.get()
+            if isinstance(self.allocated_buffers, AlazarParameter):
+                self.buffer_timeout._set_updated()
 
-            buffer_recycling = (self.buffers_per_acquisition._get_byte() >
-                                self.allocated_buffers._get_byte())
+            buffer_recycling = (self.buffers_per_acquisition.get() >
+                                self.allocated_buffers.get())
             done_setup = time.clock()
-            while (buffers_completed < self.buffers_per_acquisition._get_byte()):
+            while (buffers_completed < self.buffers_per_acquisition.get()):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
@@ -773,22 +806,30 @@ class AlazarTech_ATS(Instrument):
 
     def _set_if_present(self, param_name, value):
         if value is not None:
-            self.parameters[param_name]._set(value)
+            try:
+                self.parameters[param_name]._set(value)
+            except AttributeError:
+                self.parameters[param_name].set(value)
 
     def _set_list_if_present(self, param_base, value):
         if value is not None:
             for i, v in enumerate(value):
-                self.parameters[param_base + str(i + 1)]._set(v)
+                try:
+                    self.parameters[param_base + str(i + 1)]._set(v)
+                except AttributeError:
+                    self.parameters[param_base + str(i + 1)].set(v)
 
     def _call_dll(self, func_name, *args):
         """
         Execute a dll function `func_name`, passing it the given arguments
 
         For each argument in the list
-        - If an arg is a parameter of this instrument, the parameter
+        - If an arg is a AlazarParameter of this instrument, the parameter
           value from `._get_bytes()` is used. If the call succeeds, these
           parameters will be marked as updated using their `._set_updated()`
           method
+        - If a regular parameter the raw_value is used and uptodate is tracked
+          outside this function
         - Otherwise the arg is used directly
         """
         # create the argument list
@@ -798,6 +839,8 @@ class AlazarTech_ATS(Instrument):
             if isinstance(arg, AlazarParameter):
                 args_out.append(arg._get_byte())
                 update_params.append(arg)
+            elif isinstance(arg, Parameter):
+                args_out.append(arg.raw_value)
             else:
                 args_out.append(arg)
         # may be useful to log this but is called a lot so leave it out for now
@@ -829,7 +872,8 @@ class AlazarTech_ATS(Instrument):
 
         # mark parameters updated (only after we've checked for errors)
         for param in update_params:
-            param._set_updated()
+            if isinstance(param, AlazarParameter):
+                param._set_updated()
 
     def clear_buffers(self):
         """
@@ -843,7 +887,7 @@ class AlazarTech_ATS(Instrument):
         """
         for b in self.buffer_list:
             b.free_mem()
-        logger.info("buffers cleared")
+        logger.debug("buffers cleared")
         self.buffer_list = []
 
     def signal_to_volt(self, channel, signal):
@@ -863,7 +907,7 @@ class AlazarTech_ATS(Instrument):
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
-    def get_sample_rate(self):
+    def get_sample_rate(self, include_decimation=True):
         """
         Obtain the effective sampling rate of the acquisition
         based on clock speed and decimation
@@ -872,7 +916,7 @@ class AlazarTech_ATS(Instrument):
             the number of samples (per channel) per second
         """
         if (self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF'
-                and 'external_sample_rate' in self.parameters):
+            and 'external_sample_rate' in self.parameters):
             rate = self.external_sample_rate.get()
             # if we are using an external ref clock the sample rate
             # is set as an integer and not value mapped so we use a different
@@ -885,7 +929,10 @@ class AlazarTech_ATS(Instrument):
         if rate == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
 
-        decimation = self.decimation.get()
+        if include_decimation:
+            decimation = self.decimation.get()
+        else:
+            decimation = 0
         if decimation > 0:
             return rate / decimation
         else:
@@ -921,119 +968,6 @@ class AlazarTech_ATS(Instrument):
             return 16
         else:
             raise RuntimeError('Invalid channel configuration supplied')
-
-
-class AlazarParameter(Parameter):
-    """
-    This class represents of many parameters that are relevant for the Alazar
-    driver. This parameters only have a private set method, because the values
-    are set by the Alazar driver. They do have a get function which return a
-    human readable value. Internally the value is stored as an Alazar readable
-    value.
-
-    These parameters also keep track the up-to-dateness of the value of this
-    parameter. If the private set_function is called incorrectly, this parameter
-    raises an error when the get_function is called to warn the user that the
-    value is out-of-date
-
-    Args:
-        name: see Parameter class
-        label: see Parameter class
-        unit: see Parameter class
-        instrument: see Parameter class
-        value: default value
-        byte_to_value_dict: dictionary that maps byte values (readable to the
-            alazar) to values that are readable to humans
-        vals: see Parameter class, should not be set if byte_to_value_dict is
-            provided
-    """
-    def __init__(self, name=None, label=None, unit=None, instrument=None,
-                 value=None, byte_to_value_dict=None, vals=None):
-        if vals is None:
-            if byte_to_value_dict is None:
-                vals = validators.Anything()
-            else:
-                # TODO(damazter) (S) test this validator
-                vals = validators.Enum(*byte_to_value_dict.values())
-
-        super().__init__(name=name, label=label, unit=unit, vals=vals,
-                         instrument=instrument)
-        self.instrument = instrument
-        self._byte = None
-        self._uptodate_flag = False
-
-        # TODO(damazter) (M) check this block
-        if byte_to_value_dict is None:
-            self._byte_to_value_dict = TrivialDictionary()
-            self._value_to_byte_dict = TrivialDictionary()
-        else:
-            self._byte_to_value_dict = byte_to_value_dict
-            self._value_to_byte_dict = {
-                v: k for k, v in self._byte_to_value_dict.items()}
-
-        self._set(value)
-
-    def get_raw(self):
-        """
-        This method returns the name of the value set for this parameter
-
-        Returns:
-            value
-
-        """
-        # TODO(damazter) (S) test this exception
-        if self._uptodate_flag is False:
-            raise Exception('The value of this parameter (' + self.name +
-                            ') is not up to date with the actual value in '
-                            'the instrument.\n'
-                            'Most probable cause is illegal usage of ._set() '
-                            'method of this parameter.\n'
-                            'Don\'t use private methods if you do not know '
-                            'what you are doing!')
-        return self._byte_to_value_dict[self._byte]
-
-    def _get_byte(self):
-        """
-        this method gets the byte representation of the value of the parameter
-
-        Returns:
-            byte representation
-
-        """
-        return self._byte
-
-    def _set(self, value):
-        """
-        This method sets the value of this parameter
-        This method is private to ensure that all values in the instruments
-        are up to date always
-
-        Args:
-            value: the new value (e.g. 'NPT', 0.5, ...)
-        Returns:
-            None
-
-        """
-
-        # TODO(damazter) (S) test this validation
-        self.validate(value)
-        self._byte = self._value_to_byte_dict[value]
-        self._uptodate_flag = False
-        self._save_val(value)
-        return None
-
-    def _set_updated(self):
-        """
-        This method is used to keep track of which parameters are updated in the
-        instrument. If the end-user starts messing with this function, things
-        can go wrong.
-
-        Do not use this function if you do not know what you are doing
-
-        Returns:
-            None
-        """
-        self._uptodate_flag = True
 
 
 class Buffer:
@@ -1198,19 +1132,3 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
-
-
-class TrivialDictionary:
-    """
-    This class looks like a dictionary to the outside world
-    every key maps to this key as a value (lambda x: x)
-    """
-    def __init__(self):
-        pass
-
-    def __getitem__(self, item):
-        return item
-
-    def __contains__(self, item):
-        # this makes sure that this dictionary contains everything
-        return True
