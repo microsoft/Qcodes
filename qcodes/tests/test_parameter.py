@@ -244,36 +244,23 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
-    # There are three different scenarios for getting a parameter with  scale and offset:
-    # 1. get scalar with scalar offset/scale
-    # 2. get array with scalar offset/scale
-    # 3. get array with array offset/scale
-    TestNumbers = hst.one_of(hst.integers(min_value=-1e40, max_value=1e40),
-                             hst.floats(min_value=-1e40, max_value=1e40)
-                            ).filter(lambda x: x != 0)
-    @given(value=TestNumbers, scale=TestNumbers, offset=TestNumbers)
-    def test_scale_and_offset_raw_value_scalar(self, value, scale, offset):
-        p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
-        p(value)
-        self.assertEqual(p.raw_value, value)
-
-        p.scale = scale
-        p.offset = offset
-        # test get
-        self.assertEqual(p.raw_value, value) # No set/get cmd performed
-        self.assertEqual(pytest.approx(p()), (value-p.offset)/p.scale)
-
-        p(value)
-        self.assertEqual(pytest.approx(p.raw_value), value*p.scale+p.offset)
-        self.assertEqual(pytest.approx(p()), value)
-
+    # There are a number different scenarios for testing a parameter with scale
+    # and offset. Therefore a custom strategy for generating test parameters
+    # is implemented here. The possible cases are:
+    # for getting and setting a parameter: values can be
+    #    scalar:
+    #        offset and scale can be scalars 
+    # for getting only:
+    #    array:
+    #        offset and scale can be scalars or arrays(of same legnth as values)
+    #        independently
 
     # define shorthands for strategies
-    # Test fla
     TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x != 0)
     SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
     ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 
+    # the following test stra
     @hst.composite
     def iterable_or_number(draw, values, size, values_scalar, is_values):
         if draw(values_scalar):
