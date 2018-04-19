@@ -1,7 +1,7 @@
 """Actions, mainly to be executed in measurement Loops."""
 import time
 
-from qcodes.utils.deferred_operations import is_function
+from qcodes.utils.helpers import is_function
 from qcodes.utils.threading import thread_map
 
 
