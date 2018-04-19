@@ -4,10 +4,8 @@ Test suite for parameter
 from collections import namedtuple, Iterable
 from unittest import TestCase
 from typing import Tuple
-from time import sleep
 
 import numpy as np
-import pytest
 from hypothesis import given, event, settings
 import hypothesis.strategies as hst
 from qcodes import Function
@@ -249,7 +247,7 @@ class TestParameter(TestCase):
     # is implemented here. The possible cases are:
     # for getting and setting a parameter: values can be
     #    scalar:
-    #        offset and scale can be scalars 
+    #        offset and scale can be scalars
     # for getting only:
     #    array:
     #        offset and scale can be scalars or arrays(of same legnth as values)
@@ -279,7 +277,7 @@ class TestParameter(TestCase):
             else:
                 return draw(values)
 
-    @settings(max_examples=500)  # default:100 increased 
+    @settings(max_examples=500)  # default:100 increased
     @given(values=iterable_or_number(TestFloats, SharedSize, ValuesScalar, True),
            offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
            scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False))
