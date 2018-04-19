@@ -1,13 +1,14 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple
+from collections import namedtuple, Iterable
 from unittest import TestCase
 from typing import Tuple
 from time import sleep
 
 import numpy as np
-from hypothesis import given
+import pytest
+from hypothesis import given, event, settings
 import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
@@ -15,6 +16,7 @@ from qcodes.instrument.parameter import (
     InstrumentRefParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
+
 
 
 class GettableParam(Parameter):
@@ -242,35 +244,99 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
-
-    @given(hst.one_of(hst.integers(), hst.floats()))
-    def test_scale_and_offset_raw_value(self, number):
+    # There are three different scenarios for getting a parameter with  scale and offset:
+    # 1. get scalar with scalar offset/scale
+    # 2. get array with scalar offset/scale
+    # 3. get array with array offset/scale
+    TestNumbers = hst.one_of(hst.integers(min_value=-1e40, max_value=1e40),
+                             hst.floats(min_value=-1e40, max_value=1e40)
+                            ).filter(lambda x: x != 0)
+    @given(value=TestNumbers, scale=TestNumbers, offset=TestNumbers)
+    def test_scale_and_offset_raw_value_scalar(self, value, scale, offset):
         p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
-        p(number)
-        self.assertEqual(p.raw_value, number)
+        p(value)
+        self.assertEqual(p.raw_value, value)
 
-        p.scale = 2
-        p.offset = 1
+        p.scale = scale
+        p.offset = offset
         # test get
-        self.assertEqual(p.raw_value, number) # No set/get cmd performed
-        self.assertEqual(p(), (number-p.offset)/p.scale)
+        self.assertEqual(p.raw_value, value) # No set/get cmd performed
+        self.assertEqual(pytest.approx(p()), (value-p.offset)/p.scale)
 
-        p(number)
-        self.assertEqual(p.raw_value, number*p.scale+p.offset)
-        self.assertEqual(p(), number)
+        p(value)
+        self.assertEqual(pytest.approx(p.raw_value), value*p.scale+p.offset)
+        self.assertEqual(pytest.approx(p()), value)
 
 
-    def test_latest_value(self):
-        p = MemoryParameter(name='test_latest_value', get_cmd=lambda: 21)
+    # define shorthands for strategies
+    # Test fla
+    TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x != 0)
+    SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
+    ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 
-        p(42)
-        self.assertEqual(p.get_latest(), 42)
-        self.assertListEqual(p.get_values, [])
+    @hst.composite
+    def iterable_or_number(draw, values, size, values_scalar, is_values):
+        if draw(values_scalar):
+            # if parameter values are scalar, return scalar for values and scale/offset
+            return draw(values)
+        elif is_values:
+            # if parameter values are not scalar and parameter values are requested
+            # return a list of values of the given size
+            return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+        else:
+            # if parameter values are not scalar and scale/offset are requested
+            # make a random choice whether to return a list of the same size as the values
+            # or a simple scalar
+            if draw(hst.booleans()):
+                return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+            else:
+                return draw(values)
 
-        p.get_latest.max_val_age = 0.1
-        sleep(0.2)
-        self.assertEqual(p.get_latest(), 21)
-        self.assertEqual(p.get_values, [21])
+    @settings(max_examples=500)  # default:100 increased 
+    @given(values=iterable_or_number(TestFloats, SharedSize, ValuesScalar, True),
+           offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
+           scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False))
+    def test_scale_and_offset_raw_value_iterable(self, values, offsets, scales):
+        p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
+
+        # test that scale and offset does not change the default behaviour
+        p(values)
+        self.assertEqual(p.raw_value, values)
+
+        # test setting scale and offset does not change anything
+        p.scale = scales
+        p.offset = offsets
+        self.assertEqual(p.raw_value, values)
+
+
+        np_values = np.array(values)
+        np_offsets = np.array(offsets)
+        np_scales = np.array(scales)
+        np_get_values = np.array(p())
+        np.testing.assert_allclose(np_get_values, (np_values-np_offsets)/np_scales) # No set/get cmd performed
+
+        # test set, only for scalar values
+        if not isinstance(values, Iterable):
+            p(values)
+            np.testing.assert_allclose(np.array(p.raw_value), np_values*np_scales + np_offsets) # No set/get cmd performed
+
+            # testing conversion back and forth
+            p(values)
+            np_get_values = np.array(p())
+            np.testing.assert_allclose(np_get_values, np_values) # No set/get cmd performed
+
+        # adding statistics
+        if isinstance(offsets, Iterable):
+            event('Offset is array')
+        if isinstance(scales, Iterable):
+            event('Scale is array')
+        if isinstance(values, Iterable):
+            event('Value is array')
+        if isinstance(scales, Iterable) and isinstance(offsets, Iterable):
+            event('Scale is array and also offset')
+        if isinstance(scales, Iterable) and not isinstance(offsets, Iterable):
+            event('Scale is array but not offset')
+
 
     @given(scale=hst.integers(1, 100),
            value=hst.floats(min_value=1e-9, max_value=10))
