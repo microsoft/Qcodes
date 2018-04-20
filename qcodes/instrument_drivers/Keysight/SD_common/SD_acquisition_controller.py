@@ -129,7 +129,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'trigger_channel',
-            vals=Enum(0, 1, 2, 3, 4, 5, 6, 7),
+            vals=Enum('trig_in', *range(8)),
             set_cmd=self.set_trigger_channel,
             docstring='The channel on which acquisition is triggered.'
         )
@@ -212,17 +212,23 @@ class Triggered_Controller(AcquisitionController):
         """
         self._keysight.parameters['trigger_edge_{}'.format(self.trigger_channel.get_latest())](edge)
 
-    def set_trigger_channel(self, tch):
+    def set_trigger_channel(self, trigger_channel):
         """
         Sets the source channel with which to trigger acquisition on.
 
         Args:
-            tch (int)   : the number of the trigger channel
+            trigger_channel (int)   : the number of the trigger channel
         """
-        for ch in self.channel_selection():
-            self._keysight.parameters['analog_trigger_mask_{}'.format(ch)].set(1<<tch)
+        if trigger_channel == 'trig_in':
+            for ch in self.channel_selection():
+                self._keysight[f'digital_trigger_source_']
+            # DAQdigitaltriggerconfig
+            # triggerIOconfig
+        else:
+            for ch in self.channel_selection():
+                self._keysight.parameters[f'analog_trigger_mask_{ch}'].set(1 << trigger_channel)
         # Ensure latest trigger edge setting for the current trigger channel
-        self.trigger_channel._save_val(tch)
+        self.trigger_channel._save_val(trigger_channel)
         try:
             self.trigger_edge(self.trigger_edge())
         except:
@@ -436,7 +442,7 @@ class KeysightAcquisitionParameter(MultiParameter):
             return ['']
         else:
             return tuple(['ch{}_signal'.format(ch) for ch in
-                          self.acquisition_controller.channel_selection])
+                          self.acquisition_controller.channel_selection()])
 
     @names.setter
     def names(self, names):

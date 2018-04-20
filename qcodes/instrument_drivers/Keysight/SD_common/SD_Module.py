@@ -60,8 +60,10 @@ class SD_Module(Instrument):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
 
-    def __init__(self, name, chassis, slot, triggers, **kwargs):
+    def __init__(self, name, model, chassis, slot, triggers, **kwargs):
         super().__init__(name, **kwargs)
+
+        self.model = model
 
         # Create instance of keysight SD_Module class
         self.SD_module = keysightSD1.SD_Module()

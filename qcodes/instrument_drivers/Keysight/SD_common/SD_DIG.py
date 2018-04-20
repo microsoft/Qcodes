@@ -33,6 +33,8 @@ def logclass(cls):
     return cls
 
 
+model_channels = {'M3300A': 8}
+
 class SD_DIG(SD_Module):
     """
     This is the qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
@@ -42,7 +44,8 @@ class SD_DIG(SD_Module):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
     
-    def __init__(self, name, chassis, slot, channels, triggers=8, **kwargs):
+    def __init__(self, name, model, chassis, slot, channels=None, triggers=8,
+                 **kwargs):
         """ Initialises a generic Signadyne digitizer and its parameters
 
             Args:
@@ -50,7 +53,9 @@ class SD_DIG(SD_Module):
                 channels (int)  : the number of input channels the specified card has
                 triggers (int)  : the number of trigger inputs the specified card has
         """
-        super().__init__(name, chassis, slot, triggers, **kwargs)
+        super().__init__(name, model, chassis, slot, triggers, **kwargs)
+        if channels is None:
+            channels = model_channels[self.model]
 
         # Create instance of keysight SD_AIN class
         # We wrap it in a logclass so that any method call is recorded in
