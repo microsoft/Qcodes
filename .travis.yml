@@ -11,38 +11,41 @@ addons:
     - pandoc
 
 python:
-  - "3.5"
   - "3.6"
   # whitelist
 branches:
   only:
     - master
 
-# signal that we are on travis
-# to disable things that expect an
-# X Display
-#
-env:
-    - TRAVISCI=true
 # command to install dependencies
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - pip install -r test_requirements.txt --upgrade
+    - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
     - pip install -e .
-# command to run tests
+
+before_script: # configure a headless display to test plot generation
+    - "export DISPLAY=:99.0"
+    - "sh -e /etc/init.d/xvfb start"
+    - sleep 3 # give xvfb some time to start
+
 script:
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    # build docs with warnings as errors
     - |
-      cd ../docs
-      make html-api
+      cd ..
+      mypy qcodes --ignore-missing-imports
+    - |
+      cd docs
+      make SPHINXOPTS="-W" html-api
     - cd ..
 
 after_success:
-    # install dependencies for docs build
+    # upload code coverage
     - python-codacy-coverage -r qcodes/coverage.xml
+    - codecov
     # upload the docs
     - |
       if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then

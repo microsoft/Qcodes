@@ -162,7 +162,7 @@ class TestChannelsLoop(TestCase):
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
 
     @given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=300)
     def test_loop_measure_channels_by_name(self, values):
         p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         for i in range(4):
@@ -180,7 +180,7 @@ class TestChannelsLoop(TestCase):
 
     @given(loop_channels=hst.lists(hst.integers(0, 3), min_size=2, max_size=2, unique=True),
            measure_channel=hst.integers(0, 3))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=400)
     def test_nested_loop_over_channels(self, loop_channels, measure_channel):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
         loop = Loop(self.instrument.channels[loop_channels[0]].temperature.sweep(0, 10, 0.5))
@@ -256,6 +256,13 @@ class TestChannelsLoop(TestCase):
             assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5))+1)
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
+
+    def test_root_instrument(self):
+        assert self.instrument.root_instrument is self.instrument
+        for channel in self.instrument.channels:
+            assert channel.root_instrument is self.instrument
+            for parameter in channel.parameters.values():
+                assert parameter.root_instrument is self.instrument
 
 if __name__ == '__main__':
     unittest.main()
