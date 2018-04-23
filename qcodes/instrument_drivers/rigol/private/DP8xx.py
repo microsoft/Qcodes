@@ -127,9 +127,9 @@ class _RigolDP8xx(VisaInstrument):
 
         # channel-specific parameters
         channels = ChannelList(self, "SupplyChannel", RigolDP8xxChannel, snapshotable=False)
-        for ch_num in range(0, len(channels_ranges)):
+        for ch_num, channel_range in enumerate(channels_ranges):
             ch_name = "ch{}".format(ch_num + 1)
-            channel = RigolDP8xxChannel(self, ch_name, ch_num + 1, channels_ranges[ch_num], ovp_ranges[ch_num], ocp_ranges[ch_num])
+            channel = RigolDP8xxChannel(self, ch_name, ch_num + 1, channel_range, ovp_ranges[ch_num], ocp_ranges[ch_num])
             channels.append(channel)
             self.add_submodule(ch_name, channel)
         channels.lock()
