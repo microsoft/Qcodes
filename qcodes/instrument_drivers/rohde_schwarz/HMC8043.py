@@ -1,4 +1,4 @@
-from ._HMC804x import _RohdeSchwarzHMC804x
+from .private.HMC804x import _RohdeSchwarzHMC804x
 
 class RohdeSchwarzHMC8043(_RohdeSchwarzHMC804x):
     """
