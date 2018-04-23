@@ -1,5 +1,6 @@
 from typing import Union, cast
 import enum
+import warnings
 
 from qcodes import Parameter, ManualParameter, Instrument
 
@@ -40,7 +41,7 @@ class ParameterScaler(Parameter):
         gain: the gain value
         label: label of this parameter, by default uses 'output' label
             but attaches _amplified or _attenuated depending if gain
-            or division has been specified 
+            or division has been specified
         name: name of this parameter, by default uses 'output' name
             but attaches _amplified or _attenuated depending if gain
             or division has been specified
