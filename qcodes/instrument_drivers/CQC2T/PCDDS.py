@@ -54,7 +54,6 @@ class PCDDS(Instrument):
         if output_enable:
             operation += int('0001000000', 2)
         instr = self.construct_instruction(operation, 0)
-        print(hex(instr))
         self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def _set_load_delay(self, delay):
@@ -66,7 +65,6 @@ class PCDDS(Instrument):
         operation = int('0000010000', 2) + delay
         # Construct and send instruction
         instr = self.construct_instruction(operation, 0)
-        print(hex(instr))
         self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def construct_instruction(self, operation, pointer):
@@ -117,15 +115,17 @@ class PCDDS(Instrument):
         :param next_pulse: (Int) The next pulse that the system is to go to after this one
         :return:
         """
-        # TODO: This requires a hardware fix. The phase coherent nature of the switching causes this pulse not to sit at
         # a constant phase
         if not isinstance(pulse, int):
             raise TypeError('Incorrect type for function input pulse. It should be an int')
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. It should be an int')
         # Convert the voltage to the correct register value
-        amplitude_val = self.amp2val(voltage)
-        phase_val = self.phase2val(90.0)
+        amplitude_val = self.amp2val(np.abs(2.0*voltage))
+        if (voltage < 0):
+            phase_val = self.phase2val(270.0)
+        else:
+            phase_val = self.phase2val(90.0)
         accum_val = 0
         freq_val = 0
         self.write_pulse(pulse, phase_val, freq_val, accum_val, amplitude_val, next_pulse)
@@ -172,18 +172,12 @@ class PCDDS(Instrument):
         pulse_data += (amplitude << 2 * self.n_phase_bits + self.n_accum_bits)
         pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits + self.n_amp_bits)
         pulse_data = self.split_value(pulse_data)
-        print(hex(instr))
-        print([hex(i) for i in pulse_data])
         self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
         self.fpga.set_fpga_pc_port(self.port, [pulse_data[4]], 0, 0, 1)
         self.fpga.set_fpga_pc_port(self.port, [pulse_data[3]], 0, 0, 1)
         self.fpga.set_fpga_pc_port(self.port, [pulse_data[2]], 0, 0, 1)
         self.fpga.set_fpga_pc_port(self.port, [pulse_data[1]], 0, 0, 1)
         self.fpga.set_fpga_pc_port(self.port, [pulse_data[0]], 0, 0, 1)
-        # self.fpga.set_fpga_pc_port(
-        #     self.port,
-        #     [instr, pulse_data[4], pulse_data[3], pulse_data[2], pulse_data[1], pulse_data[0]],
-        #     0, 0, 1)
 
     @staticmethod
     def split_value(value):
@@ -212,7 +206,6 @@ class PCDDS(Instrument):
         if update:
             operation += int('1000000000', 2)
         instr = self.construct_instruction(operation, pulse)
-        print(hex(instr))
         self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def send_trigger(self):
@@ -222,7 +215,6 @@ class PCDDS(Instrument):
         """
         operation = int('1000000000', 2)
         instr = self.construct_instruction(operation, 0)
-        print(hex(instr))
         self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
     def phase2val(self, phase):
