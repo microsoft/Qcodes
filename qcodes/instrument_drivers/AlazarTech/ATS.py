@@ -458,20 +458,16 @@ class AlazarTech_ATS(Instrument):
                                "but internal sample rate supplied. "
                                "Please use 'external_sample_rate'")
             sample_rate = self.external_sample_rate
-            if ('sample_rate' in self.parameters and
-                    isinstance(self.parameters['sample_rate'],
-                               AlazarParameter)):
-                self.parameters['sample_rate']._set_updated()
+            if 'sample_rate' in self.parameters:
+                self._set_updated_if_alazar_parameter(self.sample_rate)
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
             if external_sample_rate is not None:
                 logger.warning("Using internal clock "
                                "but external sample rate supplied. "
                                "Please use 'external_sample_rate'")
-            if ('external_sample_rate' in self.parameters and
-                    isinstance(self.parameters['external_sample_rate'],
-                               AlazarParameter)):
-                self.parameters['external_sample_rate']._set_updated()
+            if 'external_sample_rate' in self.parameters:
+                self._set_updated_if_alazar_parameter(self.external_sample_rate)
 
         self.sync_settings_to_card()
 
@@ -485,11 +481,31 @@ class AlazarTech_ATS(Instrument):
         else:
             return parameter.raw_value
 
+    def _set_or__set_set_or__set(self, parameter, value, set_updated=False):
+        """
+        Simple wrapper to make it easier to set both an AlazarParameter and a
+        regular one. Can be dropped once we remove AlazarParameters
+        """
+        if isinstance(parameter, AlazarParameter):
+            parameter._set(value)
+            if set_updated:
+                parameter._set_updated()
+        else:
+            parameter.set(value)
+
+    def _set_updated_if_alazar_parameter(self, parameter):
+        """
+        Simple wrapper to set Paramter updated if
+        it is an AlazarParameter
+        """
+        if isinstance(parameter, AlazarParameter):
+            parameter._set_updated()
 
     def sync_settings_to_card(self):
         """
         Syncs all parameters to Alazar card
         """
+        self._set_updated_if_alazar_parameter(self.clock_source)
         if self.clock_source() == 'EXTERNAL_CLOCK_10MHz_REF':
             sample_rate = self.external_sample_rate
         else:
@@ -609,12 +625,13 @@ class AlazarTech_ATS(Instrument):
         # Abort any previous measurement
         self._call_dll('AlazarAbortAsyncRead', self._handle)
 
-        buffers_per_acquisition = self.buffers_per_acquisition.get()
-        samples_per_record = self.samples_per_record.get()
+        buffers_per_acquisition = self._get_raw_or_bytes(self.buffers_per_acquisition)
+        samples_per_record = self._get_raw_or_bytes(self.samples_per_record)
+        records_per_buffer = self._get_raw_or_bytes(self.records_per_buffer)
         # Set record size for NPT mode
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
-            post_trigger_size = self.samples_per_record.get()
+            post_trigger_size = samples_per_record
             self._call_dll('AlazarSetRecordSize',
                            self._handle, pretriggersize,
                            post_trigger_size)
@@ -622,22 +639,20 @@ class AlazarTech_ATS(Instrument):
         # set acquisition parameters here for NPT, TS mode
         samples_per_buffer = 0
 
-        acquire_flags = (self.mode.raw_value |
-                         self.external_startcapture.raw_value |
-                         self.enable_record_headers.raw_value |
-                         self.alloc_buffers.raw_value |
-                         self.fifo_only_streaming.raw_value |
-                         self.interleave_samples.raw_value |
-                         self.get_processed_data.raw_value)
+        acquire_flags = (self._get_raw_or_bytes(self.mode) |
+                         self._get_raw_or_bytes(self.external_startcapture) |
+                         self._get_raw_or_bytes(self.enable_record_headers) |
+                         self._get_raw_or_bytes(self.alloc_buffers) |
+                         self._get_raw_or_bytes(self.fifo_only_streaming) |
+                         self._get_raw_or_bytes(self.interleave_samples) |
+                         self._get_raw_or_bytes(self.get_processed_data))
 
         if mode == 'NPT':
-            records_per_buffer = self.records_per_buffer.get()
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
-            samples_per_buffer = samples_per_record * records_per_buffer
             self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection.raw_value,
-                           self.transfer_offset.get(), samples_per_record,
+                           self._handle, self._get_raw_or_bytes(self.channel_selection),
+                           self._get_raw_or_bytes(self.transfer_offset), samples_per_record,
                            records_per_buffer, records_per_acquisition,
                            acquire_flags)
 
@@ -649,17 +664,30 @@ class AlazarTech_ATS(Instrument):
                                 'calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
-            if self.records_per_buffer.get() != 1:
+            if self._get_raw_or_bytes(self.records_per_buffer) != 1:
                 logger.warning('records_per_buffer should be 1 in TS mode, '
                                 'defauling to 1')
-                self.records_per_buffer.set(1)
-            records_per_buffer = self.records_per_buffer.get()
+                self._set_or__set(self.records_per_buffer, 1)
+            records_per_buffer = self._get_raw_or_bytes(self.records_per_buffer)
 
             self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection.raw_value,
-                           self.transfer_offset.get(), samples_per_buffer,
+                           self._handle, self._get_raw_or_bytes(self.channel_selection),
+                           self._get_raw_or_bytes(self.transfer_offset), samples_per_buffer,
                            records_per_buffer, buffers_per_acquisition,
                            acquire_flags)
+
+        # Todo this can all be dropped once the alazar parameters are removed
+        self._set_updated_if_alazar_parameter(self.samples_per_record)
+        self._set_updated_if_alazar_parameter(self.records_per_buffer)
+        self._set_updated_if_alazar_parameter(self.buffers_per_acquisition)
+        self._set_updated_if_alazar_parameter(self.channel_selection)
+        self._set_updated_if_alazar_parameter(self.transfer_offset)
+        self._set_updated_if_alazar_parameter(self.external_startcapture)
+        self._set_updated_if_alazar_parameter(self.enable_record_headers)
+        self._set_updated_if_alazar_parameter(self.alloc_buffers)
+        self._set_updated_if_alazar_parameter(self.fifo_only_streaming)
+        self._set_updated_if_alazar_parameter(self.interleave_samples)
+        self._set_updated_if_alazar_parameter(self.get_processed_data)
 
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
@@ -672,10 +700,6 @@ class AlazarTech_ATS(Instrument):
         channels_binrep = self._get_raw_or_bytes(self.channel_selection)
         number_of_channels = self.get_num_channels(channels_binrep)
 
-        # bytes per buffer
-        bytes_per_buffer = (bytes_per_record *
-                            records_per_buffer * number_of_channels)
-
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
         # TODO(JHN) Why +7 I guess its to do ceil division?
@@ -687,25 +711,27 @@ class AlazarTech_ATS(Instrument):
         bytes_per_buffer = (bytes_per_record *
                             records_per_buffer * number_of_channels)
 
-        # create buffers for acquisition
-        # TODO(nataliejpg) should this be > 1 (as intuitive) or > 8 as in alazar sample code?
-        # the alazar code probably uses bits per sample?
         sample_type = ctypes.c_uint8
         if bytes_per_sample > 1:
             sample_type = ctypes.c_uint16
 
         self.clear_buffers()
+
         # make sure that allocated_buffers <= buffers_per_acquisition
-        if (self.allocated_buffers.get() >
-                self.buffers_per_acquisition.get()):
+        allocated_buffers = self._get_raw_or_bytes(self.allocated_buffers)
+        buffers_per_acquisition =  self._get_raw_or_bytes(self.buffers_per_acquisition)
+
+        if allocated_buffers > buffers_per_acquisition:
             logger.warning("'allocated_buffers' should be <= "
                             "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                            " to " + str(self.buffers_per_acquisition.get()))
-            self.allocated_buffers.set(
-                self.buffers_per_acquisition.get())
+                            f" to {buffers_per_acquisition}")
+            if isinstance(self.allocated_buffers, AlazarParameter):
+                self.allocated_buffers._set(buffers_per_acquisition)
+            else:
+                self.allocated_buffers.set(buffers_per_acquisition)
 
-        allocated_buffers = self.allocated_buffers.get()
-
+        allocated_buffers = self._get_raw_or_bytes(self.allocated_buffers)
+        buffer_recycling = buffers_per_acquisition > allocated_buffers
         for k in range(allocated_buffers):
             try:
                 self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
@@ -718,8 +744,7 @@ class AlazarTech_ATS(Instrument):
             for buf in self.buffer_list:
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
-            if isinstance(self.allocated_buffers, AlazarParameter):
-                self.allocated_buffers._set_updated()
+            self._set_updated_if_alazar_parameter(self.allocated_buffers)
 
             # -----start capture here-----
             acquisition_controller.pre_start_capture()
@@ -732,12 +757,9 @@ class AlazarTech_ATS(Instrument):
             # buffer handling from acquisition
             buffers_completed = 0
             bytes_transferred = 0
-            buffer_timeout = self.buffer_timeout.get()
-            if isinstance(self.allocated_buffers, AlazarParameter):
-                self.buffer_timeout._set_updated()
+            buffer_timeout = self._get_raw_or_bytes(self.buffer_timeout)
+            self._set_updated_if_alazar_parameter(self.buffer_timeout)
 
-            buffer_recycling = (self.buffers_per_acquisition.get() >
-                                self.allocated_buffers.get())
             done_setup = time.clock()
             while (buffers_completed < self.buffers_per_acquisition.get()):
                 # Wait for the buffer at the head of the list of available
