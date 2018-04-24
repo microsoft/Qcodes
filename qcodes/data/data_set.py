@@ -338,9 +338,9 @@ class DataSet(DelegateAttributes):
         data_array.data_set = self
 
     def remove_array(self, array_id):
-        """ Remove an array from a dataset 
+        """ Remove an array from a dataset
 
-        Throws an exception when the array specified is refereced by other 
+        Throws an exception when the array specified is refereced by other
         arrays in the dataset.
 
         Args:
