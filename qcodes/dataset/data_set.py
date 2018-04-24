@@ -12,7 +12,9 @@ from threading import Thread
 import time
 import logging
 import hashlib
+import uuid
 from queue import Queue, Empty
+import warnings
 
 import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
@@ -163,11 +165,15 @@ class Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str) -> None:
+    def __init__(self, path_to_db: str, conn=None) -> None:
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db)
+        if conn is None:
+            self.conn = connect(self.path_to_db)
+        else:
+            self.conn = conn
+
         self._debug = False
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
@@ -543,7 +549,7 @@ class DataSet(Sized):
                   state: Optional[Any] = None,
                   callback_kwargs: Optional[Dict[str, Any]] = None,
                   subscriber_class=Subscriber) -> str:
-        sub_id = hash_from_parts(str(time.time()))
+        sub_id = uuid.uuid4().hex
         sub = Subscriber(self, sub_id, callback, state, min_wait, min_count,
                          callback_kwargs)
         self.subscribers[sub_id] = sub
@@ -639,7 +645,7 @@ def load_by_counter(counter, exp_id):
 
 def new_data_set(name, exp_id: Optional[int] = None,
                  specs: SPECS = None, values=None,
-                 metadata=None) -> DataSet:
+                 metadata=None, conn=None) -> DataSet:
     """ Create a new dataset.
     If exp_id is not specified the last experiment will be loaded by default.
 
@@ -651,7 +657,9 @@ def new_data_set(name, exp_id: Optional[int] = None,
         values: the values to associate with the parameters
         metadata:  the values to associate with the dataset
     """
-    d = DataSet(get_DB_location())
+    path_to_db = get_DB_location()
+    d = DataSet(path_to_db, conn=conn)
+
     if exp_id is None:
         if len(get_experiments(d.conn)) > 0:
             exp_id = get_last_experiment(d.conn)
@@ -671,5 +679,8 @@ def hash_from_parts(*parts: str) -> str:
     Returns:
         hash created with the given parts
     """
+    warnings.warn("hash_from_parts has been deprecated and will be removed. "
+                  "Use stdlib uuid4 instead",
+                  stacklevel=2)
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()

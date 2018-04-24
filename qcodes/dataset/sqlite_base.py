@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS dependencies (
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 # utility function to allow sqlite/numpy type
 
-def _adapt_array(arr: ndarray) -> sqlite3.Binary:
+
+def _adapt_array(arr: ndarray) -> Any: # this should really be sqlite3.Binary but there seems to be a bug in mypy 0.590
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -196,6 +197,16 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     # sqlite3 options
     conn.row_factory = sqlite3.Row
+
+    # Make sure numpy ints and floats types are inserted properly
+    for numpy_int in [
+        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
+    ]:
+        sqlite3.register_adapter(numpy_int, int)
+
+    for numpy_float in [np.float, np.float16, np.float32, np.float64]:
+        sqlite3.register_adapter(numpy_float, float)
 
     if debug:
         conn.set_trace_callback(print)
