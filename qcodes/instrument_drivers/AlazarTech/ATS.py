@@ -475,6 +475,17 @@ class AlazarTech_ATS(Instrument):
 
         self.sync_settings_to_card()
 
+    def _get_raw_or_bytes(self, parameter):
+        """A simple function to make it easier to handle the difference between
+        Alazar paramters and regular parameters. Should be removed one AlazarParameters
+        are no longer used.
+        """
+        if isinstance(parameter, AlazarParameter):
+            return parameter._get_byte()
+        else:
+            return parameter.raw_value
+
+
     def sync_settings_to_card(self):
         """
         Syncs all parameters to Alazar card
@@ -658,7 +669,7 @@ class AlazarTech_ATS(Instrument):
         bytes_per_record = bytes_per_sample * samples_per_record
 
         # channels
-        channels_binrep = self.channel_selection.raw_value
+        channels_binrep = self._get_raw_or_bytes(self.channel_selection)
         number_of_channels = self.get_num_channels(channels_binrep)
 
         # bytes per buffer
@@ -671,10 +682,6 @@ class AlazarTech_ATS(Instrument):
         bytes_per_sample = (bps + 7) // 8
         # bytes per record
         bytes_per_record = bytes_per_sample * samples_per_record
-
-        # channels
-        channels_binrep = self.channel_selection._get_byte()
-        number_of_channels = self.get_num_channels(channels_binrep)
 
         # bytes per buffer
         bytes_per_buffer = (bytes_per_record *
