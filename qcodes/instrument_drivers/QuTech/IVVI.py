@@ -135,7 +135,7 @@ class IVVI(VisaInstrument):
                 vals=vals.Numbers(self.pol_num[i - 1],
                                   self.pol_num[i - 1] + self.Fullrange),
                 step=dac_step,
-                delay=dac_delay,
+                inter_delay=dac_delay,
                 max_val_age=10)
 
         self._update_time = 5  # seconds
@@ -510,15 +510,15 @@ class IVVI(VisaInstrument):
         Args:
             param (Parameter): a dac of the IVVI instrument
         """
-        if not isinstance(param._vals, Numbers):
+        if not isinstance(param.vals, Numbers):
             raise Exception('Only the Numbers validator is supported.')
-        min_val = param._vals._min_value
-        max_val = param._vals._max_value
+        min_val = param.vals._min_value
+        max_val = param.vals._max_value
 
         min_val_upd = self.round_dac(min_val, param.name)
         max_val_upd = self.round_dac(max_val, param.name)
 
-        param._vals = Numbers(min_val_upd, max_val_upd)
+        param.vals = Numbers(min_val_upd, max_val_upd)
 
 
 '''

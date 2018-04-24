@@ -1,0 +1,39 @@
+@startuml
+
+package "measurements.py" {
+    [DataSaver]
+    [Runner]
+    [Measurement]
+}
+package "data_set.py" {
+    [DataSet]
+}
+package "sqlite_base.py" {
+    [sqlite functions]
+}
+
+package "experiment_container.py" {
+    [Experiment]
+}
+
+package "param_spec.py" {
+    [ParamSpec]
+}
+
+database "SQLite" {
+    [experiment.db]
+}
+
+[Measurement] -> [Runner] : Calling 'run' creates:
+[Measurement] --> [ParamSpec] : Registers instances of:
+[Runner] --> [DataSet] : '~__enter~__' creates:\n'~__exit~__' flushes:
+[Runner] -> [DataSaver] : '~__enter__' returns:
+[Runner] --> [Experiment] : Creats DataSet with ref to:
+[DataSaver] --> [DataSet] : Stores data via:
+[DataSet] -> [ParamSpec] : Holds instances of:
+[DataSet] --> [sqlite functions] : Inserts data into DB
+[Experiment] --> [sqlite functions] : Creates experiments in DB
+[sqlite functions] --> [experiment.db] : SQL calls
+
+
+@enduml
