@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import time
 import os
+import warnings
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
@@ -508,7 +509,17 @@ class AlazarTech_ATS(Instrument):
         self._set_updated_if_alazar_parameter(self.clock_source)
         if self.clock_source() == 'EXTERNAL_CLOCK_10MHz_REF':
             sample_rate = self.external_sample_rate
+            if self._get_raw_or_bytes(self.external_sample_rate) == 'UNDEFINED':
+                raise RuntimeError("Using external 10 MHz Ref but external sample_rate is not set")
+            if self._get_raw_or_bytes(self.sample_rate) != 'UNDEFINED':
+                warnings.warn("Using external 10 MHz Ref but parameter sample_rate is set."
+                              "This will have no effect and is ignored")
         else:
+            if self._get_raw_or_bytes(self.sample_rate) == 'UNDEFINED':
+                raise RuntimeError("Using Internal clock but parameter sample_rate is not set")
+            if self._get_raw_or_bytes(self.external_sample_rate) != 'UNDEFINED':
+                warnings.warn("Using Internal clock but parameter external_sample_rate is set."
+                              "This will have no effect and is ignored")
             sample_rate = self.sample_rate
 
         self._call_dll('AlazarSetCaptureClock',
