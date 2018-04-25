@@ -4,6 +4,7 @@ import numpy as np
 import time
 import os
 import warnings
+import sys
 
 from typing import List, Dict, Union, Optional, Tuple, cast, Sequence
 
@@ -274,13 +275,14 @@ class AlazarTech_ATS(Instrument):
         self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32,
                                                         ctypes.c_void_p,
                                                         ctypes.c_uint32]
-        ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p,
-                                                        ctypes.c_long,
-                                                        ctypes.c_long,
-                                                        ctypes.c_long]
-        ctypes.windll.kernel32.VirtualFree.argtypes = [ctypes.c_void_p,
-                                                       ctypes.c_long,
-                                                       ctypes.c_long]
+        if sys.platform == 'win32':
+            ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p,
+                                                            ctypes.c_long,
+                                                            ctypes.c_long,
+                                                            ctypes.c_long]
+            ctypes.windll.kernel32.VirtualFree.argtypes = [ctypes.c_void_p,
+                                                           ctypes.c_long,
+                                                           ctypes.c_long]
 
     def get_idn(self) -> dict:
         # TODO this is really Dict[str, Optional[Union[str,int]]]
