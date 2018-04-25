@@ -283,6 +283,10 @@ class BaseSweepObject:
         # is an instance of ParametersTable
         self._parameter_table: Optional[ParametersTable] = None
         self._symbols_list: Optional[List[str]] = None
+        self._step_time = None
+        self._previous_iter_time = None
+        self._start_sweep_functions = [(lambda: None, ())]
+        self._end_sweep_functions = [(lambda: None, ())]
 
     def _setter_factory(self)->Iterator:
         """
@@ -300,6 +304,30 @@ class BaseSweepObject:
         else:
             self._symbols_list = []
 
+        self._start_sweep()
+
+    def _start_sweep(self):
+        for func, args in self._start_sweep_functions:
+            func(*args)
+
+    def _end_sweep(self):
+        for func, args in self._end_sweep_functions:
+            func(*args)
+
+    def _wait(self):
+        if self._step_time is None:
+            return
+
+        if self._previous_iter_time is None:
+            self._previous_iter_time = time.time()
+
+        d = time.time() - self._previous_iter_time
+        while d < self._step_time:
+            time.sleep(self._step_time - d)
+            d = time.time() - self._previous_iter_time
+
+        self._previous_iter_time = time.time()
+
     def __iter__(self)->"BaseSweepObject":
         self._start_iter()
         return self
@@ -309,10 +337,17 @@ class BaseSweepObject:
         At each iteration a dictionary is returned containing information about
         the parameters set and measurements that have been performed.
         """
+        self._wait()
+
         if self._param_setter is None:
             self._start_iter()
 
-        nxt = next(self._param_setter)
+        try:
+            nxt = next(self._param_setter)
+        except StopIteration:
+            self._end_sweep()
+            raise StopIteration()
+
         if len(nxt) and len(self._symbols_list):
             nxt = {k: nxt[k] if k in nxt else None for k in self._symbols_list}
 
@@ -323,6 +358,20 @@ class BaseSweepObject:
         We implement a convenient syntax to create nested sweep objects
         """
         return Nest([self, Chain(wrap_objects(*sweep_objects))])
+
+    def step_time(self, step_time):
+        if step_time < 0:
+            raise ValueError("Step time cannot be < 0")
+        self._step_time = step_time
+        return self
+
+    def on_sweep_start(self, tpl_list):
+        self._start_sweep_functions.extend(tpl_list)
+        return self
+
+    def on_sweep_end(self, tpl_list):
+        self._end_sweep_functions.extend(tpl_list)
+        return self
 
     @property
     def parameter_table(self)->ParametersTable:
