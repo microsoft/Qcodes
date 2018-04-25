@@ -6,7 +6,7 @@ import os
 import warnings
 import sys
 
-from typing import List, Dict, Union, Optional, Tuple, cast, Sequence
+from typing import List, Dict, Union, Tuple, cast, Sequence
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
@@ -483,7 +483,8 @@ class AlazarTech_ATS(Instrument):
 
         self.sync_settings_to_card()
 
-    def _get_raw_or_bytes(self, parameter: Union[Parameter,
+    @staticmethod
+    def _get_raw_or_bytes(parameter: Union[Parameter,
                                                  AlazarParameter]) -> Union[str,int,float]:
         """A simple function to make it easier to handle the difference between
         Alazar paramters and regular parameters. Should be removed one AlazarParameters
@@ -494,7 +495,8 @@ class AlazarTech_ATS(Instrument):
         else:
             return parameter.raw_value
 
-    def _set_or__set_set_or__set(self, parameter: Union[Parameter, AlazarParameter],
+    @staticmethod
+    def _set_or__set_set_or__set(parameter: Union[Parameter, AlazarParameter],
                                  value: Union[int,float,str],
                                  set_updated: bool=False) -> None:
         """
@@ -508,7 +510,8 @@ class AlazarTech_ATS(Instrument):
         else:
             parameter.set(value)
 
-    def _set_updated_if_alazar_parameter(self, parameter: Union[Parameter, AlazarParameter]) -> None:
+    @staticmethod
+    def _set_updated_if_alazar_parameter(parameter: Union[Parameter, AlazarParameter]) -> None:
         """
         Simple wrapper to set Paramter updated if
         it is an AlazarParameter
