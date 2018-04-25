@@ -496,7 +496,7 @@ class AlazarTech_ATS(Instrument):
             return parameter.raw_value
 
     @staticmethod
-    def _set_or__set_set_or__set(parameter: Union[Parameter, AlazarParameter],
+    def _set_or__set(parameter: Union[Parameter, AlazarParameter],
                                  value: Union[int,float,str],
                                  set_updated: bool=False) -> None:
         """
