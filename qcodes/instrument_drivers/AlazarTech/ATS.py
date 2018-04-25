@@ -5,6 +5,8 @@ import time
 import os
 import warnings
 
+from typing import List, Dict, Union, Optional, Tuple, cast, Sequence
+
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 # imported for backwards compat only
@@ -178,7 +180,7 @@ class AlazarTech_ATS(Instrument):
     }
 
     @classmethod
-    def find_boards(cls, dll_path=None):
+    def find_boards(cls, dll_path: str=None) -> List[dict]:
         """
         Find Alazar boards connected
 
@@ -200,7 +202,8 @@ class AlazarTech_ATS(Instrument):
 
         # TODO(nataliejpg) this needs fixing..., dll can't be a string
     @classmethod
-    def get_board_info(cls, dll, system_id, board_id):
+    def get_board_info(cls, dll: ctypes.CDLL, system_id: int,
+                       board_id: int) -> Dict[str,Union[str,int]]:
         """
         Get the information from a connected Alazar board
 
@@ -223,6 +226,7 @@ class AlazarTech_ATS(Instrument):
         # to get its info
         board = cls('temp', system_id=system_id, board_id=board_id,
                     server_name=None)
+
         handle = board._handle
         board_kind = cls._board_names[dll.AlazarGetBoardKind(handle)]
 
@@ -235,7 +239,8 @@ class AlazarTech_ATS(Instrument):
             'bits_per_sample': bps
         }
 
-    def __init__(self, name, system_id=1, board_id=1, dll_path=None, **kwargs):
+    def __init__(self, name: str, system_id: int=1, board_id: int=1,
+                 dll_path: str=None, **kwargs) -> None:
         super().__init__(name, **kwargs)
         self._ATS_dll = None
 
@@ -250,7 +255,7 @@ class AlazarTech_ATS(Instrument):
             raise Exception('AlazarTech_ATS not found at '
                             'system {}, board {}'.format(system_id, board_id))
 
-        self.buffer_list = []
+        self.buffer_list: List['Buffer'] = []
 
         self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [
             ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
@@ -277,7 +282,10 @@ class AlazarTech_ATS(Instrument):
                                                        ctypes.c_long,
                                                        ctypes.c_long]
 
-    def get_idn(self):
+    def get_idn(self) -> dict:
+        # TODO this is really Dict[str, Optional[Union[str,int]]]
+        # But that is inconsistent with the super class. We should consider
+        # if ints and floats are allowed as values in the dict
         """
         This methods gets the most relevant information of this instrument
 
@@ -366,7 +374,8 @@ class AlazarTech_ATS(Instrument):
                 'pcie_link_speed': pcie_link_speed,
                 'pcie_link_width': pcie_link_width}
 
-    def config(self, clock_source=None, sample_rate=None, clock_edge=None,
+    def config(self,
+               clock_source=None, sample_rate=None, clock_edge=None,
                external_sample_rate=None,
                decimation=None, coupling=None, channel_range=None,
                impedance=None, bwlimit=None, trigger_operation=None,
@@ -376,7 +385,7 @@ class AlazarTech_ATS(Instrument):
                trigger_slope2=None, trigger_level2=None,
                external_trigger_coupling=None, external_trigger_range=None,
                trigger_delay=None, timeout_ticks=None, aux_io_mode=None,
-               aux_io_param=None):
+               aux_io_param=None) -> None:
         """
         configure the ATS board and set the corresponding parameters to the
         appropriate values.
@@ -472,7 +481,8 @@ class AlazarTech_ATS(Instrument):
 
         self.sync_settings_to_card()
 
-    def _get_raw_or_bytes(self, parameter):
+    def _get_raw_or_bytes(self, parameter: Union[Parameter,
+                                                 AlazarParameter]) -> Union[str,int,float]:
         """A simple function to make it easier to handle the difference between
         Alazar paramters and regular parameters. Should be removed one AlazarParameters
         are no longer used.
@@ -482,7 +492,9 @@ class AlazarTech_ATS(Instrument):
         else:
             return parameter.raw_value
 
-    def _set_or__set_set_or__set(self, parameter, value, set_updated=False):
+    def _set_or__set_set_or__set(self, parameter: Union[Parameter, AlazarParameter],
+                                 value: Union[int,float,str],
+                                 set_updated: bool=False) -> None:
         """
         Simple wrapper to make it easier to set both an AlazarParameter and a
         regular one. Can be dropped once we remove AlazarParameters
@@ -494,7 +506,7 @@ class AlazarTech_ATS(Instrument):
         else:
             parameter.set(value)
 
-    def _set_updated_if_alazar_parameter(self, parameter):
+    def _set_updated_if_alazar_parameter(self, parameter: Union[Parameter, AlazarParameter]) -> None:
         """
         Simple wrapper to set Paramter updated if
         it is an AlazarParameter
@@ -502,7 +514,7 @@ class AlazarTech_ATS(Instrument):
         if isinstance(parameter, AlazarParameter):
             parameter._set_updated()
 
-    def sync_settings_to_card(self):
+    def sync_settings_to_card(self) -> None:
         """
         Syncs all parameters to Alazar card
         """
@@ -559,7 +571,7 @@ class AlazarTech_ATS(Instrument):
                        self.aux_io_param)
         self._parameters_synced = True
 
-    def _get_channel_info(self, handle):
+    def _get_channel_info(self, handle: int) -> Tuple[int,int]:
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
         self._call_dll('AlazarGetChannelInfo',
@@ -844,22 +856,24 @@ class AlazarTech_ATS(Instrument):
         # return result
         return acquisition_controller.post_acquire()
 
-    def _set_if_present(self, param_name, value):
+    def _set_if_present(self, param_name: str, value: Union[int,str,float]) -> None:
         if value is not None:
-            try:
-                self.parameters[param_name]._set(value)
-            except AttributeError:
-                self.parameters[param_name].set(value)
+            parameter = self.parameters[param_name]
+            if isinstance(parameter, AlazarParameter):
+                parameter._set(value)
+            else:
+                parameter.set(value)
 
-    def _set_list_if_present(self, param_base, value):
+    def _set_list_if_present(self, param_base: str, value: Sequence[Union[int,str,float]]) -> None:
         if value is not None:
             for i, v in enumerate(value):
-                try:
-                    self.parameters[param_base + str(i + 1)]._set(v)
-                except AttributeError:
-                    self.parameters[param_base + str(i + 1)].set(v)
+                parameter = self.parameters[param_base + str(i + 1)]
+                if isinstance(parameter, AlazarParameter):
+                    parameter._set(v)
+                else:
+                    parameter.set(v)
 
-    def _call_dll(self, func_name, *args):
+    def _call_dll(self, func_name: str, *args) -> None:
         """
         Execute a dll function `func_name`, passing it the given arguments
 
@@ -890,8 +904,8 @@ class AlazarTech_ATS(Instrument):
         try:
             return_code = func(*args_out)
         except Exception as e:
-            logger.error(e)
-            raise
+            logger.exception("Exception in DLL call")
+            raise e
 
         # check for errors
         if (return_code != self._success) and (return_code != 518):
@@ -915,7 +929,7 @@ class AlazarTech_ATS(Instrument):
             if isinstance(param, AlazarParameter):
                 param._set_updated()
 
-    def clear_buffers(self):
+    def clear_buffers(self) -> None:
         """
         This method uncommits all buffers that were committed by the driver.
         This method only has to be called when the acquistion crashes, otherwise
@@ -930,7 +944,7 @@ class AlazarTech_ATS(Instrument):
         logger.debug("buffers cleared")
         self.buffer_list = []
 
-    def signal_to_volt(self, channel, signal):
+    def signal_to_volt(self, channel: int, signal: int) -> float:
         """
         convert a value from a buffer to an actual value in volts based on the
         ranges of the channel
@@ -947,7 +961,7 @@ class AlazarTech_ATS(Instrument):
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
-    def get_sample_rate(self, include_decimation=True):
+    def get_sample_rate(self, include_decimation: bool=True) -> Union[float,int]:
         """
         Obtain the effective sampling rate of the acquisition
         based on clock speed and decimation
