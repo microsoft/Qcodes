@@ -497,8 +497,8 @@ class AlazarTech_ATS(Instrument):
 
     @staticmethod
     def _set_or__set(parameter: Union[Parameter, AlazarParameter],
-                                 value: Union[int,float,str],
-                                 set_updated: bool=False) -> None:
+                     value: Union[int,float,str],
+                     set_updated: bool=False) -> None:
         """
         Simple wrapper to make it easier to set both an AlazarParameter and a
         regular one. Can be dropped once we remove AlazarParameters
