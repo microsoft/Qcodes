@@ -67,7 +67,9 @@ project = 'QCoDeS'
 copyright = '2016, Giulio Ungaretti, Alex Johnson'
 author = 'Giulio Ungaretti, Alex Johnson'
 
-
+# Import matplotlib before qcodes import pyplot to set the backend
+import matplotlib
+matplotlib.use('Agg')
 # auto versioning
 import qcodes
 version = '{}'.format(qcodes.__version__)
@@ -376,18 +378,13 @@ if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
 autodoc_default_flags = []
 # we have to do this, do avoid sideeffects when importing matplotlib
 autodoc_mock_imports = []
-try:
-    import matplotlib
-    matplotlib.use('PS')
-    autodoc_mock_imports.append('matplotlib')
-except ImportError as e:
-        print(e)
 autodoc_mock_imports.append('pyspcm')
 autodoc_mock_imports.append('zhinst')
 autodoc_mock_imports.append('zhinst.utils')
 autodoc_mock_imports.append('keysightSD1')
 autodoc_mock_imports.append('cffi')
 autodoc_mock_imports.append('spirack')
+autodoc_mock_imports.append('clr')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []
@@ -395,3 +392,5 @@ templates_path = []
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
+
+numfig=True

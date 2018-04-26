@@ -7,7 +7,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
     This class is the driver for the ATS9870 board
     it inherits from the ATS base class
 
-    it creates all necessary parameters for the Alazar card
+    It creates all necessary parameters for the Alazar card
     """
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -150,6 +150,24 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            unit='10 us',
                            value=0,
                            vals=validators.Ints(min_value=0))
+        self.add_parameter(name='aux_io_mode',
+                           parameter_class=AlazarParameter,
+                           label='AUX I/O Mode',
+                           unit=None,
+                           value='AUX_IN_AUXILIARY',
+                           byte_to_value_dict={0: 'AUX_OUT_TRIGGER',
+                                               1: 'AUX_IN_TRIGGER_ENABLE',
+                                               13: 'AUX_IN_AUXILIARY'})
+
+        self.add_parameter(name='aux_io_param',
+                           parameter_class=AlazarParameter,
+                           label='AUX I/O Param',
+                           unit=None,
+                           value='NONE',
+                           byte_to_value_dict={0: 'NONE',
+                                               1: 'TRIG_SLOPE_POSITIVE',
+                                               2: 'TRIG_SLOPE_NEGATIVE'})
+
 
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',

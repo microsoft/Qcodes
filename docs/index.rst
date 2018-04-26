@@ -11,43 +11,43 @@
 .. image:: https://zenodo.org/badge/37137879.svg
    :target: https://zenodo.org/badge/latestdoi/37137879
 
-Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. 
+Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
 
 The goal is a common framework for physics experiments, so:
-    
+
 - new students don't need to spend a long time learning software in order to
-  participate in experiments 
+  participate in experiments
 - one has to write their own code only for pieces that are very specific
   to their own experiment
-- code can and should contributed back to the framework
+- code can and should be contributed back to the framework
 - the process of moving between teams or labs, and of setting up
   a new experiment is streamlined
-- physics experiments can take advantage of modern software and best practices 
+- physics experiments can take advantage of modern software and best practices
 
 
 See how easy it is to run for yourself:
 
 .. code:: python
 
-    # define your systesm
-    model = AModel()
-    # define your instruments
-    gates = MockGates('gates', model=model)
-    source = MockSource('source', model=model)
-    meter = MockMeter('meter', model=model)
-    # optionally group all the components in a station
-    station = qc.Station(gates, source, meter)
-    c0, c1, c2, vsd = gates.chan0, gates.chan1, gates.chan2, source.amplitude
-    # and loop
-    data = qc.Loop(c1[-15:15:1], 0.1).loop(c0[-15:12:.5], 0.01).each(
-        # perform actiosn at heak
-        meter.amplitude, # first measurement, at c2=0 -> amplitude_0 bcs it's action 0
-        qc.Task(c2.set, 1), # action 1 -> c2.set(1)
-        qc.Wait(0.001),
-        meter.amplitude, # second measurement, at c2=1 -> amplitude_4 bcs it's action 4
-        qc.Task(c2.set, 0)
-        # finally save
-        ).run(location='data/test2d', overwrite=True)
+   # imports
+   import qcodes as qc
+   from qcodes.tests.instrument_mocks import DummyInstrument
+
+   # instantiate two dummy instruments
+   # That would be your actual instruments in your application
+   mock_dac = DummyInstrument('mock_dac', gates=['ch1', 'ch2'])
+   mock_dmm = DummyInstrument('mock_dmm', gates=['v1', 'v2'])
+
+   # optionally (but do it) put the instruments in a station
+   station = qc.Station(mock_dac, mock_dmm)
+
+   # define a measurement...
+   loop = qc.Loop(mock_dac.ch1.sweep(0, 1, 0.05), 0).each(mock_dmm.v1)
+
+   # ...run it!
+   loop.run()
+
+Many more elaborate examples can be found in the example notebooks.
 
 
 
@@ -57,10 +57,11 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
-   start/index 
+   start/index
    help
    user/index
    community/index
+   dataset/index
    api/index
    api/generated/qcodes.instrument_drivers
    roadmap
@@ -89,4 +90,4 @@ QCoDeS logo contributed by `Guenevere E D K Prawiroatmodjo <bqv662@alumni.ku.dk>
 
 .. |LOGO|  image:: ./logos/qcodes_logo.png
    :scale: 50 %
-   :alt: qcodes logo 
+   :alt: qcodes logo

@@ -24,9 +24,8 @@ class LuaSweepParameter(ArrayParameter):
 
         super().__init__(name=name,
                          shape=(1,),
-                         docstring='Holds a sweep')
-
-        self._instrument = instrument
+                         docstring='Holds a sweep',
+                         instrument=instrument)
 
     def prepareSweep(self, start: float, stop: float, steps: int,
                      mode: str) -> None:
@@ -69,10 +68,13 @@ class LuaSweepParameter(ArrayParameter):
 
     def get_raw(self) -> np.ndarray:
 
-        data = self._instrument._fast_sweep(self.start,
-                                            self.stop,
-                                            self.steps,
-                                            self.mode)
+        if self._instrument is not None:
+            data = self._instrument._fast_sweep(self.start,
+                                                self.stop,
+                                                self.steps,
+                                                self.mode)
+        else:
+            raise RuntimeError("No instrument attached to Parameter")
 
         return data
 
@@ -116,6 +118,13 @@ class KeithleyChannel(InstrumentChannel):
                                                                 '{:.12f}'),
                            label='Current',
                            unit='A')
+
+        self.add_parameter('res',
+                           get_cmd='{}.measure.r()'.format(channel),
+                           get_parser=float,
+                           set_cmd=False,
+                           label='Resistance',
+                           unit='Ohm')
 
         self.add_parameter('mode',
                            get_cmd='{}.source.func'.format(channel),
