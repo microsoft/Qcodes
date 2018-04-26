@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS dependencies (
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 # utility function to allow sqlite/numpy type
 
-def _adapt_array(arr: ndarray) -> sqlite3.Binary:
+
+def _adapt_array(arr: ndarray) -> Any: # this should really be sqlite3.Binary but there seems to be a bug in mypy 0.590
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
