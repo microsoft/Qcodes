@@ -283,6 +283,14 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
         name: column name
         type: sqlite type of the column
     """
+    # first check that the column is not already there
+    # and do nothing if it is
+    query = f'PRAGMA TABLE_INFO("{table}");'
+    cur = atomic_transaction(conn, query)
+    columns = many_many(cur, "name")
+    if name in [col[0] for col in columns]:
+        return
+
     with atomic(conn):
         if paramtype:
             transaction(conn,
