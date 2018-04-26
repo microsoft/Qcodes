@@ -95,7 +95,8 @@ class MatPlot(BasePlot):
                 nrows = int(np.ceil(subplots / self.max_subplot_columns))
                 ncols = min(subplots, self.max_subplot_columns)
                 subplots = (nrows, ncols)
-
+            if subplots is None:
+                subplots = (1,1)
             if figsize is None:
                 # Adjust figsize depending on rows and columns in subplots
                 figsize = self.default_figsize(subplots)
