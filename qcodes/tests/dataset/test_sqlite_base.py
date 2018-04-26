@@ -93,10 +93,10 @@ def test_get_dependents(experiment):
     y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
 
     # Make a dataset
-    (rc, run_id, fmt_name) = mut.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            parameters=[x, t, y])
+    (_, run_id, fmt_name) = mut.create_run(experiment.conn,
+                                           experiment.exp_id,
+                                           name='testrun',
+                                           parameters=[x, t, y])
 
     deps = mut.get_dependents(experiment.conn, run_id)
 
