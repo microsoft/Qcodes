@@ -93,10 +93,10 @@ def test_get_dependents(experiment):
     y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
 
     # Make a dataset
-    (_, run_id, fmt_name) = mut.create_run(experiment.conn,
-                                           experiment.exp_id,
-                                           name='testrun',
-                                           parameters=[x, t, y])
+    (_, run_id, _) = mut.create_run(experiment.conn,
+                                    experiment.exp_id,
+                                    name='testrun',
+                                    parameters=[x, t, y])
 
     deps = mut.get_dependents(experiment.conn, run_id)
 
@@ -111,11 +111,11 @@ def test_get_dependents(experiment):
     x_cooked = ParamSpec('x_cooked', 'numeric', inferred_from=['x_raw'])
     z = ParamSpec('z', 'numeric', depends_on=['x_cooked'])
 
-    (rc, run_id, fmt_name) = mut.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            parameters=[x, t, x_raw,
-                                                        x_cooked, y, z])
+    (_, run_id, _) = mut.create_run(experiment.conn,
+                                    experiment.exp_id,
+                                    name='testrun',
+                                    parameters=[x, t, x_raw,
+                                                x_cooked, y, z])
 
     deps = mut.get_dependents(experiment.conn, run_id)
 
