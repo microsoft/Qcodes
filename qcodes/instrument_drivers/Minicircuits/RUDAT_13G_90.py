@@ -1,47 +1,30 @@
-import os
-
-try:
-    import clr
-except ImportError:
-    raise ImportError("""Module clr not found. Please obtain it by
-                         running 'pip install pythonnet'
-                         in a qcodes environment terminal""")
+import pywinusb.hid as hid
+import time
+import struct
 
 from qcodes import Instrument
 
 
 class RUDAT_13G_90(Instrument):
+    vendor_id = 0x20ce
+    product_id = 0x0023
 
-    PATH_TO_DRIVER = r'mcl_RUDAT64'
+    def __init__(self, name, timeout=2):
+        super().__init__(name)
+        self._timeout = timeout
 
-    def __init__(self, name, driver_path=None, serial_number=None, **kwargs):
-        super().__init__(name, **kwargs)
+        devs = hid.HidDeviceFilter(
+            product_id=RUDAT_13G_90.product_id,
+            vendor_id=RUDAT_13G_90.vendor_id
+        ).get_devices()
 
-        if os.name != 'nt':
-            raise ImportError("""This driver only works in Windows.""")
-        try:
-            if driver_path is None:
-                clr.AddReference(self.PATH_TO_DRIVER)
-            else:
-                clr.AddReference(driver_path)
-        except ImportError:
-            raise ImportError(
-                f"""Load of {self.PATH_TO_DRIVER}.dll not possible. Make sure
-                the dll file is not blocked by Windows. To unblock right-click
-                the dll to open proporties and check the 'unblock' checkmark
-                in the bottom. Check that your python installation is 64bit."""
-            )
+        if len(devs) == 0:
+            raise RuntimeError("No instruments found!")
 
-        import mcl_RUDAT64
-        self._instrument = mcl_RUDAT64.USB_RUDAT()
-
-        self._serial_number = serial_number
-        if self._serial_number is None:
-            ret = self._instrument.Get_Available_SN_List("")
-            self._serial_number = ret[1]
-
-        self._instrument.Connect(serial_number)
-        print("connected to ", self.get_idn())
+        self._data_buffer = None
+        self._device = devs[0]  # We assume we only have one instrument
+        self._device.open()
+        self._device.set_raw_data_handler(self._handler)
 
         self.add_parameter(
             "attenuation",
@@ -50,16 +33,80 @@ class RUDAT_13G_90(Instrument):
             get_parser=float
         )
 
-    def _send_scpi(self, string):
-        return self._instrument.Send_SCPI(string, "")
+        self.add_parameter(
+            "startup_attenuation",
+            set_cmd=":STARTUPATT:VALUE:{}",
+            get_cmd=":STARTUPATT:VALUE?",
+            get_parser=float
+        )
+
+        self.add_parameter(
+            "hop_points",
+            get_cmd="HOP:POINTS?",
+            get_parser=int
+        )
+
+        print("connected to ", self.get_idn())
+
+    def _handler(self, data):
+        self._data_buffer = data
+
+    def _get_data_buffer(self):
+        data = self._data_buffer
+        self._data_buffer = None
+        return data
+
+    def _get_device_reply(self):
+        tries_per_second = 5
+        number_of_tries = tries_per_second * self._timeout
+
+        response = None
+        for _ in range(number_of_tries):
+            time.sleep(1 / tries_per_second)
+            response = self._get_data_buffer()
+            if response is not None:
+                break
+
+        if response is None:
+            raise TimeoutError("")
+
+        reply_string = ""
+        for char in response[2:]:
+            if char == 0x00:
+                break
+
+            reply_string += chr(char)
+
+        return reply_string
+
+    def get_model(self):
+        data = struct.pack("BB65x", 0, 40)
+        self._device.send_output_report(data)
+        return self._get_device_reply()
+
+    def get_serial(self):
+        data = struct.pack("BB65x", 0, 41)
+        self._device.send_output_report(data)
+        return self._get_device_reply()
+
+    def get_idn(self):
+        model_name = self.get_model()
+        serial_number = self.get_serial()
+        return f"{model_name} SN: {serial_number}"
+
+    def _send_scpi(self, scpi_str):
+        n = len(scpi_str)
+        m = 65 - n
+        data = struct.pack(f"BB{n}s{m}x", 0, 1, scpi_str.encode("ascii"))
+        self._device.send_output_report(data)
+
+        try:
+            return self._get_device_reply()
+        except TimeoutError:
+            raise TimeoutError(f"Timeout while sending command {scpi_str}")
 
     def write_raw(self, cmd):
         self._send_scpi(cmd)
 
     def ask_raw(self, cmd):
-        ret = self._send_scpi(cmd)
-        return ret[1]
-
-    def get_idn(self):
-        model_name = self.ask(":MN?")
-        return f"{model_name} SN: {self._serial_number}"
+        return self._send_scpi(cmd)
