@@ -263,7 +263,7 @@ def test_measured(current_driver, set_target):
                                      cartesian_z])
 
 
-def get_time_dict(messages: List[str]) -> Dict[float, str]:
+def get_time_dict(messages: List[str]) -> Dict[str, float]:
     """
     Helper function used in test_ramp_down_first
     """

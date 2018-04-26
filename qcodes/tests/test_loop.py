@@ -34,9 +34,13 @@ class TestLoop(TestCase):
         cls.p1 = Parameter('p1', get_cmd=None, set_cmd=None, vals=Numbers(-10, 10))
         cls.p2 = Parameter('p2', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
         cls.p3 = Parameter('p3', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
-        instr = DummyInstrument('dummy_bunny')
-        cls.p4_crazy = NanReturningParameter('p4_crazy', instrument=instr)
+        cls.instr = DummyInstrument('dummy_bunny')
+        cls.p4_crazy = NanReturningParameter('p4_crazy', instrument=cls.instr)
         Station().set_measurement(cls.p2, cls.p3)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.instr.close()
 
     def test_nesting(self):
         loop = Loop(self.p1[1:3:1], 0.001).loop(
