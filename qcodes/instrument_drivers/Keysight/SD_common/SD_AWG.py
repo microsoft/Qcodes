@@ -511,7 +511,8 @@ class SD_AWG(SD_Module):
         value_name = 'AWG from file. available_RAM'
         return result_parser(value, value_name, verbose)
 
-    def awg_from_array(self, awg_number, trigger_mode, start_delay, cycles, prescaler, waveform_type, waveform_data_a,
+    def awg_from_array(self, awg_number, trigger_mode, start_delay, cycles,
+                       prescaler, waveform_type, waveform_data_a,
                        waveform_data_b=None, padding_mode=0, verbose=False):
         """
         Provides a one-step method to load, queue and start a single waveform
@@ -520,7 +521,7 @@ class SD_AWG(SD_Module):
         Loads a waveform from array.
 
         Args:
-            awg_number (int): awg number where the waveform is queued
+            awg_number (int): awg output number where the waveform is queued
             trigger_mode (int): trigger method to launch the waveform
                 Auto                        :   0
                 Software/HVI                :   1
