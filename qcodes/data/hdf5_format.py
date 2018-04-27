@@ -257,9 +257,40 @@ class HDF5Format(Formatter):
         metadata_group = data_set._h5_base_group.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
+    def _read_list_group(self, entry_point, list_type):
+        d = {}
+        self.read_dict_from_hdf5(data_dict=d,
+                                 h5_group=entry_point[list_type])
+
+        if list_type == 'tuple':
+            item = tuple([d[k] for k in sorted(d.keys())])
+        elif list_type == 'list':
+            item = [d[k] for k in sorted(d.keys())]
+        else:
+            raise Exception('type %s not supported' % type(item))
+
+        return item
+
+    def _write_list_group(self, key, item, entry_point, list_type):
+        entry_point.create_group(key)
+        group_attrs = entry_point[key].attrs
+        group_attrs['list_type'] = list_type
+
+        if list_type == 'tuple' or list_type == 'list':
+            item = dict((str(v[0]), v[1]) for v in enumerate(item))
+        else:
+            raise Exception('type %s not supported' % type(item))
+
+        entry_point[key].create_group(list_type)
+        self.write_dict_to_hdf5(
+            data_dict=item,
+            entry_point=entry_point[key][list_type])
+
     def write_dict_to_hdf5(self, data_dict, entry_point):
+        base_list_key = 'list_idx_{}'
+
         for key, item in data_dict.items():
-            if isinstance(item, (str, bool, tuple, float, int)):
+            if isinstance(item, (str, bool, float, int)):
                 entry_point.attrs[key] = item
             elif isinstance(item, np.ndarray):
                 entry_point.create_dataset(key, data=item)
@@ -272,6 +303,8 @@ class HDF5Format(Formatter):
                 entry_point.create_group(key)
                 self.write_dict_to_hdf5(data_dict=item,
                                         entry_point=entry_point[key])
+            elif isinstance(item, tuple):
+                self._write_list_group(key, item, entry_point, 'tuple')
             elif isinstance(item, list):
                 if len(item) > 0:
                     elt_type = type(item[0])
@@ -282,6 +315,7 @@ class HDF5Format(Formatter):
                             entry_point.create_dataset(key,
                                                        data=np.array(item))
                             entry_point[key].attrs['list_type'] = 'array'
+                            print('entry_point[key].attrs[list_type] = array')
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
@@ -293,7 +327,6 @@ class HDF5Format(Formatter):
                             entry_point.create_group(key)
                             group_attrs = entry_point[key].attrs
                             group_attrs['list_type'] = 'dict'
-                            base_list_key = 'list_idx_{}'
                             group_attrs['base_list_key'] = base_list_key
                             group_attrs['list_length'] = len(item)
                             for i, list_item in enumerate(item):
@@ -309,10 +342,7 @@ class HDF5Format(Formatter):
                                     elt_type, key, item))
                             entry_point.attrs[key] = str(item)
                     else:
-                        logging.warning(
-                            'List of mixed type for "{}":"{}" not supported, '
-                            'storing as string'.format(type(item), key, item))
-                        entry_point.attrs[key] = str(item)
+                        self._write_list_group(key, item, entry_point, 'list')
                 else:
                     # as h5py does not support saving None as attribute
                     entry_point.attrs[key] = 'NoneType:__emptylist__'
@@ -358,7 +388,15 @@ class HDF5Format(Formatter):
                         item = None
                     elif item == 'NoneType:__emptylist__':
                         item = []
+                    elif item == 'NoneType:__emptytuple__':
+                        item = ()
+                    else:
+                        pass
                 data_dict[key] = item
+        elif h5_group.attrs['list_type'] == 'tuple':
+            data_dict = self._read_list_group(h5_group, 'tuple')
+        elif h5_group.attrs['list_type'] == 'list':
+            data_dict = self._read_list_group(h5_group, 'list')
         elif h5_group.attrs['list_type'] == 'dict':
             # preallocate empty list
             list_to_be_filled = [None] * h5_group.attrs['list_length']
@@ -393,6 +431,7 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError("Cannot covert {} to a bool".format(s))
+
 
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 
