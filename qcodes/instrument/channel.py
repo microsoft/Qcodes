@@ -196,6 +196,11 @@ class ChannelList(Metadatable):
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
                                multichan_paramclass=self._paramclass)
+        elif isinstance(i, (list, tuple)):
+            channels = [self._channels[channel_idx] for channel_idx in i]
+            return ChannelList(self._parent, self._name, self._chan_type,
+                               channels,
+                               multichan_paramclass=self._paramclass)
         elif isinstance(i, int):
             return self._channels[i]
         elif isinstance(i, str):
