@@ -431,7 +431,6 @@ def str_to_bool(s):
 
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 
-
 class HDF5FormatMetadata(HDF5Format):
 
     metadata_file = 'snapshot.json'
