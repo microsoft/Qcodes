@@ -1,10 +1,10 @@
-from time import time, sleep
+from time import time
 
 from .SD_DIG import *
-from qcodes.instrument.parameter import MultiParameter, ManualParameter
 from qcodes.instrument.base import Instrument
 import numpy as np
 from qcodes import MultiParameter
+
 
 class AcquisitionController(Instrument):
     """
@@ -98,6 +98,7 @@ class AcquisitionController(Instrument):
             mask |= 1 << ch
         return mask
 
+
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name, keysight_name, **kwargs):
         """ 
@@ -108,21 +109,19 @@ class Triggered_Controller(AcquisitionController):
             channels (int)  : the number of input channels the specified card has
             triggers (int)  : the number of trigger inputs the specified card has
         """
-        # Set the average mode of the device
-        self._average_mode = kwargs.pop('average_mode', 'none')
         super().__init__(name, keysight_name, **kwargs)
 
         self.add_parameter(
             'average_mode',
-            parameter_class=ManualParameter,
-            initial_value=self._average_mode,
+            set_cmd=None,
+            initial_value='none',
             vals=Enum('none', 'point', 'trace'),
             docstring='The averaging mode used for acquisition, either none, point or trace'
         )
 
         self.add_parameter(
             'channel_selection',
-            parameter_class=ManualParameter,
+            set_cmd=None,
             vals=Anything(),
             docstring='The list of channels on which to acquire data.'
         )
@@ -149,6 +148,15 @@ class Triggered_Controller(AcquisitionController):
             docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
         )
 
+        self.add_parameter(
+            'trigger_delay',
+            vals=Numbers(),
+            initial_value=0,
+            set_cmd=lambda delay: [getattr(self._keysight, f'DAQ_trigger_delay_{ch}')(delay)
+                                   for ch in self.channel_selection()],
+            docstring='Sets the trigger delay before starting acquisition.'
+        )
+
 
         self.add_parameter(
             'samples_per_trace',
@@ -168,7 +176,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'traces_per_read',
-            parameter_class=ManualParameter,
+            set_cmd=None,
             vals=Numbers(min_value=1),
             set_parser=lambda val: int(round(val)),
             # set_cmd=self._set_all_n_points,
@@ -389,6 +397,18 @@ class Triggered_Controller(AcquisitionController):
             self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
 
     def _set_all_n_points(self, n_points):
+        """
+        This method sets the channelised parameters for data acquisition
+        all at once. This must be set after channel_selection is modified.
+
+        Args:
+            n_points (int)  : the number of points to read per daq_read call
+
+        """
+        for ch in self.channel_selection():
+            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
+
+    def _set_all_trigger_delay(self, n_points):
         """
         This method sets the channelised parameters for data acquisition
         all at once. This must be set after channel_selection is modified.
