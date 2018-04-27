@@ -287,7 +287,6 @@ class HDF5Format(Formatter):
             entry_point=entry_point[key][list_type])
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
-
         for key, item in data_dict.items():
             if isinstance(item, (str, bool, float, int)):
                 entry_point.attrs[key] = item
@@ -322,10 +321,10 @@ class HDF5Format(Formatter):
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data
                         elif isinstance(item[0], dict):
-                            base_list_key = 'list_idx_{}'
                             entry_point.create_group(key)
                             group_attrs = entry_point[key].attrs
                             group_attrs['list_type'] = 'dict'
+                            base_list_key = 'list_idx_{}'
                             group_attrs['base_list_key'] = base_list_key
                             group_attrs['list_length'] = len(item)
                             for i, list_item in enumerate(item):
@@ -387,8 +386,6 @@ class HDF5Format(Formatter):
                         item = None
                     elif item == 'NoneType:__emptylist__':
                         item = []
-                    elif item == 'NoneType:__emptytuple__':
-                        item = ()
                     else:
                         pass
                 data_dict[key] = item
