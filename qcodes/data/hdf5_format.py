@@ -287,7 +287,6 @@ class HDF5Format(Formatter):
             entry_point=entry_point[key][list_type])
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
-        base_list_key = 'list_idx_{}'
 
         for key, item in data_dict.items():
             if isinstance(item, (str, bool, float, int)):
@@ -315,7 +314,6 @@ class HDF5Format(Formatter):
                             entry_point.create_dataset(key,
                                                        data=np.array(item))
                             entry_point[key].attrs['list_type'] = 'array'
-                            print('entry_point[key].attrs[list_type] = array')
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
@@ -324,6 +322,7 @@ class HDF5Format(Formatter):
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data
                         elif isinstance(item[0], dict):
+                            base_list_key = 'list_idx_{}'
                             entry_point.create_group(key)
                             group_attrs = entry_point[key].attrs
                             group_attrs['list_type'] = 'dict'
