@@ -4,6 +4,7 @@ import h5py
 import os
 import json
 
+from ..version import __version__ as _qcodes_version
 from .data_array import DataArray
 from .format import Formatter
 
@@ -123,6 +124,8 @@ class HDF5Format(Formatter):
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).
         data_set._h5_base_group = self._create_file(filepath)
+        data_set._h5_base_group.attrs['__qcodes_version'] = _qcodes_version
+
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
