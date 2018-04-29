@@ -22,7 +22,7 @@ class ParameterNodeMetaClass(type):
     def __new__(meta, name, bases, dct):
         dct['_parameter_decorators_get'] = {}
         dct['_parameter_decorators_set'] = {}
-        dct['_parameter_decorators_vals'] = {}
+        dct['_parameter_decorators_validator'] = {}
         for attr in list(dct):
             val = dct[attr]
             if getattr(val, '__name__', None) == 'parameter_decorator':
@@ -30,10 +30,11 @@ class ParameterNodeMetaClass(type):
                     dct['_parameter_decorators_get'][attr[:-4]] = val
                 elif attr.endswith('_set'):
                     dct['_parameter_decorators_set'][attr[:-4]] = val
-                elif attr.endswith('_vals'):
-                    dct['_parameter_decorators_vals'][attr[:-5]] = val
+                elif attr.endswith('_validator'):
+                    dct['_parameter_decorators_validator'][attr[:-10]] = val
                 else:
-                    raise SyntaxError('parameter decorators must end with `get`, `set`, or `vals`')
+                    raise SyntaxError('parameter decorators must end with '
+                                      '`_get`, `_set`, or `_validator`')
                 dct.pop(attr)
         return super(ParameterNodeMetaClass, meta).__new__(meta, name, bases, dct)
 
@@ -89,9 +90,11 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     def __repr__(self):
         repr_str = 'ParameterNode '
         if self.name is not None:
-            repr_str += '{} '.format(self.name)
-        repr_str += 'containing {} parameters, {} nodes'.format(
-            self.name, len(self.parameters), len(self.parameter_nodes))
+            repr_str += f'{self.name} '
+        repr_str += 'containing '
+        if self.parameter_nodes:
+            repr_str += f'{len(parameter_nodes)} nodes, '
+        repr_str += f'{len(self.parameters)} parameters'
         return repr_str
 
     def __call__(self) -> dict:
@@ -126,9 +129,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 val.set_raw = partial(self._parameter_decorators_set[attr], self, val)
                 if val.wrap_set:
                     val.set = val._wrap_set(val.set_raw)
-            if attr in self._parameter_decorators_vals:
+            if attr in self._parameter_decorators_validator:
                 # Overwriting set decorator
-                val.vals = partial(self._parameter_decorators_vals[attr], self, val)
+                val.vals = partial(self._parameter_decorators_validator[attr], self, val)
             if val.name == 'None':
                 # Parameter has been created without name, update name to attr
                 val.name = attr
