@@ -2,6 +2,7 @@ import numpy as np
 import logging
 import json
 import pyperclip
+from time import time
 
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import Parameter
@@ -24,9 +25,13 @@ class SIM928(Parameter):
         max_voltage (Optional[float]): Maximum voltage (default 20)
     """
     def __init__(self, channel, name=None, max_voltage=20, step=0.001,
-                 inter_delay=0.035, **kwargs):
+                 inter_delay=0.035, t_recheck_cycles=600, **kwargs):
         if not name:
             name = 'channel_{}'.format(channel)
+
+        self.t_last_cycle_check = None
+        self.t_recheck_cycles = t_recheck_cycles
+        self._latest_charge_cycles = None
 
         self.send_cmd = cmdbase + "SNDT {:d} ,".format(channel)
 
@@ -44,14 +49,19 @@ class SIM928(Parameter):
 
     @property
     def charge_cycles(self):
-        self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
-        sleep(0.08)
-        return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
-        try:
-            return int(return_str.rstrip()[5:])
-        except:
-            logger.warning('Return string not understood: ' + return_str)
-            return -1
+        if (self.last_cycle_check is not None
+            and time() - self.t_last_cycle_check < self.t_recheck_cycles):
+
+            self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
+            sleep(0.08)
+            return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+
+            try:
+                self._latest_charge_cycles = int(return_str.rstrip()[5:])
+            except:
+                logger.warning('Return string not understood: ' + return_str)
+                self._latest_charge_cycles = -1
+        return self._latest_charge_cycles
 
     def get_voltage(self):
         """

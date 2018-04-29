@@ -3,6 +3,7 @@ from unittest.mock import patch
 import visa
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Numbers
+import warnings
 
 
 class MockVisa(VisaInstrument):
@@ -134,7 +135,18 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], 'ASRL2')
 
-        MockBackendVisaInstrument('name3', address='ASRL3@py')
+        # this one raises a warning
+        with warnings.catch_warnings(record=True) as w:
+            MockBackendVisaInstrument('name3', address='ASRL3@py')
+            self.assertTrue(len(w) == 1)
+            self.assertTrue('use the visalib' in str(w[-1].message))
+
         self.assertEqual(rm_mock.call_count, 3)
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL3')
+
+        # this one doesn't
+        MockBackendVisaInstrument('name4', address='ASRL4', visalib='@py')
+        self.assertEqual(rm_mock.call_count, 4)
+        self.assertEqual(rm_mock.call_args, (('@py',),))
+        self.assertEqual(address_opened[0], 'ASRL4')

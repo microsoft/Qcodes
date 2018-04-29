@@ -4,6 +4,9 @@ from functools import partial
 from .SD_Module import *
 
 
+model_channels = {'M3201A': 4,
+                  'M3300A': 4}
+
 class SD_AWG(SD_Module):
     """
     This is the general SD_AWG driver class that implements shared parameters and functionality among all PXIe-based
@@ -16,8 +19,11 @@ class SD_AWG(SD_Module):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
 
-    def __init__(self, name, chassis, slot, channels, triggers=8, **kwargs):
-        super().__init__(name, chassis, slot, triggers, **kwargs)
+    def __init__(self, name, model, chassis, slot, channels=None, triggers=8,
+                 **kwargs):
+        super().__init__(name, model, chassis, slot, triggers, **kwargs)
+        if channels is None:
+            channels = model_channels[self.model]
 
         # Create instance of keysight SD_AOU class
         self.awg = keysightSD1.SD_AOU()
@@ -355,19 +361,16 @@ class SD_AWG(SD_Module):
         value_name = 'configure clock output connector to {}'.format(status)
         return result_parser(value, value_name, verbose)
 
-    def config_trigger_io(self, direction, sync_mode, verbose=False):
+    def config_trigger_io(self, direction, verbose=False):
         """
         Configures the trigger connector/line direction and synchronization/sampling method
 
         Args:
             direction (int): input (1) or output (0)
-            sync_mode (int): sampling/synchronization mode
-                Non-synchronized mode   :   0   (trigger is sampled with internal 100 Mhz clock)
-                Synchronized mode       :   1   (trigger is sampled using CLK10)
         """
-        value = self.awg.triggerIOconfig(direction, sync_mode)
+        value = self.awg.triggerIOconfig(direction)
         status = 'input (1)' if direction == 1 else 'output (0)'
-        value_name = 'configure trigger io port to direction: {}, sync_mode: {}'.format(status, sync_mode)
+        value_name = 'configure trigger io port to direction: {}'.format(status)
         return result_parser(value, value_name, verbose)
 
     #
@@ -508,7 +511,8 @@ class SD_AWG(SD_Module):
         value_name = 'AWG from file. available_RAM'
         return result_parser(value, value_name, verbose)
 
-    def awg_from_array(self, awg_number, trigger_mode, start_delay, cycles, prescaler, waveform_type, waveform_data_a,
+    def awg_from_array(self, awg_number, trigger_mode, start_delay, cycles,
+                       prescaler, waveform_type, waveform_data_a,
                        waveform_data_b=None, padding_mode=0, verbose=False):
         """
         Provides a one-step method to load, queue and start a single waveform
@@ -517,7 +521,7 @@ class SD_AWG(SD_Module):
         Loads a waveform from array.
 
         Args:
-            awg_number (int): awg number where the waveform is queued
+            awg_number (int): awg output number where the waveform is queued
             trigger_mode (int): trigger method to launch the waveform
                 Auto                        :   0
                 Software/HVI                :   1
@@ -759,7 +763,8 @@ class SD_AWG(SD_Module):
         """
         wave = keysightSD1.SD_Wave()
         result = wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
-        result_parser(result)
+        # Do not parse result because the result integer may overflow to a
+        # negative number
         return wave
 
     @staticmethod

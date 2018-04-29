@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping, Iterable, Sequence
+import pyperclip
 import os
 from functools import partial
 import logging
@@ -17,7 +18,9 @@ from qcodes.data.data_array import DataArray
 
 from .base import BasePlot
 from qcodes.utils.threading import UpdaterThread
-
+import qcodes.config
+from qcodes.data.data_array import DataArray
+import numbers
 
 logger = logging.getLogger(__name__)
 
@@ -60,21 +63,24 @@ class MatPlot(BasePlot):
     max_subplot_columns = 3
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
-                 colorbar=True, **kwargs):
+                 colorbar=True, sharex=False, sharey=False, gridspec_kw=None,
+                 **kwargs):
         super().__init__(interval)
 
         if subplots is None:
             # Subplots is equal to number of args, or 1 if no args provided
             subplots = max(len(args), 1)
 
-        self._init_plot(subplots, figsize, num=num)
+        self._init_plot(subplots, figsize, num=num,
+                        sharex=sharex, sharey=sharey, gridspec_kw=gridspec_kw)
 
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
             if isinstance(arg, Sequence):
-                # Arg consists of multiple elements, add all to same subplot
-                for subarg in arg:
-                    self[k].add(subarg, colorbar=colorbar, **kwargs)
+                if len(arg) and not isinstance(arg[0], numbers.Number):
+                    # Arg consists of multiple elements, add all to same subplot
+                    for subarg in arg:
+                        self[k].add(subarg, colorbar=colorbar, **kwargs)
             else:
                 # Arg is single element, add to subplot
                 self[k].add(arg, colorbar=colorbar, **kwargs)
@@ -90,6 +96,12 @@ class MatPlot(BasePlot):
                                          interval=interval, max_threads=5)
             self.fig.canvas.mpl_connect('close_event', self.halt)
 
+        # ctrl+c copies current x, y coords
+        def handle_key_press(event):
+            if event.key == 'ctrl+c':
+                pyperclip.copy(f'({event.xdata}, {event.ydata})')
+        self.fig.canvas.mpl_connect('key_press_event', handle_key_press)
+
     def __getitem__(self, key):
         """
         Subplots can be accessed via indices.
@@ -101,11 +113,15 @@ class MatPlot(BasePlot):
         """
         return self.subplots[key]
 
-    def _init_plot(self, subplots=None, figsize=None, num=None):
+    def _init_plot(self, subplots=None, figsize=None, num=None,
+                   sharex=False, sharey=False, gridspec_kw=None):
         if isinstance(subplots, Mapping):
             if figsize is None:
                 figsize = (6, 4)
-            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, squeeze=False, **subplots)
+            self.fig, self.subplots = plt.subplots(
+                figsize=figsize, num=num, squeeze=False,
+                sharex=sharex, sharey=sharey, gridspec_kw=gridspec_kw,
+                **subplots)
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
@@ -125,7 +141,10 @@ class MatPlot(BasePlot):
 
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize,
-                                                   squeeze=False)
+                                                   squeeze=False,
+                                                   sharex=sharex,
+                                                   sharey=sharey,
+                                                   gridspec_kw=gridspec_kw)
 
         # squeeze=False ensures that subplots is always a 2D array independent
         # of the number of subplots.
@@ -166,6 +185,9 @@ class MatPlot(BasePlot):
                 without `z` we draw a scatter/lines plot (ax.plot):
                     `x`, `y`, and `fmt` (if present) are passed as positional
                     args
+
+        Returns:
+            Plot handle for trace
         """
         # TODO some way to specify overlaid axes?
         # Note that there is a conversion from subplot kwarg, which is
@@ -194,6 +216,8 @@ class MatPlot(BasePlot):
         if prev_default_title == self.title.get_text():
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
+
+        return plot_object
 
     def _update_labels(self, ax, config):
         for axletter in ("x", "y"):
@@ -301,7 +325,9 @@ class MatPlot(BasePlot):
                    zlabel=None,
                    xunit=None,
                    yunit=None,
-                    zunit=None,
+                   zunit=None,
+                   xerr=None,
+                   yerr=None,
                    **kwargs):
         # Add labels if DataArray is passed
         if 'label' not in kwargs and isinstance(y, DataArray):
@@ -313,7 +339,10 @@ class MatPlot(BasePlot):
         # stay part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
 
-        line, = ax.plot(*args, **kwargs)
+        if xerr is None and yerr is None:
+            line, = ax.plot(*args, **kwargs)
+        else:
+            line = ax.errorbar(*args, xerr=xerr, yerr=yerr, **kwargs)
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
@@ -326,6 +355,9 @@ class MatPlot(BasePlot):
                          nticks=None,
                          colorbar=True,
                          **kwargs):
+        # Remove all kwargs that are meant for line plots
+        for lineplot_kwarg in ['marker', 'linestyle', 'ms', 'xerr', 'yerr']:
+            kwargs.pop(lineplot_kwarg, None)
 
         # Add labels if DataArray is passed
         if 'label' not in kwargs and isinstance(z, DataArray):
@@ -379,7 +411,8 @@ class MatPlot(BasePlot):
                     arr_pad = arr_pad[:-1]
                     # C is allowed to be masked in pcolormesh but x and y are
                     # not so replace any empty data with nans
-                args.append(np.ma.filled(arr_pad, fill_value=np.nan))
+                arr_pad[np.isnan(arr_pad)] = np.nanmax(arr_pad)
+                args.append(arr_pad)
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask

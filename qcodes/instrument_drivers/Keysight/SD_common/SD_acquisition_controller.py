@@ -1,10 +1,10 @@
-import warnings
+from time import time
 
 from .SD_DIG import *
-from qcodes.instrument.parameter import MultiParameter, ManualParameter
 from qcodes.instrument.base import Instrument
 import numpy as np
 from qcodes import MultiParameter
+
 
 class AcquisitionController(Instrument):
     """
@@ -98,6 +98,7 @@ class AcquisitionController(Instrument):
             mask |= 1 << ch
         return mask
 
+
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name, keysight_name, **kwargs):
         """ 
@@ -108,35 +109,34 @@ class Triggered_Controller(AcquisitionController):
             channels (int)  : the number of input channels the specified card has
             triggers (int)  : the number of trigger inputs the specified card has
         """
-        # Set the average mode of the device
-        self._average_mode = kwargs.pop('average_mode', 'none')
         super().__init__(name, keysight_name, **kwargs)
 
         self.add_parameter(
             'average_mode',
-            parameter_class=ManualParameter,
-            initial_value=self._average_mode,
+            set_cmd=None,
+            initial_value='none',
             vals=Enum('none', 'point', 'trace'),
             docstring='The averaging mode used for acquisition, either none, point or trace'
         )
 
         self.add_parameter(
             'channel_selection',
-            parameter_class=ManualParameter,
+            set_cmd=None,
             vals=Anything(),
             docstring='The list of channels on which to acquire data.'
         )
 
         self.add_parameter(
             'trigger_channel',
-            vals=Enum(0, 1, 2, 3, 4, 5, 6, 7),
+            vals=Enum('trig_in', *range(8)),
             set_cmd=self.set_trigger_channel,
             docstring='The channel on which acquisition is triggered.'
         )
 
         self.add_parameter(
             'sample_rate',
-            vals=Numbers(),
+            vals=Numbers(min_value=1),
+            set_parser=lambda val: int(round(val)),
             set_cmd=self._set_all_prescalers,
             docstring='Sets the sample rate for all channels.'
         )
@@ -144,45 +144,67 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'trigger_edge',
             vals=Enum('rising', 'falling', 'both'),
-            val_mapping={'rising' : 1, 'falling' : 2, 'both' : 3},
             set_cmd=self.set_trigger_edge,
             docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
         )
 
+        self.add_parameter(
+            'trigger_delay',
+            vals=Numbers(),
+            initial_value=0,
+            set_cmd=lambda delay: [getattr(self._keysight, f'DAQ_trigger_delay_{ch}')(delay)
+                                   for ch in self.channel_selection()],
+            docstring='Sets the trigger delay before starting acquisition.'
+        )
+
 
         self.add_parameter(
-            'samples_per_record',
-            vals=Ints(),
+            'samples_per_trace',
+            vals=Numbers(min_value=1),
+            set_parser=lambda val: int(round(val)),
             set_cmd=self._set_all_points_per_cycle,
             docstring='The number of points to capture per trace.'
         )
 
         self.add_parameter(
             'traces_per_acquisition',
-            vals=Ints(),
+            vals=Numbers(min_value=1),
+            set_parser=lambda val: int(round(val)),
             set_cmd=self._set_all_n_cycles,
             docstring='The number of traces to capture per acquisition.'
         )
 
         self.add_parameter(
-            'samples_per_read',
-            parameter_class=ManualParameter,
-            vals=Ints(),
+            'traces_per_read',
+            set_cmd=None,
+            vals=Numbers(min_value=1),
+            set_parser=lambda val: int(round(val)),
             # set_cmd=self._set_all_n_points,
-            docstring='The number of points to get per read. '
+            docstring='The number of traces to get per read. '
                      'Can be use to break acquisition into multiple reads.'
         )
 
         self.add_parameter(
-            'read_timeout',
-            vals=Numbers(),
-            set_cmd=self._set_all_read_timeout,
+            'timeout',
+            vals=Numbers(min_value=0),
+            set_cmd=None,
+            unit='s',
+            docstring='The maximum time (s) spent trying to read a single channel.'
+                      'An acquisition request is sent every timeout_interval.'
+        )
+        self.add_parameter(
+            'timeout_interval',
+            vals=Numbers(min_value=0),
+            set_cmd=self._set_all_timeout,
+            unit='s',
             docstring='The maximum time (s) spent trying to read a single channel.'
         )
 
         # Set all channels to trigger by hardware
         for ch in range(8):
-            self._keysight.parameters['DAQ_trigger_mode_{}'.format(ch)].set(3)
+            self._keysight.parameters[f'DAQ_trigger_mode_{ch}'].set(3)
+
+        self.buffers = {}
 
     @property
     def trigger_threshold(self):
@@ -198,17 +220,23 @@ class Triggered_Controller(AcquisitionController):
         """
         self._keysight.parameters['trigger_edge_{}'.format(self.trigger_channel.get_latest())](edge)
 
-    def set_trigger_channel(self, tch):
+    def set_trigger_channel(self, trigger_channel):
         """
         Sets the source channel with which to trigger acquisition on.
 
         Args:
-            tch (int)   : the number of the trigger channel
+            trigger_channel (int)   : the number of the trigger channel
         """
-        for ch in self.channel_selection():
-            self._keysight.parameters['analog_trigger_mask_{}'.format(ch)].set(1<<tch)
+        if trigger_channel == 'trig_in':
+            for ch in self.channel_selection():
+                self._keysight[f'digital_trigger_source_']
+            # DAQdigitaltriggerconfig
+            # triggerIOconfig
+        else:
+            for ch in self.channel_selection():
+                self._keysight.parameters[f'analog_trigger_mask_{ch}'].set(1 << trigger_channel)
         # Ensure latest trigger edge setting for the current trigger channel
-        self.trigger_channel._save_val(tch)
+        self.trigger_channel._save_val(trigger_channel)
         try:
             self.trigger_edge(self.trigger_edge())
         except:
@@ -229,37 +257,59 @@ class Triggered_Controller(AcquisitionController):
         return self._keysight
 
     def acquire(self):
-        buffers = {ch: np.zeros((self.traces_per_acquisition.get_latest(),
-                                      self.samples_per_record.get_latest()))
+        # Initialize record of acquisition times
+        self.acquisition_times = [[] for ch in self.channel_selection()]
+        self.last_acquisition_time = time()
+
+        self.buffers = {ch: np.zeros((self.traces_per_acquisition(),
+                                      self.samples_per_trace()))
                         for ch in self.channel_selection()}
-        # total_points = self.traces_per_acquisition.get_latest() * self.samples_per_record.get_latest()
-        samples = self.traces_per_acquisition.get_latest()
-        for ch in self.channel_selection():
-            samples_retrieved = 0
-            ch_data = None
-            while (samples_retrieved < samples):
-                samples_to_get = min(self.samples_per_read.get_latest(), samples - samples_retrieved)
-                make_even = 1 if (self.samples_per_record.get_latest() % 2 == 1) else 0
-                n_points = samples_to_get * (self.samples_per_record.get_latest() + make_even)
-                self._keysight.parameters[f'n_points_{ch}'](n_points)
-                logger.debug(f'Trying to acquire {n_points} points from DAQ{ch}.')
-                ch_data_retrieved = self._keysight.daq_read(ch)
-                if (len(ch_data_retrieved) != 0):
-                    if (make_even == 1):
-                        ch_data_retrieved = ch_data_retrieved[:-1]
-                    samples_retrieved += samples_to_get
-                    if (np.any(ch_data) == None):
-                        ch_data = ch_data_retrieved
+
+        # We loop over channels first, even though it would make more sense to
+        # First loop over read iteration. The latter method gave two issues:
+        # scrambling of data between channels, and only getting data after
+        # timeout interval passed, resulting in very slow acquisitions.
+        for k, ch in enumerate(self.channel_selection()):
+            acquired_traces = 0
+            while acquired_traces < self.traces_per_acquisition():
+                traces_to_get = min(self.traces_per_read(),
+                                    self.traces_per_acquisition() - acquired_traces)
+
+                samples_to_get = traces_to_get * self.samples_per_trace()
+                # We need an even number of samples per read
+                samples_to_get_even = samples_to_get + samples_to_get % 2
+
+                self._keysight.parameters[f'n_points_{ch}'](samples_to_get_even)
+                logger.debug(f'Acquiring {samples_to_get} points from DAQ{ch}.')
+
+                t0 = time()
+                while time() - t0 < self.timeout():
+                    channel_data = self._keysight.daq_read(ch)
+                    if len(channel_data):
+                        break
                     else:
-                        ch_data = np.concatenate([ch_data, ch_data_retrieved], axis=0)
+                        logger.warning('No data acquired within timeout interval.'
+                                       ' SD_DIG.minimum_timeout_interval should'
+                                       ' be increased.')
                 else:
-                    raise RuntimeError(f'Could not acquire data on ch{ch} with read '
-                    f'timeout {self.read_timeout.get_latest():.3f}s')
-            for k, trace in enumerate(np.split(ch_data, samples)):
-                buffers[ch][k] = trace
-        # store most recent data in internal variable
-        self.buffers = buffers
-        return buffers
+                    raise RuntimeError(f'Could not acquire data on ch{ch}. '
+                                       f'Timeout {self.timeout():.3f}s')
+
+                # Record acquisition time
+                self.acquisition_times[k].append(time() - self.last_acquisition_time)
+                self.last_acquisition_time = time()
+
+                if samples_to_get % 2:
+                    # Remove final point needed to make samples per read even
+                    channel_data = channel_data[:-1]
+                # Segment read data to 2D array of traces
+                read_traces = channel_data.reshape((traces_to_get,
+                                                    self.samples_per_trace()))
+                self.buffers[ch][acquired_traces:acquired_traces+traces_to_get] = read_traces
+
+                acquired_traces += traces_to_get
+
+        return self.buffers
 
     def start(self):
         self._keysight.daq_start_multiple(self._ch_array_to_mask(self.channel_selection))
@@ -290,7 +340,7 @@ class Triggered_Controller(AcquisitionController):
         This method is called immediately after 'daq_start' is called
         """
         # n_points = self.traces_per_acquisition.get_latest() * \
-        #            self.samples_per_record.get_latest()
+        #            self.samples_per_trace.get_latest()
         # for ch in self.channel_selection():
         #     self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
         pass
@@ -358,6 +408,18 @@ class Triggered_Controller(AcquisitionController):
         for ch in self.channel_selection():
             self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
 
+    def _set_all_trigger_delay(self, n_points):
+        """
+        This method sets the channelised parameters for data acquisition
+        all at once. This must be set after channel_selection is modified.
+
+        Args:
+            n_points (int)  : the number of points to read per daq_read call
+
+        """
+        for ch in self.channel_selection():
+            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
+
     def _set_all_n_cycles(self, n_cycles):
         """
         This method sets the channelised parameters for data acquisition 
@@ -370,7 +432,7 @@ class Triggered_Controller(AcquisitionController):
         for ch in self.channel_selection():
             self._keysight.parameters['n_cycles_{}'.format(ch)].set(n_cycles)
 
-    def _set_all_read_timeout(self, timeout):
+    def _set_all_timeout(self, timeout):
         """
         This method sets the channelised parameters for data acquisition
         all at once. This must be set after channel_selection is modified.
@@ -378,12 +440,11 @@ class Triggered_Controller(AcquisitionController):
         Args:
             timeout (float)  : the maximum time (s) to wait for single channel read.
         """
-        timeout_ms = int(timeout*1000.0)
-        if timeout_ms == 0:
-            warnings.warn('Timeout of {} is too small, setting to 0 which disables'
-                          .format(timeout*1000.0) + 'timeout')
+        if timeout == 0:
+            warnings.warn(f'Timeout of {timeout} s is too small, '
+                          f'setting to 0 which disables timeout')
         for ch in self.channel_selection():
-            self._keysight.parameters['timeout_{}'.format(ch)].set(timeout_ms)
+            self._keysight.parameters[f'timeout_{ch}'].set(int(timeout*1e3))
 
     def __call__(self, *args, **kwargs):
         return "Triggered"
@@ -401,7 +462,7 @@ class KeysightAcquisitionParameter(MultiParameter):
             return ['']
         else:
             return tuple(['ch{}_signal'.format(ch) for ch in
-                          self.acquisition_controller.channel_selection])
+                          self.acquisition_controller.channel_selection()])
 
     @names.setter
     def names(self, names):
@@ -434,10 +495,10 @@ class KeysightAcquisitionParameter(MultiParameter):
             if average_mode == 'point':
                 shape = ()
             elif average_mode == 'trace':
-                shape = (self.acquisition_controller.samples_per_record.get_latest(),)
+                shape = (self.acquisition_controller.samples_per_trace.get_latest(),)
             else:
                 shape = (self.acquisition_controller.traces_per_acquisition.get_latest(),
-                         self.acquisition_controller.samples_per_record.get_latest())
+                         self.acquisition_controller.samples_per_trace.get_latest())
             return tuple([shape] * len(self.acquisition_controller.channel_selection))
         else:
             return tuple(() * len(self.names))
@@ -449,4 +510,4 @@ class KeysightAcquisitionParameter(MultiParameter):
 
     def get(self):
         data = self.acquisition_controller.do_acquisition()
-        return [data[ch] for ch in self.acquisition_controller.channel_selection]
+        return [data[ch] for ch in self.acquisition_controller.channel_selection()]

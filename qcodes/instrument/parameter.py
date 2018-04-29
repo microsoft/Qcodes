@@ -15,11 +15,13 @@ This file defines four classes of parameters:
 
 - ``Parameter`` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
+
     1. As an ``Instrument`` parameter that sends/receives commands. Provides a
        standardized interface to construct strings to pass to the
        instrument's ``write`` and ``ask`` methods
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
+
     Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
     settable parameter as the swept variable in a ``Loop``.
     The get/set functionality can be modified.
@@ -411,6 +413,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     t0 = time.perf_counter()
 
                     set_function(parsed_scaled_mapped_value, **kwargs)
+
+                    # Register if value changed
+                    val_changed = self.raw_value != parsed_scaled_mapped_value
+
                     self.raw_value = parsed_scaled_mapped_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
@@ -418,7 +424,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
 
-                    if self._snapshot_value:
+                    if self._snapshot_value and val_changed:
                         # Add to log
                         log_msg = f'parameter set to {val_step}'
                         if mapped_value != val_step:
@@ -654,12 +660,15 @@ class Parameter(_BaseParameter):
 
     By default only gettable, returning its last value.
     This behaviour can be modified in two ways:
+
     1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+
        a. callable, with zero args for get_cmd, one arg for set_cmd
        b. VISA command string
        c. None, in which case it retrieves its last value for ``get_cmd``,
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
+
     2. Creating a subclass with an explicit ``get``/``set`` method. This
        enables more advanced functionality.
 
@@ -769,7 +778,7 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str = instrument.ask if instrument else None
+                exec_str = getattr(instrument, 'ask', None)
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
             self.get = self._wrap_get(self.get_raw)
 
@@ -777,7 +786,7 @@ class Parameter(_BaseParameter):
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)
             else:
-                exec_str = instrument.write if instrument else None
+                exec_str = getattr(instrument, 'write', None)
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
             self.set = self._wrap_set(self.set_raw)
 

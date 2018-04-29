@@ -691,9 +691,9 @@ class ActiveLoop(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, thread=False, use_threads=False, quiet=False, station=None,
+    def run(self, thread=False, use_threads=False, quiet=True, station=None,
             progress_interval=False, set_active=True, save_metadata=True,
-            *args, **kwargs):
+            stop=True, *args, **kwargs):
         """
         Execute this loop.
 
@@ -708,6 +708,7 @@ class ActiveLoop(Metadatable):
                 seconds. If provided here, will override any interval provided
                 with the Loop definition
             save_metadata: save metadata of dataset
+            stop: stop Layout at the end (only used in SilQ).
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`
@@ -799,7 +800,8 @@ class ActiveLoop(Metadatable):
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             data_set.active = True
-            self._run_wrapper(set_active=set_active, save_metadata=save_metadata)
+            self._run_wrapper(set_active=set_active, save_metadata=save_metadata,
+                              stop=stop)
             ds = self.data_set
         except:
             log.exception('Loop exception')
@@ -859,7 +861,7 @@ class ActiveLoop(Metadatable):
                 # run(), but it is saved to the metadata
                 ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 self.data_set.add_metadata({'loop': {'ts_end': ts}})
-                self.data_set.finalize(save_metadata=save_metadata)
+                self.data_set.finalize(write_metadata=save_metadata)
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -909,8 +911,9 @@ class ActiveLoop(Metadatable):
                 set_name = self.data_set.action_id_map[action_indices]
                 if hasattr(self.sweep_values, 'aggregate'):
                     value = self.sweep_values.aggregate(*set_val)
-                log.debug('Calling .store method of DataSet because '
-                          'sweep_values.parameters exist')
+                # below is useful but too verbose even at debug
+                # log.debug('Calling .store method of DataSet because '
+                #           'sweep_values.parameters exist')
                 self.data_set.store(new_indices, {set_name: value})
                 # set_val list of values to set [param1_setpoint, param2_setpoint ..]
                 for j, val in enumerate(set_val):
@@ -920,9 +923,9 @@ class ActiveLoop(Metadatable):
             else:
                 set_name = self.data_set.action_id_map[action_indices]
                 data_to_store[set_name] = value
-
-            log.debug('Calling .store method of DataSet because a sweep step'
-                      ' was taken')
+            # below is useful but too verbose even at debug
+            # log.debug('Calling .store method of DataSet because a sweep step'
+            #           ' was taken')
             self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
@@ -931,8 +934,9 @@ class ActiveLoop(Metadatable):
 
             try:
                 for f in callables:
-                    log.debug('Going through callables at this sweep step.'
-                              ' Calling {}'.format(f))
+                    # below is useful but too verbose even at debug
+                    # log.debug('Going through callables at this sweep step.'
+                    #           ' Calling {}'.format(f))
                     f(first_delay=delay,
                       loop_indices=new_indices,
                       current_values=new_values)
@@ -958,7 +962,6 @@ class ActiveLoop(Metadatable):
                         self.bg_task()
                     except _QcodesBreak:
                         log.error('QCodes break raise, stopping')
-                        print('print: QCodes break raise, stopping')
                         break
                     except Exception:
                         if self.last_task_failed:
@@ -970,16 +973,16 @@ class ActiveLoop(Metadatable):
 
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
+            log.debug('Running the background task one last time.')
             try:
-                log.debug('Running the background task one last time.')
                 self.bg_task()
             except _QcodesBreak:
                 pass
 
         # the loop is finished - run the .then actions
-        log.debug('Finishing loop, running the .then actions...')
+        #log.debug('Finishing loop, running the .then actions...')
         for f in self._compile_actions(self.then_actions, ()):
-            log.debug('...running .then action {}'.format(f))
+            #log.debug('...running .then action {}'.format(f))
             f()
 
         # run the bg_final_task from the bg_task:

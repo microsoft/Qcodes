@@ -3,6 +3,7 @@ import logging
 import time
 import warnings
 import weakref
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List
 
 from qcodes.instrument.parameter_node import ParameterNode
 from qcodes.utils.helpers import strip_attrs
@@ -25,10 +26,9 @@ class Instrument(ParameterNode):
     Base class for all QCodes instruments.
 
     Args:
-        name (str): an identifier for this instrument, particularly for
+        name: an identifier for this instrument, particularly for
             attaching it to a Station.
-
-        metadata (Optional[Dict]): additional static metadata to add to this
+        metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
 
@@ -51,28 +51,20 @@ class Instrument(ParameterNode):
 
     _all_instruments = {}
 
-    def __init__(self, name, testing=False, **kwargs):
+    def __init__(self, name: str,
+                 metadata: Optional[Dict]=None, **kwargs) -> None:
         self._t0 = time.time()
         if kwargs.pop('server_name', False):
             warnings.warn("server_name argument not supported any more",
                           stacklevel=0)
         super().__init__(name, **kwargs)
 
-        self._testing = testing
-
-        if testing:
-            if hasattr(type(self), "mocker_class"):
-                mocker_class = type(self).mocker_class
-                self.mocker = mocker_class(name)
-            else:
-                raise ValueError("Testing turned on but no mocker class defined")
-
         self.IDN = Parameter(get_cmd=self.get_idn,
                              vals=Anything())
 
         self.record_instance(self)
 
-    def get_idn(self):
+    def get_idn(self) -> Dict:
         """
         Parse a standard VISA '\*IDN?' response into an ID dict.
 
@@ -103,7 +95,8 @@ class Instrument(ParameterNode):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            logging.debug('Error getting or interpreting *IDN?: ' + repr(idstr))
+            log.debug('Error getting or interpreting *IDN?: '
+                      + repr(idstr))
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
@@ -127,14 +120,15 @@ class Instrument(ParameterNode):
             raise ValueError("Cannot get mock messages if not in testing mode")
         return self.mocker.get_log_messages()
 
-    def connect_message(self, idn_param='IDN', begin_time=None):
+    def connect_message(self, idn_param: str='IDN',
+                        begin_time: float=None) -> None:
         """
         Print a standard message on initial connection to an instrument.
 
         Args:
-            idn_param (str): name of parameter that returns ID dict.
+            idn_param: name of parameter that returns ID dict.
                 Default 'IDN'.
-            begin_time (number): time.time() when init started.
+            begin_time: time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't
@@ -163,7 +157,7 @@ class Instrument(ParameterNode):
         except:
             pass
 
-    def close(self):
+    def close(self) -> None:
         """
         Irreversibly stop this instrument and free its resources.
 
@@ -179,7 +173,7 @@ class Instrument(ParameterNode):
 
 
     @classmethod
-    def close_all(cls):
+    def close_all(cls) -> None:
         """
         Try to close all instruments registered in
         `_all_instruments` This is handy for use with atexit to
@@ -197,7 +191,7 @@ class Instrument(ParameterNode):
                 pass
 
     @classmethod
-    def record_instance(cls, instance):
+    def record_instance(cls, instance: 'Instrument') -> None:
         """
         Record (a weak ref to) an instance in a class's instance list.
 
@@ -205,7 +199,7 @@ class Instrument(ParameterNode):
         that there are no other instruments with the same name.
 
         Args:
-            instance (Instrument): Instance to record
+            instance: Instance to record
 
         Raises:
             KeyError: if another instance with the same name is already present
@@ -228,7 +222,7 @@ class Instrument(ParameterNode):
         cls._instances.append(wr)
 
     @classmethod
-    def instances(cls):
+    def instances(cls) -> List['Instrument']:
         """
         Get all currently defined instances of this instrument class.
 
@@ -236,7 +230,7 @@ class Instrument(ParameterNode):
         and it's also used by the test system to find objects to test against.
 
         Returns:
-            List[Instrument]]
+            A list of instances
         """
         if getattr(cls, '_type', None) is not cls:
             # only instances of a superclass - we want instances of this
@@ -245,12 +239,12 @@ class Instrument(ParameterNode):
         return [wr() for wr in getattr(cls, '_instances', []) if wr()]
 
     @classmethod
-    def remove_instance(cls, instance):
+    def remove_instance(cls, instance: 'Instrument') -> None:
         """
         Remove a particular instance from the record.
 
         Args:
-            instance (Union[Instrument])
+            The instance to remove
         """
         wr = weakref.ref(instance)
         if wr in cls._instances:
@@ -264,14 +258,14 @@ class Instrument(ParameterNode):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name, instrument_class=None):
+    def find_instrument(cls, name: str,
+                        instrument_class: Optional[type]=None) -> 'Instrument':
         """
         Find an existing instrument by name.
 
         Args:
-            name (str)
-            instrument_class (Optional[class]): The type of instrument
-                you are looking for.
+            name: name of the instrument
+            instrument_class: The type of instrument you are looking for.
 
         Returns:
             Union[Instrument]
@@ -300,7 +294,7 @@ class Instrument(ParameterNode):
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
 
-    def write(self, cmd):
+    def write(self, cmd: str) -> None:
         """
         Write a command string with NO response to the hardware.
 
@@ -309,22 +303,20 @@ class Instrument(ParameterNode):
         hardware communication should instead override ``write_raw``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
 
         Raises:
             Exception: wraps any underlying exception with extra context,
                 including the command and the instrument.
         """
         try:
-            if self._testing:
-                self.mocker.write(cmd)
-            else:
-                self.write_raw(cmd)
+            self.write_raw(cmd)
         except Exception as e:
-            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            inst = repr(self)
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + inst,)
             raise e
 
-    def write_raw(self, cmd):
+    def write_raw(self, cmd: str) -> None:
         """
         Low level method to write a command string to the hardware.
 
@@ -333,13 +325,13 @@ class Instrument(ParameterNode):
         override ``write``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
         """
         raise NotImplementedError(
             'Instrument {} has not defined a write method'.format(
                 type(self).__name__))
 
-    def ask(self, cmd):
+    def ask(self, cmd: str) -> str:
         """
         Write a command string to the hardware and return a response.
 
@@ -348,7 +340,7 @@ class Instrument(ParameterNode):
         hardware communication should instead override ``ask_raw``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
 
         Returns:
             response (str, normally)
@@ -358,18 +350,16 @@ class Instrument(ParameterNode):
                 including the command and the instrument.
         """
         try:
-            if self._testing:
-                answer = self.mocker.ask(cmd)
-            else:
-                answer = self.ask_raw(cmd)
+            answer = self.ask_raw(cmd)
 
             return answer
 
         except Exception as e:
-            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            inst = repr(self)
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + inst,)
             raise e
 
-    def ask_raw(self, cmd):
+    def ask_raw(self, cmd: str) -> None:
         """
         Low level method to write to the hardware and return a response.
 
@@ -378,7 +368,7 @@ class Instrument(ParameterNode):
         override ``ask``.
 
         Args:
-            cmd (str): the string to send to the instrument
+            cmd: the string to send to the instrument
         """
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(

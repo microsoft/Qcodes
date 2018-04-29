@@ -9,8 +9,8 @@ class SD_FPGA(SD_Module):
         This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
 
-    def __init__(self, name, chassis, slot, **kwargs):
-        super().__init__(name, chassis, slot, triggers=8, **kwargs)
+    def __init__(self, name, model, chassis, slot, **kwargs):
+        super().__init__(name, model, chassis, slot, triggers=8, **kwargs)
         # Open the device, using the specified chassis and slot number
         FPGA_name = self.SD_module.getProductNameBySlot(chassis, slot) + '_FPGA'
         if isinstance(FPGA_name, str):

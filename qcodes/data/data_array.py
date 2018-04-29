@@ -1,7 +1,9 @@
 import numpy as np
 import collections
+import warnings
 
-from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
+from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units, \
+    smooth
 
 
 class DataArray(DelegateAttributes):
@@ -367,7 +369,7 @@ class DataArray(DelegateAttributes):
         # Generate new set arrays
         sub_set_arrays = []
         for k, set_array in enumerate(self.set_arrays):
-            if set_array == self:
+            if set_array is self:
                 sub_set_array = self
             else:
                 sub_set_array = set_array[loop_indices[:set_array.ndim]]
@@ -405,27 +407,92 @@ class DataArray(DelegateAttributes):
         """
         return len(self.ndarray)
 
-    def mean(self, axis=None, dtype=None, out=None, **kwargs):
-        sub_array = np.nanmean(self, axis=axis, dtype=dtype, out=out, **kwargs)
-        if axis is None or self.ndim == 1:
+    def mean(self, axis=None, dtype=None, out=None,
+             min_filter=None, max_filter=None, **kwargs):
+        arr = self.ndarray.copy()
+
+        # Catch runtime warnings as we may compare NaN or take mean of all Nan's
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            if min_filter is not None:
+                arr[arr < min_filter] = np.nan
+            if max_filter is not None:
+                arr[arr > max_filter] = np.nan
+
+            if isinstance(axis, int):
+                sub_array = np.nanmean(arr, axis=axis, dtype=dtype, out=out, **kwargs)
+                axis = (axis, )
+            elif axis is not None:
+                for k, ax in enumerate(axis):
+                    arr = np.rollaxis(arr, ax, k)
+                reshaped_arr = np.reshape(arr, (-1,) + arr.shape[len(axis):])
+                sub_array = np.nanmean(reshaped_arr, axis=0, dtype=dtype, out=out, **kwargs)
+
+        if axis is None:
+            return np.nanmean(arr)
+        elif not isinstance(sub_array, np.ndarray):
             return sub_array
         else:
             sub_set_arrays = []
             for k, set_array in enumerate(self.set_arrays):
-                if k == axis:
+                if k in axis:
                     continue
                 else:
-                    if set_array.ndim > axis:
-                        loop_indices = [slice(None, None,
-                                              None)] * set_array.ndim
-                        loop_indices[axis] = 0
-                        sub_set_arrays.append(set_array[tuple(loop_indices)])
-                    else:
-                        sub_set_arrays.append(set_array)
+                    loop_indices = [slice(None, None, None)] * set_array.ndim
+                    for ax in axis:
+                        if ax < set_array.ndim:
+                            loop_indices[ax] = 0
+                    sub_set_arrays.append(set_array[tuple(loop_indices)])
             return DataArray(name=self.name, label=self.label, unit=self.unit,
                              is_setpoint=self.is_setpoint,
                              preset_data=sub_array,
                              set_arrays=sub_set_arrays)
+
+    def smooth(self, window_size, axis=-1, order=3, deriv=0, rate=1):
+        if len(self.shape) == 1:
+            smoothed_array = smooth(self.ndarray,
+                                    window_size=window_size,
+                                    order=order,
+                                    deriv=deriv,
+                                    rate=rate)
+
+
+        elif len(self.shape) == 2:
+            if axis == 0:
+                arr = self.ndarray.transpose()
+            else:
+                arr = self.ndarray
+            smoothed_array = np.array([smooth(row,
+                                              window_size=window_size,
+                                              order=order,
+                                              deriv=deriv,
+                                              rate=rate)
+                                       for row in arr])
+        else:
+            raise RuntimeError('Smoothing works for up to 2 dimensional arrays,'
+                               f'not {len(self.shape)}')
+
+        return DataArray(name=self.name, label=self.label, unit=self.unit,
+                         is_setpoint=self.is_setpoint,
+                         preset_data=smoothed_array,
+                         set_arrays=self.set_arrays)
+
+    def unroll(self, *axes):
+        """ Return  a list containing all elements along an axis.
+        
+        If multiple axes are passed, each element in the list is again unrolled
+        by the second axis, etc.
+        """
+        axis = axes[0]
+        elems = self.shape[axis]
+        leading_indices = (slice(None),)*axis
+        unrolled_arr = [self[leading_indices + (elem,)] for elem in range(elems)]
+
+        if len(axes) > 1:
+            unrolled_arr = [subarr.unroll(*axes[1:]) for subarr in unrolled_arr]
+
+        return unrolled_arr
+
 
     def flat_index(self, indices, index_fill=None):
         """
