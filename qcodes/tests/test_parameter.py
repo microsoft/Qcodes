@@ -71,10 +71,6 @@ class MemoryParameter(Parameter):
 
 
 class TestParameter(TestCase):
-    def test_no_name(self):
-        with self.assertRaises(TypeError):
-            Parameter()
-
     def test_default_attributes(self):
         # Test the default attributes, providing only a name
         name = 'repetitions'
