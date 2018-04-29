@@ -1,6 +1,7 @@
 import logging
 from typing import Sequence, Any
 import numpy as np
+from functools import partial, wraps
 
 from qcodes.utils.helpers import DelegateAttributes, full_class
 from qcodes.utils.metadata import Metadatable
@@ -11,7 +12,30 @@ from qcodes.instrument.function import Function
 logger = logging.getLogger(__name__)
 
 
-class ParameterNode(Metadatable, DelegateAttributes):
+def parameter(fun):
+    def parameter_decorator(self, *args, **kwargs):
+        return fun(self, *args, **kwargs)
+    return parameter_decorator
+
+
+class ParameterNodeMetaClass(type):
+    def __new__(meta, name, bases, dct):
+        dct['_parameter_get_decorators'] = {}
+        dct['_parameter_set_decorators'] = {}
+        for attr in list(dct):
+            val = dct[attr]
+            if getattr(val, '__name__', None) == 'parameter_decorator':
+                if attr.endswith('_get'):
+                    dct['_parameter_get_decorators'][attr[:-4]] = val
+                elif attr.endswith('_set'):
+                    dct['_parameter_set_decorators'][attr[:-4]] = val
+                else:
+                    raise SyntaxError('parameter decorators must end with `get` or `set`')
+                dct.pop(attr)
+        return super(ParameterNodeMetaClass, meta).__new__(meta, name, bases, dct)
+
+
+class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMetaClass):
     """ Container for parameters
 
     The ParameterNode is a container for `Parameters`, and is primarily used for
@@ -40,6 +64,9 @@ class ParameterNode(Metadatable, DelegateAttributes):
 
     parameters = {}
     parameter_nodes = {}
+
+    _parameter_get_decorators = {}
+    _parameter_set_decorators = {}
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
@@ -86,6 +113,16 @@ class ParameterNode(Metadatable, DelegateAttributes):
     def __setattr__(self, attr, val):
         if isinstance(val, _BaseParameter):
             self.parameters[attr] = val
+
+            if attr in self._parameter_get_decorators:
+                val.get_raw = partial(self._parameter_get_decorators[attr], self, val)
+                if val.wrap_get:
+                    val.get = val._wrap_get(val.get_raw)
+            if attr in self._parameter_set_decorators:
+                # Overwriting set decorator
+                val.set_raw = partial(self._parameter_set_decorators[attr], self, val)
+                if val.wrap_set:
+                    val.set = val._wrap_set(val.set_raw)
             if val.name == 'None':
                 # Parameter has been created without name, update name to attr
                 val.name = attr

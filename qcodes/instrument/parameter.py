@@ -102,12 +102,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
         snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
-        wrap_get (Optional[bool]): Wrap get method, adding features such as 
-            saving latest value, `val_mapping`, `get_parser`.  
+        wrap_get (Optional[bool]): Wrap get method, adding features such as
+            saving latest value, `val_mapping`, `get_parser`.
             Default True
-            
-        wrap_get (Optional[bool]): Wrap set method, adding features such as 
-            saving latest value, `val_mapping`, `set_parser`.  
+
+        wrap_get (Optional[bool]): Wrap set method, adding features such as
+            saving latest value, `val_mapping`, `set_parser`.
             Default True
 
         step (Optional[Union[int, float]]): max increment of parameter value.
@@ -213,6 +213,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
+        self.wrap_get = wrap_get
         if hasattr(self, 'get_raw') and wrap_get:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get') and wrap_get:
@@ -220,6 +221,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                           'be directly accessible. It is recommended to '
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
+        self.wrap_set = wrap_set
         if hasattr(self, 'set_raw') and wrap_set:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set') and wrap_set:
