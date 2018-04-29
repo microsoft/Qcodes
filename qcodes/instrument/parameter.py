@@ -825,7 +825,10 @@ class Parameter(_BaseParameter):
         Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
         """
-        return SweepFixedValues(self, keys)
+        if isinstance(keys, slice):
+            return SweepFixedValues(self, keys)
+        else:
+            raise SyntaxError('Parameter does not contain elements.')
 
     def increment(self, value):
         """ Increment the parameter with a value
