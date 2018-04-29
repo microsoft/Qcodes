@@ -73,7 +73,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                  use_as_attributes: bool = False,
                  **kwargs):
         self.use_as_attributes = use_as_attributes
-        self.name = name
+        if name is not None:
+            self.name = name
 
         self.parameters = DotDict()
         self.parameter_nodes = DotDict()
@@ -86,8 +87,11 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     def __repr__(self):
         repr_str = 'ParameterNode '
-        if self.name is not None:
-            repr_str += f'{self.name} '
+        if hasattr(self, 'name'):
+            if isinstance(self.name, _BaseParameter):
+                repr_str += f'{self.name()} '
+            else:
+                repr_str += f'{self.name} '
         repr_str += 'containing '
         if self.parameter_nodes:
             repr_str += f'{len(parameter_nodes)} nodes, '
@@ -139,7 +143,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 # perform a set without evaluating, which saves the value,
                 # ensuring that new modifications such as the set_parser are
                 # taken into account
-                val.set(val.get_latest(), evaluate=False)
+                if hasattr(val, 'set') and val.raw_value is not None:
+                    val.set(val.get_latest(), evaluate=False)
             if val.name == 'None':
                 # Parameter has been created without name, update name to attr
                 val.name = attr
@@ -150,7 +155,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     val.label = label
         elif isinstance(val, ParameterNode):
             self.parameter_nodes[attr] = val
-            if val.name is None:
+            if not hasattr(val, 'name'):
                 # Update nested ParameterNode name
                 val.name = attr
         elif attr in self.parameters:
@@ -288,7 +293,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         # function
         par_field_len = min(max(par_lengths)+1, 50)
 
-        print(str(self.name)+ ':')
+        if hasattr(self, 'name'):
+            print(str(self.name)+ ':')
         print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
         print('-'*max_chars)
         for par in sorted(snapshot['parameters']):
