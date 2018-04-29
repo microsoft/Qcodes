@@ -122,7 +122,7 @@ class TestParameterNode(TestCase):
                 self.val = val
 
             @parameter
-            def param1_validator(self, parameter, val):
+            def param1_vals(self, parameter, val):
                 return val > 32
 
         node = Node('node', use_as_attributes=True)
