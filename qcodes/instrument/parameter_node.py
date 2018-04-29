@@ -20,17 +20,20 @@ def parameter(fun):
 
 class ParameterNodeMetaClass(type):
     def __new__(meta, name, bases, dct):
-        dct['_parameter_get_decorators'] = {}
-        dct['_parameter_set_decorators'] = {}
+        dct['_parameter_decorators_get'] = {}
+        dct['_parameter_decorators_set'] = {}
+        dct['_parameter_decorators_vals'] = {}
         for attr in list(dct):
             val = dct[attr]
             if getattr(val, '__name__', None) == 'parameter_decorator':
                 if attr.endswith('_get'):
-                    dct['_parameter_get_decorators'][attr[:-4]] = val
+                    dct['_parameter_decorators_get'][attr[:-4]] = val
                 elif attr.endswith('_set'):
-                    dct['_parameter_set_decorators'][attr[:-4]] = val
+                    dct['_parameter_decorators_set'][attr[:-4]] = val
+                elif attr.endswith('_vals'):
+                    dct['_parameter_decorators_vals'][attr[:-5]] = val
                 else:
-                    raise SyntaxError('parameter decorators must end with `get` or `set`')
+                    raise SyntaxError('parameter decorators must end with `get`, `set`, or `vals`')
                 dct.pop(attr)
         return super(ParameterNodeMetaClass, meta).__new__(meta, name, bases, dct)
 
@@ -114,15 +117,18 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         if isinstance(val, _BaseParameter):
             self.parameters[attr] = val
 
-            if attr in self._parameter_get_decorators:
-                val.get_raw = partial(self._parameter_get_decorators[attr], self, val)
+            if attr in self._parameter_decorators_get:
+                val.get_raw = partial(self._parameter_decorators_get[attr], self, val)
                 if val.wrap_get:
                     val.get = val._wrap_get(val.get_raw)
-            if attr in self._parameter_set_decorators:
+            if attr in self._parameter_decorators_set:
                 # Overwriting set decorator
-                val.set_raw = partial(self._parameter_set_decorators[attr], self, val)
+                val.set_raw = partial(self._parameter_decorators_set[attr], self, val)
                 if val.wrap_set:
                     val.set = val._wrap_set(val.set_raw)
+            if attr in self._parameter_decorators_vals:
+                # Overwriting set decorator
+                val.vals = partial(self._parameter_decorators_vals[attr], self, val)
             if val.name == 'None':
                 # Parameter has been created without name, update name to attr
                 val.name = attr
