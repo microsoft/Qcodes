@@ -268,8 +268,7 @@ class SD_DIG(SD_Module):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
     
-    def __init__(self, name, model, chassis, slot, channels=None, triggers=8,
-                 **kwargs):
+    def __init__(self, name, model, chassis, slot, channels=None, triggers=8, **kwargs):
         """ Initialises a generic Signadyne digitizer and its parameters
 
             Args:
@@ -278,6 +277,8 @@ class SD_DIG(SD_Module):
                 triggers (int)  : the number of trigger inputs the specified card has
         """
         super().__init__(name, model, chassis, slot, triggers, **kwargs)
+
+
         if channels is None:
             channels = model_channels[self.model]
 
@@ -311,8 +312,8 @@ class SD_DIG(SD_Module):
 
         # for clockSetFrequency
         self.add_parameter(
-            'sys_frequency',
-            label='CLKsys frequency',
+            'system_frequency',
+            label='System clock frequency',
             vals=Ints(),
             set_cmd=self.SD_AIN.clockSetFrequency,
             get_cmd=self.SD_AIN.clockGetFrequency,
@@ -322,7 +323,7 @@ class SD_DIG(SD_Module):
         # for clockGetSyncFrequency
         self.add_parameter(
             'sync_frequency',
-            label='CLKsync frequency',
+            label='Clock synchronization frequency',
             vals=Ints(),
             get_cmd=self.SD_AIN.clockGetSyncFrequency,
             docstring='The frequency of internal CLKsync in Hz'
