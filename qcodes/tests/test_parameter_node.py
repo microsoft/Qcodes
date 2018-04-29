@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from qcodes.instrument.parameter_node import ParameterNode
+from qcodes.instrument.parameter_node import ParameterNode, parameter
 from qcodes.instrument.parameter import Parameter
 
 class TestParameterNode(TestCase):
@@ -65,3 +65,38 @@ class TestParameterNode(TestCase):
         parameter_node.nested = nested_explicit_parameter_node
         self.assertEqual(parameter_node.nested.name, 'explicit_name')
 
+    def test_parameter_node_decorator(self):
+        class Node(ParameterNode):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.val = 42
+                self.param1 = Parameter()
+
+            @parameter
+            def param1_get(self, parameter):
+                self.get_accessed = True
+                parameter.get_accessed = True
+
+                return self.val
+
+            @parameter
+            def param1_set(self, parameter, val):
+                self.set_accessed = True
+                parameter.set_accessed = True
+                self.val = val
+
+        node = Node('node', use_as_attributes=True)
+        self.assertIn('param1', node.parameters)
+        self.assertFalse(hasattr(node, 'get_accessed'))
+        self.assertFalse(hasattr(node['param1'], 'get_accessed'))
+        self.assertFalse(hasattr(node, 'set_accessed'))
+        self.assertFalse(hasattr(node['param1'], 'set_accessed'))
+
+        self.assertEqual(node.param1, 42)
+        self.assertTrue(hasattr(node, 'get_accessed'))
+        self.assertTrue(hasattr(node['param1'], 'get_accessed'))
+
+        node.param1 = 32
+        self.assertEqual(node.param1, 32)
+        self.assertTrue(hasattr(node, 'set_accessed'))
+        self.assertTrue(hasattr(node['param1'], 'set_accessed'))
