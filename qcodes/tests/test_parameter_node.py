@@ -100,3 +100,32 @@ class TestParameterNode(TestCase):
         self.assertEqual(node.param1, 32)
         self.assertTrue(hasattr(node, 'set_accessed'))
         self.assertTrue(hasattr(node['param1'], 'set_accessed'))
+
+    def test_parameter_node_decorator_validator(self):
+        class Node(ParameterNode):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.val = 42
+                self.param1 = Parameter()
+
+            @parameter
+            def param1_get(self, parameter):
+                self.get_accessed = True
+                parameter.get_accessed = True
+
+                return self.val
+
+            @parameter
+            def param1_set(self, parameter, val):
+                self.set_accessed = True
+                parameter.set_accessed = True
+                self.val = val
+
+            @parameter
+            def param1_validator(self, parameter, val):
+                return val > 32
+
+        node = Node('node', use_as_attributes=True)
+        with self.assertRaises(ValueError):
+            node.param1 = 31
+        node.param1 = 44
