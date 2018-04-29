@@ -18,23 +18,23 @@ def parameter(fun):
     return parameter_decorator
 
 
+parameter_attrs = ['get', 'set', 'vals', 'get_parser', 'set_parser']
 class ParameterNodeMetaClass(type):
     def __new__(meta, name, bases, dct):
-        dct['_parameter_decorators_get'] = {}
-        dct['_parameter_decorators_set'] = {}
-        dct['_parameter_decorators_validator'] = {}
+        dct['_parameter_decorators'] = {}
         for attr in list(dct):
             val = dct[attr]
             if getattr(val, '__name__', None) == 'parameter_decorator':
-                if attr.endswith('_get'):
-                    dct['_parameter_decorators_get'][attr[:-4]] = val
-                elif attr.endswith('_set'):
-                    dct['_parameter_decorators_set'][attr[:-4]] = val
-                elif attr.endswith('_validator'):
-                    dct['_parameter_decorators_validator'][attr[:-10]] = val
+                for parameter_attr in parameter_attrs:
+                    if attr.endswith('_'+parameter_attr):
+                        parameter_name = attr[:-len(parameter_attr)-1]
+                        attr_dict = dct['_parameter_decorators'].get(parameter_name, {})
+                        attr_dict[parameter_attr] = val
+                        dct['_parameter_decorators'][parameter_name] = attr_dict
+                        break
                 else:
-                    raise SyntaxError('parameter decorators must end with '
-                                      '`_get`, `_set`, or `_validator`')
+                    raise SyntaxError('Parameter decorator must end with '
+                                      '`_` + {parameter_attr} ')
                 dct.pop(attr)
         return super(ParameterNodeMetaClass, meta).__new__(meta, name, bases, dct)
 
@@ -68,9 +68,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     parameters = {}
     parameter_nodes = {}
-
-    _parameter_get_decorators = {}
-    _parameter_set_decorators = {}
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
@@ -120,18 +117,29 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         if isinstance(val, _BaseParameter):
             self.parameters[attr] = val
 
-            if attr in self._parameter_decorators_get:
-                val.get_raw = partial(self._parameter_decorators_get[attr], self, val)
-                if val.wrap_get:
-                    val.get = val._wrap_get(val.get_raw)
-            if attr in self._parameter_decorators_set:
-                # Overwriting set decorator
-                val.set_raw = partial(self._parameter_decorators_set[attr], self, val)
-                if val.wrap_set:
-                    val.set = val._wrap_set(val.set_raw)
-            if attr in self._parameter_decorators_validator:
-                # Overwriting set decorator
-                val.vals = partial(self._parameter_decorators_validator[attr], self, val)
+            if attr in self._parameter_decorators:
+                # Some methods have been defined in the ParameterNode as methods
+                # Using the @parameter decorator.
+                for param_attr, param_method in self._parameter_decorators[attr].items():
+                    method_with_args = partial(param_method, self, val)
+                    if param_attr == 'get':
+                        val.get_raw = method_with_args
+                        if val.wrap_get:
+                            val.get = val._wrap_get(val.get_raw)
+                        else:
+                            val.get = val.get_raw
+                    elif param_attr == 'set':
+                        val.set_raw = method_with_args
+                        if val.wrap_set:
+                            val.set = val._wrap_set(val.set_raw)
+                        else:
+                            val.set = val.set_raw
+                    else:
+                        setattr(val, param_attr, method_with_args)
+                # perform a set without evaluating, which saves the value,
+                # ensuring that new modifications such as the set_parser are
+                # taken into account
+                val.set(val.get_latest(), evaluate=False)
             if val.name == 'None':
                 # Parameter has been created without name, update name to attr
                 val.name = attr
