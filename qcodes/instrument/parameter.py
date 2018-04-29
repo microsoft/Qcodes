@@ -214,21 +214,29 @@ class _BaseParameter(Metadatable):
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         self.wrap_get = wrap_get
-        if hasattr(self, 'get_raw') and wrap_get:
-            self.get = self._wrap_get(self.get_raw)
-        elif hasattr(self, 'get') and wrap_get:
-            warnings.warn('Wrapping get method, original get method will not '
-                          'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
-            self.get = self._wrap_get(self.get)
+        if wrap_get:
+            if hasattr(self, 'get_raw'):
+                self.get = self._wrap_get(self.get_raw)
+            elif hasattr(self, 'get'):
+                warnings.warn('Wrapping get method, original get method will not '
+                              'be directly accessible. It is recommended to '
+                              'define get_raw in your subclass instead.' )
+                self.get = self._wrap_get(self.get)
+        elif hasattr(self, 'get_raw'):
+            self.get = self.get_raw
+
         self.wrap_set = wrap_set
-        if hasattr(self, 'set_raw') and wrap_set:
-            self.set = self._wrap_set(self.set_raw)
-        elif hasattr(self, 'set') and wrap_set:
-            warnings.warn('Wrapping set method, original set method will not '
-                          'be directly accessible. It is recommended to '
-                          'define set_raw in your subclass instead.' )
-            self.set = self._wrap_set(self.set)
+        if wrap_set:
+            if hasattr(self, 'set_raw'):
+                self.set = self._wrap_set(self.set_raw)
+            elif hasattr(self, 'set'):
+                warnings.warn('Wrapping set method, original set method will not '
+                              'be directly accessible. It is recommended to '
+                              'define set_raw in your subclass instead.' )
+                self.set = self._wrap_set(self.set)
+        elif hasattr(self, 'set_raw'):
+            self.set = self.set_raw
+
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
