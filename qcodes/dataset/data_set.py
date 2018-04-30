@@ -19,7 +19,7 @@ import warnings
 import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
+from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
                                         connect, create_run, get_parameters,
                                         get_experiments,
@@ -102,7 +102,7 @@ class Subscriber(Thread):
         BEGIN
             SELECT {self.callbackid}({param_sql});
         END;"""
-        atomicTransaction(self.conn, sql)
+        atomic_transaction(self.conn, sql)
         self.data: Queue = Queue()
         self._data_set_len = len(dataSet)
         super().__init__()
@@ -205,7 +205,7 @@ class DataSet(Sized):
         tabnam = self.table_name
         # TODO: is it better/faster to use the max index?
         sql = f'SELECT COUNT(*) FROM "{tabnam}"'
-        cursor = atomicTransaction(self.conn, sql)
+        cursor = atomic_transaction(self.conn, sql)
         return one(cursor, 'COUNT(*)')
 
     @property
@@ -575,7 +575,7 @@ class DataSet(Sized):
         Remove all subscribers
         """
         sql = "select * from sqlite_master where type = 'trigger';"
-        triggers = atomicTransaction(self.conn, sql).fetchall()
+        triggers = atomic_transaction(self.conn, sql).fetchall()
         with atomic(self.conn):
             for trigger in triggers:
                 self._remove_trigger(trigger['name'])
