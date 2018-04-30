@@ -4,6 +4,9 @@ Test suite for parameter
 from collections import namedtuple
 from unittest import TestCase
 from time import sleep
+import weakref
+import gc
+from copy import copy, deepcopy
 
 import numpy as np
 from hypothesis import given
@@ -835,17 +838,87 @@ class TestInstrumentRefParameter(TestCase):
 
 
 class TestParameterSignal(TestCase):
+    def save_args_kwargs(self, *args, **kwargs):
+        self.args_kwargs_dict['args'] = args
+        self.args_kwargs_dict['kwargs'] = kwargs
+
+    def setUp(self):
+        self.args_kwargs_dict = {}
+
+        self.source_parameter = Parameter(name='source', set_cmd=None,
+                                          initial_value=42)
+
+        self.target_parameter = Parameter(name='target', set_cmd=None,
+                                          initial_value=43)
+
     def test_parameter_link_function(self):
-        source_parameter = Parameter(name='source', set_cmd=None,
-                                     initial_value=42)
+        self.source_parameter.link(self.save_args_kwargs)
 
-        args_kwargs_dict = {}
-        def save_args_kwargs(*args, **kwargs):
-            args_kwargs_dict['args'] = args
-            args_kwargs_dict['kwargs'] = kwargs
+        self.source_parameter(41)
+        self.assertEqual(self.args_kwargs_dict['args'], (41,))
+        self.assertEqual(self.args_kwargs_dict['kwargs'], {})
 
-        source_parameter.link(save_args_kwargs)
+    def test_parameter_link_parameter(self):
+        self.source_parameter.link(self.target_parameter)
+        self.assertEqual(self.target_parameter(), 43)
 
-        source_parameter(41)
-        self.assertEqual(args_kwargs_dict['args'], (41,))
-        self.assertEqual(args_kwargs_dict['kwargs'], {})
+        self.source_parameter(41)
+        self.assertEqual(self.target_parameter(), 41)
+
+        self.target_parameter(43)
+        self.assertEqual(self.target_parameter(), 43)
+
+    def test_delete_parameter(self):
+        target_ref = weakref.ref(self.target_parameter)
+
+        del self.target_parameter
+        gc.collect()
+        self.assertIsNone(target_ref())
+
+    def test_delete_linked_parameter(self):
+        self.source_parameter.link(self.target_parameter)
+
+        target_ref = weakref.ref(self.target_parameter)
+
+        del self.target_parameter
+        gc.collect()
+        self.assertIsNone(target_ref())
+
+    def test_delete_linked_parameter_set(self):
+        self.source_parameter.link(self.target_parameter)
+        self.source_parameter(41)
+        self.assertEqual(self.target_parameter(), 41)
+
+        target_ref = weakref.ref(self.target_parameter)
+        self.assertEqual(len(self.source_parameter.signal.receivers), 1)
+
+        del self.target_parameter
+        gc.collect()
+        self.assertIsNone(target_ref())
+        self.assertEqual(len(self.source_parameter.signal.receivers), 0)
+
+    def test_deepcopied_source_parameter(self):
+        self.source_parameter.link(self.target_parameter)
+        deepcopied_source_parameter = deepcopy(self.source_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        deepcopied_source_parameter(41)
+        self.assertEqual(self.source_parameter(), 42)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(41)
+        self.assertEqual(self.target_parameter(), 41)
+        self.assertEqual(deepcopied_source_parameter(), 42)
+
+    def test_copied_source_parameter(self):
+        self.source_parameter.link(self.target_parameter)
+        copied_source_parameter = copy(self.source_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        copied_source_parameter(41)
+        self.assertEqual(self.source_parameter(), 42)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(41)
+        self.assertEqual(self.target_parameter(), 41)
+        self.assertEqual(copied_source_parameter(), 42)
