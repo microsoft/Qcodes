@@ -728,7 +728,7 @@ class AWG70000A(VisaInstrument):
         return binary_out
 
     @staticmethod
-    def makeSEQXFileFromForgedSequence(
+    def make_SEQX_from_forged_sequence(
             seq: Dict[str, Dict],
             amplitudes: List[float],
             seqname: str,
