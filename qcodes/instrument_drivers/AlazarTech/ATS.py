@@ -426,7 +426,9 @@ class AlazarTech_ATS(Instrument):
             None
         """
         # region set parameters from args
-
+        warnings.warn("Alazar config is deprecated. Please replace with setting "
+                      "of paramters directly with the syncing context manager",
+                      stacklevel=2)
         self._set_if_present('clock_source', clock_source)
         self._set_if_present('sample_rate', sample_rate)
         self._set_if_present('external_sample_rate', external_sample_rate)
