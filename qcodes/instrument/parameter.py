@@ -127,7 +127,7 @@ def __deepcopy__(self, memodict={}):
         self.signal = signal
 
 
-class _BaseParameter(Metadatable, DeferredOperations):
+class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
