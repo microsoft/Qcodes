@@ -76,7 +76,13 @@ class VisaInstrument(Instrument):
 
         self.visabackend = None
 
-        self.set_address(address)
+        try:
+            self.set_address(address)
+        except Exception as e:
+            log.info(f"Could not connect to {name} instrument at {address}")
+            self.close()
+            raise e
+
         if device_clear:
             self.device_clear()
 
@@ -206,7 +212,7 @@ class VisaInstrument(Instrument):
             str: The instrument's response.
         """
         log.debug("Querying instrument {}: {}".format(self.name, cmd))
-        return self.visa_handle.ask(cmd)
+        return self.visa_handle.query(cmd)
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str] = None):

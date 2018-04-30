@@ -55,13 +55,16 @@ setup(name='qcodes',
       # packages=find_packages(exclude=["*.tests", "tests"]),
       packages=find_packages(),
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
-                               'monitor/dist/css/*', 'config/*.json']},
+                               'monitor/dist/css/*', 'config/*.json',
+                               'instrument/sims/*.yaml',
+                               'tests/dataset/fixtures/2018-01-17/*/*']},
       install_requires=[
           'numpy>=1.10,<1.14',
           'pyvisa>=1.8',
           'h5py>=2.6',
           'websockets>=3.2',
-          'jsonschema'
+          'jsonschema',
+          'pyzmq'
       ],
 
       test_suite='qcodes.tests',

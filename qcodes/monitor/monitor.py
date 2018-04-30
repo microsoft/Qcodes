@@ -20,10 +20,12 @@ import socketserver
 import webbrowser
 import datetime
 from copy import deepcopy
+from contextlib import suppress
 
 from threading import Thread
-from typing import Dict
+from typing import Dict, Any
 from asyncio import CancelledError
+import functools
 
 import websockets
 
@@ -32,14 +34,14 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters) -> Dict[float, list]:
+def _get_metadata(*parameters) -> Dict[str, Any]:
     """
     Return a dict that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     ts = time.time()
     # group meta data by instrument if any
-    metas = {}
+    metas = {} # type: Dict
     for parameter in parameters:
         _meta = getattr(parameter, "_latest", None)
         if _meta:
@@ -59,11 +61,11 @@ def _get_metadata(*parameters) -> Dict[float, list]:
         accumulator = metas.get(str(baseinst), [])
         accumulator.append(meta)
         metas[str(baseinst)] = accumulator
-    parameters = []
+    parameters_out = []
     for instrument in metas:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
-        parameters.append(temp)
-    state = {"ts": ts, "parameters": parameters}
+        parameters_out.append(temp)
+    state = {"ts": ts, "parameters": parameters_out}
     return state
 
 
@@ -109,6 +111,7 @@ class Monitor(Thread):
         time.sleep(0.01)
         super().__init__()
         self.loop = None
+        self._parameters = parameters
         self._monitor(*parameters, interval=interval)
         Monitor.running = self
 
@@ -120,18 +123,30 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         self.loop_is_closed = False
         asyncio.set_event_loop(self.loop)
-        server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
-        self.server = self.loop.run_until_complete(server_start)
-        self.loop.run_forever()
-        log.debug("loop stopped")
-        log.debug("Pending tasks at close: {}".format(
-            asyncio.Task.all_tasks(self.loop)))
-        self.loop.close()
-        while not self.loop.is_closed():
-            log.debug("waiting for loop to stop and close")
-            time.sleep(0.01)
-        self.loop_is_closed = True
-        log.debug("loop closed")
+        try:
+            server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
+            self.server = self.loop.run_until_complete(server_start)
+            self.loop.run_forever()
+        except OSError as e:
+            # The code above may throw an OSError
+            # if the socket cannot be bound
+            log.exception(e)
+        finally:
+            log.debug("loop stopped")
+            log.debug("Pending tasks at close: {}".format(
+                asyncio.Task.all_tasks(self.loop)))
+            self.loop.close()
+            while not self.loop.is_closed():
+                log.debug("waiting for loop to stop and close")
+                time.sleep(0.01)
+            self.loop_is_closed = True
+            log.debug("loop closed")
+
+    def update_all(self):
+        for p in self._parameters:
+            # call get if it can be called without arguments
+            with suppress(TypeError):
+                p.get()
 
     def stop(self) -> None:
         """
@@ -156,11 +171,15 @@ class Monitor(Thread):
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
-        asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+        try:
+            asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+        except RuntimeError as e:
+            # the above may throw a runtime error if the loop is already
+            # stopped in which case there is nothing more to do
+            log.exception("Could not close loop")
         while not self.loop_is_closed:
             log.debug("waiting for loop to stop and close")
             time.sleep(0.01)
-
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
