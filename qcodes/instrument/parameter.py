@@ -62,6 +62,7 @@ import warnings
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
 from functools import partial, wraps
 import numpy
+from blinker import Signal
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
@@ -157,6 +158,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
+    # Signal used for connecting to parameter via Parameter.link method
+    signal = None
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
@@ -410,6 +414,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
                     set_function(parsed_scaled_mapped_value, **kwargs)
 
+                    # Send a signal if anything is connected
+                    if self.signal is not None:
+                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
+
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value
 
@@ -645,6 +653,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
+
+    def link(self, callable):
+        if self.signal is None:
+            self.signal = Signal()
+        self.signal.connect(callable)
 
 
 class Parameter(_BaseParameter):
