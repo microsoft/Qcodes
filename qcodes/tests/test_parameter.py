@@ -1037,3 +1037,8 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.source_parameter(), 1)
         self.assertEqual(self.target_parameter(), 123)
         self.assertEqual(self.second_target_parameter(), 123)
+
+    def test_config_link(self):
+        # Note that config links only work in silq, since it relies on the
+        # SubConfig, and so we only test here that it doesn't raise an error
+        config_parameter = Parameter('config', config_link='pulses.duration')

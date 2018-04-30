@@ -227,7 +227,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None
+                 delay: Optional[Union[int, float]]=None,
                  config_link: str = None):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
@@ -309,11 +309,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self.log = logging.getLogger(str(self))
 
         if config_link is not None:
-            try:
+            if 'user' in config and hasattr(config.user, 'signal'):
                 config.user.signal.connect(self, sender=config_link)
-            except:
-                logging.warning(f'Could not attach {self} to config path {config_link}')
-
 
     def __copy__(self):
         return self.__deepcopy__()
