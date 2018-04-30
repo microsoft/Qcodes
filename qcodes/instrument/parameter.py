@@ -64,6 +64,7 @@ from functools import partial, wraps
 import numpy
 from blinker import Signal
 
+from qcodes import config
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
@@ -226,11 +227,13 @@ class _BaseParameter(Metadatable, SignalEmitter):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None):
+                 delay: Optional[Union[int, float]]=None
+                 config_link: str = None):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
 
-        super(_BaseParameter, self).__init__(metadata)
+        Metadatable.__init__(self, metadata)
+        SignalEmitter.__init__(self)
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -304,6 +307,13 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self._t_last_set = time.perf_counter()
 
         self.log = logging.getLogger(str(self))
+
+        if config_link is not None:
+            try:
+                config.user.signal.connect(self, sender=config_link)
+            except:
+                logging.warning(f'Could not attach {self} to config path {config_link}')
+
 
     def __copy__(self):
         return self.__deepcopy__()

@@ -6,7 +6,6 @@ class Metadatable:
     def __init__(self, metadata=None):
         self.metadata = {}
         self.load_metadata(metadata or {})
-        super().__init__()
 
     def load_metadata(self, metadata):
         """
