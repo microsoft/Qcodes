@@ -4,6 +4,7 @@ Test suite for parameter
 from collections import namedtuple
 from unittest import TestCase
 from time import sleep
+from copy import copy, deepcopy
 
 import numpy as np
 from hypothesis import given
@@ -832,3 +833,27 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+
+class TestCopyParameter(TestCase):
+    def test_copy_parameter(self):
+        p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+        p2 = copy(p1)
+
+        p2(41)
+
+        self.assertEqual(p1.raw_value, 42)
+        self.assertEqual(p1(), 42)
+        self.assertEqual(p2.raw_value, 41)
+        self.assertEqual(p2(), 41)
+
+    def test_deepcopy_parameter(self):
+        p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+        p2 = deepcopy(p1)
+
+        p2(41)
+
+        self.assertEqual(p1.raw_value, 42)
+        self.assertEqual(p1(), 42)
+        self.assertEqual(p2.raw_value, 41)
+        self.assertEqual(p2(), 41)
