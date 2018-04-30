@@ -53,7 +53,7 @@ This file defines four classes of parameters:
 # if everyone is happy to use these classes.
 
 from datetime import datetime, timedelta
-from copy import copy
+from copy import copy, deepcopy
 import time
 import logging
 import os
@@ -62,11 +62,13 @@ import warnings
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
 from functools import partial, wraps
 import numpy
+from blinker import Signal
 
+from qcodes import config
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
-                                  warn_units)
+                                  warn_units, SignalEmitter)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum
@@ -77,7 +79,53 @@ if TYPE_CHECKING:
     from .base import Instrument
 
 
-class _BaseParameter(Metadatable):
+def __deepcopy__(self, memodict={}):
+    """Custom __deepcopy__ method, added to BaseParameter upon instantiation.
+    This workaround solves the following issues with (deep)copying a parameter:
+
+    1. Certain attributes cannot be copied, such as `_BaseParameter.log`.
+       We solve this by temporarily removing the attribute and then adding
+       it later again
+    2. copying a wrapped get/set still uses the original parameter as self.
+       The result is that setting the copied parameter changes the value of the
+       original parameter instead.
+       This is solved by rewrapping the get/set
+    3. creating a class method __deepcopy__ does not allow access to the default
+       deepcopy behaviour.
+       This is solved by temporarily deleting self.__deepcopy__, and
+       then calling deepcopy(self), which invokes the original behaviour.
+       We then reattach  self.__deepcopy__, ensuring that this method is again
+       called the next time. It's a nasty hack, but unfortunately deepcopy does
+       not accept a flag to trigger the default/custom copy behaviour.
+       We also place __deepcopy__ as a separate function which is attached
+       during object instantiation, as it then belongs to the object scope, not
+       the class scope. This ensures that the __deepcopy__ of other parameters
+       is not affected.
+    4. During copy, __copy__ is only checked in the class scope. We still want
+       the behaviour of __copy__ to be the same as __deepcopy__, which we solve
+       by creating a method __copy__ which then invokes this __deepcopy__.
+
+    If anyone finds a better solution, please do change this code.
+    """
+    deepcopy_method = self.__deepcopy__
+    signal = self.signal
+    try:
+        del self.__deepcopy__
+        self.signal = None
+        self_copy = deepcopy(self)
+        self_copy.__deepcopy__ = deepcopy_method
+        if self_copy.wrap_get and hasattr(self_copy, 'get_raw'):
+            self_copy.get = self_copy._wrap_get(self_copy.get_raw)
+        if self_copy.wrap_set and hasattr(self_copy, 'set_raw'):
+            self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+        self_copy._signal_chain = []
+        return self_copy
+    finally:
+        self.__deepcopy__ = deepcopy_method
+        self.signal = signal
+
+
+class _BaseParameter(Metadatable, SignalEmitter):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -174,8 +222,13 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None):
-        super().__init__(metadata)
+                 delay: Optional[Union[int, float]]=None,
+                 config_link: str = None):
+        # Create __deepcopy__ in the object scope (see documentation for details)
+        self.__deepcopy__ = partial(__deepcopy__, self)
+
+        Metadatable.__init__(self, metadata)
+        SignalEmitter.__init__(self)
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -221,6 +274,7 @@ class _BaseParameter(Metadatable):
                 warnings.warn('Wrapping get method, original get method will not '
                               'be directly accessible. It is recommended to '
                               'define get_raw in your subclass instead.' )
+                self.get_raw = self.get
                 self.get = self._wrap_get(self.get)
         elif hasattr(self, 'get_raw'):
             self.get = self.get_raw
@@ -233,10 +287,10 @@ class _BaseParameter(Metadatable):
                 warnings.warn('Wrapping set method, original set method will not '
                               'be directly accessible. It is recommended to '
                               'define set_raw in your subclass instead.' )
+                self.set_raw = self.set
                 self.set = self._wrap_set(self.set)
         elif hasattr(self, 'set_raw'):
             self.set = self.set_raw
-
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
@@ -247,7 +301,12 @@ class _BaseParameter(Metadatable):
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
+        if config_link is not None:
+            if 'user' in config and hasattr(config.user, 'signal'):
+                config.user.signal.connect(self, sender=config_link)
 
+    def __copy__(self):
+        return self.__deepcopy__()
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
@@ -380,7 +439,7 @@ class _BaseParameter(Metadatable):
 
     def _wrap_set(self, set_function):
         @wraps(set_function)
-        def set_wrapper(value, evaluate=True, **kwargs):
+        def set_wrapper(value, signal_chain=[], evaluate=True, **kwargs):
             try:
                 self.validate(value)
 
@@ -424,6 +483,17 @@ class _BaseParameter(Metadatable):
 
                     if evaluate:
                         set_function(parsed_scaled_mapped_value, **kwargs)
+
+                    # # Send a signal if anything is connected, unless
+                    if self.signal is not None:
+                        for receiver in self.signal.receivers.values():
+                            potential_emitter = getattr(receiver(), '__self__', None)
+                            if isinstance(potential_emitter, SignalEmitter):
+                                if not signal_chain:
+                                    potential_emitter._signal_chain = [self]
+                                else:
+                                    potential_emitter._signal_chain = signal_chain + [self]
+                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
 
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value
@@ -791,7 +861,7 @@ class Parameter(_BaseParameter):
                 if max_val_age is not None:
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
-                self.get_raw = lambda: self._latest['raw_value']
+                self.get_raw = self._get_raw_value
             else:
                 exec_str = getattr(instrument, 'ask', None)
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
@@ -843,6 +913,9 @@ class Parameter(_BaseParameter):
             return SweepFixedValues(self, keys)
         else:
             raise SyntaxError('Parameter does not contain elements.')
+
+    def _get_raw_value(self):
+        return self._latest['raw_value']
 
     def increment(self, value):
         """ Increment the parameter with a value
