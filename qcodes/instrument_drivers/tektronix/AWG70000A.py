@@ -1,16 +1,14 @@
-import xml.etree.ElementTree as ET
 import datetime as dt
-import numpy as np
 import struct
 import io
 import zipfile as zf
 import logging
 from functools import partial
-
-
-from typing import List, Sequence, Dict, Union, Optional, cast
+from typing import List, Sequence, Dict, Union, Optional
 import time
 
+import xml.etree.ElementTree as ET
+import numpy as np
 
 from qcodes import Instrument, VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
