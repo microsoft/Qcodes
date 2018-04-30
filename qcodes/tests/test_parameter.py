@@ -837,6 +837,30 @@ class TestInstrumentRefParameter(TestCase):
         del self.d
 
 
+class TestCopyParameter(TestCase):
+    def test_copy_parameter(self):
+        p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+        p2 = copy(p1)
+
+        p2(41)
+
+        self.assertEqual(p1.raw_value, 42)
+        self.assertEqual(p1(), 42)
+        self.assertEqual(p2.raw_value, 41)
+        self.assertEqual(p2(), 41)
+
+    def test_deepcopy_parameter(self):
+        p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
+        p2 = deepcopy(p1)
+
+        p2(41)
+
+        self.assertEqual(p1.raw_value, 42)
+        self.assertEqual(p1(), 42)
+        self.assertEqual(p2.raw_value, 41)
+        self.assertEqual(p2(), 41)
+
+
 class TestParameterSignal(TestCase):
     def save_args_kwargs(self, *args, **kwargs):
         self.args_kwargs_dict['args'] = args
