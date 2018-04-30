@@ -19,3 +19,5 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - pip:
+    - pywinusb
