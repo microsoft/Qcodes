@@ -12,7 +12,7 @@ from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
 import qcodes.instrument.sims as sims
 import qcodes.tests.drivers.auxiliary_files as auxfiles
 
-from broadbean.broadbean import InvalidForgedSequenceError
+from broadbean.sequence import InvalidForgedSequenceError
 
 visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG70000A.yaml@sim')
 
@@ -133,7 +133,7 @@ def test_WFMXHeader_failing(num_samples, markers_included):
 def test_seqxfilefromfs_failing(forged_sequence):
 
     # typing convenience
-    make_seqx = AWG70000A.makeSEQXFileFromForgedSequence
+    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
 
     # TODO: the number of channels is defined in the
     # forged_sequence fixture but used here
@@ -165,7 +165,7 @@ def test_seqxfilefromfs_failing(forged_sequence):
 def test_seqxfile_from_fs(forged_sequence):
 
     # typing convenience
-    make_seqx = AWG70000A.makeSEQXFileFromForgedSequence
+    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
 
     path_to_schema = auxfiles.__file__.replace('__init__.py',
                                                'awgSeqDataSets.xsd')
