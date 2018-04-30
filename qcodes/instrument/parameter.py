@@ -102,12 +102,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
         snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
-        wrap_get (Optional[bool]): Wrap get method, adding features such as 
-            saving latest value, `val_mapping`, `get_parser`.  
+        wrap_get (Optional[bool]): Wrap get method, adding features such as
+            saving latest value, `val_mapping`, `get_parser`.
             Default True
-            
-        wrap_get (Optional[bool]): Wrap set method, adding features such as 
-            saving latest value, `val_mapping`, `set_parser`.  
+
+        wrap_get (Optional[bool]): Wrap set method, adding features such as
+            saving latest value, `val_mapping`, `set_parser`.
             Default True
 
         step (Optional[Union[int, float]]): max increment of parameter value.
