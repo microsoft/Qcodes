@@ -8,7 +8,7 @@ import logging
 from functools import partial
 
 
-from typing import List, Sequence, Dict, Union, Optional
+from typing import List, Sequence, Dict, Union, Optional, cast
 import time
 
 
@@ -755,7 +755,7 @@ class AWG70000A(VisaInstrument):
 
     @staticmethod
     def make_SEQX_from_forged_sequence(
-            seq: Dict[str, Dict],
+            seq: Dict[int, Dict],
             amplitudes: List[float],
             seqname: str,
             channel_mapping: Optional[Dict[Union[str, int],
@@ -792,7 +792,8 @@ class AWG70000A(VisaInstrument):
                         chan_list.append(ch)
 
         if channel_mapping is None:
-            channel_mapping = {ch: ch for ch in chan_list}
+            channel_mapping = {ch: ch_ind+1
+                               for ch_ind, ch in enumerate(chan_list)}
 
         if len(set(chan_list)) != len(amplitudes):
             raise ValueError('Incorrect number of amplitudes provided.')
@@ -882,7 +883,7 @@ class AWG70000A(VisaInstrument):
         # Make the main .sml file
 
         asset_names: List[List[str]] = []
-        seqings: List[Dict[str, int]] = []
+        seqings = []
         subseq_positions: List[int] = []
         for pos1 in seq.keys():
             pos_seqs = seq[pos1]['sequencing']
