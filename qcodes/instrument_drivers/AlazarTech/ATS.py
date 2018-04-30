@@ -7,6 +7,7 @@ import warnings
 import sys
 
 from typing import List, Dict, Union, Tuple, cast, Sequence
+from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
@@ -520,6 +521,25 @@ class AlazarTech_ATS(Instrument):
         """
         if isinstance(parameter, AlazarParameter):
             parameter._set_updated()
+
+    @contextmanager
+    def syncing(self):
+        """
+        Context manager for syncing settings to Alazar card. It will
+        automatically call sync_settings_to_card at the end of the
+        context.
+
+        Example:
+            This is intended to be used around multiple parameter sets
+            to ensure syncing is done exactly once::
+
+                with alazar.syncing():
+                     alazar.trigger_source1('EXTERNAL')
+                     alazar.trigger_level1(100)
+        """
+
+        yield
+        self.sync_settings_to_card()
 
     def sync_settings_to_card(self) -> None:
         """
