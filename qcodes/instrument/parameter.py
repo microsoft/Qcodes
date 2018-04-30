@@ -436,8 +436,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def _wrap_set(self, set_function):
         @wraps(set_function)
-        def set_wrapper(value, **kwargs):
+        def set_wrapper(value, signal_chain=[], **kwargs):
             try:
+                if self in signal_chain:
+                    return
+
                 self.validate(value)
 
                 # In some cases intermediate sweep values must be used.
@@ -480,9 +483,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
                     set_function(parsed_scaled_mapped_value, **kwargs)
 
-                    # Send a signal if anything is connected
+                    # Send a signal if anything is connected, unless
                     if self.signal is not None:
-                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
+                        self.signal.send(parsed_scaled_mapped_value,
+                                         signal_chain=signal_chain + [self],
+                                         **kwargs)
 
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value

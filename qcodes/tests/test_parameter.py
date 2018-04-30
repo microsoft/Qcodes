@@ -946,3 +946,20 @@ class TestParameterSignal(TestCase):
         self.source_parameter(44)
         self.assertEqual(self.target_parameter(), 44)
         self.assertEqual(copied_source_parameter(), 41)
+
+    def test_circular_signalling(self):
+        self.set_calls = 0
+        def prevent_circular_signalling(val):
+            if self.set_calls > 10:
+                raise RecursionError('Too many set calls')
+
+        self.source_parameter = Parameter(name='source', set_cmd=None,
+                                          initial_value=42,
+                                          set_cmd=prevent_circular_signalling)
+
+        self.target_parameter = Parameter(name='target', set_cmd=None,
+                                          initial_value=43)
+
+        self.source_parameter.link(self.target_parameter)
+        self.target_parameter.link(self.source_parameter)
+
