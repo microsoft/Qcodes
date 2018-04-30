@@ -373,6 +373,9 @@ class Config():
 
     def __getitem__(self, name):
         val = self.current_config
+        if isinstance(name, int):
+            # When iterating through a dict, indices are passed instead
+            name = list(val)[name]
         for key in name.split('.'):
             val = val[key]
         return val
