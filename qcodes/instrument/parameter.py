@@ -108,9 +108,11 @@ def __deepcopy__(self, memodict={}):
     """
     deepcopy_method = self.__deepcopy__
     log = self.log
+    signal = self.signal
     try:
         del self.__deepcopy__
         del self.log
+        self.signal = None
         self_copy = deepcopy(self)
         self_copy.__deepcopy__ = deepcopy_method
         self_copy.log = log
@@ -122,6 +124,7 @@ def __deepcopy__(self, memodict={}):
     finally:
         self.__deepcopy__ = deepcopy_method
         self.log = log
+        self.signal = signal
 
 
 class _BaseParameter(Metadatable, DeferredOperations):

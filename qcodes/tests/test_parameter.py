@@ -943,6 +943,6 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.source_parameter(), 42)
         self.assertEqual(self.target_parameter(), 43)
 
-        self.source_parameter(41)
-        self.assertEqual(self.target_parameter(), 41)
-        self.assertEqual(copied_source_parameter(), 42)
+        self.source_parameter(44)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(copied_source_parameter(), 41)
