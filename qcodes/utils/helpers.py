@@ -596,9 +596,10 @@ class SignalEmitter:
     # Signal used for connecting to parameter via Parameter.connect method
     signal = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, initialize_signal=True):
         self._signal_chain = []
-        super().__init__(*args, **kwargs)
+        if initialize_signal:
+            self.signal = Signal()
 
     def connect(self, callable):
         """Connect a callable, which can be another SignalEmitter.

@@ -233,7 +233,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self.__deepcopy__ = partial(__deepcopy__, self)
 
         Metadatable.__init__(self, metadata)
-        SignalEmitter.__init__(self)
+        SignalEmitter.__init__(self, initialize_signal=False)
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
