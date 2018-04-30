@@ -832,3 +832,20 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+
+class TestParameterSignal(TestCase):
+    def test_parameter_link_function(self):
+        source_parameter = Parameter(name='source', set_cmd=None,
+                                     initial_value=42)
+
+        args_kwargs_dict = {}
+        def save_args_kwargs(*args, **kwargs):
+            args_kwargs_dict['args'] = args
+            args_kwargs_dict['kwargs'] = kwargs
+
+        source_parameter.link(save_args_kwargs)
+
+        source_parameter(41)
+        self.assertEqual(args_kwargs_dict['args'], (41,))
+        self.assertEqual(args_kwargs_dict['kwargs'], {})
