@@ -32,7 +32,7 @@ class USBHIDMixin:
 
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
-        
+
         if hid is None:
 
             raise ImportError(
