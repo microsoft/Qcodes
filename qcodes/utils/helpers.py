@@ -576,27 +576,10 @@ def smooth(y, window_size, order=3, deriv=0, rate=1):
     return np.convolve(m[::-1], y, mode='valid')
 
 
-class SignalEmitterLink:
-    """Link used by SignalEmitter when a callable is a SignalEmitter.
-
-     The purpose is to avoid infinite recursions when signal emitters are
-     attached to each other.
-
-    """
-    def __init__(self, callable):
-        self.signal_chain = []
-        self.callable = callable
-
-    def __call__(self, *args, **kwargs):
-        # Only call if callable hasn't been previously called to avoid recursion
-        if self.callable not in self.signal_chain:
-            return self.callable(*args, signal_chain=self.signal_chain, **kwargs)
-
-
 class SignalEmitter:
     """Class that allows other callables to connect to it listen for signals.
 
-    Callables can be attached to a SignalEmitter via SignalEmitter.link.
+    Callables can be attached to a SignalEmitter via SignalEmitter.connect.
     If the SignalEmitter calls SignalEmitter.signal.send(*args, **kwargs), any
     callables are called with the respective args and kwargs.
 
@@ -606,28 +589,52 @@ class SignalEmitter:
 
     Note:
         The SignalEmitter has protection against infinite recursions resulting
-        from signal emitters calling each other. This is done via the
-        SignalEmitterLink object. However, it does not protect against infinite
+        from signal emitters calling each other. This is done by keeping track
+        of the signal chain. However, it does not protect against infinite
         recursions from signals sent from objects that are not signal emitters.
     """
-    # Signal used for connecting to parameter via Parameter.link method
+    # Signal used for connecting to parameter via Parameter.connect method
     signal = None
 
-    def link(self, callable):
+    def __init__(self, *args, **kwargs):
+        self._signal_chain = []
+        super().__init__(*args, **kwargs)
+
+    def connect(self, callable):
+        """Connect a callable, which can be another SignalEmitter.
+
+        If a SignalEmitter is passed, the __call__ method is invoked.
+
+        Args:
+            Callable: Callable to be connected to this SignalEmitter's signal.
+        """
         if self.signal is None:
             self.signal = Signal()
 
         if not isinstance(callable, SignalEmitter):
             self.signal.connect(callable)
         else:
-            callable._link = SignalEmitterLink(callable)
-            self.signal.connect(callable._link)
+            self.signal.connect(callable._signal_call)
 
-    def unlink(self, callable):
+    def disconnect(self, callable):
+        """disconnect a callable from a SignalEmitter.
+
+        Note:
+            Does not raise error if callable is not connected in the first place
+            """
+        if isinstance(callable, SignalEmitter):
+            callable = callable._signal_call
+
         for receiver_ref in list(self.signal.receivers.values()):
             receiver = receiver_ref()
             if receiver == callable:
                 self.signal.disconnect(callable)
-            elif isinstance(receiver, SignalEmitterLink):
-                if receiver.callable == callable:
-                    self.signal.disconnect(receiver_ref())
+
+    def _signal_call(self, *args, **kwargs):
+        """Method that is called instead of standard __call__ for SignalEmitters
+
+        This method ensures that the actual __call__ is only invoked if this has
+        not previously been done during the signal chain.
+        """
+        if self not in self._signal_chain:
+            return self(*args, signal_chain=self._signal_chain, **kwargs)

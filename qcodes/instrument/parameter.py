@@ -67,7 +67,7 @@ from blinker import Signal
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
-                                  warn_units, SignalEmitter, SignalEmitterLink)
+                                  warn_units, SignalEmitter)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum
@@ -120,10 +120,7 @@ def __deepcopy__(self, memodict={}):
             self_copy.get = self_copy._wrap_get(self_copy.get_raw)
         if self_copy.wrap_set and hasattr(self_copy, 'set_raw'):
             self_copy.set = self_copy._wrap_set(self_copy.set_raw)
-        try:
-            delattr(self_copy, '_link')
-        except AttributeError:
-            pass
+        self_copy._signal_chain = []
         return self_copy
     finally:
         self.__deepcopy__ = deepcopy_method
@@ -233,7 +230,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
 
-        super().__init__(metadata)
+        super(_BaseParameter, self).__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -482,14 +479,15 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
                     set_function(parsed_scaled_mapped_value, **kwargs)
 
-                    # Send a signal if anything is connected, unless
+                    # # Send a signal if anything is connected, unless
                     if self.signal is not None:
                         for receiver in self.signal.receivers.values():
-                            if isinstance(receiver(), SignalEmitterLink):
+                            potential_emitter = getattr(receiver(), '__self__', None)
+                            if isinstance(potential_emitter, SignalEmitter):
                                 if not signal_chain:
-                                    receiver().signal_chain = [self]
+                                    potential_emitter._signal_chain = [self]
                                 else:
-                                    receiver().signal_chain = signal_chain + [self]
+                                    potential_emitter._signal_chain = signal_chain + [self]
                         self.signal.send(parsed_scaled_mapped_value, **kwargs)
 
                     # Register if value changed
