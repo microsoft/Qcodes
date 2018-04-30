@@ -1,7 +1,7 @@
 """
 A mixin module for USB Human Interface Device instruments
 """
-import pywinusb.hid as hid
+import os
 import time
 import struct
 
@@ -23,6 +23,16 @@ class USBHIDMixin:
     def __init__(self, instance_id: str=None, timeout: float=2, *args,
                  **kwargs) ->None:
         super().__init__(*args, **kwargs)
+
+        if os.name != 'nt':
+            raise ImportError("""This driver only works in Windows.""")
+
+        try:
+            import pywinusb.hid as hid
+        except ImportError:
+            raise ImportError("pywinusb is not installed. Please install "
+                              "it by typing 'pip install pywinusb' in a"
+                              "qcodes environment terminal")
 
         devs = hid.HidDeviceFilter(
             product_id=self.product_id,
