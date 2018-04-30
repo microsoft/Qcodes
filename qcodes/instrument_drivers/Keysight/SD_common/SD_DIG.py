@@ -1,9 +1,13 @@
+from typing import Callable, List, Union
+import numpy as np
+
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Enum, Ints, Anything
+from qcodes.utils import validators as vals
 from scipy.interpolate import interp1d
 
-from .SD_Module import *
+from .SD_Module import SD_Module, keysightSD1, result_parser
 
 
 # Functions to log method calls from the SD_AIN class
@@ -39,9 +43,38 @@ model_channels = {'M3300A': 8}
 
 
 class SignadyneParameter(Parameter):
-    def __init__(self, name, channel, get_cmd=None, get_function=None,
-                 set_cmd=False, set_function=None, set_args=None,
-                 vals=None, val_mapping=None, initial_value=None, **kwargs):
+    """Signadyne parameter designed to send keysightSD1 commands.
+
+    This parameter can function as a standard parameter, but can also be
+    associated with a specific keysightSD1 function.
+
+    Args:
+        name: Parameter name
+        channel: Signadyne channel (between 1 and n_channels)
+        get_cmd: Standard optional Parameter get function
+        get_function: keysightSD1 function to be called when getting the
+            parameter value. If set, get_cmd must be None.
+        set_cmd: Standard optional Parameter set function
+        set_function: keysightSD1 function to be called when setting the
+            parameter value. If set, set_cmd must be None.
+        set_args: Optional ancillary parameter names that are passed to
+            set_function. Used for some keysightSD1 functions need to pass
+            multiple parameters simultaneously. If set, the name of this
+            parameter must also be included in the appropriate index.
+        initial_value: initial value for the parameter. This does not actually
+            perform a set, so it does not call any keysightSD1 function.
+        **kwargs: Additional kwargs passed to Parameter
+    """
+    def __init__(self,
+                 name: str,
+                 channel: 'DigitizerChannel',
+                 get_cmd: Callable = None,
+                 get_function: Callable = None,
+                 set_cmd: Callable = False,
+                 set_function: Callable = None,
+                 set_args: List[str] = None,
+                 initial_value=None,
+                 **kwargs):
         self.channel = channel
 
         self.get_cmd = get_cmd
@@ -51,10 +84,7 @@ class SignadyneParameter(Parameter):
         self.set_function = set_function
         self.set_args = set_args
 
-        if val_mapping is not None:
-            vals = list(val_mapping)
-
-        super().__init__(name=name, vals=vals, val_mapping=val_mapping, **kwargs)
+        super().__init__(name=name, **kwargs)
 
         if initial_value is not None:
             # We set the initial value here to ensure that it does not call
@@ -64,7 +94,15 @@ class SignadyneParameter(Parameter):
             self.raw_value = initial_value
 
     def error_check(self, value):
-        assert isinstance(value, ndarray) \
+        """Check if returned value after a set is an error code or not.
+
+        Args:
+            value: value to test.
+
+        Raises:
+            AssertionError if returned value is an error code.
+        """
+        assert isinstance(value, np.ndarray) \
                or isinstance(value, str) \
                or isinstance(value, bool) \
                or (int(value) >= 0), f'Error in call to SD_Module error code {value}'
@@ -99,6 +137,14 @@ class SignadyneParameter(Parameter):
 
 
 class DigitizerChannel(InstrumentChannel):
+    """Signadyne digitizer channel
+
+    Args:
+        parent: Parent Signadyne digitizer Instrument
+        name: channel name (e.g. 'ch1')
+        id: channel id (e.g. 1)
+        **kwargs: Additional kwargs passed to InstrumentChannel
+    """
     def __init__(self, parent: Instrument, name: str, id: int, **kwargs):
         super().__init__(parent=parent, name=name, **kwargs)
 
@@ -110,8 +156,8 @@ class DigitizerChannel(InstrumentChannel):
             'full_scale',
             unit='V',
             initial_value=1,
-            vals=Numbers(self.SD_AIN.channelMinFullScale(),
-                         self.SD_AIN.channelMaxFullScale()),
+            vals=vals.Numbers(self.SD_AIN.channelMinFullScale(),
+                              self.SD_AIN.channelMaxFullScale()),
             get_function= self.SD_AIN.channelFullScale,
             set_function=self.SD_AIN.channelInputConfig,
             docstring=f'The full scale voltage for ch{self.id}'
@@ -144,7 +190,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'prescaler',
             initial_value=0,
-            vals=Ints(0, 4095),
+            vals=vals.Ints(0, 4095),
             get_function=self.SD_AIN.channelPrescalerConfig,
             set_function=self.SD_AIN.channelPrescalerConfig,
             docstring=f'The sampling frequency prescaler for ch{self.id}. '
@@ -164,7 +210,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'trigger_threshold',
             initial_value=0,
-            vals=Numbers(-3, 3),
+            vals=vals.Numbers(-3, 3),
             set_function=self.SD_AIN.channelTriggerConfig,
             set_args=['trigger_edge', 'trigger_threshold'],
             docstring=f'the value in volts for the trigger threshold'
@@ -174,7 +220,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'points_per_cycle',
             initial_value=0,
-            vals=Ints(),
+            vals=vals.Ints(),
             set_function=self.SD_AIN.DAQconfig,
             set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The number of points per cycle for ch{self.id}'
@@ -183,7 +229,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'n_cycles',
             initial_value=-1,
-            vals=Ints(),
+            vals=vals.Ints(),
             set_function=self.SD_AIN.DAQconfig,
             set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The number of cycles to collect on DAQ {self.id}'
@@ -192,7 +238,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'trigger_delay_samples',
             initial_value=0,
-            vals=Ints(),
+            vals=vals.Ints(),
             set_function=self.SD_AIN.DAQconfig,
             set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The trigger delay for DAQ {self.id}. Can be negative'
@@ -231,7 +277,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'analog_trigger_mask',
             initial_value=0,
-            vals=Ints(),
+            vals=vals.Ints(),
             set_function=self.SD_AIN.DAQanalogTriggerConfig,
             docstring='the trigger mask you are using. Each bit signifies '
                       'which analog channel to trigger on. The channel trigger'
@@ -242,7 +288,7 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'n_points',
             initial_value=0,
-            vals=Ints(),
+            vals=vals.Ints(),
             set_cmd=None,
             docstring='the number of points to be read from specified DAQ'
         )
@@ -251,31 +297,45 @@ class DigitizerChannel(InstrumentChannel):
             'timeout',
             unit='s',
             initial_value=-1,
-            vals=Numbers(min_value=0),
+            vals=vals.Numbers(min_value=0),
             set_cmd=None,
             docstring=f'The read timeout in seconds. 0 means infinite.'
                       f'Warning: setting to 0 will freeze the digitizer until'
                       f'acquisition has completed.'
         )
 
+    def add_parameter(self, name: str,
+                      parameter_class: type=SignadyneParameter, **kwargs):
+        """Use SignadyneParameter by default"""
+        super().__init__(name=name, parameter_class=parameter_class, **kwargs)
+
 
 class SD_DIG(SD_Module):
-    """
-    This is the qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
+    """Qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
 
     This driver is written with the M3300A in mind.
 
-    This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
+    This driver makes use of the Python library provided by Keysight as part of
+    the SD1 Software package (v.2.01.00).
+
+    Args:
+        name: the name of the digitizer card
+        model: Digitizer model (e.g. 'M3300A').
+            Used to retrieve number of channels if not specified
+        chassis: Signadyne chassis (usually 0).
+        slot: module slot in chassis (starting at 1)
+        channels: the number of input channels the specified card has
+        triggers: the number of pxi trigger inputs the specified card has
     """
     
-    def __init__(self, name, model, chassis, slot, channels=None, triggers=8, **kwargs):
-        """ Initialises a generic Signadyne digitizer and its parameters
-
-            Args:
-                name (str)      : the name of the digitizer card
-                channels (int)  : the number of input channels the specified card has
-                triggers (int)  : the number of trigger inputs the specified card has
-        """
+    def __init__(self,
+                 name: str,
+                 model: str,
+                 chassis: int,
+                 slot: int,
+                 channels: int = None,
+                 triggers: int = 8,
+                 **kwargs):
         super().__init__(name, model, chassis, slot, triggers, **kwargs)
 
 
@@ -305,7 +365,7 @@ class SD_DIG(SD_Module):
         self.add_parameter(
             'trigger_direction',
             label='Trigger direction for trigger port',
-            vals=Enum(0, 1),
+            vals=vals.Enum(0, 1),
             set_cmd=self.SD_AIN.triggerIOconfig,
             docstring='The trigger direction for digitizer trigger port'
         )
@@ -314,7 +374,7 @@ class SD_DIG(SD_Module):
         self.add_parameter(
             'system_frequency',
             label='System clock frequency',
-            vals=Ints(),
+            vals=vals.Ints(),
             set_cmd=self.SD_AIN.clockSetFrequency,
             get_cmd=self.SD_AIN.clockGetFrequency,
             docstring='The frequency of internal CLKsys in Hz'
@@ -324,7 +384,7 @@ class SD_DIG(SD_Module):
         self.add_parameter(
             'sync_frequency',
             label='Clock synchronization frequency',
-            vals=Ints(),
+            vals=vals.Ints(),
             get_cmd=self.SD_AIN.clockGetSyncFrequency,
             docstring='The frequency of internal CLKsync in Hz'
         )
@@ -334,7 +394,7 @@ class SD_DIG(SD_Module):
                            get_cmd=self.get_trigger_io,
                            set_cmd=self.set_trigger_io,
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
-                           vals=Enum(0, 1))
+                           vals=vals.Enum(0, 1))
 
         self.channels = ChannelList(self,
                                     name='channels',
