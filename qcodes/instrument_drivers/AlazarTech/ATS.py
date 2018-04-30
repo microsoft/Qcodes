@@ -10,6 +10,8 @@ from typing import List, Dict, Union, Tuple, cast, Sequence
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
+from .utils import TraceParameter
+
 # imported for backwards compat only
 from .utils import TrivialDictionary, AlazarParameter
 
@@ -531,12 +533,16 @@ class AlazarTech_ATS(Instrument):
             if self._get_raw_or_bytes(self.sample_rate) != 'UNDEFINED':
                 warnings.warn("Using external 10 MHz Ref but parameter sample_rate is set."
                               "This will have no effect and is ignored")
+            # mark the unused parameter as up to date
+            self.sample_rate._set_updated()
         else:
             if self._get_raw_or_bytes(self.sample_rate) == 'UNDEFINED':
                 raise RuntimeError("Using Internal clock but parameter sample_rate is not set")
             if self._get_raw_or_bytes(self.external_sample_rate) != 'UNDEFINED':
                 warnings.warn("Using Internal clock but parameter external_sample_rate is set."
                               "This will have no effect and is ignored")
+            # mark the unused parameter as up to date
+            self.external_sample_rate._set_updated()
             sample_rate = self.sample_rate
 
         self._call_dll('AlazarSetCaptureClock',
@@ -827,8 +833,14 @@ class AlazarTech_ATS(Instrument):
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
         for name, p in self.parameters.items():
-            if name != 'IDN':
-                p.get()
+            if isinstance(p, AlazarParameter):
+                if name != 'IDN':
+                    p.get()
+            elif isinstance(p, TraceParameter):
+                if p.synced_to_card == False:
+                    raise RuntimeError(f"TraceParameter {p} not synced to Alazar "
+                                       "card detected. Aborting. Data may be corrupt")
+
 
         # Compute the total transfer time, and display performance information.
         end_time = time.clock()
@@ -900,6 +912,7 @@ class AlazarTech_ATS(Instrument):
                 update_params.append(arg)
             elif isinstance(arg, Parameter):
                 args_out.append(arg.raw_value)
+                update_params.append(arg)
             else:
                 args_out.append(arg)
         # may be useful to log this but is called a lot so leave it out for now
@@ -931,8 +944,9 @@ class AlazarTech_ATS(Instrument):
 
         # mark parameters updated (only after we've checked for errors)
         for param in update_params:
-            if isinstance(param, AlazarParameter):
+            if isinstance(param, AlazarParameter) or isinstance(param, TraceParameter):
                 param._set_updated()
+
 
     def clear_buffers(self) -> None:
         """
