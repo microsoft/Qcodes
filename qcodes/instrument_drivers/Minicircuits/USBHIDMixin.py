@@ -5,6 +5,13 @@ import os
 import time
 import struct
 
+try:
+    import pywinusb.hid as hid
+except ImportError:
+    # We will raise a proper error when we attempt to instantiate a driver.
+    # Raising an exception here will cause CI to fail under Linux
+    hid = None
+
 
 class USBHIDMixin:
     """
@@ -20,19 +27,24 @@ class USBHIDMixin:
     vendor_id = 0x0000
     product_id = 0x0000
 
+    @staticmethod
+    def _check_hid_import():
+
+        if os.name != 'nt':
+            raise ImportError("""This driver only works in Windows.""")
+        
+        if hid is None:
+
+            raise ImportError(
+                "pywinusb is not installed. Please install it by typing "
+                "'pip install pywinusb' in a qcodes environment terminal"
+            )
+
     def __init__(self, instance_id: str=None, timeout: float=2, *args,
                  **kwargs) ->None:
         super().__init__(*args, **kwargs)
 
-        if os.name != 'nt':
-            raise ImportError("""This driver only works in Windows.""")
-
-        try:
-            import pywinusb.hid as hid
-        except ImportError:
-            raise ImportError("pywinusb is not installed. Please install "
-                              "it by typing 'pip install pywinusb' in a"
-                              "qcodes environment terminal")
+        self._check_hid_import()
 
         devs = hid.HidDeviceFilter(
             product_id=self.product_id,
@@ -112,6 +124,8 @@ class USBHIDMixin:
         This method returns the 'instance_id's of all connected devices for
         with the given product and vendor IDs.
         """
+        cls._check_hid_import()
+
         devs = hid.HidDeviceFilter(
             porduct_id=cls.product_id,
             vendor_id=cls.vendor_id
