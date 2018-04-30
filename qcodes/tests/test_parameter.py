@@ -930,9 +930,9 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.source_parameter(), 42)
         self.assertEqual(self.target_parameter(), 43)
 
-        self.source_parameter(41)
-        self.assertEqual(self.target_parameter(), 41)
-        self.assertEqual(deepcopied_source_parameter(), 42)
+        self.source_parameter(44)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(deepcopied_source_parameter(), 41)
 
     def test_copied_source_parameter(self):
         self.source_parameter.link(self.target_parameter)
@@ -947,19 +947,70 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.target_parameter(), 44)
         self.assertEqual(copied_source_parameter(), 41)
 
+    def test_linked_parameter(self):
+        self.source_parameter.link(self.target_parameter)
+        copied_target_parameter = copy(self.target_parameter)
+        self.assertFalse(hasattr(copied_target_parameter, '_link'))
+
     def test_circular_signalling(self):
         self.set_calls = 0
         def prevent_circular_signalling(val):
             if self.set_calls > 10:
                 raise RecursionError('Too many set calls')
+            self.set_calls += 1
 
-        self.source_parameter = Parameter(name='source', set_cmd=None,
+        self.source_parameter = Parameter(name='source',
                                           initial_value=42,
                                           set_cmd=prevent_circular_signalling)
 
-        self.target_parameter = Parameter(name='target', set_cmd=None,
-                                          initial_value=43)
+        self.target_parameter = Parameter(name='target',
+                                          initial_value=43,
+                                          set_cmd=prevent_circular_signalling)
 
         self.source_parameter.link(self.target_parameter)
+        self.source_parameter.signal.send(0)
+
         self.target_parameter.link(self.source_parameter)
 
+        self.set_calls = 0
+
+        self.source_parameter(40)
+        self.assertEqual(self.set_calls, 2)
+        self.assertEqual(self.source_parameter(), 40)
+        self.assertEqual(self.target_parameter(), 40)
+
+        self.source_parameter(41)
+        self.assertEqual(self.set_calls, 4)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 41)
+
+    def test_unlink_parameter(self):
+        self.source_parameter.link(self.target_parameter)
+
+        self.source_parameter(123)
+        self.assertEqual(self.source_parameter(), 123)
+        self.assertEqual(self.target_parameter(), 123)
+
+        self.source_parameter.unlink(self.target_parameter)
+
+        self.source_parameter(1)
+        self.assertEqual(self.source_parameter(), 1)
+        self.assertEqual(self.target_parameter(), 123)
+
+    def test_triple_linked_parameters(self):
+        self.second_target_parameter = Parameter('p3', initial_value=40,
+                                                 set_cmd=None)
+        self.source_parameter.link(self.target_parameter)
+        self.target_parameter.link(self.second_target_parameter)
+
+        self.source_parameter(123)
+        self.assertEqual(self.source_parameter(), 123)
+        self.assertEqual(self.target_parameter(), 123)
+        self.assertEqual(self.second_target_parameter(), 123)
+
+        self.source_parameter.unlink(self.target_parameter)
+
+        self.source_parameter(1)
+        self.assertEqual(self.source_parameter(), 1)
+        self.assertEqual(self.target_parameter(), 123)
+        self.assertEqual(self.second_target_parameter(), 123)
