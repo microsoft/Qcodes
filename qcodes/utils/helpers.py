@@ -9,6 +9,7 @@ import time
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+from blinker import Signal
 
 import numpy as np
 
@@ -452,7 +453,7 @@ def warn_units(class_name, instance):
 
 def get_last_input_cells(cells=3):
     """
-    Get last input cell. Note that get_last_input_cell.globals must be set to 
+    Get last input cell. Note that get_last_input_cell.globals must be set to
     the ipython globals
     Returns:
         last cell input if successful, else None
@@ -573,3 +574,60 @@ def smooth(y, window_size, order=3, deriv=0, rate=1):
     lastvals = y[-1] + np.abs(y[-half_window - 1:-1][::-1] - y[-1])
     y = np.concatenate((firstvals, y, lastvals))
     return np.convolve(m[::-1], y, mode='valid')
+
+
+class SignalEmitterLink:
+    """Link used by SignalEmitter when a callable is a SignalEmitter.
+
+     The purpose is to avoid infinite recursions when signal emitters are
+     attached to each other.
+
+    """
+    def __init__(self, callable):
+        self.signal_chain = []
+        self.callable = callable
+
+    def __call__(self, *args, **kwargs):
+        # Only call if callable hasn't been previously called to avoid recursion
+        if self.callable not in self.signal_chain:
+            return self.callable(*args, signal_chain=self.signal_chain, **kwargs)
+
+
+class SignalEmitter:
+    """Class that allows other callables to connect to it listen for signals.
+
+    Callables can be attached to a SignalEmitter via SignalEmitter.link.
+    If the SignalEmitter calls SignalEmitter.signal.send(*args, **kwargs), any
+    callables are called with the respective args and kwargs.
+
+    Args:
+        callable: Callable, to be called whenever SignalEmitter.signal.send is
+            triggered. Can be another SignalEmitter.
+
+    Note:
+        The SignalEmitter has protection against infinite recursions resulting
+        from signal emitters calling each other. This is done via the
+        SignalEmitterLink object. However, it does not protect against infinite
+        recursions from signals sent from objects that are not signal emitters.
+    """
+    # Signal used for connecting to parameter via Parameter.link method
+    signal = None
+
+    def link(self, callable):
+        if self.signal is None:
+            self.signal = Signal()
+
+        if not isinstance(callable, SignalEmitter):
+            self.signal.connect(callable)
+        else:
+            callable._link = SignalEmitterLink(callable)
+            self.signal.connect(callable._link)
+
+    def unlink(self, callable):
+        for receiver_ref in list(self.signal.receivers.values()):
+            receiver = receiver_ref()
+            if receiver == callable:
+                self.signal.disconnect(callable)
+            elif isinstance(receiver, SignalEmitterLink):
+                if receiver.callable == callable:
+                    self.signal.disconnect(receiver_ref())

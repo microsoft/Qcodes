@@ -67,7 +67,7 @@ from blinker import Signal
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
-                                  warn_units)
+                                  warn_units, SignalEmitter, SignalEmitterLink)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum
@@ -120,6 +120,10 @@ def __deepcopy__(self, memodict={}):
             self_copy.get = self_copy._wrap_get(self_copy.get_raw)
         if self_copy.wrap_set and hasattr(self_copy, 'set_raw'):
             self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+        try:
+            delattr(self_copy, '_link')
+        except AttributeError:
+            pass
         return self_copy
     finally:
         self.__deepcopy__ = deepcopy_method
@@ -127,7 +131,7 @@ def __deepcopy__(self, memodict={}):
         self.signal = signal
 
 
-class _BaseParameter(Metadatable):
+class _BaseParameter(Metadatable, SignalEmitter):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -208,8 +212,6 @@ class _BaseParameter(Metadatable):
             JSON snapshot of the parameter
     """
 
-    # Signal used for connecting to parameter via Parameter.link method
-    signal = None
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
@@ -438,9 +440,6 @@ class _BaseParameter(Metadatable):
         @wraps(set_function)
         def set_wrapper(value, signal_chain=[], **kwargs):
             try:
-                if self in signal_chain:
-                    return
-
                 self.validate(value)
 
                 # In some cases intermediate sweep values must be used.
@@ -485,9 +484,13 @@ class _BaseParameter(Metadatable):
 
                     # Send a signal if anything is connected, unless
                     if self.signal is not None:
-                        self.signal.send(parsed_scaled_mapped_value,
-                                         signal_chain=signal_chain + [self],
-                                         **kwargs)
+                        for receiver in self.signal.receivers.values():
+                            if isinstance(receiver(), SignalEmitterLink):
+                                if not signal_chain:
+                                    receiver().signal_chain = [self]
+                                else:
+                                    receiver().signal_chain = signal_chain + [self]
+                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
 
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value
@@ -724,11 +727,6 @@ class _BaseParameter(Metadatable):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
-
-    def link(self, callable):
-        if self.signal is None:
-            self.signal = Signal()
-        self.signal.connect(callable)
 
 
 class Parameter(_BaseParameter):
