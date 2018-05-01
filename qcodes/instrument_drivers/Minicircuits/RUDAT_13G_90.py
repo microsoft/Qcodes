@@ -18,9 +18,9 @@ class RUDAT_13G_90(USBHIDInstrument):
     product_id = 0x0023
 
     def __init__(self, name: str, instance_id: str=None, timeout: float=2,
-                 *args, **kwargs) ->None:
+                 **kwargs) ->None:
 
-        super().__init__(name, instance_id, timeout, *args, **kwargs)
+        super().__init__(name, instance_id, timeout, **kwargs)
 
         self.add_parameter(
             "model_name",

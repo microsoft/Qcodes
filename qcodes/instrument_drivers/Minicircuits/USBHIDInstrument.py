@@ -11,7 +11,7 @@ except ImportError:
     # Raising an exception here will cause CI to fail under Linux
     hid = None
 
-from qcodes import Instrument
+from qcodes.instrument.base import Instrument
 
 
 class USBHIDInstrument(Instrument):
@@ -40,11 +40,11 @@ class USBHIDInstrument(Instrument):
                 "'pip install pywinusb' in a qcodes environment terminal"
             )
 
-    def __init__(self, name, instance_id: str=None, timeout: float=2, *args,
+    def __init__(self, name, instance_id: str=None, timeout: float=2,
                  **kwargs) ->None:
 
+        super().__init__(name, **kwargs)
         self._check_hid_import()
-        super().__init__(name, *args, **kwargs)
 
         devs = hid.HidDeviceFilter(
             product_id=self.product_id,
@@ -106,7 +106,7 @@ class USBHIDInstrument(Instrument):
 
         tries_per_second = 5
         number_of_tries = int(tries_per_second * self._timeout)
-        
+
         response = None
         for _ in range(number_of_tries):
             time.sleep(1 / tries_per_second)
@@ -118,6 +118,9 @@ class USBHIDInstrument(Instrument):
             raise TimeoutError("")
 
         return self._unpack_string(response)
+
+    def close(self):
+        self._device.close()
 
     @classmethod
     def enumerate_devices(cls):
