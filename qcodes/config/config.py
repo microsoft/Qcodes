@@ -440,7 +440,7 @@ class DotDict(dict):
         try:
             return self.__getitem__(key)
         except KeyError:
-            raise AttributeError('Attribute {} not found'.format(key))
+            raise AttributeError(f'Attribute {key} not found')
 
 
 def update(d, u):
