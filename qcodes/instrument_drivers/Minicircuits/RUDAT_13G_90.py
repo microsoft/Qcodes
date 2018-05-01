@@ -1,12 +1,10 @@
 import struct
 from typing import Dict
 
-from qcodes import Instrument
-
-from .USBHIDMixin import USBHIDMixin
+from .USBHIDInstrument import USBHIDInstrument
 
 
-class RUDAT_13G_90(USBHIDMixin, Instrument):
+class RUDAT_13G_90(USBHIDInstrument):
     """
     Args:
         name (str)
@@ -16,20 +14,13 @@ class RUDAT_13G_90(USBHIDMixin, Instrument):
             the class method 'enumerate_devices'
         timeout (float): Specify a timeout for this instrument
     """
-    packet_size = 64
     vendor_id = 0x20ce
     product_id = 0x0023
 
     def __init__(self, name: str, instance_id: str=None, timeout: float=2,
                  *args, **kwargs) ->None:
 
-        super().__init__(
-            name=name,
-            instance_id=instance_id,
-            timeout=timeout,
-            *args,
-            **kwargs
-        )
+        super().__init__(name, instance_id, timeout, *args, **kwargs)
 
         self.add_parameter(
             "model_name",
@@ -67,43 +58,45 @@ class RUDAT_13G_90(USBHIDMixin, Instrument):
         )
 
         self._usb_endpoint = 0
-        self._end_of_message = 0x00
+        self._end_of_message = b"\x00"
+        self.packet_size = 64
 
         self.connect_message()
 
-    def _send_scpi(self, scpi_str: str) ->str:
+    def _pack_string(self, scpi_str: str) ->bytes:
         """
-        Send a SCPI command to the instrument
+        Pack a string to a binary format such that it can be send to the
+        HID.
 
         Args:
-            scpi_str (string)
+            scpi_str (str)
         """
         str_len = len(scpi_str)
+        pad_len = self.packet_size - str_len
+
+        if pad_len < 0:
+            raise ValueError(f"Length of data exceeds {self.packet_size} B")
+
         command_number = 1
         packed_data = struct.pack(
-            f"B{str_len}s", command_number, scpi_str.encode("ascii")
+            f"BB{str_len}s{pad_len}x",
+            self._usb_endpoint, command_number, scpi_str.encode("ascii")
         )
 
-        try:
-            response = self.ask_hid(self._usb_endpoint, packed_data)
-        except TimeoutError:
-            raise TimeoutError(f"Timeout while sending command {scpi_str}")
+        return packed_data
 
-        reply_string = ""
-        # clip the first byte off because it reflects the command
-        for char in response[1:]:
-            if char == self._end_of_message:
-                break
+    def _unpack_string(self, response: bytes) ->str:
+        """
+        Unpack data from the instrument to a string
 
-            reply_string += chr(char)
-
-        return reply_string
-
-    def write_raw(self, cmd: str)->None:
-        self._send_scpi(cmd)
-
-    def ask_raw(self, cmd: str)->str:
-        return self._send_scpi(cmd)
+        Args:
+            response (bytes)
+        """
+        usb_end_point, command_number, reply_data = struct.unpack(
+            f"BB{self.packet_size-1}s", bytes(response)
+        )
+        span = reply_data.find(self._end_of_message)
+        return str(reply_data[:span])
 
     def get_idn(self) -> Dict[str, str]:
         model = self.model_name()
