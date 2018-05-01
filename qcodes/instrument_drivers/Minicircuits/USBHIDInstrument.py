@@ -78,31 +78,27 @@ class USBHIDInstrument(Instrument):
     def _unpack_string(self, response: bytes) ->str:
         raise NotImplementedError("Please subclass")
 
-    def write_raw(self, scpi_str: str):
+    def write_raw(self, cmd: str) ->None:
         """
         Send binary data to the human interface device
 
         Args:
-            feature_id (int): The 'address' of the device we want to send the
-                meassage to
-            data (bytearray)
+           cmd (str)
         """
-        data = self._pack_string(scpi_str)
+        data = self._pack_string(cmd)
 
         result = self._device.send_output_report(data)
         if not result:
             raise RuntimeError("Communication with device failed")
 
-    def ask_raw(self, scpi_str: str) ->str:
+    def ask_raw(self, cmd: str) ->str:
         """
         Send binary data to the human interface device and wait for a reply
 
         Args:
-            feature_id (int): The 'address' of the device we want to send the
-                meassage to
-            data (bytearray)
+            cmd (str)
         """
-        self.write_raw(scpi_str)
+        self.write_raw(cmd)
 
         tries_per_second = 5
         number_of_tries = int(tries_per_second * self._timeout)

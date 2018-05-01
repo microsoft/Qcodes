@@ -63,15 +63,15 @@ class RUDAT_13G_90(USBHIDInstrument):
 
         self.connect_message()
 
-    def _pack_string(self, scpi_str: str) ->bytes:
+    def _pack_string(self, cmd: str) ->bytes:
         """
         Pack a string to a binary format such that it can be send to the
         HID.
 
         Args:
-            scpi_str (str)
+            cmd (str)
         """
-        str_len = len(scpi_str)
+        str_len = len(cmd)
         pad_len = self.packet_size - str_len
 
         if pad_len < 0:
@@ -80,7 +80,7 @@ class RUDAT_13G_90(USBHIDInstrument):
         command_number = 1
         packed_data = struct.pack(
             f"BB{str_len}s{pad_len}x",
-            self._usb_endpoint, command_number, scpi_str.encode("ascii")
+            self._usb_endpoint, command_number, cmd.encode("ascii")
         )
 
         return packed_data
@@ -92,11 +92,11 @@ class RUDAT_13G_90(USBHIDInstrument):
         Args:
             response (bytes)
         """
-        usb_end_point, command_number, reply_data = struct.unpack(
+        _, _, reply_data = struct.unpack(
             f"BB{self.packet_size-1}s", bytes(response)
         )
         span = reply_data.find(self._end_of_message)
-        return str(reply_data[:span])
+        return reply_data[:span].decode("ascii")
 
     def get_idn(self) -> Dict[str, str]:
         model = self.model_name()
