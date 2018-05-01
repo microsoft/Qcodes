@@ -42,6 +42,7 @@ class USBHIDInstrument(Instrument):
 
     def __init__(self, name, instance_id: str=None, timeout: float=2,
                  **kwargs) ->None:
+        #super().__init__(*args, **kwargs)
 
         super().__init__(name, **kwargs)
         self._check_hid_import()
@@ -72,7 +73,7 @@ class USBHIDInstrument(Instrument):
         self._data_buffer = None
         return data
 
-    def _pack_string(self, scpi_str: str) -> bytes:
+    def _pack_string(self, cmd: str) -> bytes:
         raise NotImplementedError("Please subclass")
 
     def _unpack_string(self, response: bytes) ->str:
