@@ -4,7 +4,7 @@ import time
 import logging
 from traceback import format_exc
 from copy import deepcopy
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from typing import Dict, Callable
 
 from .gnuplot_format import GNUPlotFormat
@@ -112,7 +112,6 @@ def load_data(location=None, formatter=None, io=None):
     data.read()
     return data
 
-
 class DataSet(DelegateAttributes):
 
     """
@@ -171,8 +170,12 @@ class DataSet(DelegateAttributes):
 
     background_functions: Dict[str, Callable] = OrderedDict()
 
+    _latest_datasets = deque(maxlen=10)
+
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
+        DataSet._latest_datasets.append(self)
+
         if location is False or isinstance(location, str):
             self.location = location
         else:
