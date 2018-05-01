@@ -73,7 +73,7 @@ class USBHIDInstrument(Instrument):
         self._data_buffer = None
         return data
 
-    def _pack_string(self, cmd: str) -> bytes:
+    def _pack_string(self, cmd: str) ->bytes:
         raise NotImplementedError("Please subclass")
 
     def _unpack_string(self, response: bytes) ->str:
