@@ -14,7 +14,7 @@ except ImportError:
 from qcodes.instrument.base import Instrument
 
 
-class USBHIDInstrument(Instrument):
+class USBHIDMixin(Instrument):
     """
     Args:
         instance_id (str): The id of the instrument we want to connect. If
@@ -42,7 +42,6 @@ class USBHIDInstrument(Instrument):
 
     def __init__(self, name, instance_id: str=None, timeout: float=2,
                  **kwargs) ->None:
-        #super().__init__(*args, **kwargs)
 
         super().__init__(name, **kwargs)
         self._check_hid_import()

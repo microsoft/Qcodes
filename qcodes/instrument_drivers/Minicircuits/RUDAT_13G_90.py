@@ -1,10 +1,11 @@
 import struct
 from typing import Dict
 
-from .USBHIDInstrument import USBHIDInstrument
+from .USBHIDMixin import USBHIDMixin
+from qcodes.instrument.base import Instrument
 
 
-class RUDAT_13G_90(USBHIDInstrument):
+class RUDAT_13G_90(USBHIDMixin, Instrument):
     """
     Args:
         name (str)
