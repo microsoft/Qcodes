@@ -148,8 +148,6 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
             the class method 'enumerate_devices'
         timeout (float): Specify a timeout for this instrument
     """
-    vendor_id = 0x20ce
-    product_id = 0x0023
 
     def __init__(self, name: str, instance_id: str=None, timeout: float=2,
                  **kwargs) ->None:

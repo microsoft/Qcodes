@@ -63,4 +63,5 @@ class RUDAT_13G_90(Instrument):
 
 
 class RUDAT_13G_90_USB(MiniCircuitsHIDMixin, RUDAT_13G_90):
-    pass
+    vendor_id = 0x20ce
+    product_id = 0x0023
