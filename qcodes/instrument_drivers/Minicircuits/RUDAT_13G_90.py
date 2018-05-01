@@ -1,27 +1,18 @@
-import struct
 from typing import Dict
 
-from .USBHIDMixin import USBHIDMixin
+from .USBHIDMixin import MiniCircuitsHIDMixin
 from qcodes.instrument.base import Instrument
 
 
-class RUDAT_13G_90(USBHIDMixin, Instrument):
+class RUDAT_13G_90(Instrument):
     """
     Args:
         name (str)
-        instance_id (str): The id of the instrument we want to connect. If
-            there is only one instrument then this is an optional argument.
-            If we have more then one instrument, quarry their ID's by calling
-            the class method 'enumerate_devices'
-        timeout (float): Specify a timeout for this instrument
     """
-    vendor_id = 0x20ce
-    product_id = 0x0023
 
-    def __init__(self, name: str, instance_id: str=None, timeout: float=2,
-                 **kwargs) ->None:
+    def __init__(self, name: str, **kwargs) ->None:
 
-        super().__init__(name, instance_id, timeout, **kwargs)
+        super().__init__(name, **kwargs)
 
         self.add_parameter(
             "model_name",
@@ -58,46 +49,7 @@ class RUDAT_13G_90(USBHIDMixin, Instrument):
             get_parser=int
         )
 
-        self._usb_endpoint = 0
-        self._end_of_message = b"\x00"
-        self.packet_size = 64
-
         self.connect_message()
-
-    def _pack_string(self, cmd: str) ->bytes:
-        """
-        Pack a string to a binary format such that it can be send to the
-        HID.
-
-        Args:
-            cmd (str)
-        """
-        str_len = len(cmd)
-        pad_len = self.packet_size - str_len
-
-        if pad_len < 0:
-            raise ValueError(f"Length of data exceeds {self.packet_size} B")
-
-        command_number = 1
-        packed_data = struct.pack(
-            f"BB{str_len}s{pad_len}x",
-            self._usb_endpoint, command_number, cmd.encode("ascii")
-        )
-
-        return packed_data
-
-    def _unpack_string(self, response: bytes) ->str:
-        """
-        Unpack data from the instrument to a string
-
-        Args:
-            response (bytes)
-        """
-        _, _, reply_data = struct.unpack(
-            f"BB{self.packet_size-1}s", bytes(response)
-        )
-        span = reply_data.find(self._end_of_message)
-        return reply_data[:span].decode("ascii")
 
     def get_idn(self) -> Dict[str, str]:
         model = self.model_name()
@@ -108,3 +60,7 @@ class RUDAT_13G_90(USBHIDMixin, Instrument):
                 'model': model,
                 'serial': serial,
                 'firmware': firmware}
+
+
+class RUDAT_13G_90_USB(MiniCircuitsHIDMixin, RUDAT_13G_90):
+    pass
