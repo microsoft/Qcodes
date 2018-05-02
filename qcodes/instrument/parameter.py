@@ -46,6 +46,10 @@ This file defines four classes of parameters:
     Note that it is not yet a subclass of BaseParameter.
 
 
+A callable can be attached to a parameter using `_BaseParameter.connect`.
+Every time the parameter changes value. the callable is called with the new
+value as an argument. This also allows other parameters to be updated every time
+the primary parameter changes value.
 """
 
 # TODO (alexcjohnson) update this with the real duck-typing requirements or
@@ -208,6 +212,10 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
+
+        config_link: optional silq config path, in which case every time
+            that the silq config item is updated, the parameter value is also
+            updated. Warning: SilQ only! See SilQ SubConfig for more info.
     """
 
 
