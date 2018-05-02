@@ -375,7 +375,7 @@ class Config():
         val = self.current_config
         if isinstance(name, int):
             # When iterating through a dict, indices are passed instead
-            name = list(val)[name]
+            return list(val)[name]
         for key in name.split('.'):
             val = val[key]
         return val
