@@ -460,10 +460,14 @@ class CryogenicSMS120C(VisaInstrument):
                 self._set_pauseRamp(1)
                 self.ask('SET MID %0.2f' % val)       # Set target field
                 self._set_pauseRamp(0)               # Unpause the controller
-                # Ramp magnet/field to MID (Note: Using standard write as read
-                # returns an error/is non-existent).
-                self.write('RAMP MID')
-                log.info('Ramping magnetic field...')
+                # Ramp magnet/field to MID or ZERO (Note: Using standard write 
+                # as read returns an error/is non-existent).
+                if val == 0:
+                    self.write('RAMP ZERO')
+                    log.info('Ramping magnetic field to zero...')
+                else:
+                    self.write('RAMP MID')
+                    log.info('Ramping magnetic field...')
             else:
                 log.error(
                     'Target field is outside max. limits, please lower the target value.')
