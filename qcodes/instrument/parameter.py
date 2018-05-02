@@ -309,10 +309,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
-        if config_link is not None:
-            if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
-                config.user.silq_config.signal.connect(self._handle_config_signal,
-                                                       sender=config_link)
+        if config_link:
+            self.set_config_link(config_link)
 
     def __copy__(self):
         return self.__deepcopy__()
@@ -746,6 +744,12 @@ class _BaseParameter(Metadatable, SignalEmitter):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
+
+    def set_config_link(self, config_link):
+        if config_link is not None:
+            if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
+                config.user.silq_config.signal.connect(self._handle_config_signal,
+                                                       sender=config_link)
 
 
 class Parameter(_BaseParameter):
