@@ -584,8 +584,9 @@ class SignalEmitter:
     callables are called with the respective args and kwargs.
 
     Args:
-        callable: Callable, to be called whenever SignalEmitter.signal.send is
-            triggered. Can be another SignalEmitter.
+        initialize_signal: instantiate a blnker.Signal object. If set to False,
+            self.Signal needs to be set later on. This could be useful when you
+            want a single Signal that is shared by all class instances.
 
     Note:
         The SignalEmitter has protection against infinite recursions resulting
@@ -593,10 +594,10 @@ class SignalEmitter:
         of the signal chain. However, it does not protect against infinite
         recursions from signals sent from objects that are not signal emitters.
     """
-    # Signal used for connecting to parameter via Parameter.connect method
+    # Signal used for connecting to parameter via SignalEmitter.connect method
     signal = None
 
-    def __init__(self, initialize_signal=True):
+    def __init__(self, initialize_signal: bool=True):
         self._signal_chain = []
         if initialize_signal:
             self.signal = Signal()
