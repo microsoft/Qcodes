@@ -309,8 +309,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self.log = logging.getLogger(str(self))
 
         if config_link is not None:
-            if 'user' in config and hasattr(config.user, 'signal'):
-                config.user.signal.connect(self, sender=config_link)
+            if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
+                config.user.silq_config.signal.connect(self._handle_config_signal,
+                                                       sender=config_link)
 
     def __copy__(self):
         return self.__deepcopy__()
@@ -339,6 +340,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
+
+    def _handle_config_signal(self, sender, value):
+        self(value)
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str]=None) -> dict:
