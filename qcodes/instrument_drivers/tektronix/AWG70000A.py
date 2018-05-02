@@ -20,6 +20,8 @@ log = logging.getLogger(__name__)
 #
 # MODEL DEPENDENT SETTINGS
 #
+# TODO: it seems that a lot of settings differ between models
+# perhaps these dicts should be merged to one
 
 _fg_path_val_map = {'5208': {'DC High BW': "DCHB",
                              'DC High Voltage': "DCHV",
@@ -40,6 +42,11 @@ _num_of_markers_map = {'5208': 4,
 _chan_resolutions = {'5208': [12, 13, 14, 15, 16],
                      '70001A': [8, 9, 10],
                      '70002A': [8, 9, 10]}
+
+# channel amplitudes
+_chan_amps = {'70001A': 0.5,
+              '70002A': 0.5,
+              '5208': 1.5}
 
 
 class SRValidator(Validator):
@@ -118,7 +125,7 @@ class AWGChannel(InstrumentChannel):
                            get_cmd='FGEN:CHANnel{}:AMPLitude?'.format(channel),
                            set_cmd='FGEN:CHANnel{}:AMPLitude {{}}'.format(channel),
                            unit='V',
-                           vals=vals.Numbers(0, 0.5),
+                           vals=vals.Numbers(0, _chan_amps[self.model]),
                            get_parser=float)
 
         self.add_parameter('fgen_offset',
@@ -200,7 +207,7 @@ class AWGChannel(InstrumentChannel):
             get_cmd='SOURce{}:VOLTage?'.format(channel),
             unit='V',
             get_parser=float,
-            vals=vals.Numbers(0.250, 0.500))
+            vals=vals.Numbers(0.250, _chan_amps[self.model]))
 
         # markers
         for mrk in range(1, _num_of_markers_map[self.model]+1):
