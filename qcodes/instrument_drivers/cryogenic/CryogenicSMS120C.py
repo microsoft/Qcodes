@@ -452,7 +452,6 @@ class CryogenicSMS120C(VisaInstrument):
             return
         # check ramp status is OK
         if self._can_startRamping():
-
             # Check that field is not outside max.field limit
             if (self._get_unit() == 1 and (val <= self._get_maxField())) or (
                     self._get_unit() == 0 and (val <= self._current_rating)):
@@ -473,8 +472,22 @@ class CryogenicSMS120C(VisaInstrument):
                     'Target field is outside max. limits, please lower the target value.')
         else:
             log.error('Cannot set field - check magnet status.')
+    
+    def _set_field_bidirectional(self, val):
+        polarity = self._get_polarity()
+        desired_polarity = '-' if val < 0 else '+'
+        
+        if ((polarity == '+' and desired_polarity == '-') or 
+            (polarity == '-' and desired_polarity == '+')):
+            self._set_field(0)
+            # This is, sadly, blocking
+            self._wait_for_field_zero(0)
+            self._set_polarity(desired_polarity)
+
+        self._set_field(abs(val))
         
     def _wait_for_field_zero(self, field_threshold=0.003, refresh_time=0.1):
         """Waits for the field to be within a certain threshold"""
         while abs(self.field()) > field_threshold:
             time.sleep(refresh_time)
+
