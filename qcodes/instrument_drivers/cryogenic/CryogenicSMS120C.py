@@ -473,3 +473,8 @@ class CryogenicSMS120C(VisaInstrument):
                     'Target field is outside max. limits, please lower the target value.')
         else:
             log.error('Cannot set field - check magnet status.')
+        
+    def _wait_for_field_zero(self, field_threshold=0.003, refresh_time=0.1):
+        """Waits for the field to be within a certain threshold"""
+        while abs(self.field()) > field_threshold:
+            time.sleep(refresh_time)
