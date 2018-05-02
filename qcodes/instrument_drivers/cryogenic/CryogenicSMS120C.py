@@ -447,6 +447,9 @@ class CryogenicSMS120C(VisaInstrument):
 
     # Between any two commands, there are must be around 200ms waiting time.
     def _set_field(self, val):
+        if not self.switchHeater(): # If switch heater is OFF
+            log.error('Unable to set field, switch heater is off, persistent mode may be active')
+            return
         # check ramp status is OK
         if self._can_startRamping():
 
