@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict, deque
-from typing import Dict, Callable
+from typing import Dict, Callable, Deque
 
 from .. import config
 from .gnuplot_format import GNUPlotFormat
@@ -171,7 +171,7 @@ class DataSet(DelegateAttributes):
 
     background_functions: Dict[str, Callable] = OrderedDict()
 
-    _latest_datasets = deque(maxlen=config['user'].get('size_latest_dataset', 1))
+    _latest_datasets : Deque = deque(maxlen=config['user'].get('size_latest_dataset', 1))
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
