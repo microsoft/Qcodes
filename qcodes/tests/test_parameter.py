@@ -811,7 +811,6 @@ class TestManualParameterValMapping(TestCase):
         assert self.instrument.myparameter.raw_value == 0
 
 
-
 class TestInstrumentRefParameter(TestCase):
 
     def setUp(self):
@@ -1038,3 +1037,26 @@ class TestParameterSignal(TestCase):
         # Note that config links only work in silq, since it relies on the
         # SubConfig, and so we only test here that it doesn't raise an error
         config_parameter = Parameter('config', config_link='pulses.duration')
+
+    def test_parameter_signal_modifiers(self):
+        self.source_parameter.connect(self.target_parameter, offset=1)
+        self.source_parameter(10)
+        self.assertEqual(self.source_parameter(), 10)
+        self.assertEqual(self.target_parameter(), 11)
+
+        self.source_parameter.disconnect(self.target_parameter)
+        self.source_parameter(12)
+        self.assertEqual(self.source_parameter(), 12)
+        self.assertEqual(self.target_parameter(), 11)
+
+        self.source_parameter.connect(self.target_parameter, scale=2)
+        self.source_parameter(13)
+        self.assertEqual(self.source_parameter(), 13)
+        self.assertEqual(self.target_parameter(), 26)
+
+        self.source_parameter.disconnect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, scale=2,
+                                      offset=10)
+        self.source_parameter(14)
+        self.assertEqual(self.source_parameter(), 14)
+        self.assertEqual(self.target_parameter(), 38)

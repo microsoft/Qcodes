@@ -602,13 +602,29 @@ class SignalEmitter:
         if initialize_signal:
             self.signal = Signal()
 
-    def connect(self, callable):
+        self._signal_modifiers = {
+            'offset': None,
+            'scale': None
+        }
+
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError('__call__ must be implemented in a '
+                                  'SignalEmitter subclass')
+
+    def connect(self, callable, offset: float = None, scale: float = None):
         """Connect a callable, which can be another SignalEmitter.
 
         If a SignalEmitter is passed, the __call__ method is invoked.
 
         Args:
             Callable: Callable to be connected to this SignalEmitter's signal.
+            offset: Optional offset to apply to emitted value
+            scale: Optional scale to apply to emitted value
+
+        Note:
+            If offset or scale is provided, the emitted value should be a number.
+            If an emitted signal contains 'value' as kwarg, this will be
+            modified. Otherwise the first arg (sender) will be modified.
         """
         if self.signal is None:
             self.signal = Signal()
@@ -616,6 +632,8 @@ class SignalEmitter:
         if not isinstance(callable, SignalEmitter):
             self.signal.connect(callable)
         else:
+            callable._signal_modifiers['offset'] = offset
+            callable._signal_modifiers['scale'] = scale
             self.signal.connect(callable._signal_call)
 
     def disconnect(self, callable):
@@ -632,11 +650,24 @@ class SignalEmitter:
             if receiver == callable:
                 self.signal.disconnect(callable)
 
-    def _signal_call(self, *args, **kwargs):
+    def _signal_call(self, sender, *args, **kwargs):
         """Method that is called instead of standard __call__ for SignalEmitters
 
         This method ensures that the actual __call__ is only invoked if this has
         not previously been done during the signal chain.
         """
         if self not in self._signal_chain:
-            return self(*args, signal_chain=self._signal_chain, **kwargs)
+
+            # If any modifier is set,
+            if self._signal_modifiers['scale'] is not None:
+                if 'value' in kwargs:
+                    kwargs['value'] *= self._signal_modifiers['scale']
+                else:
+                    sender *= self._signal_modifiers['scale']
+            if self._signal_modifiers['offset'] is not None:
+                if 'value' in kwargs:
+                    kwargs['value'] += self._signal_modifiers['offset']
+                else:
+                    sender += self._signal_modifiers['offset']
+
+            return self(sender, *args, signal_chain=self._signal_chain, **kwargs)
