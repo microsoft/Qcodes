@@ -4,6 +4,8 @@ Test suite for parameter
 from collections import namedtuple
 from unittest import TestCase
 from time import sleep
+import weakref
+import gc
 from copy import copy, deepcopy
 
 import numpy as np
@@ -857,3 +859,186 @@ class TestCopyParameter(TestCase):
         self.assertEqual(p1(), 42)
         self.assertEqual(p2.raw_value, 41)
         self.assertEqual(p2(), 41)
+
+
+class TestParameterSignal(TestCase):
+    def save_args_kwargs(self, *args, **kwargs):
+        self.args_kwargs_dict['args'] = args
+        self.args_kwargs_dict['kwargs'] = kwargs
+
+    def setUp(self):
+        self.args_kwargs_dict = {}
+
+        self.source_parameter = Parameter(name='source', set_cmd=None,
+                                          initial_value=42)
+
+        self.target_parameter = Parameter(name='target', set_cmd=None,
+                                          initial_value=43)
+
+    def test_parameter_connect_function(self):
+        self.source_parameter.connect(self.save_args_kwargs)
+
+        self.source_parameter(41)
+        self.assertEqual(self.args_kwargs_dict['args'], (41,))
+        self.assertEqual(self.args_kwargs_dict['kwargs'], {})
+
+    def test_parameter_connect_parameter(self):
+        self.source_parameter.connect(self.target_parameter)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(41)
+        self.assertEqual(self.target_parameter(), 41)
+
+        self.target_parameter(43)
+        self.assertEqual(self.target_parameter(), 43)
+
+    def test_delete_parameter(self):
+        target_ref = weakref.ref(self.target_parameter)
+
+        del self.target_parameter
+        gc.collect()
+        self.assertIsNone(target_ref())
+
+    def test_delete_connected_parameter(self):
+        self.source_parameter.connect(self.target_parameter)
+
+        target_ref = weakref.ref(self.target_parameter)
+
+        del self.target_parameter
+        gc.collect()
+        self.assertIsNone(target_ref())
+
+    def test_delete_connected_parameter_set(self):
+        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter(41)
+        self.assertEqual(self.target_parameter(), 41)
+
+        target_ref = weakref.ref(self.target_parameter)
+        self.assertEqual(len(self.source_parameter.signal.receivers), 1)
+
+        del self.target_parameter
+        gc.collect()
+        self.assertIsNone(target_ref())
+        self.assertEqual(len(self.source_parameter.signal.receivers), 0)
+
+    def test_deepcopied_source_parameter(self):
+        self.source_parameter.connect(self.target_parameter)
+        deepcopied_source_parameter = deepcopy(self.source_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        deepcopied_source_parameter(41)
+        self.assertEqual(self.source_parameter(), 42)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(44)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(deepcopied_source_parameter(), 41)
+
+    def test_copied_source_parameter(self):
+        self.source_parameter.connect(self.target_parameter)
+        copied_source_parameter = copy(self.source_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        copied_source_parameter(41)
+        self.assertEqual(self.source_parameter(), 42)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(44)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(copied_source_parameter(), 41)
+
+    def test_connected_parameter(self):
+        self.source_parameter.connect(self.target_parameter)
+        copied_target_parameter = copy(self.target_parameter)
+
+    def test_circular_signalling(self):
+        self.set_calls = 0
+        def prevent_circular_signalling(val):
+            if self.set_calls > 10:
+                raise RecursionError('Too many set calls')
+            self.set_calls += 1
+
+        self.source_parameter = Parameter(name='source',
+                                          initial_value=42,
+                                          set_cmd=prevent_circular_signalling)
+
+        self.target_parameter = Parameter(name='target',
+                                          initial_value=43,
+                                          set_cmd=prevent_circular_signalling)
+
+        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter.signal.send(0)
+
+        self.target_parameter.connect(self.source_parameter)
+
+        self.set_calls = 0
+
+        self.source_parameter(40)
+        self.assertEqual(self.set_calls, 2)
+        self.assertEqual(self.source_parameter(), 40)
+        self.assertEqual(self.target_parameter(), 40)
+
+        self.source_parameter(41)
+        self.assertEqual(self.set_calls, 4)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 41)
+
+    def test_connect_to_second_parameter(self):
+        self.source_parameter2 = Parameter('source2', initial_value=12,
+                                           set_cmd=None)
+
+        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter2.connect(self.target_parameter)
+
+        self.source_parameter(1)
+        self.assertEqual(self.source_parameter(), 1)
+        self.assertEqual(self.source_parameter2(), 12)
+        self.assertEqual(self.target_parameter(), 1)
+
+        self.source_parameter2(2)
+        self.assertEqual(self.source_parameter(), 1)
+        self.assertEqual(self.source_parameter2(), 2)
+        self.assertEqual(self.target_parameter(), 2)
+
+        self.source_parameter2.disconnect(self.target_parameter)
+        self.source_parameter(3)
+        self.source_parameter2(4)
+        self.assertEqual(self.source_parameter(), 3)
+        self.assertEqual(self.source_parameter2(), 4)
+        self.assertEqual(self.target_parameter(), 3)
+
+    def test_disconnect_parameter(self):
+        self.source_parameter.connect(self.target_parameter)
+
+        self.source_parameter(123)
+        self.assertEqual(self.source_parameter(), 123)
+        self.assertEqual(self.target_parameter(), 123)
+
+        self.source_parameter.disconnect(self.target_parameter)
+
+        self.source_parameter(1)
+        self.assertEqual(self.source_parameter(), 1)
+        self.assertEqual(self.target_parameter(), 123)
+
+    def test_triple_connected_parameters(self):
+        self.second_target_parameter = Parameter('p3', initial_value=40,
+                                                 set_cmd=None)
+        self.source_parameter.connect(self.target_parameter)
+        self.target_parameter.connect(self.second_target_parameter)
+
+        self.source_parameter(123)
+        self.assertEqual(self.source_parameter(), 123)
+        self.assertEqual(self.target_parameter(), 123)
+        self.assertEqual(self.second_target_parameter(), 123)
+
+        self.source_parameter.disconnect(self.target_parameter)
+
+        self.source_parameter(1)
+        self.assertEqual(self.source_parameter(), 1)
+        self.assertEqual(self.target_parameter(), 123)
+        self.assertEqual(self.second_target_parameter(), 123)
+
+    def test_config_link(self):
+        # Note that config links only work in silq, since it relies on the
+        # SubConfig, and so we only test here that it doesn't raise an error
+        config_parameter = Parameter('config', config_link='pulses.duration')

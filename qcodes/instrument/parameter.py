@@ -46,6 +46,10 @@ This file defines four classes of parameters:
     Note that it is not yet a subclass of BaseParameter.
 
 
+A callable can be attached to a parameter using `_BaseParameter.connect`.
+Every time the parameter changes value. the callable is called with the new
+value as an argument. This also allows other parameters to be updated every time
+the primary parameter changes value.
 """
 
 # TODO (alexcjohnson) update this with the real duck-typing requirements or
@@ -62,11 +66,13 @@ import warnings
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
 from functools import partial, wraps
 import numpy
+from blinker import Signal
 
+from qcodes import config
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
-                                  warn_units)
+                                  warn_units, SignalEmitter)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum
@@ -107,9 +113,11 @@ def __deepcopy__(self, memodict={}):
     """
     deepcopy_method = self.__deepcopy__
     log = self.log
+    signal = self.signal
     try:
         del self.__deepcopy__
         del self.log
+        self.signal = None
         self_copy = deepcopy(self)
         self_copy.__deepcopy__ = deepcopy_method
         self_copy.log = log
@@ -117,13 +125,15 @@ def __deepcopy__(self, memodict={}):
             self_copy.get = self_copy._wrap_get(self_copy.get_raw)
         if self_copy.wrap_set and hasattr(self_copy, 'set_raw'):
             self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+        self_copy._signal_chain = []
         return self_copy
     finally:
         self.__deepcopy__ = deepcopy_method
         self.log = log
+        self.signal = signal
 
 
-class _BaseParameter(Metadatable, DeferredOperations):
+class _BaseParameter(Metadatable, SignalEmitter):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -202,7 +212,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
+
+        config_link: optional silq config path, in which case every time
+            that the silq config item is updated, the parameter value is also
+            updated. Warning: SilQ only! See SilQ SubConfig for more info.
     """
+
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
@@ -220,11 +235,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None):
+                 delay: Optional[Union[int, float]]=None,
+                 config_link: str = None):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
 
-        super().__init__(metadata)
+        Metadatable.__init__(self, metadata)
+        SignalEmitter.__init__(self, initialize_signal=False)
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
@@ -299,6 +316,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         self.log = logging.getLogger(str(self))
 
+        if config_link is not None:
+            if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
+                config.user.silq_config.signal.connect(self._handle_config_signal,
+                                                       sender=config_link)
+
     def __copy__(self):
         return self.__deepcopy__()
 
@@ -326,6 +348,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
+
+    def _handle_config_signal(self, sender, value):
+        self(value)
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str]=None) -> dict:
@@ -429,7 +454,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def _wrap_set(self, set_function):
         @wraps(set_function)
-        def set_wrapper(value, **kwargs):
+        def set_wrapper(value, signal_chain=[], **kwargs):
             try:
                 self.validate(value)
 
@@ -472,6 +497,17 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     t0 = time.perf_counter()
 
                     set_function(parsed_scaled_mapped_value, **kwargs)
+
+                    # # Send a signal if anything is connected, unless
+                    if self.signal is not None:
+                        for receiver in self.signal.receivers.values():
+                            potential_emitter = getattr(receiver(), '__self__', None)
+                            if isinstance(potential_emitter, SignalEmitter):
+                                if not signal_chain:
+                                    potential_emitter._signal_chain = [self]
+                                else:
+                                    potential_emitter._signal_chain = signal_chain + [self]
+                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
 
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value

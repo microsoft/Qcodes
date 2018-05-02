@@ -63,7 +63,8 @@ setup(name='qcodes',
           'h5py>=2.6',
           'websockets>=3.2,<3.4',
           'jsonschema',
-          'pyperclip'
+          'pyperclip',
+          'blinker'
       ],
 
       test_suite='qcodes.tests',
