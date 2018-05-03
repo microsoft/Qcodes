@@ -51,7 +51,7 @@ class CryogenicSMS120C(VisaInstrument):
     """
 
     # Reg. exp. to match a float or exponent in a string
-    _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
+    _re_float_exp = r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
                  current_ramp_limit=0.0506, reset=False, timeout=5, terminator='\r\n', **kwargs):
@@ -136,7 +136,7 @@ class CryogenicSMS120C(VisaInstrument):
 
 
     def get_idn(self):
-        """
+        r"""
         Overwrites the get_idn function using constants as the hardware
         does not have a proper \*IDN function.
         """
