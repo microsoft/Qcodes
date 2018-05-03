@@ -536,7 +536,7 @@ class AWG70000A(VisaInstrument):
         self._sendBinaryFile(wfmx, filename, path)
 
     def _sendBinaryFile(self, binfile: bytes, filename: str,
-                        path: str) -> None:
+                        path: str, overwrite: bool=True) -> None:
         """
         Send a binary file to the AWG's mass memory (disk).
 
@@ -545,6 +545,7 @@ class AWG70000A(VisaInstrument):
             filename: The name of the file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved.
+            overwite: If true, the file on disk gets overwritten
         """
 
         name_str = 'MMEMory:DATA "{}"'.format(filename).encode('ascii')
@@ -560,6 +561,14 @@ class AWG70000A(VisaInstrument):
             raise ValueError('File too large to transfer')
 
         self.current_directory(path)
+
+        if overwrite:
+            log.debug(f'Pre-deleting file {filename} at {path}')
+            self.visa_handle.write(f'MMEMory:DELete {filename}')
+            # if the file does not exist,
+            # an error code -256 is put in the error queue
+            resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
+            log.debug(f'Pre-deletion finished with return code {resp}')
 
         self.visa_handle.write_raw(msg)
 
