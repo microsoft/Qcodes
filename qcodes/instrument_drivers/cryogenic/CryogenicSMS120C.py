@@ -54,7 +54,7 @@ class CryogenicSMS120C(VisaInstrument):
     _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
-                 current_ramp_limit=0.0506,reset=False, timeout=5, terminator='\r\n', **kwargs):
+                 current_ramp_limit=0.0506, reset=False, timeout=5, terminator='\r\n', **kwargs):
 
         log.debug('Initializing instrument')
         super().__init__(name, address, terminator=terminator, **kwargs)
@@ -459,7 +459,7 @@ class CryogenicSMS120C(VisaInstrument):
                 self._set_pauseRamp(1)
                 self.ask('SET MID %0.2f' % val)       # Set target field
                 self._set_pauseRamp(0)               # Unpause the controller
-                # Ramp magnet/field to MID or ZERO (Note: Using standard write 
+                # Ramp magnet/field to MID or ZERO (Note: Using standard write
                 # as read returns an error/is non-existent).
                 if val == 0:
                     self.write('RAMP ZERO')
@@ -472,12 +472,12 @@ class CryogenicSMS120C(VisaInstrument):
                     'Target field is outside max. limits, please lower the target value.')
         else:
             log.error('Cannot set field - check magnet status.')
-    
+
     def _set_field_bidirectional(self, val):
         polarity = self._get_polarity()
         desired_polarity = '-' if val < 0 else '+'
-        
-        if ((polarity == '+' and desired_polarity == '-') or 
+
+        if ((polarity == '+' and desired_polarity == '-') or
             (polarity == '-' and desired_polarity == '+')):
             self._set_field(0)
             # This is, sadly, blocking
@@ -485,7 +485,7 @@ class CryogenicSMS120C(VisaInstrument):
             self._set_polarity(desired_polarity)
 
         self._set_field(abs(val))
-        
+
     def _wait_for_field_zero(self, field_threshold=0.003, refresh_time=0.1):
         """Waits for the field to be within a certain threshold"""
         while abs(self.field()) > field_threshold:
