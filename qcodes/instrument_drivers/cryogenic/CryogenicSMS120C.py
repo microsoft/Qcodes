@@ -478,7 +478,7 @@ class CryogenicSMS120C(VisaInstrument):
         desired_polarity = '-' if val < 0 else '+'
 
         if ((polarity == '+' and desired_polarity == '-') or
-            (polarity == '-' and desired_polarity == '+')):
+                (polarity == '-' and desired_polarity == '+')):
             self._set_field(0)
             # This is, sadly, blocking
             self._wait_for_field_zero(0)
@@ -490,4 +490,3 @@ class CryogenicSMS120C(VisaInstrument):
         """Waits for the field to be within a certain threshold"""
         while abs(self.field()) > field_threshold:
             time.sleep(refresh_time)
-
