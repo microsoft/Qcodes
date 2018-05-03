@@ -195,9 +195,6 @@ class QDac(VisaInstrument):
         # TODO: do we need a query delay for robust operation?
         self._write_response = ''
 
-        # The following bool is used in self.write
-        self.debugmode = False
-
         if self._get_firmware_version() < 0.170202:
             raise RuntimeError('''
                                Obsolete QDAC Software version detected.
@@ -650,8 +647,8 @@ class QDac(VisaInstrument):
         available in `_write_response`
 
         """
-        if self.debugmode:
-            log.info('Sending command string: {}'.format(cmd))
+
+        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
