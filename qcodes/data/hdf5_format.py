@@ -291,6 +291,9 @@ class HDF5Format(Formatter):
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
+            if isinstance(key, (float, int)):
+                key = '__' + str(type(key)) + '__' + str(key)
+
             if isinstance(item, (str, bool, float, int)):
                 entry_point.attrs[key] = item
             elif isinstance(item, np.ndarray):
@@ -433,6 +436,7 @@ def str_to_bool(s):
 
 
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
+
 
 class HDF5FormatMetadata(HDF5Format):
 
