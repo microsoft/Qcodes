@@ -648,7 +648,7 @@ class QDac(VisaInstrument):
 
         """
 
-        log.debug('Sending command string: {}'.format(cmd))
+        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
