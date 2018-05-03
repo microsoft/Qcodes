@@ -1,6 +1,12 @@
+"""
+Module for the Rigol DG1062 driver. We have only implemented:
+1) Setting/getting waveforms
+2) Setting/getting the impedance
+3) Setting/getting the polarity
+"""
+
 import logging
 from functools import partial
-from collections import defaultdict
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
@@ -9,14 +15,26 @@ log = logging.getLogger(__name__)
 
 
 class GD1062Channel(InstrumentChannel):
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: 'GD1062', name: str, channel: int):
+        """
+        Args:
+            parent: The instrument this channel belongs to
+            name (str)
+            channel (int)
+        """
+
         super().__init__(parent, name)
 
         self.parent = parent
         self.channel = channel
 
-        self.waveform_params = defaultdict(
-            lambda: ["freq", "ampl", "offset", "phase"])
+        default_wave_params = ["freq", "ampl", "offset", "phase"]
+
+        self.waveform_params = {
+            waveform: default_wave_params for waveform in
+            ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER"]
+        }
+        
         self.waveform_params["DC"] = ["freq", "ampl", "offset"]
         self.waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
@@ -88,10 +106,13 @@ class GD1062Channel(InstrumentChannel):
         if not "waveform" in params_dict:
             raise ValueError("At least 'waveform' argument needed")
 
-        current_waveform = params_dict["waveform"]
-        param_names = self.waveform_params[current_waveform]
+        waveform = params_dict["waveform"]
+        if waveform not in self.waveform_params:
+            raise ValueError("Unknown waveform '{waveform}'")
 
-        string = f":SOUR{self.channel}:APPL:{current_waveform} "
+        param_names = self.waveform_params[waveform]
+
+        string = f":SOUR{self.channel}:APPL:{waveform} "
         string += ",".join(
             ["{:7e}".format(params_dict[param]) for param in param_names])
         self.parent.write_raw(string)
