@@ -449,6 +449,16 @@ class AWG70000A(VisaInstrument):
 
         return resp
 
+    def delete_sequence_from_list(self, seqname: str) -> None:
+        """
+        Delete the specified sequence from the sequence list
+
+        Args:
+            seqname: The name of the sequence (as it appears in the sequence
+                list, not the file name) to delete
+        """
+        self.write(f'SLISt:SEQuence:DELete "{seqname}"')
+
     def clearSequenceList(self):
         """
         Clear the sequence list
