@@ -1,7 +1,8 @@
 import logging
-from typing import Sequence, Any
+from typing import Sequence, Any, Dict, Callable
 import numpy as np
 from functools import partial, wraps
+from copy import deepcopy
 
 from qcodes.utils.helpers import DelegateAttributes, full_class
 from qcodes.utils.metadata import Metadatable
@@ -39,6 +40,32 @@ class ParameterNodeMetaClass(type):
         return super(ParameterNodeMetaClass, meta).__new__(meta, name, bases, dct)
 
 
+def __deepcopy__(self, memodict={}):
+    """Deepcopy method for ParameterNode.
+
+    It is
+    """
+    # We remove parameters because it may cause circular referencing, i.e. the
+    # parameter references the ParameterNode via its decorated method, while
+    # the ParameterNode references the parameter via its `parameters` attribute
+    restore_attrs = {'__deepcopy__': self.__deepcopy__}
+    try:
+        for attr in restore_attrs:
+            delattr(self, attr)
+
+        self_copy = deepcopy(self)
+
+        for parameter_name, parameter in self_copy.parameters.items():
+            if parameter_name in self._parameter_decorators:
+                parameter_decorators = self._parameter_decorators[parameter_name]
+                self_copy._attach_parameter_decorators(parameter, parameter_decorators)
+
+            return self_copy
+    finally:
+        for attr_name, attr in restore_attrs.items():
+            setattr(self, attr_name, attr)
+
+
 class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMetaClass):
     """ Container for parameters
 
@@ -72,6 +99,11 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
                  **kwargs):
+        # Move deepcopy method to the instance scope, since it will temporarily
+        # delete its own method during copying (see ParameterNode.__deepcopy__)
+        self.__deepcopy__ = partial(__deepcopy__, self)
+        self.__copy__ = self.__deepcopy__
+
         self.use_as_attributes = use_as_attributes
         if name is not None:
             self.name = name
@@ -124,27 +156,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             if attr in self._parameter_decorators:
                 # Some methods have been defined in the ParameterNode as methods
                 # Using the @parameter decorator.
-                for param_attr, param_method in self._parameter_decorators[attr].items():
-                    method_with_args = partial(param_method, self, val)
-                    if param_attr == 'get':
-                        val.get_raw = method_with_args
-                        if val.wrap_get:
-                            val.get = val._wrap_get(val.get_raw)
-                        else:
-                            val.get = val.get_raw
-                    elif param_attr == 'set':
-                        val.set_raw = method_with_args
-                        if val.wrap_set:
-                            val.set = val._wrap_set(val.set_raw)
-                        else:
-                            val.set = val.set_raw
-                    else:
-                        setattr(val, param_attr, method_with_args)
-                # perform a set without evaluating, which saves the value,
-                # ensuring that new modifications such as the set_parser are
-                # taken into account
-                if hasattr(val, 'set') and val.raw_value is not None:
-                    val.set(val.get_latest(), evaluate=False)
+                self._attach_parameter_decorators(
+                    parameter=val,
+                    decorator_methods=self._parameter_decorators[attr])
             if val.name == 'None':
                 # Parameter has been created without name, update name to attr
                 val.name = attr
@@ -163,6 +177,40 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             self.parameters[attr](val)
         else:
             super().__setattr__(attr, val)
+
+    def _attach_parameter_decorators(self,
+                                     parameter: _BaseParameter,
+                                     decorator_methods: Dict[str, Callable]):
+        """Attaches @parameter decorators to a parameter
+
+        Args:
+            parameter: Parameter to attach decorators to
+            decorator_methods: Decorator methods to attach to parameter
+            """
+        for param_attr, param_method in decorator_methods.items():
+            method_with_args = partial(param_method, self, parameter)
+            if param_attr == 'get':
+                parameter.get_raw = method_with_args
+                if parameter.wrap_get:
+                    parameter.get = parameter._wrap_get(parameter.get_raw)
+                else:
+                    parameter.get = parameter.get_raw
+            elif param_attr == 'set':
+                parameter.set_raw = method_with_args
+                if parameter.wrap_set:
+                    parameter.set = parameter._wrap_set(parameter.set_raw)
+                else:
+                    parameter.set = parameter.set_raw
+            else:
+                setattr(parameter, param_attr, method_with_args)
+        # perform a set without eparameteruating, which saves the value,
+        # ensuring that new modifications such as the set_parser are
+        # taken into account
+        if hasattr(parameter, 'set') and parameter.raw_value is not None:
+            parameter.set(parameter.get_latest(), evaluate=False)
+
+    #TODO: something with deepcopy
+    __copy__ = deepcopy
 
     # def __dir__(self):
     #     # Add parameters to dir
@@ -357,10 +405,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             any: The return value of the function.
         """
         return self.functions[func_name].call(*args, **kwargs)
-
-    def __getstate__(self):
-        """Prevent pickling instruments by raising an error."""
-        raise RuntimeError('Instrumentts cannot be pickled')
 
     def validate_status(self,
                         verbose: bool = False):

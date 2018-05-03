@@ -1,7 +1,9 @@
 from unittest import TestCase
+from copy import copy, deepcopy
 
 from qcodes.instrument.parameter_node import ParameterNode, parameter
 from qcodes.instrument.parameter import Parameter
+
 
 class TestParameterNode(TestCase):
     def test_implicit_parameter_name(self):
@@ -129,3 +131,202 @@ class TestParameterNode(TestCase):
         with self.assertRaises(ValueError):
             node.param1 = 31
         node.param1 = 44
+
+class TestCopyParameterNode(TestCase):
+    def test_copy_parameter_node(self):
+        node = ParameterNode(use_as_attributes=True)
+        node.p = Parameter(set_cmd=None)
+        node.p = 123
+
+        node2 = copy(node)
+        self.assertEqual(node.p, 123)
+        self.assertEqual(node2.p, 123)
+
+        node3 = deepcopy(node)
+        self.assertEqual(node3.p, 123)
+
+        node.p = 124
+        self.assertEqual(node.p, 124)
+        self.assertEqual(node2.p, 123)
+        self.assertEqual(node3.p, 123)
+
+        node2.p = 125
+        self.assertEqual(node.p, 124)
+        self.assertEqual(node2.p, 125)
+        self.assertEqual(node3.p, 123)
+
+        node3.p = 126
+        self.assertEqual(node.p, 124)
+        self.assertEqual(node2.p, 125)
+        self.assertEqual(node3.p, 126)
+
+    def test_copy_parameter_in_node(self):
+        node = ParameterNode(use_as_attributes=True)
+        node.p = Parameter(set_cmd=None)
+
+        node.p = 123
+
+        p_copy = copy(node['p'])
+        self.assertEqual(node.p, 123)
+        self.assertEqual(p_copy(), 123)
+
+        node.p = 124
+        self.assertEqual(node.p, 124)
+        self.assertEqual(p_copy(), 123)
+
+        p_copy(125)
+        self.assertEqual(node.p, 124)
+        self.assertEqual(p_copy(), 125)
+
+    def test_copy_parameter_node_with_parameter_decorator(self):
+        class Node(ParameterNode):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.p = Parameter()
+                self.value = 1
+
+            @parameter
+            def p_get(self, parameter):
+                return (self.value, parameter._value)
+
+            @parameter
+            def p_set(self, parameter, value):
+                parameter._value = value
+
+            @parameter
+            def p_vals(self, parameter, val):
+                return True
+
+        node = Node(use_as_attributes=True)
+
+        node.p = 42
+        self.assertEqual(node.p, (1,42))
+
+        node_copy = copy(node)
+        node_copy.name = 'node_copy'
+        node_copy.value = 2
+        self.assertEqual(node.p, (1,42))
+        self.assertEqual(node_copy.p, (2, 42))
+
+        node.p = 43
+        self.assertEqual(node.p, (1, 43))
+        self.assertEqual(node_copy.p, (2, 42))
+
+        node_copy.p = 44
+        self.assertEqual(node.p, (1, 43))
+        self.assertEqual(node_copy.p, (2, 44))
+
+    def test_deepcopy_parameter_node_with_parameter_decorator(self):
+        class Node(ParameterNode):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.p = Parameter()
+                self.value = 1
+
+            @parameter
+            def p_get(self, parameter):
+                return (self.value, parameter._value)
+
+            @parameter
+            def p_set(self, parameter, value):
+                parameter._value = value
+
+            @parameter
+            def p_vals(self, parameter, val):
+                return True
+
+        node = Node(use_as_attributes=True)
+
+        node.p = 42
+        self.assertEqual(node.p, (1,42))
+
+        node_copy = copy(node)
+        node_copy.value = 2
+        self.assertEqual(node.p, (1,42))
+        self.assertEqual(node_copy.p, (2, 42))
+
+        node.p = 43
+        self.assertEqual(node.p, (1, 43))
+        self.assertEqual(node_copy.p, (2, 42))
+
+        node_copy.p = 44
+        self.assertEqual(node.p, (1, 43))
+        self.assertEqual(node_copy.p, (2, 44))
+
+    def test_copy_parameter_in_node_with_decorator(self):
+        class Node(ParameterNode):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.p = Parameter()
+                self.value = 1
+
+            @parameter
+            def p_get(self, parameter):
+                return (self.value, parameter._value)
+
+            @parameter
+            def p_set(self, parameter, value):
+                parameter._value = value
+
+            @parameter
+            def p_vals(self, parameter, val):
+                return True
+
+        node = Node(use_as_attributes=True)
+
+        node.p = 42
+        self.assertEqual(node.p, (1,42))
+
+        parameter_copy = copy(node['p'])
+        self.assertEqual(parameter_copy(), (1, 42))
+
+        node.value = 2
+        self.assertEqual(node.p, (2, 42))
+        self.assertEqual(parameter_copy(), (2, 42))
+
+        node.p = 43
+        self.assertEqual(node.p, (2, 43))
+        self.assertEqual(parameter_copy(), (2, 42))
+
+        parameter_copy(44)
+        self.assertEqual(node.p, (2, 43))
+        self.assertEqual(parameter_copy(), (2, 44))
+
+    def test_deepcopy_parameter_in_node_with_decorator(self):
+        class Node(ParameterNode):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.p = Parameter()
+                self.value = 1
+
+            @parameter
+            def p_get(self, parameter):
+                return (self.value, parameter._value)
+
+            @parameter
+            def p_set(self, parameter, value):
+                parameter._value = value
+
+            @parameter
+            def p_vals(self, parameter, val):
+                return True
+
+        node = Node(use_as_attributes=True)
+
+        node.p = 42
+        self.assertEqual(node.p, (1,42))
+
+        parameter_copy = deepcopy(node['p'])
+        self.assertEqual(parameter_copy(), (1, 42))
+
+        node.value = 2
+        self.assertEqual(node.p, (2, 42))
+        self.assertEqual(parameter_copy(), (2, 42))
+
+        node.p = 43
+        self.assertEqual(node.p, (2, 43))
+        self.assertEqual(parameter_copy(), (2, 42))
+
+        parameter_copy(44)
+        self.assertEqual(node.p, (2, 43))
+        self.assertEqual(parameter_copy(), (2, 44))

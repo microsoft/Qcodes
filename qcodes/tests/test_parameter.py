@@ -837,23 +837,35 @@ class TestCopyParameter(TestCase):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
         p2 = copy(p1)
 
-        p2(41)
-
         self.assertEqual(p1.raw_value, 42)
         self.assertEqual(p1(), 42)
-        self.assertEqual(p2.raw_value, 41)
-        self.assertEqual(p2(), 41)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p1(43)
+        p2(44)
+
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 44)
+        self.assertEqual(p2(), 44)
 
     def test_deepcopy_parameter(self):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
         p2 = deepcopy(p1)
 
-        p2(41)
-
         self.assertEqual(p1.raw_value, 42)
         self.assertEqual(p1(), 42)
-        self.assertEqual(p2.raw_value, 41)
-        self.assertEqual(p2(), 41)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p1(43)
+        p2(44)
+
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 44)
+        self.assertEqual(p2(), 44)
 
 
 class TestParameterSignal(TestCase):
@@ -878,7 +890,7 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.args_kwargs_dict['kwargs'], {})
 
     def test_parameter_connect_parameter(self):
-        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, update=False)
         self.assertEqual(self.target_parameter(), 43)
 
         self.source_parameter(41)
@@ -917,7 +929,7 @@ class TestParameterSignal(TestCase):
         self.assertEqual(len(self.source_parameter.signal.receivers), 0)
 
     def test_deepcopied_source_parameter(self):
-        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, update=False)
         deepcopied_source_parameter = deepcopy(self.source_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
@@ -930,7 +942,7 @@ class TestParameterSignal(TestCase):
         self.assertEqual(deepcopied_source_parameter(), 41)
 
     def test_copied_source_parameter(self):
-        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, update=False)
         copied_source_parameter = copy(self.source_parameter)
 
         self.assertEqual(self.target_parameter(), 43)

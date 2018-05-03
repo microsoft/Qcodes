@@ -111,22 +111,49 @@ def __deepcopy__(self, memodict={}):
 
     If anyone finds a better solution, please do change this code.
     """
-    deepcopy_method = self.__deepcopy__
-    signal = self.signal
+    restore_attrs = {}
+    for attr in ['__deepcopy__', 'signal', 'get', 'set']:
+        if attr in self.__dict__:
+            restore_attrs[attr] = getattr(self, attr)
+
+    node_decorator_methods = {}
+    for attr in ['get_raw', 'set_raw', 'vals', 'set_parser', 'get_parser']:
+        attr_partial = self.__dict__.get(attr, None)
+        if isinstance(attr_partial, partial) and \
+                attr_partial.func.__name__ == 'parameter_decorator':
+            node_decorator_methods[attr] = attr_partial
     try:
-        del self.__deepcopy__
-        self.signal = None
+        for attr in {**restore_attrs, **node_decorator_methods}:
+            delattr(self, attr)
+
         self_copy = deepcopy(self)
-        self_copy.__deepcopy__ = deepcopy_method
-        if self_copy.wrap_get and hasattr(self_copy, 'get_raw'):
-            self_copy.get = self_copy._wrap_get(self_copy.get_raw)
-        if self_copy.wrap_set and hasattr(self_copy, 'set_raw'):
-            self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+        self_copy.__deepcopy__ = restore_attrs['__deepcopy__']
+
+        # Detach and reattach all node decorator methods, now containing
+        # reference to the new parameter, but still old parameter node
+        for attr, attr_partial in node_decorator_methods.items():
+            attr_method = attr_partial.func
+            original_node = attr_partial.args[0]
+            attr_partial_copy = partial(attr_method, original_node, self_copy)
+            setattr(self_copy, attr, attr_partial_copy)
+
+        # Ensure all get/set methods work fine
+        if 'get' in restore_attrs:
+            if self.wrap_get:
+                self_copy.get = self_copy._wrap_get(self_copy.get_raw)
+            else:
+                self_copy.get = deepcopy(restore_attrs['get'])
+        if 'set' in restore_attrs:
+            if self_copy.wrap_set:
+                self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+            else:
+                self_copy.set = deepcopy(restore_attrs['set'])
+
         self_copy._signal_chain = []
         return self_copy
     finally:
-        self.__deepcopy__ = deepcopy_method
-        self.signal = signal
+        for attr_name, attr in {**restore_attrs, **node_decorator_methods}.items():
+            setattr(self, attr_name, attr)
 
 
 class _BaseParameter(Metadatable, SignalEmitter):
@@ -312,9 +339,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
         if config_link:
             self.set_config_link(config_link)
 
-    def __copy__(self):
-        return self.__deepcopy__()
-
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
@@ -339,6 +363,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
+
+    def __copy__(self):
+        return self.__deepcopy__()
 
     @property
     def log(self):
@@ -721,6 +748,19 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
 
+    @wraps(SignalEmitter.connect)
+    def connect(self, callable, update=True, **kwargs):
+        SignalEmitter.connect(self, callable, update=update, **kwargs)
+
+    def set_config_link(self, config_link: str):
+        if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
+            config.user.silq_config.signal.connect(self._handle_config_signal,
+                                                   sender=config_link)
+            try:
+                return config.user.silq_config[config_link]
+            except KeyError:
+                pass
+
     # Deprecated
     @property
     def full_name(self):
@@ -744,12 +784,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
-
-    def set_config_link(self, config_link):
-        if config_link is not None:
-            if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
-                config.user.silq_config.signal.connect(self._handle_config_signal,
-                                                       sender=config_link)
 
 
 class Parameter(_BaseParameter):
@@ -865,7 +899,7 @@ class Parameter(_BaseParameter):
                  set_cmd:  Optional[Union[str, Callable, bool]]=False,
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[str]=None,
+                 vals: Optional[Validator]=None,
                  docstring: Optional[str]=None,
                  **kwargs):
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)

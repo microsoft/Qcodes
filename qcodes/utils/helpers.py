@@ -607,11 +607,8 @@ class SignalEmitter:
             'scale': None
         }
 
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError('__call__ must be implemented in a '
-                                  'SignalEmitter subclass')
-
-    def connect(self, callable, offset: float = None, scale: float = None):
+    def connect(self, callable, update=False, offset: float = None,
+                scale: float = None):
         """Connect a callable, which can be another SignalEmitter.
 
         If a SignalEmitter is passed, the __call__ method is invoked.
@@ -635,6 +632,16 @@ class SignalEmitter:
             callable._signal_modifiers['offset'] = offset
             callable._signal_modifiers['scale'] = scale
             self.signal.connect(callable._signal_call)
+
+        if update:
+            # Update callable with current value
+            value = self()
+            if scale is not None:
+                value *= scale
+            if offset is not None:
+                value += offset
+
+            callable(value)
 
     def disconnect(self, callable):
         """disconnect a callable from a SignalEmitter.
