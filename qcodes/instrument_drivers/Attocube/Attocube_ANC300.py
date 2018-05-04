@@ -156,6 +156,7 @@ class ANMxx0(InstrumentChannel):
                                unit='Hz',
                                val_mapping=filter_mapping)
 
+        # TODO(Thibaud Ruelle): define acceptable vals properly for patterns
         self.add_parameter('step_up_pattern',
                            get_cmd='getpu {}'.format(self.aid),
                            get_parser=lambda s: [int(u) for u in
@@ -179,7 +180,7 @@ class ANMxx0(InstrumentChannel):
                           call_cmd='stepu {} c'.format(self.aid))
 
         self.add_function('step_up',
-                          call_cmd='stepu {} {{.0f}}'.format(self.aid),
+                          call_cmd='stepu {} {{:d}}'.format(self.aid),
                           args=[vals.Ints(min_value=1)])
 
         self.add_function('step_down_single',
@@ -189,7 +190,7 @@ class ANMxx0(InstrumentChannel):
                           call_cmd='stepu {} c'.format(self.aid))
 
         self.add_function('step_down',
-                          call_cmd='stepd {} {{.0f}}'.format(self.aid),
+                          call_cmd='stepd {} {{:d}}'.format(self.aid),
                           args=[vals.Ints(min_value=1)])
 
         self.add_function('stop',
@@ -218,6 +219,7 @@ class ANMxx0(InstrumentChannel):
         self.add_function('wait_capacitance_updated',
                           call_cmd='stop {}'.format(self.aid))
 
+        # TODO(Thibaud Ruelle): test for range before adding param
         self.add_parameter('trigger_up_pin',
                            get_cmd='gettu {}'.format(self.aid),
                            get_parser=partial(ans_parser, 'trigger'),
