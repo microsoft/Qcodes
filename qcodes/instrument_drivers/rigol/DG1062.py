@@ -85,6 +85,7 @@ class DG1062Channel(InstrumentChannel):
             return self._get_waveform_params()
 
         self._set_waveform_params(**kwargs)
+        return {}
 
     def _get_waveform_param(self, param: str) ->float:
         """
@@ -127,7 +128,7 @@ class DG1062Channel(InstrumentChannel):
                         f"waveform")
             return
 
-        self._set_waveform_params(**params_dict)
+        return self._set_waveform_params(**params_dict)
 
     def _set_waveform_params(self, **params_dict: Dict) ->None:
         """
@@ -136,7 +137,7 @@ class DG1062Channel(InstrumentChannel):
         if not "waveform" in params_dict:
             raise ValueError("At least 'waveform' argument needed")
 
-        waveform = params_dict["waveform"]
+        waveform = str(params_dict["waveform"])
         if waveform not in self.waveform_params:
             raise ValueError(f"Unknown waveform '{waveform}'. Options are "
                              f"{self.waveform_params.keys()}")
@@ -157,7 +158,7 @@ class DG1062(VisaInstrument):
     def __init__(self, name: str, address: str, *args: List,
                  **kwargs: Dict) ->None:
 
-        super().__init__(name, address, terminator='\n', *args, **kwargs)
+        super().__init__(name, address, *args, **kwargs)
 
         channels = ChannelList(self, "channel", DG1062Channel,
                                snapshotable=True)
