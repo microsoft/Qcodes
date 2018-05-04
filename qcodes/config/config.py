@@ -9,6 +9,7 @@ from os.path import expanduser
 from pathlib import Path
 
 import jsonschema
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +88,8 @@ class Config():
     defaults = None
     defaults_schema = None
 
-    _diff_config = {}
-    _diff_schema = {}
+    _diff_config: Dict[str, dict] = {}
+    _diff_schema: Dict[str, dict] = {}
 
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()
@@ -272,6 +273,8 @@ class Config():
         """
         with open(path, "r") as fp:
             config = json.load(fp)
+
+        logger.debug(f'Loading config from {path}')
 
         config = DotDict(config)
         self.current_config_path = path

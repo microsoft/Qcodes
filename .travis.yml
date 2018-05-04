@@ -11,7 +11,6 @@ addons:
     - pandoc
 
 python:
-  - "3.5"
   - "3.6"
   # whitelist
 branches:
@@ -22,7 +21,7 @@ branches:
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - pip install -r test_requirements.txt --upgrade
+    - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
     - pip install -e .
 
@@ -34,14 +33,20 @@ before_script: # configure a headless display to test plot generation
 script:
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    # build docs with warnings as errors
     - |
-      cd ../docs
-      make html-api
+      cd ..
+      mypy qcodes --ignore-missing-imports --no-strict-optional
+
+    - |
+      cd docs
+      make SPHINXOPTS="-W" html-api
     - cd ..
 
 after_success:
-    # install dependencies for docs build
+    # upload code coverage
     - python-codacy-coverage -r qcodes/coverage.xml
+    - codecov
     # upload the docs
     - |
       if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then

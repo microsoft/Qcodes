@@ -26,12 +26,20 @@ class DacReader(object):
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
+        if volt < self.min_val or volt >= self.max_val:
+            raise ValueError('Cannot convert voltage {} V '.format(volt) +
+                             'to a voltage code, value out of range '
+                             '({} V - {} V).'.format(self.min_val,
+                                                     self.max_val))
+
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
         val = int(round(frac * 65536))
-        if val >= 65536:  # Check limits. For example setting max_val will cause an overflow
-            return 65535
-        if val < 0:  # Ensure no negative values
-            return 0
+        # extra check to be absolutely sure that the instrument does nothing
+        # receive an out-of-bounds value
+        if val > 65535 or val < 0:
+            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
+                             ', which is not within the allowed range.'
+                             ''.format(volt, val))
         return val
 
     def _dac_code_to_v(self, code):
@@ -257,8 +265,8 @@ class DacChannel(InstrumentChannel, DacReader):
 
     def _set_dac(self, code):
         """
-        Set the voltage on the dac channel, ramping if the enable_rate parameter is set for this
-        channel.
+        Set the voltage on the dac channel, ramping if the enable_rate
+        parameter is set for this channel.
 
         Params:
             code (int): the DAC code to set the voltage to
@@ -491,13 +499,19 @@ class Decadac(VisaInstrument, DacReader):
 
         # Check whether we can set startup values for the DAC.
         # This requires access to the EEPROM on each slot
+
+        # note from DV: the value never gets set to True in this driver.
+        # To avoid an error of a non existing attribute, here I set it to
+        # False by default
+        self._VERSA_EEPROM_available = False
+
         try:
             # Let's temporarily pretend to be slot 0
             self._slot = 0
             self._query_address(6, versa_eeprom=True)
             del self._slot
         except DACException:
-            self._VERSA_EEPROM_available = False
+            pass
 
         # Check whether calibration is supported
         try:
