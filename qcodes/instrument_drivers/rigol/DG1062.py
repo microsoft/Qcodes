@@ -7,7 +7,7 @@ Module for the Rigol DG1062 driver. We have only implemented:
 
 import logging
 from functools import partial
-from typing import Union, List, Dict
+from typing import Union, Dict
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
