@@ -15,8 +15,8 @@ from qcodes import InstrumentChannel, ChannelList
 log = logging.getLogger(__name__)
 
 
-class GD1062Channel(InstrumentChannel):
-    def __init__(self, parent: 'GD1062', name: str, channel: int) ->None:
+class DG1062Channel(InstrumentChannel):
+    def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
         """
         Args:
             parent: The instrument this channel belongs to
@@ -75,7 +75,7 @@ class GD1062Channel(InstrumentChannel):
         Apply a waveform on the channel
 
         Example:
-        >>> gd = GD1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
+        >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
         >>> gd.channels[0].apply(waveform="SIN", freq=1E3, ampl=1.0, offset=0, phase=0)
 
         If not kwargs are given a dictionary with the current waveform
@@ -153,18 +153,18 @@ class GD1062Channel(InstrumentChannel):
         self.parent.write_raw(string)
 
 
-class GD1062(VisaInstrument):
+class DG1062(VisaInstrument):
     def __init__(self, name: str, address: str, *args: List,
                  **kwargs: Dict) ->None:
 
         super().__init__(name, address, terminator='\n', *args, **kwargs)
 
-        channels = ChannelList(self, "channel", GD1062Channel,
+        channels = ChannelList(self, "channel", DG1062Channel,
                                snapshotable=True)
 
         for ch_num in [1, 2]:
             ch_name = "ch{}".format(ch_num)
-            channel = GD1062Channel(self, ch_name, ch_num)
+            channel = DG1062Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
 
