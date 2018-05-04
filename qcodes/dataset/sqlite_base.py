@@ -1229,7 +1229,7 @@ def _create_run_table(conn: sqlite3.Connection,
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               parameters: List[ParamSpec],
+               parameters: Optional[List[ParamSpec]]=None,
                values:  List[Any] = None,
                metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
     """ Create a single run for the experiment.
@@ -1304,7 +1304,7 @@ def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
 def add_meta_data(conn: sqlite3.Connection,
                   row_id: int,
                   metadata: Dict[str, Any],
-                  table_name: Optional[str] = "runs") -> None:
+                  table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
 
