@@ -98,11 +98,17 @@ class GD1062Channel(InstrumentChannel):
         """
         Get all the parameters of the current waveform and
         """
+        def to_float(string):
+            try:
+                return float(string)
+            except ValueError:
+                return string
+
         waveform_str = self.parent.ask_raw(f":SOUR{self.channel}:APPL?")
         parts = waveform_str.strip("\"").split(",")
 
         current_waveform = parts[0]
-        param_vals = [current_waveform] + [float(i) for i in parts[1:]]
+        param_vals = [current_waveform] + [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
 
@@ -133,7 +139,7 @@ class GD1062Channel(InstrumentChannel):
         waveform = params_dict["waveform"]
         if waveform not in self.waveform_params:
             raise ValueError(f"Unknown waveform '{waveform}'. Options are "
-                             f"{self.waveform_params}")
+                             f"{self.waveform_params.keys()}")
 
         param_names = self.waveform_params[waveform]
 
