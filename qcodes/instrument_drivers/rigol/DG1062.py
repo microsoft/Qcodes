@@ -55,6 +55,13 @@ class DG1062Channel(InstrumentChannel):
             )
 
         self.add_parameter(
+            "waveform",
+            get_cmd=partial(self._get_waveform_param, "waveform")
+            # We set the waveform by calling the 'apply' method with
+            # appropriate parameters
+        )
+
+        self.add_parameter(
             "impedance",
             get_cmd=f":OUTPUT{channel}:IMP?",
             set_cmd=f":OUTPUT{channel}:IMP {{}}",
@@ -155,10 +162,10 @@ class DG1062Channel(InstrumentChannel):
 
 
 class DG1062(VisaInstrument):
-    def __init__(self, name: str, address: str, *args: List,
+    def __init__(self, name: str, address: str,
                  **kwargs: Dict) ->None:
 
-        super().__init__(name, address, *args, **kwargs)
+        super().__init__(name, address, terminator="\n", **kwargs)
 
         channels = ChannelList(self, "channel", DG1062Channel,
                                snapshotable=True)
