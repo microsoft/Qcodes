@@ -149,7 +149,7 @@ class _BaseParameter(Metadatable):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    get_raw = None # type: Optional[Callable]
+    get_raw = None  # type: Optional[Callable]
     set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
