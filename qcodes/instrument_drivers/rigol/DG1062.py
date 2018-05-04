@@ -7,6 +7,7 @@ Module for the Rigol DG1062 driver. We have only implemented:
 
 import logging
 from functools import partial
+from typing import Union, List, Dict
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
@@ -15,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 class GD1062Channel(InstrumentChannel):
-    def __init__(self, parent: 'GD1062', name: str, channel: int):
+    def __init__(self, parent: 'GD1062', name: str, channel: int) ->None:
         """
         Args:
             parent: The instrument this channel belongs to
@@ -28,13 +29,14 @@ class GD1062Channel(InstrumentChannel):
         self.parent = parent
         self.channel = channel
 
+        # All waveforms except 'DC' and 'ARB' have these parameters
         default_wave_params = ["freq", "ampl", "offset", "phase"]
 
         self.waveform_params = {
             waveform: default_wave_params for waveform in
             ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER"]
         }
-        
+
         self.waveform_params["DC"] = ["freq", "ampl", "offset"]
         self.waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
@@ -68,18 +70,34 @@ class GD1062Channel(InstrumentChannel):
             val_mapping={1: 'POSITIVE', 0: 'NEGATIVE'},
         )
 
-    def apply(self, **kwargs):
+    def apply(self, **kwargs: Dict) ->Union[None, Dict]:
+        """
+        Apply a waveform on the channel
+
+        Example:
+        >>> gd = GD1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
+        >>> gd.channels[0].apply(waveform="SIN", freq=1E3, ampl=1.0, offset=0, phase=0)
+
+        If not kwargs are given a dictionary with the current waveform
+        parameters are returned.
+        """
         if len(kwargs) == 0:
             return self._get_waveform_params()
 
         self._set_waveform_params(**kwargs)
 
-    def _get_waveform_param(self, param):
+    def _get_waveform_param(self, param: str) ->float:
+        """
+        Get a parameter of the current waveform. Valid param names are
+        dependent on the waveform type (e.g. "DC" does not have a "phase")
+        """
         params_dict = self._get_waveform_params()
         return params_dict.get(param, None)
 
-    def _get_waveform_params(self):
-
+    def _get_waveform_params(self) ->Dict:
+        """
+        Get all the parameters of the current waveform and
+        """
         waveform_str = self.parent.ask_raw(f":SOUR{self.channel}:APPL?")
         parts = waveform_str.strip("\"").split(",")
 
@@ -90,7 +108,10 @@ class GD1062Channel(InstrumentChannel):
 
         return params_dict
 
-    def _set_waveform_param(self, param, value):
+    def _set_waveform_param(self, param: str, value: float) ->None:
+        """
+        Set a particular waveform param to the given value.
+        """
         params_dict = self._get_waveform_params()
 
         if param in params_dict:
@@ -98,19 +119,27 @@ class GD1062Channel(InstrumentChannel):
         else:
             log.warning(f"Warning, unable to set '{param}' for the current "
                         f"waveform")
+            return
 
         self._set_waveform_params(**params_dict)
 
-    def _set_waveform_params(self, **params_dict):
-
+    def _set_waveform_params(self, **params_dict: Dict) ->None:
+        """
+        Apply a waveform with values given in a dictionary.
+        """
         if not "waveform" in params_dict:
             raise ValueError("At least 'waveform' argument needed")
 
         waveform = params_dict["waveform"]
         if waveform not in self.waveform_params:
-            raise ValueError("Unknown waveform '{waveform}'")
+            raise ValueError(f"Unknown waveform '{waveform}'. Options are "
+                             f"{self.waveform_params}")
 
         param_names = self.waveform_params[waveform]
+
+        if not set(param_names).issubset(params_dict.keys()):
+            raise ValueError(f"Waveform {waveform} needs at least parameters "
+                             f"{param_names}")
 
         string = f":SOUR{self.channel}:APPL:{waveform} "
         string += ",".join(
@@ -119,7 +148,9 @@ class GD1062Channel(InstrumentChannel):
 
 
 class GD1062(VisaInstrument):
-    def __init__(self, name, address, *args, **kwargs):
+    def __init__(self, name: str, address: str, *args: List,
+                 **kwargs: Dict) ->None:
+
         super().__init__(name, address, terminator='\n', *args, **kwargs)
 
         channels = ChannelList(self, "channel", GD1062Channel,
