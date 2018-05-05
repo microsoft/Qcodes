@@ -48,6 +48,14 @@ _chan_amps = {'70001A': 0.5,
               '70002A': 0.5,
               '5208': 1.5}
 
+# marker ranges
+_marker_high = {'70001A': (-1.4, 1.4),
+                '70002A': (-1.4, 1.4),
+                '5208': (-0.5, 1.75)}
+_marker_low = {'70001A': (-1.4, 1.4),
+               '70002A': (-1.4, 1.4),
+               '5208': (-0.3, 1.55)}
+
 
 class SRValidator(Validator):
     """
@@ -215,21 +223,19 @@ class AWGChannel(InstrumentChannel):
             self.add_parameter(
                 'marker{}_high'.format(mrk),
                 label='Channel {} marker {} high level'.format(channel, mrk),
-                set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
-                                                                     mrk),
+                set_cmd=partial(self._set_marker, channel, mrk, True),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
                 unit='V',
-                vals=vals.Numbers(-1.4, 1.4),
+                vals=vals.Numbers(*_marker_high[self.model]),
                 get_parser=float)
 
             self.add_parameter(
                 'marker{}_low'.format(mrk),
                 label='Channel {} marker {} low level'.format(channel, mrk),
-                set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
-                                                                    mrk),
+                set_cmd=partial(self._set_marker, channel, mrk, False),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
                 unit='V',
-                vals=vals.Numbers(-1.4, 1.4),
+                vals=vals.Numbers(*_marker_low[self.model]),
                 get_parser=float)
 
             self.add_parameter(
