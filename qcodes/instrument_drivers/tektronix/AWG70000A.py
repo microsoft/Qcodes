@@ -1,18 +1,19 @@
-import xml.etree.ElementTree as ET
 import datetime as dt
-import numpy as np
 import struct
 import io
 import zipfile as zf
 import logging
 from functools import partial
-
+from typing import List, Sequence, Dict, Union, Optional
 import time
-from typing import List, Sequence
+
+import xml.etree.ElementTree as ET
+import numpy as np
 
 from qcodes import Instrument, VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Validator
+from broadbean.sequence import fs_schema, InvalidForgedSequenceError
 
 log = logging.getLogger(__name__)
 
@@ -655,7 +656,7 @@ class AWG70000A(VisaInstrument):
         are loaded into the sequence list.
 
         Args:
-            filename: The name of the sequence file
+            filename: The name of the sequence file INCLUDING the extension
             path: Path to load from. If omitted, the default path
                 (self.seqxFileFolder) is used.
         """
@@ -824,6 +825,193 @@ class AWG70000A(VisaInstrument):
         return binary_out
 
     @staticmethod
+    def make_SEQX_from_forged_sequence(
+            seq: Dict[int, Dict],
+            amplitudes: List[float],
+            seqname: str,
+            channel_mapping: Optional[Dict[Union[str, int],
+                                           int]]=None) -> bytes:
+        """
+        Make a .seqx from a forged broadbean sequence.
+        Supports subsequences.
+
+        Args:
+            seq: The output of broadbean's Sequence.forge()
+            amplitudes: A list of the AWG channels' voltage amplitudes.
+                The first entry is ch1 etc.
+            channel_mapping: A mapping from what the channel is called
+                in the broadbean sequence to the integer describing the
+                physical channel it should be assigned to.
+            seqname: The name that the sequence will have in the AWG's
+                sequence list. Used for loading the sequence.
+
+        Returns:
+            The binary .seqx file contents. Can be sent directly to the
+                instrument or saved on disk.
+        """
+
+        try:
+            fs_schema.validate(seq)
+        except Exception as e:
+            raise InvalidForgedSequenceError(e)
+
+        chan_list: List[Union[str, int]] = []
+        for pos1 in seq.keys():
+            for pos2 in seq[pos1]['content'].keys():
+                for ch in seq[pos1]['content'][pos2]['data'].keys():
+                    if ch not in chan_list:
+                        chan_list.append(ch)
+
+        if channel_mapping is None:
+            channel_mapping = {ch: ch_ind+1
+                               for ch_ind, ch in enumerate(chan_list)}
+
+        if len(set(chan_list)) != len(amplitudes):
+            raise ValueError('Incorrect number of amplitudes provided.')
+
+        if set(chan_list) != set(channel_mapping.keys()):
+            raise ValueError(f'Invalid channel_mapping. The sequence has '
+                             f'channels {set(chan_list)}, but the '
+                             'channel_mapping maps from the channels '
+                             f'{set(channel_mapping.keys())}')
+
+        if set(channel_mapping.values()) != set(range(1, 1+len(chan_list))):
+            raise ValueError('Invalid channel_mapping. Must map onto '
+                             f'{list(range(1, 1+len(chan_list)))}')
+
+        ##########
+        # STEP 1:
+        # Make all .wfmx files
+
+        wfmx_files: List[bytes] = []
+        wfmx_filenames: List[str] = []
+
+        for pos1 in seq.keys():
+            for pos2 in seq[pos1]['content'].keys():
+                for ch, data in seq[pos1]['content'][pos2]['data'].items():
+                    # TODO: Add support for more than two markers
+                    wfm = data['wfm']
+                    # TODO: can we add support for single markers?
+                    if 'm1' or 'm2' in data.keys():
+                        m1 = data.get('m1', np.zeros(len(wfm)))
+                        m2 = data.get('m2', np.zeros(len(wfm)))
+                        wfm_data = np.stack((wfm, m1, m2))
+                    else:
+                        wfm_data = wfm
+                    awgchan = channel_mapping[ch]
+                    wfmx = AWG70000A.makeWFMXFile(wfm_data,
+                                                  amplitudes[awgchan-1])
+                    wfmx_files.append(wfmx)
+                    wfmx_filenames.append(f'wfm_{pos1}_{pos2}_{awgchan}')
+
+        ##########
+        # STEP 2:
+        # Make all subsequence .sml files
+
+        subseqsml_files: List[str] = []
+        subseqsml_filenames: List[str] = []
+
+        for pos1 in seq.keys():
+            if seq[pos1]['type'] == 'subsequence':
+
+                ss_wfm_names: List[List[str]] = []
+
+                # we need to "flatten" all the individual dicts of element
+                # sequence options into one dict of lists of sequencing options
+                # and we must also provide default values if nothing
+                # is specified
+                seqings: List[Dict[str, int]] = []
+                for pos2 in (seq[pos1]['content'].keys()):
+                    pos_seqs = seq[pos1]['content'][pos2]['sequencing']
+                    pos_seqs['twait'] = pos_seqs.get('twait', 0)
+                    pos_seqs['nrep'] = pos_seqs.get('nrep', 1)
+                    pos_seqs['jump_input'] = pos_seqs.get('jump_input', 0)
+                    pos_seqs['jump_target'] = pos_seqs.get('jump_target', 0)
+                    pos_seqs['goto'] = pos_seqs.get('goto', 0)
+                    seqings.append(pos_seqs)
+
+                    ss_wfm_names.append([n for n in wfmx_filenames
+                                      if f'wfm_{pos1}_{pos2}' in n])
+
+                seqing = {k: [d[k] for d in seqings]
+                          for k in seqings[0].keys()}
+
+                subseqname = f'subsequence_{pos1}'
+
+                subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
+                                                   nreps=seqing['nrep'],
+                                                   event_jumps=seqing['jump_input'],
+                                                   event_jump_to=seqing['jump_target'],
+                                                   go_to=seqing['goto'],
+                                                   elem_names=ss_wfm_names,
+                                                   seqname=subseqname)
+
+                subseqsml_files.append(subseqsml)
+                subseqsml_filenames.append(f'{subseqname}')
+
+        ##########
+        # STEP 3:
+        # Make the main .sml file
+
+        asset_names: List[List[str]] = []
+        seqings = []
+        subseq_positions: List[int] = []
+        for pos1 in seq.keys():
+            pos_seqs = seq[pos1]['sequencing']
+
+            pos_seqs['twait'] = pos_seqs.get('twait', 0)
+            pos_seqs['nrep'] = pos_seqs.get('nrep', 1)
+            pos_seqs['jump_input'] = pos_seqs.get('jump_input', 0)
+            pos_seqs['jump_target'] = pos_seqs.get('jump_target', 0)
+            pos_seqs['goto'] = pos_seqs.get('goto', 0)
+            seqings.append(pos_seqs)
+            if seq[pos1]['type'] == 'subsequence':
+                subseq_positions.append(pos1)
+                asset_names.append([sn for sn in subseqsml_filenames
+                                    if f'_{pos1}' in sn])
+            else:
+                asset_names.append([wn for wn in wfmx_filenames
+                                    if f'wfm_{pos1}' in wn])
+        seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+
+        mainseqname = seqname
+        mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
+                                            nreps=seqing['nrep'],
+                                            event_jumps=seqing['jump_input'],
+                                            event_jump_to=seqing['jump_target'],
+                                            go_to=seqing['goto'],
+                                            elem_names=asset_names,
+                                            seqname=mainseqname,
+                                            subseq_positions=subseq_positions)
+
+        ##########
+        # STEP 4:
+        # Build the .seqx file
+
+        user_file = b''
+        setup_file = AWG70000A._makeSetupFile(mainseqname)
+
+        buffer = io.BytesIO()
+
+        zipfile = zf.ZipFile(buffer, mode='a')
+        for ssn, ssf in zip(subseqsml_filenames, subseqsml_files):
+            zipfile.writestr(f'Sequences/{ssn}.sml', ssf)
+        zipfile.writestr(f'Sequences/{mainseqname}.sml', mainseqsml)
+
+        for (name, wfile) in zip(wfmx_filenames, wfmx_files):
+            zipfile.writestr('Waveforms/{}.wfmx'.format(name), wfile)
+
+        zipfile.writestr('setup.xml', setup_file)
+        zipfile.writestr('userNotes.txt', user_file)
+        zipfile.close()
+
+        buffer.seek(0)
+        seqx = buffer.getvalue()
+        buffer.close()
+
+        return seqx
+
+    @staticmethod
     def makeSEQXFile(trig_waits: Sequence[int],
                      nreps: Sequence[int],
                      event_jumps: Sequence[int],
@@ -955,8 +1143,9 @@ class AWG70000A(VisaInstrument):
                      event_jumps: Sequence[int],
                      event_jump_to: Sequence[int],
                      go_to: Sequence[int],
-                     wfm_names: Sequence[Sequence[str]],
-                     seqname: str) -> str:
+                     elem_names: Sequence[Sequence[str]],
+                     seqname: str,
+                     subseq_positions: List[int]=[]) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -971,14 +1160,20 @@ class AWG70000A(VisaInstrument):
             event_jump_to: Jump target in case of event. 1-indexed,
                 0 means next. Must be specified for all elements.
             go_to: Which element to play next. 1-indexed, 0 means next.
-            wfm_names: The waveforms to use. Should be packed like
-                [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+            elem_names: The waveforms/subsequences to use. Should be packed
+                like:
+                [[wfmpos1ch1, wfmpos1ch2, ...],
+                 [subseqpos2],
+                 [wfmpos3ch1, wfmpos3ch2, ...], ...]
             seqname: The name of the sequence. This name will appear in
                 the sequence list of the instrument.
+            subseq_positions: The positions (step numbers) occupied by
+                subsequences
 
         Returns:
             A str containing the file contents, to be saved as an .sml file
         """
+
         offsetdigits = 9
 
         waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
@@ -992,19 +1187,12 @@ class AWG70000A(VisaInstrument):
         if lstlens[0] == 0:
             raise ValueError('Received empty sequence option lengths!')
 
-        # hackish check of wmfs dimensions
-        if len(np.shape(wfm_names)) != 2:
-            raise ValueError('Wrong shape of wfm_names input argument.')
-
-        if lstlens[0] != np.shape(wfm_names)[1]:
+        if lstlens[0] != np.shape(elem_names)[0]:
             raise ValueError('Mismatch between number of waveforms and'
                              ' number of sequencing steps.')
 
         N = lstlens[0]
-        chans = np.shape(wfm_names)[0]
-
-        # for easy indexing later
-        wfm_names_arr = np.array(wfm_names)
+        chans = np.shape(elem_names)[0]
 
         # form the timestamp string
         timezone = time.timezone
@@ -1091,12 +1279,15 @@ class AWG70000A(VisaInstrument):
                 gotostep.text = '{:d}'.format(go_to[n-1])
 
             assets = ET.SubElement(step, 'Assets')
-            for wfm in wfm_names_arr[:, n-1]:
+            for assetname in elem_names[n-1]:
                 asset = ET.SubElement(assets, 'Asset')
                 temp_elem = ET.SubElement(asset, 'AssetName')
-                temp_elem.text = wfm
+                temp_elem.text = assetname
                 temp_elem = ET.SubElement(asset, 'AssetType')
-                temp_elem.text = 'Waveform'
+                if n in subseq_positions:
+                    temp_elem.text = 'Sequence'
+                else:
+                    temp_elem.text = 'Waveform'
 
             flags = ET.SubElement(step, 'Flags')
             for _ in range(chans):
@@ -1110,6 +1301,9 @@ class AWG70000A(VisaInstrument):
         temp_elem.set('name', '')
         temp_elem = ET.SubElement(datafile, 'Setup')
 
+        # the tostring() call takes roughly 75% of the total
+        # time spent in this function. Can we speed up things?
+        # perhaps we should use lxml?
         xmlstr = ET.tostring(datafile, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
 
