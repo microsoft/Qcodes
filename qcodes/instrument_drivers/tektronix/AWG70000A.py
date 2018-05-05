@@ -239,6 +239,13 @@ class AWGChannel(InstrumentChannel):
                 get_cmd='OUTPut{}:WVALue:MARKer{}?'.format(channel, mrk),
                 vals=vals.Enum('FIRST', 'LOW', 'HIGH'))
 
+            self.add_parameter(
+                name=f'marker{mrk}_stoppedvalue',
+                label=f'Channel {channel} marker {mrk} stopped value',
+                set_cmd=f'OUTPut{channel}:SVALue:MARKer{mrk} {{}}',
+                get_cmd=f'OUTPut{channel}:SVALue:MARKer{mrk}?',
+                vals=vals.Enum('OFF', 'LOW'))
+
         ##################################################
         # MISC.
 
@@ -253,6 +260,21 @@ class AWGChannel(InstrumentChannel):
                                       markers, 9 bit resolution
                                       allows for one, and 10 bit
                                       does NOT allow for markers"""))
+
+    def _set_marker(self, channel: int, marker: int,
+                    high: bool, voltage: float) -> None:
+        """
+        Set the marker high/low value and update the low/high value
+        """
+        if high:
+            this = 'HIGH'
+            other = 'low'
+        else:
+            this = 'LOW'
+            other = 'high'
+
+        self.write(f'SOURce{channel}:MARKer{marker}:VOLTage:{this} {voltage}')
+        self.parameters[f'marker{marker}_{other}'].get()
 
     def _set_fgfreq(self, channel: int, frequency: float) -> None:
         """
