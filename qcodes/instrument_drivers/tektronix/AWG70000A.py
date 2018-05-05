@@ -435,12 +435,24 @@ class AWG70000A(VisaInstrument):
         """
         self.write('TRIGger:IMMediate BTRigger')
 
-    def play(self) -> None:
+    def wait_for_operation_to_complete(self):
+        """
+        Waits for the latest issued overlapping command to finish
+        """
+        self.ask('*OPC?')
+
+    def play(self, wait_for_opc: bool=True) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
         play button on the front panel.
+
+        Args:
+            wait_for_opc: If True, this command is blocking while the
+                instrument is getting ready to play
         """
         self.write('AWGControl:RUN')
+        if wait_for_opc:
+            self.wait_for_operation_to_complete()
 
     def stop(self) -> None:
         """
