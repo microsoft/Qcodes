@@ -399,6 +399,13 @@ class AWG70000A(VisaInstrument):
                            unit='Hz',
                            vals=vals.Numbers(6.25e9, 12.5e9))
 
+        self.add_parameter('run_state',
+                           label='Run state',
+                           get_cmd='AWGControl:RSTATe?',
+                           val_mapping={'0': 'Stopped',
+                                        '1': 'Waiting for trigger',
+                                        '2': 'Running'})
+
         # We deem 2 channels too few for a channel list
         if self.num_channels > 2:
             chanlist = ChannelList(self, 'Channels', AWGChannel,
