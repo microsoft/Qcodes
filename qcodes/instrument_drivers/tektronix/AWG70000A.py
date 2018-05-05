@@ -402,9 +402,9 @@ class AWG70000A(VisaInstrument):
         self.add_parameter('run_state',
                            label='Run state',
                            get_cmd='AWGControl:RSTATe?',
-                           val_mapping={'0': 'Stopped',
-                                        '1': 'Waiting for trigger',
-                                        '2': 'Running'})
+                           val_mapping={'Stopped': '0',
+                                        'Waiting for trigger': '1',
+                                        'Running': '2'})
 
         # We deem 2 channels too few for a channel list
         if self.num_channels > 2:
