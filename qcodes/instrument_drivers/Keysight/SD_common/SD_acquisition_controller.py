@@ -6,7 +6,7 @@ import logging
 from .SD_DIG import *
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import MultiParameter
-from qcodes.utils.validators import Numbers, Multiples
+from qcodes.utils import validators as vals
 
 
 logger = logging.getLogger(__name__)
@@ -29,14 +29,9 @@ class AcquisitionController(Instrument):
     Attributes:
         _keysight: a reference to the keysight instrument driver
     """
-    def __init__(self, name, keysight_name, **kwargs):
-        """
-        :param keysight_name: The name of the keysight instrument on the server
-        :return: nothing
-        """
+    def __init__(self, name, digitizer, **kwargs):
         super().__init__(name, **kwargs)
-        self._keysight = self.find_instrument(keysight_name,
-                                            instrument_class=SD_DIG)
+        self.digitizer = digitizer
 
         # Names and shapes must have initial value, even through they will be
         # overwritten in set_acquisition_settings. If we don't do this, the
@@ -82,51 +77,37 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
-    
-    def _ch_array_to_mask(self, channel_selection):
-        """
-        This method is a helper function to translate an array of channel numbers
-        into a binary mask.
-
-        Returns:
-            a binary mask of channels
-        """
-        mask = 0
-        for ch in channel_selection():
-            mask |= 1 << ch
-        return mask
 
 
 class Triggered_Controller(AcquisitionController):
-    def __init__(self, name, keysight_name, **kwargs):
+    def __init__(self, name: str, digitizer: Instrument, **kwargs):
         """ 
         Initialises a generic Keysight digitizer and its parameters
 
         Args:
-            name (str)      : the name of the digitizer card
-            channels (int)  : the number of input channels the specified card has
-            triggers (int)  : the number of trigger inputs the specified card has
+            name: Acquisition controller name
+            digitizer: Keysight digitizer instrument
         """
-        super().__init__(name, keysight_name, **kwargs)
+        super().__init__(name, digitizer, **kwargs)
 
         self.add_parameter(
             'average_mode',
             set_cmd=None,
             initial_value='none',
-            vals=Enum('none', 'point', 'trace'),
+            vals=vals.Enum('none', 'point', 'trace'),
             docstring='The averaging mode used for acquisition, either none, point or trace'
         )
 
         self.add_parameter(
             'channel_selection',
             set_cmd=None,
-            vals=Anything(),
+            vals=vals.Anything(),
             docstring='The list of channels on which to acquire data.'
         )
 
         self.add_parameter(
             'trigger_channel',
-            vals=Enum('trig_in', *[f'ch{k}' for k in range(8)],
+            vals=vals.Enum('trig_in', *[f'ch{k}' for k in range(8)],
                       *[f'pxi{k}' for k in range(1, 9)]),
             set_cmd=self.set_trigger_channel,
             docstring='The channel on which acquisition is triggered.'
@@ -134,7 +115,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'sample_rate',
-            vals=Numbers(min_value=1),
+            vals=vals.Numbers(min_value=1),
             set_parser=self._sample_rate_to_prescaler,
             set_cmd=lambda prescaler: self.active_channels.prescaler(prescaler),
             docstring='Sets the sample rate for all channels. The sample rate '
@@ -144,15 +125,15 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'trigger_edge',
-            vals=Enum('rising', 'falling', 'both'),
-            set_cmd=lambda edge: self._keysight.channels(self.trigger_channel).trigger_edge(edge),
+            vals=vals.Enum('rising', 'falling', 'both'),
+            set_cmd=lambda edge: self.digitizer.channels(self.trigger_channel).trigger_edge(edge),
             docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
         )
 
         # TODO: Convert samples to duration
         self.add_parameter(
             'trigger_delay_samples',
-            vals=Numbers(),
+            vals=vals.Numbers(),
             initial_value=0,
             set_cmd=lambda delay: self.active_channels.trigger_delay(delay),
             docstring='Sets the trigger delay before starting acquisition.'
@@ -161,7 +142,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'samples_per_trace',
-            vals=Multiples(divisor=2, min_value=2),
+            vals=vals.Multiples(divisor=2, min_value=2),
             set_parser=lambda val: int(round(val)),
             set_cmd=lambda samples: self.active_channels.points_per_cycle(samples),
             docstring='The number of points to capture per trace.'
@@ -169,7 +150,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'traces_per_acquisition',
-            vals=Numbers(min_value=1),
+            vals=vals.Numbers(min_value=1),
             set_parser=lambda val: int(round(val)),
             set_cmd=lambda n_cycles: self.active_channels.n_cycles(n_cycles),
             docstring='The number of traces to capture per acquisition. '
@@ -179,7 +160,7 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'traces_per_read',
             set_cmd=None,
-            vals=Numbers(min_value=1),
+            vals=vals.Numbers(min_value=1),
             set_parser=lambda val: int(round(val)),
             docstring='The number of traces to get per read. '
                      'Can be use to break acquisition into multiple reads.'
@@ -187,7 +168,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'timeout',
-            vals=Numbers(min_value=0),
+            vals=vals.Numbers(min_value=0),
             set_cmd=lambda timeout: self.active_channels.timeout(timeout),
             unit='s',
             docstring='The maximum time (s) spent trying to read a single channel. '
@@ -196,7 +177,7 @@ class Triggered_Controller(AcquisitionController):
         )
         self.add_parameter(
             'timeout_interval',
-            vals=Numbers(min_value=0),
+            vals=vals.Numbers(min_value=0),
             set_cmd=lambda timeout: self.active_channels.timeout(timeout),
             unit='s',
             docstring='The maximum time (s) spent trying to read a single channel. '
@@ -204,13 +185,13 @@ class Triggered_Controller(AcquisitionController):
         )
 
         # Set all channels to trigger by an analog signal
-        self._keysight.channels.trigger_mode('analog')
+        self.digitizer.channels.trigger_mode('analog')
 
         self.buffers = {}
 
     @property
     def trigger_threshold(self):
-        return self._keysight.parameters['trigger_threshold_{}'.format(
+        return self.digitizer.parameters['trigger_threshold_{}'.format(
                                          self.trigger_channel.get_latest())]
 
     @property
@@ -269,7 +250,7 @@ class Triggered_Controller(AcquisitionController):
 
                 t0 = time()
                 while time() - t0 < self.timeout():
-                    channel_data = self._keysight.daq_read(ch)
+                    channel_data = self.digitizer.daq_read(ch)
                     if len(channel_data):
                         break
                     else:
@@ -297,8 +278,7 @@ class Triggered_Controller(AcquisitionController):
         return self.buffers
 
     def start(self):
-        channel_mask = self._ch_array_to_mask(self.channel_selection)
-        self._keysight.daq_start_multiple(channel_mask)
+        self.digitizer.daq_start_multiple(self.channel_selection())
 
     def do_acquisition(self):
         """
@@ -318,8 +298,8 @@ class Triggered_Controller(AcquisitionController):
         The Keysight instrument will call this method right before
         'daq_start' is called
         """
-        self._keysight.daq_stop_multiple(self._ch_array_to_mask(self.channel_selection))
-        self._keysight.daq_flush_multiple(self._ch_array_to_mask(self.channel_selection))
+        self.digitizer.daq_stop_multiple(self.channel_selection())
+        self.digitizer.daq_flush_multiple(self.channel_selection())
 
     def pre_acquire(self):
         """
@@ -357,7 +337,7 @@ class Triggered_Controller(AcquisitionController):
             Args:
                 n_points (int)  : the number of points to capture per trace
         """
-        system_frequency = self._keysight.system_frequency()
+        system_frequency = self.digitizer.system_frequency()
         prescaler = round(system_frequency/sample_rate - 1)
         real_rate = system_frequency/(round(prescaler)+1)
         if abs(sample_rate - real_rate)/sample_rate > 0.1:
