@@ -15,7 +15,7 @@
     },
     "user": {
         "scriptfolder": ".",
-        "mainfolder": ".",
+        "mainfolder": "."
     },
     "station_configurator": {
         "enable_forced_reconnect": false,
