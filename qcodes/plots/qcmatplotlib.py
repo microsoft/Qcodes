@@ -64,7 +64,7 @@ class MatPlot(BasePlot):
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  colorbar=True, sharex=False, sharey=False, gridspec_kw=None,
-                 **kwargs):
+                 actions = [], **kwargs):
         super().__init__(interval)
 
         if subplots is None:
@@ -96,11 +96,10 @@ class MatPlot(BasePlot):
                                          interval=interval, max_threads=5)
             self.fig.canvas.mpl_connect('close_event', self.halt)
 
-        # ctrl+c copies current x, y coords
-        def handle_key_press(event):
-            if event.key == 'ctrl+c':
-                pyperclip.copy(f'({event.xdata}, {event.ydata})')
-        self.fig.canvas.mpl_connect('key_press_event', handle_key_press)
+        # Attach any actions
+        self.actions = []
+        for action in actions:
+            self.actions.append(self.connect(action))
 
     def __getitem__(self, key):
         """
@@ -555,3 +554,10 @@ class MatPlot(BasePlot):
                             subplot.qcodes_colorbar.formatter = tx
                             subplot.qcodes_colorbar.set_label(new_label)
                             subplot.qcodes_colorbar.update_ticks()
+
+    # Allow actions to be attached
+    available_actions = {}
+    def connect(self, action_name):
+        action = self.available_actions[action_name]()
+        action.connect(self)
+        return action
