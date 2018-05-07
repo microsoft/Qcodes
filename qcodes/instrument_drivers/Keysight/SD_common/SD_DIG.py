@@ -1,13 +1,12 @@
-from typing import Callable, List, Union
+from typing import Callable, List
 import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
-from scipy.interpolate import interp1d
 
-from .SD_Module import SD_Module, keysightSD1, result_parser
+from .SD_Module import SD_Module, keysightSD1
 
 
 # Functions to log method calls from the SD_AIN class
@@ -42,11 +41,12 @@ def logclass(cls):
 model_channels = {'M3300A': 8}
 
 
-def error_check(value, method_name):
+def error_check(value, method_name=None):
     """Check if returned value after a set is an error code or not.
 
     Args:
         value: value to test.
+        method_name: Name of called SD method, used for error message
 
     Raises:
         AssertionError if returned value is an error code.
@@ -158,7 +158,7 @@ class DigitizerChannel(InstrumentChannel):
             initial_value=1,
             vals=vals.Numbers(self.SD_AIN.channelMinFullScale(),
                               self.SD_AIN.channelMaxFullScale()),
-            get_function= self.SD_AIN.channelFullScale,
+            get_function=self.SD_AIN.channelFullScale,
             set_function=self.SD_AIN.channelInputConfig,
             docstring=f'The full scale voltage for ch{self.id}'
         )
@@ -168,7 +168,7 @@ class DigitizerChannel(InstrumentChannel):
             'impedance',
             initial_value='50',
             val_mapping={'high': 0, '50': 1},
-            get_function= self.SD_AIN.channelImpedance,
+            get_function=self.SD_AIN.channelImpedance,
             set_function=self.SD_AIN.channelInputConfig,
             set_args=['full_scale', 'impedance', 'coupling'],
             docstring=f'The input impedance of ch{self.id}. Note that for '
@@ -327,7 +327,7 @@ class SD_DIG(SD_Module):
         channels: the number of input channels the specified card has
         triggers: the number of pxi trigger inputs the specified card has
     """
-    
+
     def __init__(self,
                  name: str,
                  model: str,
@@ -337,7 +337,6 @@ class SD_DIG(SD_Module):
                  triggers: int = 8,
                  **kwargs):
         super().__init__(name, model, chassis, slot, triggers, **kwargs)
-
 
         if channels is None:
             channels = model_channels[self.model]
@@ -398,7 +397,7 @@ class SD_DIG(SD_Module):
 
     def initialize(self, chassis: int, slot: int):
         """Open connection to digitizer
-        
+
         Args:
             chassis: Signadyne chassis number (1 by default)
             slot: Module slot in chassis
@@ -414,7 +413,7 @@ class SD_DIG(SD_Module):
             f'No SD_DIG found at chassis {chassis}, slot {slot}'
 
         result_code = self.SD_AIN.openWithSlot(digitizer_name, chassis, slot)
-        assert result_code > 0, f'Could not open SD_DIG error code {error_code}'
+        assert result_code > 0, f'Could not open SD_DIG error code {result_code}'
 
         return digitizer_name
 
@@ -435,11 +434,11 @@ class SD_DIG(SD_Module):
         """
         daq_channel = self.channels[channel]
         value = self.SD_AIN.DAQread(channel, daq_channel.n_points(),
-                                    daq_channel.timeout() * 1e3) # ms
+                                    daq_channel.timeout() * 1e3)  # ms
         if not isinstance(value, int):
             # Scale signal from int to volts, why are we checking for non-int?
             int_min, int_max = -0x8000, 0x7FFF
-            v_min, v_max = -daq_channel.full_scale, daq_channel.full_scale
+            v_min, v_max = -daq_channel.full_scale(), daq_channel.full_scale()
             relative_value = (value.astype(float) - int_min) / (int_max - int_min)
             scaled_value = v_min + (v_max-v_min) * relative_value
         else:
@@ -449,7 +448,7 @@ class SD_DIG(SD_Module):
 
     def daq_start(self, channel: int):
         """ Start acquiring data or waiting for a trigger on the specified DAQ
-        
+
         Acquisition data can then be read using `daq_read`
 
         Args:
@@ -516,7 +515,7 @@ class SD_DIG(SD_Module):
             AssertionError if DAQtrigger was unsuccessful
         """
         value = self.SD_AIN.DAQtrigger(channel)
-        error_check(value, method_name=f'DAQtrigger ch{daq}')
+        error_check(value, method_name=f'DAQtrigger ch{channel}')
         return value
 
     def daq_trigger_multiple(self, channels):
@@ -591,16 +590,21 @@ class SD_DIG(SD_Module):
         error_check(value, method_name='triggerIOread')
         return value
 
-    def reset_clock_phase(self, trigger_behaviour, trigger_source, skew=0.0, verbose=False):
+    def reset_clock_phase(self,
+                          trigger_behaviour: int,
+                          trigger_source: int,
+                          skew: float = 0.0):
         """ Reset the clock phase between CLKsync and CLKsys
 
         Args:
-            trigger_behaviour (int) :
-            trigger_source    (int) : the PXI trigger number
-            skew           (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
+            trigger_behaviour:
+            trigger_source: the PXI trigger number
+            skew: the skew between PXI_CLK10 and CLKsync in multiples of 10ns
 
+        Raises:
+            AssertionError if clockResetPhase was unsuccessful
         """
         value = self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)
-        value_name = 'reset_clock_phase trigger_behaviour: {}, trigger_source: {}, skew: {}'.format(
-            trigger_behaviour, trigger_source, skew)
-        return result_parser(value, value_name, verbose)
+        error_check(value, f'clockResetPhase(trigger_behaviour={trigger_behaviour}, '
+                           f'trigger_source={trigger_source}, skew={skew}')
+        return value
