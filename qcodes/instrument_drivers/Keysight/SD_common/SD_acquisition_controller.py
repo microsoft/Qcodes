@@ -81,7 +81,7 @@ class AcquisitionController(Instrument):
 
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name: str, digitizer: Instrument, **kwargs):
-        """ 
+        """
         Initialises a generic Keysight digitizer and its parameters
 
         Args:
@@ -101,7 +101,7 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'channel_selection',
             set_cmd=None,
-            vals=vals.Anything(),
+            vals=vals.Lists(),
             docstring='The list of channels on which to acquire data.'
         )
 
@@ -113,6 +113,7 @@ class Triggered_Controller(AcquisitionController):
             docstring='The channel on which acquisition is triggered.'
         )
 
+        # Set_cmds are lambda to ensure current active_channels is used
         self.add_parameter(
             'sample_rate',
             vals=vals.Numbers(min_value=1),
@@ -126,11 +127,10 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'trigger_edge',
             vals=vals.Enum('rising', 'falling', 'both'),
-            set_cmd=lambda edge: self.digitizer.channels(self.trigger_channel).trigger_edge(edge),
+            set_cmd=lambda edge: self.digitizer.channels[self.trigger_channel()].trigger_edge(edge),
             docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
         )
 
-        # TODO: Convert samples to duration
         self.add_parameter(
             'trigger_delay_samples',
             vals=vals.Numbers(),
@@ -191,35 +191,41 @@ class Triggered_Controller(AcquisitionController):
 
     @property
     def trigger_threshold(self):
-        return self.digitizer.parameters['trigger_threshold_{}'.format(
-                                         self.trigger_channel.get_latest())]
+        trigger_channel = self.digitizer.channels[self.trigger_channel()]
+        return trigger_channel.trigger_threshold()
 
     @property
     def active_channels(self):
-        return self.keysight.channels(self.channel_selection())
+        return self.digitizer.channels[self.channel_selection()]
 
     def set_trigger_channel(self, trigger_channel):
         """
         Sets the source channel with which to trigger acquisition on.
 
+        Also ensures the trigger edge and trigger threshold are updated
+
         Args:
             trigger_channel (int)   : the number of the trigger channel
         """
         if trigger_channel == 'trig_in':
-            raise NotImplementedError()
-            # digital_trigger_source
-            # DAQdigitaltriggerconfig
-            # triggerIOconfig
+            self.digitizer.trigger_direction('out')
+
+            self.active_channels.trigger_mode('digital')
+
+            self.active_channels.digital_trigger_source('trig_in')
+            self.active_channels.digital_trigger_mode('rising_edge')
         elif trigger_channel.startswith('pxi'):
             raise NotImplementedError()
         else: # Analog channel
+            self.active_channels.trigger_mode('analog')
             self.active_channels.analog_trigger_mask(1 << trigger_channel)
+            # Explicitly save val to ensure trigger_edge and threshold work.
+            self.trigger_channel._save_val(trigger_channel)
+            self.analog_trigger_edge(self.analog_trigger_edge())
+            self.analog_trigger_threshold(self.analog_trigger_threshold())
 
-        # TODO: check if this works
-        # Ensure latest trigger edge setting for the current trigger channel
-        self.trigger_channel._save_val(trigger_channel)
-        self.trigger_edge(self.trigger_edge())
-        self.trigger_threshold(self.trigger_threshold())
+        # TODO variable trigger delay samples
+        self.active_channels.trigger_delay_samples(0)
 
     def acquire(self):
         # Initialize record of acquisition times
@@ -351,19 +357,15 @@ class Triggered_Controller(AcquisitionController):
 
 
 class KeysightAcquisitionParameter(MultiParameter):
-    def __init__(self, acquisition_controller=None, **kwargs):
+    def __init__(self, acquisition_controller: AcquisitionController, **kwargs):
         self.acquisition_controller = acquisition_controller
         super().__init__(snapshot_value=False,
                          names=[''], shapes=[()], **kwargs)
 
     @property
     def names(self):
-        if self.acquisition_controller is None or \
-                not hasattr(self.acquisition_controller, 'channel_selection'):
-            return ['']
-        else:
-            return tuple(['ch{}_signal'.format(ch) for ch in
-                          self.acquisition_controller.channel_selection()])
+        return tuple([f'ch{ch}_signal' for ch in
+                      self.acquisition_controller.channel_selection()])
 
     @names.setter
     def names(self, names):
@@ -396,11 +398,11 @@ class KeysightAcquisitionParameter(MultiParameter):
             if average_mode == 'point':
                 shape = ()
             elif average_mode == 'trace':
-                shape = (self.acquisition_controller.samples_per_trace.get_latest(),)
+                shape = (self.acquisition_controller.samples_per_trace(),)
             else:
-                shape = (self.acquisition_controller.traces_per_acquisition.get_latest(),
-                         self.acquisition_controller.samples_per_trace.get_latest())
-            return tuple([shape] * len(self.acquisition_controller.channel_selection))
+                shape = (self.acquisition_controller.traces_per_acquisition(),
+                         self.acquisition_controller.samples_per_trace())
+            return tuple([shape] * len(self.acquisition_controller.channel_selection()))
         else:
             return tuple(() * len(self.names))
 
@@ -409,6 +411,6 @@ class KeysightAcquisitionParameter(MultiParameter):
         # Ignore setter since getter is extracted from acquisition controller
         pass
 
-    def get(self):
+    def get_raw(self):
         data = self.acquisition_controller.do_acquisition()
         return [data[ch] for ch in self.acquisition_controller.channel_selection()]

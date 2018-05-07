@@ -197,25 +197,6 @@ class DigitizerChannel(InstrumentChannel):
                       f'Sampling rate will be max_sampling_rate/(prescaler+1)'
         )
 
-        # For channelTriggerConfig
-        self.add_parameter(
-            'trigger_edge',
-            initial_value='rising',
-            val_mapping={'rising': 1, 'falling': 2, 'both': 3},
-            set_function=self.SD_AIN.channelTriggerConfig,
-            set_args=['trigger_edge', 'trigger_threshold'],
-            docstring=f'The trigger mode for ch{self.id}'
-        )
-
-        self.add_parameter(
-            'trigger_threshold',
-            initial_value=0,
-            vals=vals.Numbers(-3, 3),
-            set_function=self.SD_AIN.channelTriggerConfig,
-            set_args=['trigger_edge', 'trigger_threshold'],
-            docstring=f'the value in volts for the trigger threshold'
-        )
-
         # For DAQ config
         self.add_parameter(
             'points_per_cycle',
@@ -236,21 +217,55 @@ class DigitizerChannel(InstrumentChannel):
         )
 
         self.add_parameter(
-            'trigger_delay_samples',
-            initial_value=0,
-            vals=vals.Ints(),
-            set_function=self.SD_AIN.DAQconfig,
-            set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
-            docstring=f'The trigger delay for DAQ {self.id}. Can be negative'
-        )
-
-        self.add_parameter(
             'trigger_mode',
             initial_value='auto',
             val_mapping={'auto': 0, 'software': 1, 'digital': 2, 'analog': 3},
             set_function=self.SD_AIN.DAQconfig,
             set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The trigger mode for ch{self.id}'
+        )
+
+        self.add_parameter(
+            'trigger_delay_samples',
+            initial_value=0,
+            vals=vals.Ints(),
+            set_function=self.SD_AIN.DAQconfig,
+            set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
+            docstring=f'The trigger delay (in samples) for ch{self.id}. '
+                      f'Can be negative'
+        )
+
+        # For channelTriggerConfig
+        self.add_parameter(
+            'analog_trigger_edge',
+            initial_value='rising',
+            val_mapping={'rising': 1, 'falling': 2, 'both': 3},
+            set_function=self.SD_AIN.channelTriggerConfig,
+            set_args=['trigger_edge', 'trigger_threshold'],
+            docstring=f'The analog trigger edge for ch{self.id}.'
+                      f'This is only used when the channel is set as the analog'
+                      f'trigger channel'
+        )
+
+        self.add_parameter(
+            'analog_trigger_threshold',
+            initial_value=0,
+            vals=vals.Numbers(-3, 3),
+            set_function=self.SD_AIN.channelTriggerConfig,
+            set_args=['trigger_edge', 'trigger_threshold'],
+            docstring=f'the value in volts for the trigger threshold'
+        )
+
+        self.add_parameter(
+            'analog_trigger_mask',
+            initial_value=0,
+            vals=vals.Ints(),
+            set_function=self.SD_AIN.DAQanalogTriggerConfig,
+            docstring='the trigger mask you are using. Each bit signifies '
+                      'which analog channel to trigger on. The channel trigger'
+                      ' behaviour must be configured separately (trigger_edge '
+                      'and trigger_threshold). Needs to be double checked, but '
+                      'it seems multiple analog trigger channels can be used.'
         )
 
         # For DAQ trigger Config
@@ -272,16 +287,6 @@ class DigitizerChannel(InstrumentChannel):
             set_function=self.SD_AIN.DAQdigitalTriggerConfig,
             docstring='the trigger source you are using. Can be trig_in '
                       '(external IO) or pxi1 to pxi8'
-        )
-
-        self.add_parameter(
-            'analog_trigger_mask',
-            initial_value=0,
-            vals=vals.Ints(),
-            set_function=self.SD_AIN.DAQanalogTriggerConfig,
-            docstring='the trigger mask you are using. Each bit signifies '
-                      'which analog channel to trigger on. The channel trigger'
-                      ' behaviour must be configured separately.'
         )
 
         # For DAQ read
@@ -356,7 +361,7 @@ class SD_DIG(SD_Module):
         self.add_parameter(
             'trigger_direction',
             label='Trigger direction for trigger port',
-            vals=vals.Enum(0, 1),
+            val_mapping={'out': 0, 'in': 1},
             set_cmd=self.SD_AIN.triggerIOconfig,
             docstring='The trigger direction for digitizer trigger port'
         )
