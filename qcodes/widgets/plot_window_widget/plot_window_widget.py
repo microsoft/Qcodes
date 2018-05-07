@@ -38,3 +38,21 @@ class PlotWindowWidget(DOMWidget):
 
     def collapse(self):
         self.collapsed = True
+
+
+class MPlot():
+    """Tool to easily add a plot to the PlotWindowWidget.
+
+    Args:
+        name: Variable name of self (e.g mplot = MPlot('mplot'))
+        cell_window_widget: QCoDeS CellWindowWidget instance
+    """
+    def __init__(self, name, cell_window_widget):
+        self.name = name
+        self.cell_window_widget = cell_window_widget
+
+    def __call__(self, *args, **kwargs):
+        self.plot_args = args
+        self.plot_kwargs = kwargs
+        self.cell_window_widget.execute_code(
+            f'plot = MatPlot(*{self.name}.plot_args, **{self.name}.plot_kwargs)')
