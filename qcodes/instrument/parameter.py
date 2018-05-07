@@ -366,7 +366,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def _wrap_set(self, set_function):
         @wraps(set_function)
-        def set_wrapper(value, **kwargs):
+        def set_wrapper(value, evaluate=True, **kwargs):
             try:
                 self.validate(value)
 
@@ -408,7 +408,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(parsed_scaled_mapped_value, **kwargs)
+                    if evaluate:
+                        set_function(parsed_scaled_mapped_value, **kwargs)
 
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value
@@ -792,7 +793,13 @@ class Parameter(_BaseParameter):
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None:
-            self.set(initial_value)
+            if hasattr(self, 'set'):
+                self.set(initial_value, evaluate=False)
+            else:
+                # No set function defined, so create a wrapper function
+                # which we evaluate. This ensures that the initial value goes
+                # through any set parsing/mapping
+                self._wrap_set(set_function=None)(initial_value, evaluate=False)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((

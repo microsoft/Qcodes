@@ -105,14 +105,6 @@ class Triggered_Controller(AcquisitionController):
             docstring='The list of channels on which to acquire data.'
         )
 
-        self.add_parameter(
-            'trigger_channel',
-            vals=vals.Enum('trig_in', *[f'ch{k}' for k in range(8)],
-                      *[f'pxi{k}' for k in range(1, 9)]),
-            set_cmd=self.set_trigger_channel,
-            docstring='The channel on which acquisition is triggered.'
-        )
-
         # Set_cmds are lambda to ensure current active_channels is used
         self.add_parameter(
             'sample_rate',
@@ -125,17 +117,43 @@ class Triggered_Controller(AcquisitionController):
         )
 
         self.add_parameter(
-            'trigger_edge',
+            'trigger_channel',
+            vals=vals.Enum('trig_in', *[f'ch{k}' for k in range(8)],
+                      *[f'pxi{k}' for k in range(1, 9)]),
+            set_cmd=self.set_trigger_channel,
+            docstring='The channel on which acquisition is triggered.'
+        )
+
+        self.add_parameter(
+            'analog_trigger_edge',
             vals=vals.Enum('rising', 'falling', 'both'),
-            set_cmd=lambda edge: self.digitizer.channels[self.trigger_channel()].trigger_edge(edge),
+            initial_value='rising',
+            set_cmd=lambda edge: self._trigger_channel.analog_trigger_edge(edge),
             docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
+        )
+
+        self.add_parameter(
+            'analog_trigger_threshold',
+            vals=vals.Numbers(-3, 3),
+            initial_value=1,
+            set_cmd=lambda threshold: self._trigger_channel.analog_trigger_threshold(threshold),
+            docstring=f'the value in volts for the trigger threshold'
+        )
+
+        self.add_parameter(
+            'digital_trigger_mode',
+            vals=vals.Enum('active_high', 'active_low', 'rising', 'falling'),
+            initial_value='rising',
+            set_cmd=lambda mode: self._trigger_channel.digital_trigger_mode(mode),
+            docstring='Sets the digital trigger mode for the active trigger channel.'
         )
 
         self.add_parameter(
             'trigger_delay_samples',
             vals=vals.Numbers(),
             initial_value=0,
-            set_cmd=lambda delay: self.active_channels.trigger_delay(delay),
+            set_parser=int,
+            set_cmd=lambda delay: self.active_channels.trigger_delay_samples(delay),
             docstring='Sets the trigger delay before starting acquisition.'
         )
 
@@ -169,7 +187,7 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'timeout',
             vals=vals.Numbers(min_value=0),
-            set_cmd=lambda timeout: self.active_channels.timeout(timeout),
+            set_cmd=None,
             unit='s',
             docstring='The maximum time (s) spent trying to read a single channel. '
                       'An acquisition request is sent every timeout_interval. '
@@ -183,16 +201,11 @@ class Triggered_Controller(AcquisitionController):
             docstring='The maximum time (s) spent trying to read a single channel. '
                       'This must be set after channel_selection is modified.'
         )
-
-        # Set all channels to trigger by an analog signal
-        self.digitizer.channels.trigger_mode('analog')
-
         self.buffers = {}
 
     @property
-    def trigger_threshold(self):
-        trigger_channel = self.digitizer.channels[self.trigger_channel()]
-        return trigger_channel.trigger_threshold()
+    def _trigger_channel(self):
+        return self.digitizer.channels[self.trigger_channel()]
 
     @property
     def active_channels(self):
@@ -209,23 +222,19 @@ class Triggered_Controller(AcquisitionController):
         """
         if trigger_channel == 'trig_in':
             self.digitizer.trigger_direction('out')
-
             self.active_channels.trigger_mode('digital')
-
             self.active_channels.digital_trigger_source('trig_in')
-            self.active_channels.digital_trigger_mode('rising_edge')
+            self.active_channels.digital_trigger_mode(self.digital_trigger_mode())
         elif trigger_channel.startswith('pxi'):
             raise NotImplementedError()
         else: # Analog channel
             self.active_channels.trigger_mode('analog')
-            self.active_channels.analog_trigger_mask(1 << trigger_channel)
+            trigger_id = int(trigger_channel[-1])
+            self.active_channels.analog_trigger_mask(1 << trigger_id)
             # Explicitly save val to ensure trigger_edge and threshold work.
             self.trigger_channel._save_val(trigger_channel)
             self.analog_trigger_edge(self.analog_trigger_edge())
             self.analog_trigger_threshold(self.analog_trigger_threshold())
-
-        # TODO variable trigger delay samples
-        self.active_channels.trigger_delay_samples(0)
 
     def acquire(self):
         # Initialize record of acquisition times
@@ -350,7 +359,8 @@ class Triggered_Controller(AcquisitionController):
             logger.warning('The chosen sample rate deviates by more than 10% from '
                            'the closest achievable rate, real sample rate will '
                            f'be {real_rate}')
-        self.active_channels.prescaler(prescaler)
+        return prescaler
+        # self.active_channels.prescaler(prescaler)
 
     def __call__(self, *args, **kwargs):
         return "Triggered"
@@ -364,8 +374,11 @@ class KeysightAcquisitionParameter(MultiParameter):
 
     @property
     def names(self):
-        return tuple([f'ch{ch}_signal' for ch in
-                      self.acquisition_controller.channel_selection()])
+        try:
+            return tuple([f'ch{ch}_signal' for ch in
+                          self.acquisition_controller.channel_selection()])
+        except AttributeError:
+            return []
 
     @names.setter
     def names(self, names):

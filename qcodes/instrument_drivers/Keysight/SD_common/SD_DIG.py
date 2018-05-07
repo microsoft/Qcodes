@@ -104,12 +104,15 @@ class SignadyneParameter(Parameter):
             # the set_raw method the first time
             if self.val_mapping is not None:
                 initial_value = self.val_mapping[initial_value]
-            self.raw_value = initial_value
+            self._save_val(initial_value)
 
     def set_raw(self, val):
         if self.set_cmd is not False:
-            return self.set_cmd(val)
-        else:
+            if self.set_cmd is not None:
+                return self.set_cmd(val)
+            else:
+                return
+        elif self.set_function is not None:
             if self.set_args is None:
                 set_vals = [val]
             else:
@@ -128,12 +131,17 @@ class SignadyneParameter(Parameter):
             # Check if the returned value is an error
             method_name = self.set_function.__func__.__name__
             error_check(return_val, method_name=method_name)
+        else:
+            # Do nothing, value is saved
+            pass
 
     def get_raw(self):
         if self.get_cmd is not None:
             return self.get_cmd()
-        else:
+        elif self.get_function is not None:
             return self.get_function(self.channel.id)
+        else:
+            return self.get_latest()
 
 
 class DigitizerChannel(InstrumentChannel):
@@ -156,10 +164,11 @@ class DigitizerChannel(InstrumentChannel):
             'full_scale',
             unit='V',
             initial_value=1,
-            vals=vals.Numbers(self.SD_AIN.channelMinFullScale(),
-                              self.SD_AIN.channelMaxFullScale()),
-            get_function=self.SD_AIN.channelFullScale,
+            vals=vals.Numbers(0, 3),
+            # self.SD_AIN.channelMinFullScale(),
+            #                   self.SD_AIN.channelMaxFullScale()),
             set_function=self.SD_AIN.channelInputConfig,
+            set_args=['full_scale', 'impedance', 'coupling'],
             docstring=f'The full scale voltage for ch{self.id}'
         )
 
@@ -228,7 +237,8 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'trigger_delay_samples',
             initial_value=0,
-            vals=vals.Ints(),
+            vals=vals.Numbers(),
+            set_parser=int,
             set_function=self.SD_AIN.DAQconfig,
             set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The trigger delay (in samples) for ch{self.id}. '
@@ -241,7 +251,7 @@ class DigitizerChannel(InstrumentChannel):
             initial_value='rising',
             val_mapping={'rising': 1, 'falling': 2, 'both': 3},
             set_function=self.SD_AIN.channelTriggerConfig,
-            set_args=['trigger_edge', 'trigger_threshold'],
+            set_args=['analog_trigger_edge', 'analog_trigger_threshold'],
             docstring=f'The analog trigger edge for ch{self.id}.'
                       f'This is only used when the channel is set as the analog'
                       f'trigger channel'
@@ -252,7 +262,7 @@ class DigitizerChannel(InstrumentChannel):
             initial_value=0,
             vals=vals.Numbers(-3, 3),
             set_function=self.SD_AIN.channelTriggerConfig,
-            set_args=['trigger_edge', 'trigger_threshold'],
+            set_args=['analog_trigger_edge', 'analog_trigger_threshold'],
             docstring=f'the value in volts for the trigger threshold'
         )
 
@@ -271,13 +281,13 @@ class DigitizerChannel(InstrumentChannel):
         # For DAQ trigger Config
         self.add_parameter(
             'digital_trigger_mode',
-            initial_value='rising_edge',
+            initial_value='rising',
             val_mapping={'active_high': 1, 'active_low': 2,
-                         'rising_edge': 3, 'falling_edge': 4},
+                         'rising': 3, 'falling': 4},
             set_function=self.SD_AIN.DAQdigitalTriggerConfig,
             set_args=['digital_trigger_source', 'digital_trigger_mode'],
             docstring='The digital trigger mode. Can be `active_high`, '
-                      '`active_low`, `rising_edge`, `falling_edge`'
+                      '`active_low`, `rising`, `falling`'
         )
 
         self.add_parameter(
@@ -285,6 +295,7 @@ class DigitizerChannel(InstrumentChannel):
             initial_value='trig_in',
             val_mapping={'trig_in': 0, **{f'pxi{k}': 4000+k for k in range(1, 9)}},
             set_function=self.SD_AIN.DAQdigitalTriggerConfig,
+            set_args=['digital_trigger_source', 'digital_trigger_mode'],
             docstring='the trigger source you are using. Can be trig_in '
                       '(external IO) or pxi1 to pxi8'
         )
@@ -312,7 +323,8 @@ class DigitizerChannel(InstrumentChannel):
     def add_parameter(self, name: str,
                       parameter_class: type=SignadyneParameter, **kwargs):
         """Use SignadyneParameter by default"""
-        super().__init__(name=name, parameter_class=parameter_class, **kwargs)
+        super().add_parameter(name=name, parameter_class=parameter_class,
+                              channel=self, **kwargs)
 
 
 class SD_DIG(SD_Module):
@@ -370,9 +382,12 @@ class SD_DIG(SD_Module):
         self.add_parameter(
             'system_frequency',
             label='System clock frequency',
-            vals=vals.Ints(),
-            set_cmd=self.SD_AIN.clockSetFrequency,
-            get_cmd=self.SD_AIN.clockGetFrequency,
+            vals=vals.Numbers(),
+            set_cmd=None,
+            initial_value=100e6,
+            # clockGetFrequency seems to give issues
+            # set_cmd=self.SD_AIN.clockSetFrequency,
+            # get_cmd=self.SD_AIN.clockGetFrequency,
             docstring='The frequency of internal CLKsys in Hz'
         )
 
@@ -439,7 +454,7 @@ class SD_DIG(SD_Module):
         """
         daq_channel = self.channels[channel]
         value = self.SD_AIN.DAQread(channel, daq_channel.n_points(),
-                                    daq_channel.timeout() * 1e3)  # ms
+                                    int(daq_channel.timeout() * 1e3))  # ms
         if not isinstance(value, int):
             # Scale signal from int to volts, why are we checking for non-int?
             int_min, int_max = -0x8000, 0x7FFF
