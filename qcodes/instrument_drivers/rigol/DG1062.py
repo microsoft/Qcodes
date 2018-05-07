@@ -77,6 +77,25 @@ class DG1062Channel(InstrumentChannel):
             val_mapping={1: 'POSITIVE', 0: 'NEGATIVE'},
         )
 
+    def __getattr__(self, item):
+        """
+        We want to be able to call waveform functions like so
+        >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
+        >>> help(gd.channels[0].sin)
+        >>> gd.channels[0].sin(freq=2E3, ampl=1.0, offset=0, phase=0)
+        """
+        waveform = item.upper()
+        if waveform not in self.waveform_params:
+            return super().__getitem__(item)
+
+        def f(**kwargs):
+            return partial(self.apply, waveform=waveform)(**kwargs)
+
+        # By wrapping the partial in a function we can change the docstring
+        f.__doc__ = f"Arguments: {self.waveform_params[waveform]}"
+
+        return f
+
     def apply(self, **kwargs: Dict) ->Union[None, Dict]:
         """
         Apply a waveform on the channel
