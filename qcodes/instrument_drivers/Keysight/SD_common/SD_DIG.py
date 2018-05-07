@@ -6,7 +6,7 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
-from .SD_Module import SD_Module, keysightSD1
+from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, error_check
 
 
 # Functions to log method calls from the SD_AIN class
@@ -39,109 +39,6 @@ def logclass(cls):
 
 
 model_channels = {'M3300A': 8}
-
-
-def error_check(value, method_name=None):
-    """Check if returned value after a set is an error code or not.
-
-    Args:
-        value: value to test.
-        method_name: Name of called SD method, used for error message
-
-    Raises:
-        AssertionError if returned value is an error code.
-    """
-    assert isinstance(value, (str, bool, np.ndarray)) or (int(value) >= 0), \
-        f'Error in call to SD_Module.{method_name}, error code {value}'
-
-
-class SignadyneParameter(Parameter):
-    """Signadyne parameter designed to send keysightSD1 commands.
-
-    This parameter can function as a standard parameter, but can also be
-    associated with a specific keysightSD1 function.
-
-    Args:
-        name: Parameter name
-        channel: Signadyne channel (between 1 and n_channels)
-        get_cmd: Standard optional Parameter get function
-        get_function: keysightSD1 function to be called when getting the
-            parameter value. If set, get_cmd must be None.
-        set_cmd: Standard optional Parameter set function
-        set_function: keysightSD1 function to be called when setting the
-            parameter value. If set, set_cmd must be None.
-        set_args: Optional ancillary parameter names that are passed to
-            set_function. Used for some keysightSD1 functions need to pass
-            multiple parameters simultaneously. If set, the name of this
-            parameter must also be included in the appropriate index.
-        initial_value: initial value for the parameter. This does not actually
-            perform a set, so it does not call any keysightSD1 function.
-        **kwargs: Additional kwargs passed to Parameter
-    """
-    def __init__(self,
-                 name: str,
-                 channel: 'DigitizerChannel',
-                 get_cmd: Callable = None,
-                 get_function: Callable = None,
-                 set_cmd: Callable = False,
-                 set_function: Callable = None,
-                 set_args: List[str] = None,
-                 initial_value=None,
-                 **kwargs):
-        self.channel = channel
-
-        self.get_cmd = get_cmd
-        self.get_function = get_function
-
-        self.set_cmd = set_cmd
-        self.set_function = set_function
-        self.set_args = set_args
-
-        super().__init__(name=name, **kwargs)
-
-        if initial_value is not None:
-            # We set the initial value here to ensure that it does not call
-            # the set_raw method the first time
-            if self.val_mapping is not None:
-                initial_value = self.val_mapping[initial_value]
-            self._save_val(initial_value)
-
-    def set_raw(self, val):
-        if self.set_cmd is not False:
-            if self.set_cmd is not None:
-                return self.set_cmd(val)
-            else:
-                return
-        elif self.set_function is not None:
-            if self.set_args is None:
-                set_vals = [val]
-            else:
-                # Convert set args, which are parameter names, to their
-                # corresponding parameter values
-                set_vals = []
-                for set_arg in self.set_args:
-                    if set_arg == self.name:
-                        set_vals.append(val)
-                    else:
-                        # Get the current value of the parameter
-                        set_vals.append(getattr(self.channel, set_arg).raw_value)
-
-            # Evaluate the set function with the necessary set parameter values
-            return_val = self.set_function(self.channel.id, *set_vals)
-            # Check if the returned value is an error
-            method_name = self.set_function.__func__.__name__
-            error_check(return_val, method_name=method_name)
-        else:
-            # Do nothing, value is saved
-            pass
-
-    def get_raw(self):
-        if self.get_cmd is not None:
-            return self.get_cmd()
-        elif self.get_function is not None:
-            return self.get_function(self.channel.id)
-        else:
-            return self.get_latest()
 
 
 class DigitizerChannel(InstrumentChannel):
@@ -324,7 +221,7 @@ class DigitizerChannel(InstrumentChannel):
                       parameter_class: type=SignadyneParameter, **kwargs):
         """Use SignadyneParameter by default"""
         super().add_parameter(name=name, parameter_class=parameter_class,
-                              channel=self, **kwargs)
+                              parent=self, **kwargs)
 
 
 class SD_DIG(SD_Module):
@@ -419,7 +316,7 @@ class SD_DIG(SD_Module):
         """Open connection to digitizer
 
         Args:
-            chassis: Signadyne chassis number (1 by default)
+            chassis: Signadyne chassis number (usually 1)
             slot: Module slot in chassis
 
         Returns:
