@@ -99,7 +99,7 @@
                     "description": "Location of experiments"
                 }
             },
-            "description": "controls user settings of qcodes"
+            "description": "Optional feature for qdev-wrappers package: controls user settings of qcodes"
         },
         "station_configurator": {
             "type": "object",
@@ -119,10 +119,9 @@
                     "default": null,
                     "description": "default file name, specifying the file to load, when none is specified. Can be a relative or absolute path"
                 }
-
             },
-            "description": "Setting for the StationConfigurator module in qdev-wrappers"
+            "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
         }
        },
-    "required":[ "gui", "core" , "user", "station_configurator"]
+    "required":[ "gui", "core"]
 }
