@@ -16,6 +16,8 @@ class HDF5Format(Formatter):
     Capable of storing (write) and recovering (read) qcodes datasets.
     """
 
+    _format_tag = 'hdf5'
+    
     def close_file(self, data_set):
         """
         Closes the hdf5 file open in the dataset.
@@ -125,6 +127,7 @@ class HDF5Format(Formatter):
         # I think this is a sane default (MAR).
         data_set._h5_base_group = self._create_file(filepath)
         data_set._h5_base_group.attrs['__qcodes_version'] = _qcodes_version
+        data_set._h5_base_group.attrs['__format_tag'] = self._format_tag
 
         return data_set._h5_base_group
 
@@ -440,6 +443,7 @@ from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 
 class HDF5FormatMetadata(HDF5Format):
 
+    _format_tag = 'hdf5-json'
     metadata_file = 'snapshot.json'
 
     def write_metadata(self, data_set, io_manager=None, location=None, read_first=False):
