@@ -104,6 +104,12 @@ class DG1062Channel(InstrumentChannel):
         >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
         >>> gd.channels[0].apply(waveform="SIN", freq=1E3, ampl=1.0, offset=0, phase=0)
 
+        Valid waveforms are: HARM, NOIS, RAMP, SIN, SQU, TRI, USER, DC, ARB
+        To find the correct arguments of each waveform we can e.g. do:
+        >>> help(gd.channels[0].sin)
+        Notice the lower case when accessing the waveform through convenience
+        functions.
+
         If not kwargs are given a dictionary with the current waveform
         parameters are returned.
         """
