@@ -163,6 +163,7 @@ class AWGChannel(InstrumentChannel):
         """
         self.awg.AWGflush(self.id)
 
+
     @with_error_check
     def queue_waveform(self,
                        waveform_number: int,
