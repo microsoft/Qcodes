@@ -53,14 +53,14 @@ class AcquisitionController(Instrument):
         """
         Use this method to prepare yourself for the data acquisition
         The Keysight instrument will call this method right before
-        'daq_start' is called
+        'start_channels' is called
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
     def pre_acquire(self):
         """
-        This method is called immediately after 'daq_start' is called
+        This method is called immediately after 'start_channels' is called
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
@@ -265,7 +265,7 @@ class Triggered_Controller(AcquisitionController):
 
                 t0 = time()
                 while time() - t0 < self.timeout():
-                    channel_data = self.digitizer.daq_read(ch)
+                    channel_data = channel.read(ch)
                     if len(channel_data):
                         break
                     else:
@@ -293,7 +293,7 @@ class Triggered_Controller(AcquisitionController):
         return self.buffers
 
     def start(self):
-        self.digitizer.daq_start_multiple(self.channel_selection())
+        self.digitizer.start_channels(self.channel_selection())
 
     def do_acquisition(self):
         """
@@ -311,14 +311,14 @@ class Triggered_Controller(AcquisitionController):
         """
         Use this method to prepare yourself for the data acquisition
         The Keysight instrument will call this method right before
-        'daq_start' is called
+        'start_channels' is called
         """
-        self.digitizer.daq_stop_multiple(self.channel_selection())
-        self.digitizer.daq_flush_multiple(self.channel_selection())
+        self.digitizer.stop_channels(self.channel_selection())
+        self.digitizer.flush_channels(self.channel_selection())
 
     def pre_acquire(self):
         """
-        This method is called immediately after 'daq_start' is called
+        This method is called immediately after 'start_channels' is called
         """
         pass
 

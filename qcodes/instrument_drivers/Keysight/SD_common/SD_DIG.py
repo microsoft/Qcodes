@@ -6,7 +6,7 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
-from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, error_check
+from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, with_error_check
 
 
 # Functions to log method calls from the SD_AIN class
@@ -227,6 +227,70 @@ class DigitizerChannel(InstrumentChannel):
         super().add_parameter(name=name, parameter_class=parameter_class,
                               parent=self, **kwargs)
 
+    @with_error_check
+    def start(self):
+        """ Start acquiring data or waiting for a trigger on the specified DAQ
+
+        Acquisition data can then be read using `daq_read`
+
+        Raises:
+            AssertionError if DAQstart was unsuccessful
+        """
+        return self.SD_AIN.DAQstart(self.id)
+
+    @with_error_check
+    def read(self) -> np.ndarray:
+        """ Read from the specified DAQ.
+
+        Channel acquisition must first be started using `daq_start`
+        Uses channel parameters `n_points` and `timeout`
+
+        Returns:
+            Numpy array with acquisition data
+
+        Raises:
+            AssertionError if DAQread was unsuccessful
+        """
+        value = self.SD_AIN.DAQread(self.id, self.n_points(),
+                                    int(self.timeout() * 1e3))  # ms
+        if not isinstance(value, int):
+            # Scale signal from int to volts, why are we checking for non-int?
+            int_min, int_max = -0x8000, 0x7FFF
+            v_min, v_max = -self.full_scale(), self.full_scale()
+            relative_value = (value.astype(float) - int_min) / (int_max - int_min)
+            scaled_value = v_min + (v_max-v_min) * relative_value
+        else:
+            scaled_value = value
+        return scaled_value
+
+    @with_error_check
+    def stop(self):
+        """ Stop acquiring data on the specified DAQ
+
+        Raises:
+            AssertionError if DAQstop was unsuccessful
+        """
+        return self.SD_AIN.DAQstop(self.id)
+
+    @with_error_check
+    def flush(self):
+        """ Flush the DAQ channel
+
+        Raises:
+            AssertionError if DAQflush was unsuccessful
+        """
+        return self.SD_AIN.DAQflush(self.id)
+
+    @with_error_check
+    def trigger(self):
+        """ Manually trigger the specified DAQ
+
+        Raises:
+            AssertionError if DAQtrigger was unsuccessful
+        """
+        return self.SD_AIN.DAQtrigger(self.id)
+
+
 
 class SD_DIG(SD_Module):
     """Qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
@@ -303,10 +367,10 @@ class SD_DIG(SD_Module):
 
         self.add_parameter('trigger_io',
                            label='trigger io',
-                           get_cmd=self.get_trigger_io,
-                           set_cmd=self.set_trigger_io,
+                           get_function=self.SD_AIN.triggerIOread,
+                           set_functon=self.SD_AIN.triggerIOwrite,
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
-                           vals=vals.Enum(0, 1))
+                           val_mapping={'off': 0, 'on': 1})
 
         self.channels = ChannelList(self,
                                     name='channels',
@@ -338,51 +402,14 @@ class SD_DIG(SD_Module):
 
         return digitizer_name
 
-    def daq_read(self, channel: int) -> np.ndarray:
-        """ Read from the specified DAQ.
+    def add_parameter(self, name: str,
+                      parameter_class: type=SignadyneParameter, **kwargs):
+        """Use SignadyneParameter by default"""
+        super().add_parameter(name=name, parameter_class=parameter_class,
+                              parent=self, **kwargs)
 
-        Channel acquisition must first be started using `daq_start`
-        Uses channel parameters `n_points` and `timeout`
-
-        Args:
-            channel: the input DAQ you are reading from
-
-        Returns:
-            Numpy array with acquisition data
-
-        Raises:
-            AssertionError if DAQread was unsuccessful
-        """
-        daq_channel = self.channels[channel]
-        value = self.SD_AIN.DAQread(channel, daq_channel.n_points(),
-                                    int(daq_channel.timeout() * 1e3))  # ms
-        if not isinstance(value, int):
-            # Scale signal from int to volts, why are we checking for non-int?
-            int_min, int_max = -0x8000, 0x7FFF
-            v_min, v_max = -daq_channel.full_scale(), daq_channel.full_scale()
-            relative_value = (value.astype(float) - int_min) / (int_max - int_min)
-            scaled_value = v_min + (v_max-v_min) * relative_value
-        else:
-            scaled_value = value
-        error_check(scaled_value, method_name=f'DAQread ch{channel}')
-        return scaled_value
-
-    def daq_start(self, channel: int):
-        """ Start acquiring data or waiting for a trigger on the specified DAQ
-
-        Acquisition data can then be read using `daq_read`
-
-        Args:
-            channel: the input DAQ you are enabling
-
-        Raises:
-            AssertionError if DAQstart was unsuccessful
-        """
-        return_value = self.SD_AIN.DAQstart(channel)
-        error_check(return_value, method_name=f'DAQstart ch{channel}')
-        return return_value
-
-    def daq_start_multiple(self, channels: List[int]):
+    @with_error_check
+    def start_channels(self, channels: List[int]):
         """ Start acquiring data or waiting for a trigger on the specified DAQs
 
         Args:
@@ -394,24 +421,10 @@ class SD_DIG(SD_Module):
         """
         # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         channel_mask = sum(2**channel for channel in channels)
-        value = self.SD_AIN.DAQstartMultiple(channel_mask)
-        error_check(value, method_name=f'DAQstartMultiple channels {channels}')
-        return value
+        return self.SD_AIN.DAQstartMultiple(channel_mask)
 
-    def daq_stop(self, channel: int):
-        """ Stop acquiring data on the specified DAQ
-
-        Args:
-            channel: the DAQ you are disabling
-
-        Raises:
-            AssertionError if DAQstop was unsuccessful
-        """
-        value = self.SD_AIN.DAQstop(channel)
-        error_check(value, method_name=f'DAQstop ch{channel}')
-        return value
-
-    def daq_stop_multiple(self, channels: List[int]):
+    @with_error_check
+    def stop_channels(self, channels: List[int]):
         """ Stop acquiring data on the specified DAQs
 
         Args:
@@ -422,24 +435,10 @@ class SD_DIG(SD_Module):
         """
         # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         channel_mask = sum(2**channel for channel in channels)
-        value = self.SD_AIN.DAQstopMultiple(channel_mask)
-        error_check(value, method_name=f'DAQstopMultiple channels {channels}')
-        return value
+        return self.SD_AIN.DAQstopMultiple(channel_mask)
 
-    def daq_trigger(self, channel: int):
-        """ Manually trigger the specified DAQ
-
-        Args:
-            channel: the DAQ you are triggering
-
-        Raises:
-            AssertionError if DAQtrigger was unsuccessful
-        """
-        value = self.SD_AIN.DAQtrigger(channel)
-        error_check(value, method_name=f'DAQtrigger ch{channel}')
-        return value
-
-    def daq_trigger_multiple(self, channels):
+    @with_error_check
+    def trigger_channels(self, channels):
         """ Manually trigger the specified DAQs
 
         Args:
@@ -451,24 +450,10 @@ class SD_DIG(SD_Module):
 
         # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         channel_mask = sum(2**channel for channel in channels)
-        value = self.SD_AIN.DAQtriggerMultiple(channel_mask)
-        error_check(value, method_name=f'DAQtriggerMultiple channels {channels}')
-        return value
+        return self.SD_AIN.DAQtriggerMultiple(channel_mask)
 
-    def daq_flush(self, channel: int):
-        """ Flush the specified DAQ channel
-
-        Args:
-            channel: the DAQ channel to flushing
-
-        Raises:
-            AssertionError if DAQflush was unsuccessful
-        """
-        value = self.SD_AIN.DAQflush(channel)
-        error_check(value, method_name=f'DAQflush channel {channel}')
-        return value
-
-    def daq_flush_multiple(self, channels: List[int]):
+    @with_error_check
+    def flush_channels(self, channels: List[int]):
         """ Flush the specified DAQ channels
 
         Args:
@@ -479,38 +464,9 @@ class SD_DIG(SD_Module):
         """
         # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         channel_mask = sum(2**channel for channel in channels)
-        value = self.SD_AIN.DAQflushMultiple(channel_mask)
-        error_check(value, method_name=f'DAQflushMultiple channels {channels}')
-        return value
+        return self.SD_AIN.DAQflushMultiple(channel_mask)
 
-    def set_trigger_io(self, trigger_value: int):
-        """ Write a value to the IO trigger port
-
-        Args:
-            trigger_value: the binary value to write to the IO port
-
-        Raises:
-            AssertionError if trigger io is not 0 or 1
-            AssertionError if triggerIOwrite was unsuccessful
-        """
-        assert trigger_value in [0, 1]
-        value = self.SD_AIN.triggerIOwrite(trigger_value)
-        error_check(value, f'triggerIOwrite value {trigger_value}')
-        return value
-
-    def get_trigger_io(self) -> int:
-        """ Read current trigger IO value
-
-        Returns:
-             0 or 1 depending on current IO value
-
-        Raises:
-            AssertionError if triggerIOread was unsuccessful
-        """
-        value = self.SD_AIN.triggerIOread()
-        error_check(value, method_name='triggerIOread')
-        return value
-
+    @with_error_check
     def reset_clock_phase(self,
                           trigger_behaviour: int,
                           trigger_source: int,
@@ -525,7 +481,4 @@ class SD_DIG(SD_Module):
         Raises:
             AssertionError if clockResetPhase was unsuccessful
         """
-        value = self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)
-        error_check(value, f'clockResetPhase(trigger_behaviour={trigger_behaviour}, '
-                           f'trigger_source={trigger_source}, skew={skew}')
-        return value
+        return self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)
