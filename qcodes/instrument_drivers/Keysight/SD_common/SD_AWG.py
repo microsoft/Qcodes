@@ -50,6 +50,30 @@ class AWGChannel(InstrumentChannel):
                            docstring='Determines if trig i/o should be used '
                                      'as a trigger input or trigger output.')
 
+        self.add_parameter('trigger_source',
+                           label=f'ch{self.id} trigger source',
+                           val_mapping={'trig_in': 0,
+                                        **{f'pxi{k}': 4000+k for k in range(1, 9)}},
+                           initial_value='trig_in',
+                           set_function=self.awg.AWGtriggerExternalConfig,
+                           set_args=['trigger_source', 'trigger_behaviour'],
+                           docstring='External trigger source used to proceed '
+                                     'to next waveform. Only used if the '
+                                     'waveform is queued with external trigger '
+                                     'mode option. trig_in requires '
+                                     'trigger_direction == "input".')
+
+        self.add_parameter('trigger_mode',
+                           label=f'ch{self.id} trigger mode',
+                            initial_value='rising',
+                            val_mapping={'active_high': 1, 'active_low': 2,
+                                         'rising': 3, 'falling': 4},
+                            set_function=self.SD_AIN.DAQdigitalTriggerConfig,
+                            set_args=['trigger_source', 'trigger_mode'],
+                            docstring='The digital trigger mode when the '
+                                      'waveform is queued with external trigger '
+                                      'mode option.')
+
         # AWG parameters
         self.add_parameter('queue_mode',
                            set_function=self.awg.AWGqueueConfig,
@@ -124,7 +148,7 @@ class AWGChannel(InstrumentChannel):
 
     @with_error_check
     def reset_phase(self):
-        """Resets the accumulated phase of the selected channel.
+        """Resets the function generator accumulated phase for this channel.
 
         This accumulated phase is the result of the phase continuous operation
         of the product, used by the function generator.
@@ -261,28 +285,6 @@ class AWGChannel(InstrumentChannel):
         return self.awg.AWGqueueMarkerConfig(self.id, marker_mode, pxi_mask,
                                              io_mask, trigger_value, sync_mode,
                                              length, delay)
-
-    def configure_external_trigger(self,
-                                   external_source: int,
-                                   trigger_behaviour: int):
-        """Configures the external triggers for the selected awg.
-
-        The external trigger is used in case the waveform is queued with the
-        external trigger mode option.
-
-        Args:
-            external_source: value indicating external trigger source
-                External I/O Trigger    :   0
-                PXI Trigger [0..n]      :   4000+n
-            trigger_behaviour: value indicating the trigger behaviour
-                Active High     :   1
-                Active Low      :   2
-                Rising Edge     :   3
-                Falling Edge    :   4
-        """
-        return self.awg.AWGtriggerExternalConfig(self.id, external_source,
-                                                 trigger_behaviour)
-
     @with_error_check
     def start(self):
         """Starts the selected AWG from the beginning of its queue.
@@ -440,7 +442,7 @@ class SD_AWG(SD_Module):
         return self.awg.clockResetPhase(trigger_behaviour, trigger_source, skew)
 
     @with_error_check
-    def reset_multiple_channel_phase(self, channel_mask: int):
+    def reset_phase_channels(self, channel_mask: int):
         """
         Resets the accumulated phase of the selected channels simultaneously.
 
@@ -472,11 +474,14 @@ class SD_AWG(SD_Module):
     #
 
     @with_error_check
-    def load_waveform(self, waveform_object: keysightSD1.SD_Wave,
+    def load_waveform(self,
+                      waveform_object: keysightSD1.SD_Wave,
                       waveform_number: int) -> int:
-        """
-        Loads the specified waveform into the module onboard RAM.
+        """Loads the specified waveform SD_Wave into the module onboard RAM.
+
         Waveforms must be created first as an instance of the SD_Wave class.
+        To load a waveform directly from an array, use load_waveform_array.
+        Not sure which method should be preferred.
 
         Args:
             waveform_object: pointer to the waveform object
@@ -490,13 +495,14 @@ class SD_AWG(SD_Module):
         return self.awg.waveformLoad(waveform_object, waveform_number)
 
     @with_error_check
-    def load_waveform_int16(self,
+    def load_waveform_array(self,
                             waveform_type: int,
                             data_raw: np.ndarray,
                             waveform_number: int) -> int:
-        """
-        Loads the specified waveform into the module onboard RAM.
-        Waveforms must be created first as an instance of the SD_Wave class.
+        """Loads the specified waveform array into the module onboard RAM.
+
+        Alternatively, load_waveform can be used, which requires an SD_Wave
+        waveform object. Not sure which method should be preferred.
 
         Args:
             waveform_type: waveform type
@@ -553,7 +559,7 @@ class SD_AWG(SD_Module):
             waveform_type: waveform type
             data_raw: array with waveform points
             waveform_number: waveform number to identify the waveform
-                in subsequent related function calls.
+                in subsequent related funcion calls.
             padding_mode:
                 0:  the waveform is loaded as it is, zeros are added at the
                     end if the number of points is not a multiple of the number
