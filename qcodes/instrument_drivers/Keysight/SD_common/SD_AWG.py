@@ -1,10 +1,10 @@
-from functools import partial
+from typing import List
 import numpy as np
-from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, error_check, with_error_check
+from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, \
+    with_error_check
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-# TODO add channels
 from qcodes import validators as vals
 
 model_channels = {'M3201A': 4,
@@ -12,7 +12,7 @@ model_channels = {'M3201A': 4,
 
 
 class AWGChannel(InstrumentChannel):
-    def __init__(self, parent: Instrument, name:str, id:int, **kwargs):
+    def __init__(self, parent: Instrument, name: str, id: int, **kwargs):
         super().__init__(parent=parent, name=name, **kwargs)
 
         self.awg = self._parent.awg
@@ -65,14 +65,14 @@ class AWGChannel(InstrumentChannel):
 
         self.add_parameter('trigger_mode',
                            label=f'ch{self.id} trigger mode',
-                            initial_value='rising',
-                            val_mapping={'active_high': 1, 'active_low': 2,
-                                         'rising': 3, 'falling': 4},
-                            set_function=self.SD_AIN.DAQdigitalTriggerConfig,
-                            set_args=['trigger_source', 'trigger_mode'],
-                            docstring='The digital trigger mode when the '
-                                      'waveform is queued with external trigger '
-                                      'mode option.')
+                           initial_value='rising',
+                           val_mapping={'active_high': 1, 'active_low': 2,
+                                        'rising': 3, 'falling': 4},
+                           set_function=self.SD_AIN.DAQdigitalTriggerConfig,
+                           set_args=['trigger_source', 'trigger_mode'],
+                           docstring='The digital trigger mode when the '
+                                     'waveform is queued with external trigger '
+                                     'mode option.')
 
         # AWG parameters
         self.add_parameter('queue_mode',
@@ -120,25 +120,26 @@ class AWGChannel(InstrumentChannel):
                            set_args=['angle_modulation', 'deviation_gain'],
                            docstring=f'Function generator modulation gain.'
                                      f'To be used with angle_modulation')
-        @with_error_check
-        def config_angle_modulation(self,
-                                    channel_number: int,
-                                    modulation_type: int,
-                                    deviation_gain: int):
-            """
-            Configures the modulation in frequency/phase for the selected channel
 
-            Args:
-                channel_number: the number of the channel to configure
-                modulation_type: the modulation type the AWG is used for
-                    No Modulation           :   0
-                    Frequency Modulation    :   1
-                    Phase Modulation        :   2
-                deviation_gain: gain for the modulating signal
-            """
-            return self.awg.modulationAngleConfig(channel_number,
-                                                  modulation_type,
-                                                  deviation_gain)
+    @with_error_check
+    def config_angle_modulation(self,
+                                channel_number: int,
+                                modulation_type: int,
+                                deviation_gain: int):
+        """
+        Configures the modulation in frequency/phase for the selected channel
+
+        Args:
+            channel_number: the number of the channel to configure
+            modulation_type: the modulation type the AWG is used for
+                No Modulation           :   0
+                Frequency Modulation    :   1
+                Phase Modulation        :   2
+            deviation_gain: gain for the modulating signal
+        """
+        return self.awg.modulationAngleConfig(channel_number,
+                                              modulation_type,
+                                              deviation_gain)
 
     def add_parameter(self, name: str,
                       parameter_class: type=SignadyneParameter, **kwargs):
@@ -162,7 +163,6 @@ class AWGChannel(InstrumentChannel):
         Waveforms are not removed from the onboard RAM.
         """
         self.awg.AWGflush(self.id)
-
 
     @with_error_check
     def queue_waveform(self,
@@ -206,6 +206,13 @@ class AWGChannel(InstrumentChannel):
             waveform_data_a: array with waveform points
             waveform_data_b: array with waveform points, only for the waveforms
                                         which have a second component
+            padding_mode:
+                0:  the waveform is loaded as it is, zeros are added at the
+                    end if the number of points is not a multiple of the number
+                    required by the AWG.
+                1:  the waveform is loaded n times (using DMA) until the total
+                    number of points is multiple of the number required by the
+                    AWG. (only works for waveforms with even number of points)
 
         Returns:
             availableRAM: available onboard RAM in waveform points,
@@ -238,6 +245,13 @@ class AWGChannel(InstrumentChannel):
             cycles: number of times the waveform is repeated once launched
                 zero = infinite repeats
             prescaler: waveform prescaler value, to reduce eff. sampling rate
+            padding_mode:
+                0:  the waveform is loaded as it is, zeros are added at the
+                    end if the number of points is not a multiple of the number
+                    required by the AWG.
+                1:  the waveform is loaded n times (using DMA) until the total
+                    number of points is multiple of the number required by the
+                    AWG. (only works for waveforms with even number of points)
 
         Returns:
             availableRAM: available onboard RAM in waveform points,
@@ -286,6 +300,7 @@ class AWGChannel(InstrumentChannel):
         return self.awg.AWGqueueMarkerConfig(self.id, marker_mode, pxi_mask,
                                              io_mask, trigger_value, sync_mode,
                                              length, delay)
+
     @with_error_check
     def start(self):
         """Starts the selected AWG from the beginning of its queue.
@@ -363,24 +378,39 @@ class SD_AWG(SD_Module):
         # Open the device using the specified chassis and slot number
         self.initialize(chassis=chassis, slot=slot)
 
+        self.add_parameter('clock_output',
+                           val_mapping={'off': 0, 'on': 1},
+                           set_function=self.awg.clockIOconfig,
+                           docstring="Turn clock connector output on or off.")
+
         self.add_parameter('trigger_io',
                            label='trigger io',
                            get_function=self.awg.triggerIOread,
                            set_function=self.awg.triggerIOwrite,
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
                            vals=vals.Enum(0, 1))
+
         self.add_parameter('clock_frequency',
                            label='clock frequency',
                            unit='Hz',
-                           get_cmd=self.awg.clockGetFrequency,
-                           set_cmd=self.awg.clockSetFrequency,
+                           get_function=self.awg.clockGetFrequency,
+                           set_function=self.awg.clockSetFrequency,
                            docstring='The real hardware clock frequency in Hz',
                            vals=vals.Numbers(100e6, 500e6))
+
         self.add_parameter('clock_sync_frequency',
                            label='clock sync frequency',
                            unit='Hz',
-                           get_cmd=self.awg.clockGetSyncFrequency,
+                           get_function=self.awg.clockGetSyncFrequency,
                            docstring='The frequency of the internal CLKsync in Hz')
+
+        self.channels = ChannelList(self,
+                                    name='channels',
+                                    chan_type=AWGChannel)
+        for ch in range(self.n_channels):
+            channel = AWGChannel(self, name=f'ch{ch}', id=ch)
+            setattr(self, f'ch{ch}', channel)
+            self.channels.append(channel)
 
     def add_parameter(self, name: str,
                       parameter_class: type=SignadyneParameter, **kwargs):
@@ -407,8 +437,7 @@ class SD_AWG(SD_Module):
             f"No SD_AWG found at chassis {chassis}, slot {slot}"
 
         result_code = self.awg.openWithSlot(awg_name, chassis, slot)
-        assert result_code > 0, f'Could not open SD_AWG error code {error_code}'
-
+        assert result_code > 0, f'Could not open SD_AWG error code {result_code}'
 
     def off(self):
         """
@@ -443,36 +472,19 @@ class SD_AWG(SD_Module):
         return self.awg.clockResetPhase(trigger_behaviour, trigger_source, skew)
 
     @with_error_check
-    def reset_phase_channels(self, channel_mask: int):
+    def reset_phase_channels(self, channels: List[int]):
         """
         Resets the accumulated phase of the selected channels simultaneously.
 
         Args:
-            channel_mask: Mask to select the channel to reset.
-                (LSB is channel 0, bit 1 is channel 1 etc.)
+            channels: list of channels for which to reset the phase
 
         Example:
             reset_multiple_channel_phase(5) would reset the phase of channel 0 and 2
         """
-        # TODO rid mask
+        # AWG channel mask, where LSB is for ch0, bit 1 is for ch1 etc.
+        channel_mask = sum(2**channel for channel in channels)
         return self.awg.channelPhaseResetMultiple(channel_mask)
-
-    @with_error_check
-    def config_clock_io(self, clock_config):
-        """
-        Configures the operation of the clock output connector (CLK)
-
-        Args:
-            clock_config: clock connector function
-                Disable       : 0   The CLK connector is disabled
-                CLKref Output : 1   A copy of the reference clock is available
-                                    at the CLK connector
-        """
-        return self.awg.clockIOconfig(clock_config)
-
-    #
-    # Waveform related functions
-    #
 
     @with_error_check
     def load_waveform(self,
@@ -583,11 +595,7 @@ class SD_AWG(SD_Module):
         """
         return self.awg.waveformFlush()
 
-    #
-    # AWG related functions
-    #
-
-    def start_channels(self, awg_mask):
+    def start_channels(self, channels: List[int]):
         """Starts the selected AWGs from the beginning of their queues.
 
         The generation will start immediately or when a trigger is received,
@@ -595,127 +603,127 @@ class SD_AWG(SD_Module):
         and provided that at least one waveform is queued in these AWGs.
 
         Args:
-            awg_mask (int): Mask to select the awgs to start (LSB is awg 0, bit 1 is awg 1 etc.)
+            channels: List of channels to start
         """
-        self.awg.AWGstartMultiple(awg_mask)
+        # AWG channel mask, where LSB is for ch0, bit 1 is for ch1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        self.awg.AWGstartMultiple(channel_mask)
 
-    def pause_channels(self, awg_mask):
+    def pause_channels(self, channels: List[int]):
         """Pauses the selected AWGs, leaving the last waveform point at the
         output, and ignoring all incoming triggers.
         The waveform generation can be resumed calling awg_resume_multiple
 
         Args:
-            awg_mask (int): Mask to select the awgs to pause (LSB is awg 0, bit 1 is awg 1 etc.)
+            channels: List of channels to pause
         """
-        self.awg.AWGpauseMultiple(awg_mask)
+        # AWG channel mask, where LSB is for ch0, bit 1 is for ch1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        self.awg.AWGpauseMultiple(channel_mask)
 
-    def resume_channels(self, awg_mask):
-        """
-        Resumes the selected AWGs, from the current positions of their respective queue.
+    def resume_channels(self, channels: List[int]):
+        """Resumes the selected AWGs from the current positions of their
+        respective queue.
 
         Args:
-            awg_mask (int): Mask to select the awgs to resume (LSB is awg 0, bit 1 is awg 1 etc.)
+            channels: List of channels to resume
         """
-        self.awg.AWGresumeMultiple(awg_mask)
+        # AWG channel mask, where LSB is for ch0, bit 1 is for ch1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        self.awg.AWGresumeMultiple(channel_mask)
 
-    def stop_channels(self, awg_mask):
+    def stop_channels(self, channels: List[int]):
         """Stops the selected AWGs, setting their output to zero and resetting
         their AWG queues to the initial positions.
 
         All following incoming triggers are ignored.
 
         Args:
-            awg_mask (int): Mask to select the awgs to stop (LSB is awg 0, bit 1 is awg 1 etc.)
+            channels: List of channels to stop
         """
-        self.awg.AWGstopMultiple(awg_mask)
+        # AWG channel mask, where LSB is for ch0, bit 1 is for ch1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        self.awg.AWGstopMultiple(channel_mask)
 
-
-    def trigger_channels(self, awg_mask):
+    def trigger_channels(self, channels: List[int]):
         """Triggers the selected AWGs.
 
         The waveform waiting in the current position of the queue is launched,
         provided it is configured with VI/HVI Trigger.
 
         Args:
-            awg_mask (int): Mask to select the awgs to be triggered (LSB is awg 0, bit 1 is awg 1 etc.)
+            channels: List of chnanels to trigger
         """
-        self.awg.AWGtriggerMultiple(awg_mask)
+        # AWG channel mask, where LSB is for ch0, bit 1 is for ch1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        self.awg.AWGtriggerMultiple(channel_mask)
 
-
-
-    #
     # Functions related to creation of SD_Wave objects
-    #
-
     @staticmethod
-    def new_waveform_from_file(waveform_file):
-        """
-        Creates a SD_Wave object from data points contained in a file.
+    def new_waveform_from_file(waveform_file: str) -> keysightSD1.SD_Wave:
+        """Creates a SD_Wave object from data points contained in a file.
+
         This waveform object is stored in the PC RAM, not in the onboard RAM.
 
         Args:
-            waveform_file (str): file containing the waveform points
+            waveform_file: file containing the waveform points
 
         Returns:
-            waveform (SD_Wave): pointer to the waveform object,
-            or negative numbers for errors
+            waveform: pointer to the waveform object (can be negative)
         """
-        wave = keysightSD1.SD_Wave()
-        result = wave.newFromFile(waveform_file)
-        result_parser(result)
-        return wave
+        wave = keysightSD1.SD_Wave()  # Not sure why this is here
+        return wave.newFromFile(waveform_file)
 
     @staticmethod
-    def new_waveform_from_double(waveform_type, waveform_data_a, waveform_data_b=None):
-        """
-        Creates a SD_Wave object from data points contained in an array.
+    def new_waveform_from_double(waveform_type: int,
+                                 waveform_data_a: np.ndarray,
+                                 waveform_data_b: np.ndarray = None
+                                 ) -> keysightSD1.SD_Wave:
+        """Creates a SD_Wave object from data points contained in an array.
+
         This waveform object is stored in the PC RAM, not in the onboard RAM.
 
         Args:
-            waveform_type (int): waveform type
-            waveform_data_a (array): array of (float) with waveform points
-            waveform_data_b (array): array of (float) with waveform points,
-                                     only for the waveforms which have a second component
+            waveform_type: waveform type
+            waveform_data_a: array of (float) with waveform points
+            waveform_data_b: array of (float) with waveform points,
+                only for the waveforms which have a second component
 
         Returns:
-            waveform (SD_Wave): pointer to the waveform object,
-            or negative numbers for errors
+            waveform: pointer to the waveform object (can be negative)
         """
-        wave = keysightSD1.SD_Wave()
-        result = wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
+        wave = keysightSD1.SD_Wave()  # Not sure why this is here
         # Do not parse result because the result integer may overflow to a
         # negative number
-        return wave
+        return wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
 
     @staticmethod
-    def new_waveform_from_int(waveform_type, waveform_data_a, waveform_data_b=None):
+    def new_waveform_from_int(waveform_type: int,
+                              waveform_data_a: np.ndarray,
+                              waveform_data_b: np.ndarray = None
+                              ) -> keysightSD1.SD_Wave:
         """
         Creates a SD_Wave object from data points contained in an array.
         This waveform object is stored in the PC RAM, not in the onboard RAM.
 
         Args:
-            waveform_type (int): waveform type
-            waveform_data_a (array): array of (int) with waveform points
-            waveform_data_b (array): array of (int) with waveform points,
-                                     only for the waveforms which have a second component
+            waveform_type: waveform type
+            waveform_data_a: array of (int) with waveform points
+            waveform_data_b: array of (int) with waveform points,
+                only for the waveforms which have a second component
 
         Returns:
-            waveform (SD_Wave): pointer to the waveform object,
-            or negative numbers for errors
+            waveform: pointer to the waveform object (can be negative)
         """
-        wave = keysightSD1.SD_Wave()
-        result = wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
-        result_parser(result)
-        return wave
+        wave = keysightSD1.SD_Wave()  # Not sure why this is here
+        return wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
 
     @staticmethod
-    def get_waveform_status(waveform, verbose=False):
-        value = waveform.getStatus()
-        value_name = 'waveform_status'
-        return result_parser(value, value_name, verbose)
+    @with_error_check
+    def get_waveform_status(waveform):
+        return waveform.getStatus()
 
     @staticmethod
-    def get_waveform_type(waveform, verbose=False):
-        value = waveform.getType()
-        value_name = 'waveform_type'
-        return result_parser(value, value_name, verbose)
+    @with_error_check
+    def get_waveform_type(waveform):
+        return waveform.getType()

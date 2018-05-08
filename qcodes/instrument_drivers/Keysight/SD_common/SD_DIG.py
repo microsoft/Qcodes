@@ -380,6 +380,12 @@ class SD_DIG(SD_Module):
             setattr(self, f'ch{ch}', channel)
             self.channels.append(channel)
 
+    def add_parameter(self, name: str,
+                      parameter_class: type=SignadyneParameter, **kwargs):
+        """Use SignadyneParameter by default"""
+        super().add_parameter(name=name, parameter_class=parameter_class,
+                              parent=self, **kwargs)
+
     def initialize(self, chassis: int, slot: int):
         """Open connection to digitizer
 
@@ -401,12 +407,6 @@ class SD_DIG(SD_Module):
         assert result_code > 0, f'Could not open SD_DIG error code {result_code}'
 
         return digitizer_name
-
-    def add_parameter(self, name: str,
-                      parameter_class: type=SignadyneParameter, **kwargs):
-        """Use SignadyneParameter by default"""
-        super().add_parameter(name=name, parameter_class=parameter_class,
-                              parent=self, **kwargs)
 
     @with_error_check
     def start_channels(self, channels: List[int]):
