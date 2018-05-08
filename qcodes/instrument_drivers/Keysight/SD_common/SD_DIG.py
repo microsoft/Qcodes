@@ -109,7 +109,8 @@ class DigitizerChannel(InstrumentChannel):
             initial_value=0,
             vals=vals.Ints(),
             set_function=self.SD_AIN.DAQconfig,
-            set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The number of points per cycle for ch{self.id}'
         )
 
@@ -118,7 +119,8 @@ class DigitizerChannel(InstrumentChannel):
             initial_value=-1,
             vals=vals.Ints(),
             set_function=self.SD_AIN.DAQconfig,
-            set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The number of cycles to collect on DAQ {self.id}'
         )
 
@@ -127,7 +129,8 @@ class DigitizerChannel(InstrumentChannel):
             initial_value='auto',
             val_mapping={'auto': 0, 'software': 1, 'digital': 2, 'analog': 3},
             set_function=self.SD_AIN.DAQconfig,
-            set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The trigger mode for ch{self.id}'
         )
 
@@ -137,7 +140,8 @@ class DigitizerChannel(InstrumentChannel):
             vals=vals.Numbers(),
             set_parser=int,
             set_function=self.SD_AIN.DAQconfig,
-            set_args=['points_per_cycle', 'n_cycles', 'trigger_delay_samples', 'trigger_mode'],
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
             docstring=f'The trigger delay (in samples) for ch{self.id}. '
                       f'Can be negative'
         )
