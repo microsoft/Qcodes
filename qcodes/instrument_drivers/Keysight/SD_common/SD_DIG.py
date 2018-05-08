@@ -194,11 +194,11 @@ class DigitizerChannel(InstrumentChannel):
         self.add_parameter(
             'digital_trigger_source',
             initial_value='trig_in',
-            val_mapping={'trig_in': 0, **{f'pxi{k}': 4000+k for k in range(1, 9)}},
+            val_mapping={'trig_in': 0, **{f'pxi{k}': 4000+k for k in range(8)}},
             set_function=self.SD_AIN.DAQdigitalTriggerConfig,
             set_args=['digital_trigger_source', 'digital_trigger_mode'],
             docstring='the trigger source you are using. Can be trig_in '
-                      '(external IO) or pxi1 to pxi8'
+                      '(external IO) or pxi0 to pxi7'
         )
 
         # For DAQ read

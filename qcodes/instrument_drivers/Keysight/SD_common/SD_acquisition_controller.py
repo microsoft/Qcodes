@@ -119,7 +119,7 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'trigger_channel',
             vals=vals.Enum('trig_in', *[f'ch{k}' for k in range(8)],
-                      *[f'pxi{k}' for k in range(1, 9)]),
+                      *[f'pxi{k}' for k in range(8)]),
             set_cmd=self.set_trigger_channel,
             docstring='The channel on which acquisition is triggered.'
         )

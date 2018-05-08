@@ -53,7 +53,7 @@ class AWGChannel(InstrumentChannel):
         self.add_parameter('trigger_source',
                            label=f'ch{self.id} trigger source',
                            val_mapping={'trig_in': 0,
-                                        **{f'pxi{k}': 4000+k for k in range(1, 9)}},
+                                        **{f'pxi{k}': 4000+k for k in range(8)}},
                            initial_value='trig_in',
                            set_function=self.awg.AWGtriggerExternalConfig,
                            set_args=['trigger_source', 'trigger_behaviour'],
