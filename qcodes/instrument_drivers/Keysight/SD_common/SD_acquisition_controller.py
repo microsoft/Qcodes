@@ -2,8 +2,6 @@ from time import time
 import numpy as np
 import logging
 
-# TODO remove asterisk
-from .SD_DIG import *
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils import validators as vals
@@ -119,7 +117,7 @@ class Triggered_Controller(AcquisitionController):
         self.add_parameter(
             'trigger_channel',
             vals=vals.Enum('trig_in', *[f'ch{k}' for k in range(8)],
-                      *[f'pxi{k}' for k in range(8)]),
+                           *[f'pxi{k}' for k in range(8)]),
             set_cmd=self.set_trigger_channel,
             docstring='The channel on which acquisition is triggered.'
         )
@@ -157,7 +155,6 @@ class Triggered_Controller(AcquisitionController):
             docstring='Sets the trigger delay before starting acquisition.'
         )
 
-
         self.add_parameter(
             'samples_per_trace',
             vals=vals.Multiples(divisor=2, min_value=2),
@@ -181,7 +178,7 @@ class Triggered_Controller(AcquisitionController):
             vals=vals.Numbers(min_value=1),
             set_parser=lambda val: int(round(val)),
             docstring='The number of traces to get per read. '
-                     'Can be use to break acquisition into multiple reads.'
+                      'Can be use to break acquisition into multiple reads.'
         )
 
         self.add_parameter(
@@ -211,14 +208,14 @@ class Triggered_Controller(AcquisitionController):
     def active_channels(self):
         return self.digitizer.channels[self.channel_selection()]
 
-    def set_trigger_channel(self, trigger_channel):
+    def set_trigger_channel(self, trigger_channel: str):
         """
         Sets the source channel with which to trigger acquisition on.
 
         Also ensures the trigger edge and trigger threshold are updated
 
         Args:
-            trigger_channel (int)   : the number of the trigger channel
+            trigger_channel: the number of the trigger channel
         """
         if trigger_channel == 'trig_in':
             self.digitizer.trigger_direction('out')
@@ -227,7 +224,7 @@ class Triggered_Controller(AcquisitionController):
             self.active_channels.digital_trigger_mode(self.digital_trigger_mode())
         elif trigger_channel.startswith('pxi'):
             raise NotImplementedError()
-        else: # Analog channel
+        else:  # Analog channel
             self.active_channels.trigger_mode('analog')
             trigger_id = int(trigger_channel[-1])
             self.active_channels.analog_trigger_mask(1 << trigger_id)
@@ -336,7 +333,7 @@ class Triggered_Controller(AcquisitionController):
         if self.average_mode() == 'none':
             data = buffers
         elif self.average_mode() == 'trace':
-            data = {ch : np.mean(buffers[ch], axis=0) for ch in self.channel_selection()}
+            data = {ch: np.mean(buffers[ch], axis=0) for ch in self.channel_selection()}
         elif self.average_mode() == 'point':
             data = {ch: np.mean(buffers[ch]) for ch in self.channel_selection()}
         else:
@@ -344,23 +341,26 @@ class Triggered_Controller(AcquisitionController):
                                       f'not implemented')
         return data
 
-    def _sample_rate_to_prescaler(self, sample_rate):
-        """
-            This method sets the channelised parameters for data acquisition
-            all at once. This must be set after channel_selection is modified.
+    def _sample_rate_to_prescaler(self, sample_rate: float, tolerance=0.1):
+        """Converts a sample rate to a prescaler.
+
+            The actual sample rate may be different, since the prescaler must be
+            an integer. A warning is raised if the relative mismatch is larger
+            than the tolerance.
 
             Args:
-                n_points (int)  : the number of points to capture per trace
+                sample_rate: Sample rate to convert to a prescaler.
+                tolerance: Maximum relative mismatch between target sample rate
+                    and actual sample rate. A warning is raised if not satisfied
         """
         system_frequency = self.digitizer.system_frequency()
         prescaler = round(system_frequency/sample_rate - 1)
         real_rate = system_frequency/(round(prescaler)+1)
-        if abs(sample_rate - real_rate)/sample_rate > 0.1:
+        if abs(sample_rate - real_rate)/sample_rate > tolerance:
             logger.warning('The chosen sample rate deviates by more than 10% from '
                            'the closest achievable rate, real sample rate will '
                            f'be {real_rate}')
         return prescaler
-        # self.active_channels.prescaler(prescaler)
 
     def __call__(self, *args, **kwargs):
         return "Triggered"
