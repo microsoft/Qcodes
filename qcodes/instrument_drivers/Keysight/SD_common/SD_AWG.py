@@ -45,7 +45,7 @@ class AWGChannel(InstrumentChannel):
 
         self.add_parameter('trigger_direction',
                            label=f'ch{self.id} trigger direction',
-                           val_mapping={'input': 1, 'output': 0},
+                           val_mapping={'in': 1, 'out': 0},
                            set_function=self.awg.triggerIOconfig,
                            docstring='Determines if trig i/o should be used '
                                      'as a trigger input or trigger output.')
@@ -61,7 +61,7 @@ class AWGChannel(InstrumentChannel):
                                      'to next waveform. Only used if the '
                                      'waveform is queued with external trigger '
                                      'mode option. trig_in requires '
-                                     'trigger_direction == "input".')
+                                     'trigger_direction == "in".')
 
         self.add_parameter('trigger_mode',
                            label=f'ch{self.id} trigger mode',
