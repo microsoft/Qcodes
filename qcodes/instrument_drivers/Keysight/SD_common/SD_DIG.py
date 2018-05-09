@@ -291,7 +291,6 @@ class DigitizerChannel(InstrumentChannel):
         return self.SD_AIN.DAQtrigger(self.id)
 
 
-
 class SD_DIG(SD_Module):
     """Qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
 
@@ -368,7 +367,7 @@ class SD_DIG(SD_Module):
         self.add_parameter('trigger_io',
                            label='trigger io',
                            get_function=self.SD_AIN.triggerIOread,
-                           set_functon=self.SD_AIN.triggerIOwrite,
+                           set_function=self.SD_AIN.triggerIOwrite,
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
                            val_mapping={'off': 0, 'on': 1})
 

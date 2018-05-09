@@ -262,7 +262,7 @@ class Triggered_Controller(AcquisitionController):
 
                 t0 = time()
                 while time() - t0 < self.timeout():
-                    channel_data = channel.read(ch)
+                    channel_data = channel.read()
                     if len(channel_data):
                         break
                     else:

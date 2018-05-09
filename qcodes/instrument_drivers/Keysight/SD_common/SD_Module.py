@@ -38,6 +38,7 @@ def with_error_check(fun):
         value = fun(*args, **kwargs)
         error_check(value, f'Error calling {fun.__name__} with args {kwargs}. '
                            f'Return value = {value}')
+        return value
     return error_check_wrapper
 
 def result_parser(value, name='result', verbose=False):

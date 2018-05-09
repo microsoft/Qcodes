@@ -33,8 +33,7 @@ class InstrumentChannel(InstrumentBase):
         # want to do in the Instrument initializer
         super().__init__(name=name, **kwargs)
 
-        self.name = "{}_{}".format(parent.name, str(name))
-        self.short_name = str(name)
+        self.short_name = self.name = str(name)
         self._meta_attrs = ['name']
 
         self._parent = parent

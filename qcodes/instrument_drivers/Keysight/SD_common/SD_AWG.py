@@ -6,7 +6,7 @@ from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, \
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes import validators as vals
-
+from .SD_DIG import logclass
 model_channels = {'M3201A': 4,
                   'M3300A': 4}
 
@@ -405,10 +405,10 @@ class SD_AWG(SD_Module):
         self.n_channels = channels
 
         # Create instance of keysight SD_AOU class
-        self.awg = keysightSD1.SD_AOU()
+        self.awg = logclass(keysightSD1.SD_AOU)()
 
         # Create an instance of keysight SD_Wave class
-        self.wave = keysightSD1.SD_Wave()
+        self.wave = logclass(keysightSD1.SD_Wave)()
 
         # Open the device using the specified chassis and slot number
         self.initialize(chassis=chassis, slot=slot)
@@ -478,10 +478,9 @@ class SD_AWG(SD_Module):
         """
         Stops the AWGs and sets the waveform of all channels to 'No Signal'
         """
-
-        for i in range(self.n_channels):
-            self.awg_stop(i)
-            self.set_channel_wave_shape(wave_shape=0, channel_number=i)
+        for channel in self.channels:
+            channel.stop()
+            channel.wave_shape('none')
 
     @with_error_check
     def reset_clock_phase(self,
