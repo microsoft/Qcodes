@@ -54,7 +54,8 @@ def DMM():
 @pytest.fixture
 def SpectrumAnalyzer():
     """
-    Yields a DummyInstrument that holds an ArrayParameter
+    Yields a DummyInstrument that holds ArrayParameters returning
+    different types
     """
 
     class Spectrum(ArrayParameter):
@@ -80,8 +81,22 @@ def SpectrumAnalyzer():
             # not the best SA on the market; it just returns noise...
             return np.random.randn(self.npts)
 
+    class ListSpectrum(Spectrum):
+
+        def get_raw(self):
+            output = super().get_raw()
+            return list(output)
+
+    class TupleSpectrum(Spectrum):
+
+        def get_raw(self):
+            output = super().get_raw()
+            return tuple(output)
+
     SA = DummyInstrument('dummy_SA')
     SA.add_parameter('spectrum', parameter_class=Spectrum)
+    SA.add_parameter('listspectrum', parameter_class=ListSpectrum)
+    SA.add_parameter('tuplespectrum', parameter_class=TupleSpectrum)
 
     yield SA
 
@@ -568,6 +583,40 @@ def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
                                  (spectrum, spectrum.get()))
+
+    assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_arrayparams_lists(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    lspec = SpectrumAnalyzer.listspectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(lspec)
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(lspec)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(lspec)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(lspec, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    lspec.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (lspec, lspec.get()))
 
     assert datasaver.points_written == N*M
 
