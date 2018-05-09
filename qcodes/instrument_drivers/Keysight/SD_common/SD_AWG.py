@@ -68,7 +68,7 @@ class AWGChannel(InstrumentChannel):
                            initial_value='rising',
                            val_mapping={'active_high': 1, 'active_low': 2,
                                         'rising': 3, 'falling': 4},
-                           set_function=self.SD_AIN.DAQdigitalTriggerConfig,
+                           set_function=self.awg.AWGtriggerExternalConfig,
                            set_args=['trigger_source', 'trigger_mode'],
                            docstring='The digital trigger mode when the '
                                      'waveform is queued with external trigger '
@@ -162,7 +162,7 @@ class AWGChannel(InstrumentChannel):
 
         Waveforms are not removed from the onboard RAM.
         """
-        self.awg.AWGflush(self.id)
+        return self.awg.AWGflush(self.id)
 
     @with_error_check
     def queue_waveform(self,
@@ -309,7 +309,7 @@ class AWGChannel(InstrumentChannel):
         depending on the trigger selection of the first waveform in the queue
         and provided that at least one waveform is queued in the AWG.
         """
-        self.awg.AWGstart(self.id)
+        return self.awg.AWGstart(self.id)
 
     @with_error_check
     def pause(self):
@@ -317,20 +317,20 @@ class AWGChannel(InstrumentChannel):
         output, and ignoring all incoming triggers.
         The waveform generation can be resumed calling awg_resume
         """
-        self.awg.AWGpause(self.id)
+        return self.awg.AWGpause(self.id)
 
     @with_error_check
     def resume(self):
         """Resumes the selected AWG, from the current position of the queue.
         """
-        self.awg.AWGresume(self.id)
+        return self.awg.AWGresume(self.id)
 
     def stop(self):
         """Stops the selected AWG, setting the output to zero and resetting the
         AWG queue to its initial position.
         All following incoming triggers are ignored.
         """
-        self.awg.AWGstop(self.id)
+        return self.awg.AWGstop(self.id)
 
     def jump_next_waveform(self):
         """Forces a jump to the next waveform in the awg queue.
@@ -351,15 +351,50 @@ class AWGChannel(InstrumentChannel):
 
 class SD_AWG(SD_Module):
     """
-    This is the general SD_AWG driver class that implements shared parameters and functionality among all PXIe-based
-    AWG cards by Keysight. (series M32xxA and M33xxA)
-
-    This driver was written to be inherited from by a specific AWG card driver (e.g. M3201A).
+    This is the general SD_AWG driver class that implements shared parameters
+    and functionality among all PXIe-based AWG cards by Keysight.
+    (series M32xxA and M33xxA)
 
     This driver was written with the M3201A card in mind.
 
-    This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
+    This driver makes use of the Python library provided by Keysight as part of
+    the SD1 Software package (v.2.01.00).
+
+
+    # General information about AWG behaviour
+
+    AWG behaviour:
+    # Output voltage
+    The waveform points are between -1 and 1, which correspond to the minimum,
+    maximum voltages, respectively.
+    When waiting for a trigger to proceed to the next waveform, the output voltage
+    of the final point in the previous waveform is maintained. If there is no
+    previous waveform, the voltage is zero. Similar for a waveform start_delay
+    (see below).
+    Note that this can cause odd behaviour, namely that before the waveform queue is
+    played for the first time, the voltage is 0V, but after the queue has finished,
+    the output voltage will be the that of the last point. This may affect the pulse
+    sequence, if not handled correctly.
+
+    # Start delay:
+    The start delay is time between when a waveform should start and when it
+    actually starts. If the waveform requires a trigger, it will wait for
+    waveform_delay after it received a trigger.
+    If the waveform doesn't need a trigger, it will still wait for start_delay after
+    the previous waveform finished.
+    During start_delay, the output voltage is the last point of the previous
+    waveform. If there is no previous waveform, output voltage is zero.
+    Start delay is independent of prescaler!
+    The max value is 6000
+
+    # Trigger
+    Triggers are ignored if the system is not waiting for one. It is therefore
+    important to have some small dead-time built-in before the AWG receives the
+    trigger to ensure that the AWG is waiting for one.
     """
+
+    waveform_multiple = 5
+    waveform_minimum = 15
 
     def __init__(self, name, model, chassis, slot, channels=None, triggers=8,
                  **kwargs):
@@ -672,7 +707,8 @@ class SD_AWG(SD_Module):
             waveform: pointer to the waveform object (can be negative)
         """
         wave = keysightSD1.SD_Wave()  # Not sure why this is here
-        return wave.newFromFile(waveform_file)
+        wave.newFromFile(waveform_file)
+        return wave
 
     @staticmethod
     def new_waveform_from_double(waveform_type: int,
@@ -695,7 +731,8 @@ class SD_AWG(SD_Module):
         wave = keysightSD1.SD_Wave()  # Not sure why this is here
         # Do not parse result because the result integer may overflow to a
         # negative number
-        return wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
+        wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
+        return wave
 
     @staticmethod
     def new_waveform_from_int(waveform_type: int,
@@ -716,7 +753,8 @@ class SD_AWG(SD_Module):
             waveform: pointer to the waveform object (can be negative)
         """
         wave = keysightSD1.SD_Wave()  # Not sure why this is here
-        return wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
+        wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
+        return wave
 
     @staticmethod
     @with_error_check

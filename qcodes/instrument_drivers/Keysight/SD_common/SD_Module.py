@@ -146,7 +146,7 @@ class SignadyneParameter(Parameter):
             # Evaluate the set function with the necessary set parameter values
             if isinstance(self.parent, InstrumentChannel):
                 # Also pass the channel id
-                return_val = self.set_function(self.channel.id, *set_vals)
+                return_val = self.set_function(self.parent.id, *set_vals)
             else:
                 return_val = self.set_function(*set_vals)
             # Check if the returned value is an error
