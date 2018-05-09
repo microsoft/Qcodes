@@ -3,6 +3,7 @@ Test suite for parameter
 """
 from collections import namedtuple
 from unittest import TestCase
+from typing import Tuple
 from time import sleep
 
 import numpy as np
@@ -45,7 +46,7 @@ blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
     namedtuple('blank', 'name')('')  # blank .name
-)
+) # type: Tuple
 named_instrument = namedtuple('yesname', 'name')('astro')
 
 

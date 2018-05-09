@@ -3,14 +3,15 @@ import logging
 import time
 import warnings
 import weakref
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING, cast
 
 import numpy as np
-
+if TYPE_CHECKING:
+    from qcodes.instrumet.channel import ChannelList
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from .parameter import Parameter
+from .parameter import Parameter, _BaseParameter
 from .function import Function
 
 log = logging.getLogger(__name__)
@@ -45,9 +46,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                  metadata: Optional[Dict]=None, **kwargs) -> None:
         self.name = str(name)
 
-        self.parameters = {}
-        self.functions = {}
-        self.submodules = {}
+        self.parameters = {} # type: Dict[str, _BaseParameter]
+        self.functions = {} # type: Dict[str, Function]
+        self.submodules = {} # type: Dict[str, Union['InstrumentBase', 'ChannelList']]
         super().__init__(**kwargs)
 
     def add_parameter(self, name: str,
@@ -109,7 +110,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name: str, submodule: Metadatable) -> None:
+    def add_submodule(self, name: str, submodule:  Union['InstrumentBase', 'ChannelList']) -> None:
         """
         Bind one submodule to this instrument.
 
@@ -174,8 +175,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             try:
                 snap['parameters'][name] = param.snapshot(update=update)
             except:
-                log.debug("Snapshot: Could not update parameter:"
-                          "{}".format(name))
+                # really log this twice. Once verbose for the UI and once
+                # at lower level with more info for file based loggers
+                log.warning("Snapshot: Could not update parameter:"
+                            "{}".format(name))
+                log.info("Details for Snapshot of {}:".format(name),
+                         exec_info=True)
+
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
@@ -243,6 +249,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             else:
                 submodule.print_readable_snapshot(update, max_chars)
 
+    @property
+    def root_instrument(self) -> 'InstrumentBase':
+        return self
     #
     # shortcuts to parameters & setters & getters                           #
     #
@@ -352,7 +361,9 @@ class Instrument(InstrumentBase):
 
     shared_kwargs = ()
 
-    _all_instruments = {}
+    _all_instruments = {} # type: Dict[str, weakref.ref[Instrument]]
+    _type = None
+    _instances = [] # type: List[weakref.ref]
 
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
@@ -369,7 +380,7 @@ class Instrument(InstrumentBase):
 
         self.record_instance(self)
 
-    def get_idn(self) -> Dict:
+    def get_idn(self) -> Dict[str, Optional[str]]:
         """
         Parse a standard VISA '\*IDN?' response into an ID dict.
 
@@ -391,6 +402,7 @@ class Instrument(InstrumentBase):
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
+            idparts = [] # type: List[Optional[str]]
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -471,11 +483,14 @@ class Instrument(InstrumentBase):
         Examples:
             >>> atexit.register(qc.Instrument.close_all())
         """
+        log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
                 inst = cls.find_instrument(inststr)
+                log.info(f"Closing {inststr}")
                 inst.close()
             except KeyError:
+                log.info(f"Failed to close {inststr}, ignored")
                 pass
 
     @classmethod
@@ -535,7 +550,7 @@ class Instrument(InstrumentBase):
             The instance to remove
         """
         wr = weakref.ref(instance)
-        if wr in cls._instances:
+        if wr in getattr(cls, "_instances", []):
             cls._instances.remove(wr)
 
         # remove from all_instruments too, but don't depend on the
@@ -569,14 +584,14 @@ class Instrument(InstrumentBase):
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError('Instrument {} has been removed'.format(name))
-
+        inst = cast('Instrument', ins)
         if instrument_class is not None:
-            if not isinstance(ins, instrument_class):
+            if not isinstance(inst, instrument_class):
                 raise TypeError(
                     'Instrument {} is {} but {} was requested'.format(
-                        name, type(ins), instrument_class))
+                        name, type(inst), instrument_class))
 
-        return ins
+        return inst
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
@@ -647,7 +662,7 @@ class Instrument(InstrumentBase):
             e.args = e.args + ('asking ' + repr(cmd) + ' to ' + inst,)
             raise e
 
-    def ask_raw(self, cmd: str) -> None:
+    def ask_raw(self, cmd: str) -> str:
         """
         Low level method to write to the hardware and return a response.
 

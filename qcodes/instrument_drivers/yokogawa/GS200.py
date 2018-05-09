@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
@@ -195,7 +195,7 @@ class GS200(VisaInstrument):
         # We want to cache the range value so communication with the instrument only happens when the set the
         # range. Getting the range always returns the cached value. This value is adjusted when calling
         # self._set_range
-        self._cached_range_value = None # type: Optional[float]
+        self._cached_range_value = None # type: Optional[Union[float,int]]
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
@@ -382,6 +382,9 @@ class GS200(VisaInstrument):
 
         if not auto_enabled:
             self_range = self._cached_range_value
+            if self_range is None:
+                raise RuntimeError("Trying to set output but not in"
+                                   " auto mode and range is unknown.")
         else:
             mode = self._cached_mode
             if mode == "CURR":
@@ -396,6 +399,9 @@ class GS200(VisaInstrument):
                 # Update range
                 self.range()
                 self_range = self._cached_range_value
+                if self_range is None:
+                    raise RuntimeError("Trying to set output but not in"
+                                       " auto mode and range is unknown.")
             # If we are still out of range, raise a value error
             if abs(output_level) > abs(self_range):
                 raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(

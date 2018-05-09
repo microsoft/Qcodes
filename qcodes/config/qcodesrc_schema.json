@@ -23,9 +23,39 @@
                         "INFO",
                         "DEBUG"
                     ]
+                },
+                "file_loglevel" :{
+                    "type" : "string",
+                    "description": "control file logging  level",
+                    "default": "INFO",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
+                "register_magic" : {
+                    "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
+                    "anyOf" : [
+                        {"type": "boolean"},
+                        {"type": "array"}
+                    ],
+                    "default": true
+                },
+                "db_debug": {
+                    "description": "Use debugging mode in sqlite ",
+                    "type" : "boolean",
+                    "default": false
+                },
+                "db_location": {
+                    "type": "string",
+                    "description": "location of the database",
+                    "default": "./experiments.db"
                 }
             },
-            "required":["loglevel" ]
+            "required":["loglevel", "db_location"]
         },
         "gui" : {
             "type" : "object",

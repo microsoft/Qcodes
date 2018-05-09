@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import logging
+from typing import Optional, Sequence, Dict
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -140,7 +141,20 @@ class SR86xBuffer(InstrumentChannel):
             )
 
         self.bytes_per_sample = 4
-        self._capture_data = dict()
+
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Sequence[str] = None) -> Dict:
+        if params_to_skip_update is None:
+            params_to_skip_update = []
+        # we omit count_capture_kilobytes from the snapshot because
+        # it can only be read after a completed capture and will
+        # timeout otherwise when the snapshot is updated, e.g. at
+        # station creation time
+        params_to_skip_update = list(params_to_skip_update)
+        params_to_skip_update.append('count_capture_kilobytes')
+
+        snapshot = super().snapshot_base(update, params_to_skip_update)
+        return snapshot
 
     @staticmethod
     def _set_capture_len_parser(value: int) -> int:
@@ -539,20 +553,20 @@ class SR86x(VisaInstrument):
         mode = self._N_TO_INPUT_SIGNAL[int(s)]
 
         if mode == 'voltage':
-            self.sensitivity.set_validator(self._VOLT_ENUM)
+            self.sensitivity.vals = self._VOLT_ENUM
             self._set_units('V')
         else:
-            self.sensitivity.set_validator(self._CURR_ENUM)
+            self.sensitivity.vals = self._CURR_ENUM
             self._set_units('A')
 
         return mode
 
     def _set_input_config(self, s):
         if s == 'voltage':
-            self.sensitivity.set_validator(self._VOLT_ENUM)
+            self.sensitivity.vals = self._VOLT_ENUM
             self._set_units('V')
         else:
-            self.sensitivity.set_validator(self._CURR_ENUM)
+            self.sensitivity.vals = self._CURR_ENUM
             self._set_units('A')
 
         return self._INPUT_SIGNAL_TO_N[s]

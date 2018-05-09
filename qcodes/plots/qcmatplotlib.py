@@ -95,7 +95,8 @@ class MatPlot(BasePlot):
                 nrows = int(np.ceil(subplots / self.max_subplot_columns))
                 ncols = min(subplots, self.max_subplot_columns)
                 subplots = (nrows, ncols)
-
+            if subplots is None:
+                subplots = (1,1)
             if figsize is None:
                 # Adjust figsize depending on rows and columns in subplots
                 figsize = self.default_figsize(subplots)
@@ -143,6 +144,9 @@ class MatPlot(BasePlot):
                 without `z` we draw a scatter/lines plot (ax.plot):
                     `x`, `y`, and `fmt` (if present) are passed as positional
                     args
+        
+        Returns:
+            Plot handle for trace
         """
         # TODO some way to specify overlaid axes?
         # Note that there is a conversion from subplot kwarg, which is
@@ -167,6 +171,8 @@ class MatPlot(BasePlot):
         if prev_default_title == self.title.get_text():
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
+
+        return plot_object
 
     def _update_labels(self, ax, config):
         for axletter in ("x", "y"):

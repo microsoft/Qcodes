@@ -1,5 +1,7 @@
-sphinx
+sphinx>=1.7.2
 sphinx_rtd_theme
 sphinxcontrib-jsonschema
 nbconvert
 ipython
+jupyter
+scipy
