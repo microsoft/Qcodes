@@ -621,6 +621,40 @@ def test_datasaver_arrayparams_lists(experiment, SpectrumAnalyzer, DAC, N, M):
     assert datasaver.points_written == N*M
 
 
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    tspec = SpectrumAnalyzer.tuplespectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(tspec)
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(tspec)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(tspec)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(tspec, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    tspec.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (tspec, tspec.get()))
+
+    assert datasaver.points_written == N*M
+
+
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
     dir = os.path.dirname(__file__)
