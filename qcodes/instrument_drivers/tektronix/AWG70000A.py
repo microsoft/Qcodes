@@ -23,11 +23,15 @@ log = logging.getLogger(__name__)
 #
 
 
-def _remove_quotation_marks(input: str) -> str:
+def _parse_string_response(input_str: str) -> str:
     """
-    Remove quotation marks from string
+    Remove quotation marks from string and return 'N/A'
+    if the input is empty
     """
-    return input.replace('"', '')
+    output = input_str.replace('"', '')
+    output = output if output else 'N/A'
+
+    return output
 
 
 ##################################################
@@ -220,7 +224,7 @@ class AWGChannel(InstrumentChannel):
                            label=('Waveform/sequence assigned to '
                                   f' channel {self.channel}'),
                            get_cmd=f"SOURCE{self.channel}:CASSet?",
-                           get_parser=_remove_quotation_marks)
+                           get_parser=_parse_string_response)
 
         # markers
         for mrk in range(1, _num_of_markers_map[self.model]+1):
