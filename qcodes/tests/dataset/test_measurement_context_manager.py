@@ -547,6 +547,22 @@ def test_datasaver_arrays_lists_tuples(empty_temp_db, N):
     assert datasaver.points_written == N
 
 
+def test_datasaver_foul_input(experiment):
+
+    meas = Measurement()
+
+    meas.register_custom_parameter('foul',
+                                   label='something unnatural',
+                                   unit='Fahrenheit')
+
+    foul_stuff = [qc.Parameter('foul'), set((1, 2, 3))]
+
+    with meas.run() as datasaver:
+        for ft in foul_stuff:
+            with pytest.raises(ValueError):
+                datasaver.add_result(('foul', ft))
+
+
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 def test_datasaver_unsized_arrays(empty_temp_db, N):
