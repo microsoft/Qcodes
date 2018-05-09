@@ -477,7 +477,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
-def test_datasaver_arrays(empty_temp_db, N):
+def test_datasaver_arrays_lists_tuples(empty_temp_db, N):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -513,9 +513,32 @@ def test_datasaver_arrays(empty_temp_db, N):
                                    unit='Majorana flux',
                                    setpoints=('freqax', 'gate_voltage'))
 
+    # save arrays
     with meas.run() as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         signal = np.random.randn(N)
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+    # save lists
+    with meas.run() as datasaver:
+        freqax = list(np.linspace(1e6, 2e6, N))
+        signal = list(np.random.randn(N))
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+    # save tuples
+    with meas.run() as datasaver:
+        freqax = tuple(np.linspace(1e6, 2e6, N))
+        signal = tuple(np.random.randn(N))
 
         datasaver.add_result(('freqax', freqax),
                              ('signal', signal),
