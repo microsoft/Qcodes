@@ -28,7 +28,9 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     response = response.replace(':', '')
     digits = ''.join([d for d in response if d in numchars])
     scale_and_unit = response[len(digits):]
-    if scale_and_unit[0] in scale_to_factor.keys():
+    if scale_and_unit == '':
+        their_scaling = 1
+        elif scale_and_unit[0] in scale_to_factor.keys():
         their_scaling = scale_to_factor[scale_and_unit[0]]
     else:
         their_scaling = 1
