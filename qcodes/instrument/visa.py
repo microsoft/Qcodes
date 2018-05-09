@@ -76,7 +76,13 @@ class VisaInstrument(Instrument):
 
         self.visabackend = None
 
-        self.set_address(address)
+        try:
+            self.set_address(address)
+        except Exception as e:
+            log.info(f"Could not connect to {name} instrument at {address}")
+            self.close()
+            raise e
+
         if device_clear:
             self.device_clear()
 
@@ -129,7 +135,11 @@ class VisaInstrument(Instrument):
             self.visa_handle.flush(
                 vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
         else:
-            self.visa_handle.clear()
+            status_code = self.visa_handle.clear()
+            if status_code is not None:
+                log.warning("Cleared visa buffer on "
+                            "{} with status code {}".format(self.name,
+                                                            status_code))
 
     def set_terminator(self, terminator):
         r"""
@@ -195,19 +205,10 @@ class VisaInstrument(Instrument):
         Args:
             cmd (str): The command to send to the instrument.
         """
-        # the simulation backend does not return anything on
-        # write
         log.debug("Writing to instrument {}: {}".format(self.name, cmd))
-        if self.visabackend == 'sim':
-            # if we use pyvisa-sim, we must read back the 'OK'
-            # response of the setting
-            resp = self.visa_handle.ask(cmd)
-            if resp != 'OK':
-                log.warning('Received non-OK response from instrument '
-                            '{}: {}.'.format(self.name, resp))
-        else:
-            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-            self.check_error(ret_code)
+
+        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+        self.check_error(ret_code)
 
     def ask_raw(self, cmd):
         """
@@ -220,7 +221,9 @@ class VisaInstrument(Instrument):
             str: The instrument's response.
         """
         log.debug("Querying instrument {}: {}".format(self.name, cmd))
-        return self.visa_handle.ask(cmd)
+        response = self.visa_handle.query(cmd)
+        log.debug(f"Got instrument response: {response}")
+        return response
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str] = None):

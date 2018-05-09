@@ -14,7 +14,7 @@ import qcodes.utils.validators as vals
 # Such a driver is just a two-line class definition.
 
 
-class IPToVisa(VisaInstrument, IPInstrument):
+class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
     """
     Class to inject an VisaInstrument like behaviour in an
     IPInstrument that we'd like to use as a VISAInstrument with the
@@ -78,5 +78,5 @@ class IPToVisa(VisaInstrument, IPInstrument):
         self.remove_instance(self)
 
 
-class AMI430_VISA(AMI430, IPToVisa):
+class AMI430_VISA(AMI430, IPToVisa): # type: ignore
     pass
