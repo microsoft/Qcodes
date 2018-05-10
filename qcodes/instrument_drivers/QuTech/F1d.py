@@ -1,4 +1,4 @@
-from qcodes import Instrument
+from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Enum
 
 try:

@@ -17,6 +17,8 @@ from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.database import initialise_database
+
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
@@ -24,15 +26,7 @@ def empty_temp_db():
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"],
-                     qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
@@ -346,7 +340,7 @@ def test_subscriptions(experiment, DAC, DMM):
         for res in results:
             state += [pres for pres in res if pres > 7]
 
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
@@ -368,16 +362,56 @@ def test_subscriptions(experiment, DAC, DMM):
         assert res_dict == {}
         assert lt7s == []
 
+        as_and_bs = list(zip(range(5), range(3, 8)))
+
         for num in range(5):
 
-            (a, b) = 5*np.random.randn(2)
+            (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
-            sleep(meas.write_period)
+            sleep(1.2*meas.write_period)
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
     assert len(datasaver._dataset.subscribers) == 0
+
+
+@settings(deadline=None, max_examples=25)
+@given(N=hst.integers(min_value=2000, max_value=3000))
+def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
+
+    def sub_get_x_vals(results, length, state):
+        """
+        A list of all x values
+        """
+        state += [res[0] for res in results]
+
+    def sub_get_y_vals(results, length, state):
+        """
+        A list of all y values
+        """
+        state += [res[1] for res in results]
+
+    meas = Measurement(exp=experiment)
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+
+    xvals = []
+    yvals = []
+
+    meas.add_subscriber(sub_get_x_vals, state=xvals)
+    meas.add_subscriber(sub_get_y_vals, state=yvals)
+
+    given_xvals = range(N)
+    given_yvals = range(1, N+1)
+
+    with meas.run() as datasaver:
+
+        for x, y in zip(given_xvals, given_yvals):
+            datasaver.add_result((DAC.ch1, x), (DMM.v1, y))
+
+    assert xvals == list(given_xvals)
+    assert yvals == list(given_yvals)
 
 
 # There is no way around it: this test is slow. We test that write_period
@@ -407,7 +441,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
         assert datasaver._dataset.number_of_results == 0
-        sleep(write_period)
+        sleep(write_period * 1.1)
         datasaver.add_result((DAC.ch1, set_values[breakpoint]),
                              (DMM.v1, get_values[breakpoint]))
         assert datasaver.points_written == breakpoint + 1
@@ -471,6 +505,34 @@ def test_datasaver_arrays(empty_temp_db, N):
         datasaver.add_result(('freqax', freqax),
                              ('signal', signal),
                              ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+
+@settings(max_examples=10, deadline=None)
+@given(N=hst.integers(min_value=2, max_value=500))
+def test_datasaver_unsized_arrays(empty_temp_db, N):
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='freqax',
+                                   label='Frequency axis',
+                                   unit='Hz')
+    meas.register_custom_parameter(name='signal',
+                                   label='qubit signal',
+                                   unit='Majorana number',
+                                   setpoints=('freqax',))
+    # note that np.array(some_number) is not the same as the number
+    # its also not an array with a shape. Check here that we handle it
+    # correctly
+    with meas.run() as datasaver:
+        freqax = np.linspace(1e6, 2e6, N)
+        signal = np.random.randn(N)
+        for i in range(N):
+            myfreq = np.array(freqax[i])
+            mysignal = np.array(signal[i])
+            datasaver.add_result(('freqax', myfreq), ('signal', mysignal))
 
     assert datasaver.points_written == N
 
