@@ -56,7 +56,7 @@ class AWGChannel(InstrumentChannel):
                                         **{f'pxi{k}': 4000+k for k in range(8)}},
                            initial_value='trig_in',
                            set_function=self.awg.AWGtriggerExternalConfig,
-                           set_args=['trigger_source', 'trigger_behaviour'],
+                           set_args=['trigger_source', 'trigger_mode'],
                            docstring='External trigger source used to proceed '
                                      'to next waveform. Only used if the '
                                      'waveform is queued with external trigger '

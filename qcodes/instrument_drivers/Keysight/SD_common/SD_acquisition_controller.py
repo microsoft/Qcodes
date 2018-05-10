@@ -126,7 +126,7 @@ class Triggered_Controller(AcquisitionController):
             'analog_trigger_edge',
             vals=vals.Enum('rising', 'falling', 'both'),
             initial_value='rising',
-            set_cmd=lambda edge: self._trigger_channel.analog_trigger_edge(edge),
+            set_cmd=lambda edge: self.active_channels.analog_trigger_edge(edge),
             docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
         )
 
@@ -134,7 +134,7 @@ class Triggered_Controller(AcquisitionController):
             'analog_trigger_threshold',
             vals=vals.Numbers(-3, 3),
             initial_value=1,
-            set_cmd=lambda threshold: self._trigger_channel.analog_trigger_threshold(threshold),
+            set_cmd=lambda threshold: self.active_channels.analog_trigger_threshold(threshold),
             docstring=f'the value in volts for the trigger threshold'
         )
 
@@ -142,7 +142,7 @@ class Triggered_Controller(AcquisitionController):
             'digital_trigger_mode',
             vals=vals.Enum('active_high', 'active_low', 'rising', 'falling'),
             initial_value='rising',
-            set_cmd=lambda mode: self._trigger_channel.digital_trigger_mode(mode),
+            set_cmd=lambda mode: self.active_channels.digital_trigger_mode(mode),
             docstring='Sets the digital trigger mode for the active trigger channel.'
         )
 
@@ -202,7 +202,10 @@ class Triggered_Controller(AcquisitionController):
 
     @property
     def _trigger_channel(self):
-        return self.digitizer.channels[self.trigger_channel()]
+        if self._trigger_channel().startswith('ch'):
+            return self.digitizer.channels[self.trigger_channel()]
+        else:
+            return None
 
     @property
     def active_channels(self):
@@ -223,7 +226,9 @@ class Triggered_Controller(AcquisitionController):
             self.active_channels.digital_trigger_source('trig_in')
             self.active_channels.digital_trigger_mode(self.digital_trigger_mode())
         elif trigger_channel.startswith('pxi'):
-            raise NotImplementedError()
+            self.active_channels.trigger_mode('digital')
+            self.active_channels.digital_trigger_source(trigger_channel)
+            self.active_channels.digital_trigger_mode(self.digital_trigger_mode())
         else:  # Analog channel
             self.active_channels.trigger_mode('analog')
             trigger_id = int(trigger_channel[-1])
