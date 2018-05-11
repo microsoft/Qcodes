@@ -132,11 +132,13 @@ class TestParameterNode(TestCase):
             node.param1 = 31
         node.param1 = 44
 
+
 class TestCopyParameterNode(TestCase):
     def test_copy_parameter_node(self):
         node = ParameterNode(use_as_attributes=True)
         node.p = Parameter(set_cmd=None)
         node.p = 123
+        self.assertEqual(node['p']._instrument, None)
 
         node2 = copy(node)
         self.assertEqual(node.p, 123)
@@ -159,6 +161,18 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node.p, 124)
         self.assertEqual(node2.p, 125)
         self.assertEqual(node3.p, 126)
+
+    def test_copy_parameter_node_add_parameter(self):
+        node = ParameterNode(use_as_attributes=True)
+        node.add_parameter('p', set_cmd=None)
+        node.p = 123
+        self.assertEqual(node['p'](), 123)
+        self.assertEqual(node['p']._instrument, node)
+
+        node_copy = copy(node)
+        self.assertEqual(node.p, 123)
+        self.assertEqual(node['p']._instrument, node)
+        self.assertEqual(node_copy['p']._instrument, None)
 
     def test_copy_parameter_in_node(self):
         node = ParameterNode(use_as_attributes=True)
@@ -330,3 +344,113 @@ class TestCopyParameterNode(TestCase):
         parameter_copy(44)
         self.assertEqual(node.p, (2, 43))
         self.assertEqual(parameter_copy(), (2, 44))
+
+
+class ParameterAndNode(Parameter, ParameterNode):
+    def __init__(self, **kwargs):
+        Parameter.__init__(self, **kwargs)
+        ParameterNode.__init__(self, use_as_attributes=True, **kwargs)
+        self.value = 42
+
+    def get_raw(self):
+        return self.value
+
+    def set_raw(self, value):
+        self.value = value
+
+
+class TestCombinedParameterAndParameterNode(TestCase):
+    def test_overlapping_attributes(self):
+        # If any new attributes get introduced to either, this test will check
+        # if it overlaps.
+        node = ParameterNode('node')
+        p = Parameter('param', set_cmd=None)
+
+        parameter_dict = [*p.__dict__, *Parameter.__dict__]
+        node_dict = [*node.__dict__, *ParameterNode.__dict__]
+        overlapping_attrs = {k for k in parameter_dict + node_dict
+                             if k in parameter_dict and k in node_dict}
+        self.assertSetEqual(overlapping_attrs,
+                            {'__init__', '_meta_attrs', '__doc__', '__module__',
+                             'metadata', '__deepcopy__', 'name', '__getitem__'})
+
+    def test_create_multiple_inheritance_initialization(self):
+        class ParameterAndNode(Parameter, ParameterNode):
+            def __init__(self, **kwargs):
+                Parameter.__init__(self, **kwargs)
+                ParameterNode.__init__(self, use_as_attributes=True, **kwargs)
+
+        parameter_and_node = ParameterAndNode()
+
+        # Check if ParameterNode instance attribute exists
+        # which means it went through its __init__
+        self.assertTrue(hasattr(parameter_and_node, 'functions'))
+        # Same for parameter
+        self.assertTrue(hasattr(parameter_and_node, 'step'))
+
+    def test_parameter_get_set(self):
+
+        parameter_and_node = ParameterAndNode()
+        self.assertEqual(parameter_and_node(), 42)
+
+        parameter_and_node(41)
+        self.assertEqual(parameter_and_node(), 41)
+
+    def test_add_parameter_to_node(self):
+        parameter_and_node = ParameterAndNode()
+        p = Parameter('p', initial_value=42)
+        parameter_and_node.p = p
+        self.assertEqual(parameter_and_node.p, 42)
+        self.assertEqual(parameter_and_node['p'], p)
+
+        self.assertEqual(parameter_and_node(), 42)
+        parameter_and_node(43)
+        self.assertEqual(parameter_and_node(), 43)
+
+    def test_connect_parameter_and_node_to_parameter(self):
+        parameter_and_node = ParameterAndNode()
+        p = Parameter('p', initial_value=0, set_cmd=None)
+        parameter_and_node.p = p
+
+        p_source = Parameter('p', initial_value=42, set_cmd=None)
+        p_source.connect(parameter_and_node['p'], update=True)
+        self.assertEqual(parameter_and_node.p, 42)
+
+        p_source(40)
+        self.assertEqual(parameter_and_node.p, 40)
+
+    def test_connect_parameter_to_parameter_and_node(self):
+        parameter_and_node = ParameterAndNode()
+        p = Parameter('p', initial_value=0, set_cmd=None)
+        parameter_and_node.p = p
+
+        p_target = Parameter('p', initial_value=42, set_cmd=None)
+        parameter_and_node['p'].connect(p_target, update=True)
+        self.assertEqual(p_target(), 0)
+
+        parameter_and_node.p = 40
+        self.assertEqual(p_target(), 40)
+
+    def test_copy_parameter_and_node(self):
+        parameter_and_node = ParameterAndNode()
+        p = Parameter('p', initial_value=42, set_cmd=None)
+        parameter_and_node.p = p
+
+        copy_parameter_and_node = deepcopy(parameter_and_node)
+        self.assertEqual(copy_parameter_and_node.p, 42)
+
+    def test_copy_connected_parameter_and_node(self):
+        parameter_and_node = ParameterAndNode()
+        p = Parameter('p', initial_value=0, set_cmd=None)
+        parameter_and_node.p = p
+
+        p_source = Parameter('p', initial_value=42, set_cmd=None)
+        p_source.connect(parameter_and_node['p'], update=True)
+        self.assertEqual(parameter_and_node.p, 42)
+
+        copy_parameter_and_node = deepcopy(parameter_and_node)
+        self.assertEqual(copy_parameter_and_node.p, 42)
+
+        p_source(41)
+        self.assertEqual(parameter_and_node.p, 41)
+        self.assertEqual(copy_parameter_and_node.p, 42)
