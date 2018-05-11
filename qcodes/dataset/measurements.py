@@ -104,7 +104,7 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            if sum([isinstance(value, typ) for typ in array_like_types]) > 0:
+            if any(isinstance(value, typ) for typ in array_like_types):
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
                 array_size = len(value)
@@ -114,7 +114,7 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
-            elif sum([isinstance(value, t) for t in non_array_like_types]) > 0:
+            elif any(isinstance(value, t) for t in non_array_like_types):
                 pass
             else:
                 raise ValueError('Wrong value type received. '
