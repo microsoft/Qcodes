@@ -388,7 +388,12 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         try:
             return self.parameters[key]
         except KeyError:
+            pass
+        try:
             return self.functions[key]
+        except KeyError:
+            pass
+        return super().__getitem__(key)
 
     def call(self, func_name: str, *args, **kwargs):
         """ Shortcut for calling a function from its name.
