@@ -59,11 +59,11 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized
 from functools import partial, wraps
 import numpy
 
-from qcodes.utils.deferred_operations import DeferredOperations
+
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
@@ -74,10 +74,10 @@ from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
 if TYPE_CHECKING:
-    from .base import Instrument
+    from .base import Instrument, InstrumentBase
 
 
-class _BaseParameter(Metadatable, DeferredOperations):
+class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -149,6 +149,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+    get_raw = None # type: Optional[Callable]
+    set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
@@ -164,7 +166,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None):
+                 delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -203,14 +205,14 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw'):
+        if hasattr(self, 'get_raw') and self.get_raw is not None:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw'):
+        if hasattr(self, 'set_raw') and self.set_raw is not None:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
@@ -253,7 +255,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                           ' Parameter {}'.format(self.name))
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> dict:
+                      params_to_skip_update: Sequence[str]=None) -> Dict[str, Any]:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -271,7 +273,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 and self._snapshot_value and update:
             self.get()
 
-        state = copy(self._latest)
+        state = copy(self._latest) # type: Dict[str, Any]
         state['__class__'] = full_class(self)
         state['full_name'] = str(self)
 
@@ -280,7 +282,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             state.pop('raw_value', None)
 
         if isinstance(state['ts'], datetime):
-            state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+            dttime = state['ts'] # type: datetime
+            state['ts'] = dttime.strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
             if attr == 'instrument' and self._instrument:
@@ -418,9 +421,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[float, int],
+    def get_ramp_values(self, value: Union[float, int, Sized],
                         step: Union[float, int]=None) -> List[Union[float,
-                                                                    int]]:
+                                                                    int,
+                                                                    Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -435,7 +439,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if step is None:
             return [value]
         else:
-            if isinstance(value, collections.Iterable) and len(value) > 1:
+            if isinstance(value, collections.Sized) and len(value) > 1:
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
@@ -495,7 +499,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             TypeError: if step is not a number
         """
         if step is None:
-            self._step = step
+            self._step = step # type: Optional[Union[float, int]]
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -619,6 +623,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
         else:
             raise TypeError('vals must be a Validator')
 
+    @property
+    def root_instrument(self) -> Optional['InstrumentBase']:
+        if self._instrument is not None:
+            return self._instrument.root_instrument
+        else:
+            return None
 
 class Parameter(_BaseParameter):
     """
@@ -733,9 +743,9 @@ class Parameter(_BaseParameter):
                  set_cmd:  Optional[Union[str, Callable, bool]]=False,
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[str]=None,
+                 vals: Optional[Validator]=None,
                  docstring: Optional[str]=None,
-                 **kwargs):
+                 **kwargs) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
@@ -747,16 +757,16 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str = instrument.ask if instrument else None
-                self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
+                exec_str_ask = instrument.ask if instrument else None
+                self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw = partial(self._save_val, validate=False)
+                self.set_raw = partial(self._save_val, validate=False)# type: Callable
             else:
-                exec_str = instrument.write if instrument else None
-                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
+                exec_str_write = instrument.write if instrument else None
+                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
@@ -912,7 +922,7 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: bool=None):
+                 metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
@@ -1088,7 +1098,7 @@ class MultiParameter(_BaseParameter):
                  docstring: str=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: Optional[dict]=None):
+                 metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
@@ -1167,7 +1177,7 @@ class MultiParameter(_BaseParameter):
         return self.names
 
 
-class GetLatest(DelegateAttributes, DeferredOperations):
+class GetLatest(DelegateAttributes):
     """
     Wrapper for a Parameter that just returns the last set or measured value
     stored in the Parameter itself.
@@ -1272,6 +1282,7 @@ class CombinedParameter(Metadatable):
             if unit is None:
                 unit = units
         self.parameter.unit = unit
+        self.setpoints=[]
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
@@ -1296,7 +1307,7 @@ class CombinedParameter(Metadatable):
             setFunction(value)
         return values
 
-    def sweep(self, *array: numpy.ndarray):
+    def sweep(self, *array: numpy.ndarray) -> 'CombinedParameter':
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
@@ -1318,26 +1329,26 @@ class CombinedParameter(Metadatable):
             dim = set([len(a) for a in array])
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
-            array = numpy.array(array).transpose()
+            nparray = numpy.array(array).transpose()
         else:
             # cast to array in case users
             # decide to not read docstring
             # and pass a 2d list
-            array = numpy.array(array[0])
+            nparray = numpy.array(array[0])
         new = copy(self)
         _error_msg = """ Dimensionality of array does not match\
                         the number of parameter combined. Expected a \
                         {} dimensional array, got a {} dimensional array. \
                         """
         try:
-            if array.shape[1] != self.dimensionality:
+            if nparray.shape[1] != self.dimensionality:
                 raise ValueError(_error_msg.format(self.dimensionality,
-                                                   array.shape[1]))
+                                                   nparray.shape[1]))
         except KeyError:
             # this means the array is 1d
             raise ValueError(_error_msg.format(self.dimensionality, 1))
 
-        new.setpoints = array.tolist()
+        new.setpoints = nparray.tolist()
         return new
 
     def _aggregate(self, *vals):

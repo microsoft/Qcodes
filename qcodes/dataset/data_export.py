@@ -164,6 +164,25 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
+def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
+    """
+    Figure out what type of visualisation is proper for the
+    provided setpoints.
+
+    Args:
+        setpoints: The x-axis values
+
+    Returns:
+        A string which is 'point' if all the setpoints are identical,
+            else it returns 'line'
+    """
+
+    if np.allclose(setpoints, setpoints[0]):
+        return 'point'
+    else:
+        return 'line'
+
+
 def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
@@ -187,6 +206,14 @@ def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
 
     xpoints = flatten_1D_data_for_plot(setpoints[0])
     ypoints = flatten_1D_data_for_plot(setpoints[1])
+
+    # First check whether all setpoints are identical along
+    # any dimension
+    x_all_the_same = np.allclose(xpoints, xpoints[0])
+    y_all_the_same = np.allclose(ypoints, ypoints[0])
+
+    if x_all_the_same or y_all_the_same:
+        return 'point'
 
     # Now check if this is a simple rectangular sweep,
     # possibly interrupted in the middle of one row
@@ -242,7 +269,8 @@ def get_shaped_data_by_runid(run_id: int) -> List:
     mydata = get_data_by_id(run_id)
 
     for independet in mydata:
-        if len(independet) == 3:
+        data_length_long_enough = len(independet) == 3 and len(independet[0]['data']) > 0 and len(independet[1]['data']) > 0
+        if data_length_long_enough:
             datatype = datatype_from_setpoints_2d([independet[0]['data'],
                                                    independet[1]['data']])
             if datatype in ('grid', 'equidistant'):

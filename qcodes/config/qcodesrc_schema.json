@@ -24,6 +24,18 @@
                         "DEBUG"
                     ]
                 },
+                "file_loglevel" :{
+                    "type" : "string",
+                    "description": "control file logging  level",
+                    "default": "INFO",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
                 "register_magic" : {
                     "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
                     "anyOf" : [

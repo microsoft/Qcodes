@@ -7,8 +7,10 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
+from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
 from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.database import initialise_database
+
 import qcodes.dataset.experiment_container
 import pytest
 import tempfile
@@ -19,18 +21,13 @@ n_experiments = 0
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
+    global n_experiments
+    n_experiments = 0
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qcodes.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
@@ -103,17 +100,23 @@ def test_add_paramspec(dataset):
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
-    parameter_a = ParamSpec("a", "NUMERIC")
-    parameter_b = ParamSpec("b", "NUMERIC", key="value", number=1)
-    parameter_c = ParamSpec("c", "array")
+    parameter_a = ParamSpec("a_param", "NUMERIC")
+    parameter_b = ParamSpec("b_param", "NUMERIC", key="value", number=1)
+    parameter_c = ParamSpec("c_param", "array", inferred_from=[parameter_a,
+                                                               parameter_b])
     dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+
+    # Now retrieve the paramspecs
+
     paramspecs = dataset.paramspecs
-    expected_keys = ['a', 'b', 'c']
+    expected_keys = ['a_param', 'b_param', 'c_param']
     keys = sorted(list(paramspecs.keys()))
     assert keys == expected_keys
     for expected_param_name in expected_keys:
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
+
+    assert paramspecs['c_param'].inferred_from == 'a_param, b_param'
 
 
 def test_add_paramspec_one_by_one(dataset):
@@ -325,5 +328,37 @@ def test_database_upgrade(empty_temp_db):
                            " {}".format(userversion))
     sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
 
-    atomicTransaction(connection, sql)
+    atomic_transaction(connection, sql)
     set_user_version(connection, 1)
+
+
+def test_numpy_ints(dataset):
+    """
+     Test that we can insert numpy integers in the data set
+    """
+    xparam = ParamSpec('x', 'numeric')
+    dataset.add_parameters([xparam])
+
+    numpy_ints = [
+        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
+    ]
+
+    results = [{"x": tp(1)} for tp in numpy_ints]
+    dataset.add_results(results)
+    expected_result = len(numpy_ints) * [[1]]
+    assert dataset.get_data("x") == expected_result
+
+
+def test_numpy_floats(dataset):
+    """
+    Test that we can insert numpy floats in the data set
+    """
+    float_param = ParamSpec('y', 'numeric')
+    dataset.add_parameters([float_param])
+
+    numpy_floats = [np.float, np.float16, np.float32, np.float64]
+    results = [{"y": tp(1.2)} for tp in numpy_floats]
+    dataset.add_results(results)
+    expected_result = [[tp(1.2)] for tp in numpy_floats]
+    assert dataset.get_data("y") == expected_result

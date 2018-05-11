@@ -392,3 +392,5 @@ templates_path = []
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
+
+numfig=True
