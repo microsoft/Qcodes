@@ -112,7 +112,7 @@ def __deepcopy__(self, memodict={}):
     If anyone finds a better solution, please do change this code.
     """
     restore_attrs = {}
-    for attr in ['__deepcopy__', 'signal', 'get', 'set']:
+    for attr in ['__deepcopy__', 'signal', 'get', 'set', '_instrument']:
         if attr in self.__dict__:
             restore_attrs[attr] = getattr(self, attr)
 
@@ -128,6 +128,9 @@ def __deepcopy__(self, memodict={}):
 
         self_copy = deepcopy(self)
         self_copy.__deepcopy__ = restore_attrs['__deepcopy__']
+
+        if '_instrument' in restore_attrs:
+            self_copy._instrument = None
 
         # Detach and reattach all node decorator methods, now containing
         # reference to the new parameter, but still old parameter node
@@ -962,7 +965,7 @@ class Parameter(_BaseParameter):
         if isinstance(keys, slice):
             return SweepFixedValues(self, keys)
         else:
-            raise SyntaxError('Parameter does not contain elements.')
+            return super().__getitem__(keys)
 
     def _get_raw_value(self):
         return self._latest['raw_value']
