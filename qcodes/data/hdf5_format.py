@@ -57,6 +57,11 @@ class HDF5Format(Formatter):
         """
         self._open_file(data_set, location)
 
+        if '__format_tag' in data_set._h5_base_group.attrs:
+            format_tag = data_set._h5_base_group.attrs['__format_tag']
+            if format_tag != self._format_tag:
+                raise Exception('format tag %s does not match tag %s of file' % (format_tag, self._format_tag ) )
+
         for i, array_id in enumerate(
                 data_set._h5_base_group['Data Arrays'].keys()):
             # Decoding string is needed because of h5py/issues/379
