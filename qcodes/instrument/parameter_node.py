@@ -206,7 +206,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         if hasattr(parameter, 'set') and parameter.raw_value is not None:
             parameter.set(parameter.get_latest(), evaluate=False)
 
-    #TODO: something with deepcopy
     __copy__ = deepcopy
 
     # def __dir__(self):
