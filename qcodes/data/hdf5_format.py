@@ -17,7 +17,7 @@ class HDF5Format(Formatter):
     """
 
     _format_tag = 'hdf5'
-    
+
     def close_file(self, data_set):
         """
         Closes the hdf5 file open in the dataset.
@@ -60,7 +60,7 @@ class HDF5Format(Formatter):
         if '__format_tag' in data_set._h5_base_group.attrs:
             format_tag = data_set._h5_base_group.attrs['__format_tag']
             if format_tag != self._format_tag:
-                raise Exception('format tag %s does not match tag %s of file' % (format_tag, self._format_tag ) )
+                raise Exception('format tag %s does not match tag %s of file' % (format_tag, self._format_tag))
 
         for i, array_id in enumerate(
                 data_set._h5_base_group['Data Arrays'].keys()):
