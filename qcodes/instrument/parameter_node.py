@@ -130,9 +130,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         repr_str += f'{len(self.parameters)} parameters'
         return repr_str
 
-    def __call__(self) -> dict:
-        return self.parameters
-
     def __getattr__(self, attr):
         if attr == 'use_as_attributes':
             return super().__getattr__(attr)
@@ -423,29 +420,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 if verbose:
                     print('validate_status: param %s: %s' % (k, value))
                 p.validate(value)
-
-    # Deprecated methods
-    def set(self, param_name: str, value: Any):
-        """ Shortcut for setting a parameter from its name and new value.
-
-        Args:
-            param_name: The name of a parameter of this instrument.
-            value: The new value to set.
-        """
-        logger.warning('parameter_node.set is deprecated.')
-        self.parameters[param_name].set(value)
-
-    def get(self, param_name: str):
-        """ Shortcut for getting a parameter from its name.
-
-        Args:
-            param_name: The name of a parameter of this instrument.
-
-        Returns:
-            any: The current value of the parameter.
-        """
-        logger.warning('parameter_node.get is deprecated.')
-        return self.parameters[param_name].get()
 
     def print_readable_snapshot(self, update=False, max_chars=80):
         logger.warning('print_readable_snapshot is replaced with print_snapshot')
