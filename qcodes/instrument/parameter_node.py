@@ -23,6 +23,11 @@ parameter_attrs = ['get', 'set', 'vals', 'get_parser', 'set_parser']
 class ParameterNodeMetaClass(type):
     def __new__(meta, name, bases, dct):
         dct['_parameter_decorators'] = {}
+        # Initialize parameter decorators with those of parent bases
+        for base in bases:
+            if hasattr(base, '_parameter_decorators'):
+                dct['_parameter_decorators'].update(**base._parameter_decorators)
+
         for attr in list(dct):
             val = dct[attr]
             if getattr(val, '__name__', None) == 'parameter_decorator':
@@ -60,7 +65,7 @@ def __deepcopy__(self, memodict={}):
                 parameter_decorators = self._parameter_decorators[parameter_name]
                 self_copy._attach_parameter_decorators(parameter, parameter_decorators)
 
-            return self_copy
+        return self_copy
     finally:
         for attr_name, attr in restore_attrs.items():
             setattr(self, attr_name, attr)

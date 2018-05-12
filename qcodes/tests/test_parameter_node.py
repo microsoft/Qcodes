@@ -132,6 +132,23 @@ class TestParameterNode(TestCase):
             node.param1 = 31
         node.param1 = 44
 
+    def test_parameter_node_subclass_decorator(self):
+        class Node(ParameterNode):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.val = 42
+                self.param1 = Parameter()
+
+            @parameter
+            def param1_get(self, parameter):
+                return self.val
+
+        class SubNode(Node):
+            pass
+
+        subnode = SubNode()
+        self.assertEqual(subnode.param1(), 42)
+
 
 class TestCopyParameterNode(TestCase):
     def test_copy_parameter_node(self):
@@ -229,6 +246,32 @@ class TestCopyParameterNode(TestCase):
         node_copy.p = 44
         self.assertEqual(node.p, (1, 43))
         self.assertEqual(node_copy.p, (2, 44))
+
+    def test_copy_parameter_node_with_parameter_decorator_2(self):
+        # Create node whose parameter returns node and parameter objects
+        class Node(ParameterNode):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                self.p = Parameter()
+                self.value = 1
+
+            @parameter
+            def p_get(self, parameter):
+                return (self, parameter, parameter._value)
+
+            @parameter
+            def p_set(self, parameter, value):
+                parameter._value = value
+
+        node = Node(use_as_attributes=True)
+        node_copy = copy(node)
+        self.assertIsNot(node['p'], node_copy['p'])
+
+        node_copy.p = 2
+        returned_node, returned_parameter, returned_val = node_copy.p
+        self.assertIs(returned_node, node_copy)
+        self.assertIs(returned_parameter, node_copy['p'])
+        self.assertIs(returned_val, 2)
 
     def test_deepcopy_parameter_node_with_parameter_decorator(self):
         class Node(ParameterNode):
