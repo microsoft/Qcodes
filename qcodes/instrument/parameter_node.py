@@ -306,32 +306,48 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         Returns:
             dict: base snapshot
         """
+        if self.simplify_snapshot:
+            snap = {"__class__": full_class(self)}
+            if self.functions:
+                snap["functions"] = {name: func.snapshot(update=update)
+                                     for name, func in self.functions.items()}
+            if self.submodules:
+                snap["submodules"] = {name: subm.snapshot(update=update)
+                                      for name, subm in self.submodules.items()}
+            for parameter_name, parameter in self.parameters.items():
+                parameter_snapshot = parameter.snapshot()
+                if 'unit' in parameter_snapshot:
+                    parameter_name = f'{parameter_name} ({parameter_snapshot["unit"]})'
+                if parameter._snapshot_value:
+                    snap[parameter_name] = parameter_snapshot['value']
+                else:
+                    snap[parameter_name] = parameter_snapshot
+        else:
+            snap = {
+                "functions": {name: func.snapshot(update=update)
+                              for name, func in self.functions.items()},
+                "submodules": {name: subm.snapshot(update=update)
+                               for name, subm in self.submodules.items()},
+                "__class__": full_class(self),
+                "parameters": {},
+                "parameter_nodes": {name: node.snapshot()
+                                    for name, node in self.parameter_nodes.items()}
+            }
 
-        snap = {
-            "functions": {name: func.snapshot(update=update)
-                          for name, func in self.functions.items()},
-            "submodules": {name: subm.snapshot(update=update)
-                           for name, subm in self.submodules.items()},
-            "__class__": full_class(self),
-            "parameters": {},
-            "parameter_nodes": {name: node.snapshot()
-                                for name, node in self.parameter_nodes.items()}
-        }
-
-        for name, param in self.parameters.items():
-            update = update
-            if params_to_skip_update and name in params_to_skip_update:
-                update = False
-            try:
-                snap['parameters'][name] = param.snapshot(
-                    update=update, simplify=self.simplify_snapshot)
-            except:
-                logging.warning("Snapshot: Could not update parameter:", name)
-                snap['parameters'][name] = param.snapshot(
-                    update=False, simplify=self.simplify_snapshot)
-        for attr in set(self._meta_attrs):
-            if hasattr(self, attr):
-                snap[attr] = getattr(self, attr)
+            for name, param in self.parameters.items():
+                update = update
+                if params_to_skip_update and name in params_to_skip_update:
+                    update = False
+                try:
+                    snap['parameters'][name] = param.snapshot(
+                        update=update, simplify=self.simplify_snapshot)
+                except:
+                    logging.warning("Snapshot: Could not update parameter:", name)
+                    snap['parameters'][name] = param.snapshot(
+                        update=False, simplify=self.simplify_snapshot)
+            for attr in set(self._meta_attrs):
+                if hasattr(self, attr):
+                    snap[attr] = getattr(self, attr)
 
         return snap
 

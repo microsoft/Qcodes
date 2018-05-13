@@ -23,7 +23,7 @@ class TestParameterNode(TestCase):
             self.assertEqual(parameter_node['explicit_name_parameter'].name,
                              'explicit')
             self.assertEqual(parameter_node['explicit_name_parameter'].label,
-                             'explicit')
+                             'Explicit')
 
     def test_use_as_attributes(self):
         parameter_node = ParameterNode(use_as_attributes=True)
@@ -413,9 +413,16 @@ class TestCombinedParameterAndParameterNode(TestCase):
         node_dict = [*node.__dict__, *ParameterNode.__dict__]
         overlapping_attrs = {k for k in parameter_dict + node_dict
                              if k in parameter_dict and k in node_dict}
+        # Remove slotnames if it exists, used for caching __getstate__
+        try:
+            overlapping_attrs.remove('__slotnames__')
+        except:
+            pass
+
         self.assertSetEqual(overlapping_attrs,
                             {'__init__', '_meta_attrs', '__doc__', '__module__',
-                             'metadata', '__deepcopy__', 'name', '__getitem__'})
+                             'metadata', '__deepcopy__', 'name', '__getitem__',
+                             'log_changes'})
 
     def test_create_multiple_inheritance_initialization(self):
         class ParameterAndNode(Parameter, ParameterNode):
@@ -518,8 +525,7 @@ class TestParameterNodeLogging(TestCase):
     def test_parameter_in_node_simplified_snapshot(self):
         node = ParameterNode(simplify_snapshot=True)
         node.p = Parameter(initial_value=42)
-        self.assertDictEqual(node.snapshot()['parameters']['p'],
-                             {'name': 'p', 'label': 'P', 'value': 42})
+        self.assertEqual(node.snapshot()['p'], 42)
 
     def test_subnode_snapshot(self):
         node = ParameterNode()
