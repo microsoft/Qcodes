@@ -63,7 +63,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_parser=self.get_parser_on_off,
                            set_parser=self.set_parser_on_off)
         self.add_parameter('pulsemod_state',
-                           label='Pulse Modulatuion',
+                           label='Pulse Modulation',
                            get_cmd=':SOUR:PULM:STAT?',
                            set_cmd=':SOUR:PULM:STAT {}',
                            get_parser=self.get_parser_on_off,
