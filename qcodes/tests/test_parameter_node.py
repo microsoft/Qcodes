@@ -497,3 +497,37 @@ class TestCombinedParameterAndParameterNode(TestCase):
         p_source(41)
         self.assertEqual(parameter_and_node.p, 41)
         self.assertEqual(copy_parameter_and_node.p, 42)
+
+
+class TestParameterNodeLogging(TestCase):
+    def test_empty_node_snapshot(self):
+        node = ParameterNode()
+        snapshot = node.snapshot()
+        self.assertCountEqual(snapshot.keys(),
+                             ['__class__', 'functions', 'parameters',
+                              'submodules', 'parameter_nodes'])
+
+        node.name = 'node_name'
+        self.assertEqual(node.snapshot()['name'], 'node_name')
+
+    def test_parameter_in_node_snapshot(self):
+        node = ParameterNode()
+        node.p = Parameter()
+        self.assertEqual(node.snapshot()['parameters']['p'], node.p.snapshot())
+
+    def test_parameter_in_node_simplified_snapshot(self):
+        node = ParameterNode(simplify_snapshot=True)
+        node.p = Parameter(initial_value=42)
+        self.assertDictEqual(node.snapshot()['parameters']['p'],
+                             {'name': 'p', 'label': 'P', 'value': 42})
+
+    def test_subnode_snapshot(self):
+        node = ParameterNode()
+        node.subnode = ParameterNode()
+
+        self.assertDictEqual(node.snapshot()['parameter_nodes']['subnode'],
+                             node.subnode.snapshot())
+
+        node.subnode.param = Parameter()
+        self.assertDictEqual(node.snapshot()['parameter_nodes']['subnode'],
+                             node.subnode.snapshot())

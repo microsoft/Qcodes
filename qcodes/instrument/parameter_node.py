@@ -312,10 +312,12 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
                            for name, subm in self.submodules.items()},
-            "__class__": full_class(self)
+            "__class__": full_class(self),
+            "parameters": {},
+            "parameter_nodes": {name: node.snapshot()
+                                for name, node in self.parameter_nodes.items()}
         }
 
-        snap['parameters'] = {}
         for name, param in self.parameters.items():
             update = update
             if params_to_skip_update and name in params_to_skip_update:
@@ -330,6 +332,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
+
         return snap
 
     def print_snapshot(self,
