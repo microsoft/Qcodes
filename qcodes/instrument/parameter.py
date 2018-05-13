@@ -236,6 +236,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
             been set or measured more recently than this, perform an
             additional measurement.
 
+        log_changes: Log any set commands that change the parameter's value
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
 
@@ -260,6 +262,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
+                 log_changes: bool = True,
                  delay: Optional[Union[int, float]]=None,
                  config_link: str = None):
         # Create __deepcopy__ in the object scope (see documentation for details)
@@ -271,6 +274,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
+        self.log_changes = log_changes
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError('vals must be None or a Validator')
@@ -332,7 +336,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale',
+        self._meta_attrs = ['name', 'full_name', 'instrument', 'step', 'scale',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
@@ -378,7 +382,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self(value)
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> dict:
+                      params_to_skip_update: Sequence[str]=None,
+                      simplify: bool = False) -> dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -396,9 +401,18 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 and self._snapshot_value and update:
             self.get()
 
+        if simplify:
+            state = {}
+            for attr in ['name', 'label', 'unit']:
+                val = getattr(self, attr, None)
+                if val:
+                    state[attr] = val
+            if self._snapshot_value:
+                state['value'] = self._latest['value']
+            return state
+
         state = copy(self._latest)
         state['__class__'] = full_class(self)
-        state['full_name'] = str(self)
 
         if not self._snapshot_value:
             state.pop('value')
@@ -415,7 +429,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 })
             else:
                 val = getattr(self, attr, None)
-                if val is not None:
+                if val:
                     attr_strip = attr.lstrip('_')  # strip leading underscores
                     if isinstance(val, Validator):
                         state[attr_strip] = repr(val)
@@ -479,7 +493,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
     def _wrap_set(self, set_function):
         @wraps(set_function)
-        def set_wrapper(value, signal_chain=[], evaluate=True, **kwargs):
+        def set_wrapper(value, signal_chain=(), evaluate=True, **kwargs):
             try:
                 self.validate(value)
 
@@ -521,6 +535,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
+                    # Register if value changed
+                    val_changed = self.raw_value != parsed_scaled_mapped_value
+
                     if evaluate:
                         set_function(parsed_scaled_mapped_value, **kwargs)
 
@@ -535,9 +552,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                     potential_emitter._signal_chain = signal_chain + [self]
                         self.signal.send(parsed_scaled_mapped_value, **kwargs)
 
-                    # Register if value changed
-                    val_changed = self.raw_value != parsed_scaled_mapped_value
-
                     self.raw_value = parsed_scaled_mapped_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
@@ -545,7 +559,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
 
-                    if self._snapshot_value and val_changed:
+                    if self.log_changes and self._snapshot_value \
+                            and val_changed and self.name != 'None':
                         # Add to log
                         log_msg = f'parameter set to {val_step}'
                         if mapped_value != val_step:
@@ -885,6 +900,8 @@ class Parameter(_BaseParameter):
             been set or measured more recently than this, perform an
             additional measurement.
 
+        log_changes: Log any set commands that change the parameter's value
+
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
@@ -903,9 +920,11 @@ class Parameter(_BaseParameter):
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
+                 log_changes: bool = True,
                  docstring: Optional[str]=None,
                  **kwargs):
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
+        super().__init__(name=name, instrument=instrument, vals=vals,
+                         log_changes=log_changes, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
@@ -930,7 +949,12 @@ class Parameter(_BaseParameter):
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
-        self.label = name if label is None else label
+        if label is not None or name is None:
+            self.label = label
+        else:
+            # Make label capitalized name, replacing underscore with spaces
+            label = name.replace('_', ' ')
+            self.label = label[0].capitalize() + label[1:]
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None:

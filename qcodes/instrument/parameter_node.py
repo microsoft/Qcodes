@@ -79,12 +79,22 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     Args:
         name: Optional name for parameter node
+        use_as_attributes: Treat parameters as attributes (see below)
+        log_changes: Log all changes of parameter values as debug messages
+        simplify_snapshot: Snapshot contains simplified parameter snapshots
 
     A parameter can be added to a ParameterNode by settings its attribute:
     ``parameter_node.new_parameter = Parameter()``
     The name of the parameter is set to the attribute name
 
-    Once a parameter has been added its value can be set as such:
+    Once a parameter has been added, its value can be set/get depending on the
+    arg use_as_attributes. If use_as_attributes is False, calling
+    ``parameter_node.new_parameter`` returns the Parameter object.
+    The parameter is set using ``parameter_node.new_parameter(value)`` and
+    retrieved via ``parameter_node.new_parameter()`` (same as you would for a
+    parameter that does not belong to a Node).
+
+    If ``use_as_attributes`` is True, its value can be set as such:
     ``parameter_node.new_parameter = 42``
     Note that this doesn't replace the parameter by 42, but instead sets the
     value of the parameter.
@@ -93,9 +103,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
      ``parameter_node.new_parameter`` (returns 42)
      Again, this doesn't return the parameter, but its value
 
-    The parameter object can be accessed in two ways:
-    - ``parameter_node['new_parameter']``
-    - ``parameter_node().new_parameter``
+    The parameter object can then be accessed via ``parameter_node['new_parameter']``
     """
 
     parameters = {}
@@ -103,6 +111,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
+                 log_changes: bool = True,
+                 simplify_snapshot: bool = False,
                  **kwargs):
         # Move deepcopy method to the instance scope, since it will temporarily
         # delete its own method during copying (see ParameterNode.__deepcopy__)
@@ -110,6 +120,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         self.__copy__ = self.__deepcopy__
 
         self.use_as_attributes = use_as_attributes
+        self.log_changes = log_changes
+        self.simplify_snapshot = simplify_snapshot
+
         if name is not None:
             self.name = name
 
@@ -167,13 +180,14 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 if val.label is None:
                     # For label, convert underscores to spaces and capitalize
                     label = attr.replace('_', ' ')
-                    label = label[0].capitalize() + label[1:]
-                    val.label = label
+                    val.label = label[0].capitalize() + label[1:]
+            val.log_changes = self.log_changes
         elif isinstance(val, ParameterNode):
             self.parameter_nodes[attr] = val
             if not hasattr(val, 'name'):
                 # Update nested ParameterNode name
                 val.name = attr
+            val.log_changes = self.log_changes
         elif attr in self.parameters:
             # Set parameter value
             self.parameters[attr](val)
@@ -307,10 +321,12 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             if params_to_skip_update and name in params_to_skip_update:
                 update = False
             try:
-                snap['parameters'][name] = param.snapshot(update=update)
+                snap['parameters'][name] = param.snapshot(
+                    update=update, simplify=self.simplify_snapshot)
             except:
-                logging.info("Snapshot: Could not update parameter:", name)
-                snap['parameters'][name] = param.snapshot(update=False)
+                logging.warning("Snapshot: Could not update parameter:", name)
+                snap['parameters'][name] = param.snapshot(
+                    update=False, simplify=self.simplify_snapshot)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
