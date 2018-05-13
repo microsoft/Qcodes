@@ -69,7 +69,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_parser=self.get_parser_on_off,
                            set_parser=self.set_parser_on_off)
         self.add_parameter('pulsemod_source',
-                           label='Pulse Modulation Source', 
+                           label='Pulse Modulation Source',
                            get_cmd='SOUR:PULM:SOUR?',
                            set_cmd='SOUR:PULM:SOUR {}',
                            vals=vals.Enum('INT', 'EXT', 'int', 'ext'))
