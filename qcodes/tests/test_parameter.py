@@ -7,6 +7,7 @@ from time import sleep
 import weakref
 import gc
 from copy import copy, deepcopy
+import logging
 
 import numpy as np
 from hypothesis import given
@@ -1072,3 +1073,73 @@ class TestParameterSignal(TestCase):
         self.source_parameter(14)
         self.assertEqual(self.source_parameter(), 14)
         self.assertEqual(self.target_parameter(), 38)
+
+
+class ListHandler(logging.Handler):  # Inherit from logging.Handler
+    def __init__(self, log_list):
+        # run the regular Handler __init__
+        logging.Handler.__init__(self)
+        # Our custom argument
+        self.log_list = log_list
+
+    def emit(self, record):
+        # record.message is the log message
+        self.log_list.append(record.msg)
+
+
+class TestParameterLogging(TestCase):
+    def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
+        self.log_list = []
+        self.handler = ListHandler(self.log_list)
+        logging.getLogger().addHandler(self.handler)
+        print('Started logging')
+
+    def tearDown(self):
+        logging.getLogger().removeHandler(self.handler)
+        print('Stopped logging')
+
+    def test_logging(self):
+        p = Parameter('p', initial_value=41, set_cmd=None)
+        self.assertEqual(len(self.log_list), 1)
+        p(42)
+        self.assertEqual(len(self.log_list), 2)
+
+        p.log_changes = False
+        p(43)
+        self.assertEqual(len(self.log_list), 2)
+
+        p.log_changes = True
+        p(44)
+        self.assertEqual(len(self.log_list), 3)
+
+        # Set to same value, no log should be emitted
+        p(44)
+        self.assertEqual(len(self.log_list), 3)
+
+
+class TestParameterSnapshotting(TestCase):
+    def test_empty_parameter_snapshot(self):
+        param = Parameter()
+        snapshot = param.snapshot()
+        self.assertEqual(snapshot['name'], 'None')
+        self.assertEqual(snapshot['value'], None)
+        self.assertEqual(snapshot['raw_value'], None)
+
+    def test_empty_parameter_simplified_snapshot(self):
+        param = Parameter()
+        snapshot = param.snapshot(simplify=True)
+        self.assertEqual(snapshot, {'name': 'None', 'value': None})
+
+    def test_named_parameter_simplified_snapshot(self):
+        param = Parameter('param_1')
+        snapshot = param.snapshot(simplify=True)
+        self.assertEqual(snapshot, {'name': 'param_1',
+                                    'label': 'Param 1',
+                                    'value': None})
+        param.unit = 'V'
+        snapshot = param.snapshot(simplify=True)
+        self.assertEqual(snapshot, {'name': 'param_1',
+                                    'label': 'Param 1',
+                                    'unit': 'V',
+                                    'value': None})
