@@ -60,7 +60,8 @@ class HDF5Format(Formatter):
         if '__format_tag' in data_set._h5_base_group.attrs:
             format_tag = data_set._h5_base_group.attrs['__format_tag']
             if format_tag != self._format_tag:
-                raise Exception('format tag %s does not match tag %s of file %s' % (format_tag, self._format_tag, location))
+                raise Exception('format tag %s does not match tag %s of file %s' %
+                                (format_tag, self._format_tag, location))
 
         for i, array_id in enumerate(
                 data_set._h5_base_group['Data Arrays'].keys()):
@@ -306,6 +307,8 @@ class HDF5Format(Formatter):
                 entry_point.attrs[key] = item
             elif isinstance(item, np.ndarray):
                 entry_point.create_dataset(key, data=item)
+            elif isinstance(item, (np.int32, np.int64)):
+                entry_point.attrs[key] = int(item)
             elif item is None:
                 # as h5py does not support saving None as attribute
                 # I create special string, note that this can create
