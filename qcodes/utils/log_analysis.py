@@ -4,6 +4,7 @@ import dateutil
 from typing import Optional, List
 
 import pandas as pd
+Series = pandas.core.series.Series
 
 
 def logfile_to_dataframe(logfile: Optional[str]=None,
@@ -29,11 +30,38 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
     return dataframe
 
 
-def time_difference(time1: str, time2: str) -> float:
+def time_difference(firsttimes: Series,
+                    secondtimes: Series,
+                    use_first_series_labels: bool=True) -> Series:
     """
-    Get the time difference in seconds between two timestamps
-    """
-    t1 = dateutil.parser.parse(time1)
-    t2 = dateutil.parser.parse(time2)
+    Calculate the time differences between two series
+    containing time stamp strings as their values.
 
-    return (t2 - t1).total_seconds()
+    Args:
+        firsttimes: The oldest times
+        secondtimes: The youngest times
+        use_first_series_labels: If true, the returned Series
+            has the same labels as firsttimes. Else it has
+            the labels of secondtimes
+
+    Returns:
+        A Series with float values of the time difference (s)
+    """
+
+    # sanitising
+
+    if ',' in firsttimes.iloc[0]:
+        nfirsttimes = firsttimes.str.replace(',', '.')
+    else:
+        nfirsttimes = firsttimes
+
+    if ',' in secondtimes.iloc[0]:
+        nsecondtimes = secondtimes.str.replace(',', '.')
+    else:
+        nsecondtimes = secondtimes
+
+    t0s = nfirsttimes.astype("datetime64[ns]")
+    t1s = nsecondtimes.astype("datetime64[ns]")
+    timedeltas = t1s - t0s.values  # this keeps t1s' labels
+
+    return timedeltas.apply(pd.Timedelta.total_seconds)
