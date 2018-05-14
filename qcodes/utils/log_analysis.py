@@ -48,8 +48,6 @@ def time_difference(firsttimes: Series,
         A Series with float values of the time difference (s)
     """
 
-    # sanitising
-
     if ',' in firsttimes.iloc[0]:
         nfirsttimes = firsttimes.str.replace(',', '.')
     else:
@@ -62,6 +60,11 @@ def time_difference(firsttimes: Series,
 
     t0s = nfirsttimes.astype("datetime64[ns]")
     t1s = nsecondtimes.astype("datetime64[ns]")
-    timedeltas = t1s - t0s.values  # this keeps t1s' labels
+    timedeltas = (t1s.values - t0s.values).astype('float')*1e-9
 
-    return timedeltas.apply(pd.Timedelta.total_seconds)
+    if use_first_series_labels:
+        output = pd.Series(timedeltas, index=nfirsttimes.index)
+    else:
+        output = pd.Series(timedeltas, index=nsecondtimes.index)
+
+    return output
