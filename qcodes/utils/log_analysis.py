@@ -4,7 +4,7 @@ import dateutil
 from typing import Optional, List
 
 import pandas as pd
-Series = pd.core.series.Series
+from pandas.core.series import Series
 
 
 def logfile_to_dataframe(logfile: Optional[str]=None,
