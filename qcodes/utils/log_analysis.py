@@ -1,6 +1,5 @@
 # module for reading logfiles and doing some analysis on them
 
-import dateutil
 from typing import Optional, List
 
 import pandas as pd
