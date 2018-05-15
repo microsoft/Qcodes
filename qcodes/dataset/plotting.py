@@ -14,11 +14,13 @@ from .data_export import (datatype_from_setpoints_1d,
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
-AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.axes.Axes]
+AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
+                     Sequence[matplotlib.axes.Axes]]]=None,
+               colorbars: Optional[Union[matplotlib.axes.Axes,
                      Sequence[matplotlib.axes.Axes]]]=None) -> Tuple[List[matplotlib.axes.Axes],
                                                         List[Optional[matplotlib.axes.Axes]]]:
     """
@@ -83,6 +85,8 @@ def plot_by_id(run_id: int,
     nplots = len(alldata)
     if isinstance(axes, matplotlib.axes.Axes):
         axes = [axes]
+    if isinstance(colorbars, matplotlib.colorbar.Colorbar):
+        colorbars = [colorbars]
 
     if axes is None:
         axes = []
@@ -94,8 +98,10 @@ def plot_by_id(run_id: int,
             raise RuntimeError(f"Trying to make {nplots} plots, but"
                                f"received {len(axes)} axes objects.")
 
-    cbaxes: List[Optional[matplotlib.axes.Axes]] = []
-    for data, ax in zip(alldata, axes):
+    if colorbars is None:
+        colorbars = len(axes)*[None]
+    new_colorbars = []
+    for data, ax, colorbar in zip(alldata, axes, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
@@ -115,7 +121,7 @@ def plot_by_id(run_id: int,
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
             set_axis_labels(ax, data)
-            cbaxes.append(None)
+            new_colorbars.append(None)
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -136,25 +142,26 @@ def plot_by_id(run_id: int,
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
-            ax, cbax = how_to_plot[plottype](xpoints, ypoints, zpoints, ax)
-            cbaxes.append(cbax)
-            set_axis_labels(ax, data, cbax)
+            ax, colorbar = how_to_plot[plottype](xpoints, ypoints, zpoints, ax, colorbar)
+            set_axis_labels(ax, data, colorbar)
+            new_colorbars.append(colorbar)
 
         else:
             log.warning('Multi-dimensional data encountered. '
                         f'parameter {data[-1].name} depends on '
                         f'{len(data-1)} parameters, cannot plot '
                         f'that.')
-            cbaxes.append(None)
+            new_colorbars.append(None)
 
-    if len(axes) != len(cbaxes):
-        raise RuntimeError("Non equal number of axes. Perhaps cbaxes is "
+    if len(axes) != len(new_colorbars):
+        raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
-    return axes, cbaxes
+    return axes, new_colorbars
 
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
-                        ax: matplotlib.axes.Axes) -> AxesTuple:
+                        ax: matplotlib.axes.Axes,
+                        colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
     """
     Make a 2D scatterplot of the data
 
@@ -163,18 +170,23 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
         y: The y values
         z: The z values
         ax: The axis to plot onto
+        colorbar: The colorbar to plot into
 
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
     mappable = ax.scatter(x=x, y=y, c=z)
-    cbax = ax.figure.colorbar(mappable, ax=ax)
-    return ax, cbax
+    if colorbar is not None:
+        colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
+    else:
+        colorbar = ax.figure.colorbar(mappable, ax=ax)
+    return ax, colorbar
 
 
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                          z: np.ndarray,
-                         ax: matplotlib.axes.Axes) -> AxesTuple:
+                         ax: matplotlib.axes.Axes,
+                         colorbar: matplotlib.colorbar.Colorbar) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -189,6 +201,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
         y: The y values
         z: The z values
         ax: The axis to plot onto
+        colorbar: a colorbar to reuse the axis for
 
     Returns:
         The matplotlib axes handle for plot and colorbar
@@ -209,6 +222,8 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               np.array([yrow[-1] + dys[-1]])))
 
     colormesh = ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
-    cax = ax.figure.colorbar(colormesh, ax=ax)
-
-    return ax, cax
+    if colorbar is not None:
+        colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
+    else:
+        colorbar = ax.figure.colorbar(colormesh, ax=ax)
+    return ax, colorbar
