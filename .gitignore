@@ -83,3 +83,6 @@ docs/examples/data/*
 
 # Mac files
 .DS_Store
+
+# qcodes related
+experiments.db
