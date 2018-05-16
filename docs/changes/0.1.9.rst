@@ -1,0 +1,48 @@
+Changelog for QCoDeS 0.1.9
+==========================
+
+This release changes the API of Parameters in QCoDeS, reducing the amount of Parameter classes. It also introduces tests for VisaInstrument drivers via the PyVISA-sim backend.
+
+Note: This is the last QCoDeS release before the new dataset and as such it will be the last QCoDeS release to support python 3.5.
+
+
+New & Improved
+______________
+
+- New and Improved drivers:
+
+  - New driver for HP8753D Spectrum Analyzer (#843)
+  - Fixes to Decadac driver (#756, #838, #857, #876)
+  - Unification of existing Keysight waveform generator drivers (#758)
+  - New driver for Keysight Infiniium MSOS104A oscilloscope (#766)
+  - New driver for Keysight N51x1 RF source (#796)
+  - New driver for Keysight E8267D (#892)
+  - New driver for Mini-Circuits RF switch USB-4SPDT-A18 (#891)
+  - New driver for Mini-Circuits RF switch RC-xSP4T (#814)
+  - New driver for Mini-Circuits RF switch RC-1SP4T (#814)
+  - New driver for Mini-Circuits RF switch USB-4SPDT (#814)
+  - New driver for Spirack module (#847)
+  - Fixes to IVVI (#919)
+  - Features added to ZI UHF-LI driver (#883, #879, #870, #685)
+  - New driver for Cryogenic SMS120c (#819)
+  - New driver for Rohde & Schwarz RTO 1000 oscilloscope (#679, #907)
+  - New drivers for Stanford Research Instruments lock-in amplifiers SR860 and SR865
+  - New driver for Tektronix AWG70000A series (#761, #911)
+  - New fast sweep feature for and channelisation of Tektronix Keithley 2600 (#747)
+  - New driver for Yokogawa GS200
+
+- New features:
+
+  - Simulated instruments using PyVISA-sim for driver testing (#859)
+  - New Parameter API (#651)
+
+ - Documentation improvements:
+
+   - MatPlot Guide (#762)
+   - Obsolete examples removed (#918)
+   - New and easier installation instructions (#841)
+
+Breaking Changes
+________________
+
+- The Parameter API changed. There are no longer StandardParameters and ManualParameters can be avoided.

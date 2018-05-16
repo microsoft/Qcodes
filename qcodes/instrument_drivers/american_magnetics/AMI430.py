@@ -2,13 +2,107 @@ import collections
 import logging
 import time
 from functools import partial
+from warnings import warn
 
 import numpy as np
 
-from qcodes import Instrument, IPInstrument
-from qcodes.instrument.mockers.ami430 import MockAMI430
+from qcodes import Instrument, IPInstrument, InstrumentChannel
 from qcodes.math.field_vector import FieldVector
-from qcodes.utils.validators import Numbers, Anything
+from qcodes.utils.validators import Bool, Numbers, Ints, Anything
+
+log = logging.getLogger(__name__)
+
+
+class AMI430Exception(Exception):
+    pass
+
+
+class AMI430Warning(UserWarning):
+    pass
+
+
+class AMI430SwitchHeater(InstrumentChannel):
+    class _Decorators:
+        @classmethod
+        def check_enabled(cls, f):
+            def check_enabled_decorator(self, *args, **kwargs):
+                if not self.check_enabled():
+                    raise AMI430Exception("Switch not enabled")
+                return f(self, *args, **kwargs)
+            return check_enabled_decorator
+
+    def __init__(self, parent: 'AMI430') -> None:
+        super().__init__(parent, "SwitchHeater")
+
+        # Add state parameters
+        self.add_parameter('enabled',
+                           label='Switch Heater Enabled',
+                           get_cmd=self.check_enabled,
+                           set_cmd=lambda x: (self.enable() if x
+                                              else self.disable()),
+                           vals=Bool())
+        self.add_parameter('state',
+                           label='Switch Heater On',
+                           get_cmd=self.check_state,
+                           set_cmd=lambda x: (self.on() if x
+                                              else self.off()),
+                           vals=Bool())
+        self.add_parameter('in_persistent_mode',
+                           label='Persistent Mode',
+                           get_cmd="PERS?",
+                           val_mapping={True: 1, False: 0})
+
+        # Configuration Parameters
+        self.add_parameter('current',
+                           label='Switch Heater Current',
+                           unit='mA',
+                           get_cmd='PS:CURR?',
+                           get_parser=float,
+                           set_cmd='CONF:PS:CURR {}',
+                           vals=Numbers(0, 125))
+        self.add_parameter('heat_time',
+                           label='Heating Time',
+                           unit='s',
+                           get_cmd='PS:HTIME?',
+                           get_parser=int,
+                           set_cmd='CONF:PS:HTIME {}',
+                           vals=Ints(5, 120))
+        self.add_parameter('cool_time',
+                           label='Cooling Time',
+                           unit='s',
+                           get_cmd='PS:CTIME?',
+                           get_parser=int,
+                           set_cmd='CONF:PS:CTIME {}',
+                           vals=Ints(5, 3600))
+
+    def disable(self):
+        """Turn measurement off"""
+        self.write('CONF:PS 0')
+        self._enabled = False
+
+    def enable(self):
+        """Turn measurement on"""
+        self.write('CONF:PS 1')
+        self._enabled = True
+
+    def check_enabled(self):
+        return bool(self.ask('PS:INST?').strip())
+
+    @_Decorators.check_enabled
+    def on(self):
+        self.write("PS 1")
+        while self._parent.ramping_state() == "heating switch":
+            self._parent._sleep(0.5)
+
+    @_Decorators.check_enabled
+    def off(self):
+        self.write("PS 0")
+        while self._parent.ramping_state() == "cooling switch":
+            self._parent._sleep(0.5)
+
+    @_Decorators.check_enabled
+    def check_state(self):
+        return bool(self.ask("PS?").strip())
 
 
 class AMI430(IPInstrument):
@@ -23,102 +117,112 @@ class AMI430(IPInstrument):
     Args:
         name (string): a name for the instrument
         address (string): IP address of the power supply programmer
-        coil_constant (float): coil constant in Tesla per ampere
-        current_rating (float): maximum current rating in ampere
-        current_ramp_limit (float): current ramp limit in ampere per second
-        persistent_switch (bool): whether this magnet has a persistent switch
+        current_ramp_limit: A current ramp limit, in units of A/s
     """
+    _SHORT_UNITS = {'seconds': 's', 'minutes': 'min',
+                    'tesla': 'T', 'kilogauss': 'kG'}
+    _DEFAULT_CURRENT_RAMP_LIMIT = 0.06  # [A/s]
 
-    mocker_class = MockAMI430
-    default_current_ramp_limit = 0.06  # [A/s]
+    def __init__(self, name, address=None, port=None,
+                 reset=False, terminator='\r\n',
+                 current_ramp_limit=None, has_current_rating=False,
+                 **kwargs):
 
-    def __init__(self, name, address=None, port=None, persistent_switch=True,
-                 reset=False, current_ramp_limit=None, terminator='\r\n', testing=False, **kwargs):
-
-        if None in [address, port] and not testing:
-            raise ValueError("The port and address values need to be given if not in testing mode")
-
-        if current_ramp_limit is None:
-            current_ramp_limit = AMI430.default_current_ramp_limit
-
-        elif current_ramp_limit > AMI430.default_current_ramp_limit:
-            warning_message = "Increasing maximum ramp rate: we have a default current ramp rate limit of {dcrl} " \
-                              "A/s. We do not want to ramp faster then a set maximum so as to avoid quenching " \
-                              "the magnet. A value of {dcrl} A/s seems like a safe, conservative value for any " \
-                              "magnet. Change this value at your own responsibility after consulting the specs of " \
-                              "your particular magnet".format(dcrl=AMI430.default_current_ramp_limit)
-            raise Warning(warning_message)
-
-        super().__init__(name, address, port, terminator=terminator, testing=testing,
+        super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
-
         self._parent_instrument = None
-        # If we are in testing mode there is no need to have pauses built-in when setting field values.
+        self.has_current_rating = has_current_rating
 
-        # Make sure the ramp rate time unit is seconds
-        if int(self.ask('RAMP:RATE:UNITS?')) == 1:
-            self.write('CONF:RAMP:RATE:UNITS 0')
+        # Add reset function
+        self.add_function('reset', call_cmd='*RST')
+        if reset:
+            self.reset()
 
-        # Make sure the field unit is Tesla
-        if int(self.ask('FIELD:UNITS?')) == 0:
-            self.write('CONF:FIELD:UNITS 1')
+        # Add parameters setting instrument units
+        self.add_parameter("ramp_rate_units",
+                           get_cmd='RAMP:RATE:UNITS?',
+                           set_cmd=(lambda units:
+                                    self._update_units(ramp_rate_units=units)),
+                           val_mapping={'seconds': 0,
+                                        'minutes': 1})
+        self.add_parameter('field_units',
+                           get_cmd='FIELD:UNITS?',
+                           set_cmd=(lambda units:
+                                    self._update_units(field_units=units)),
+                           val_mapping={'kilogauss': 0,
+                                        'tesla': 1})
 
-        ramp_rate_reply = self.ask("RAMP:RATE:CURRENT:1?")
-        current_rating = float(ramp_rate_reply.split(",")[1])
+        # Set programatic safety limits
+        self.add_parameter('current_ramp_limit',
+                           get_cmd=lambda: self._current_ramp_limit,
+                           set_cmd=self._update_ramp_rate_limit,
+                           unit="A/s")
+        self.add_parameter('field_ramp_limit',
+                           get_cmd=lambda: self.current_ramp_limit(),
+                           set_cmd=lambda x: self.current_ramp_limit(x),
+                           scale=1/float(self.ask("COIL?")),
+                           unit="T/s")
+        if current_ramp_limit is None:
+            self._update_ramp_rate_limit(AMI430._DEFAULT_CURRENT_RAMP_LIMIT,
+                                         update=False)
+        else:
+            self._update_ramp_rate_limit(current_ramp_limit, update=False)
 
-        coil_constant = float(self.ask("COIL?"))
-        self._coil_constant = coil_constant
-        self._current_rating = current_rating
+        # Add solenoid parameters
+        self.add_parameter('coil_constant',
+                           get_cmd=self._update_coil_constant,
+                           set_cmd=self._update_coil_constant,
+                           vals=Numbers(0.001, 999.99999))
 
-        self._current_ramp_limit = current_ramp_limit
-        self._persistent_switch = persistent_switch
+        # TODO: Not all AMI430s expose this setting. Currently, we
+        # don't know why, but this most likely a firmware version issue,
+        # so eventually the following condition will be smth like
+        # if firmware_version > XX
+        if has_current_rating:
+            self.add_parameter('current_rating',
+                               get_cmd="CURR:RATING?",
+                               get_parser=float,
+                               set_cmd="CONF:CURR:RATING {}",
+                               unit="A",
+                               vals=Numbers(0.001, 9999.9999))
 
-        self._field_rating = coil_constant * current_rating
-        self._field_ramp_limit = coil_constant * current_ramp_limit
+            self.add_parameter('field_rating',
+                               get_cmd=lambda: self.current_rating(),
+                               set_cmd=lambda x: self.current_rating(x),
+                               scale=1/float(self.ask("COIL?")))
 
+        self.add_parameter('current_limit',
+                           unit="A",
+                           set_cmd="CONF:CURR:LIMIT {}",
+                           get_cmd='CURR:LIMIT?',
+                           get_parser=float,
+                           vals=Numbers(0, 80))  # what are good numbers here?
+
+        self.add_parameter('field_limit',
+                           set_cmd=self.current_limit.set,
+                           get_cmd=self.current_limit.get,
+                           scale=1/float(self.ask("COIL?")))
+
+        # Add current solenoid parameters
+        # Note that field is validated in set_field
         self.add_parameter('field',
                            get_cmd='FIELD:MAG?',
                            get_parser=float,
-                           set_cmd=self._set_field,
-                           unit='T',
-                           vals=Numbers(-self._field_rating,
-                                        self._field_rating))
-
-        self.add_function('ramp_to',
-                          call_cmd=self._ramp_to,
-                          args=[Numbers(-self._field_rating,
-                                        self._field_rating)])
-
+                           set_cmd=self.set_field)
         self.add_parameter('ramp_rate',
                            get_cmd=self._get_ramp_rate,
-                           set_cmd=self._set_ramp_rate,
-                           unit='T/s',
-                           vals=Numbers(0, self._current_ramp_limit))
-
+                           set_cmd=self._set_ramp_rate)
         self.add_parameter('setpoint',
                            get_cmd='FIELD:TARG?',
-                           get_parser=float,
-                           unit='T')
-
-        if persistent_switch:
-            self.add_parameter('switch_heater_enabled',
-                               get_cmd='PS?',
-                               set_cmd=self._set_persistent_switch,
-                               val_mapping={False: 0, True: 1})
-
-            self.add_parameter('in_persistent_mode',
-                               get_cmd='PERS?',
-                               val_mapping={False: 0, True: 1})
-
+                           get_parser=float)
         self.add_parameter('is_quenched',
                            get_cmd='QU?',
-                           val_mapping={False: 0, True: 1})
-
+                           val_mapping={True: 1, False: 0})
         self.add_function('reset_quench', call_cmd='QU 0')
         self.add_function('set_quenched', call_cmd='QU 1')
-
         self.add_parameter('ramping_state',
                            get_cmd='STATE?',
+                           get_parser=int,
                            val_mapping={
                                'ramping': 1,
                                'holding': 2,
@@ -132,20 +236,30 @@ class AMI430(IPInstrument):
                                'cooling switch': 10,
                            })
 
+        # Add persistent switch
+        switch_heater = AMI430SwitchHeater(self)
+        self.add_submodule("switch_heater", switch_heater)
+
+        # Add interaction functions
         self.add_function('get_error', call_cmd='SYST:ERR?')
         self.add_function('ramp', call_cmd='RAMP')
         self.add_function('pause', call_cmd='PAUSE')
         self.add_function('zero', call_cmd='ZERO')
-        self.add_function('reset', call_cmd='*RST')
 
-        if reset:
-            self.reset()
+        # Correctly assign all units
+        self._update_units()
 
         self.connect_message()
 
     def _sleep(self, t):
-        """Sleep for a number of seconds t. If we are in testing mode, commit this"""
-        if self._testing:
+        """
+        Sleep for a number of seconds t. If we are or using
+        the PyVISA 'sim' backend, omit this
+        """
+
+        simmode = getattr(self, 'visabackend', False) == 'sim'
+
+        if simmode:
             return
         else:
             time.sleep(t)
@@ -158,134 +272,104 @@ class AMI430(IPInstrument):
             logging.error(__name__ + ': Could not ramp because of quench')
             return False
 
-        if self._persistent_switch and self.in_persistent_mode():
+        if self.switch_heater.in_persistent_mode():
             logging.error(__name__ + ': Could not ramp because persistent')
             return False
 
         state = self.ramping_state()
-
         if state == 'ramping':
-            # If we don't have a persistent switch, or it's heating: OK to ramp
-            if not self._persistent_switch or self.switch_heater_enabled():
+            # If we don't have a persistent switch, or it's warm
+            if not self.switch_heater.enabled():
+                return True
+            elif self.switch_heater.state():
                 return True
         elif state in ['holding', 'paused', 'at zero current']:
             return True
 
         logging.error(__name__ + ': Could not ramp, state: {}'.format(state))
-
         return False
 
-    def set_field(self, value, *, perform_safety_check=True):
-        self._set_field(value, perform_safety_check=perform_safety_check)
-
-    def _set_field(self, value, *, perform_safety_check=True):
+    def set_field(self, value, *, block=True, perform_safety_check=True):
         """
-        Blocking method to ramp to a certain field
+        Ramp to a certain field
 
         Args:
+            block (bool): Whether to wait unit the field has finished setting
             perform_safety_check (bool): Whether to set the field via a parent
                 driver (if present), which might perform additional safety
                 checks.
         """
-        # If part of a parent driver, set the value using that driver
-        if np.abs(value) > self._field_rating:
+        # Check we aren't violating field limits
+        field_lim = float(self.ask("COIL?"))*self.current_limit()
+        if np.abs(value) > field_lim:
             msg = 'Aborted _set_field; {} is higher than limit of {}'
-            raise ValueError(msg.format(value, self._field_rating))
+            raise ValueError(msg.format(value, field_lim))
 
+        # If part of a parent driver, set the value using that driver
         if self._parent_instrument is not None and perform_safety_check:
             self._parent_instrument._request_field_change(self, value)
             return
 
-        if self._can_start_ramping():
-            self.pause()
+        # Check we can ramp
+        if not self._can_start_ramping():
+            raise AMI430Exception("Cannot ramp in current state")
 
-            # Set the ramp target
-            self.write('CONF:FIELD:TARG {}'.format(value))
+        # Then, do the actual ramp
+        self.pause()
+        # Set the ramp target
+        self.write('CONF:FIELD:TARG {}'.format(value))
 
-            # If we have a persistent switch, make sure it is resistive
-            if self._persistent_switch:
-                if not self.switch_heater_enabled():
-                    self.switch_heater_enabled(True)
+        # If we have a persistent switch, make sure it is resistive
+        if self.switch_heater.enabled():
+            if not self.switch_heater.state():
+                raise AMI430Exception("Switch heater is not on")
+        self.ramp()
 
-            self.ramp()
-            self._sleep(0.5)
-
-            # Wait until no longer ramping
-            while self.ramping_state() == 'ramping':
-                self._sleep(0.3)
-
-            self._sleep(2.0)
-            state = self.ramping_state()
-
-            # If we are now holding, it was successful
-            if state == 'holding':
-                self.pause()
-            else:
-                msg = '_set_field({}) failed with state: {}'
-                raise Exception(msg.format(value, state))
-
-    def _ramp_to(self, value):
-        """ Non-blocking method to ramp to a certain field """
-        if np.abs(value) > self._field_rating:
-            msg = 'Aborted _ramp_to; {} is higher than limit of {}'
-
-            raise ValueError(msg.format(value, self._field_rating))
-
-        if self._parent_instrument is not None:
-            msg = (": Initiating a blocking instead of non-blocking "
-                   " function because this magnet belongs to a parent driver")
-            logging.warning(__name__ + msg)
-
-            self._parent_instrument._request_field_change(self, value)
-
+        # Check if we want to block
+        if not block:
             return
 
-        if self._can_start_ramping():
-            self.pause()
+        # Otherwise, wait until no longer ramping
+        while self.ramping_state() == 'ramping':
+            self._sleep(0.3)
+        self._sleep(2.0)
+        state = self.ramping_state()
+        # If we are now holding, it was successful
+        if state != 'holding':
+            msg = '_set_field({}) failed with state: {}'
+            raise AMI430Exception(msg.format(value, state))
 
-            # Set the ramp target
-            self.write('CONF:FIELD:TARG {}'.format(value))
+    def ramp_to(self, value, block=False):
+        """ User accessible method to ramp to field """
+        # This function duplicates set_field, let's deprecate it...
+        warn("This method is deprecated."
+             " Use set_field with named parameter block=False instead.",
+             DeprecationWarning)
+        if self._parent_instrument is not None:
+            if not block:
+                msg = (": Initiating a blocking instead of non-blocking "
+                       " function because this magnet belongs to a parent "
+                       "driver")
+                logging.warning(__name__ + msg)
 
-            # If we have a persistent switch, make sure it is resistive
-            if self._persistent_switch:
-                if not self.switch_heater_enabled():
-                    self.switch_heater_enabled(True)
-
-            self.ramp()
+            self._parent_instrument._request_field_change(self, value)
+        else:
+            self.set_field(value, block=False)
 
     def _get_ramp_rate(self):
         """ Return the ramp rate of the first segment in Tesla per second """
         results = self.ask('RAMP:RATE:FIELD:1?').split(',')
-
         return float(results[0])
 
     def _set_ramp_rate(self, rate):
         """ Set the ramp rate of the first segment in Tesla per second """
-        cmd = 'CONF:RAMP:RATE:FIELD 1,{},{}'.format(rate, self._field_rating)
-
-        self.write(cmd)
-
-    def _set_persistent_switch(self, on):
-        """
-        Blocking function that sets the persistent switch heater state and
-        waits until it has finished either heating or cooling
-
-        on: False/True
-        """
-        if on:
-            self.write('PS 1')
-            self._sleep(0.5)
-
-            # Wait until heating is finished
-            while self.ramping_state() == 'heating switch':
-                self._sleep(0.3)
-        else:
-            self.write('PS 0')
-            self._sleep(0.5)
-
-            # Wait until cooling is finished
-            while self.ramping_state() == 'cooling switch':
-                self._sleep(0.3)
+        if rate > self.field_ramp_limit():
+            raise ValueError(f"{rate} {self.ramp_rate.unit} "
+                             f"is above the ramp rate limit of "
+                             f"{self.field_ramp_limit()} "
+                             f"{self.field_ramp_limit()}")
+        self.write('CONF:RAMP:RATE:SEG 1')
+        self.write('CONF:RAMP:RATE:FIELD 1,{},0'.format(rate))
 
     def _connect(self):
         """
@@ -296,16 +380,109 @@ class AMI430(IPInstrument):
         super()._connect()
         self.flush_connection()
 
+    def _update_ramp_rate_limit(self, new_current_rate_limit, update=True):
+        """
+        Update the maximum current ramp rate
+        The value passed here is scaled by the units set in
+        self.ramp_rate_units
+        """
+        # Warn if we are going above the default
+        warn_level = AMI430._DEFAULT_CURRENT_RAMP_LIMIT
+        if new_current_rate_limit > AMI430._DEFAULT_CURRENT_RAMP_LIMIT:
+            warning_message = ("Increasing maximum ramp rate: we have a "
+                               "default current ramp rate limit of "
+                               "{} {}".format(warn_level,
+                                              self.current_ramp_limit.unit) +
+                               ". We do not want to ramp faster than a set "
+                               "maximum so as to avoid quenching "
+                               "the magnet. A value of "
+                               "{} {}".format(warn_level,
+                                              self.current_ramp_limit.unit) +
+                               " seems like a safe, conservative value for"
+                               " any magnet. Change this value at your own "
+                               "responsibility after consulting the specs of "
+                               "your particular magnet")
+            warn(warning_message, category=AMI430Warning)
+
+        # Update ramp limit
+        self._current_ramp_limit = new_current_rate_limit
+        # And update instrument limits
+        if update:
+            field_ramp_limit = self.field_ramp_limit()
+            if self.ramp_rate() > field_ramp_limit:
+                self.ramp_rate(field_ramp_limit)
+
+    def _update_coil_constant(self, new_coil_constant=None):
+        """
+        Update the coil constant and relevant scaling factors.
+        If new_coil_constant is none, query the coil constant from the
+        instrument
+        """
+        # Query coil constant from instrument
+        if new_coil_constant is None:
+            new_coil_constant = float(self.ask("COIL?"))
+        else:
+            self.write("CONF:COIL {}".format(new_coil_constant))
+
+        # Update scaling factors
+        if self.has_current_rating:
+            self.field_ramp_limit.scale = 1/new_coil_constant
+            self.field_rating.scale = 1/new_coil_constant
+
+        # Return new coil constant
+        return new_coil_constant
+
+    def _update_units(self, ramp_rate_units=None, field_units=None):
+        # Get or set units on device
+        if ramp_rate_units is None:
+            ramp_rate_units = self.ramp_rate_units()
+        else:
+            self.write("CONF:RAMP:RATE:UNITS {}".format(ramp_rate_units))
+            ramp_rate_units = self.ramp_rate_units.val_mapping[ramp_rate_units]
+        if field_units is None:
+            field_units = self.field_units()
+        else:
+            self.write("CONF:FIELD:UNITS {}".format(field_units))
+            field_units = self.field_units.val_mapping[field_units]
+
+        # Map to shortened unit names
+        ramp_rate_units = AMI430._SHORT_UNITS[ramp_rate_units]
+        field_units = AMI430._SHORT_UNITS[field_units]
+
+        # And update all units
+        self.coil_constant.unit = "{}/A".format(field_units)
+        self.field_limit.unit = f"{field_units}"
+        self.field.unit = "{}".format(field_units)
+        self.setpoint.unit = "{}".format(field_units)
+        self.ramp_rate.unit = "{}/{}".format(field_units, ramp_rate_units)
+        self.current_ramp_limit.unit = "A/{}".format(ramp_rate_units)
+        self.field_ramp_limit.unit = f"{field_units}/{ramp_rate_units}"
+
+        # And update scaling factors
+        # Note: we don't update field_ramp_limit scale as it redirects
+        #       to ramp_rate_limit we don't update ramp_rate units as
+        #       the instrument stores changed units
+        if ramp_rate_units == "min":
+            self.current_ramp_limit.scale = 1/60
+        else:
+            self.current_ramp_limit.scale = 1
+        self._update_coil_constant()
+
 
 class AMI430_3D(Instrument):
-    def __init__(self, name, instrument_x, instrument_y, instrument_z, field_limit, **kwargs):
+    def __init__(self, name, instrument_x, instrument_y,
+                 instrument_z, field_limit, **kwargs):
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
             raise ValueError("Name should be a string")
 
-        if not all([isinstance(instrument, Instrument) for instrument in [instrument_x, instrument_y, instrument_z]]):
-            raise ValueError("Instruments need to be instances of the class Instrument")
+        instruments = [instrument_x, instrument_y, instrument_z]
+
+        if not all([isinstance(instrument, AMI430)
+                    for instrument in instruments]):
+            raise ValueError("Instruments need to be instances "
+                             "of the class AMI430")
 
         self._instrument_x = instrument_x
         self._instrument_y = instrument_y
@@ -314,7 +491,8 @@ class AMI430_3D(Instrument):
         if repr(field_limit).isnumeric() or isinstance(field_limit, collections.Iterable):
             self._field_limit = field_limit
         else:
-            raise ValueError("field limit should either be a number or an iterable")
+            raise ValueError("field limit should either be"
+                             " a number or an iterable")
 
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
@@ -485,7 +663,10 @@ class AMI430_3D(Instrument):
         if repr(self._field_limit).isnumeric():
             return np.linalg.norm(setpoint_values) < self._field_limit
 
-        return any([limit_function(*setpoint_values) for limit_function in self._field_limit])
+        answer = any([limit_function(*setpoint_values) for
+                      limit_function in self._field_limit])
+
+        return answer
 
     def _set_fields(self, values):
         """
@@ -496,6 +677,7 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
+        log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
         if not self._verify_safe_setpoint(values):
@@ -505,24 +687,28 @@ class AMI430_3D(Instrument):
         for name, value in zip(["x", "y", "z"], values):
 
             instrument = getattr(self, "_instrument_{}".format(name))
-            instrument.field.validate(value)
             if instrument.ramping_state() == "ramping":
                 msg = '_set_fields aborted; magnet {} is already ramping'
-                raise ValueError(msg.format(instrument))
+                raise AMI430Exception(msg.format(instrument))
 
         # Now that we know we can proceed, call the individual instruments
 
+        log.debug("Field values OK, proceeding")
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
-            # This will ensure that we are always in a save region as far as the quenching of the magnets is concerned
+            # This will ensure that we are always in a safe region as
+            # far as the quenching of the magnets is concerned
             for name, value in zip(["x", "y", "z"], values):
 
                 instrument = getattr(self, "_instrument_{}".format(name))
                 current_actual = instrument.field()
-                # If the new set point is practically equal to the current one then do nothing
+
+                # If the new set point is practically equal to the
+                # current one then do nothing
                 if np.isclose(value, current_actual, rtol=0, atol=1e-8):
                     continue
-                # evaluate if the new set point is lesser or greater then the current value
+                # evaluate if the new set point is smaller or larger
+                # than the current value
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
@@ -553,8 +739,12 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return_value = [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
-        # guaranty that the order in which the values are returned is the same as the original intention
+
+        # Do not do "return list(d.values())", because then there is
+        # no guaranty that the order in which the values are returned
+        # is the same as the original intention
+        return_value = [d[name] for name in names]
+
         if len(names) == 1:
             return_value = return_value[0]
 
@@ -566,8 +756,11 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return_value = [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
-        # guaranty that the order in which the values are returned is the same as the original intention
+        return_value = [d[name] for name in names]
+        # Do not do "return list(d.values())", because then there is
+        # no guarantee that the order in which the values are returned
+        # is the same as the original intention
+
         if len(names) == 1:
             return_value = return_value[0]
 
@@ -615,12 +808,3 @@ class AMI430_3D(Instrument):
     def _set_rho(self, rho):
         self._set_point.set_component(rho=rho)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def get_mocker_messages(self):
-        messages = []
-        for name in ["x", "y", "z"]:
-            instrument = getattr(self, "_instrument_{}".format(name))
-            if instrument.is_testing():
-                messages += instrument.get_mock_messages()
-
-        return messages
