@@ -411,9 +411,9 @@ def insert_many_values(conn: sqlite3.Connection,
     # We demand that all values have the same length
     lengths = [len(val) for val in values]
     if len(np.unique(lengths)) > 1:
-        raise ValueError(f'Wrong input format for values. Must specify the '
+        raise ValueError('Wrong input format for values. Must specify the '
                          'same number of values for all columns. Received'
-                         ' lengths {lengths}.')
+                         f' lengths {lengths}.')
     no_of_rows = len(lengths)
     no_of_columns = lengths[0]
 

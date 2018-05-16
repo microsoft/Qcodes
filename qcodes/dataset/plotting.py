@@ -15,14 +15,14 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
+AxesTupleList = Tuple[List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]]
 
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
-                     Sequence[matplotlib.axes.Axes]]]=None,
-               colorbars: Optional[Union[matplotlib.axes.Axes,
-                     Sequence[matplotlib.axes.Axes]]]=None) -> Tuple[List[matplotlib.axes.Axes],
-                                                        List[Optional[matplotlib.axes.Axes]]]:
+                              Sequence[matplotlib.axes.Axes]]]=None,
+               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
+                                   Sequence[matplotlib.colorbar.Colorbar]]]=None) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -39,10 +39,11 @@ def plot_by_id(run_id: int,
 
     Args:
         run_id: ID of the dataset to plot
-        axes: Matplotlib axes to plot on
+        axes: Optional Matplotlib axes to plot on. If non provided new axes will be created
+        colorbars: Optional Matplotlib Colorbars to use for 2D plots. If non provided new ones will be createds
 
     Returns:
-        a list of axes and a list of colorbar axes of the same length.
+        a list of axes and a list of colorbars of the same length.
         The colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
@@ -100,7 +101,7 @@ def plot_by_id(run_id: int,
 
     if colorbars is None:
         colorbars = len(axes)*[None]
-    new_colorbars = []
+    new_colorbars: List[matplotlib.colorbar.Colorbar] = []
     for data, ax, colorbar in zip(alldata, axes, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
