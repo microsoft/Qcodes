@@ -103,6 +103,7 @@ class DataSaver:
                                  'measurement.')
             if isinstance(value, np.ndarray):
                 value = cast(np.ndarray, partial_result[1])
+                value = np.atleast_1d(value)
                 array_size = len(value)
                 if input_size > 1 and input_size != array_size:
                     raise ValueError('Incompatible array dimensions. Trying to'
@@ -133,7 +134,6 @@ class DataSaver:
         # Now check for missing setpoints
         for partial_result in res:
             param = str(partial_result[0])
-            value = partial_result[1]
             if param in self._known_dependencies.keys():
                 stuffweneed = set(self._known_dependencies[param])
                 stuffwehave = set(params)
@@ -148,11 +148,12 @@ class DataSaver:
             for partial_result in res:
                 param = str(partial_result[0])
                 value = partial_result[1]
-
                 # For compatibility with the old Loop, setpoints are
                 # tuples of numbers (usually tuple(np.linspace(...))
                 if hasattr(value, '__len__') and not(isinstance(value, str)):
                     value = cast(Union[Sequence,np.ndarray], value)
+                    if isinstance(value, np.ndarray):
+                        value = np.atleast_1d(value)
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
