@@ -79,6 +79,7 @@ target/
 *.md~
 *.py~
 tmp/
+.#*
 
 docs/examples/data/*
 
