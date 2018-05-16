@@ -509,6 +509,34 @@ def test_datasaver_arrays(empty_temp_db, N):
     assert datasaver.points_written == N
 
 
+@settings(max_examples=10, deadline=None)
+@given(N=hst.integers(min_value=2, max_value=500))
+def test_datasaver_unsized_arrays(empty_temp_db, N):
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='freqax',
+                                   label='Frequency axis',
+                                   unit='Hz')
+    meas.register_custom_parameter(name='signal',
+                                   label='qubit signal',
+                                   unit='Majorana number',
+                                   setpoints=('freqax',))
+    # note that np.array(some_number) is not the same as the number
+    # its also not an array with a shape. Check here that we handle it
+    # correctly
+    with meas.run() as datasaver:
+        freqax = np.linspace(1e6, 2e6, N)
+        signal = np.random.randn(N)
+        for i in range(N):
+            myfreq = np.array(freqax[i])
+            mysignal = np.array(signal[i])
+            datasaver.add_result(('freqax', myfreq), ('signal', mysignal))
+
+    assert datasaver.points_written == N
+
+
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
