@@ -1329,25 +1329,23 @@ class GetLatest(DelegateAttributes, DeferredOperations):
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self):
+    def get(self, raw=False):
         """Return latest value if time since get was less than
         `self.max_val_age`, otherwise perform `get()` and return result
         """
         state = self.parameter._latest
-        if self.max_val_age is None:
-            # Return last value since max_val_age is not specified
-            return state['value']
-        else:
+        if self.max_val_age is not None:
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
             if state['ts'] is None or state['ts'] < oldest_ok_val:
                 # Time of last get exceeds max_val_age seconds, need to
                 # perform new .get()
-                return self.parameter.get()
-            else:
-                return state['value']
+                self.parameter.get()
+                state = self.parameter._latest
 
-    def __call__(self):
-        return self.get()
+        return state['raw_value'] if raw else state['value']
+
+    def __call__(self,raw=False):
+        return self.get(raw=raw)
 
 
 def combine(*parameters, name, label=None, unit=None, units=None,
