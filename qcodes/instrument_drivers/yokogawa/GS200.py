@@ -290,7 +290,7 @@ class GS200(VisaInstrument):
 
         # Reset function
         self.add_function('reset', call_cmd='*RST')
-        
+
         self.connect_message()
 
     def on(self):
