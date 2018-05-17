@@ -373,6 +373,9 @@ class Config():
 
     def __getitem__(self, name):
         val = self.current_config
+        if isinstance(name, int):
+            # When iterating through a dict, indices are passed instead
+            return list(val)[name]
         for key in name.split('.'):
             val = val[key]
         return val
@@ -437,7 +440,7 @@ class DotDict(dict):
         try:
             return self.__getitem__(key)
         except KeyError:
-            raise AttributeError('Attribute {} not found'.format(key))
+            raise AttributeError(f'Attribute {key} not found')
 
 
 def update(d, u):
