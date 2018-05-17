@@ -61,7 +61,7 @@ from qcodes.utils.metadata import Metadatable
 from qcodes.plots.qcmatplotlib import MatPlot
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
-                      BreakIf, _QcodesBreak)
+                      BreakIf, ContinueIf, _QcodesBreak)
 
 
 log = logging.getLogger(__name__)
@@ -105,6 +105,8 @@ class Loop(Metadatable):
     data), ``Wait`` times, or other ``ActiveLoop``\s or ``Loop``\s to nest inside
     this one.
     """
+
+    loop_indices = ()
     def __init__(self, sweep_values, delay=0, station=None,
                  progress_interval=None):
         super().__init__()
@@ -239,7 +241,7 @@ class Loop(Metadatable):
         if an action is not recognized
         """
         for action in actions:
-            if isinstance(action, (Task, Wait, BreakIf, ActiveLoop)):
+            if isinstance(action, (Task, Wait, BreakIf, ContinueIf, ActiveLoop)):
                 continue
             if hasattr(action, 'get') and (hasattr(action, 'name') or
                                            hasattr(action, 'names')):
@@ -247,7 +249,7 @@ class Loop(Metadatable):
             raise TypeError('Unrecognized action:', action,
                             'Allowed actions are: objects (parameters) with '
                             'a `get` method and `name` or `names` attribute, '
-                            'and `Task`, `Wait`, `BreakIf`, and `ActiveLoop` '
+                            'and `Task`, `Wait`, `BreakIf`, `ContinueIf`, and `ActiveLoop` '
                             'objects. `Loop` objects are OK too, except in '
                             'Station default measurements.')
 
@@ -904,6 +906,7 @@ class ActiveLoop(Metadatable):
             set_val = self.sweep_values.set(value)
 
             new_indices = loop_indices + (i,)
+            Loop.loop_indices = new_indices
             new_values = current_values + (value,)
             data_to_store = {}
 
@@ -932,6 +935,7 @@ class ActiveLoop(Metadatable):
                 # only wait the delay time if an inner loop will not inherit it
                 self._wait(delay)
 
+            f = None
             try:
                 for f in callables:
                     # below is useful but too verbose even at debug
@@ -944,7 +948,8 @@ class ActiveLoop(Metadatable):
                     # after the first action, no delay is inherited
                     delay = 0
             except _QcodesBreak:
-                break
+                if not isinstance(f, ContinueIf):
+                    break
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
