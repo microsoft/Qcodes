@@ -44,6 +44,13 @@ class PCDDS(Instrument):
             docstring='How long the delay should be during loading a new pulse to calculate the new coefficients'
         )
 
+        self.add_parameter(
+            'pcdds_enable',
+            set_cmd=self._set_pcdds_enable,
+            vals=Bool(),
+            docstring='Set the output of the device to use the PCDDS system and not the inbuilt functionality'
+        )
+
     def _set_output_enable(self, output_enable):
         """
         Set the output enable state of the module
@@ -53,6 +60,13 @@ class PCDDS(Instrument):
         operation = int('0010000000', 2)
         if output_enable:
             operation += int('0001000000', 2)
+        instr = self.construct_instruction(operation, 0)
+        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+
+    def _set_pcdds_enable(self, pcdds_enable):
+        operation = int('0100000000', 2)
+        if pcdds_enable:
+            operation += int('0000000001', 2)
         instr = self.construct_instruction(operation, 0)
         self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
 
