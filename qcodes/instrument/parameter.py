@@ -1344,7 +1344,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
 
         return state['raw_value'] if raw else state['value']
 
-    def __call__(self,raw=False):
+    def __call__(self, raw=False):
         return self.get(raw=raw)
 
 
