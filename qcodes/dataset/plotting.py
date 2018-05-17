@@ -1,6 +1,5 @@
 import logging
 from typing import Optional, List, Sequence, Union, Tuple
-
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -130,6 +129,7 @@ def plot_by_id(run_id: int,
             # From the setpoints, figure out which 2D plotter to use
             # TODO: The "decision tree" for what gets plotted how and how
             # we check for that is still unfinished/not optimised
+
             how_to_plot = {'grid': plot_on_a_plain_grid,
                            'equidistant': plot_on_a_plain_grid,
                            'point': plot_2d_scatterplot,
@@ -143,7 +143,8 @@ def plot_by_id(run_id: int,
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
-            ax, colorbar = how_to_plot[plottype](xpoints, ypoints, zpoints, ax, colorbar)
+            plot_func = how_to_plot[plottype]
+            ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
             set_axis_labels(ax, data, colorbar)
             new_colorbars.append(colorbar)
 
@@ -187,7 +188,7 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar) -> AxesTuple:
+                         colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
