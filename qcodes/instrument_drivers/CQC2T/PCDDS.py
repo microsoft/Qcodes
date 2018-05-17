@@ -59,8 +59,8 @@ class PCDDSChannel(InstrumentChannel):
     def _set_output_enable(self, output_enable):
         """
         Set the output enable state of the module
-        :param output_enable: (Bool) Is the output enabled
-        :return: None
+        Args:
+            output_enable: (Bool) Is the output enabled
         """
         operation = int('0010000000', 2)
         if output_enable:
@@ -69,6 +69,11 @@ class PCDDSChannel(InstrumentChannel):
         self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
 
     def _set_pcdds_enable(self, pcdds_enable):
+        """
+        Select the output between the PCDDS system and the passthrough connection
+        Args:
+            pcdds_enable: (Bool) If true, select the PCDDS system. Otherwise use passthrough
+        """
         operation = int('0100000000', 2)
         if pcdds_enable:
             operation += int('0000000001', 2)
@@ -78,8 +83,8 @@ class PCDDSChannel(InstrumentChannel):
     def _set_load_delay(self, delay):
         """
         Set the delay that the system will apply to calculate all the phase and frequency coefficiences
-        :param delay: (Int) Delay in clock cycles
-        :return: None
+        Args:
+            delay: (Int) Delay in clock cycles
         """
         operation = int('0000010000', 2) + delay
         # Construct and send instruction
@@ -89,9 +94,12 @@ class PCDDSChannel(InstrumentChannel):
     def construct_instruction(self, operation, pointer):
         """
         Function to construct the int instruction packet from the operation and pointer
-        :param operation: (Int) Operation that we want to do
-        :param pointer: (Int) ID of the pulse that this instruction refers to
-        :return: (Int) Instruction
+        Args:
+            operation: (Int) Operation that we want to do
+            pointer: (Int) ID of the pulse that this instruction refers to
+
+        Returns: (Int) Instruction
+
         """
         # Check that the pointer is in the allowed range
         if pointer >= 2**self.n_pointer_bits:
@@ -151,12 +159,12 @@ class PCDDSChannel(InstrumentChannel):
     def write_sine_pulse(self, pulse, phase, frequency, amplitude, next_pulse):
         """
         Write a normal sinusoidal pulse with the desired properties to the pulse memory.
-        :param pulse: (Int) The location in pulse memory that this is to be written to
-        :param phase: (Float) The phase of the signal in degrees
-        :param frequency: (Float) The frequency of the signal in Hz
-        :param amplitude: (Float) The desired output maximum amplitude in V
-        :param next_pulse: (Int) The next pulse that the system is to go to after this one
-        :return: None
+        Args:
+            pulse: (Int) The location in pulse memory that this is to be written to
+            phase: (Float) The phase of the signal in degrees
+            frequency: (Float) The frequency of the signal in Hz
+            amplitude: (Float) The desired output maximum amplitude in V
+            next_pulse: (Int) The next pulse that the system is to go to after this one
         """
         if not isinstance(pulse, int):
             raise TypeError('Incorrect type for function input pulse. It should be an int')
@@ -171,14 +179,13 @@ class PCDDSChannel(InstrumentChannel):
 
     def write_dc_pulse(self, pulse, voltage, next_pulse):
         """
-        Write a DC pulse to memory. This sets up a pulse with a phase offset of 90 degrees, 0 frequency
+        Write a DC pulse to memory. This sets up a pulse with a phase offset of 90 or 270 degrees, 0 frequency
         and a certain amplitude
-        :param pulse: (Int) The location in pulse memory that this is to be written to
-        :param voltage: (Float) The desired DC voltage
-        :param next_pulse: (Int) The next pulse that the system is to go to after this one
-        :return:
+        Args:
+            pulse: (Int) The location in pulse memory that this is to be written to
+            voltage: (Float) The desired DC voltage
+            next_pulse: (Int) The next pulse that the system is to go to after this one
         """
-        # a constant phase
         if not isinstance(pulse, int):
             raise TypeError('Incorrect type for function input pulse. It should be an int')
         if not isinstance(next_pulse, int):
@@ -196,13 +203,13 @@ class PCDDSChannel(InstrumentChannel):
     def write_chirp_pulse(self, pulse, phase, frequency, frequency_accumulation, amplitude, next_pulse):
         """
         Write a pulse to pulse memory which contains a frequency sweep
-        :param pulse: (Int) The location in pulse memory that this is to be written to
-        :param phase: (Float) The phase value for this pulse in degrees
-        :param frequency: (Float) The frequency value for this pulse in Hz
-        :param frequency_accumulation: (Float) The frequency accumulation for this pulse in Hz/s
-        :param amplitude: (Float) The amplitude for this pulse in V
-        :param next_pulse: (Int) The pulse that the system is to go to after this one
-        :return: None
+        Args:
+            pulse: (Int) The location in pulse memory that this is to be written to
+            phase: (Float) The phase value for this pulse in degrees
+            frequency: (Float) The frequency value for this pulse in Hz
+            frequency_accumulation: (Float) The frequency accumulation for this pulse in Hz/s
+            amplitude: (Float) The amplitude for this pulse in V
+            next_pulse: (Int) The pulse that the system is to go to after this one
         """
         if not isinstance(pulse, int):
             raise TypeError('Incorrect type for function input pulse. It should be an int')
@@ -217,13 +224,13 @@ class PCDDSChannel(InstrumentChannel):
     def write_pulse(self, pulse, phase, frequency, frequency_accumulation, amplitude, next_pulse):
         """
         Function to write a pulse with given register values to a given location in pulse memory
-        :param pulse: (Int) The location in pulse memory that this is to be written to
-        :param phase: (Int) The phase register value for this pulse
-        :param frequency: (Int) The frequency register value for this pulse
-        :param frequency_accumulation: (Int) The frequency accumulation register for this pulse
-        :param amplitude: (Int) The amplitude register for this pulse
-        :param next_pulse: (Int) The pulse that the system is to go to after this one
-        :return: None
+        Args:
+            pulse: (Int) The location in pulse memory that this is to be written to
+            phase: (Int) The phase register value for this pulse
+            frequency: (Int) The frequency register value for this pulse
+            frequency_accumulation: (Int) The frequency accumulation register for this pulse
+            amplitude: (Int) The amplitude register for this pulse
+            next_pulse: (Int) The pulse that the system is to go to after this one
         """
         if pulse < 0 or pulse > 2**self.n_pointer_bits:
             raise ValueError(
@@ -253,8 +260,10 @@ class PCDDSChannel(InstrumentChannel):
     def split_value(value):
         """
         Splits a 20 byte message up into 5x 32 bit messages
-        :param value: (Int) The message that is to be split
-        :return: (List of Ints) List of 32 bit length ints to be sent as messages
+        Args:
+            value: (Int) The message that is to be split
+
+        Returns: (List of Ints) List of 32 bit length ints to be sent as messages
         """
         if not isinstance(value, int):
             raise TypeError('Incorrect type passed to split_value')
@@ -268,9 +277,9 @@ class PCDDSChannel(InstrumentChannel):
         """
         Function to set the next pulse to be played. It is also possible to update to this new pulse
         via this function
-        :param pulse: (Int) Next pulse to be played
-        :param update: (Bool) Should the system update right now
-        :return: None
+        Args:
+            pulse: (Int) Next pulse to be played
+            update: (Bool) Should the system update right now
         """
         operation = int('0000000010', 2)
         if update:
@@ -281,7 +290,6 @@ class PCDDSChannel(InstrumentChannel):
     def send_trigger(self):
         """
         Send a trigger signal to the FPGA
-        :return: None
         """
         operation = int('1000000000', 2)
         instr = self.construct_instruction(operation, 0)
@@ -290,8 +298,10 @@ class PCDDSChannel(InstrumentChannel):
     def phase2val(self, phase):
         """
         Function to calculate the correct phase register values for a given phase
-        :param phase: (Float) The desired phase in degrees.
-        :return: (Int) The register value for the desired phase
+        Args:
+            phase: (Float) The desired phase in degrees.
+
+        Returns: (Int) The register value for the desired phase
         """
         phase = phase % 360.0
         return int(np.round((2 ** self.n_phase_bits / 360.0) * phase))
@@ -299,8 +309,10 @@ class PCDDSChannel(InstrumentChannel):
     def freq2val(self, freq):
         """
         Function to calculate the correct frequency register values for a given frequency
-        :param freq: (Float) The desired frequency in Hz
-        :return: (Int) The register value for the desired frequency
+        Args:
+            freq: (Float) The desired frequency in Hz
+
+        Returns: (Int) The register value for the desired frequency
         """
         if freq > self.f_max or freq < 0:
             raise ValueError('Frequency of {0} is outside of allowed values [0, {1}MHz]'.format(freq, self.f_max/1e6))
@@ -309,8 +321,10 @@ class PCDDSChannel(InstrumentChannel):
     def accum2val(self, accum):
         """
         Function to calculate the correct accumulation register values for a given accumulation
-        :param accum: (Float) The desired accumulation in Hz/s
-        :return: (Int) The register value for the desired accumulation
+        Args:
+            accum: (Float) The desired accumulation in Hz/s
+
+        Returns: (Int) The register value for the desired accumulation
         """
         if accum < 0 or accum > (5*self.clk ** 2):
             raise ValueError('Frequency Accumulation of {0} is outside of allowed values [0,{1}Hz/s]'.format(
@@ -320,8 +334,10 @@ class PCDDSChannel(InstrumentChannel):
     def amp2val(self, amp):
         """
         Function to calculate the correct amplitude register values for a given amplitude
-        :param amp: (Float) The desired amplitude in V
-        :return: (Int) The register value for the desired amplitude
+        Args:
+            amp: (Float) The desired amplitude in V
+
+        Returns: (Int) The register value for the desired amplitude
         """
         if amp < 0 or amp > self.v_max:
             raise ValueError('Amplitude of {0} is outside of allowed values [0, {1}V'.format(amp, self.v_max))
