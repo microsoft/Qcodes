@@ -1,5 +1,6 @@
 from qcodes.instrument_drivers.Keysight.M3300A import Keysight_M3300A_FPGA
 from qcodes.instrument.base import Instrument
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Bool, Ints
 
 import numpy as np
@@ -10,17 +11,18 @@ except ImportError:
     raise ImportError('to use the Keysight SD drivers install the keysightSD1 module '
                       '(http://www.keysight.com/main/software.jspx?ckey=2784055)')
 
+model_channels = {'M3201A': 4,
+                  'M3300A': 4}
 
-class PCDDS(Instrument):
+
+class PCDDSChannel(InstrumentChannel):
     """
-    This class is the driver for the Phase Coherent Pulse Generation Module implemented on the FPGA onboard a Keysight
-    PXI AWG card
+    Class that holds all the actions related to a specific PCDDS channel
     """
-    def __init__(self, name, **kwargs):
-        """ Constructor for the pulse generation modules """
-        super().__init__(name, **kwargs)
-        self.fpga = Keysight_M3300A_FPGA('FPGA')
-        self.port = 0
+    def __init__(self, parent: Instrument, name: str, id: int, **kwargs):
+        super().__init__(parent=parent, name=name, **kwargs)
+        self.fpga = self._parent.fpga
+        self.id = id
         self.n_pointer_bits = 9
         self.n_op_bits = 10
         self.n_phase_bits = 45
@@ -32,6 +34,7 @@ class PCDDS(Instrument):
 
         self.add_parameter(
             'output_enable',
+            label=f'ch{self.id} output_enable',
             set_cmd=self._set_output_enable,
             vals=Bool(),
             docstring='Whether the system has an enabled output'
@@ -39,6 +42,7 @@ class PCDDS(Instrument):
 
         self.add_parameter(
             'load_delay',
+            label=f'ch{self.id} load_delay',
             set_cmd=self._set_load_delay,
             vals=Ints(0, 15),
             docstring='How long the delay should be during loading a new pulse to calculate the new coefficients'
@@ -46,6 +50,7 @@ class PCDDS(Instrument):
 
         self.add_parameter(
             'pcdds_enable',
+            label=f'ch{self.id} pcdds_enable',
             set_cmd=self._set_pcdds_enable,
             vals=Bool(),
             docstring='Set the output of the device to use the PCDDS system and not the inbuilt functionality'
@@ -61,14 +66,14 @@ class PCDDS(Instrument):
         if output_enable:
             operation += int('0001000000', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
 
     def _set_pcdds_enable(self, pcdds_enable):
         operation = int('0100000000', 2)
         if pcdds_enable:
             operation += int('0000000001', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
 
     def _set_load_delay(self, delay):
         """
@@ -79,7 +84,7 @@ class PCDDS(Instrument):
         operation = int('0000010000', 2) + delay
         # Construct and send instruction
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
 
     def construct_instruction(self, operation, pointer):
         """
@@ -95,9 +100,53 @@ class PCDDS(Instrument):
         # Convert and return
         return (operation << 22) + pointer
 
-    def reset(self):
-        """ Sends the reset signal to the FPGA """
-        self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.PULSE)
+    def write_zero_pulse(self, pulse):
+        """
+        Function to write all zeros to a specific memory location
+        Args:
+            pulse: (Int) The location where the zeros are to be written
+        """
+        self.write_pulse(pulse=pulse, phase=0, frequency=0, frequency_accumulation=0, amplitude=0, next_pulse=0)
+
+    def clear_memory(self):
+        """
+        Function to clear all memory
+        """
+        for i in np.arange(2**self.n_pointer_bits):
+            self.write_zero_pulse(pulse=i)
+
+    def write_instr(self, instr):
+        """
+        Function to write an instruction to the pulse memory.
+
+        It takes a dictionary with the following entries:
+        - instr: The instruction type. Valid instruction types are 'dc', 'sine' and 'chrip'
+        - pulse_idx: The pulse id that this instruction is to be stored in
+        - phase: The phase of the relevant pulse. Only applicable to 'sine' and 'chirp' pulses
+        - freq: The frequency of this pulse. Only applicable to 'sine' and 'chirp' pulses
+        - accum: The frequency accumulation rate. Only applicable to 'chirp' pulses
+        - amp: The amplitude of the pulse
+        - next_pulse: The next pulse that should be played after this one
+        Args:
+            instr: (Dict) The instruction to write to memory
+        """
+        if instr['instr'] == 'dc':
+            self.write_dc_pulse(pulse=instr['pulse_idx'], voltage=instr['amp'], next_pulse=instr['next_pulse'])
+        elif instr['instr'] == 'sine':
+            self.write_sine_pulse(pulse=instr['pulse_idx'],
+                                  phase=instr['phase'],
+                                  frequency=instr['freq'],
+                                  amplitude=instr['amp'],
+                                  next_pulse=instr['next_pulse'])
+        elif instr['instr'] == 'chirp':
+            self.write_chirp_pulse(pulse=instr['pulse_idx'],
+                                   phase=instr['phase'],
+                                   frequency=instr['freq'],
+                                   frequency_accumulation=instr['accum'],
+                                   amplitude=instr['amp'],
+                                   next_pulse=instr['next_pulse'])
+        else:
+            raise ValueError('Unknown instruction type: {}'.format(instr['instr']))
 
     def write_sine_pulse(self, pulse, phase, frequency, amplitude, next_pulse):
         """
@@ -136,7 +185,7 @@ class PCDDS(Instrument):
             raise TypeError('Incorrect type for function input next_pulse. It should be an int')
         # Convert the voltage to the correct register value
         amplitude_val = self.amp2val(np.abs(2.0*voltage))
-        if (voltage < 0):
+        if voltage < 0:
             phase_val = self.phase2val(270.0)
         else:
             phase_val = self.phase2val(90.0)
@@ -176,6 +225,13 @@ class PCDDS(Instrument):
         :param next_pulse: (Int) The pulse that the system is to go to after this one
         :return: None
         """
+        if pulse < 0 or pulse > 2**self.n_pointer_bits:
+            raise ValueError(
+                'The pulse index is outside of memory. It should be between 0 and {}'.format(2**self.n_pointer_bits-1))
+        if next_pulse < 0 or next_pulse > 2**self.n_pointer_bits:
+            raise ValueError(
+                'The next_pulse index is outside of memory. It should be between 0 and {}'.format(
+                    2 ** self.n_pointer_bits - 1))
         # Construct the initial instruction to write a new pulse to memory
         operation = int('0000100000', 2)
         instr = self.construct_instruction(operation, pulse)
@@ -186,12 +242,12 @@ class PCDDS(Instrument):
         pulse_data += (amplitude << 2 * self.n_phase_bits + self.n_accum_bits)
         pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits + self.n_amp_bits)
         pulse_data = self.split_value(pulse_data)
-        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.port, [pulse_data[4]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.port, [pulse_data[3]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.port, [pulse_data[2]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.port, [pulse_data[1]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.port, [pulse_data[0]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [pulse_data[4]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [pulse_data[3]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [pulse_data[2]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [pulse_data[1]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [pulse_data[0]], 0, 0, 1)
 
     @staticmethod
     def split_value(value):
@@ -220,7 +276,7 @@ class PCDDS(Instrument):
         if update:
             operation += int('1000000000', 2)
         instr = self.construct_instruction(operation, pulse)
-        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
 
     def send_trigger(self):
         """
@@ -229,7 +285,7 @@ class PCDDS(Instrument):
         """
         operation = int('1000000000', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
 
     def phase2val(self, phase):
         """
@@ -270,3 +326,30 @@ class PCDDS(Instrument):
         if amp < 0 or amp > self.v_max:
             raise ValueError('Amplitude of {0} is outside of allowed values [0, {1}V'.format(amp, self.v_max))
         return int(np.round((2**self.n_amp_bits-1) * amp/self.v_max))
+
+
+class PCDDS(Instrument):
+    """
+    This class is the driver for the Phase Coherent Pulse Generation Module implemented on the FPGA onboard a Keysight
+    PXI AWG card
+    """
+    def __init__(self, name, model, chassis, slot, channels=None, triggers=8, **kwargs):
+        """ Constructor for the pulse generation modules """
+        super().__init__(name, model, chassis, slot, triggers, **kwargs)
+        self.fpga = Keysight_M3300A_FPGA('FPGA')
+
+        if channels is None:
+            channels = model_channels[self.model]
+        self.n_channels = channels
+
+        self.channels = ChannelList(self,
+                                    name='channels',
+                                    chan_type=PCDDSChannel)
+        for ch in range(self.n_channels):
+            channel = PCDDSChannel(self, name=f'ch{ch}', id=ch)
+            setattr(self, f'ch{ch}', channel)
+            self.channels.append(channel)
+
+    def reset(self):
+        """ Sends the reset signal to the FPGA """
+        self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.PULSE)
