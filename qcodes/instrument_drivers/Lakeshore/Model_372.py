@@ -119,12 +119,12 @@ class Heater(InstrumentChannel):
                                set_cmd=f"OUTMODE {heater_index}, {{mode}}, {{input_channel}}, {{powerup_enable}}, {{polarity}}, {{filter}}, {{delay}}",
                                get_cmd=f'OUTMODE? {heater_index}')
 
-        self.add_parameter('P', vals=vals.Ints(0, 1000),
-                           get_parser=int, parameter_class=GroupParameter)
-        self.add_parameter('I', vals=vals.Ints(0, 1000),
-                           get_parser=int, parameter_class=GroupParameter)
-        self.add_parameter('D', vals=vals.Ints(0, 2500),
-                           get_parser=int, parameter_class=GroupParameter)
+        self.add_parameter('P', vals=vals.Numbers(0, 1000),
+                           get_parser=float, parameter_class=GroupParameter)
+        self.add_parameter('I', vals=vals.Numbers(0, 1000),
+                           get_parser=float, parameter_class=GroupParameter)
+        self.add_parameter('D', vals=vals.Numbers(0, 2500),
+                           get_parser=float, parameter_class=GroupParameter)
         self.pid_group = Group([self.P, self.I, self.D],
                                set_cmd=f"PID {heater_index}, {{P}}, {{I}}, {{D}}",
                                get_cmd=f'PID? {heater_index}')
@@ -135,6 +135,11 @@ class Heater(InstrumentChannel):
                            set_cmd=f'RANGE {heater_index}, {{}}',
                            get_cmd=f'RANGE? {heater_index}')
 
+        self.add_parameter('setpoint', get_parser=lambda x: Range(int(x)),
+                           vals=vals.Numbers(0, 400),
+                           get_parser=float,
+                           set_cmd=f'SETP {heater_index}, {{}}',
+                           get_cmd=f'SETP? {heater_index}')
 
 class Model_372(LakeshoreBase):
     """
