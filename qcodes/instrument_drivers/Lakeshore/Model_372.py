@@ -23,7 +23,8 @@ class GroupParameter(Parameter):
 
 
 class Group():
-    def __init__(self, parameters, set_cmd=None, get_cmd=None, get_parser=None, separator=','):
+    def __init__(self, parameters, set_cmd=None, get_cmd=None,
+                 get_parser=None, separator=','):
         self.parameters = OrderedDict((p.name, p) for p in parameters)
         self.instrument = parameters[0].root_instrument
         for p in parameters:
@@ -64,18 +65,33 @@ class Group():
 class Model_372_Channel(BaseSensorChannel):
     pass
 
-# class Heater(InstrumentChannel):
-#      def __init__(self, parent, heater_name, heater_index):
-#         super().__init__(parent, heater_name)
-#         self.heater_index = heater_index
-#         self.add_parameter('input_channel', type=GroupParameter, group=group)
-#         self.add_parameter('', set_cmd=self._set_input, get_cmd=self._get_input)
+class Heater(InstrumentChannel):
+     def __init__(self, parent, heater_name, heater_index):
+        super().__init__(parent, heater_name)
+        self.heater_index = heater_index
+        self.add_parameter('mode', parameter_class=GroupParameter)
+        self.add_parameter('input_channel', parameter_class=GroupParameter)
+        self.add_parameter('powerup_enable', parameter_class=GroupParameter)
+        self.add_parameter('polarity', parameter_class=GroupParameter)
+        self.add_parameter('filter', parameter_class=GroupParameter)
+        self.add_parameter('delay', parameter_class=GroupParameter)
+        self.pid_group = Group([self.mode, self.input_channel,
+                               self.powerup_enable, self.polarity,
+                               self.filter, self.delay],
+                               set_cmd=f"OUTMODE {heater_index}, {{mode}}, {{input_channel}}, {{poweup_enable}}, {{polarity}}, {{filter}}, {{delay}}",
+                               get_cmd=f'OUTMODE? {heater_index}')
 
-#      def _set_input(self, value, **kwargs):
-         
+        self.add_parameter('P', parameter_class=GroupParameter)
+        self.add_parameter('I', parameter_class=GroupParameter)
+        self.add_parameter('D', parameter_class=GroupParameter)
+        self.pid_group = Group([self.P, self.I, self.D],
+                               set_cmd=f"PID {heater_index}, {{P}}, {{I}}, {{D}}",
+                               get_cmd=f'PID? {heater_index}')
+        
+        self.add_parameter('range',
+                           set_cmd=f'RANGE {heater_index}, {{}}',
+                           get_cmd=f'RANGE? {heater_index}')
 
-#      def _get_input(self):
-#          pass
 
 class Model_372(LakeshoreBase):
     """
@@ -83,57 +99,12 @@ class Model_372(LakeshoreBase):
     Controlled via sockets
     """
     CHANNEL_CLASS = Model_372_Channel
-    channel_name_command: Dict[str,str] = {'ch{:02}'.format(i): str(i) for i in range(1,17)}
+    channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i) for i in range(1, 17)}
+    
+
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
+        self.sample_heater = Heater(self, 'sample_heater', 0)
+        self.warmup_heater = Heater(self, 'warmup_heater', 1)
+        self.analog_heater = Heater(self, 'analog_heater', 2)
 
-        self.add_parameter('P', parameter_class=GroupParameter)
-        self.add_parameter('I', parameter_class=GroupParameter)
-        self.add_parameter('D', parameter_class=GroupParameter)
-        self.pid_group = Group([self.P, self.I, self.D],
-                               set_cmd="PID 1, {P}, {I}, {D}",
-                               get_cmd='PID? 1')
-
-
-
-# class Model_372(LakeshoreBase):
-#     """
-#     Lakeshore Model 372 Temperature Controller Driver
-#     Controlled via sockets
-#     """
-#     CHANNEL_CLASS = Model_372_Channel
-#     channel_name_command: Dict[str,str] = {'ch{:02}'.format(i): str(i) for i in range(1,17)}
-#     def __init__(self, name: str, address: str, **kwargs) -> None:
-#         super().__init__(name, address, **kwargs)
-
-#         self.add_parameter('P', set_cmd=self._set_p, get_cmd=self._get_p)
-#         self.add_parameter('I', set_cmd=self._set_i, get_cmd=self._get_i)
-#         self.add_parameter('D', set_cmd=self._set_d, get_cmd=self._get_d)
-
-#         # self.add_parameter('selected_heater', set_cmd=None, val_mapping={'SAMPLE_HEATER': 0, 'OUTPUT_HEATER': 1})
-#         self.add_parameter('output', set_cmd=None, val_mapping={'SAMPLE_HEATER': 0, 'OUTPUT_HEATER': 1})
-
-
-#     def selected_heater(self):
-#         return '0'
-
-#     def _get_pid(self):
-#         return [float(num) for num in self.ask(f"PID? {self.selected_heater()}").split(',')]
-
-#     def _set_p(self, P):
-#         self.write(f"PID {self.selected_heater()}, {P}, {self.I()}, {self.D()}")
-
-#     def _get_p(self):
-#         return self._get_pid()[0]
-
-#     def _set_i(self, i):
-#         self.write(f"PID {self.selected_heater()}, {self.P()}, {i}, {self.D()}")
-
-#     def _get_i(self):
-#         return self._get_pid()[1]
-
-#     def _set_d(self, d):
-#         self.write(f"PID {self.selected_heater()}, {self.P()}, {self.I()}, {d}")
-
-#     def _get_d(self):
-#         return self._get_pid()[2]

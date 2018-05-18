@@ -85,5 +85,5 @@ def test_instantiation_model_336():
 def test_instantiation_model_372():
     visalib = sims.__file__.replace('__init__.py', 'lakeshore_model372.yaml@sim')
     ls = Model_372_Mock('lakeshore_372', 'GPIB::3::65535::INSTR', visalib=visalib, device_clear=False)
-    ls.P(1)
-    assert ls.P() == 1
+    ls.warmup_heater.P(1)
+    assert ls.warmup_heater.P() == 1
