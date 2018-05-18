@@ -59,7 +59,7 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable
 from functools import partial, wraps
 import numpy
 
@@ -76,6 +76,7 @@ from qcodes.data.data_array import DataArray
 if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
+Number = Union[float, int]
 
 class _BaseParameter(Metadatable):
     """
@@ -109,6 +110,12 @@ class _BaseParameter(Metadatable):
         scale (Optional[float]): Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
+
+        offset: Compensate for a parameter specific offset. (just as scale)
+            get value = raw value - offset.
+            set value = argument + offset.
+            If offset and scale are used in combination, when getting a value,
+            first an offset is added, then the scale is applied.
 
         inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
@@ -157,7 +164,8 @@ class _BaseParameter(Metadatable):
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Union[int, float]]=None,
-                 scale: Optional[Union[int, float]]=None,
+                 scale: Optional[Union[Number, Iterable[Number]]]=None,
+                 offset: Optional[Union[Number, Iterable[Number]]]=None,
                  inter_delay: Union[int, float]=0,
                  post_delay: Union[int, float]=0,
                  val_mapping: Optional[dict]=None,
@@ -181,6 +189,7 @@ class _BaseParameter(Metadatable):
 
         self.step = step
         self.scale = scale
+        self.offset = offset
         self.raw_value = None
         if delay is not None:
             warnings.warn("Delay kwarg is deprecated. Replace with "
@@ -222,7 +231,7 @@ class _BaseParameter(Metadatable):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale',
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale', 'offset',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
@@ -311,7 +320,8 @@ class _BaseParameter(Metadatable):
         if (self.get_parser is None and
             self.set_parser is None and
             self.val_mapping is None and
-            self.scale is None):
+            self.scale is None and
+            self.offset is None):
                 self.raw_value = value
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
@@ -327,6 +337,20 @@ class _BaseParameter(Metadatable):
                 if self.get_parser is not None:
                     value = self.get_parser(value)
 
+                # apply offset first (native scale)
+                if self.offset is not None:
+                    # offset values
+                    if isinstance(self.offset, collections.Iterable):
+                        # offset contains multiple elements, one for each value
+                        value = tuple(value - offset for value, offset
+                                      in zip(value, self.offset))
+                    elif isinstance(value, collections.Iterable):
+                        # Use single offset for all values
+                        value = tuple(value - self.offset for value in value)
+                    else:
+                        value -= self.offset
+
+                # scale second
                 if self.scale is not None:
                     # Scale values
                     if isinstance(self.scale, collections.Iterable):
@@ -369,25 +393,35 @@ class _BaseParameter(Metadatable):
                 for step_index, val_step in enumerate(steps):
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
-                        mapped_value = self.val_mapping[val_step]
+                        raw_value = self.val_mapping[val_step]
                     else:
-                        mapped_value = val_step
+                        raw_value = val_step
 
+                    # transverse transformation in reverse order as compared to
+                    # getter:
+                    # apply scale first
                     if self.scale is not None:
                         if isinstance(self.scale, collections.Iterable):
                             # Scale contains multiple elements, one for each value
-                            scaled_mapped_value = tuple(val * scale for val, scale
-                                                        in zip(mapped_value, self.scale))
+                            raw_value = tuple(val * scale for val, scale
+                                              in zip(raw_value, self.scale))
                         else:
                             # Use single scale for all values
-                            scaled_mapped_value = mapped_value*self.scale
-                    else:
-                        scaled_mapped_value = mapped_value
+                            raw_value *= self.scale
 
+                    # apply offset next
+                    if self.offset is not None:
+                        if isinstance(self.offset, collections.Iterable):
+                            # offset contains multiple elements, one for each value
+                            raw_value = tuple(val + offset for val, offset
+                                              in zip(raw_value, self.offset))
+                        else:
+                            # Use single offset for all values
+                            raw_value += self.offset
+
+                    # parser last
                     if self.set_parser is not None:
-                        parsed_scaled_mapped_value = self.set_parser(scaled_mapped_value)
-                    else:
-                        parsed_scaled_mapped_value = scaled_mapped_value
+                        raw_value = self.set_parser(raw_value)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -399,8 +433,8 @@ class _BaseParameter(Metadatable):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(parsed_scaled_mapped_value, **kwargs)
-                    self.raw_value = parsed_scaled_mapped_value
+                    set_function(raw_value, **kwargs)
+                    self.raw_value = raw_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
                                              self.set_parser is None and
