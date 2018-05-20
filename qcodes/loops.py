@@ -381,6 +381,9 @@ class ActiveLoop(Metadatable):
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
 
+        # Record summed durations of callables
+        self.timings = []
+
     def __getitem__(self, item):
         """
         Retrieves action with index `item`
@@ -885,6 +888,7 @@ class ActiveLoop(Metadatable):
         delay = max(self.delay, first_delay)
 
         callables = self._compile_actions(self.actions, action_indices)
+        self.timings = [[callable, 0] for callable in callables]
         n_callables = 0
         for item in callables:
             if hasattr(item, 'param_ids'):
@@ -937,13 +941,16 @@ class ActiveLoop(Metadatable):
 
             f = None
             try:
-                for f in callables:
+                for k, f in enumerate(callables):
+                    t0 = time.time()
                     # below is useful but too verbose even at debug
                     # log.debug('Going through callables at this sweep step.'
                     #           ' Calling {}'.format(f))
                     f(first_delay=delay,
                       loop_indices=new_indices,
                       current_values=new_values)
+                    
+                    self.timings[k][1] += time.time() - t0
 
                     # after the first action, no delay is inherited
                     delay = 0
