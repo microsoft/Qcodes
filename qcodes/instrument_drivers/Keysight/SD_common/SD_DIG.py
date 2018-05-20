@@ -221,6 +221,14 @@ class DigitizerChannel(InstrumentChannel):
                       f'acquisition has completed.'
         )
 
+        self.add_parameter(
+            'data_multiplier',
+            initial_value=1,
+            vals=vals.Numbers(),
+            set_cmd=None,
+            docstring=f'Value to multiply all acquisition data by'
+        )
+
     def add_parameter(self, name: str,
                       parameter_class: type=SignadyneParameter, **kwargs):
         """Use SignadyneParameter by default"""
@@ -261,6 +269,7 @@ class DigitizerChannel(InstrumentChannel):
             scaled_value = v_min + (v_max-v_min) * relative_value
         else:
             scaled_value = value
+        scaled_value *= self.data_multiplier()
         return scaled_value
 
     @with_error_check
