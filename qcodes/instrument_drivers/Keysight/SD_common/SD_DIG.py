@@ -371,13 +371,15 @@ class SD_DIG(SD_Module):
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
                            val_mapping={'off': 0, 'on': 1})
 
-        self.channels = ChannelList(self,
+        channels = ChannelList(self,
                                     name='channels',
                                     chan_type=DigitizerChannel)
         for ch in range(self.n_channels):
             channel = DigitizerChannel(self, name=f'ch{ch}', id=ch)
             setattr(self, f'ch{ch}', channel)
-            self.channels.append(channel)
+            channels.append(channel)
+
+        self.add_submodule('channels', channels)
 
     def add_parameter(self, name: str,
                       parameter_class: type=SignadyneParameter, **kwargs):

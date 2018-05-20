@@ -35,6 +35,7 @@ class AWGChannel(InstrumentChannel):
 
         self.add_parameter('wave_shape',
                            label=f'ch{self.id} wave shape',
+                           initial_value='arbitrary',
                            set_function=self.awg.channelWaveShape,
                            val_mapping={'HiZ': -1, 'none': 0, 'sinusoidal': 1,
                                         'triangular': 2, 'square': 4, 'dc': 5,
@@ -439,13 +440,14 @@ class SD_AWG(SD_Module):
                            get_function=self.awg.clockGetSyncFrequency,
                            docstring='The frequency of the internal CLKsync in Hz')
 
-        self.channels = ChannelList(self,
-                                    name='channels',
-                                    chan_type=AWGChannel)
+        channels = ChannelList(self,
+                               name='channels',
+                               chan_type=AWGChannel)
         for ch in range(self.n_channels):
             channel = AWGChannel(self, name=f'ch{ch}', id=ch)
             setattr(self, f'ch{ch}', channel)
-            self.channels.append(channel)
+            channels.append(channel)
+        self.add_submodule('channels', channels)
 
     def add_parameter(self, name: str,
                       parameter_class: type=SignadyneParameter, **kwargs):
@@ -480,7 +482,7 @@ class SD_AWG(SD_Module):
         """
         for channel in self.channels:
             channel.stop()
-            channel.wave_shape('none')
+            # channel.wave_shape('none')
 
     @with_error_check
     def reset_clock_phase(self,

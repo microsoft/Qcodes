@@ -162,11 +162,11 @@ class SignadyneParameter(Parameter):
             return self.get_cmd()
         elif self.get_function is not None:
             if isinstance(self.parent, InstrumentChannel):
-                return self.get_function(self.channel.id)
+                return self.get_function(self.parent.id)
             else:
                 return self.get_function()
         else:
-            return self.get_latest()
+            return self.get_latest(raw=True)
 
 
 class SD_Module(Instrument):
