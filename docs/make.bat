@@ -75,7 +75,7 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
-    :HTML
+	:HTML
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1
 	echo.
@@ -84,8 +84,8 @@ if "%1" == "html" (
 )
 
 if "%1" == "htmlapi" (
-    sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
-    mkdir api\generated\
+	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
+	mkdir api\generated\
 	mkdir _notebooks
 	mkdir _notebooks\DataSet
 	mkdir _notebooks\DataSet\Real_instruments
