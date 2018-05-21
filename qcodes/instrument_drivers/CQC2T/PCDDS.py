@@ -32,6 +32,7 @@ class PCDDSChannel(InstrumentChannel):
         self.v_max = 3.0
         self.f_max = 200e6
 
+        # TODO: pp amplitude -> 0V to peak amplitude
         self.add_parameter(
             'output_enable',
             label=f'ch{self.id} output_enable',
@@ -45,7 +46,8 @@ class PCDDSChannel(InstrumentChannel):
             label=f'ch{self.id} load_delay',
             set_cmd=self._set_load_delay,
             vals=Ints(0, 15),
-            docstring='How long the delay should be during loading a new pulse to calculate the new coefficients'
+            docstring='How long the delay should be during loading a new pulse '
+                      'to calculate the new coefficients (delay in samples).'
         )
 
         self.add_parameter(
@@ -55,6 +57,9 @@ class PCDDSChannel(InstrumentChannel):
             vals=Bool(),
             docstring='Set the output of the device to use the PCDDS system and not the inbuilt functionality'
         )
+
+        # Initially set load delay to 10 samples
+        self.load_delay(10)
 
     def _set_output_enable(self, output_enable):
         """
@@ -102,19 +107,20 @@ class PCDDSChannel(InstrumentChannel):
 
         """
         # Check that the pointer is in the allowed range
-        if pointer >= 2**self.n_pointer_bits:
-            raise ValueError(
-                'Pointer with value {} is outside of bounds [{}, {}]'.format(pointer, 0, 2**self.n_pointer_bits-1))
+        assert pointer < 2**self.n_pointer_bits, \
+            f'Pointer with value {pointer} is outside of bounds ' \
+            f'[0, {2**self.n_pointer_bits-1}]'
         # Convert and return
         return (operation << 22) + pointer
 
-    def write_zero_pulse(self, pulse):
+    def write_zero_pulse(self, pulse: int):
         """
         Function to write all zeros to a specific memory location
         Args:
-            pulse: (Int) The location where the zeros are to be written
+            pulse: The location where the zeros are to be written
         """
-        self.write_pulse(pulse=pulse, phase=0, frequency=0, frequency_accumulation=0, amplitude=0, next_pulse=0)
+        self.write_pulse(pulse=pulse, phase=0, frequency=0,
+                         frequency_accumulation=0, amplitude=0, next_pulse=0)
 
     def clear_memory(self):
         """
@@ -123,7 +129,7 @@ class PCDDSChannel(InstrumentChannel):
         for i in np.arange(2**self.n_pointer_bits):
             self.write_zero_pulse(pulse=i)
 
-    def write_instr(self, instr):
+    def write_instr(self, instr: dict):
         """
         Function to write an instruction to the pulse memory.
 
@@ -136,10 +142,11 @@ class PCDDSChannel(InstrumentChannel):
         - amp: The amplitude of the pulse
         - next_pulse: The next pulse that should be played after this one
         Args:
-            instr: (Dict) The instruction to write to memory
+            instr: The instruction to write to memory
         """
         if instr['instr'] == 'dc':
-            self.write_dc_pulse(pulse=instr['pulse_idx'], voltage=instr['amp'], next_pulse=instr['next_pulse'])
+            self.write_dc_pulse(pulse=instr['pulse_idx'], voltage=instr['amp'],
+                                next_pulse=instr['next_pulse'])
         elif instr['instr'] == 'sine':
             self.write_sine_pulse(pulse=instr['pulse_idx'],
                                   phase=instr['phase'],
@@ -154,7 +161,7 @@ class PCDDSChannel(InstrumentChannel):
                                    amplitude=instr['amp'],
                                    next_pulse=instr['next_pulse'])
         else:
-            raise ValueError('Unknown instruction type: {}'.format(instr['instr']))
+            raise ValueError(f'Unknown instruction type: {instr["instr"]}')
 
     def write_sine_pulse(self, pulse, phase, frequency, amplitude, next_pulse):
         """
@@ -234,7 +241,8 @@ class PCDDSChannel(InstrumentChannel):
         """
         if pulse < 0 or pulse > 2**self.n_pointer_bits:
             raise ValueError(
-                'The pulse index is outside of memory. It should be between 0 and {}'.format(2**self.n_pointer_bits-1))
+                f'The pulse index is outside of memory. '
+                f'It should be between 0 and {2**self.n_pointer_bits-1}')
         if next_pulse < 0 or next_pulse > 2**self.n_pointer_bits:
             raise ValueError(
                 'The next_pulse index is outside of memory. It should be between 0 and {}'.format(
