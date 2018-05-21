@@ -163,12 +163,12 @@ class PCDDSChannel(InstrumentChannel):
         - instr: The instruction type. Valid instruction types are 'dc',
                  'sine' and 'chrip'
         - pulse_idx: The pulse id that this instruction is to be stored in
-        - phase: The phase of the relevant pulse. Only applicable to 'sine'
-                 and 'chirp' pulses
+        - phase: The phase of the relevant pulse (in degrees).
+            Only applicable to 'sine' and 'chirp' pulses
         - freq: The frequency of this pulse. Only applicable to 'sine' and
                 'chirp' pulses
-        - accum: The frequency accumulation rate. Only applicable to 'chirp'
-                 pulses
+        - accum: The frequency accumulation rate (in Hz/s).
+            Only applicable to 'chirp' pulses
         - amp: The amplitude of the pulse
         - next_pulse: The next pulse that should be played after this one
         Args:
