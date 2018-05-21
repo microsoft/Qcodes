@@ -15,6 +15,27 @@ except ImportError:
 model_channels = {'M3201A': 4,
                   'M3300A': 4}
 
+"""
+Instruction Code Syntax:
+
+Each 32-bit instruction code packet is split into a 10-bit command, 9-bit 
+pulse pointer and 13 bits of unused space. They are currently laid out as 
+follows:
+[(10 bit) Command, (13 bit) unused, (9 bit) pulse pointer]
+
+Within the command, we have the following command breakdown structure
+
+Bit 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 | Instruction
+-------------------------------------------------------------------------------
+    1 | x | x | x | x | x | x | x | x | x | Software Trigger
+    x | 1 | x | x | x | x | x | x | x | s | Set pcdds_enable to s
+    x | x | 1 | a | x | x | x | x | x | x | Set output_enable to s
+    x | 0 | x | x | 1 | x | x | x | x | x | Write pulse
+    x | 0 | x | x | 0 | 1 | a | b | c | d | Set load_delay to abcd
+    x | 0 | x | x | 0 | 0 | x | x | 1 | x | Set next pulse
+
+"""
+
 
 class PCDDSChannel(InstrumentChannel):
     """
