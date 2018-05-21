@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping, Iterable, Sequence
+import pyperclip
 import os
 from functools import partial
 import logging
@@ -63,7 +64,7 @@ class MatPlot(BasePlot):
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  colorbar=True, sharex=False, sharey=False, gridspec_kw=None,
-                 **kwargs):
+                 actions = [], **kwargs):
         super().__init__(interval)
 
         if subplots is None:
@@ -94,6 +95,11 @@ class MatPlot(BasePlot):
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
             self.fig.canvas.mpl_connect('close_event', self.halt)
+
+        # Attach any actions
+        self.actions = []
+        for action in actions:
+            self.actions.append(self.connect(action))
 
     def __getitem__(self, key):
         """
@@ -404,7 +410,8 @@ class MatPlot(BasePlot):
                     arr_pad = arr_pad[:-1]
                     # C is allowed to be masked in pcolormesh but x and y are
                     # not so replace any empty data with nans
-                args.append(np.ma.filled(arr_pad, fill_value=np.nan))
+                arr_pad[np.isnan(arr_pad)] = np.nanmax(arr_pad)
+                args.append(arr_pad)
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask
@@ -547,3 +554,10 @@ class MatPlot(BasePlot):
                             subplot.qcodes_colorbar.formatter = tx
                             subplot.qcodes_colorbar.set_label(new_label)
                             subplot.qcodes_colorbar.update_ticks()
+
+    # Allow actions to be attached
+    available_actions = {}
+    def connect(self, action_name):
+        action = self.available_actions[action_name]()
+        action.connect(self)
+        return action

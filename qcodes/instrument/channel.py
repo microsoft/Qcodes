@@ -33,8 +33,7 @@ class InstrumentChannel(InstrumentBase):
         # want to do in the Instrument initializer
         super().__init__(name=name, **kwargs)
 
-        self.name = "{}_{}".format(parent.name, str(name))
-        self.short_name = str(name)
+        self.short_name = self.name = str(name)
         self._meta_attrs = ['name']
 
         self._parent = parent
@@ -195,6 +194,11 @@ class ChannelList(Metadatable):
         if isinstance(i, slice):
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
+                               multichan_paramclass=self._paramclass)
+        elif isinstance(i, (list, tuple)):
+            channels = [self._channels[channel_idx] for channel_idx in i]
+            return ChannelList(self._parent, self._name, self._chan_type,
+                               channels,
                                multichan_paramclass=self._paramclass)
         elif isinstance(i, int):
             return self._channels[i]

@@ -1,9 +1,12 @@
 """Actions, mainly to be executed in measurement Loops."""
 import time
+import logging
 
 from qcodes.utils.deferred_operations import is_function
 from qcodes.utils.threading import thread_map
 
+
+logger = logging.getLogger(__name__)
 
 _NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
 
@@ -235,6 +238,7 @@ class BreakIf:
 
     def __call__(self, **ignore_kwargs):
         if self.condition():
+            logger.info(f'Breakif Condition not met: {self.condition}')
             raise _QcodesBreak
 
     def snapshot(self, update=False):
@@ -250,6 +254,13 @@ class BreakIf:
         """
         return {'type': 'BreakIf', 'condition': repr(self.condition)}
 
+
+class ContinueIf(BreakIf):
+    """Perform continue, i.e. proceed to next loop, if condition is met.
+
+    Behaviour is similar to BreakIf
+    """
+    pass
 
 class _QcodesBreak(Exception):
     pass

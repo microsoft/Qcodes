@@ -1,7 +1,12 @@
-from qcodes.utils.validators import Numbers, Enum, Ints, Anything
-from scipy.interpolate import interp1d
+from typing import Callable, List
+import numpy as np
 
-from .SD_Module import *
+from qcodes.instrument.base import Instrument
+from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.utils import validators as vals
+
+from .SD_Module import SD_Module, keysightSD1, SignadyneParameter, with_error_check
 
 
 # Functions to log method calls from the SD_AIN class
@@ -33,24 +38,298 @@ def logclass(cls):
     return cls
 
 
-class SD_DIG(SD_Module):
+model_channels = {'M3300A': 8}
+
+
+class DigitizerChannel(InstrumentChannel):
+    """Signadyne digitizer channel
+
+    Args:
+        parent: Parent Signadyne digitizer Instrument
+        name: channel name (e.g. 'ch1')
+        id: channel id (e.g. 1)
+        **kwargs: Additional kwargs passed to InstrumentChannel
     """
-    This is the qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
+    def __init__(self, parent: Instrument, name: str, id: int, **kwargs):
+        super().__init__(parent=parent, name=name, **kwargs)
+
+        self.SD_AIN = self._parent.SD_AIN
+        self.id = id
+
+        # For channelInputConfig
+        self.add_parameter(
+            'full_scale',
+            unit='V',
+            initial_value=1,
+            vals=vals.Numbers(0, 3),
+            # self.SD_AIN.channelMinFullScale(),
+            #                   self.SD_AIN.channelMaxFullScale()),
+            set_function=self.SD_AIN.channelInputConfig,
+            set_args=['full_scale', 'impedance', 'coupling'],
+            docstring=f'The full scale voltage for ch{self.id}'
+        )
+
+        # For channelTriggerConfig
+        self.add_parameter(
+            'impedance',
+            initial_value='50',
+            val_mapping={'high': 0, '50': 1},
+            get_function=self.SD_AIN.channelImpedance,
+            set_function=self.SD_AIN.channelInputConfig,
+            set_args=['full_scale', 'impedance', 'coupling'],
+            docstring=f'The input impedance of ch{self.id}. Note that for '
+                      f'high input impedance, the measured voltage will not be '
+                      f'the actual voltage'
+        )
+
+        self.add_parameter(
+            'coupling',
+            initial_value='AC',
+            val_mapping={'DC': 0, 'AC': 1},
+            get_function=self.SD_AIN.channelCoupling,
+            set_function=self.SD_AIN.channelInputConfig,
+            set_args=['full_scale', 'impedance', 'coupling'],
+            docstring=f'The coupling of ch{self.id}'
+        )
+
+        # For channelPrescalerConfig
+        self.add_parameter(
+            'prescaler',
+            initial_value=0,
+            vals=vals.Ints(0, 4095),
+            get_function=self.SD_AIN.channelPrescalerConfig,
+            set_function=self.SD_AIN.channelPrescalerConfig,
+            docstring=f'The sampling frequency prescaler for ch{self.id}. '
+                      f'Sampling rate will be max_sampling_rate/(prescaler+1)'
+        )
+
+        # For DAQ config
+        self.add_parameter(
+            'points_per_cycle',
+            initial_value=0,
+            vals=vals.Ints(),
+            set_function=self.SD_AIN.DAQconfig,
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
+            docstring=f'The number of points per cycle for ch{self.id}'
+        )
+
+        self.add_parameter(
+            'n_cycles',
+            initial_value=-1,
+            vals=vals.Ints(),
+            set_function=self.SD_AIN.DAQconfig,
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
+            docstring=f'The number of cycles to collect on DAQ {self.id}'
+        )
+
+        self.add_parameter(
+            'trigger_mode',
+            initial_value='auto',
+            val_mapping={'auto': 0, 'software': 1, 'digital': 2, 'analog': 3},
+            set_function=self.SD_AIN.DAQconfig,
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
+            docstring=f'The trigger mode for ch{self.id}'
+        )
+
+        self.add_parameter(
+            'trigger_delay_samples',
+            initial_value=0,
+            vals=vals.Numbers(),
+            set_parser=int,
+            set_function=self.SD_AIN.DAQconfig,
+            set_args=['points_per_cycle', 'n_cycles',
+                      'trigger_delay_samples', 'trigger_mode'],
+            docstring=f'The trigger delay (in samples) for ch{self.id}. '
+                      f'Can be negative'
+        )
+
+        # For channelTriggerConfig
+        self.add_parameter(
+            'analog_trigger_edge',
+            initial_value='rising',
+            val_mapping={'rising': 1, 'falling': 2, 'both': 3},
+            set_function=self.SD_AIN.channelTriggerConfig,
+            set_args=['analog_trigger_edge', 'analog_trigger_threshold'],
+            docstring=f'The analog trigger edge for ch{self.id}.'
+                      f'This is only used when the channel is set as the analog'
+                      f'trigger channel'
+        )
+
+        self.add_parameter(
+            'analog_trigger_threshold',
+            initial_value=0,
+            vals=vals.Numbers(-3, 3),
+            set_function=self.SD_AIN.channelTriggerConfig,
+            set_args=['analog_trigger_edge', 'analog_trigger_threshold'],
+            docstring=f'the value in volts for the trigger threshold'
+        )
+
+        self.add_parameter(
+            'analog_trigger_mask',
+            initial_value=0,
+            vals=vals.Ints(),
+            set_function=self.SD_AIN.DAQanalogTriggerConfig,
+            docstring='the trigger mask you are using. Each bit signifies '
+                      'which analog channel to trigger on. The channel trigger'
+                      ' behaviour must be configured separately (trigger_edge '
+                      'and trigger_threshold). Needs to be double checked, but '
+                      'it seems multiple analog trigger channels can be used.'
+        )
+
+        # For DAQ trigger Config
+        self.add_parameter(
+            'digital_trigger_mode',
+            initial_value='rising',
+            val_mapping={'active_high': 1, 'active_low': 2,
+                         'rising': 3, 'falling': 4},
+            set_function=self.SD_AIN.DAQdigitalTriggerConfig,
+            set_args=['digital_trigger_source', 'digital_trigger_mode'],
+            docstring='The digital trigger mode. Can be `active_high`, '
+                      '`active_low`, `rising`, `falling`'
+        )
+
+        self.add_parameter(
+            'digital_trigger_source',
+            initial_value='trig_in',
+            val_mapping={'trig_in': 0, **{f'pxi{k}': 4000+k for k in range(8)}},
+            set_function=self.SD_AIN.DAQdigitalTriggerConfig,
+            set_args=['digital_trigger_source', 'digital_trigger_mode'],
+            docstring='the trigger source you are using. Can be trig_in '
+                      '(external IO) or pxi0 to pxi7'
+        )
+
+        # For DAQ read
+        self.add_parameter(
+            'n_points',
+            initial_value=0,
+            vals=vals.Ints(),
+            set_cmd=None,
+            docstring='the number of points to be read from specified DAQ'
+        )
+
+        self.add_parameter(
+            'timeout',
+            unit='s',
+            initial_value=-1,
+            vals=vals.Numbers(min_value=0),
+            set_cmd=None,
+            docstring=f'The read timeout in seconds. 0 means infinite.'
+                      f'Warning: setting to 0 will freeze the digitizer until'
+                      f'acquisition has completed.'
+        )
+
+        self.add_parameter(
+            'data_multiplier',
+            initial_value=1,
+            vals=vals.Numbers(),
+            set_cmd=None,
+            docstring=f'Value to multiply all acquisition data by'
+        )
+
+    def add_parameter(self, name: str,
+                      parameter_class: type=SignadyneParameter, **kwargs):
+        """Use SignadyneParameter by default"""
+        super().add_parameter(name=name, parameter_class=parameter_class,
+                              parent=self, **kwargs)
+
+    @with_error_check
+    def start(self):
+        """ Start acquiring data or waiting for a trigger on the specified DAQ
+
+        Acquisition data can then be read using `daq_read`
+
+        Raises:
+            AssertionError if DAQstart was unsuccessful
+        """
+        return self.SD_AIN.DAQstart(self.id)
+
+    @with_error_check
+    def read(self) -> np.ndarray:
+        """ Read from the specified DAQ.
+
+        Channel acquisition must first be started using `daq_start`
+        Uses channel parameters `n_points` and `timeout`
+
+        Returns:
+            Numpy array with acquisition data
+
+        Raises:
+            AssertionError if DAQread was unsuccessful
+        """
+        value = self.SD_AIN.DAQread(self.id, self.n_points(),
+                                    int(self.timeout() * 1e3))  # ms
+        if not isinstance(value, int):
+            # Scale signal from int to volts, why are we checking for non-int?
+            int_min, int_max = -0x8000, 0x7FFF
+            v_min, v_max = -self.full_scale(), self.full_scale()
+            relative_value = (value.astype(float) - int_min) / (int_max - int_min)
+            scaled_value = v_min + (v_max-v_min) * relative_value
+        else:
+            scaled_value = value
+        scaled_value *= self.data_multiplier()
+        return scaled_value
+
+    @with_error_check
+    def stop(self):
+        """ Stop acquiring data on the specified DAQ
+
+        Raises:
+            AssertionError if DAQstop was unsuccessful
+        """
+        return self.SD_AIN.DAQstop(self.id)
+
+    @with_error_check
+    def flush(self):
+        """ Flush the DAQ channel
+
+        Raises:
+            AssertionError if DAQflush was unsuccessful
+        """
+        return self.SD_AIN.DAQflush(self.id)
+
+    @with_error_check
+    def trigger(self):
+        """ Manually trigger the specified DAQ
+
+        Raises:
+            AssertionError if DAQtrigger was unsuccessful
+        """
+        return self.SD_AIN.DAQtrigger(self.id)
+
+
+class SD_DIG(SD_Module):
+    """Qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
 
     This driver is written with the M3300A in mind.
 
-    This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
-    """
-    
-    def __init__(self, name, chassis, slot, channels, triggers=8, **kwargs):
-        """ Initialises a generic Signadyne digitizer and its parameters
+    This driver makes use of the Python library provided by Keysight as part of
+    the SD1 Software package (v.2.01.00).
 
-            Args:
-                name (str)      : the name of the digitizer card
-                channels (int)  : the number of input channels the specified card has
-                triggers (int)  : the number of trigger inputs the specified card has
-        """
-        super().__init__(name, chassis, slot, triggers, **kwargs)
+    Args:
+        name: the name of the digitizer card
+        model: Digitizer model (e.g. 'M3300A').
+            Used to retrieve number of channels if not specified
+        chassis: Signadyne chassis (usually 0).
+        slot: module slot in chassis (starting at 1)
+        channels: the number of input channels the specified card has
+        triggers: the number of pxi trigger inputs the specified card has
+    """
+
+    def __init__(self,
+                 name: str,
+                 model: str,
+                 chassis: int,
+                 slot: int,
+                 channels: int = None,
+                 triggers: int = 8,
+                 **kwargs):
+        super().__init__(name, model, chassis, slot, triggers, **kwargs)
+
+        if channels is None:
+            channels = model_channels[self.model]
 
         # Create instance of keysight SD_AIN class
         # We wrap it in a logclass so that any method call is recorded in
@@ -61,674 +340,155 @@ class SD_DIG(SD_Module):
         self.n_channels = channels
 
         # Open the device, using the specified chassis and slot number
-        dig_name = self.SD_AIN.getProductNameBySlot(chassis, slot)
-        if isinstance(dig_name, str):
-            result_code = self.SD_AIN.openWithSlot(dig_name, chassis, slot)
-            if result_code <= 0:
-                raise Exception('Could not open SD_DIG '
-                                'error code {}'.format(result_code))
-        else:
-            raise Exception('No SD_DIG found at '
-                            'chassis {}, slot {}'.format(chassis, slot))
-
-        #
-        # Create a set of internal variables to aid set/get cmds in params
-        #
-
-        # Create distinct parameters for each of the digitizer channels
-
-        # For channelInputConfig
-        self._full_scale = [1] * self.n_channels  # By default, full scale = 1V
-        self._impedance = [1] * self.n_channels  # By default, 50 ohm
-        self._coupling = [0] * self.n_channels  # By default, DC coupling
-        # For channelPrescalerConfig
-        self._prescaler = [0] * self.n_channels  # By default, no prescaling
-        # For channelTriggerConfig
-        self._trigger_edge = [keysightSD1.SD_AIN_TriggerMode.RISING_EDGE] * self.n_channels
-        self._trigger_threshold = [0] * self.n_channels  # By default, threshold at 0V
-        # For DAQ config
-        self._points_per_cycle = [0] * self.n_channels
-        self._n_cycles = [-1] * self.n_channels
-        self._trigger_delay = [0] * self.n_channels
-        self._trigger_mode = [0] * self.n_channels
-        # For DAQ trigger Config
-        self._digital_trigger_mode = [0] * self.n_channels
-        self._digital_trigger_source = [0] * self.n_channels
-        self._analog_trigger_mask = [0] * self.n_channels
-        # For DAQ read
-        self._n_points = [0] * self.n_channels
-        self._timeout = [-1] * self.n_channels
-
-        #
-        # Create internal parameters
-        #
+        self.initialize(chassis=chassis, slot=slot)
 
         # for triggerIOconfig
         self.add_parameter(
             'trigger_direction',
             label='Trigger direction for trigger port',
-            vals=Enum(0, 1),
+            val_mapping={'out': 0, 'in': 1},
             set_cmd=self.SD_AIN.triggerIOconfig,
             docstring='The trigger direction for digitizer trigger port'
         )
 
         # for clockSetFrequency
         self.add_parameter(
-            'sys_frequency',
-            label='CLKsys frequency',
-            vals=Ints(),
-            set_cmd=self.SD_AIN.clockSetFrequency,
-            get_cmd=self.SD_AIN.clockGetFrequency,
+            'system_frequency',
+            label='System clock frequency',
+            vals=vals.Numbers(),
+            set_cmd=None,
+            initial_value=100e6,
+            # clockGetFrequency seems to give issues
+            # set_cmd=self.SD_AIN.clockSetFrequency,
+            # get_cmd=self.SD_AIN.clockGetFrequency,
             docstring='The frequency of internal CLKsys in Hz'
         )
 
         # for clockGetSyncFrequency
         self.add_parameter(
             'sync_frequency',
-            label='CLKsync frequency',
-            vals=Ints(),
+            label='Clock synchronization frequency',
+            vals=vals.Ints(),
             get_cmd=self.SD_AIN.clockGetSyncFrequency,
             docstring='The frequency of internal CLKsync in Hz'
         )
 
         self.add_parameter('trigger_io',
                            label='trigger io',
-                           get_cmd=self.get_trigger_io,
-                           set_cmd=self.set_trigger_io,
+                           get_function=self.SD_AIN.triggerIOread,
+                           set_function=self.SD_AIN.triggerIOwrite,
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
-                           vals=Enum(0, 1))
+                           val_mapping={'off': 0, 'on': 1})
 
-        for n in range(self.n_channels):
-            # For channelInputConfig
-            self.add_parameter(
-                'full_scale_{}'.format(n),
-                label='Full scale range for channel {}'.format(n),
-                # TODO: validator must be set after device opened
-                # vals=Numbers(self.SD_AIN.channelMinFullScale(), self.SD_AIN.channelMaxFullScale())
-                set_cmd=partial(self.set_full_scale, channel=n),
-                get_cmd=partial(self.get_full_scale, channel=n),
-                docstring='The full scale voltage for channel {}'.format(n)
-            )
+        channels = ChannelList(self,
+                                    name='channels',
+                                    chan_type=DigitizerChannel)
+        for ch in range(self.n_channels):
+            channel = DigitizerChannel(self, name=f'ch{ch}', id=ch)
+            setattr(self, f'ch{ch}', channel)
+            channels.append(channel)
 
-            # For channelTriggerConfig
-            self.add_parameter(
-                'impedance_{}'.format(n),
-                label='Impedance for channel {}'.format(n),
-                vals=Enum('high', '50'),
-                val_mapping={'high': 0, '50': 1},
-                set_cmd=partial(self.set_impedance, channel=n),
-                get_cmd=partial(self.get_impedance, channel=n),
-                docstring='The input impedance of channel {}'.format(n)
-            )
+        self.add_submodule('channels', channels)
 
-            self.add_parameter(
-                'coupling_{}'.format(n),
-                label='Coupling for channel {}'.format(n),
-                vals=Enum('DC', 'AC'),
-                val_mapping={'DC': 0, 'AC': 1},
-                set_cmd=partial(self.set_coupling, channel=n),
-                get_cmd=partial(self.get_coupling, channel=n),
-                docstring='The coupling of channel {}'.format(n)
-            )
+    def add_parameter(self, name: str,
+                      parameter_class: type=SignadyneParameter, **kwargs):
+        """Use SignadyneParameter by default"""
+        super().add_parameter(name=name, parameter_class=parameter_class,
+                              parent=self, **kwargs)
 
-            # For channelPrescalerConfig
-            self.add_parameter(
-                'prescaler_{}'.format(n),
-                label='Prescaler for channel {}'.format(n),
-                vals=Ints(0, 4095),
-                set_cmd=partial(self.set_prescaler, channel=n),
-                get_cmd=partial(self.get_prescaler, channel=n),
-                docstring='The sampling frequency prescaler for channel {}'.format(n)
-            )
-
-            # For channelTriggerConfig
-            self.add_parameter(
-                'trigger_edge_{}'.format(n), label='Trigger mode for channel {}'.format(n),
-                vals=Enum('rising', 'falling', 'both'),
-                val_mapping={'rising' : 1, 'falling' : 2, 'both' : 3},
-                set_cmd=partial(self.set_trigger_edge, channel=n),
-                docstring='The trigger mode for channel {}'.format(n)
-            )
-
-            self.add_parameter(
-                'trigger_threshold_{}'.format(n),
-                label='Trigger threshold for channel {}'.format(n),
-                vals=Numbers(-3, 3),
-                set_cmd=partial(self.set_trigger_threshold, channel=n),
-                docstring='The trigger threshold for channel {}'.format(n)
-            )
-
-            # For DAQ config
-            self.add_parameter(
-                'points_per_cycle_{}'.format(n),
-                label='Points per cycle for channel {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_points_per_cycle, channel=n),
-                docstring='The number of points per cycle for DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'n_cycles_{}'.format(n),
-                label='n cycles for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_n_cycles, channel=n),
-                docstring='The number of cycles to collect on DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'DAQ_trigger_delay_{}'.format(n),
-                label='Trigger delay for for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_daq_trigger_delay, channel=n),
-                docstring='The trigger delay for DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'DAQ_trigger_mode_{}'.format(n),
-                label='Trigger mode for for DAQ {}'.format(n),
-                vals=Enum(0, 1, 2, 3),
-                set_cmd=partial(self.set_daq_trigger_mode, channel=n),
-                docstring='The trigger mode for DAQ {}'.format(n)
-            )
-
-            # For DAQ trigger Config
-            self.add_parameter(
-                'digital_trigger_mode_{}'.format(n),
-                label='Digital trigger mode for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_digital_trigger_mode, channel=n),
-                docstring='The digital trigger mode for DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'digital_trigger_source_{}'.format(n),
-                label='Digital trigger source for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_digital_trigger_source, channel=n),
-                docstring='The digital trigger source for DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'analog_trigger_mask_{}'.format(n),
-                label='Analog trigger mask for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_analog_trigger_mask, channel=n),
-                docstring='The analog trigger mask for DAQ {}'.format(n)
-            )
-
-            # For DAQ read
-            self.add_parameter(
-                'n_points_{}'.format(n),
-                label='n points for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_n_points, channel=n),
-                docstring='The number of points to be read using daq_read on DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'timeout_{}'.format(n),
-                label='timeout for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_timeout, channel=n),
-                docstring='The read timeout for DAQ {}'.format(n)
-            )
-
-    #
-    # User functions
-    #
-
-    def daq_read(self, daq, verbose=False):
-        """ Read from the specified DAQ
+    def initialize(self, chassis: int, slot: int):
+        """Open connection to digitizer
 
         Args:
-            daq (int)       : the input DAQ you are reading from
+            chassis: Signadyne chassis number (usually 1)
+            slot: Module slot in chassis
 
-        Parameters:
-            n_points
-            timeout
+        Returns:
+            Name of digitizer
+
+        Raises:
+            AssertionError if connection to digitizer was unsuccessful
         """
-        value = self.SD_AIN.DAQread(daq, self._n_points[daq], self._timeout[daq])
-        if not isinstance(value, int):
-            # Scale signal from int to volts, why are we checking for non-int?
-            int_min, int_max = -0x8000, 0x7FFF
-            v_min, v_max = -self._full_scale[daq], self._full_scale[daq]
-            relative_value = (value.astype(float) - int_min) / (int_max - int_min)
-            scaled_value = v_min + (v_max-v_min) * relative_value
-        else:
-            scaled_value = value
-        value_name = f'DAQ_read channel {daq}'
-        return result_parser(scaled_value, value_name, verbose)
+        digitizer_name = self.SD_AIN.getProductNameBySlot(chassis, slot)
+        assert isinstance(digitizer_name, str), \
+            f'No SD_DIG found at chassis {chassis}, slot {slot}'
 
-    def daq_start(self, daq, verbose=False):
-        """ Start acquiring data or waiting for a trigger on the specified DAQ
+        result_code = self.SD_AIN.openWithSlot(digitizer_name, chassis, slot)
+        assert result_code > 0, f'Could not open SD_DIG error code {result_code}'
 
-        Args:
-            daq (int)       : the input DAQ you are enabling
-        """
-        value = self.SD_AIN.DAQstart(daq)
-        value_name = 'DAQ_start channel {}'.format(daq)
-        return result_parser(value, value_name, verbose)
+        return digitizer_name
 
-    def daq_start_multiple(self, daq_mask, verbose=False):
+    @with_error_check
+    def start_channels(self, channels: List[int]):
         """ Start acquiring data or waiting for a trigger on the specified DAQs
 
         Args:
-            daq_mask (int)  : the input DAQs you are enabling, composed as a bitmask
-                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+            channels: list of channels to start
+
+        Raises:
+            AssertionError if DAQstartMultiple was unsuccessful
+
         """
-        value = self.SD_AIN.DAQstartMultiple(daq_mask)
-        value_name = 'DAQ_start_multiple mask {:#b}'.format(daq_mask)
-        return result_parser(value, value_name, verbose)
+        # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        return self.SD_AIN.DAQstartMultiple(channel_mask)
 
-    def daq_stop(self, daq, verbose=False):
-        """ Stop acquiring data on the specified DAQ
-
-        Args:
-            daq (int)       : the DAQ you are disabling
-        """
-        value = self.SD_AIN.DAQstop(daq)
-        value_name = 'DAQ_stop channel {}'.format(daq)
-        return result_parser(value, value_name, verbose)
-
-    def daq_stop_multiple(self, daq_mask, verbose=False):
+    @with_error_check
+    def stop_channels(self, channels: List[int]):
         """ Stop acquiring data on the specified DAQs
 
         Args:
-            daq_mask (int)  : the DAQs you are triggering, composed as a bitmask
-                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+            channels: List of DAQ channels to stop
+
+        Raises:
+            AssertionError if DAQstopMultiple was unsuccessful
         """
-        value = self.SD_AIN.DAQstopMultiple(daq_mask)
-        value_name = 'DAQ_stop_multiple mask {:#b}'.format(daq_mask)
-        return result_parser(value, value_name, verbose)
+        # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        return self.SD_AIN.DAQstopMultiple(channel_mask)
 
-    def daq_trigger(self, daq, verbose=False):
-        """ Manually trigger the specified DAQ
-
-        Args:
-            daq (int)       : the DAQ you are triggering
-        """
-        value = self.SD_AIN.DAQtrigger(daq)
-        value_name = 'DAQ_trigger channel {}'.format(daq)
-        return result_parser(value, value_name, verbose)
-
-    def daq_trigger_multiple(self, daq_mask, verbose=False):
+    @with_error_check
+    def trigger_channels(self, channels):
         """ Manually trigger the specified DAQs
 
         Args:
-            daq_mask (int)  : the DAQs you are triggering, composed as a bitmask
-                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
-        """
-        value = self.SD_AIN.DAQtriggerMultiple(daq_mask)
-        value_name = 'DAQ_trigger_multiple mask {:#b}'.format(daq_mask)
-        return result_parser(value, value_name, verbose)
+            channels: List of DAQ channels to trigger
 
-    def daq_flush(self, daq, verbose=False):
-        """ Flush the specified DAQ
+        Raises:
+            AssertionError if DAQtriggerMultiple was unsuccessful
+        """
+
+        # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        return self.SD_AIN.DAQtriggerMultiple(channel_mask)
+
+    @with_error_check
+    def flush_channels(self, channels: List[int]):
+        """ Flush the specified DAQ channels
 
         Args:
-            daq (int)       : the DAQ you are flushing
+            channels: List of DAQ channels to flush
+
+        Raises:
+            AssertionError if DAQflushMultiple was unsuccessful
         """
-        value = self.SD_AIN.DAQflush(daq)
-        value_name = 'DAQ_flush channel {}'.format(daq)
-        return result_parser(value, value_name, verbose)
+        # DAQ channel mask, where LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        channel_mask = sum(2**channel for channel in channels)
+        return self.SD_AIN.DAQflushMultiple(channel_mask)
 
-    def daq_flush_multiple(self, daq_mask, verbose=False):
-        """ Flush the specified DAQs
-
-        Args:
-            daq_mask (int)  : the DAQs you are flushing, composed as a bitmask
-                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
-        """
-        value = self.SD_AIN.DAQflushMultiple(daq_mask)
-        value_name = 'DAQ_flush_multiple mask {:#b}'.format(daq_mask)
-        return result_parser(value, value_name, verbose)
-
-    def set_trigger_io(self, val, verbose=False):
-        """ Write a value to the IO trigger port
-
-        Args:
-            value (int)     : the binary value to write to the IO port
-
-        """
-        # TODO: Check if the port is writable
-        value = self.SD_AIN.triggerIOwrite(val)
-        value_name = 'set io trigger output to {}'.format(val)
-        return result_parser(value, value_name, verbose)
-
-    def get_trigger_io(self, verbose=False):
-        """ Write a value to the IO trigger port
-
-        """
-        # TODO: Check if the port is readable
-        value = self.SD_AIN.triggerIOread()
-        value_name = 'trigger_io'
-        return result_parser(value, value_name, verbose)
-
-    def reset_clock_phase(self, trigger_behaviour, trigger_source, skew=0.0, verbose=False):
+    @with_error_check
+    def reset_clock_phase(self,
+                          trigger_behaviour: int,
+                          trigger_source: int,
+                          skew: float = 0.0):
         """ Reset the clock phase between CLKsync and CLKsys
 
         Args:
-            trigger_behaviour (int) :
-            trigger_source    (int) : the PXI trigger number
-            skew           (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
+            trigger_behaviour:
+            trigger_source: the PXI trigger number
+            skew: the skew between PXI_CLK10 and CLKsync in multiples of 10ns
 
+        Raises:
+            AssertionError if clockResetPhase was unsuccessful
         """
-        value = self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)
-        value_name = 'reset_clock_phase trigger_behaviour: {}, trigger_source: {}, skew: {}'.format(
-            trigger_behaviour, trigger_source, skew)
-        return result_parser(value, value_name, verbose)
-
-    #
-    # Functions used internally to set/get parameters
-    #
-
-    @staticmethod
-    def set_clksys_frequency(frequency, verbose=False):
-        """ Sets the CLKsys frequency
-
-        Args:
-
-        frequency (int)         : frequency of CLKsys in Hz
-
-        """
-        value = 0
-        value_name = 'set_CLKsys_frequency not implemented'
-        return result_parser(value, value_name, verbose)
-
-    def get_prescaler(self, channel, verbose=False):
-        """ Gets the channel prescaler value
-
-        Args:
-            channel (int)       : the input channel you are observing
-        """
-        value = self.SD_AIN.channelPrescaler(channel)
-        # Update internal parameter for consistency
-        self._prescaler[channel] = value
-        value_name = 'get_prescaler'
-        return result_parser(value, value_name, verbose)
-
-    def set_prescaler(self, prescaler, channel, verbose=False):
-        """ Sets the channel sampling frequency via the prescaler
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            prescaler (int)     : the prescaler value [0..4095]
-        """
-        self._prescaler[channel] = prescaler
-        value = self.SD_AIN.channelPrescalerConfig(channel, prescaler)
-        value_name = 'set_prescaler ch{} to {}'.format(channel, prescaler)
-        return result_parser(value, value_name, verbose)
-
-    # channelInputConfig
-    # NOTE: When setting any of full_scale, coupling or impedance
-    # the initial internal value is used as a placeholder, as all 3 arguments
-    # are required at once to the Keysight library
-    def get_full_scale(self, channel, verbose=False):
-        """ Gets the channel full scale input voltage
-
-        Args:
-            channel(int)        : the input channel you are observing
-        """
-        value = self.SD_AIN.channelFullScale(channel)
-        # Update internal parameter for consistency
-        self._full_scale[channel] = value
-        value_name = 'get_full_scale'
-        return result_parser(value, value_name, verbose)
-
-    def set_full_scale(self, full_scale, channel, verbose=False):
-        """ Sets the channel full scale input voltage
-
-        Args:
-            channel(int)        : the input channel you are configuring
-            full_scale (float)  : the input full scale range in volts
-        """
-        self._full_scale[channel] = full_scale
-        value = self.SD_AIN.channelInputConfig(channel, self._full_scale[channel],
-                                               self._impedance[channel],
-                                               self._coupling[channel])
-        value_name = 'set_full_scale ch{} to {}'.format(channel, full_scale)
-        return result_parser(value, value_name, verbose)
-
-    def get_impedance(self, channel, verbose=False):
-        """ Gets the channel input impedance
-
-        Args:
-            channel (int)       : the input channel you are observing
-        """
-        value = self.SD_AIN.channelImpedance(channel)
-        # Update internal parameter for consistency
-        self._impedance[channel] = value
-        value_name = 'get_impedance'
-        return result_parser(value, value_name, verbose)
-
-    def set_impedance(self, impedance, channel, verbose=False):
-        """ Sets the channel input impedance
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            impedance (int)     : the input impedance (0 = Hi-Z, 1 = 50 Ohm)
-        """
-        self._impedance[channel] = impedance
-        value = self.SD_AIN.channelInputConfig(channel, self._full_scale[channel],
-                                               self._impedance[channel],
-                                               self._coupling[channel])
-        value_name = 'set_impedance ch{} to {}'.format(channel, impedance)
-        return result_parser(value, value_name, verbose)
-
-    def get_coupling(self, channel, verbose=False):
-        """ Gets the channel coupling
-
-        Args:
-            channel (int)       : the input channel you are observing
-        """
-        value = self.SD_AIN.channelCoupling(channel)
-        # Update internal parameter for consistency
-        self._coupling[channel] = value
-        value_name = 'get_coupling'
-        return result_parser(value, value_name, verbose)
-
-    def set_coupling(self, coupling, channel, verbose=False):
-        """ Sets the channel coupling
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            coupling (int)      : the channel coupling (0 = DC, 1 = AC)
-        """
-        self._coupling[channel] = coupling
-        value = self.SD_AIN.channelInputConfig(channel, self._full_scale[channel],
-                                               self._impedance[channel],
-                                               self._coupling[channel])
-        value_name = 'set_coupling ch{} to {}'.format(channel, coupling)
-        return result_parser(value, value_name, verbose)
-
-    # channelTriggerConfig
-    def set_trigger_edge(self, trigger_edge, channel, verbose=False):
-        """ Sets the current trigger mode from those defined in SD_AIN_TriggerMode
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            trigger_edge (int)  : the trigger edge drawn from the class SD_AIN_TriggerMode
-                  RISING_EDGE   : 1
-                  FALLING_EDGE  : 2
-                  BOTH_EDGES    : 3
-        """
-        self._trigger_edge[channel] = trigger_edge
-        value = self.SD_AIN.channelTriggerConfig(channel, self._trigger_edge[channel],
-                                                 self._trigger_threshold[channel])
-        value_name = 'set_trigger_edge ch{} to {}'.format(channel, trigger_edge)
-        return result_parser(value, value_name, verbose)
-
-    def get_trigger_edge(self, channel):
-        """ Returns the current trigger mode
-
-        Args:
-            channel (int)       : the input channel you are observing
-        """
-        return self._trigger_edge[channel]
-
-    def set_trigger_threshold(self, threshold, channel, verbose=False):
-        """ Sets the current trigger threshold, in the range of -3V and 3V
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            threshold (float)   : the value in volts for the trigger threshold
-        """
-        self._trigger_threshold[channel] = threshold
-        value = self.SD_AIN.channelTriggerConfig(channel, self._trigger_edge[channel],
-                                                 self._trigger_threshold[channel])
-        value_name = f'set_trigger_threshold ch{channel} to {threshold}'
-        return result_parser(value, value_name, verbose)
-
-    def get_trigger_threshold(self, channel):
-        """ Returns the current trigger threshold
-
-        Args:
-            channel (int)       : the input channel you are observing
-        """
-        return self._trigger_threshold[channel]
-
-    # DAQConfig
-    def set_points_per_cycle(self, n_points, channel, verbose=False):
-        """ Sets the number of points to be collected per trigger
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            n_points (int)      : the number of points to collect per cycle
-        """
-        self._points_per_cycle[channel] = n_points
-        value = self.SD_AIN.DAQconfig(channel, self._points_per_cycle[channel],
-                                      self._n_cycles[channel],
-                                      self._trigger_delay[channel],
-                                      self._trigger_mode[channel])
-        value_name = 'set_points_per_cycle ch{} to {}'.format(channel, n_points)
-        return result_parser(value, value_name, verbose)
-
-    def set_n_cycles(self, n_cycles, channel, verbose=False):
-        """ Sets the number of trigger cycles to collect data for
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            n_cycles (int)      : the number of triggers to collect data from
-
-        """
-        self._n_cycles[channel] = n_cycles
-        value = self.SD_AIN.DAQconfig(channel, self._points_per_cycle[channel],
-                                      self._n_cycles[channel],
-                                      self._trigger_delay[channel],
-                                      self._trigger_mode[channel])
-        value_name = 'set_n_cycles ch{} to {}'.format(channel, n_cycles)
-        return result_parser(value, value_name, verbose)
-
-    def set_daq_trigger_delay(self, delay, channel, verbose=False):
-        """ Sets the trigger delay for the specified trigger source
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            delay   (int)       : the delay in samples, which
-                                  scales with channel prescaler
-        """
-        self._trigger_delay[channel] = delay
-        value = self.SD_AIN.DAQconfig(channel, self._points_per_cycle[channel],
-                                      self._n_cycles[channel],
-                                      self._trigger_delay[channel],
-                                      self._trigger_mode[channel])
-        value_name = 'set_DAQ_trigger_delay ch{} to {}'.format(channel, delay)
-        return result_parser(value, value_name, verbose)
-
-    def set_daq_trigger_mode(self, mode, channel, verbose=False):
-        """ Sets the trigger mode for the specified DAQ unit.
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            mode  (int)         : the trigger mode you are using
-                AUTOTRIG        : 0
-                SW/VIHVITRIG    : 1
-                EXTTRIG         : 2
-                ANALOGTRIG      : 3
-                SWHVITRIG_CYCLE : 5
-                EXTTRIG_CYCLE   : 6
-                ANALOGAUTOTRIG  : 7
-        """
-        self._trigger_mode[channel] = mode
-        value = self.SD_AIN.DAQconfig(channel, self._points_per_cycle[channel],
-                                      self._n_cycles[channel],
-                                      self._trigger_delay[channel],
-                                      self._trigger_mode[channel])
-        value_name = 'set_DAQ_trigger_mode ch{} to {}'.format(channel, mode)
-        return result_parser(value, value_name, verbose)
-
-    # DAQ trigger Config
-    def set_digital_trigger_mode(self, mode, channel, verbose=False):
-        """
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            mode  (int)         : the trigger mode you are using
-                ACTIVE_HIGH     : 1
-                ACTIVE_LOW      : 2
-                RISING_EDGE     : 3
-                FALLING_EDGE    : 4
-        """
-        self._digital_trigger_mode[channel] = mode
-        value = self.SD_AIN.DAQdigitalTriggerConfig(channel,
-                                                    self._digital_trigger_source[channel],
-                                                    self._digital_trigger_mode[channel])
-        value_name = 'set_digital_trigger_mode ch{}'.format(channel)
-        return result_parser(value, value_name, verbose)
-
-    def set_digital_trigger_source(self, source, channel, verbose=False):
-        """
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            source  (int)       : the trigger source you are using
-                EXT I/O Trigger : 0
-                PXI Trigger [i] : 4000+i
-        """
-        self._digital_trigger_source[channel] = source
-        value = self.SD_AIN.DAQdigitalTriggerConfig(channel,
-                                                    self._digital_trigger_source[channel],
-                                                    self._digital_trigger_mode[channel])
-        value_name = 'set_digital_trigger_mode ch{}'.format(channel)
-        return result_parser(value, value_name, verbose)
-
-    def set_analog_trigger_mask(self, mask, channel, verbose=False):
-        """
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            mask  (int)           the trigger mask you are using
-                                  each bit signifies which analog channel to
-                                  trigger on. The channel trigger behaviour
-                                  must be configured separately.
-        """
-        self._analog_trigger_mask[channel] = mask
-        value = self.SD_AIN.DAQanalogTriggerConfig(channel, self._analog_trigger_mask[channel])
-        value_name = 'set_analog_trigger_mask ch{} to {}'.format(channel, mask)
-        return result_parser(value, value_name, verbose)
-
-    # DAQ read
-    def set_n_points(self, n_points, channel, verbose=False):
-        """ Sets the trigger source
-
-        Args:
-            channel (int)       : the input channel you are configuring
-            n_points  (int)     : the number of points to be read from specified DAQ
-        """
-        self._n_points[channel] = n_points
-        value = 0 # No error
-        value_name = 'set_n_points ch{} to {}'.format(channel, n_points)
-        return result_parser(value, value_name, verbose)
-
-    def set_timeout(self, timeout, channel, verbose=False):
-        """ Sets the trigger source
-        
-        Args:
-            channel (int)       : the input channel you are configuring
-            timeout (int)       : the read timeout in ms for the specified DAQ
-        """
-        self._timeout[channel] = timeout
-        value = 0 # No error
-        value_name = 'set_timeout ch{} to {}'.format(channel, timeout)
-        return result_parser(value, value_name, verbose)
-
+        return self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)

@@ -36,8 +36,8 @@ class Measure(Metadatable):
     def get_data_set(self, *args, **kwargs):
         return self._dummyLoop.get_data_set(*args, **kwargs)
 
-    def run(self, use_threads=False, quiet=False, station=None,
-            set_active=True, **kwargs):
+    def run(self, *args, use_threads=False, quiet=False, station=None,
+            set_active=True, save_metadata=True, **kwargs):
         """
         Run the actions in this measurement and return their data as a DataSet
 
@@ -75,7 +75,7 @@ class Measure(Metadatable):
             a DataSet object containing the results of the measurement
         """
 
-        data_set = self._dummyLoop.get_data_set(**kwargs)
+        data_set = self._dummyLoop.get_data_set(*args, **kwargs)
 
         # set the DataSet to local for now so we don't save it, since
         # we're going to massage it afterward
@@ -125,22 +125,23 @@ class Measure(Metadatable):
         data_set.location = data_set._location
         data_set.write()
 
-        # metadata: ActiveLoop already provides station snapshot, but also
-        # puts in a 'loop' section that we need to replace with 'measurement'
-        # but we use the info from 'loop' to ensure consistency and avoid
-        # duplication.
-        LOOP_SNAPSHOT_KEYS = ['ts_start', 'ts_end', 'use_threads']
-        data_set.add_metadata({'measurement': {
-            k: data_set.metadata['loop'][k] for k in LOOP_SNAPSHOT_KEYS
-        }})
-        del data_set.metadata['loop']
+        if save_metadata:
+            # metadata: ActiveLoop already provides station snapshot, but also
+            # puts in a 'loop' section that we need to replace with 'measurement'
+            # but we use the info from 'loop' to ensure consistency and avoid
+            # duplication.
+            LOOP_SNAPSHOT_KEYS = ['ts_start', 'ts_end', 'use_threads']
+            data_set.add_metadata({'measurement': {
+                k: data_set.metadata['loop'][k] for k in LOOP_SNAPSHOT_KEYS
+            }})
+            del data_set.metadata['loop']
 
-        # actions are included in self.snapshot() rather than in
-        # LOOP_SNAPSHOT_KEYS because they are useful if someone just
-        # wants a local snapshot of the Measure object
-        data_set.add_metadata({'measurement': self.snapshot()})
+            # actions are included in self.snapshot() rather than in
+            # LOOP_SNAPSHOT_KEYS because they are useful if someone just
+            # wants a local snapshot of the Measure object
+            data_set.add_metadata({'measurement': self.snapshot()})
 
-        data_set.save_metadata()
+            data_set.save_metadata()
 
         if not quiet:
             print(repr(data_set))

@@ -62,7 +62,9 @@ setup(name='qcodes',
           'pyvisa>=1.8',
           'h5py>=2.6',
           'websockets>=3.2,<3.4',
-          'jsonschema'
+          'jsonschema',
+          'pyperclip',
+          'blinker'
       ],
 
       test_suite='qcodes.tests',
