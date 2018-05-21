@@ -53,6 +53,7 @@ class PCDDSChannel(InstrumentChannel):
         self.clk = 100e6
         self.v_max = 1.5
         self.f_max = 200e6
+        self.fpga_port = 1
 
         self.add_parameter(
             'output_enable',
@@ -93,7 +94,7 @@ class PCDDSChannel(InstrumentChannel):
         if output_enable:
             operation += int('0001000000', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
 
     def _set_pcdds_enable(self, pcdds_enable: bool):
         """
@@ -107,7 +108,7 @@ class PCDDSChannel(InstrumentChannel):
         if pcdds_enable:
             operation += int('0000000001', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
 
     def _set_load_delay(self, delay: int):
         """
@@ -119,7 +120,7 @@ class PCDDSChannel(InstrumentChannel):
         operation = int('0000010000', 2) + delay
         # Construct and send instruction
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
 
     def construct_instruction(self, operation: int, pointer: int) -> int:
         """
@@ -309,12 +310,17 @@ class PCDDSChannel(InstrumentChannel):
         pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits
                        + self.n_amp_bits)
         pulse_data = self.split_value(pulse_data)
-        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.id, [pulse_data[4]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.id, [pulse_data[3]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.id, [pulse_data[2]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.id, [pulse_data[1]], 0, 0, 1)
-        self.fpga.set_fpga_pc_port(self.id, [pulse_data[0]], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[4]],
+                                   self.id, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[3]],
+                                   self.id, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[2]],
+                                   self.id, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[1]],
+                                   self.id, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[0]],
+                                   self.id, 0, 1)
 
     @staticmethod
     def split_value(value: int) -> List[int]:
@@ -345,7 +351,7 @@ class PCDDSChannel(InstrumentChannel):
         if update:
             operation += int('1000000000', 2)
         instr = self.construct_instruction(operation, pulse)
-        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
 
     def send_trigger(self):
         """
@@ -353,7 +359,7 @@ class PCDDSChannel(InstrumentChannel):
         """
         operation = int('1000000000', 2)
         instr = self.construct_instruction(operation, 0)
-        self.fpga.set_fpga_pc_port(self.id, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
 
     def phase2val(self, phase: float) -> int:
         """
