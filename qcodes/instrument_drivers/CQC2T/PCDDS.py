@@ -352,19 +352,21 @@ class PCDDS(Instrument):
     def __init__(self, name, model, chassis, slot, channels=None, triggers=8, **kwargs):
         """ Constructor for the pulse generation modules """
         super().__init__(name, model, chassis, slot, triggers, **kwargs)
+        # TODO: Convert to SD_FPGA, have a look at FPGA_TriggerController
         self.fpga = Keysight_M3300A_FPGA('FPGA')
 
         if channels is None:
             channels = model_channels[self.model]
         self.n_channels = channels
 
-        self.channels = ChannelList(self,
-                                    name='channels',
-                                    chan_type=PCDDSChannel)
+        channels = ChannelList(self,
+                               name='channels',
+                               chan_type=PCDDSChannel)
         for ch in range(self.n_channels):
             channel = PCDDSChannel(self, name=f'ch{ch}', id=ch)
             setattr(self, f'ch{ch}', channel)
-            self.channels.append(channel)
+            channels.append(channel)
+        self.add_submodule('channels', channels)
 
     def reset(self):
         """ Sends the reset signal to the FPGA """
