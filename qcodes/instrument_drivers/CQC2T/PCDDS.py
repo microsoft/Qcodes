@@ -81,6 +81,14 @@ class PCDDSChannel(InstrumentChannel):
                       'and not the inbuilt functionality'
         )
 
+        self.add_parameter(
+            'instruction_sequence',
+            label=f'ch{self.id} instruction sequence of pulses',
+            initial_value=[],
+            docstring='The instruction sequence for all pulses sent to the DDS.'
+                      'Gets cleared during clear_memory()'
+        )
+
         # Initially set load delay to 10 samples
         self.load_delay(10)
 
@@ -155,6 +163,7 @@ class PCDDSChannel(InstrumentChannel):
         """
         for i in np.arange(2**self.n_pointer_bits):
             self.write_zero_pulse(pulse=i)
+        self.instruction_sequence().clear()
 
     def write_instr(self, instr: dict):
         """
@@ -162,7 +171,7 @@ class PCDDSChannel(InstrumentChannel):
 
         It takes a dictionary with the following entries:
         - instr: The instruction type. Valid instruction types are 'dc',
-                 'sine' and 'chrip'
+                 'sine' and 'chirp'
         - pulse_idx: The pulse id that this instruction is to be stored in
         - phase: The phase of the relevant pulse (in degrees).
             Only applicable to 'sine' and 'chirp' pulses
@@ -193,6 +202,8 @@ class PCDDSChannel(InstrumentChannel):
                                    next_pulse=instr['next_pulse'])
         else:
             raise ValueError(f'Unknown instruction type: {instr["instr"]}')
+
+        self.instruction_sequence().append(instr)
 
     def write_sine_pulse(self, pulse: int, phase: float, frequency: float,
                          amplitude: float, next_pulse: int):
@@ -239,7 +250,7 @@ class PCDDSChannel(InstrumentChannel):
             raise TypeError('Incorrect type for function input next_pulse. '
                             'It should be an int')
         # Convert the voltage to the correct register value
-        amplitude_val = self.amp2val(np.abs(2.0*voltage))
+        amplitude_val = self.amp2val(np.abs(voltage))
         if voltage < 0:
             phase_val = self.phase2val(270.0)
         else:
@@ -421,13 +432,13 @@ class PCDDS(Instrument):
     This class is the driver for the Phase Coherent Pulse Generation Module
     implemented on the FPGA onboard a Keysight PXI AWG card
     """
-    def __init__(self, name: str, FPGA, channels: int, **kwargs):
+    def __init__(self, name: str, FPGA, channels: int = None, **kwargs):
         """ Constructor for the pulse generation modules """
         super().__init__(name,  **kwargs)
         self.fpga = FPGA
 
         if channels is None:
-            channels = model_channels[self.model]
+            channels = model_channels[self.fpga.model]
         self.n_channels = channels
 
         channels = ChannelList(self,
@@ -440,5 +451,8 @@ class PCDDS(Instrument):
         self.add_submodule('channels', channels)
 
     def reset(self):
-        """ Sends the reset signal to the FPGA """
+        """ Sends the reset signal to the FPGA.
+
+        Hasn't been tested if it actually does something.
+        """
         self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.PULSE)
