@@ -927,7 +927,7 @@ class AlazarTech_ATS(Instrument):
         """
         # create the argument list
         args_out = []
-        update_params = []
+        update_params: List[Union[AlazarParameter, Parameter]] = []
         for arg in args:
             if isinstance(arg, AlazarParameter):
                 args_out.append(arg._get_byte())
