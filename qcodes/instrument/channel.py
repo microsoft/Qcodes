@@ -424,7 +424,13 @@ class ChannelList(Metadatable):
                 for chan in self._channels:
                     chan.functions[name](*args, **kwargs)
             return multi_func
+        elif callable(getattr(self._channels[0], name, None)):
+            # Same as above, but now for a method
+            def multi_func(*args, **kwargs):
+                return [getattr(chan, name)(*args, **kwargs)
+                        for chan in self._channels]
 
+            return multi_func
         try:
             return self._channel_mapping[name]
         except KeyError:

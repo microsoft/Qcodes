@@ -44,13 +44,6 @@ class AWGChannel(InstrumentChannel):
                                      f'Can be either arbitrary (AWG), or one '
                                      f'of the function generator types.')
 
-        self.add_parameter('trigger_direction',
-                           label=f'ch{self.id} trigger direction',
-                           val_mapping={'in': 1, 'out': 0},
-                           set_function=self.awg.triggerIOconfig,
-                           docstring='Determines if trig i/o should be used '
-                                     'as a trigger input or trigger output.')
-
         self.add_parameter('trigger_source',
                            label=f'ch{self.id} trigger source',
                            val_mapping={'trig_in': 0,
@@ -425,6 +418,13 @@ class SD_AWG(SD_Module):
                            set_function=self.awg.triggerIOwrite,
                            docstring='The trigger input value, 0 (OFF) or 1 (ON)',
                            vals=vals.Enum(0, 1))
+
+        self.add_parameter('trigger_direction',
+                           label=f'trigger direction',
+                           val_mapping={'in': 1, 'out': 0},
+                           set_function=self.awg.triggerIOconfig,
+                           docstring='Determines if trig i/o should be used '
+                                     'as a trigger input or trigger output.')
 
         self.add_parameter('clock_frequency',
                            label='clock frequency',
