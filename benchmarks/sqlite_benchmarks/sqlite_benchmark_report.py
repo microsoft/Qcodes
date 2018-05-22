@@ -2,19 +2,31 @@ import time
 import random
 import inspect
 import sqlite3
+from statistics import mean
+
+import numpy as np
 import matplotlib.pyplot as plt
 
-
 import qcodes as qc
+from qcodes import ParamSpec, new_data_set, new_experiment
 
 
-from profiling_sqlite_base import benchmark_add_results_vs_MAX_VARIABLE_NUMBER
-
-
-MAX_VARIABLE_NUMBER = 250000 - 1
+MAX_VARIABLE_NUMBER = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
 DB_PATH = 'executemany_benchmarks.db'
 
+# skip the creation of plots, and only make the report
+no_plots = True
+
 def create_table_manyrows(cols=1000):
+    '''create a table named lol2 with cols columns
+    paramters
+    ---------
+    cols : int
+        number of columns in table
+    returns
+    -------
+    None
+    '''
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
         r = ['val_%s INTEGER' % i for i in range(cols)]
@@ -23,12 +35,16 @@ def create_table_manyrows(cols=1000):
 
 
 def drop_table_manyrows():
+    '''drop the table lol2
+    '''
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
         cur.execute('DROP TABLE IF EXISTS lol2')
 
 
 def drop_and_create_table(cols=1000):
+    '''drop the table if it exists and create it again
+    '''
     drop_table_manyrows()
     create_table_manyrows(cols)
 
@@ -102,13 +118,18 @@ COMMIT TRANSACTION;
     return time.time() - t1
 
 
-def plot_insertion_speed_vs_nrows(cols, maxrows, stepsize, mvn1, mvn2):
+def plot_insertion_speed_vs_nrows(cols, maxrows, stepsize):
+    fname = 'insertion_speed_vs_nrows_%s_%s.png' % (cols, maxrows)
+    if no_plots:
+        return fname
     plt.figure()
     rows = range(1, maxrows, maxrows//stepsize)
     t1 = []
     t2 = []
     t3 = []
     t4 = []
+    mvn1 = 100
+    mvn2 = 999
     for row in rows:
         t1.append(bench_executemanyrows_execute_many(rows=row, cols=cols))
         t2.append(bench_executemanyrows_execute(rows=row, cols=cols, mvn=mvn1))
@@ -121,18 +142,22 @@ def plot_insertion_speed_vs_nrows(cols, maxrows, stepsize, mvn1, mvn2):
     plt.legend()
     plt.xlabel('number of rows')
     plt.ylabel('insertion time $\mathit{S}$')
-    fname = 'insertion_speed_vs_nrows_%s_%s.png' % (cols, maxrows)
     plt.savefig(fname)
     return fname
 
 
-def plot_insertion_speed_vs_ncols(rows, maxcols, stepsize, mvn1, mvn2):
+def plot_insertion_speed_vs_ncols(rows, maxcols, stepsize):
+    fname = 'insertion_speed_vs_ncols_%s_%s.png' % (rows, maxcols)
+    if no_plots:
+        return fname
     plt.figure()
     cols = range(1, maxcols, maxcols//stepsize)
     t1 = []
     t2 = []
     t3 = []
     t4 = []
+    mvn1 = 100
+    mvn2 = 999
     for col in cols:
         t1.append(bench_executemanyrows_execute_many(rows=rows, cols=col))
         t2.append(bench_executemanyrows_execute(rows=rows, cols=col, mvn=mvn1))
@@ -145,17 +170,18 @@ def plot_insertion_speed_vs_ncols(rows, maxcols, stepsize, mvn1, mvn2):
     plt.legend()
     plt.xlabel('number of columns')
     plt.ylabel('insertion time $\mathit{S}$')
-    fname = 'insertion_speed_vs_ncols_%s_%s.png' % (rows, maxcols)
     plt.savefig(fname)
     return fname
 
 
 def plot_insertion_speed_vs_max_var_num():
-    plt.figure()
     fname = 'plot_insertion_speed_vs_max_var_num.png'
+    if no_plots:
+        return fname
+    plt.figure()
     t1 = []
-    a = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
-    mvn = range(2, a, a//50)
+    a = 999
+    mvn = range(100, a, a//50)
     for i in mvn:
         t1.append(bench_executemanyrows_execute(rows=100000, mvn=i, cols=2))
     plt.plot(mvn, t1)
@@ -205,8 +231,10 @@ def insert_commit_3(n=200000):
 
 
 def benchmark_inserts():
-    plt.figure()
     fname = 'benchmark_inserts.png'
+    if no_plots:
+        return fname
+    plt.figure()
     n = range(1, 1000, 100)
     res1 = []
     res2 = []
@@ -265,8 +293,10 @@ def average_lookup_commit(m=2000, n=200000):
 
 
 def benchmark_lookups():
-    plt.figure()
     fname = 'benchmark_lookups.png'
+    if no_plots:
+        return fname
+    plt.figure()
     t1 = []
     t2 = []
     tot = 1000000
@@ -284,6 +314,45 @@ def benchmark_lookups():
     plt.ylabel('lookup time $\mathit{S}$')
     plt.savefig(fname)
     return fname
+
+
+def benchmark_add_results_vs_MAX_VARIABLE_NUMBER():
+    filename = 'benchmark_add_results_vs_MAX_VARIABLE_NUMBER.png'
+    if no_plots:
+        return filename
+    plt.figure()
+    xr, yr = [], []
+
+    mvn = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+    for i in range(2, mvn, mvn//50):
+        ts = []
+        for j in range(3):
+            qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER'] = i
+            new_experiment("profile", "profile")
+            data_set = new_data_set("stress_test_simple")
+
+            t1 = ParamSpec('t', 'numeric', label='time', unit='s')
+            x = ParamSpec('x', 'numeric',
+                          label='voltage', unit='v', depends_on=[t1])
+
+            data_set.add_parameter(t1)
+            data_set.add_parameter(x)
+            insertion_size = 400 * 600
+            t_values = np.linspace(-1, 1, insertion_size)
+            results = [{"t": t, "x": 2 * t ** 2 + 1} for t in t_values]
+
+            t1r = time.time()
+            data_set.add_results(results)
+            t = time.time() - t1r
+            ts.append(t)
+        xr.append(i)
+        yr.append(mean(ts))
+
+    plt.plot(xr, yr)
+    plt.ylabel('execution time of data_set.add_results(result)')
+    plt.xlabel('MAX_VARIABLE_NUMBER')
+    plt.savefig(filename)
+    return filename
 
 
 def header(text):
@@ -313,11 +382,14 @@ def make_report():
     report = []
     report.append([header('Sqlite insertion benchmarks')])
 
+    report.append([text('These experiments we carried out on a windows machine. '),
+                   text('Running these experiments on another system might yield different results.')])
+
     # benchmark committing
     benchmark_inserts_1 = benchmark_inserts()
     report.append([sheader('Benchmarking the effect of committing'),
                    image(benchmark_inserts_1),
-                   text('The orange line lies below the green line'),
+                   text('The orange line lies below the green line.'),
                    text('The blue and orange graphs each have'),
                    codeline('cur.execute(query, value)'),
                    text('inside a for loop, while the green graph uses'),
@@ -325,23 +397,28 @@ def make_report():
                    text('The difference between the blue and orange graph is that'
                         ' we commit for every insertion in the blue and we '
                         'commit only once for the orange after all insertions.'),
-                   text('From this we see that it is way faster to commit only once '
-                        'after all the insertions have been executed. The difference '
-                        'between execute and executemany is minimal.')])
+                   text(''),
+                   text('From this we learn that one should only commit once after all queries have been'
+                        ' executed.'),
+                   text('This approach is constant time in contrast to committing every iteration which is '
+                        'linear time.')])
 
     benchmark_lookups_1 = benchmark_lookups()
     report.append([sheader('Benchmarking for random lookups'),
                    image(benchmark_lookups_1),
+                   text('This plot shows the time it takes to select 5% of the number of records.'),
+                   text('The selected records are chosen at random.'),
+                   text('The difference between the graphs is that we only fetch after executing '
+                        'the select statement for the blue graph and that we also commit afterwards '
+                        'for the orange graph.'),
+                   text(''),
                    text('There is no overhead of comitting when doing lookups.'),
                    text('On the other hand there is no reason to commit when there are no changes.')])
 
     # benchmark insertion speed
     cols = 2
     maxrows = 400 * 600
-    mvn2 = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
-    mvn1 = 999
-
-    is_vs_nrows_1 = plot_insertion_speed_vs_nrows(cols, maxrows, 20, mvn1, mvn2)
+    is_vs_nrows_1 = plot_insertion_speed_vs_nrows(cols, maxrows, 30)
     report.append([sheader('Insertion speed vs. number of rows'),
                    image(is_vs_nrows_1),
                    text('This plot shows the insertion speed for %s columns' % cols)])
@@ -352,23 +429,22 @@ def make_report():
                    codeline('cur.executescript(script)'),
                    text('The execute method call is used as in sqlite_base.'),
                    text('The variable mvn stands for the MAX_VARIABLE_NUMBER from the SQLiteSettings.'),
-                   text('Wee see that the fastest approach is the one already implemented, but with a mvn of '
-                        '%s. For mvn=%s this approach is actually the slowest. ' % (mvn1, mvn2))])
+                   text('Wee see that the fastest approach is the one already implemented. '),
+                   text('It makes no difference to dynamically change the mvn. The same speed is achieved.')])
     cols = 100
-    maxrows = 400 * 600
-    is_vs_nrows_2 = plot_insertion_speed_vs_nrows(cols, maxrows, 20, mvn1, mvn2)
+    maxrows = 10000
+    is_vs_nrows_2 = plot_insertion_speed_vs_nrows(cols, maxrows, 30)
     report.append([image(is_vs_nrows_2),
                    text('This plot shows the insertion speed for %s columns.' % cols),
-                   text('The method executescript seems to be the fastest when there are many columns.')])
+                   text('The difference between the different approaches is smaller'
+                        ' when the number of columns increases.')])
 
-    rows = 400 * 600
+    rows = 10000
     maxcols = 100
-    is_vs_ncols_1 = plot_insertion_speed_vs_ncols(rows, maxcols, 20, mvn1, mvn2)
+    is_vs_ncols_1 = plot_insertion_speed_vs_ncols(rows, maxcols, 30)
     report.append([sheader('Insertion speed vs. number of columns'),
                    image(is_vs_ncols_1),
-                   text('This plot shows the insertion speed for %s rows.' % rows),
-                   text('For small number of columns the execute method is fastest, while for a larger'
-                        ' number the executescript method is the fastest.')])
+                   text('This plot shows the insertion speed for %s rows.' % rows)])
 
     # benchmark MAX_VARIABLE_NUMBER
     is_vs_mvn1 = plot_insertion_speed_vs_max_var_num()
@@ -376,13 +452,17 @@ def make_report():
                    image(is_vs_mvn1),
                    text('This plot shows how the insertion speed of '),
                    codeline('cur.execute(query, values)'),
-                   text('as implemented in sqlite_base. The execution time varies with MAX_VARIABLE_NUMBER.')])
+                   text('as implemented in sqlite_base when dynamically varying MAX_VARIABLE_NUMBER. '
+                        'The insertion time does not change when'
+                        ' dynamically changing the MAX_VARIABLE_NUMBER.')])
 
     is_vs_mvn2 = benchmark_add_results_vs_MAX_VARIABLE_NUMBER()
     report.append([image(is_vs_mvn2),
-                   text('This plot shows a real benchmark of existing code. The plot is specified by the following function.'),
+                   text('This plot shows a real benchmark of existing code.'
+                        ' The plot is specified by the following function.'),
                    codefunction(benchmark_add_results_vs_MAX_VARIABLE_NUMBER),
-                   text('Wee see that a choice of 1000 instead of 250000 results in 50% faster insertion times')])
+                   text('As long as the mvn is not set too low it does not matter what it is set to. '
+                        'The default value of 1000 is fine.')])
 
 
 
@@ -394,5 +474,8 @@ def make_report():
 
 if __name__ == '__main__':
     make_report()
-
+    #plot_insertion_speed_vs_nrows(2, 10000, 50)
+    #plot_insertion_speed_vs_nrows(600, 10000, 30)
+    #plot_insertion_speed_vs_ncols(10000, 100, 30)
+    #plt.show()
     #plot_insertion_speed_vs_max_var_num()
