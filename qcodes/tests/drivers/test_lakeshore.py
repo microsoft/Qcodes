@@ -6,7 +6,7 @@ from contextlib import suppress
 
 import qcodes
 from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
-from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372, Mode, Polarity, Range
+from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 import qcodes.instrument.sims as sims
 
 
@@ -182,10 +182,10 @@ def test_pid_set(lakeshore_372):
 
 def test_output_mode(lakeshore_372):
     ls = lakeshore_372
-    mode = Mode.closed_loop
+    mode = 'off'
     input_channel = 1
     powerup_enable = True
-    polarity = Polarity.unipolar
+    polarity = 'unipolar'
     filter = True
     delay = 1
     # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
@@ -203,7 +203,7 @@ def test_output_mode(lakeshore_372):
 
 def test_range(lakeshore_372):
     ls = lakeshore_372
-    heater_range = Range.max_10mA
+    heater_range = '10mA'
     # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
     h = ls.warmup_heater
     h.range(heater_range)

@@ -1,7 +1,106 @@
 from typing import Dict, Tuple
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
+
+
+class GroupParameter(Parameter):
+    def __init__(self, name, instrument, **kwargs):
+        self.group = None
+        super().__init__(name, instrument, **kwargs)
+
+    def set_raw(self, value, **kwargs):
+        self.group.set(self, value)
+
+    def get_raw(self, result=None):
+        if not result:
+            self.group.update()
+            return self.raw_value
+        else:
+            return result
+
+
+class Group():
+    def __init__(self, parameters, set_cmd=None, get_cmd=None,
+                 get_parser=None, separator=',', types=None):
+        self.parameters = OrderedDict((p.name, p) for p in parameters)
+        self.instrument = parameters[0].root_instrument
+        for p in parameters:
+            p.group = self
+        self.set_cmd = set_cmd
+        self.get_cmd = get_cmd
+        if get_parser:
+            self.get_parser = get_parser
+        else:
+            self.get_parser = self._separator_parser(separator, types)
+    
+    def _separator_parser(self, separator, types):
+        def parser(ret_str):
+            print(f'retr string is {ret_str}')
+            keys = self.parameters.keys()
+            values = ret_str.split(separator)
+            return dict(zip(keys, values))
+        return parser
+    
+    def set(self, set_parameter, value):
+        if any((p.get_latest() is None) for p in self.parameters.values()):
+            self.update()
+        calling_dict = {name: p.raw_value for name, p in self.parameters.items()}
+        calling_dict[set_parameter.name] = value
+        command_str = self.set_cmd.format(**calling_dict)
+        set_parameter.root_instrument.write(command_str)
+
+    def update(self):
+        ret = self.get_parser(self.instrument.ask(self.get_cmd))
+        # if any(p.get_latest() != ret[] for name, p in self.parameters if p is not get_parameter):
+        #     log.warn('a value has changed on the device')
+        # TODO(DV): this is odd, but the only way to call the wrapper accordingly
+        for name, p in list(self.parameters.items()):
+            p.get(result=ret[name])
+        
+
+class BaseOutput(InstrumentChannel):
+
+    MODES = {}
+    RANGES = {}
+
+    def __init__(self, parent, output_name, output_index):
+        super().__init__(parent, output_name)
+        self.output_index = output_index
+        self.add_parameter('mode',
+                           val_mapping=self.MODES,
+                           parameter_class=GroupParameter)
+        self.add_parameter('input_channel', get_parser=int,
+                           parameter_class=GroupParameter)
+        self.add_parameter('powerup_enable',
+                           val_mapping={True: 1, False: 0},
+                           parameter_class=GroupParameter)
+        self.output_group = Group([self.mode, self.input_channel,
+                                  self.powerup_enable],
+                                  set_cmd=f"OUTMODE {output_index}, {{mode}}, {{input_channel}}, {{powerup_enable}}, {{polarity}}, {{filter}}, {{delay}}",
+                                  get_cmd=f'OUTMODE? {output_index}')
+
+        self.add_parameter('P', vals=vals.Numbers(0, 1000),
+                           get_parser=float, parameter_class=GroupParameter)
+        self.add_parameter('I', vals=vals.Numbers(0, 1000),
+                           get_parser=float, parameter_class=GroupParameter)
+        self.add_parameter('D', vals=vals.Numbers(0, 2500),
+                           get_parser=float, parameter_class=GroupParameter)
+        self.pid_group = Group([self.P, self.I, self.D],
+                               set_cmd=f"PID {output_index}, {{P}}, {{I}}, {{D}}",
+                               get_cmd=f'PID? {output_index}')
+        
+        self.add_parameter('range',
+                           val_mapping=self.RANGES,
+                           set_cmd=f'RANGE {output_index}, {{}}',
+                           get_cmd=f'RANGE? {output_index}')
+
+        self.add_parameter('setpoint', 
+                           vals=vals.Numbers(0, 400),
+                           get_parser=float,
+                           set_cmd=f'SETP {output_index}, {{}}',
+                           get_cmd=f'SETP? {output_index}')
 
 
 class BaseSensorChannel(InstrumentChannel):
@@ -27,36 +126,10 @@ class BaseSensorChannel(InstrumentChannel):
                            val_mapping={'OK': 0, 'Invalid Reading': 1, 'Temp Underrange': 16, 'Temp Overrange': 32,
                            'Sensor Units Zero': 64, 'Sensor Units Overrange': 128}, label='Sensor_Status')
 
-        self.add_parameter('setpoint',
-                           get_cmd='setp? {}'.format(self._channel),
-                           set_cmd='setp {},{{}}'.format(self._channel),
-                           get_parser=float,
-                           label = 'Temperature setpoint',
-                           unit='K')
-
-        self.add_parameter('range_id',
-                           get_cmd='range? {}'.format(self._channel),
-                           set_cmd='range {},{{}}'.format(self._channel),
-                           get_parser=validators.Enum(1,2,3),
-                           label = 'Range ID',
-                           unit='K')
-
         self.add_parameter('sensor_name', get_cmd='INNAME? {}'.format(self._channel),
                            get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=validators.Strings(15),
                            label='Sensor_Name')
 
-    def set_range_from_temperature(self, temperature):
-        if temperature < self._parent.t_limit(1):
-            range_id = 1
-        elif temperature < self._parent.t_limit(2):
-            range_id = 2
-        else:
-            range_id = 3
-        self.range_id(range_id)
-
-    def set_setpoint_and_range(self, temperature):
-        self.set_range_from_temperature(temperature)
-        self.setpoint(temperature)
 
 
 class LakeshoreBase(VisaInstrument):
@@ -97,16 +170,16 @@ class LakeshoreBase(VisaInstrument):
 
         self.connect_message()
 
-    def set_temperature_limits(self, T: Tuple[float, float]):
-        self.t_limit = T
+    # def set_temperature_limits(self, T: Tuple[float, float]):
+    #     self.t_limit = T
 
-    def get_temperature_limits(self):
-        return self.t_limit
+    # def get_temperature_limits(self):
+    #     return self.t_limit
 
-    def warmup(self):
-        for channel in self.channels:
-            channel.temperature(300)
+    # def warmup(self):
+    #     for channel in self.channels:
+    #         channel.temperature(300)
 
-    def cooldown(self):
-        for channel in self.channels:
-            channel.temperature(0)
+    # def cooldown(self):
+    #     for channel in self.channels:
+    #         channel.temperature(0)
