@@ -321,7 +321,7 @@ class PCDDSChannel(InstrumentChannel):
         pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits
                        + self.n_amp_bits)
         pulse_data = self.split_value(pulse_data)
-        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], 0, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
         self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[4]],
                                    self.id, 0, 1)
         self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[3]],
