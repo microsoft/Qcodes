@@ -12,12 +12,14 @@ from threading import Thread
 import time
 import logging
 import hashlib
+import uuid
 from queue import Queue, Empty
+import warnings
 
 import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
+from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
                                         connect, create_run, get_parameters,
                                         get_experiments,
@@ -100,7 +102,7 @@ class Subscriber(Thread):
         BEGIN
             SELECT {self.callbackid}({param_sql});
         END;"""
-        atomicTransaction(self.conn, sql)
+        atomic_transaction(self.conn, sql)
         self.data: Queue = Queue()
         self._data_set_len = len(dataSet)
         super().__init__()
@@ -203,7 +205,7 @@ class DataSet(Sized):
         tabnam = self.table_name
         # TODO: is it better/faster to use the max index?
         sql = f'SELECT COUNT(*) FROM "{tabnam}"'
-        cursor = atomicTransaction(self.conn, sql)
+        cursor = atomic_transaction(self.conn, sql)
         return one(cursor, 'COUNT(*)')
 
     @property
@@ -547,7 +549,7 @@ class DataSet(Sized):
                   state: Optional[Any] = None,
                   callback_kwargs: Optional[Dict[str, Any]] = None,
                   subscriber_class=Subscriber) -> str:
-        sub_id = hash_from_parts(str(time.time()))
+        sub_id = uuid.uuid4().hex
         sub = Subscriber(self, sub_id, callback, state, min_wait, min_count,
                          callback_kwargs)
         self.subscribers[sub_id] = sub
@@ -573,7 +575,7 @@ class DataSet(Sized):
         Remove all subscribers
         """
         sql = "select * from sqlite_master where type = 'trigger';"
-        triggers = atomicTransaction(self.conn, sql).fetchall()
+        triggers = atomic_transaction(self.conn, sql).fetchall()
         with atomic(self.conn):
             for trigger in triggers:
                 self._remove_trigger(trigger['name'])
@@ -677,5 +679,8 @@ def hash_from_parts(*parts: str) -> str:
     Returns:
         hash created with the given parts
     """
+    warnings.warn("hash_from_parts has been deprecated and will be removed. "
+                  "Use stdlib uuid4 instead",
+                  stacklevel=2)
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()

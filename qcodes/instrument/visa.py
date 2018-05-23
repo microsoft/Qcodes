@@ -130,7 +130,11 @@ class VisaInstrument(Instrument):
             self.visa_handle.flush(
                 vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
         else:
-            self.visa_handle.clear()
+            status_code = self.visa_handle.clear()
+            if status_code is not None:
+                log.warning("Cleared visa buffer on "
+                            "{} with status code {}".format(self.name,
+                                                            status_code))
 
     def set_terminator(self, terminator):
         r"""
@@ -212,7 +216,9 @@ class VisaInstrument(Instrument):
             str: The instrument's response.
         """
         log.debug("Querying instrument {}: {}".format(self.name, cmd))
-        return self.visa_handle.query(cmd)
+        response = self.visa_handle.query(cmd)
+        log.debug(f"Got instrument response: {response}")
+        return response
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str] = None):
