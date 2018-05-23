@@ -103,17 +103,17 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
                                    mode=5, input_channel=2,
                                    powerup_enable=0, polarity=0,
                                    filter=0, delay=1,
-                                   range=0)
+                                   output_range=0)
         self.heaters['1'] = Heater(P=1, I=2, D=3,
                                    mode=5, input_channel=2,
                                    powerup_enable=0, polarity=0,
                                    filter=0, delay=1,
-                                   range=0)
+                                    output_range=0)
         self.heaters['2'] = Heater(P=1, I=2, D=3,
                                    mode=5, input_channel=2,
                                    powerup_enable=0, polarity=0,
                                    filter=0, delay=1,
-                                   range=0)
+                                   output_range=0)
     @query('PID?')    
     def pidq(self, arg):
         heater = self.heaters[arg]
@@ -146,14 +146,14 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     @query('RANGE?')    
     def rangeq(self, arg):
         heater = self.heaters[arg]
-        return f'{heater.range}'
+        return f'{heater.output_range}'
 
     @command('RANGE')
     @split_args()
-    def heater_range(self, output, heater_range):
+    def output_range(self, output, output_range):
         h = self.heaters[output]
-        h.range = heater_range
-        print(f'setting range to {h.range}')
+        h.output_range = output_range
+        print(f'setting output_range to {h.output_range}')
 
 visalib = sims.__file__.replace('__init__.py', 'lakeshore_model372.yaml@sim')
 # def test_instantiation_model_336():
@@ -186,7 +186,7 @@ def test_output_mode(lakeshore_372):
     input_channel = 1
     powerup_enable = True
     polarity = 'unipolar'
-    filter = True
+    use_filter = True
     delay = 1
     # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
     h = ls.warmup_heater
@@ -194,17 +194,17 @@ def test_output_mode(lakeshore_372):
     h.input_channel(input_channel)
     h.powerup_enable(powerup_enable)
     h.polarity(polarity)
-    h.filter(filter)
+    h.use_filter(use_filter)
     h.delay(delay)
     h.mode()
     assert (h.mode(), h.input_channel()) == (mode, input_channel)
     assert (h.powerup_enable(), h.polarity()) == (powerup_enable, polarity)
-    assert (h.filter(), h.delay()) == (filter, delay)
+    assert (h.use_filter(), h.delay()) == (use_filter, delay)
 
 def test_range(lakeshore_372):
     ls = lakeshore_372
-    heater_range = '10mA'
+    output_range = '10mA'
     # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
     h = ls.warmup_heater
-    h.range(heater_range)
-    assert h.range() == heater_range
+    h.output_range(output_range)
+    assert h.output_range() == output_range

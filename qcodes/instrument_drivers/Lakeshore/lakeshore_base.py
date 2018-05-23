@@ -1,9 +1,14 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, ClassVar
+import logging
+from collections import OrderedDict
+import time
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
+import qcodes.utils.validators as vals
 
+log = logging.getLogger(__name__)
 
 class GroupParameter(Parameter):
     def __init__(self, name, instrument, **kwargs):
@@ -58,15 +63,17 @@ class Group():
         # TODO(DV): this is odd, but the only way to call the wrapper accordingly
         for name, p in list(self.parameters.items()):
             p.get(result=ret[name])
-        
+
+VAL_MAP_TYPE = ClassVar[Dict[str, int]]
 
 class BaseOutput(InstrumentChannel):
 
-    MODES = {}
-    RANGES = {}
+    MODES: VAL_MAP_TYPE = {}
+    RANGES: VAL_MAP_TYPE = {}
 
     def __init__(self, parent, output_name, output_index):
         super().__init__(parent, output_name)
+        self._has_pid = True
         self.output_index = output_index
         self.add_parameter('mode',
                            val_mapping=self.MODES,
@@ -80,18 +87,18 @@ class BaseOutput(InstrumentChannel):
                                   self.powerup_enable],
                                   set_cmd=f"OUTMODE {output_index}, {{mode}}, {{input_channel}}, {{powerup_enable}}, {{polarity}}, {{filter}}, {{delay}}",
                                   get_cmd=f'OUTMODE? {output_index}')
-
-        self.add_parameter('P', vals=vals.Numbers(0, 1000),
-                           get_parser=float, parameter_class=GroupParameter)
-        self.add_parameter('I', vals=vals.Numbers(0, 1000),
-                           get_parser=float, parameter_class=GroupParameter)
-        self.add_parameter('D', vals=vals.Numbers(0, 2500),
-                           get_parser=float, parameter_class=GroupParameter)
-        self.pid_group = Group([self.P, self.I, self.D],
-                               set_cmd=f"PID {output_index}, {{P}}, {{I}}, {{D}}",
-                               get_cmd=f'PID? {output_index}')
+        if self._has_pid:
+            self.add_parameter('P', vals=vals.Numbers(0, 1000),
+                            get_parser=float, parameter_class=GroupParameter)
+            self.add_parameter('I', vals=vals.Numbers(0, 1000),
+                            get_parser=float, parameter_class=GroupParameter)
+            self.add_parameter('D', vals=vals.Numbers(0, 2500),
+                            get_parser=float, parameter_class=GroupParameter)
+            self.pid_group = Group([self.P, self.I, self.D],
+                                set_cmd=f"PID {output_index}, {{P}}, {{I}}, {{D}}",
+                                get_cmd=f'PID? {output_index}')
         
-        self.add_parameter('range',
+        self.add_parameter('output_range',
                            val_mapping=self.RANGES,
                            set_cmd=f'RANGE {output_index}, {{}}',
                            get_cmd=f'RANGE? {output_index}')
@@ -102,6 +109,67 @@ class BaseOutput(InstrumentChannel):
                            set_cmd=f'SETP {output_index}, {{}}',
                            get_cmd=f'SETP? {output_index}')
 
+        # additional non Visa parameters
+        self.add_parameter('range_limits',
+                           set_cmd=None,
+                           vals=validators.Sequence(validators.Numbers(0,400), require_sorted=True),
+                           label='Temperature limits for ranges ', unit='K')
+
+        self.add_parameter('wait_cycle_time',
+                           set_cmd=None,
+                           vals=validators.Numbers(0,100),
+                           label='Time between two readings when waiting for temperature to equilibrate', unit='s')
+
+        self.add_parameter('wait_tolerance',
+                           set_cmd=None,
+                           vals=validators.Numbers(0,100),
+                           label='Acceptable tolerance when waiting for temperature to equilibrate', unit='')
+        self.add_parameter('wait_equilibration_time',
+                           set_cmd=None,
+                           vals=validators.Numbers(0,100),
+                           label='Duration during which temperature has to be within tolerance.', unit='')
+    def set_range_from_temperature(self, temperature):
+        i = bisect(self.range_limits.get_latest(), temperature)
+        self.output_range(self.RANGES(i))
+        return self.output_range
+
+    def set_setpoint_and_range(self, temperature):
+        self.set_range_from_temperature(temperature)
+        self.setpoint(temperature)
+
+    def wait_until_set_point_reached(*,wait_cycle_time: float=None,
+                                     wait_tolerance: float=None,
+                                     wait_equilibration_time: float=None):
+        wait_cycle_time =  wait_cycle_time or self.wait_cycle_time.get_latest()
+        wait_tolerance = wait_tolerance or self.wait_tolerance.get_latest()
+        wait_equilibration_time = wait_equilibration_time or self.wait_equilibration_time.get_latest()
+        active_channel_id = self.input_channel()
+        active_channel = self.root_instrument.channels[active_channel_id]
+        assert active_channel._channel == active_channel_id
+
+        t_setpoint = self.setpoint()
+        t_reading = active_channel.temperature()
+        start_time_in_tolerance_zone = None
+        is_in_tolerance_zone = False
+        while True:
+            t_reading = active_channel.temperature()
+            # if temperature is lower than sensor range, keep on waiting
+            # TODO(DV):only do this coming from one direction
+            if t_reading:
+                delta = abs(t_reading-t_setpoint)/t_reading
+                if delta < wait_tolerance:
+                    if is_in_tolerance_zone:
+                        if time.monotonic() - start_time_in_tolerance_zone > wait_equilibration_time:
+                            break
+                    else:
+                        start_time_in_tolerance_zone = time.monotonic()
+                else:
+                    if is_in_tolerance_zone:
+                        is_in_tolerance_zone = False
+                        start_time_in_tolerance_zone = None
+
+            log.debug(f'waiting to reach setpoint: temp at {t_reading}, delta:{delta}')
+            time.sleep(wait_cycle_time)
 
 class BaseSensorChannel(InstrumentChannel):
 
@@ -132,6 +200,7 @@ class BaseSensorChannel(InstrumentChannel):
 
 
 
+
 class LakeshoreBase(VisaInstrument):
     """
     This Base class has been written to be that base for the Lakeshore 336 and 372. There are probably other lakeshore modes that can use the functionality provided here. If you add another lakeshore driver please make sure to extend this class accordingly, or create a new one.
@@ -146,15 +215,6 @@ class LakeshoreBase(VisaInstrument):
     def __init__(self, name: str, address: str,
                  terminator: str ='\r\n', **kwargs):
         super().__init__(name, address, **kwargs)
-        self.add_parameter('temperature_limits',
-                           set_cmd=self.set_temperature_limits,
-                           get_cmd=self.get_temperature_limits,
-                           label='Temperature limits for ranges ',
-                           unit='K')
-
-        # plug some senisble values in here
-        self.t_limit: Tuple[float, float] = (10.0, 20.0)
-
         # Allow access to channels either by referring to the channel name
         # or through a channel list.
         # i.e. instr.A.temperature() and instr.channels[0].temperature()
@@ -170,16 +230,3 @@ class LakeshoreBase(VisaInstrument):
 
         self.connect_message()
 
-    # def set_temperature_limits(self, T: Tuple[float, float]):
-    #     self.t_limit = T
-
-    # def get_temperature_limits(self):
-    #     return self.t_limit
-
-    # def warmup(self):
-    #     for channel in self.channels:
-    #         channel.temperature(300)
-
-    # def cooldown(self):
-    #     for channel in self.channels:
-    #         channel.temperature(0)

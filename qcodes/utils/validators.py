@@ -1,5 +1,6 @@
 import math
 from typing import Union, Tuple, cast, Optional
+import collections
 
 import numpy as np
 
@@ -574,6 +575,41 @@ class Lists(Validator):
             for elt in value:
                 self._elt_validator.validate(elt)
 
+class Sequence(Validator):
+    """
+    Validator for Sequences
+    Args:
+        elt_validator: used to validate the individual elements of the Sequence
+    """
+
+    def __init__(self, elt_validator=Anything(),
+                 length=None, require_sorted=False):
+        self._elt_validator = elt_validator
+        self._length = length
+        self._require_sorted = require_sorted
+        self._valid_values = [elt_validator._valid_values]
+
+    def __repr__(self):
+        msg = '<Sequence : '
+        msg += f'len: {self._length} '
+        msg += f'sorted: {self._require_sorted} '
+        msg += self._elt_validator.__repr__() + '>'
+        return msg
+
+    def validate(self, value, context=''):
+        if not isinstance(value, collections.Sequence):
+            raise TypeError(
+                '{} is not a sequence; {}'.format(repr(value), context))
+        if not len(value) == self._length:
+            raise ValueError(
+                f'{repr(value)} has not length {self._length} but {len(value)}')
+        if self._require_sorted and sorted(value) != value:
+            raise ValueError(
+                f'{repr(value)} is required to be sorted.')
+        # Does not validate elements if not required to improve performance
+        if not isinstance(self._elt_validator, Anything):
+            for elt in value:
+                self._elt_validator.validate(elt)
 
 class Callable(Validator):
     """
