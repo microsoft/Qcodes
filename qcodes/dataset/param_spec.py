@@ -5,7 +5,7 @@ from typing import Union, Sequence, List
 # we can't accept everything (or we can but crash at runtime?)
 # we only support the types in VALUES type, that is:
 # str, Number, List, ndarray, bool
-class ParamSpec():
+class ParamSpec:
     def __init__(self, name: str,
                  paramtype: str,
                  label: str = None,
@@ -82,6 +82,19 @@ class ParamSpec():
         self._depends_on.extend(
             p.name if isinstance(p, ParamSpec) else p
             for p in depends_on
+        )
+
+    def copy(self) -> 'ParamSpec':
+        """
+        Make a copy of self
+        """
+        return ParamSpec(
+            self.name,
+            self.type,
+            self.label,
+            self.unit,
+            self._inferred_from,
+            self._depends_on
         )
 
     def sql_repr(self):
