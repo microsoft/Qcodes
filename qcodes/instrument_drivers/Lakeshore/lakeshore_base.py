@@ -2,6 +2,7 @@ from typing import Dict, Tuple, ClassVar
 import logging
 from collections import OrderedDict
 import time
+from bisect import bisect
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.instrument.parameter import Parameter
@@ -128,9 +129,10 @@ class BaseOutput(InstrumentChannel):
                            set_cmd=None,
                            vals=validators.Numbers(0,100),
                            label='Duration during which temperature has to be within tolerance.', unit='')
+
     def set_range_from_temperature(self, temperature):
         i = bisect(self.range_limits.get_latest(), temperature)
-        self.output_range(self.RANGES(i))
+        self.output_range(self.RANGES[i])
         return self.output_range
 
     def set_setpoint_and_range(self, temperature):
@@ -185,6 +187,13 @@ class BaseSensorChannel(InstrumentChannel):
                            get_parser=float,
                            label='Temerature',
                            unit='K')
+
+        self.add_parameter('t_limit', get_cmd=f'TLIMIT? {self._channel}',
+                           set_cmd=f'TLIMIT {self._channel}, {{}}',
+                           get_parser=float,
+                           label='Temerature limit',
+                           unit='K')
+
         self.add_parameter('sensor_raw', get_cmd='SRDG? {}'.format(self._channel),
                            get_parser=float,
                            label='Raw_Reading',

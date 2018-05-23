@@ -17,7 +17,7 @@ class MockVisaInstrument():
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        # This base class mixin holds two dictionaries associated with the 
+        # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
         self.cmds = {}
         # and pyvisa_instrument.query() functions
@@ -27,7 +27,7 @@ class MockVisaInstrument():
         # instrument.
 
         # to facilitate the definition there are the decorators `@query' and `@command`
-        # these attach an attribute to the method, so that the dictionaries can be 
+        # these attach an attribute to the method, so that the dictionaries can be
         # filled here in the constructor.
         # (This is borderline abusive, but makes a it easy to define mocks)
         func_names = dir(self)
@@ -89,7 +89,7 @@ def command(name=None):
     return wrapper
 
 
-class Heater:
+class DictClass:
     def __init__(self, **kwargs):
         for kwarg, value in kwargs.items():
             setattr(self, kwarg, value)
@@ -99,22 +99,24 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         super().__init__(*args, **kwargs)
         self.heaters = {}
         # initial values
-        self.heaters['0'] = Heater(P=1, I=2, D=3,
-                                   mode=5, input_channel=2,
-                                   powerup_enable=0, polarity=0,
-                                   filter=0, delay=1,
-                                   output_range=0)
-        self.heaters['1'] = Heater(P=1, I=2, D=3,
-                                   mode=5, input_channel=2,
-                                   powerup_enable=0, polarity=0,
-                                   filter=0, delay=1,
-                                    output_range=0)
-        self.heaters['2'] = Heater(P=1, I=2, D=3,
-                                   mode=5, input_channel=2,
-                                   powerup_enable=0, polarity=0,
-                                   filter=0, delay=1,
-                                   output_range=0)
-    @query('PID?')    
+        self.heaters['0'] = DictClass(P=1, I=2, D=3,
+                                      mode=5, input_channel=2,
+                                      powerup_enable=0, polarity=0,
+                                      filter=0, delay=1,
+                                      output_range=0)
+        self.heaters['1'] = DictClass(P=1, I=2, D=3,
+                                      mode=5, input_channel=2,
+                                      powerup_enable=0, polarity=0,
+                                      filter=0, delay=1,
+                                      output_range=0)
+        self.heaters['2'] = DictClass(P=1, I=2, D=3,
+                                      mode=5, input_channel=2,
+                                      powerup_enable=0, polarity=0,
+                                      filter=0, delay=1,
+                                      output_range=0)
+        self.channels = {str(i): DictClass(tlimit=i) for i in range(1,17)}
+
+    @query('PID?')
     def pidq(self, arg):
         heater = self.heaters[arg]
         return f'{heater.P}, {heater.I}, {heater.D}'
@@ -122,9 +124,10 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     @command('PID')
     @split_args()
     def pid(self, output, P, I, D):
-        self.heaters[output] = Heater(P=P, I=I, D=D)
+        for a, v in zip(['P', 'I', 'D'], [P, I, D]):
+            setattr(self.heaters[output], a, v)
 
-    @query('OUTMODE?')    
+    @query('OUTMODE?')
     def outmodeq(self, arg):
         heater = self.heaters[arg]
         return f'{heater.mode}, {heater.input_channel}, {heater.powerup_enable}, {heater.polarity}, {heater.filter}, {heater.delay}'
@@ -143,17 +146,29 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         h.delay = delay
         print(f'setting outputmode to {h.mode}, {input_channel}, {powerup_enable}, {polarity}, {filter}, {delay}')
 
-    @query('RANGE?')    
+    @query('RANGE?')
     def rangeq(self, arg):
         heater = self.heaters[arg]
         return f'{heater.output_range}'
 
     @command('RANGE')
     @split_args()
-    def output_range(self, output, output_range):
+    def range_cmd(self, output, output_range):
         h = self.heaters[output]
         h.output_range = output_range
         print(f'setting output_range to {h.output_range}')
+
+    @query('TLIMIT?')
+    def tlimitq(self, arg):
+        chan = self.channels[arg]
+        return f'{chan.tlimit}'
+
+    @command('TLIMIT')
+    @split_args()
+    def tlimitcmd(self, output, tlimit):
+        chan = self.channels[output]
+        chan.tlimit = tlimit
+        print(f'setting TLIMIT to {chan.tlimit}')
 
 visalib = sims.__file__.replace('__init__.py', 'lakeshore_model372.yaml@sim')
 # def test_instantiation_model_336():
@@ -208,3 +223,10 @@ def test_range(lakeshore_372):
     h = ls.warmup_heater
     h.output_range(output_range)
     assert h.output_range() == output_range
+
+def test_tlimit(lakeshore_372):
+    ls = lakeshore_372
+    tlimit = 5.1
+    # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
+    ls.ch01.t_limit(tlimit)
+    assert ls.ch01.t_limit() == tlimit
