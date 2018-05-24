@@ -26,6 +26,17 @@ class ParamTable:
         self._nests = [[spec.name] for spec in
                        self._param_specs] if nests is None else nests
 
+        self._dependencies_resolved = False
+
+    def check_unresolved(self) ->None:
+        """
+        We cannot perform operations on tables with resolved dependencies,
+        because operations alter these dependencies.
+        """
+        if self._dependencies_resolved:
+            raise TypeError("Cannot operate on a parameter table with already "
+                            "resolved dependencies")
+
     def copy(self) ->'ParamTable':
         """
         Return a copy of this table
@@ -41,11 +52,14 @@ class ParamTable:
         Args:
             other: A table to nest in self
         """
+        self.check_unresolved()
+        other.check_unresolved()
+
         if len(self._nests) > 1:
             # This for example occurs when we do
             # nest(chain(sweep(x, [0, 1, 2]), sweep(y, [3, 4, 5]), p)
             # Is p dependent on x or on y?
-            raise ValueError("Cannot nest in chained sweep object")
+            raise TypeError("Cannot nest in chained sweep object")
 
         param_specs = self.param_specs + other.param_specs
         nests = [self.nests[0] + nest for nest in other.nests]
@@ -59,6 +73,9 @@ class ParamTable:
         Args:
             other: A table to chain with self
         """
+        self.check_unresolved()
+        other.check_unresolved()
+
         param_specs = self.param_specs + other.param_specs
         nests = self.nests + other.nests
 
@@ -76,8 +93,43 @@ class ParamTable:
         """
         After creating sweep objects and param specs, resolve the dependencies.
         """
+        if self._dependencies_resolved:
+            return
+
         param_spec_dict = {spec.name: spec for spec in self._param_specs}
 
         for nest in self._nests:
             dependent_name = nest[-1]
             param_spec_dict[dependent_name].add_depends_on(nest[:-1])
+
+        self._dependencies_resolved = True
+
+
+def prod(param_tables: List[ParamTable]) ->ParamTable:
+    """
+    Created a parameter table by repeatedly nesting tables in a list.
+    For example, prod([a, b, c]) will create a table from a.nest(b).nest(c)
+
+    Args:
+        param_tables
+    """
+    table_product = param_tables[0].copy()
+    for table in param_tables[1:]:
+        table_product = table_product.nest(table)
+
+    return table_product
+
+
+def add(param_tables: List[ParamTable]) ->ParamTable:
+    """
+    Created a parameter table by repeatedly chaining tables in a list.
+    For example, add([a, b, c]) will create a table from a.chain(b).chain(c)
+
+    Args:
+        param_tables
+    """
+    table_product = param_tables[0].copy()
+    for table in param_tables[1:]:
+        table_product = table_product.chain(table)
+
+    return table_product
