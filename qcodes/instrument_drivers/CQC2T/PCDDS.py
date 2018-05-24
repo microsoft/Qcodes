@@ -456,3 +456,24 @@ class PCDDS(Instrument):
         Hasn't been tested if it actually does something.
         """
         self.fpga.reset(reset_mode=keysightSD1.SD_ResetMode.PULSE)
+
+    def get_debug_messages(self):
+        address_labels = ['front panel input',
+                          'pxi trigger 0',
+                          'pxi trigger 1',
+                          'pxi trigger 2',
+                          'pxi trigger 3',
+                          'output enable ch0',
+                          'delay length ch0',
+                          'output enable ch1',
+                          'delay length ch1',
+                          'output enable ch2',
+                          'delay length ch2',
+                          'output enable ch3',
+                          'delay length ch3']
+        return {label: PCDDS.fpga.get_fpga_pc_port(port=1,
+                                                   data_size=1,
+                                                   address=debug_port + 1,
+                                                   address_mode=1,
+                                                   access_mode=0)[0]
+                for debug_port, label in enumerate(address_labels)}
