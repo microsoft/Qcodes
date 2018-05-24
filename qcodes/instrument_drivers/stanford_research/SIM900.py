@@ -49,7 +49,7 @@ class SIM928(Parameter):
 
     @property
     def charge_cycles(self):
-        if (self.last_cycle_check is not None
+        if (self.t_last_cycle_check is not None
             and time() - self.t_last_cycle_check < self.t_recheck_cycles):
 
             self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
