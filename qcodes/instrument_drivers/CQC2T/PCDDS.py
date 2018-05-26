@@ -385,18 +385,28 @@ class PCDDSChannel(InstrumentChannel):
         return int(np.round((2 ** self.n_phase_bits / 360.0) * phase))
 
     def freq2val(self, freq: float) -> int:
-        """
-        Function to calculate the correct frequency register values for a given
-        frequency
+        """Calculates correct frequency register values for a given frequency
+
+        The frequency register is any int between 0 and 2**self.n_phase_bits-1,
+        where 0 corresponds to 0 Hz, and 2**n_phase_bits corresponds to the
+        maximum frequency (inverse of the maximum sampling rate including any
+        interleaving), which is effectively 0 Hz.
+        Negative frequencies are effectively:
+        (max_frequency + frequency) % 2**n_phase_bits
+
         Args:
             freq: The desired frequency in Hz
 
         Returns: The register value for the desired frequency
         """
-        if freq > self.f_max or freq < 0:
-            raise ValueError(f'Frequency of {freq} is outside of allowed '
-                             f'values [0, {self.f_max/1e6}MHz]')
-        return int(np.round((2 ** self.n_phase_bits / (5*self.clk)) * freq))
+        assert -self.f_max < freq < self.f_max, \
+            f'Frequency of {freq} is outside of allowed values: ' \
+            f'[0, {self.f_max/1e6}MHz]'
+        bit_value = int(np.round((2**self.n_phase_bits / (5*self.clk)) * freq))
+        # If frequency is negative, bit value is also negative.
+        # Ensure positive value by taking modulus
+        bit_value %= 2**self.n_phase_bits
+        return bit_value
 
     def accum2val(self, accum: float) -> int:
         """
