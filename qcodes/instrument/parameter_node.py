@@ -107,7 +107,11 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     """
 
     parameters = {}
-    parameter_nodes = {}
+    parameter_nodes = {}    #
+    # attributes to delegate from dict attributes, for example:
+    # instrument.someparam === instrument.parameters['someparam']
+    delegate_attr_dicts = ['parameters', 'parameter_nodes', 'functions',
+                           'submodules']
 
     def __init__(self, name: str = None,
                  use_as_attributes: bool = False,
@@ -144,7 +148,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 repr_str += f'{self.name} '
         repr_str += 'containing '
         if self.parameter_nodes:
-            repr_str += f'{len(parameter_nodes)} nodes, '
+            repr_str += f'{len(self.parameter_nodes)} nodes, '
         repr_str += f'{len(self.parameters)} parameters'
         return repr_str
 
@@ -378,7 +382,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         par_field_len = min(max(par_lengths)+1, 50)
 
         if hasattr(self, 'name'):
-            print(str(self.name)+ ':')
+            print(str(self.name) + ':')
         print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
         print('-'*max_chars)
         for par in sorted(snapshot['parameters']):
@@ -412,15 +416,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                         channel.print_readable_snapshot()
             else:
                 submodule.print_readable_snapshot(update, max_chars)
-
-    #
-    # shortcuts to parameters & setters & getters                           #
-    # instrument.someparam === instrument.parameters['someparam']           #
-    # instrument.get('someparam') === instrument['someparam'].get()         #
-    # etc...                                                                #
-    #
-    delegate_attr_dicts = ['parameters', 'parameter_nodes', 'functions',
-                           'submodules']
 
     def __getitem__(self, key):
         """Delegate instrument['name'] to parameter or function 'name'."""
@@ -465,6 +460,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     print('validate_status: param %s: %s' % (k, value))
                 p.validate(value)
 
+    # Deprecated methods
     def print_readable_snapshot(self, update=False, max_chars=80):
         logger.warning('print_readable_snapshot is replaced with print_snapshot')
         self.print_snapshot(update=update, max_chars=max_chars)
