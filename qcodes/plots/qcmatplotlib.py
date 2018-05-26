@@ -421,8 +421,15 @@ class MatPlot(BasePlot):
 
         # Set x and y limits if arrays are provided
         if x is not None and y is not None:
-            ax.set_xlim(np.nanmin(args[0]), np.nanmax(args[0]))
-            ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
+            xlim = [np.nanmin(args[0]), np.nanmax(args[0])]
+            ylim = [np.nanmin(args[1]), np.nanmax(args[1])]
+            if ax.collections:  # ensure existring 2D plots are not cropped
+                xlim = [min(xlim[0], ax.get_xlim()[0]),
+                        max(xlim[1], ax.get_xlim()[1])]
+                ylim = [min(ylim[0], ax.get_ylim()[0]),
+                        max(ylim[1], ax.get_ylim()[1])]
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
 
         # Specify preferred number of ticks with labels
         if nticks and ax.get_xscale() != 'log' and ax.get_yscale != 'log':
