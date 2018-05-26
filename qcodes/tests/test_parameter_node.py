@@ -149,6 +149,14 @@ class TestParameterNode(TestCase):
         subnode = SubNode()
         self.assertEqual(subnode.param1(), 42)
 
+    def test_sweep_parameter_node(self):
+        node = ParameterNode(use_as_attributes=True)
+        node.param1 = Parameter(set_cmd=None)
+        sweep_values_node = node.sweep('param1', 0, 10, step=1)
+        sweep_values_parameter = node['param1'].sweep(0, 10, step=1)
+        self.assertEqual(list(sweep_values_node), list(sweep_values_parameter))
+
+
 
 class TestCopyParameterNode(TestCase):
     def test_copy_parameter_node(self):

@@ -198,6 +198,27 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         else:
             super().__setattr__(attr, val)
 
+    __copy__ = deepcopy
+
+    def __getitem__(self, key):
+        """Delegate instrument['name'] to parameter or function 'name'."""
+        try:
+            return self.parameters[key]
+        except KeyError:
+            pass
+        try:
+            return self.functions[key]
+        except KeyError:
+            pass
+        return super().__getitem__(key)
+
+    def __dir__(self):
+        # Add parameters to dir
+        items = super().__dir__()
+        items.extend(self.parameters)
+        items.extend(self.parameter_nodes)
+        return items
+
     def _attach_parameter_decorators(self,
                                      parameter: _BaseParameter,
                                      decorator_methods: Dict[str, Callable]):
@@ -228,14 +249,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         # taken into account
         if hasattr(parameter, 'set') and parameter.raw_value is not None:
             parameter.set(parameter.get_latest(), evaluate=False)
-
-    __copy__ = deepcopy
-
-    # def __dir__(self):
-    #     # Add parameters to dir
-    #     items = super().__dir__()
-    #     items.extend(self.parameters.keys())
-    #     return items
 
     def add_function(self, name: str, **kwargs):
         """ Bind one Function to this parameter node.
@@ -355,6 +368,37 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
         return snap
 
+    def sweep(self, parameter_name: str, start=None, stop=None, step=None,
+              num=None, **kwargs):
+        """ Sweep a parameter in the parameter node
+
+        The following lines are identical:
+
+        >>> parameter_node.param.sweep(start=0, stop=10, step=1)
+        >>> parameter_node['param'].sweep(start=0, stop=10, step=1)
+        >>> parameter_node.sweep('param', start=0, stop=10, step=1)
+
+        Using the parameter node's sweep method is the recommended method,
+        especially if parameter_node.use_as_attributes == True.
+
+        Args:
+            parameter_name: Name of parameter to sweep
+            start: Sweep start value. Does not need to be set if window is set
+            stop: Sweep stop value. Does not need to be set if window is set
+            step: Optional sweep step. Does not need to be set if num or
+                step_percentage is set
+            num: Optional number of sweep values between start and stop. Does
+                not need to be set if step or step_percentage is set
+            **kwargs: Additional sweep kwargs, for SilQ QCoDeS these are:
+                window: Optional sweep window around current value.
+                    If set, start and stop do not need to be set
+                step_percentage: Optional step percentage, calculated from silq
+                    config (needs work, and does not work in unforked QCoDeS)
+        """
+        return self.parameters[parameter_name].sweep(start=start, stop=stop,
+                                                     step=step, num=num,
+                                                     **kwargs)
+
     def print_snapshot(self,
                        update: bool = False,
                        max_chars: int = 80):
@@ -416,18 +460,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                         channel.print_readable_snapshot()
             else:
                 submodule.print_readable_snapshot(update, max_chars)
-
-    def __getitem__(self, key):
-        """Delegate instrument['name'] to parameter or function 'name'."""
-        try:
-            return self.parameters[key]
-        except KeyError:
-            pass
-        try:
-            return self.functions[key]
-        except KeyError:
-            pass
-        return super().__getitem__(key)
 
     def call(self, func_name: str, *args, **kwargs):
         """ Shortcut for calling a function from its name.
