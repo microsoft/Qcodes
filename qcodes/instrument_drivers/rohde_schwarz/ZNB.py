@@ -376,7 +376,8 @@ class ZNB(VisaInstrument):
     CHANNEL_CLASS = ZNBChannel
 
 
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs) -> None:
+    def __init__(self, name: str, address: str, init_s_params: bool=True,
+                 reset_channels=True, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 
@@ -427,8 +428,9 @@ class ZNB(VisaInstrument):
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
-        self.reset()
-        self.clear_channels()
+        if reset_channels:
+            self.reset()
+            self.clear_channels()
         channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
                                snapshotable=True)
         self.add_submodule("channels", channels)
@@ -442,7 +444,8 @@ class ZNB(VisaInstrument):
             self.channels.autoscale()
 
         self.update_display_on()
-        self.rf_off()
+        if reset_channels:
+            self.rf_off()
         self.connect_message()
 
     def display_grid(self, rows: int, cols: int):
