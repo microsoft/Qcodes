@@ -1,6 +1,5 @@
 from typing import Dict
 import logging
-from bisect import bisect
 from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel, VAL_MAP_TYPE
 import qcodes.utils.validators as vals
 
