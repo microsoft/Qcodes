@@ -1,4 +1,6 @@
 import logging
+from functools import partial
+from typing import Optional
 
 from qcodes import VisaInstrument
 from qcodes import ChannelList, InstrumentChannel
@@ -94,29 +96,44 @@ class FrequencySweep(ArrayParameter):
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel, vna_parameter: str=None) -> None:
+    def __init__(self, parent: 'ZNB', name: str, channel: int, vna_parameter: str=None,
+                 existing_trace_to_bind_to: Optional[str]=None) -> None:
         """
         Args:
             parent: Instrument that this channel is bound to.
             name: Name to use for this channel.
+            channel: channel on the VNA to use
             vna_parameter: Name of parameter on the vna that this should
                 measure such as S12. If left empty this will fall back to
                 `name`.
+            existing_trace_to_bind_to: If supplied try to bind to an existing trace with
+                this name rather than creating a new trace.
+
         """
         n = channel
         self._instrument_channel = channel
-        self._tracename = "Trc{}".format(channel)
+
         if vna_parameter is None:
             vna_parameter = name
         self._vna_parameter = vna_parameter
         super().__init__(parent, name)
 
+        if existing_trace_to_bind_to is None:
+            self._tracename = "Trc{}".format(channel)
+        else:
+            traces = self._parent.ask(f"CONFigure:TRACe:CATalog?")
+            if existing_trace_to_bind_to not in traces:
+                raise RuntimeError(f"Trying to bind to {existing_trace_to_bind_to} "
+                                   f"which is not in {traces}")
+            self._tracename = existing_trace_to_bind_to
+
         # map hardware channel to measurement
         # hardware channels are mapped one to one to qcodes channels
         # we are not using sub traces within channels.
-        self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
-                                                       self._tracename,
-                                                       self._vna_parameter))
+        if existing_trace_to_bind_to is None:
+            self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
+                                                           self._tracename,
+                                                           self._vna_parameter))
 
         # source power is dependent on model, but not well documented.
         # here we assume -60 dBm for ZNB20, the others are set,
@@ -190,7 +207,7 @@ class ZNBChannel(InstrumentChannel):
                            set_cmd='CONF:CHAN{}:MEAS {{}}'.format(n),
                            get_parser=int)
         self.add_parameter(name='format',
-                           get_cmd='CALC{}:FORM?'.format(n),
+                           get_cmd=partial(self._get_format, tracename=self._tracename),
                            set_cmd=self._set_format,
                            val_mapping={'dB': 'MLOG\n',
                                         'Linear Magnitude': 'MLIN\n',
@@ -222,6 +239,11 @@ class ZNBChannel(InstrumentChannel):
         self.add_function('autoscale',
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
 
+    def _get_format(self, tracename):
+        n = self._instrument_channel
+        self.write(f"CALC{n}:PAR:SEL '{tracename}'")
+        return self.ask(f"CALC{n}:FORM?")
+
     def _set_format(self, val):
         unit_mapping = {'MLOG\n': 'dB',
                         'MLIN\n': '',
@@ -248,7 +270,7 @@ class ZNBChannel(InstrumentChannel):
                          'GDEL\n': 'Delay',
                          'COMP\n': 'Complex Magnitude'}
         channel = self._instrument_channel
-        self.write('CALC{}:FORM {}'.format(channel, val))
+        self.write(f"CALC{channel}:PAR:SEL '{self._tracename}';CALC{channel}:FORM {val}")
         self.trace.unit = unit_mapping[val]
         self.trace.label = "{} {}".format(
             self.short_name, label_mapping[val])
@@ -342,6 +364,7 @@ class ZNBChannel(InstrumentChannel):
             # need to ensure averaged result is returned
             for avgcount in range(self.avg()):
                 self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
+            self._parent.write(f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'")
             data_str = self.ask(
                 'CALC{}:DATA? {}'.format(self._instrument_channel,
                                          data_format_command))
