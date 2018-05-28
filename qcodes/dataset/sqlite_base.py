@@ -188,8 +188,15 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     ]:
         sqlite3.register_adapter(numpy_int, int)
 
+    def to_float(fl):
+        if np.isnan(fl):
+            return "nan"
+        return float(fl)
+
+    sqlite3.register_converter("numeric", np.float)
+
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
-        sqlite3.register_adapter(numpy_float, float)
+        sqlite3.register_adapter(numpy_float, to_float)
 
     if debug:
         conn.set_trace_callback(print)
