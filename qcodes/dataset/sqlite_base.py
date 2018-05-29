@@ -108,14 +108,14 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def _convert_numeric(value):
+def _convert_numeric(value: bytes) -> Union[float, int]:
     numeric = float(value)
     if np.isnan(numeric) or numeric != int(numeric):
         return numeric
     return int(numeric)
 
 
-def _adapt_float(fl):
+def _adapt_float(fl: float) -> Union[float, str]:
     if np.isnan(fl):
         return "nan"
     return float(fl)
