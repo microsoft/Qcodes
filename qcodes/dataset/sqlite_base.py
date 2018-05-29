@@ -110,11 +110,9 @@ def _convert_array(text: bytes) -> ndarray:
 
 def _convert_numeric(value):
     numeric = float(value)
-    if np.isnan(numeric):
+    if np.isnan(numeric) or numeric != int(numeric):
         return numeric
-    if numeric == int(numeric):
-        return int(numeric)
-    return numeric
+    return int(numeric)
 
 
 def _adapt_float(fl):
