@@ -117,7 +117,7 @@ def _convert_numeric(value):
     return numeric
 
 
-def _adapt_numeric(fl):
+def _adapt_float(fl):
     if np.isnan(fl):
         return "nan"
     return float(fl)
@@ -206,7 +206,7 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     sqlite3.register_converter("numeric", _convert_numeric)
 
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
-        sqlite3.register_adapter(numpy_float, _adapt_numeric)
+        sqlite3.register_adapter(numpy_float, _adapt_float)
 
     if debug:
         conn.set_trace_callback(print)
