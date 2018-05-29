@@ -199,6 +199,7 @@ class Triggered_Controller(AcquisitionController):
                       'This must be set after channel_selection is modified.'
         )
         self.buffers = {}
+        self.is_acquiring = False
 
     @property
     def _trigger_channel(self):
@@ -303,10 +304,16 @@ class Triggered_Controller(AcquisitionController):
         Returns:
             records : a numpy array of channelized data
         """
-        self.pre_start_capture()
-        self.start()
-        self.pre_acquire()
-        data = self.acquire()
+        try:
+            assert not self.is_acquiring, "Digitizer is already acquiring"
+            self.is_acquiring = True
+            self.pre_start_capture()
+            self.start()
+            self.pre_acquire()
+            data = self.acquire()
+        finally:
+            self.is_acquiring = False
+
         return self.post_acquire(data)
 
     def pre_start_capture(self):
