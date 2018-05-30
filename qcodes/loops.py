@@ -359,6 +359,9 @@ class ActiveLoop(Metadatable):
     # Currently active loop, is set when calling loop.run(set_active=True)
     # is reset to None when active measurement is finished
     active_loop = None
+    action_indices = ()
+    loop_indices = ()
+    active_action = None
     _is_stopped = False
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
@@ -823,6 +826,9 @@ class ActiveLoop(Metadatable):
             self.data_set = None
             if set_active:
                 ActiveLoop.active_loop = None
+            ActiveLoop.action_indices = ()
+            ActiveLoop.loop_indices = ()
+            ActiveLoop.active_action = None
 
         return ds
 
@@ -885,6 +891,8 @@ class ActiveLoop(Metadatable):
 
         # at the beginning of the loop, the time to wait after setting
         # the loop parameter may be increased if an outer loop requested longer
+        ActiveLoop.action_indices = action_indices
+
         delay = max(self.delay, first_delay)
 
         callables = self._compile_actions(self.actions, action_indices)
@@ -902,6 +910,8 @@ class ActiveLoop(Metadatable):
         self.last_task_failed = False
 
         for i, value in enumerate(self.sweep_values):
+            ActiveLoop.loop_indices = loop_indices + (i,)
+
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
                     self.sweep_values.name, i, imax, time.time() - t0),
@@ -941,16 +951,32 @@ class ActiveLoop(Metadatable):
 
             f = None
             try:
+                current_action_idx = 0
                 for k, f in enumerate(callables):
                     t0 = time.time()
                     # below is useful but too verbose even at debug
                     # log.debug('Going through callables at this sweep step.'
                     #           ' Calling {}'.format(f))
+                    if not isinstance(f, _Measure):
+                        # Register current action as active one, a _Measure
+                        # does this internally for each of its actions
+                        ActiveLoop.action_indices = action_indices + (current_action_idx,)
+                        ActiveLoop.active_action = f
+
                     f(first_delay=delay,
+                      action_indices=action_indices,
+                      current_action_idx=current_action_idx,
                       loop_indices=new_indices,
                       current_values=new_values)
-                    
+
                     self.timings[k][1] += time.time() - t0
+
+                    if not isinstance(f, _Measure):
+                        # Increment current action idx so that loop_position is
+                        # maintained (done internally for _Measure)
+                        current_action_idx += 1
+                    else:
+                        current_action_idx += len(f.param_ids)
 
                     # after the first action, no delay is inherited
                     delay = 0
