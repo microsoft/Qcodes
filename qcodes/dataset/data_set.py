@@ -667,15 +667,17 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata:  the values to associate with the dataset
     """
     path_to_db = get_DB_location()
-    d = DataSet(path_to_db, conn=conn)
+    conn = connect(get_DB_location())
 
     if exp_id is None:
-        if len(get_experiments(d.conn)) > 0:
-            exp_id = get_last_experiment(d.conn)
+        if len(get_experiments(conn)) > 0:
+            exp_id = get_last_experiment(conn)
         else:
             raise ValueError("No experiments found."
                              "You can start a new one with:"
                              " new_experiment(name, sample_name)")
+
+    d = DataSet(path_to_db, run_id=0, conn=conn)                             
     d._new(name, exp_id, specs, values, metadata)
     return d
 
