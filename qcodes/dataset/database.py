@@ -1,12 +1,14 @@
 # high-level interface to the database
 
+from os.path import expanduser
+
 from qcodes.dataset.sqlite_base import connect as _connect
 from qcodes.dataset.sqlite_base import init_db as _init_db
 import qcodes.config
 
 
 def get_DB_location() -> str:
-    return qcodes.config["core"]["db_location"]
+    return expanduser(qcodes.config["core"]["db_location"])
 
 
 def get_DB_debug() -> bool:
