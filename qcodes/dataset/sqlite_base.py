@@ -108,6 +108,19 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
+def _convert_numeric(value: bytes) -> Union[float, int]:
+    numeric = float(value)
+    if np.isnan(numeric) or numeric != int(numeric):
+        return numeric
+    return int(numeric)
+
+
+def _adapt_float(fl: float) -> Union[float, str]:
+    if np.isnan(fl):
+        return "nan"
+    return float(fl)
+
+
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     """Get the value of one column from one row
     Args:
@@ -188,8 +201,10 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     ]:
         sqlite3.register_adapter(numpy_int, int)
 
+    sqlite3.register_converter("numeric", _convert_numeric)
+
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
-        sqlite3.register_adapter(numpy_float, float)
+        sqlite3.register_adapter(numpy_float, _adapt_float)
 
     if debug:
         conn.set_trace_callback(print)
