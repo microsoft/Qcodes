@@ -166,7 +166,18 @@ class Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str, run_id: int, conn=None) -> None:
+    def __init__(self, path_to_db: str, run_id: Optional[int]=None,
+                 conn=None) -> None:
+        """
+        Create a new DataSet object. The object can either be intended
+        to hold a new run or and old run.
+
+        Args:
+            path_to_db: path to the sqlite file on disk
+            run_id: provide this when loading an existing run, leave it
+              as None when creating a new run
+            conn: connection to the DB
+        """                 
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
@@ -178,7 +189,8 @@ class DataSet(Sized):
         self.run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, Subscriber] = {}
-        self._completed = completed(self.conn, self.run_id)
+        if run_id:
+            self._completed = completed(self.conn, self.run_id)
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
@@ -633,7 +645,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    conn = connect(get_DB_location)
+    conn = connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -675,7 +687,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
                              " new_experiment(name, sample_name)")
     # This is admittedly a bit weird. We create a dataset, link it to some
     # run in the DB and then (using _new) change what it's linked to
-    d = DataSet(path_to_db, run_id=1, conn=conn)                             
+    d = DataSet(path_to_db, run_id=None, conn=conn)                             
     d._new(name, exp_id, specs, values, metadata)
     return d
 
