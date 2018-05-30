@@ -106,7 +106,6 @@ class Loop(Metadatable):
     this one.
     """
 
-    loop_indices = ()
     def __init__(self, sweep_values, delay=0, station=None,
                  progress_interval=None):
         super().__init__()
@@ -910,7 +909,6 @@ class ActiveLoop(Metadatable):
         self.last_task_failed = False
 
         for i, value in enumerate(self.sweep_values):
-            ActiveLoop.loop_indices = loop_indices + (i,)
 
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
@@ -920,7 +918,7 @@ class ActiveLoop(Metadatable):
             set_val = self.sweep_values.set(value)
 
             new_indices = loop_indices + (i,)
-            Loop.loop_indices = new_indices
+            ActiveLoop.loop_indices = new_indices
             new_values = current_values + (value,)
             data_to_store = {}
 
