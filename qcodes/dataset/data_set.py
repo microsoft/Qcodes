@@ -21,7 +21,8 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
-                                        connect, create_run, get_parameters,
+                                        connect, create_run, completed,
+                                        get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
                                         length, modify_values,
@@ -177,7 +178,7 @@ class DataSet(Sized):
         self.run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, Subscriber] = {}
-        self._completed = self._is_completed()
+        self._completed = completed(self.conn, self.run_id)
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
@@ -231,10 +232,6 @@ class DataSet(Sized):
         return select_one_where(self.conn, "runs",
                                 "exp_id", "run_id", self.run_id)
 
-    def _is_completed(self) -> bool:
-        comp_time = select_one_where(self.conn, "runs", "completed_timestamp",
-                                     "run_id", self.run_id)
-        return False if comp_time is None else True
 
     def toggle_debug(self):
         """
@@ -676,8 +673,9 @@ def new_data_set(name, exp_id: Optional[int] = None,
             raise ValueError("No experiments found."
                              "You can start a new one with:"
                              " new_experiment(name, sample_name)")
-
-    d = DataSet(path_to_db, run_id=0, conn=conn)                             
+    # This is admittedly a bit weird. We create a dataset, link it to some
+    # run in the DB and then (using _new) change what it's linked to
+    d = DataSet(path_to_db, run_id=1, conn=conn)                             
     d._new(name, exp_id, specs, values, metadata)
     return d
 
