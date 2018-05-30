@@ -1,20 +1,12 @@
-from hypothesis import given, settings
-import hypothesis.strategies as hst
-import numpy as np
+import os
 
-import qcodes as qc
-from qcodes import ParamSpec, new_data_set, new_experiment, experiments
-from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
-import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
-from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database
-
-import qcodes.dataset.experiment_container
 import pytest
 import tempfile
-import os
+
+import qcodes as qc
+from qcodes.dataset.database import initialise_database
+from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.data_set import new_data_set, load_by_id
 
 
 @pytest.fixture(scope="function")
@@ -34,13 +26,6 @@ def experiment(empty_temp_db):
     e.conn.close()
 
 
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = new_data_set("test-dataset")
-    yield dataset
-    dataset.conn.close()
-
-
 def test_load_by_id(experiment):
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
@@ -56,3 +41,4 @@ def test_load_by_id(experiment):
     loaded_ds = load_by_id(run_id)
     assert loaded_ds.completed == False
     assert loaded_ds.exp_id == 1
+
