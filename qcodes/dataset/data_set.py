@@ -177,7 +177,7 @@ class DataSet(Sized):
             run_id: provide this when loading an existing run, leave it
               as None when creating a new run
             conn: connection to the DB
-        """                 
+        """
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
@@ -658,7 +658,7 @@ def load_by_counter(counter, exp_id):
     run_id = one(c, 'run_id')
     conn.close()
     d = DataSet(get_DB_location(), run_id=run_id)
-   
+
     return d
 
 
@@ -695,9 +695,9 @@ def new_data_set(name, exp_id: Optional[int] = None,
     if tempcon:
         conn.close()
         conn = None
-    d = DataSet(path_to_db, run_id=None, conn=conn)                             
+    d = DataSet(path_to_db, run_id=None, conn=conn)
     d._new(name, exp_id, specs, values, metadata)
-    
+
     return d
 
 
