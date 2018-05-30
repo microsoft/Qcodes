@@ -637,7 +637,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    d = DataSet(get_DB_location())
+    conn = connect(get_DB_location)
     sql = """
     SELECT run_id
     FROM
@@ -646,8 +646,10 @@ def load_by_counter(counter, exp_id):
       result_counter= ? AND
       exp_id = ?
     """
-    c = transaction(d.conn, sql, counter, exp_id)
-    d.run_id = one(c, 'run_id')
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, 'run_id')
+    d = DataSet(get_DB_location(), run_id=run_id)
+    
     return d
 
 
