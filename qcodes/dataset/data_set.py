@@ -79,7 +79,7 @@ class Subscriber(Thread):
         # whether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
-        self.conn = dataSet.conn
+        conn = dataSet.conn
         self.log = logging.getLogger(f"Subscriber {self.sub_id}")
 
         self.state = state
@@ -96,14 +96,14 @@ class Subscriber(Thread):
         param_sql = ",".join([f"NEW.{p.name}" for p in parameters])
         self.callbackid = f"callback{self.sub_id}"
 
-        self.conn.create_function(self.callbackid, -1, self.cache)
+        conn.create_function(self.callbackid, -1, self.cache)
         sql = f"""
         CREATE TRIGGER sub{self.sub_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callbackid}({param_sql});
         END;"""
-        atomic_transaction(self.conn, sql)
+        atomic_transaction(conn, sql)
         self.data: Queue = Queue()
         self._data_set_len = len(dataSet)
         super().__init__()
@@ -656,8 +656,9 @@ def load_by_counter(counter, exp_id):
     """
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
+    conn.close()
     d = DataSet(get_DB_location(), run_id=run_id)
-    
+   
     return d
 
 
@@ -676,7 +677,11 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata:  the values to associate with the dataset
     """
     path_to_db = get_DB_location()
-    conn = connect(get_DB_location())
+    if conn is None:
+        tempcon = True
+        conn = connect(get_DB_location())
+    else:
+        tempcon = False
 
     if exp_id is None:
         if len(get_experiments(conn)) > 0:
@@ -687,8 +692,12 @@ def new_data_set(name, exp_id: Optional[int] = None,
                              " new_experiment(name, sample_name)")
     # This is admittedly a bit weird. We create a dataset, link it to some
     # run in the DB and then (using _new) change what it's linked to
+    if tempcon:
+        conn.close()
+        conn = None
     d = DataSet(path_to_db, run_id=None, conn=conn)                             
     d._new(name, exp_id, specs, values, metadata)
+    
     return d
 
 
