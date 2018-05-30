@@ -146,12 +146,12 @@ class _Measure:
 
         # for performance, pre-calculate which params return data for
         # multiple arrays, and the name mappings
-        self.getters = []
+        self.parameters = []
         self.param_ids = []
         self.composite = []
         paramcheck = []  # list to check if parameters are unique
         for param, action_indices in params_indices:
-            self.getters.append(param.get)
+            self.parameters.append(param)
 
             if param._instrument:
                 paramcheck.append((param, param._instrument))
@@ -184,15 +184,15 @@ class _Measure:
 
         out_dict = {}
         if self.use_threads:
-            out = thread_map(self.getters)
+            out = thread_map(self.parameters)
         else:
             out = []
-            for k, getter in enumerate(self.getters):
+            for k, parameter in enumerate(self.parameters):
                 # Registering action as active one in case it needs to be
                 # accessed during the action itself
                 ActiveLoop.action_indices = action_indices + (current_action_idx + k,)
-                ActiveLoop.active_action = getter
-                out.append(getter())
+                ActiveLoop.active_action = parameter
+                out.append(parameter.get())
 
         for param_out, param_id, composite in zip(out, self.param_ids,
                                                   self.composite):
