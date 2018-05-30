@@ -622,8 +622,7 @@ def load_by_id(run_id)->DataSet:
         the datasets
 
     """
-    d = DataSet(get_DB_location())
-    d.run_id = run_id
+    d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
