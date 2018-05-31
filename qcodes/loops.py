@@ -399,11 +399,17 @@ class ActiveLoop(Metadatable):
 
     @property
     def loop_shape(self) -> dict:
-        if not self.data_set:
-            return {}
-        else:
-            return {data_array.action_indices: data_array.shape
-                    for data_array in self.data_set.arrays.values()}
+        loop_shape = {}
+        sweep_vals = len(self.sweep_values)
+
+        for k, action in enumerate(self.actions):
+            if isinstance(action, ActiveLoop):
+                for action_subindex, loop_subshape in action.loop_shape.items():
+                    action_index = (k,) + action_subindex
+                    loop_shape[action_index] = (sweep_vals, ) + loop_subshape
+            else:
+                loop_shape[(k, )] = (sweep_vals, )
+        return loop_shape
 
     def then(self, *actions, overwrite=False):
         """
