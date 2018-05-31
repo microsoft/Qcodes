@@ -257,7 +257,8 @@ class HDF5Format(Formatter):
         metadata_group = data_set._h5_base_group.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
-    def write_dict_to_hdf5(self, data_dict, entry_point):
+    @staticmethod
+    def write_dict_to_hdf5(data_dict, entry_point):
         for key, item in data_dict.items():
             if isinstance(item, (str, bool, tuple, float, int)):
                 entry_point.attrs[key] = item
@@ -270,8 +271,8 @@ class HDF5Format(Formatter):
                 entry_point.attrs[key] = 'NoneType:__None__'
             elif isinstance(item, dict):
                 entry_point.create_group(key)
-                self.write_dict_to_hdf5(data_dict=item,
-                                        entry_point=entry_point[key])
+                HDF5Format.write_dict_to_hdf5(data_dict=item,
+                                   entry_point=entry_point[key])
             elif isinstance(item, list):
                 if len(item) > 0:
                     elt_type = type(item[0])
@@ -299,7 +300,7 @@ class HDF5Format(Formatter):
                             for i, list_item in enumerate(item):
                                 list_item_grp = entry_point[key].create_group(
                                     base_list_key.format(i))
-                                self.write_dict_to_hdf5(
+                                HDF5Format.write_dict_to_hdf5(
                                     data_dict=list_item,
                                     entry_point=list_item_grp)
                         else:
@@ -337,13 +338,14 @@ class HDF5Format(Formatter):
             self.read_dict_from_hdf5(data_set.metadata, metadata_group)
         return data_set
 
-    def read_dict_from_hdf5(self, data_dict, h5_group):
+    @staticmethod
+    def read_dict_from_hdf5(data_dict, h5_group):
         if 'list_type' not in h5_group.attrs:
             for key, item in h5_group.items():
                 if isinstance(item, h5py.Group):
                     data_dict[key] = {}
-                    data_dict[key] = self.read_dict_from_hdf5(data_dict[key],
-                                                              item)
+                    data_dict[key] = HDF5Format.read_dict_from_hdf5(
+                        data_dict[key], item)
                 else:  # item either a group or a dataset
                     if 'list_type' not in item.attrs:
                         data_dict[key] = item.value
@@ -365,7 +367,7 @@ class HDF5Format(Formatter):
             base_list_key = h5_group.attrs['base_list_key']
             for i in range(h5_group.attrs['list_length']):
                 list_to_be_filled[i] = {}
-                self.read_dict_from_hdf5(
+                HDF5Format.read_dict_from_hdf5(
                     data_dict=list_to_be_filled[i],
                     h5_group=h5_group[base_list_key.format(i)])
 
