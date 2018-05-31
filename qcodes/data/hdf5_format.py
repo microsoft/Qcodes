@@ -51,9 +51,17 @@ class HDF5Format(Formatter):
     def read(self, data_set, location=None):
         """
         Reads an hdf5 file specified by location into a data_set object.
-        If no data_set is provided will creata an empty data_set to read into.
-        If no location is provided will use the location specified in the
-        dataset.
+        If no data_set is provided will create an empty data_set to read into.
+
+
+        Args:
+            data_set (DataSet): the data to read into. Should already have
+                attributes ``io`` (an io manager), ``location`` (string),
+                and ``arrays`` (dict of ``{array_id: array}``, can be empty
+                or can already have some or all of the arrays present, they
+                expect to be overwritten)
+            location (None or str): Location to write the data. If no location 
+                is provided will use the location specified in the dataset.
         """
         self._open_file(data_set, location)
 
@@ -150,6 +158,7 @@ class HDF5Format(Formatter):
             force_write (bool): if True creates a new file to write to
             flush (bool) : whether to flush after writing, can be disabled
                 for testing or performance reasons
+            write_metadata (bool): If True write the dataset metadata to disk
             only_complete (bool): Not used by this formatter, but must be
                 included in the call signature to avoid an "unexpected
                 keyword argument" TypeError.
@@ -299,6 +308,12 @@ class HDF5Format(Formatter):
             entry_point=entry_point[key][list_type])
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
+        """ Write a (nested) dictionary to HDF5 
+
+        Args:
+            data_dict (dict): Dicionary to be written
+            entry_point (object): Object to write to
+        """
         for key, item in data_dict.items():
             if isinstance(key, (float, int)):
                 key = '__' + str(type(key)) + '__' + str(key)
@@ -372,6 +387,9 @@ class HDF5Format(Formatter):
         """
         Reads in the metadata, this is also called at the end of a read
         statement so there should be no need to call this explicitly.
+
+        Args:
+            data_set (DataSet): Dataset object to read the metadata into
         """
         # checks if there is an open file in the dataset as load_data does
         # reading of metadata before reading the complete dataset
@@ -383,6 +401,13 @@ class HDF5Format(Formatter):
         return data_set
 
     def read_dict_from_hdf5(self, data_dict, h5_group):
+        """ Read a dictionary from HDF5 
+
+        Args:
+            data_dict (dict): Dataset to read from
+            h5_group (object): HDF5 object to read from
+        """
+
         if 'list_type' not in h5_group.attrs:
             for key, item in h5_group.items():
                 if isinstance(item, h5py.Group):
