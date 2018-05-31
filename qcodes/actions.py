@@ -44,7 +44,7 @@ class Task:
         func (callable): Function to executed
         N (int): if set, Task is only executed every N calls.
             Task is always executed in first call.
-        condition (callable): If set, Task is only executed if condition 
+        condition (callable): If set, Task is only executed if condition
             evaluates to True
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
@@ -146,12 +146,12 @@ class _Measure:
 
         # for performance, pre-calculate which params return data for
         # multiple arrays, and the name mappings
-        self.getters = []
+        self.parameters = []
         self.param_ids = []
         self.composite = []
         paramcheck = []  # list to check if parameters are unique
         for param, action_indices in params_indices:
-            self.getters.append(param.get)
+            self.parameters.append(param)
 
             if param._instrument:
                 paramcheck.append((param, param._instrument))
@@ -179,12 +179,20 @@ class _Measure:
                                                'asked for'
                                                ' {}.'.format(duplicates))
 
-    def __call__(self, loop_indices, **ignore_kwargs):
+    def __call__(self, action_indices, current_action_idx, loop_indices, **ignore_kwargs):
+        from qcodes.loops import ActiveLoop
+
         out_dict = {}
         if self.use_threads:
-            out = thread_map(self.getters)
+            out = thread_map(self.parameters)
         else:
-            out = [g() for g in self.getters]
+            out = []
+            for k, parameter in enumerate(self.parameters):
+                # Registering action as active one in case it needs to be
+                # accessed during the action itself
+                ActiveLoop.action_indices = action_indices + (current_action_idx + k,)
+                ActiveLoop.active_action = parameter
+                out.append(parameter.get())
 
         for param_out, param_id, composite in zip(out, self.param_ids,
                                                   self.composite):
@@ -193,7 +201,6 @@ class _Measure:
                     out_dict[part_id] = val
             else:
                 out_dict[param_id] = param_out
-
         self.store(loop_indices, out_dict)
 
 
@@ -209,7 +216,8 @@ class _Nest:
         self.inner_loop = inner_loop
         self.action_indices = action_indices
 
-    def __call__(self, **kwargs):
+    def __call__(self, action_indices, **kwargs):
+        # We ignore the passed action indices
         self.inner_loop._run_loop(action_indices=self.action_indices, **kwargs)
 
 
