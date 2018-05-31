@@ -50,6 +50,9 @@ class HDF5FormatHickle(HDF5Format):
 
     def read_metadata(self, data_set):
         """ Reads in the metadata
+
+        Args:
+            data_set (DataSet): Dataset object to read the metadata into
         """
         io_manager = data_set.io
         location = data_set.location
