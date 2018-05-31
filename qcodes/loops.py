@@ -357,10 +357,10 @@ class ActiveLoop(Metadatable):
 
     # Currently active loop, is set when calling loop.run(set_active=True)
     # is reset to None when active measurement is finished
-    active_loop = None
-    action_indices = ()
-    loop_indices = ()
-    active_action = None
+    active_loop = None  # Currently active outer loop
+    action_indices = ()  # Full indices of actions within loops
+    loop_indices = ()  # Current sweep index in loop
+    active_action = None  # Currently active action (e.g. parameter)
     _is_stopped = False
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
@@ -396,6 +396,14 @@ class ActiveLoop(Metadatable):
             loop.actions[item]
         """
         return self.actions[item]
+
+    @property
+    def loop_shape(self) -> dict:
+        if not self.data_set:
+            return {}
+        else:
+            return {data_array.action_indices: data_array.shape
+                    for data_array in self.data_set.arrays.values()}
 
     def then(self, *actions, overwrite=False):
         """
