@@ -14,6 +14,7 @@ class HDF5Format(Formatter):
     HDF5 formatter for saving qcodes datasets.
 
     Capable of storing (write) and recovering (read) qcodes datasets.
+           
     """
 
     _format_tag = 'hdf5'
@@ -21,6 +22,9 @@ class HDF5Format(Formatter):
     def close_file(self, data_set):
         """
         Closes the hdf5 file open in the dataset.
+        
+        Args:
+            data_set (DataSet): DataSet object
         """
         if hasattr(data_set, '_h5_base_group'):
             data_set._h5_base_group.close()

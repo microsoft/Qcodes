@@ -7,9 +7,10 @@ from qcodes.utils.helpers import deep_update
 
 log = logging.getLogger(__name__)
 
+
 class HDF5FormatHickle(HDF5Format):
 
-    metadata_file = 'snapshot.hickle'
+    _metadata_file = 'snapshot.hickle'
     _format_tag = 'hdf5-hickle'
 
     def write_metadata(self, data_set, io_manager=None, location=None, read_first=False):
@@ -43,8 +44,8 @@ class HDF5FormatHickle(HDF5Format):
             self.read_metadata(data_set)
             deep_update(data_set.metadata, memory_metadata)
 
-        log.info('writing metadata to file %s' % self.metadata_file)
-        fn = io_manager.join(location, self.metadata_file)
+        log.info('writing metadata to file %s' % self._metadata_file)
+        fn = io_manager.join(location, self._metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
             hickle.dump(data_set.metadata, snap_file)
 
@@ -56,9 +57,9 @@ class HDF5FormatHickle(HDF5Format):
         """
         io_manager = data_set.io
         location = data_set.location
-        fn = io_manager.join(location, self.metadata_file)
+        fn = io_manager.join(location, self._metadata_file)
         if io_manager.list(fn):
-            log.info('reading metadata from file %s' % self.metadata_file)
+            log.info('reading metadata from file %s' % self._metadata_file)
             with io_manager.open(fn, 'r') as snap_file:
                 metadata = hickle.load(snap_file)
             data_set.metadata.update(metadata)
