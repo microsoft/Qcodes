@@ -18,6 +18,9 @@ from qcodes.dataset.data_set import DataSet
 
 log = logging.getLogger(__name__)
 
+array_like_types = (tuple, list, np.ndarray)
+non_array_like_types = (int, float, str)
+
 
 class ParameterTypeError(Exception):
     pass
@@ -101,7 +104,7 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            if isinstance(value, np.ndarray):
+            if any(isinstance(value, typ) for typ in array_like_types):
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
                 array_size = len(value)
@@ -111,6 +114,14 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            elif any(isinstance(value, t) for t in non_array_like_types):
+                pass
+            else:
+                raise ValueError('Wrong value type received. '
+                                 f'Got {type(value)}, but only int, float, '
+                                 'str, tuple, list, and np.ndarray is '
+                                 'allowed.')
+
             # TODO (WilliamHPNielsen): The following code block is ugly and
             # brittle and should be enough to convince us to abandon the
             # design of ArrayParameters (possibly) containing (some of) their
