@@ -283,12 +283,13 @@ class MatPlot(BasePlot):
             config = trace['config']
             plot_object = trace['plot_object']
             if 'z' in config:
+                ax = self[config.get('subplot', 1) - 1]
+
                 # pcolormesh doesn't seem to allow editing x and y data, only z
                 # so instead, we'll remove and re-add the data.
                 if plot_object:
                     plot_object.remove()
 
-                ax = self[config.get('subplot', 1) - 1]
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
@@ -413,16 +414,22 @@ class MatPlot(BasePlot):
                 arr_pad[np.isnan(arr_pad)] = np.nanmax(arr_pad)
                 args.append(arr_pad)
             args.append(args_masked[-1])
+
+            # Set x and y limits
+            xlim = [np.nanmin(args[0]), np.nanmax(args[0])]
+            ylim = [np.nanmin(args[1]), np.nanmax(args[1])]
+            if ax.collections:  # ensure existing 2D plots are not cropped
+                xlim = [min(xlim[0], ax.get_xlim()[0]),
+                        max(xlim[1], ax.get_xlim()[1])]
+                ylim = [min(ylim[0], ax.get_ylim()[0]),
+                        max(ylim[1], ax.get_ylim()[1])]
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
         else:
             # Only the masked value of z is used as a mask
             args = args_masked[-1:]
 
         pc = ax.pcolormesh(*args, **kwargs)
-
-        # Set x and y limits if arrays are provided
-        if x is not None and y is not None:
-            ax.set_xlim(np.nanmin(args[0]), np.nanmax(args[0]))
-            ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
 
         # Specify preferred number of ticks with labels
         if nticks and ax.get_xscale() != 'log' and ax.get_yscale != 'log':
