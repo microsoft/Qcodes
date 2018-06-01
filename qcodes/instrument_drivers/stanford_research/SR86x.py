@@ -338,7 +338,7 @@ class SR86x(VisaInstrument):
                            get_cmd='SLVL?',
                            set_cmd='SLVL {}',
                            get_parser=float,
-                           vals=Numbers(min_value=10e-9, max_value=2))
+                           vals=Numbers(min_value=0, max_value=2))
         self.add_parameter(name='harmonic',
                            label='Harmonic',
                            get_cmd='HARM?',

@@ -361,4 +361,14 @@ def test_numpy_floats(dataset):
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
     expected_result = [[tp(1.2)] for tp in numpy_floats]
-    assert dataset.get_data("y") == expected_result
+    assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+
+
+def test_numpy_nan(dataset):
+    parameter_m = ParamSpec("m", "numeric")
+    dataset.add_parameters([parameter_m])
+
+    data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
+    dataset.add_results(data_dict)
+    retrieved = dataset.get_data("m")
+    assert np.isnan(retrieved[1])
