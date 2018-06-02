@@ -876,6 +876,64 @@ class TestCopyParameter(TestCase):
         self.assertEqual(p2.raw_value, 44)
         self.assertEqual(p2(), 44)
 
+    def test_copy_parameter_change_name(self):
+        p = Parameter(name='parameter1')
+        p_copy = copy(p)
+
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p.name = 'changed_parameter_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p_copy.name = 'new_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'new_name')
+
+    def test_deepcopy_parameter_change_name(self):
+        p = Parameter(name='parameter1')
+        p_copy = deepcopy(p)
+
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p.name = 'changed_parameter_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p_copy.name = 'new_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'new_name')
+
+    def test_parameter_copy_get_latest(self):
+        p = Parameter(name='p1', set_cmd=None)
+        p(42)
+        p_copy = copy(p)
+
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p(41)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p_copy(43)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 43)
+
+    def test_parameter_deepcopy_get_latest(self):
+        p = Parameter(name='p1', set_cmd=None)
+        p(42)
+        p_copy = deepcopy(p)
+
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p(41)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p_copy(43)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 43)
+
 
 class TestParameterSignal(TestCase):
     def save_args_kwargs(self, *args, **kwargs):
@@ -937,6 +995,19 @@ class TestParameterSignal(TestCase):
         self.assertIsNone(target_ref())
         self.assertEqual(len(self.source_parameter.signal.receivers), 0)
 
+    def test_copied_source_parameter(self):
+        self.source_parameter.connect(self.target_parameter, update=False)
+        deepcopied_source_parameter = copy(self.source_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        deepcopied_source_parameter(41)
+        self.assertEqual(self.source_parameter(), 42)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(44)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(deepcopied_source_parameter(), 41)
+
     def test_deepcopied_source_parameter(self):
         self.source_parameter.connect(self.target_parameter, update=False)
         deepcopied_source_parameter = deepcopy(self.source_parameter)
@@ -950,18 +1021,39 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.target_parameter(), 44)
         self.assertEqual(deepcopied_source_parameter(), 41)
 
-    def test_copied_source_parameter(self):
+    def test_copied_target_parameter(self):
         self.source_parameter.connect(self.target_parameter, update=False)
-        copied_source_parameter = copy(self.source_parameter)
+        copied_target_parameter = copy(self.target_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
-        copied_source_parameter(41)
-        self.assertEqual(self.source_parameter(), 42)
-        self.assertEqual(self.target_parameter(), 43)
+        self.assertEqual(copied_target_parameter(), 43)
 
-        self.source_parameter(44)
+        self.source_parameter(41)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 41)
+        self.assertEqual(copied_target_parameter(), 43)
+
+        self.target_parameter(44)
+        self.assertEqual(self.source_parameter(), 41)
         self.assertEqual(self.target_parameter(), 44)
-        self.assertEqual(copied_source_parameter(), 41)
+        self.assertEqual(copied_target_parameter(), 43)
+
+    def test_deepcopied_target_parameter(self):
+        self.source_parameter.connect(self.target_parameter, update=False)
+        copied_target_parameter = copy(self.target_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        self.assertEqual(copied_target_parameter(), 43)
+
+        self.source_parameter(41)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 41)
+        self.assertEqual(copied_target_parameter(), 43)
+
+        self.target_parameter(44)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(copied_target_parameter(), 43)
 
     def test_connected_parameter(self):
         self.source_parameter.connect(self.target_parameter)
