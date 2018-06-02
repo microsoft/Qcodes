@@ -442,6 +442,11 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self_copy._signal_chain = []
         self_copy._instrument = None
 
+        # Perform deepcopy on latest value to ensure the original and copied
+        # parameters cannot affect each other (e.g. if the latest value is a
+        # list and list.clear() is called)
+        self_copy._latest = deepcopy(self._latest)
+
         return self_copy
 
     @property
