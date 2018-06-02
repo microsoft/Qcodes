@@ -1018,6 +1018,39 @@ class TestCopyParameter(TestCase):
 
         copied_custom_multi_parameter = deepcopy(custom_array_parameter)
 
+    def test_copy_stateful_parameter(self):
+        p = Parameter(set_cmd=None)
+        p([])
+
+        p_copy = copy(p)
+        self.assertEqual(p(), [])
+        self.assertEqual(p_copy(), [])
+
+        p().append(1)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [])
+
+        p_copy().append(2)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [2])
+
+    def test_deepcopy_stateful_parameter(self):
+        p = Parameter(set_cmd=None)
+        p([])
+
+        p_copy = deepcopy(p)
+        self.assertEqual(p(), [])
+        self.assertEqual(p_copy(), [])
+
+        p().append(1)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [])
+
+        p_copy().append(2)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [2])
+
+
 
 class TestParameterSignal(TestCase):
     def save_args_kwargs(self, *args, **kwargs):
