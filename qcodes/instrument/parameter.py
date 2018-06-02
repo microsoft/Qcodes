@@ -440,6 +440,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                          max_val_age=self.get_latest.max_val_age)
         self_copy.signal = None
         self_copy._signal_chain = []
+        self_copy._instrument = None
 
         return self_copy
 
