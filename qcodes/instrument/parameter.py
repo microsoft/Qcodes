@@ -541,17 +541,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     if evaluate:
                         set_function(parsed_scaled_mapped_value, **kwargs)
 
-                    # # Send a signal if anything is connected, unless
-                    if self.signal is not None:
-                        for receiver in self.signal.receivers.values():
-                            potential_emitter = getattr(receiver(), '__self__', None)
-                            if isinstance(potential_emitter, SignalEmitter):
-                                if not signal_chain:
-                                    potential_emitter._signal_chain = [self]
-                                else:
-                                    potential_emitter._signal_chain = signal_chain + [self]
-                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
-
                     self.raw_value = parsed_scaled_mapped_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
@@ -579,6 +568,18 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
+                    # Send a signal if anything is connected
+                    if self.signal is not None:
+                        for receiver in self.signal.receivers.values():
+                            potential_emitter = getattr(receiver(), '__self__', None)
+                            if isinstance(potential_emitter, SignalEmitter):
+                                # Update signal chain to avoid circular signalling
+                                if not signal_chain:
+                                    potential_emitter._signal_chain = [self]
+                                else:
+                                    potential_emitter._signal_chain = signal_chain + [self]
+                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
