@@ -84,7 +84,9 @@ if TYPE_CHECKING:
 
 
 def __deepcopy__(self, memodict={}):
-    """Custom __deepcopy__ method, added to BaseParameter upon instantiation.
+    """_BaseParameter.__deepcopy__ method, Invoked via copy.deepcopy(param).
+
+    This method is added to BaseParameter upon instantiation.
     This workaround solves the following issues with (deep)copying a parameter:
 
     1. Certain attributes cannot be copied, such as `_BaseParameter.log`.
@@ -110,6 +112,10 @@ def __deepcopy__(self, memodict={}):
        by creating a method __copy__ which then invokes this __deepcopy__.
 
     If anyone finds a better solution, please do change this code.
+
+    Note:
+        For most simple cases, copy.copy(param) can be used instead, which
+        is faster and creates a shallow copy.
     """
     restore_attrs = {}
     for attr in ['__deepcopy__', 'signal', 'get', 'set', '_instrument']:
@@ -372,9 +378,19 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                           ' Parameter {}'.format(self.name))
 
     def __copy__(self):
-        """Create a copy of the Parameter
+        """Create a copy of the Parameter, invoked by copy.copy(param)
 
+        Copying a parameter creates a shallow copy of the parameter, which
+        means that it does not create copies of any object attributes. For a
+        deep copy that also copies each of its attributes, use
 
+        >>> copy.deepcopy(param)
+
+        Note:
+            Since copying only creates a shallow copy, this may cause issues in
+            cases where on of its attributes is an object that references the
+            parameter, as the object is not copied, and so it will still
+            reference to the original parameter, and not the copied one.
         """
         # Perform underlying default behaviour of copy(obj)
         # We need to call the underlying functions because we need to perform
