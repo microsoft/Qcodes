@@ -844,8 +844,12 @@ class TestCopyParameter(TestCase):
         self.assertEqual(p2(), 42)
 
         p1(43)
-        p2(44)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
 
+        p2(44)
         self.assertEqual(p1.raw_value, 43)
         self.assertEqual(p1(), 43)
         self.assertEqual(p2.raw_value, 44)
@@ -861,8 +865,12 @@ class TestCopyParameter(TestCase):
         self.assertEqual(p2(), 42)
 
         p1(43)
-        p2(44)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
 
+        p2(44)
         self.assertEqual(p1.raw_value, 43)
         self.assertEqual(p1(), 43)
         self.assertEqual(p2.raw_value, 44)
