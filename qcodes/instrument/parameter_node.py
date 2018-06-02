@@ -2,7 +2,7 @@ import logging
 from typing import Sequence, Any, Dict, Callable
 import numpy as np
 from functools import partial, wraps
-from copy import deepcopy
+from copy import copy, deepcopy, _reconstruct
 
 from qcodes.utils.helpers import DelegateAttributes, full_class
 from qcodes.utils.metadata import Metadatable
@@ -198,7 +198,28 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         else:
             super().__setattr__(attr, val)
 
-    __copy__ = deepcopy
+    def __copy__(self):
+        """Copy method for ParameterNode, invoked by copy.copy(parameter_node).
+        """
+        rv = self.__reduce_ex__(4)
+        self_copy = _reconstruct(self, None, *rv)
+
+        self_copy.parameters = {}
+        for parameter_name, parameter in self.parameters.items():
+            parameter_copy = copy(parameter)
+            self_copy.parameters[parameter_name] = parameter_copy
+
+            if parameter_name in self._parameter_decorators:
+                parameter_decorators = self._parameter_decorators[parameter_name]
+                self_copy._attach_parameter_decorators(parameter_copy,
+                                                       parameter_decorators)
+
+        self_copy.parameter_nodes = {}
+        for node_name, parameter_node in self_copy.parameter_nodes.items():
+            parameter_node_copy = copy(parameter_node)
+            self_copy.parameter_nodes[node_name] = parameter_node_copy
+
+        return self_copy
 
     def __getitem__(self, key):
         """Delegate instrument['name'] to parameter or function 'name'."""
