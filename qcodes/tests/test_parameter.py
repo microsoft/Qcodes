@@ -934,6 +934,90 @@ class TestCopyParameter(TestCase):
         self.assertEqual(p.get_latest(), 41)
         self.assertEqual(p_copy.get_latest(), 43)
 
+    def test_copy_multi_parameter(self):
+        class CustomMultiParameter(MultiParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+            def set_raw(self, values):
+                self.values = values
+
+        custom_multi_parameter = CustomMultiParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      names=['arg1', 'arg2'],
+                                                      shapes=((),())
+                                                      )
+        self.assertListEqual(custom_multi_parameter(), [1,2])
+
+        copied_custom_multi_parameter = copy(custom_multi_parameter)
+        custom_multi_parameter([3,4])
+        self.assertListEqual(custom_multi_parameter(), [3, 4])
+        self.assertListEqual(copied_custom_multi_parameter.get_latest(), [1, 2])
+        self.assertListEqual(copied_custom_multi_parameter(), [1, 2])
+
+    def test_deepcopy_multi_parameter(self):
+        class CustomMultiParameter(MultiParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+            def set_raw(self, values):
+                self.values = values
+
+        custom_multi_parameter = CustomMultiParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      names=['arg1', 'arg2'],
+                                                      shapes=((),())
+                                                      )
+        self.assertListEqual(custom_multi_parameter(), [1,2])
+
+        copied_custom_multi_parameter = deepcopy(custom_multi_parameter)
+        custom_multi_parameter([3,4])
+        self.assertListEqual(custom_multi_parameter(), [3, 4])
+        self.assertListEqual(copied_custom_multi_parameter.get_latest(), [1, 2])
+        self.assertListEqual(copied_custom_multi_parameter(), [1, 2])
+
+    def test_copy_array_parameter(self):
+        class CustomArrayParameter(ArrayParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+        custom_array_parameter = CustomArrayParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      shape=(2,)
+                                                      )
+        self.assertListEqual(custom_array_parameter(), [1,2])
+
+        copied_custom_multi_parameter = copy(custom_array_parameter)
+
+    def test_deepcopy_array_parameter(self):
+        class CustomArrayParameter(ArrayParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+        custom_array_parameter = CustomArrayParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      shape=(2,)
+                                                      )
+        self.assertListEqual(custom_array_parameter(), [1,2])
+
+        copied_custom_multi_parameter = deepcopy(custom_array_parameter)
+
 
 class TestParameterSignal(TestCase):
     def save_args_kwargs(self, *args, **kwargs):
