@@ -514,23 +514,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     print('validate_status: param %s: %s' % (k, value))
                 p.validate(value)
 
-    def copy_shallow(self):
-        parameters, self.parameters = self.parameters, {}
-        parameter_nodes, self.parameter_nodes = self.parameter_nodes, {}
-        try:
-            self_copy = deepcopy(self)
-            # parameters are now their values, so they're already attributes
-            self_copy.use_as_attributes = False
-            self_copy.parameters = {name: parameter.get_latest()
-                                    for name, parameter in parameters.items()}
-            self_copy.parameter_nodes = {name: node.copy_shallow()
-                                    for name, node in parameter_nodes.items()}
-        finally:
-            self.parameters = parameters
-            self.parameter_nodes = parameter_nodes
-
-        return self_copy
-
     # Deprecated methods
     def print_readable_snapshot(self, update=False, max_chars=80):
         logger.warning('print_readable_snapshot is replaced with print_snapshot')
