@@ -57,7 +57,7 @@ the primary parameter changes value.
 # if everyone is happy to use these classes.
 
 from datetime import datetime, timedelta
-from copy import copy, deepcopy
+from copy import copy, deepcopy, _reconstruct
 import time
 import logging
 import os
@@ -372,7 +372,55 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                           ' Parameter {}'.format(self.name))
 
     def __copy__(self):
-        return self.__deepcopy__()
+        # Perform underlying default behaviour of copy(obj)
+        # We need to call the underlying functions because we need to perform
+        # additional actions afterwards
+        rv = self.__reduce_ex__(4)
+        self_copy = _reconstruct(self, None, *rv)
+
+        # Detach and reattach all node decorator methods, now containing
+        # reference to the new parameter, but still old parameter node
+        for attr in ['get_raw', 'set_raw', 'vals', 'set_parser', 'get_parser']:
+            attr_partial = self.__dict__.get(attr, None)
+            if isinstance(attr_partial, partial) and \
+                    attr_partial.func.__name__ == 'parameter_decorator':
+                attr_method = attr_partial.func
+                original_node = attr_partial.args[0]
+                attr_partial_copy = partial(attr_method, original_node, self_copy)
+                setattr(self_copy, attr, attr_partial_copy)
+
+        # Ensure Parameter's get_raw method points to the copied parameter's
+        # _get_raw_value when no get method defined and get_cmd=None
+        if 'get_raw' in self.__dict__ and self.get_raw == self._get_raw_value:
+            self_copy.get_raw = self_copy._get_raw_value
+
+        # Ensure Parameter's set_raw method points to the copied parameter's
+        # save_val when no get method defined and get_cmd=None
+        if ('set_raw' in self.__dict__
+                and isinstance(self.set_raw, partial)
+                and self.set_raw.func == self._save_val):
+            self_copy.set_raw = partial(self_copy._save_val,
+                                        **self.set_raw.keywords)
+
+        # Wrap get and set methods
+        if 'get' in self.__dict__:
+            if self.wrap_get:
+                self_copy.get = self_copy._wrap_get(self_copy.get_raw)
+            else:
+                self_copy.get = self_copy.get_raw
+
+        if 'set' in self.__dict__:
+            if self_copy.wrap_set:
+                self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+            else:
+                self_copy.set = self_copy.set_raw
+
+        self_copy.get_latest = GetLatest(self_copy,
+                                         max_val_age=self.get_latest.max_val_age)
+        self_copy.signal = None
+        self_copy._signal_chain = []
+
+        return self_copy
 
     @property
     def log(self):
