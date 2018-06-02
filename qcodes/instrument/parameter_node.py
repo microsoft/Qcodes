@@ -209,10 +209,11 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             parameter_copy = copy(parameter)
             self_copy.parameters[parameter_name] = parameter_copy
 
-            if parameter_name in self._parameter_decorators:
-                parameter_decorators = self._parameter_decorators[parameter_name]
-                self_copy._attach_parameter_decorators(parameter_copy,
-                                                       parameter_decorators)
+        # Attach parameter decorators, done in a second loop because the
+        # decorators may call parameters, and so all parameters must exist
+        for parameter_name, parameter_decorators in self._parameter_decorators.items():
+            parameter = self_copy.parameters[parameter_name]
+            self_copy._attach_parameter_decorators(parameter, parameter_decorators)
 
         self_copy.parameter_nodes = {}
         for node_name, parameter_node in self_copy.parameter_nodes.items():
@@ -265,11 +266,11 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     parameter.set = parameter.set_raw
             else:
                 setattr(parameter, param_attr, method_with_args)
-        # perform a set without eparameteruating, which saves the value,
+        # perform a set without evaluating, which saves the value,
         # ensuring that new modifications such as the set_parser are
         # taken into account
         if hasattr(parameter, 'set') and parameter.raw_value is not None:
-            parameter.set(parameter.get_latest(), evaluate=False)
+            parameter.set(copy(parameter.get_latest()), evaluate=False)
 
     def add_function(self, name: str, **kwargs):
         """ Bind one Function to this parameter node.
