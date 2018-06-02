@@ -372,6 +372,10 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                           ' Parameter {}'.format(self.name))
 
     def __copy__(self):
+        """Create a copy of the Parameter
+
+
+        """
         # Perform underlying default behaviour of copy(obj)
         # We need to call the underlying functions because we need to perform
         # additional actions afterwards
@@ -391,7 +395,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
         # Ensure Parameter's get_raw method points to the copied parameter's
         # _get_raw_value when no get method defined and get_cmd=None
-        if 'get_raw' in self.__dict__ and self.get_raw == self._get_raw_value:
+        if ('get_raw' in self.__dict__
+                and self.get_raw == getattr(self, '_get_raw_value', None)):
             self_copy.get_raw = self_copy._get_raw_value
 
         # Ensure Parameter's set_raw method points to the copied parameter's
