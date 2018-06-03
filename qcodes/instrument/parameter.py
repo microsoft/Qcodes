@@ -277,9 +277,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         Metadatable.__init__(self, metadata)
         SignalEmitter.__init__(self, initialize_signal=False)
         self.name = str(name)
-        self.parent = parent
-        if instrument is not None:
-            self.parent = instrument
+        self.parent = instrument if instrument is not None else parent
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
         self.log_changes = log_changes
@@ -498,13 +496,13 @@ class _BaseParameter(Metadatable, SignalEmitter):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            if attr == 'parent' and self.parent:
+            if attr == 'parent' and self.parent is not None:
                 # We also add instrument items for deprecation reasons
                 state.update({
                     'parent': full_class(self.parent),
                     'parent_name': getattr(self.parent, 'name', 'no_name'),
                     'instrument': full_class(self.parent),
-                    'instrument_name': self.parent.name
+                    'instrument_name': getattr(self.parent, 'name', 'no_name')
                 })
             else:
                 val = getattr(self, attr, None)
