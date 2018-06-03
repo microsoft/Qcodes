@@ -171,6 +171,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     def __setattr__(self, attr, val):
         if isinstance(val, _BaseParameter):
             self.parameters[attr] = val
+            if val.parent is None:
+                val.parent = self
 
             if attr in self._parameter_decorators:
                 # Some methods have been defined in the ParameterNode as methods
@@ -545,5 +547,5 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         """
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
-        param = parameter_class(name=name, instrument=self, **kwargs)
+        param = parameter_class(name=name, instrument=self, parent=self, **kwargs)
         self.parameters[name] = param

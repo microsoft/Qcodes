@@ -118,7 +118,7 @@ def __deepcopy__(self, memodict={}):
         is faster and creates a shallow copy.
     """
     restore_attrs = {}
-    for attr in ['__deepcopy__', 'signal', 'get', 'set', '_instrument']:
+    for attr in ['__deepcopy__', 'signal', 'get', 'set', '_instrument', 'parent']:
         if attr in self.__dict__:
             restore_attrs[attr] = getattr(self, attr)
 
@@ -135,8 +135,8 @@ def __deepcopy__(self, memodict={}):
         self_copy = deepcopy(self)
         self_copy.__deepcopy__ = restore_attrs['__deepcopy__']
 
-        if '_instrument' in restore_attrs:
-            self_copy._instrument = None
+        self_copy._instrument = None
+        self_copy.parent = None
 
         # Detach and reattach all node decorator methods, now containing
         # reference to the new parameter, but still old parameter node
@@ -253,6 +253,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
     """
 
     def __init__(self, name: str = None,
+                 parent: Optional['ParameterNode'] = None,
                  instrument: Optional['Instrument'] = None,
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
@@ -277,6 +278,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         Metadatable.__init__(self, metadata)
         SignalEmitter.__init__(self, initialize_signal=False)
         self.name = str(name)
+        self.parent = parent
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -354,9 +356,10 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
-        inst_name = getattr(self._instrument, 'name', '')
-        if inst_name:
-            return '{}_{}'.format(inst_name, self.name)
+        if hasattr(self._instrument, 'name'):
+            return f'{self._instrument.name}_{self.name}'
+        elif hasattr(self.parent, 'name'):
+            return f'{self.parent.name}_{self.name}'
         else:
             return self.name
 
@@ -441,6 +444,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self_copy.signal = None
         self_copy._signal_chain = []
         self_copy._instrument = None
+        self_copy.parent = None
 
         # Perform deepcopy on latest value to ensure the original and copied
         # parameters cannot affect each other (e.g. if the latest value is a
@@ -501,6 +505,11 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 state.update({
                     'instrument': full_class(self._instrument),
                     'instrument_name': self._instrument.name
+                })
+            elif attr == 'parent' and self.parent:
+                state.update({
+                    'parent': full_class(self.parent),
+                    'parent_name': getattr(self.parent, 'name', 'no_name')
                 })
             else:
                 val = getattr(self, attr, None)
@@ -709,6 +718,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
         if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
                        str(self._instrument.__class__)) + '.' + self.name
+        elif self.parent:
+            context = (getattr(self.parent, 'name', '') or
+                       str(self.parent.__class__)) + '.' + self.name
         else:
             context = self.name
         if self.vals is not None:
@@ -1444,14 +1456,12 @@ class MultiParameter(_BaseParameter):
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return [inst_name + '_' + name for name in self.names]
-        except AttributeError:
-            pass
-
-        return self.names
+        if hasattr(self._instrument, 'name'):
+            return [f'{self._instrument.name}_{name}' for name in self.names]
+        elif hasattr(self.parent, 'name'):
+            return [f'{self.parent.name}_{name}' for name in self.names]
+        else:
+            return self.names
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
