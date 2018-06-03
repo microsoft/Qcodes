@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence, Any, Dict, Callable
+from typing import Sequence, Any, Dict, Callable, List
 import numpy as np
 from functools import partial, wraps
 from copy import copy, deepcopy, _reconstruct
@@ -243,6 +243,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         items.extend(self.parameter_nodes)
         return items
 
+    def __eq__(self, other):
+        return self.matches_parameter_node(other)
+
     def _attach_parameter_decorators(self,
                                      parameter: _BaseParameter,
                                      decorator_methods: Dict[str, Callable]):
@@ -391,6 +394,41 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     snap[attr] = getattr(self, attr)
 
         return snap
+
+    def matches_parameter_node(self,
+                                other: Any,
+                                exclude_parameters: List[str] = [],
+                                exclude_parameter_nodes: List[str] = []) -> bool:
+        """Tests if the parameters of another node matches this one.
+
+        Returns:
+            False if any parameter values aren't equal
+            False if the compared object is not exactly the same class.
+            False if the number of parameters doesn't match
+            True if all parameter values match
+        """
+        if not other.__class__ == self.__class__:
+            return False
+        elif len(self.parameters) != len(other.parameters):
+            return False
+        elif len(self.parameter_nodes) != len(other.parameter_nodes):
+            return False
+
+        for parameter_name, parameter in self.parameters.items():
+            if parameter_name in exclude_parameters:
+                continue
+            elif not parameter_name in other.parameters \
+                    or parameter() != other.parameters[parameter_name]():
+                return False
+
+        for parameter_node_name, parameter_node in self.parameter_nodes.items():
+            if parameter_node_name in exclude_parameter_nodes:
+                continue
+            elif not parameter_node_name in other.parameter_nodes \
+                    or not parameter_node.matches_parameter_node(
+                other.parameter_nodes[parameter_node_name]):
+                return False
+        return True
 
     def sweep(self, parameter_name: str, start=None, stop=None, step=None,
               num=None, **kwargs):
