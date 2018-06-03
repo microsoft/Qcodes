@@ -998,6 +998,7 @@ class Parameter(_BaseParameter):
 
     def __init__(self, name: str = None,
                  instrument: Optional['Instrument']=None,
+                 parent: Optional['ParameterNode'] = None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  get_cmd: Optional[Union[str, Callable, bool]]=None,
@@ -1008,7 +1009,8 @@ class Parameter(_BaseParameter):
                  log_changes: bool = True,
                  docstring: Optional[str]=None,
                  **kwargs):
-        super().__init__(name=name, instrument=instrument, vals=vals,
+        super().__init__(name=name, instrument=instrument,
+                         parent=parent, vals=vals,
                          log_changes=log_changes, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
@@ -1193,6 +1195,7 @@ class ArrayParameter(_BaseParameter):
                  name: str,
                  shape: Sequence[int],
                  instrument: Optional['Instrument']=None,
+                 parent: Optional['ParameterNode'] = None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  wrap_get: bool=True,
@@ -1205,9 +1208,14 @@ class ArrayParameter(_BaseParameter):
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
                  metadata: bool=None, ):
-        super().__init__(name, instrument, snapshot_get, metadata,
+        super().__init__(name=name,
+                         instrument=instrument,
+                         parent=parent,
+                         snapshot_get=snapshot_get,
+                         metadata=metadata,
                          snapshot_value=snapshot_value,
-                         wrap_get=wrap_get, wrap_set=wrap_set)
+                         wrap_get=wrap_get,
+                         wrap_set=wrap_set)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1372,6 +1380,7 @@ class MultiParameter(_BaseParameter):
                  names: Sequence[str],
                  shapes: Sequence[Sequence[Optional[int]]],
                  instrument: Optional['Instrument']=None,
+                 parent: Optional['ParameterNode'] = None,
                  labels: Optional[Sequence[str]]=None,
                  units: Optional[Sequence[str]]=None,
                  wrap_get: bool=True,
@@ -1384,9 +1393,14 @@ class MultiParameter(_BaseParameter):
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
                  metadata: Optional[dict]=None):
-        super().__init__(name, instrument, snapshot_get, metadata,
+        super().__init__(name=name,
+                         instrument=instrument,
+                         snapshot_get=snapshot_get,
+                         metadata=metadata,
                          snapshot_value=snapshot_value,
-                         wrap_get=wrap_get, wrap_set=wrap_set)
+                         parent=parent,
+                         wrap_get=wrap_get,
+                         wrap_set=wrap_set)
 
         # if hasattr(self, 'set'):
         #     # TODO (alexcjohnson): can we support, ala Combine?

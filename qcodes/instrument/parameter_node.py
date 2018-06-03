@@ -559,7 +559,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         logger.warning('print_readable_snapshot is replaced with print_snapshot')
         self.print_snapshot(update=update, max_chars=max_chars)
 
-    def add_parameter(self, name, parameter_class=Parameter, **kwargs):
+    def add_parameter(self, name, parameter_class=Parameter, parent=None, **kwargs):
         """
         Bind one Parameter to this instrument.
 
@@ -585,5 +585,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         """
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
-        param = parameter_class(name=name, parent=self, **kwargs)
+
+        if parent is None:
+            parent = self
+
+        param = parameter_class(name=name, parent=parent, **kwargs)
         self.parameters[name] = param
