@@ -118,7 +118,7 @@ def __deepcopy__(self, memodict={}):
         is faster and creates a shallow copy.
     """
     restore_attrs = {}
-    for attr in ['__deepcopy__', 'signal', 'get', 'set', '_instrument', 'parent']:
+    for attr in ['__deepcopy__', 'signal', 'get', 'set', 'parent']:
         if attr in self.__dict__:
             restore_attrs[attr] = getattr(self, attr)
 
@@ -135,7 +135,6 @@ def __deepcopy__(self, memodict={}):
         self_copy = deepcopy(self)
         self_copy.__deepcopy__ = restore_attrs['__deepcopy__']
 
-        self_copy._instrument = None
         self_copy.parent = None
 
         # Detach and reattach all node decorator methods, now containing
@@ -279,7 +278,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
         SignalEmitter.__init__(self, initialize_signal=False)
         self.name = str(name)
         self.parent = parent
-        self._instrument = instrument
+        if instrument is not None:
+            self.parent = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
         self.log_changes = log_changes
@@ -356,9 +356,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
-        if hasattr(self._instrument, 'name'):
-            return f'{self._instrument.name}_{self.name}'
-        elif hasattr(self.parent, 'name'):
+        if hasattr(self.parent, 'name'):
             return f'{self.parent.name}_{self.name}'
         else:
             return self.name
@@ -443,7 +441,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                          max_val_age=self.get_latest.max_val_age)
         self_copy.signal = None
         self_copy._signal_chain = []
-        self_copy._instrument = None
         self_copy.parent = None
 
         # Perform deepcopy on latest value to ensure the original and copied
@@ -501,15 +498,13 @@ class _BaseParameter(Metadatable, SignalEmitter):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            if attr == 'instrument' and self._instrument:
-                state.update({
-                    'instrument': full_class(self._instrument),
-                    'instrument_name': self._instrument.name
-                })
-            elif attr == 'parent' and self.parent:
+            if attr == 'parent' and self.parent:
+                # We also add instrument items for deprecation reasons
                 state.update({
                     'parent': full_class(self.parent),
-                    'parent_name': getattr(self.parent, 'name', 'no_name')
+                    'parent_name': getattr(self.parent, 'name', 'no_name'),
+                    'instrument': full_class(self.parent),
+                    'instrument_name': self.parent.name
                 })
             else:
                 val = getattr(self, attr, None)
@@ -715,10 +710,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
             value (any): value to validate
 
         """
-        if self._instrument:
-            context = (getattr(self._instrument, 'name', '') or
-                       str(self._instrument.__class__)) + '.' + self.name
-        elif self.parent:
+        if self.parent:
             context = (getattr(self.parent, 'name', '') or
                        str(self.parent.__class__)) + '.' + self.name
         else:
@@ -890,6 +882,14 @@ class _BaseParameter(Metadatable, SignalEmitter):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
+
+    @property
+    def _instrument(self):
+        return self.parent
+
+    @_instrument.setter
+    def _instrument(self, value):
+        self.parent = value
 
 
 class Parameter(_BaseParameter):
@@ -1456,9 +1456,7 @@ class MultiParameter(_BaseParameter):
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
-        if hasattr(self._instrument, 'name'):
-            return [f'{self._instrument.name}_{name}' for name in self.names]
-        elif hasattr(self.parent, 'name'):
+        if hasattr(self.parent, 'name'):
             return [f'{self.parent.name}_{name}' for name in self.names]
         else:
             return self.names
@@ -1706,7 +1704,7 @@ class InstrumentRefParameter(Parameter):
         # note that _instrument refers to the instrument this parameter belongs
         # to, while the ref_instrument_name is the instrument that is the value
         # of this parameter.
-        return self._instrument.find_instrument(ref_instrument_name)
+        return self.parent.find_instrument(ref_instrument_name)
 
 
 # Deprecated parameters
