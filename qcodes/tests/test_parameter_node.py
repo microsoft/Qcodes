@@ -162,9 +162,10 @@ class TestCopyParameterNode(TestCase):
         node = ParameterNode(use_as_attributes=True)
         node.p = Parameter(set_cmd=None)
         node.p = 123
-        self.assertEqual(node['p']._instrument, None)
+        self.assertEqual(node['p'].parent, node)
 
         node2 = copy(node)
+        self.assertEqual(node2['p'].parent, None)
         self.assertIsNot(node['p'], node2['p'])
         self.assertEqual(node.p, 123)
         self.assertEqual(node2.p, 123)
@@ -191,9 +192,10 @@ class TestCopyParameterNode(TestCase):
         node = ParameterNode(use_as_attributes=True)
         node.p = Parameter(set_cmd=None)
         node.p = 123
-        self.assertEqual(node['p']._instrument, None)
+        self.assertEqual(node['p'].parent, node)
 
         node2 = deepcopy(node)
+        self.assertEqual(node2['p'].parent, None)
         self.assertEqual(node.p, 123)
         self.assertEqual(node2.p, 123)
 
