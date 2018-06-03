@@ -624,7 +624,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                              self.set_parser is None and
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
-
                     if self.log_changes and self._snapshot_value \
                             and val_changed and self.name != 'None':
                         # Add to log
@@ -708,7 +707,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
             value (any): value to validate
 
         """
-        if self.parent:
+        if self.parent is not None:
             context = (getattr(self.parent, 'name', '') or
                        str(self.parent.__class__)) + '.' + self.name
         else:
