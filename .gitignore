@@ -45,9 +45,12 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.pytest_cache/*
+
 nosetests.xml
 coverage.xml
 *,cover
+.hypothesis
 
 # Translations
 *.mo
@@ -76,6 +79,7 @@ target/
 *.md~
 *.py~
 tmp/
+.#*
 
 docs/examples/data/*
 
@@ -83,3 +87,6 @@ docs/examples/data/*
 
 # Mac files
 .DS_Store
+
+# qcodes related
+experiments.db
