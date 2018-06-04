@@ -1,4 +1,4 @@
-name: qcodestest2
+name: qcodes
 channels: 
  - defaults
 dependencies:
