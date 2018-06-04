@@ -17,5 +17,6 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - pyyaml
  - pip:
     - pyvisa
