@@ -295,6 +295,7 @@ class MatPlot(BasePlot):
         line, = ax.plot(*args, **kwargs)
         return line
 
+    @staticmethod
     def _make_args_for_pcolormesh(args_masked, x, y):
         if x is not None and y is not None:
             # If x and y are provided, modify the arrays such that they
