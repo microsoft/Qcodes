@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 import struct
 import io
 import zipfile as zf
@@ -449,18 +450,30 @@ class AWG70000A(VisaInstrument):
         """
         self.ask('*OPC?')
 
-    def play(self, wait_for_opc: bool=True) -> None:
+    def play(self, wait_for_running: bool=True, timeout: float=10) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
         play button on the front panel.
 
         Args:
-            wait_for_opc: If True, this command is blocking while the
+            wait_for_running: If True, this command is blocking while the
                 instrument is getting ready to play
+            timeout: The maximal time to wait for the instrument to play.
+                Raises an exception is this time is reached.
         """
         self.write('AWGControl:RUN')
-        if wait_for_opc:
-            self.wait_for_operation_to_complete()
+        if wait_for_running:
+            start_time = time.perf_counter()
+            running = False
+            while not running:
+                time.sleep(0.1)
+                running = self.run_state() == 'Running'
+                waited_for = start_time - time.perf_counter()
+                if waited_for > timeout:
+                    raise RuntimeError(f'Reached timeout ({timeout} s) '
+                                       'while waiting for instrument to play.'
+                                       ' Perhaps some waveform or sequence is'
+                                       ' corrupt?')
 
     def stop(self) -> None:
         """
@@ -622,7 +635,7 @@ class AWG70000A(VisaInstrument):
 
         if overwrite:
             log.debug(f'Pre-deleting file {filename} at {path}')
-            self.visa_handle.write(f'MMEMory:DELete {filename}')
+            self.visa_handle.write(f'MMEMory:DELete "{filename}"')
             # if the file does not exist,
             # an error code -256 is put in the error queue
             resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
