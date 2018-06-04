@@ -106,7 +106,7 @@ def test_init_awg2(awg2):
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-@settings(deadline=1500, max_examples=7)
+@settings(deadline=2500, max_examples=7)
 @given(N=hst.integers(1, 100))
 def test_SML_successful_generation_vary_length(N):
 

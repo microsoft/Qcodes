@@ -20,6 +20,23 @@ log = logging.getLogger(__name__)
 
 ##################################################
 #
+# SMALL HELPER FUNCTIONS
+#
+
+
+def _parse_string_response(input_str: str) -> str:
+    """
+    Remove quotation marks from string and return 'N/A'
+    if the input is empty
+    """
+    output = input_str.replace('"', '')
+    output = output if output else 'N/A'
+
+    return output
+
+
+##################################################
+#
 # MODEL DEPENDENT SETTINGS
 #
 # TODO: it seems that a lot of settings differ between models
@@ -218,6 +235,12 @@ class AWGChannel(InstrumentChannel):
             unit='V',
             get_parser=float,
             vals=vals.Numbers(0.250, _chan_amps[self.model]))
+
+        self.add_parameter('assigned_asset',
+                           label=('Waveform/sequence assigned to '
+                                  f' channel {self.channel}'),
+                           get_cmd=f"SOURCE{self.channel}:CASSet?",
+                           get_parser=_parse_string_response)
 
         # markers
         for mrk in range(1, _num_of_markers_map[self.model]+1):
