@@ -18,6 +18,9 @@ from qcodes.dataset.data_set import DataSet
 
 log = logging.getLogger(__name__)
 
+array_like_types = (tuple, list, np.ndarray)
+non_array_like_types = (int, float, str)
+
 
 class ParameterTypeError(Exception):
     pass
@@ -101,8 +104,9 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            if isinstance(value, np.ndarray):
+            if any(isinstance(value, typ) for typ in array_like_types):
                 value = cast(np.ndarray, partial_result[1])
+                value = np.atleast_1d(value)
                 array_size = len(value)
                 if input_size > 1 and input_size != array_size:
                     raise ValueError('Incompatible array dimensions. Trying to'
@@ -110,6 +114,14 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            elif any(isinstance(value, t) for t in non_array_like_types):
+                pass
+            else:
+                raise ValueError('Wrong value type received. '
+                                 f'Got {type(value)}, but only int, float, '
+                                 'str, tuple, list, and np.ndarray is '
+                                 'allowed.')
+
             # TODO (WilliamHPNielsen): The following code block is ugly and
             # brittle and should be enough to convince us to abandon the
             # design of ArrayParameters (possibly) containing (some of) their
@@ -133,7 +145,6 @@ class DataSaver:
         # Now check for missing setpoints
         for partial_result in res:
             param = str(partial_result[0])
-            value = partial_result[1]
             if param in self._known_dependencies.keys():
                 stuffweneed = set(self._known_dependencies[param])
                 stuffwehave = set(params)
@@ -148,11 +159,12 @@ class DataSaver:
             for partial_result in res:
                 param = str(partial_result[0])
                 value = partial_result[1]
-
                 # For compatibility with the old Loop, setpoints are
                 # tuples of numbers (usually tuple(np.linspace(...))
                 if hasattr(value, '__len__') and not(isinstance(value, str)):
                     value = cast(Union[Sequence,np.ndarray], value)
+                    if isinstance(value, np.ndarray):
+                        value = np.atleast_1d(value)
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -371,8 +383,8 @@ class Measurement:
 
     def register_parameter(
             self, parameter: _BaseParameter,
-            setpoints: Tuple[_BaseParameter]=None,
-            basis: Tuple[_BaseParameter]=None) -> None:
+            setpoints: Sequence[_BaseParameter]=None,
+            basis: Sequence[_BaseParameter]=None) -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -397,7 +409,7 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-
+        my_setpoints: Sequence[Union[str,_BaseParameter]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
             if parameter.setpoint_names:
@@ -418,8 +430,8 @@ class Measurement:
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
-            my_setpoints: Tuple[Union[_BaseParameter, str], ...] = setpoints if setpoints else ()
-            my_setpoints += (spname,)
+            my_setpoints = list(setpoints) if setpoints else []
+            my_setpoints += [spname]
         else:
             my_setpoints = setpoints
 

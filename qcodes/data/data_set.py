@@ -337,6 +337,23 @@ class DataSet(DelegateAttributes):
         # back-reference to the DataSet
         data_array.data_set = self
 
+    def remove_array(self, array_id):
+        """ Remove an array from a dataset
+
+        Throws an exception when the array specified is refereced by other
+        arrays in the dataset.
+
+        Args:
+            array_id (str): array_id of array to be removed
+        """
+        for a in self.arrays:
+            sa = self.arrays[a].set_arrays
+            if array_id in [a.array_id for a in sa]:
+                raise Exception(
+                    'cannot remove array %s as it is referenced by a' % array_id)
+        _ = self.arrays.pop(array_id)
+        self.action_id_map = self._clean_array_ids(self.arrays.values())
+
     def _clean_array_ids(self, arrays):
         """
         replace action_indices tuple with compact string array_ids
