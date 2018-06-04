@@ -59,7 +59,7 @@ setup(name='qcodes',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*']},
       install_requires=[
-          'numpy>=1.10,<1.14',
+          'numpy>=1.10',
           'pyvisa>=1.8',
           'h5py>=2.6',
           'websockets>=3.2',
