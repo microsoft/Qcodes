@@ -1,4 +1,5 @@
 import datetime as dt
+import time
 import struct
 import io
 import zipfile as zf
@@ -38,6 +39,8 @@ def _parse_string_response(input_str: str) -> str:
 #
 # MODEL DEPENDENT SETTINGS
 #
+# TODO: it seems that a lot of settings differ between models
+# perhaps these dicts should be merged to one
 
 _fg_path_val_map = {'5208': {'DC High BW': "DCHB",
                              'DC High Voltage': "DCHV",
@@ -58,6 +61,19 @@ _num_of_markers_map = {'5208': 4,
 _chan_resolutions = {'5208': [12, 13, 14, 15, 16],
                      '70001A': [8, 9, 10],
                      '70002A': [8, 9, 10]}
+
+# channel amplitudes
+_chan_amps = {'70001A': 0.5,
+              '70002A': 0.5,
+              '5208': 1.5}
+
+# marker ranges
+_marker_high = {'70001A': (-1.4, 1.4),
+                '70002A': (-1.4, 1.4),
+                '5208': (-0.5, 1.75)}
+_marker_low = {'70001A': (-1.4, 1.4),
+               '70002A': (-1.4, 1.4),
+               '5208': (-0.3, 1.55)}
 
 
 class SRValidator(Validator):
@@ -136,7 +152,7 @@ class AWGChannel(InstrumentChannel):
                            get_cmd='FGEN:CHANnel{}:AMPLitude?'.format(channel),
                            set_cmd='FGEN:CHANnel{}:AMPLitude {{}}'.format(channel),
                            unit='V',
-                           vals=vals.Numbers(0, 0.5),
+                           vals=vals.Numbers(0, _chan_amps[self.model]),
                            get_parser=float)
 
         self.add_parameter('fgen_offset',
@@ -218,7 +234,7 @@ class AWGChannel(InstrumentChannel):
             get_cmd='SOURce{}:VOLTage?'.format(channel),
             unit='V',
             get_parser=float,
-            vals=vals.Numbers(0.250, 0.500))
+            vals=vals.Numbers(0.250, _chan_amps[self.model]))
 
         self.add_parameter('assigned_asset',
                            label=('Waveform/sequence assigned to '
@@ -232,21 +248,19 @@ class AWGChannel(InstrumentChannel):
             self.add_parameter(
                 'marker{}_high'.format(mrk),
                 label='Channel {} marker {} high level'.format(channel, mrk),
-                set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
-                                                                     mrk),
+                set_cmd=partial(self._set_marker, channel, mrk, True),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
                 unit='V',
-                vals=vals.Numbers(-1.4, 1.4),
+                vals=vals.Numbers(*_marker_high[self.model]),
                 get_parser=float)
 
             self.add_parameter(
                 'marker{}_low'.format(mrk),
                 label='Channel {} marker {} low level'.format(channel, mrk),
-                set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
-                                                                    mrk),
+                set_cmd=partial(self._set_marker, channel, mrk, False),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
                 unit='V',
-                vals=vals.Numbers(-1.4, 1.4),
+                vals=vals.Numbers(*_marker_low[self.model]),
                 get_parser=float)
 
             self.add_parameter(
@@ -255,6 +269,13 @@ class AWGChannel(InstrumentChannel):
                 set_cmd='OUTPut{}:WVALue:MARKer{} {{}}'.format(channel, mrk),
                 get_cmd='OUTPut{}:WVALue:MARKer{}?'.format(channel, mrk),
                 vals=vals.Enum('FIRST', 'LOW', 'HIGH'))
+
+            self.add_parameter(
+                name=f'marker{mrk}_stoppedvalue',
+                label=f'Channel {channel} marker {mrk} stopped value',
+                set_cmd=f'OUTPut{channel}:SVALue:MARKer{mrk} {{}}',
+                get_cmd=f'OUTPut{channel}:SVALue:MARKer{mrk}?',
+                vals=vals.Enum('OFF', 'LOW'))
 
         ##################################################
         # MISC.
@@ -270,6 +291,21 @@ class AWGChannel(InstrumentChannel):
                                       markers, 9 bit resolution
                                       allows for one, and 10 bit
                                       does NOT allow for markers"""))
+
+    def _set_marker(self, channel: int, marker: int,
+                    high: bool, voltage: float) -> None:
+        """
+        Set the marker high/low value and update the low/high value
+        """
+        if high:
+            this = 'HIGH'
+            other = 'low'
+        else:
+            this = 'LOW'
+            other = 'high'
+
+        self.write(f'SOURce{channel}:MARKer{marker}:VOLTage:{this} {voltage}')
+        self.parameters[f'marker{marker}_{other}'].get()
 
     def _set_fgfreq(self, channel: int, frequency: float) -> None:
         """
@@ -388,6 +424,13 @@ class AWG70000A(VisaInstrument):
                            unit='Hz',
                            vals=vals.Numbers(6.25e9, 12.5e9))
 
+        self.add_parameter('run_state',
+                           label='Run state',
+                           get_cmd='AWGControl:RSTATe?',
+                           val_mapping={'Stopped': '0',
+                                        'Waiting for trigger': '1',
+                                        'Running': '2'})
+
         # We deem 2 channels too few for a channel list
         if self.num_channels > 2:
             chanlist = ChannelList(self, 'Channels', AWGChannel,
@@ -424,12 +467,36 @@ class AWG70000A(VisaInstrument):
         """
         self.write('TRIGger:IMMediate BTRigger')
 
-    def play(self) -> None:
+    def wait_for_operation_to_complete(self):
+        """
+        Waits for the latest issued overlapping command to finish
+        """
+        self.ask('*OPC?')
+
+    def play(self, wait_for_running: bool=True, timeout: float=10) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
         play button on the front panel.
+
+        Args:
+            wait_for_running: If True, this command is blocking while the
+                instrument is getting ready to play
+            timeout: The maximal time to wait for the instrument to play.
+                Raises an exception is this time is reached.
         """
         self.write('AWGControl:RUN')
+        if wait_for_running:
+            start_time = time.perf_counter()
+            running = False
+            while not running:
+                time.sleep(0.1)
+                running = self.run_state() == 'Running'
+                waited_for = start_time - time.perf_counter()
+                if waited_for > timeout:
+                    raise RuntimeError(f'Reached timeout ({timeout} s) '
+                                       'while waiting for instrument to play.'
+                                       ' Perhaps some waveform or sequence is'
+                                       ' corrupt?')
 
     def stop(self) -> None:
         """
@@ -465,6 +532,16 @@ class AWG70000A(VisaInstrument):
         resp = respstr.split(',')
 
         return resp
+
+    def delete_sequence_from_list(self, seqname: str) -> None:
+        """
+        Delete the specified sequence from the sequence list
+
+        Args:
+            seqname: The name of the sequence (as it appears in the sequence
+                list, not the file name) to delete
+        """
+        self.write(f'SLISt:SEQuence:DELete "{seqname}"')
 
     def clearSequenceList(self):
         """
@@ -553,7 +630,7 @@ class AWG70000A(VisaInstrument):
         self._sendBinaryFile(wfmx, filename, path)
 
     def _sendBinaryFile(self, binfile: bytes, filename: str,
-                        path: str) -> None:
+                        path: str, overwrite: bool=True) -> None:
         """
         Send a binary file to the AWG's mass memory (disk).
 
@@ -562,6 +639,7 @@ class AWG70000A(VisaInstrument):
             filename: The name of the file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved.
+            overwite: If true, the file on disk gets overwritten
         """
 
         name_str = 'MMEMory:DATA "{}"'.format(filename).encode('ascii')
@@ -577,6 +655,14 @@ class AWG70000A(VisaInstrument):
             raise ValueError('File too large to transfer')
 
         self.current_directory(path)
+
+        if overwrite:
+            log.debug(f'Pre-deleting file {filename} at {path}')
+            self.visa_handle.write(f'MMEMory:DELete "{filename}"')
+            # if the file does not exist,
+            # an error code -256 is put in the error queue
+            resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
+            log.debug(f'Pre-deletion finished with return code {resp}')
 
         self.visa_handle.write_raw(msg)
 
@@ -1020,8 +1106,8 @@ class AWG70000A(VisaInstrument):
         # (no_of_chans, no_of_elms, no_of_arrays, no_of_points)
         # where no_of_arrays is 3 if both markers are included
         (chans, elms) = np.shape(wfms)[0: 2]
-        wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
-                     for ch in range(1, chans+1)]
+        wfm_names = [[f'wfmch{ch}pos{el}' for ch in range(1, chans+1)]
+                     for el in range(1, elms+1)]
 
         # generate wfmx files for the waveforms
         flat_wfmxs = [] # type: List[bytes]
