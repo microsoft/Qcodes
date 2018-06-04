@@ -77,6 +77,12 @@ class DG1062Channel(InstrumentChannel):
             val_mapping={1: 'POSITIVE', 0: 'NEGATIVE'},
         )
 
+        self.add_parameter(
+            "state",
+            set_cmd=f"OUTPUT{channel}:STATE {{}}",
+            get_cmd=f"OUTPUT{channel}:STATE?",
+        )
+
     def __getattr__(self, item):
         """
         We want to be able to call waveform functions like so
