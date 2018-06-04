@@ -329,31 +329,34 @@ class MatPlot(BasePlot):
                 # If a two-dimensional array is provided, only consider the
                 # first row/column, depending on the axis
                 if arr.ndim > 1:
-                    arr = arr[0] if k == 0 else arr[:,0]
-
+                    arr = arr[0] if k == 0 else arr[:, 0]
+                # first extrapolate to fill any empty values Matplotlib 2.2 no
+                # longer support nans in x and y for pcolormesh.
                 if np.ma.is_masked(arr[1]):
-                    # Only the first element is not nan, in this case pad with
-                    # a value, and separate their values by 1
-                    arr_pad = np.pad(arr, (1, 0), mode='symmetric')
-                    arr_pad[:2] += [-0.5, 0.5]
+                    step_size = 1.
+                    # Only the first element is not nan. We have to guess the step size
                 else:
-                    # Add padding on both sides equal to endpoints
-                    arr_pad = np.pad(arr, (1, 1), mode='symmetric')
-                    # Add differences to edgepoints (may be nan)
-                    arr_pad[0] += arr_pad[1] - arr_pad[2]
-                    arr_pad[-1] += arr_pad[-2] - arr_pad[-3]
+                    # the average stepsize is our best guess
+                    step_size = np.ma.average(np.ma.diff(arr))
 
-                    diff = np.ma.diff(arr_pad) / 2
-                    # Insert value at beginning and end of diff to ensure same
-                    # length
-                    diff = np.insert(diff, 0, diff[0])
+                last_good_value = arr[np.logical_not(arr.mask)][-1]
+                extrapolation_start = last_good_value+step_size
+                n_invalid = np.sum(arr.mask)
+                extrapolation_stop = extrapolation_start+step_size*(n_invalid-1)
+                # numpy (1.14) has a deprecation warning related to shared masks
+                # lets silence this by making sure that this is not shared before
+                # modifying the mask
+                arr.unshare_mask()
+                arr[arr.mask] = np.linspace(extrapolation_start,
+                                            extrapolation_stop,
+                                            num=n_invalid)
 
-                    arr_pad += diff
-                    # Ignore final value
-                    arr_pad = arr_pad[:-1]
-                    # C is allowed to be masked in pcolormesh but x and y are
-                    # not so replace any empty data with nans
-                args.append(np.ma.filled(arr_pad, fill_value=np.nan))
+                # now shift to get edges coordinates rather than center coordinates
+                # first Add padding on both sides equal to endpoints
+                arr_pad = np.pad(arr, (1, 0), mode='symmetric')
+                arr_pad[0] -= step_size/2
+                arr_pad[1:] += step_size/2
+                args.append(arr_pad)
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask
