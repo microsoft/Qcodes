@@ -135,7 +135,7 @@ class MatPlot(BasePlot):
 
         Args:
             use_offset (bool, Optional): Whether or not ticks can have an offset
-            
+
             kwargs: with the following exceptions (mostly the data!), these are
                 passed directly to the matplotlib plotting routine.
                 `subplot`: the 1-based axes number to append to (default 1)
@@ -145,7 +145,7 @@ class MatPlot(BasePlot):
                 without `z` we draw a scatter/lines plot (ax.plot):
                     `x`, `y`, and `fmt` (if present) are passed as positional
                     args
-        
+
         Returns:
             Plot handle for trace
         """
@@ -295,6 +295,56 @@ class MatPlot(BasePlot):
         line, = ax.plot(*args, **kwargs)
         return line
 
+    def _make_args_for_pcolormesh(args_masked, x, y):
+        if x is not None and y is not None:
+            # If x and y are provided, modify the arrays such that they
+            # correspond to grid corners instead of grid centers.
+            # This is to ensure that pcolormesh centers correctly and
+            # does not ignore edge points.
+            args = []
+            for k, arr in enumerate(args_masked[:-1]):
+                # If a two-dimensional array is provided, only consider the
+                # first row/column, depending on the axis
+                if arr.ndim > 1:
+                    arr = arr[0] if k == 0 else arr[:, 0]
+                # first extrapolate to fill any empty values Matplotlib 2.2 no
+                # longer support nans in x and y for pcolormesh.
+                if np.ma.is_masked(arr[1]):
+                    step_size = 1.
+                    # Only the first element is not nan. We have to guess the
+                    # step size
+                else:
+                    # the average stepsize is our best guess
+                    step_size = np.ma.average(np.ma.diff(arr))
+
+                last_good_value = arr[np.logical_not(arr.mask)][-1]
+                extrapolation_start = last_good_value+step_size
+                n_invalid = np.sum(arr.mask)
+                extrapolation_stop = extrapolation_start+step_size*(n_invalid-1)
+                # numpy (1.14) has a deprecation warning related to shared
+                # masks
+                # lets silence this by making sure that this is not shared
+                # before
+                # modifying the mask
+                arr.unshare_mask()
+                arr[arr.mask] = np.linspace(extrapolation_start,
+                                            extrapolation_stop,
+                                            num=n_invalid)
+
+                # now shift to get edges coordinates rather than center
+                # coordinates
+                # first Add padding on both sides equal to endpoints
+                arr_pad = np.pad(arr, (1, 0), mode='symmetric')
+                arr_pad[0] -= step_size/2
+                arr_pad[1:] += step_size/2
+                args.append(arr_pad)
+            args.append(args_masked[-1])
+        else:
+            # Only the masked value of z is used as a mask
+            args = args_masked[-1:]
+
+        return args
+
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
                          xlabel=None,
                          ylabel=None,
@@ -319,48 +369,8 @@ class MatPlot(BasePlot):
             return False
         if 'cmap' not in kwargs:
             kwargs['cmap'] = qcodes.config['gui']['defaultcolormap']
-        if x is not None and y is not None:
-            # If x and y are provided, modify the arrays such that they
-            # correspond to grid corners instead of grid centers.
-            # This is to ensure that pcolormesh centers correctly and
-            # does not ignore edge points.
-            args = []
-            for k, arr in enumerate(args_masked[:-1]):
-                # If a two-dimensional array is provided, only consider the
-                # first row/column, depending on the axis
-                if arr.ndim > 1:
-                    arr = arr[0] if k == 0 else arr[:, 0]
-                # first extrapolate to fill any empty values Matplotlib 2.2 no
-                # longer support nans in x and y for pcolormesh.
-                if np.ma.is_masked(arr[1]):
-                    step_size = 1.
-                    # Only the first element is not nan. We have to guess the step size
-                else:
-                    # the average stepsize is our best guess
-                    step_size = np.ma.average(np.ma.diff(arr))
 
-                last_good_value = arr[np.logical_not(arr.mask)][-1]
-                extrapolation_start = last_good_value+step_size
-                n_invalid = np.sum(arr.mask)
-                extrapolation_stop = extrapolation_start+step_size*(n_invalid-1)
-                # numpy (1.14) has a deprecation warning related to shared masks
-                # lets silence this by making sure that this is not shared before
-                # modifying the mask
-                arr.unshare_mask()
-                arr[arr.mask] = np.linspace(extrapolation_start,
-                                            extrapolation_stop,
-                                            num=n_invalid)
-
-                # now shift to get edges coordinates rather than center coordinates
-                # first Add padding on both sides equal to endpoints
-                arr_pad = np.pad(arr, (1, 0), mode='symmetric')
-                arr_pad[0] -= step_size/2
-                arr_pad[1:] += step_size/2
-                args.append(arr_pad)
-            args.append(args_masked[-1])
-        else:
-            # Only the masked value of z is used as a mask
-            args = args_masked[-1:]
+        args = self._make_args_for_pcolormesh(args_masked, x, y)
 
         pc = ax.pcolormesh(*args, **kwargs)
 
@@ -406,7 +416,7 @@ class MatPlot(BasePlot):
     def save(self, filename=None):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title.
 
         Args:
