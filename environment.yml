@@ -1,14 +1,12 @@
 name: qcodestest2
 channels: 
  - defaults
- - conda-forge
 dependencies:
  - h5py
  - matplotlib=2.2.2
  - pyqtgraph 
  - python=3.6
  - jsonschema
- - pyvisa=1.9.0
  - QtPy
  - sip
  - pyqt=5.9.2
@@ -19,3 +17,5 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - pip:
+    - pyvisa
