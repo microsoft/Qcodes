@@ -5,6 +5,7 @@ using the nbagg backend and matplotlib
 from collections import Mapping
 from collections import Sequence
 from functools import partial
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -242,7 +243,13 @@ class MatPlot(BasePlot):
                     plot_object.remove()
 
                 ax = self[config.get('subplot', 1) - 1]
-                plot_object = self._draw_pcolormesh(ax, **config)
+                kwargs = deepcopy(config)
+                # figsize may be passed in as part of config.
+                # pcolormesh will raise an error if this is passed to it
+                # so strip it here.
+                if 'figsize' in kwargs:
+                    kwargs.pop('figsize')
+                plot_object = self._draw_pcolormesh(ax, **kwargs)
                 trace['plot_object'] = plot_object
 
                 if plot_object:
@@ -302,7 +309,7 @@ class MatPlot(BasePlot):
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
         args_masked = [masked_invalid(arg) for arg in [x, y, z]
-                      if arg is not None]
+                       if arg is not None]
 
         if np.any([np.all(getmask(arg)) for arg in args_masked]):
             # if the z array is masked, don't draw at all
@@ -310,7 +317,6 @@ class MatPlot(BasePlot):
             # pcolormesh does not accept masked x and y axes, so we do not need
             # to check for them.
             return False
-
         if 'cmap' not in kwargs:
             kwargs['cmap'] = qcodes.config['gui']['defaultcolormap']
         if x is not None and y is not None:
