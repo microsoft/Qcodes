@@ -1070,8 +1070,8 @@ class AWG70000A(VisaInstrument):
         # (no_of_chans, no_of_elms, no_of_arrays, no_of_points)
         # where no_of_arrays is 3 if both markers are included
         (chans, elms) = np.shape(wfms)[0: 2]
-        wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
-                     for ch in range(1, chans+1)]
+        wfm_names = [[f'wfmch{ch}pos{el}' for ch in range(1, chans+1)]
+                     for el in range(1, elms+1)]
 
         # generate wfmx files for the waveforms
         flat_wfmxs = [] # type: List[bytes]
