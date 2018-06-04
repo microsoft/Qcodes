@@ -1,7 +1,7 @@
 numpy==1.13.3
 matplotlib==2.2.2
 pyqtgraph==0.10.0
-PyVISA==1.8
+PyVISA==1.9
 PyQt5==5.9
 sip==4.19.8
 QtPy==1.4.2
