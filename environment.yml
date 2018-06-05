@@ -18,5 +18,7 @@ dependencies:
  - spyder
  - pyzmq
  - pyyaml
+ - lxml
+ - scipy
  - pip:
     - pyvisa
