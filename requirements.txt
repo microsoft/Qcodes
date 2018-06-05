@@ -5,7 +5,7 @@ PyVISA==1.9
 PyQt5==5.9
 sip==4.19.8
 QtPy==1.4.2
-h5py==2.7.1
+h5py==2.8.0
 jsonschema
 pyzmq>=16.0.2
 git+https://github.com/QCoDeS/broadbean.git
