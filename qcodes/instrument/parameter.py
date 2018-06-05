@@ -78,6 +78,29 @@ if TYPE_CHECKING:
 
 Number = Union[float, int]
 
+
+class _SetParamContext:
+    """
+    This class is returned by the set method of parameters
+
+    Example usage:
+    >>> v = dac.voltage()
+    >>> with dac.voltage(-1):
+        ...     # Do stuff with the DAC output set to -1 V.
+        ...
+    >>> assert abs(dac.voltage() - v) <= tolerance
+    """
+    def __init__(self, parameter):
+        self._parameter = parameter
+        self._original_value = parameter.get()
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, typ, value, traceback):
+        self._parameter.set(self._original_value)
+
+
 class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
@@ -385,6 +408,8 @@ class _BaseParameter(Metadatable):
             try:
                 self.validate(value)
 
+                set_context_manager = _SetParamContext(self)
+
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
@@ -449,6 +474,9 @@ class _BaseParameter(Metadatable):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
+                return set_context_manager
+
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
