@@ -10,7 +10,9 @@ from qcodes.plots.qcmatplotlib import MatPlot
 def make_simulated_xyz(xrange: np.ndarray,
                        yrange: np.ndarray,
                        step: int,
-                       interrupt_at: int=0) -> Tuple[np.ndarray]:
+                       interrupt_at: int=0) -> Tuple[np.ndarray,
+                                                     np.ndarray,
+                                                     np.ndarray]:
     """
     Make x, y, and z np.arrays like a Loop measurement would. In particular
     get the positions of nans right.
