@@ -92,10 +92,12 @@ class _SetParamContext:
     """
     def __init__(self, parameter):
         self._parameter = parameter
-        self._original_value = parameter.get()
+        self._original_value = self._parameter._latest["value"]
 
     def __enter__(self):
-        pass
+        if not hasattr(self._parameter, "set"):
+            raise AttributeError("Can only use settable parameter as "
+                                 "context manager")
 
     def __exit__(self, typ, value, traceback):
         self._parameter.set(self._original_value)
