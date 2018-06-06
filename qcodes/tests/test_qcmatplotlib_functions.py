@@ -1,7 +1,6 @@
 from typing import Tuple
 from itertools import product
 
-import pytest
 import numpy as np
 
 from qcodes.plots.qcmatplotlib import MatPlot
