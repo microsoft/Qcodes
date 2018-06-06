@@ -924,7 +924,6 @@ class TestSetContextManager(TestCase):
         assert self.instrument.a.get() is None
 
     def test_context(self):
-        self.instrument.a.set(1)
         self.instrument.a.set(2)
 
         with self.instrument.a.set(3):
