@@ -914,13 +914,19 @@ class TestSetContextManager(TestCase):
             get_cmd=None
         )
 
-        self.instrument.a.set(2)
-
     def tearDown(self):
         self.instrument.close()
         del self.instrument
 
+    def test_none_value(self):
+        with self.instrument.a.set(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() is None
+
     def test_context(self):
+        self.instrument.a.set(1)
+        self.instrument.a.set(2)
+
         with self.instrument.a.set(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2
