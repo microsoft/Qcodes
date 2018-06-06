@@ -95,9 +95,7 @@ class _SetParamContext:
         self._original_value = self._parameter._latest["value"]
 
     def __enter__(self):
-        if not hasattr(self._parameter, "set"):
-            raise AttributeError("Can only use settable parameter as "
-                                 "context manager")
+        pass
 
     def __exit__(self, typ, value, traceback):
         self._parameter.set(self._original_value)
