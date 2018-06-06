@@ -54,7 +54,8 @@ def DMM():
 @pytest.fixture
 def SpectrumAnalyzer():
     """
-    Yields a DummyInstrument that holds an ArrayParameter
+    Yields a DummyInstrument that holds ArrayParameters returning
+    different types
     """
 
     class Spectrum(ArrayParameter):
@@ -80,8 +81,22 @@ def SpectrumAnalyzer():
             # not the best SA on the market; it just returns noise...
             return np.random.randn(self.npts)
 
+    class ListSpectrum(Spectrum):
+
+        def get_raw(self):
+            output = super().get_raw()
+            return list(output)
+
+    class TupleSpectrum(Spectrum):
+
+        def get_raw(self):
+            output = super().get_raw()
+            return tuple(output)
+
     SA = DummyInstrument('dummy_SA')
     SA.add_parameter('spectrum', parameter_class=Spectrum)
+    SA.add_parameter('listspectrum', parameter_class=ListSpectrum)
+    SA.add_parameter('tuplespectrum', parameter_class=TupleSpectrum)
 
     yield SA
 
@@ -462,7 +477,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
-def test_datasaver_arrays(empty_temp_db, N):
+def test_datasaver_arrays_lists_tuples(empty_temp_db, N):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -498,6 +513,7 @@ def test_datasaver_arrays(empty_temp_db, N):
                                    unit='Majorana flux',
                                    setpoints=('freqax', 'gate_voltage'))
 
+    # save arrays
     with meas.run() as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         signal = np.random.randn(N)
@@ -507,6 +523,44 @@ def test_datasaver_arrays(empty_temp_db, N):
                              ('gate_voltage', 0))
 
     assert datasaver.points_written == N
+
+    # save lists
+    with meas.run() as datasaver:
+        freqax = list(np.linspace(1e6, 2e6, N))
+        signal = list(np.random.randn(N))
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+    # save tuples
+    with meas.run() as datasaver:
+        freqax = tuple(np.linspace(1e6, 2e6, N))
+        signal = tuple(np.random.randn(N))
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+
+def test_datasaver_foul_input(experiment):
+
+    meas = Measurement()
+
+    meas.register_custom_parameter('foul',
+                                   label='something unnatural',
+                                   unit='Fahrenheit')
+
+    foul_stuff = [qc.Parameter('foul'), set((1, 2, 3))]
+
+    with meas.run() as datasaver:
+        for ft in foul_stuff:
+            with pytest.raises(ValueError):
+                datasaver.add_result(('foul', ft))
 
 
 @settings(max_examples=10, deadline=None)
@@ -568,6 +622,74 @@ def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
                                  (spectrum, spectrum.get()))
+
+    assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_arrayparams_lists(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    lspec = SpectrumAnalyzer.listspectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(lspec)
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(lspec)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(lspec)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(lspec, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    lspec.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (lspec, lspec.get()))
+
+    assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    tspec = SpectrumAnalyzer.tuplespectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(tspec)
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(tspec)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(tspec)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(tspec, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    tspec.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (tspec, tspec.get()))
 
     assert datasaver.points_written == N*M
 
