@@ -284,7 +284,7 @@ class MatPlot(BasePlot):
                    zlabel=None,
                    xunit=None,
                    yunit=None,
-                    zunit=None,
+                   zunit=None,
                    **kwargs):
         # NOTE(alexj)stripping out subplot because which subplot we're in is
         # already described by ax, and it's not a kwarg to matplotlib's ax.plot.
@@ -297,6 +297,15 @@ class MatPlot(BasePlot):
 
     @staticmethod
     def _make_args_for_pcolormesh(args_masked, x, y):
+        """
+        Make args for pcolormesh.
+        pcolormesh accepts as args either
+        C - a (potentially) masked array
+        or
+        x, y, C where x and y are the colour box edge arrays and
+        are NOT allowed to be masked
+        """
+
         if x is not None and y is not None:
             # If x and y are provided, modify the arrays such that they
             # correspond to grid corners instead of grid centers.
@@ -323,22 +332,18 @@ class MatPlot(BasePlot):
                 n_invalid = np.sum(arr.mask)
                 extrapolation_stop = extrapolation_start+step_size*(n_invalid-1)
                 # numpy (1.14) has a deprecation warning related to shared
-                # masks
-                # lets silence this by making sure that this is not shared
-                # before
-                # modifying the mask
+                # masks. Let's silence this by making sure that this is
+                # not shared before modifying the mask
                 arr.unshare_mask()
                 arr[arr.mask] = np.linspace(extrapolation_start,
                                             extrapolation_stop,
                                             num=n_invalid)
-
-                # now shift to get edges coordinates rather than center
-                # coordinates
-                # first Add padding on both sides equal to endpoints
-                arr_pad = np.pad(arr, (1, 0), mode='symmetric')
-                arr_pad[0] -= step_size/2
-                arr_pad[1:] += step_size/2
-                args.append(arr_pad)
+                # Now shift array to get edge coordinates rather than
+                # centre coordinates
+                arr_shift = np.insert(arr, 0, arr[0])
+                arr_shift[0] -= step_size/2
+                arr_shift[1:] += step_size/2
+                args.append(arr_shift)
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask
@@ -359,6 +364,7 @@ class MatPlot(BasePlot):
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
+
         args_masked = [masked_invalid(arg) for arg in [x, y, z]
                        if arg is not None]
 
