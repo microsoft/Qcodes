@@ -375,7 +375,7 @@ class DataSet(Sized):
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         len_before_add = length(self.conn, self.table_name)
-        insert_many_values(self.conn, self.table_name, expected_keys,
+        insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         # TODO: should this not be made atomic?
         self.conn.commit()
