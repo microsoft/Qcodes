@@ -1115,7 +1115,9 @@ class AWG70000A(VisaInstrument):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]
 
-        flat_wfm_names = [name for lst in wfm_names for name in lst]
+        # This unfortunately assumes no subsequences
+        flat_wfm_names = list(np.reshape(np.array(wfm_names).transpose(),
+                                         (chans*elms,)))
 
         sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
                                           event_jumps, event_jump_to,
@@ -1228,7 +1230,7 @@ class AWG70000A(VisaInstrument):
                              ' number of sequencing steps.')
 
         N = lstlens[0]
-        chans = np.shape(elem_names)[0]
+        chans = np.shape(elem_names)[1]
 
         # form the timestamp string
         timezone = time.timezone
