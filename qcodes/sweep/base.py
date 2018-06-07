@@ -14,7 +14,6 @@ class BaseSweepObject:
 
         self._generator: Iterator = None
         self._parameter_table: ParamTable = None
-        self._symbols_list: list = None
 
     def _generator_factory(self) ->Iterator:
         """
@@ -25,11 +24,6 @@ class BaseSweepObject:
 
     def _start_iter(self) ->None:
         self._generator = self._generator_factory()
-        if self._parameter_table is not None:
-            self._symbols_list = [spec.name for spec in
-                                  self._parameter_table.param_specs]
-        else:
-            self._symbols_list = []
 
     def __iter__(self) ->'BaseSweepObject':
         self._start_iter()
@@ -39,11 +33,7 @@ class BaseSweepObject:
         if self._generator is None:
             self._start_iter()
 
-        nxt = next(self._generator)
-        if len(nxt) and len(self._symbols_list):
-            nxt = {k: nxt[k] if k in nxt else None for k in self._symbols_list}
-
-        return nxt
+        return next(self._generator)
 
     @property
     def parameter_table(self) ->ParamTable:
