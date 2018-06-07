@@ -97,7 +97,56 @@ class MagPhaseSweep(MultiParameter):
         self._instrument.write('SENS:SWE:MODE CONT')
                       
         return mag_list, phase_list
+
+class FormattedSweep(ArrayParameter):
+    """
+    Mag will run a sweep, including averaging, before returning data.
+    As such, wait time in a loop is not needed.
+    """
+    def __init__(self, name, instrument, format, label, unit, start, stop, npts):
+        super().__init__(name,
+                         label=label,
+                         unit=unit,
+                         shape=(npts,),
+                         setpoints=(np.linspace(start, stop, num=npts),),
+                         setpoint_names=('frequency',),
+                         setpoint_labels=('Frequency',),
+                         setpoint_units=('Hz',)
+                         )
+        self._instrument = instrument
+        self.format = format
         
+    def set_sweep(self, start, stop, npts):
+        f = np.linspace(int(start), int(stop), num=npts)
+        self.setpoints = (f,)
+        self.shape = (npts,)
+        
+    def get_raw(self):
+        npts = self._instrument.points()
+        self.set_sweep(self._instrument.start(), self._instrument.stop(), npts)
+        
+        # Take instrument out of continuous mode, and send triggers equal to the number of averages
+        self._instrument.write('SENS:AVER:CLE')
+        self._instrument.write('TRIG:SOUR IMM')
+        avg = self._instrument.averages()
+        self._instrument.write('SENS:SWE:GRO:COUN {0}'.format(avg))
+        self._instrument.write('SENS:SWE:MODE GRO')
+
+        # Once the sweep mode is in hold, we know we're done
+        while True:
+            if self._instrument.ask('SENS:SWE:MODE?') == 'HOLD':
+                break
+            time.sleep(0.1)
+        
+        # Ask for magnitude
+        self._instrument.write('CALC:FORM %s' % self.format)
+        data_str = self._instrument.ask('CALC:DATA? FDATA').split(',')
+        data_list = np.fromiter((float(v) for v in data_str), float, count=npts)
+
+        # Return the instrument state
+        self._instrument.write('SENS:SWE:MODE CONT')
+                      
+        return data_list
 
 class N5245A(VisaInstrument):
     """
@@ -160,6 +209,11 @@ class N5245A(VisaInstrument):
                            vals=Numbers(min_value=1,max_value=15e6))
         
         # Number of averages (also resets averages)
+        self.add_parameter('averages_enabled',
+                            label='Averages Enabled',
+                            get_cmd="SENS:AVER?",
+                            set_cmd="SENS:AVER {}",
+                            val_mapping={True: 'ON', False: 'OFF'})
         self.add_parameter('averages',
                            label='Averages',
                            get_cmd='SENS:AVER:COUN?',
@@ -271,19 +325,22 @@ class N5245A(VisaInstrument):
     # Adjusting the sweep requires an adjustment to the sweep parameters
     def _set_start(self, val):
         self.write('SENS:FREQ:STAR {:.2f}'.format(val))
-        self.raw_trace.set_sweep(val, self.stop(), self.points())
-        self.vector_trace.set_sweep(val, self.stop(), self.points())
+        self._set_sweep(start=val)
             
     def _set_stop(self, val):
         self.write('SENS:FREQ:STOP {:.2f}'.format(val))
-        self.raw_trace.set_sweep(self.start(), val, self.points())
-        self.vector_trace.set_sweep(self.start(), val, self.points())
+        self._set_sweep(stop=val)
             
     def _set_points(self, val):
         self.write('SENS:SWE:POIN {:d}'.format(val))
-        self.raw_trace.set_sweep(self.start(), self.stop(), val)
-        self.vector_trace.set_sweep(self.start(), self.stop(), val)
+        self._set_sweep(npts=val)
 
-
-        
-                
+    def _set_sweep(self, start=None, stop=None, npts=None):
+        if start is None:
+            start = self.start()
+        if stop is None:
+            stop = self.stop()
+        if npts is None:
+            npts = self.points()
+        for trace in self.traces:
+            trace.set_sweep(start, stop, npts)
