@@ -422,8 +422,8 @@ class Measurement:
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
             spname_parts = []
-            if parameter.root_instrument is not None:
-                inst_name = parameter.root_instrument.name
+            if parameter._instrument is not None:
+                inst_name = parameter._instrument.name
                 if inst_name is not None:
                     spname_parts.append(inst_name)
             if parameter.setpoint_names is not None:
