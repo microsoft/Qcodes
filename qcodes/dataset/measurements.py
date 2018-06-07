@@ -117,7 +117,7 @@ class DataSaver:
             elif any(isinstance(value, t) for t in non_array_like_types):
                 pass
             elif value is None:
-                pass 
+                pass
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
