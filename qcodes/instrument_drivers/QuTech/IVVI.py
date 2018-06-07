@@ -459,6 +459,13 @@ class IVVI(VisaInstrument):
             return 'POS'
         else:
             return 'Invalid polarity in memory'
+        
+    def set_parameter_bounds(name, min_value, max_value):
+        parameter = self.parameters[name]
+        if not isinstance(parameter.vals, Numbers):
+            raise Exception('Only the Numbers validator is supported.')
+        parameter.vals._min_value = min_value
+        parameter.vals._max_value = max_value
 
     def _gen_ch_set_func(self, fun, ch):
         def set_func(val):
