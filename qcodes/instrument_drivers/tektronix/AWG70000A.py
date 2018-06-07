@@ -963,7 +963,7 @@ class AWG70000A(VisaInstrument):
                     seqings.append(pos_seqs)
 
                     ss_wfm_names.append([n for n in wfmx_filenames
-                                      if f'wfm_{pos1}_{pos2}' in n])
+                                         if f'wfm_{pos1}_{pos2}' in n])
 
                 seqing = {k: [d[k] for d in seqings]
                           for k in seqings[0].keys()}
