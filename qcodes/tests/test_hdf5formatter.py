@@ -275,6 +275,7 @@ class TestHDF5_Format(TestCase):
         some_dict = {}
         some_dict['list_of_ints'] = list(np.arange(5))
         some_dict['list_of_floats'] = list(np.arange(5.1))
+        some_dict['list_of_mixed_type'] = list([1, '1'])
         fp = self.loc_provider(
             io=DataSet.default_io,
             record={'name': 'test_dict_writing'})+'.hdf5'
@@ -309,7 +310,6 @@ class TestHDF5_Format(TestCase):
         some_dict['nested_dataset'] = data1
 
         some_dict['list_of_dataset'] = [data1, data1]
-        some_dict['list_of_mixed_type'] = ['hello', 4, 4.2]
 
         fp = self.loc_provider(
             io=DataSet.default_io,
@@ -323,8 +323,6 @@ class TestHDF5_Format(TestCase):
                          new_dict['nested_dataset'])
         self.assertEqual(str(some_dict['list_of_dataset']),
                          new_dict['list_of_dataset'])
-        self.assertEqual(str(some_dict['list_of_mixed_type']),
-                         new_dict['list_of_mixed_type'])
 
         F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
         with self.assertRaises(NotImplementedError):
