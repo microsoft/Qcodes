@@ -341,6 +341,17 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 
 def test_subscriptions(experiment, DAC, DMM):
+    """
+    Test that subscribers are called at the moment that data is flushed to database
+
+    Note that for the purpose of this test, flush_data_to_database method is called explicitly instead of waiting for
+    the data to be flushed automatically after the write_period passes after a add_result call.
+
+    Args:
+        experiment (qcodes.dataset.experiment_container.Experiment) : qcodes experiment object
+        DAC (qcodes.instrument.base.Instrument) : dummy instrument object
+        DMM (qcodes.instrument.base.Instrument) : another dummy instrument object
+    """
 
     def subscriber1(results, length, state):
         """
@@ -383,8 +394,10 @@ def test_subscriptions(experiment, DAC, DMM):
 
             (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
-            sleep(1.2*meas.write_period)
+
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
+            datasaver.flush_data_to_database()
+
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
