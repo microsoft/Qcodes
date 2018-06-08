@@ -121,7 +121,7 @@ def test_SML_successful_generation_vary_length(N):
     seqname = 'seq'
 
     smlstring = AWG70000A._makeSMLFile(tw, nreps, ejs, ejt, goto,
-                                       wfm_names, seqname)
+                                       wfm_names, seqname, chans=3)
 
     # This line will raise an exception if the XML is not valid
     etree.parse(StringIO(smlstring))
