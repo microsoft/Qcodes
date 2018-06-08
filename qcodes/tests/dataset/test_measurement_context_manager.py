@@ -341,6 +341,10 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 
 def test_subscriptions(experiment, DAC, DMM):
+    """
+    Here the following is tested: subscribers should be called at the moment the data is flushed to the database,
+    i.e. after new result is added. For the purpose of testing, flush_data_to_database method is called explicitly.
+    """
 
     def subscriber1(results, length, state):
         """
@@ -383,8 +387,10 @@ def test_subscriptions(experiment, DAC, DMM):
 
             (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
-            sleep(1.2*meas.write_period)
+
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
+            datasaver.flush_data_to_database()
+
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
