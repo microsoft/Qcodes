@@ -259,6 +259,12 @@ class ChannelList(Metadatable):
         self._channel_mapping[obj.short_name] = obj
         return self._channels.append(obj)
 
+    def clear(self):
+        if self._locked:
+            raise AttributeError("Cannot clear a locked channel list")
+        self._channels.clear()
+        self._channel_mapping.clear()
+
     def extend(self, objects):
         """
         Insert an iterable of objects into the list of channels.
