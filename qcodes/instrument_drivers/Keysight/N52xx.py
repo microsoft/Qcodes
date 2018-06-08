@@ -1,13 +1,18 @@
 from cmath import phase
 import math
 import numpy as np
-from qcodes import VisaInstrument, MultiParameter, InstrumentChannel, ArrayParameter, ChannelList
+from qcodes import Instrument, VisaInstrument, MultiParameter, InstrumentChannel, ArrayParameter, ChannelList
 from qcodes.utils.validators import Numbers, Enum, Bool
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable, Tuple
 import time
 import re
 
 class PNASweep(ArrayParameter):
-    def __init__(self, name, instrument, **kwargs):
+    def __init__(self, 
+                 name: str, 
+                 instrument: 'PNABase',
+                 **kwargs: Any) -> None:
+
         super().__init__(name,
                  instrument=instrument,
                  shape=(0,),
@@ -16,20 +21,20 @@ class PNASweep(ArrayParameter):
                  )
 
     @property
-    def shape(self):
+    def shape(self) -> Sequence[int]:
         if self._instrument is None:
             return (0,)
         return (self._instrument.root_instrument.points(),)
     @shape.setter
-    def shape(self, val):
+    def shape(self, val: Sequence[int]) -> None:
         pass
     @property
-    def setpoints(self):
+    def setpoints(self) -> Sequence:
         start = self._instrument.root_instrument.start()
         stop = self._instrument.root_instrument.stop()
         return (np.linspace(start, stop, self.shape[0]),)
     @setpoints.setter
-    def setpoints(self, val):
+    def setpoints(self, val: Sequence[int]) -> None:
         pass
 
 class FormattedSweep(PNASweep):
@@ -37,7 +42,13 @@ class FormattedSweep(PNASweep):
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
     """
-    def __init__(self, name, instrument, format, label, unit, memory=False):
+    def __init__(self, 
+                 name: str, 
+                 instrument: 'PNABase', 
+                 format: str, 
+                 label: str, 
+                 unit: str, 
+                 memory: bool=False) -> None:
         super().__init__(name,
                          instrument=instrument,
                          label=label,
@@ -49,7 +60,7 @@ class FormattedSweep(PNASweep):
         self.format = format
         self.memory = memory
 
-    def get_raw(self):
+    def get_raw(self) -> Sequence[float]:
         root_instr = self._instrument.root_instrument
         # Check if we should run a new sweep
         if root_instr.auto_sweep():
@@ -63,7 +74,7 @@ class FormattedSweep(PNASweep):
 
         return data
 
-    def run_sweep(self):
+    def run_sweep(self) -> str:
         root_instr = self._instrument.root_instrument
         # Store previous mode
         prev_mode = root_instr.sweep_mode()
@@ -89,8 +100,12 @@ class PNAPort(InstrumentChannel):
     Note: This can be expanded to include a large number of extra parameters...
     """
 
-    def __init__(self, parent, name, port,
-                 min_power, max_power):
+    def __init__(self, 
+                 parent: 'PNABase', 
+                 name: str, 
+                 port: int,
+                 min_power: Union[int, float], 
+                 max_power: Union[int, float]) -> None:
         super().__init__(parent, name)
 
         self.port = int(port)
@@ -105,7 +120,9 @@ class PNAPort(InstrumentChannel):
                            set_cmd=pow_cmd + "{}",
                            get_parser=float)
 
-    def _set_power_limits(self, min_power, max_power):
+    def _set_power_limits(self, 
+                          min_power: Union[int, float], 
+                          max_power: Union[int, float]) -> None:
         """
         Set port power limits
         """
@@ -116,7 +133,10 @@ class PNATrace(InstrumentChannel):
     Allow operations on individual PNA traces.
     """
 
-    def __init__(self, parent, name, trace):
+    def __init__(self, 
+                 parent: 'PNABase', 
+                 name: str, 
+                 trace: int) -> None:
         super().__init__(parent, name)
         self.trace = trace
 
@@ -163,13 +183,13 @@ class PNATrace(InstrumentChannel):
                            unit='LinMag',
                            parameter_class=FormattedSweep)
 
-    def write(self, cmd):
+    def write(self, cmd: str) -> None:
         """
         Select correct trace before querying
         """
         super().write("CALC:PAR:MNUM {}".format(self.trace))
         super().write(cmd)
-    def ask(self, cmd):
+    def ask(self, cmd: str) -> str:
         """
         Select correct trace before querying
         """
@@ -177,7 +197,7 @@ class PNATrace(InstrumentChannel):
         return super().ask(cmd)
 
     @staticmethod
-    def parse_paramstring(paramspec):
+    def parse_paramstring(paramspec: str) -> Tuple[str, str, str]:
         """
         Parse parameter specification from PNA
         """
@@ -185,17 +205,17 @@ class PNATrace(InstrumentChannel):
         ch, param, trnum = re.findall(r"CH(\d+)_(S\d+)_(\d+)", paramspec)[0]
         return ch, param, trnum
 
-    def _Sparam(self, paramspec):
+    def _Sparam(self, paramspec: str) -> str:
         """
         Extrace S_parameter from returned PNA format
         """
         return self.parse_paramstring(paramspec)[1]
-    def _set_Sparam(self, val):
+    def _set_Sparam(self, val: str) -> None:
         """
         Set an S-parameter, in the format S<a><b>, where a and b
         can range from 1-4
         """
-        if not re.match("S[1-4][1-4]"):
+        if not re.match("S[1-4][1-4]", val):
             raise ValueError("Invalid S parameter spec")
         self.write(f"CALC:PAR:MOD:EXT {val}")
 
@@ -208,11 +228,13 @@ class PNABase(VisaInstrument):
           traces, but using traces across multiple channels may have unexpected results.
     """
 
-    def __init__(self, name, address,
-                 min_freq, max_freq, # Set frequency ranges
-                 min_power, max_power, # Set power ranges
-                 nports, # Number of ports on the PNA
-                 **kwargs):
+    def __init__(self, 
+                 name: str, 
+                 address: str,
+                 min_freq: Union[int, float], max_freq: Union[int, float], # Set frequency ranges
+                 min_power: Union[int, float], max_power: Union[int, float], # Set power ranges
+                 nports: int, # Number of ports on the PNA
+                 **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         #Ports
@@ -344,7 +366,7 @@ class PNABase(VisaInstrument):
         self.connect_message()
 
     @property
-    def traces(self):
+    def traces(self) -> ChannelList:
         """
         Update channel list with active traces and return the new list
         """
@@ -352,17 +374,19 @@ class PNABase(VisaInstrument):
         self._traces.clear()
         for trace in parlist[::2]:
             trnum = PNATrace.parse_paramstring(trace)[2]
-            trace = PNATrace(self, "tr{}".format(trnum), int(trnum))
-            self._traces.append(trace)
+            pna_trace = PNATrace(self, "tr{}".format(trnum), int(trnum))
+            self._traces.append(pna_trace)
         return self._traces
 
-    def get_options(self):
+    def get_options(self) -> Sequence[str]:
         # Query the instrument for what options are installed
         return self.ask('*OPT?').strip('"').split(',')
 
-    def _set_auto_sweep(self, val):
+    def _set_auto_sweep(self, val: bool) -> None:
         self._auto_sweep = val
-    def _set_power_limits(self, min_power, max_power):
+    def _set_power_limits(self, 
+                          min_power: Union[int, float], 
+                          max_power: Union[int, float]) -> None:
         """
         Set port power limits
         """
@@ -371,11 +395,13 @@ class PNABase(VisaInstrument):
             port._set_power_limits(min_power, max_power)
 
 class PNAxBase(PNABase):
-    def __init__(self, name, address,
-                 min_freq, max_freq, # Set frequency ranges
-                 min_power, max_power, # Set power ranges
-                 nports, # Number of ports on the PNA
-                 **kwargs):
+    def __init__(self, 
+                 name: str, 
+                 address: str,
+                 min_freq: Union[int, float], max_freq: Union[int, float], # Set frequency ranges
+                 min_power: Union[int, float], max_power: Union[int, float], # Set power ranges
+                 nports: int, # Number of ports on the PNA
+                 **kwargs: Any) -> None:
 
         super().__init__(name, address,
                        min_freq, max_freq,
@@ -383,7 +409,7 @@ class PNAxBase(PNABase):
                        nports,
                        **kwargs)
 
-    def _enable_fom(self):
+    def _enable_fom(self) -> None:
         '''
         PNA-x units with two sources have an enormous list of functions & configurations.
         In practice, most of this will be set up manually on the unit, with power and frequency
