@@ -342,8 +342,15 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 def test_subscriptions(experiment, DAC, DMM):
     """
-    Here the following is tested: subscribers should be called at the moment the data is flushed to the database,
-    i.e. after new result is added. For the purpose of testing, flush_data_to_database method is called explicitly.
+    Test that subscribers are called at the moment that data is flushed to database
+
+    Note that for the purpose of this test, flush_data_to_database method is called explicitly instead of waiting for
+    the data to be flushed automatically after the write_period passes after a add_result call.
+
+    Args:
+        experiment (qcodes.dataset.experiment_container.Experiment) : qcodes experiment object
+        DAC (qcodes.instrument.base.Instrument) : dummy instrument object
+        DMM (qcodes.instrument.base.Instrument) : another dummy instrument object
     """
 
     def subscriber1(results, length, state):
