@@ -5,6 +5,7 @@ class N5245A(N52xx.PNAxBase):
         super().__init__(name, address, 
                          min_freq=10e6, max_freq=50e9, 
                          min_power=-30, max_power=13,
+                         nports=4,
                          **kwargs)
 
         options = self.get_options()
