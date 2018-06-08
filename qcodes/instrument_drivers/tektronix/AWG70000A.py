@@ -833,7 +833,7 @@ class AWG70000A(VisaInstrument):
             markers = data[1, :]
             for i in range(1, M-1):
                 markers += data[i+1, :] * (2**i)
-                markers = markers.astype(int)
+            markers = markers.astype(int)
             fmt = N*'B'  # endian-ness doesn't matter for one byte
             binary_marker = struct.pack(fmt, *markers)
 
