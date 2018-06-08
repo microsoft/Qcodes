@@ -11,3 +11,5 @@ class N5245A(N52xx.PNAxBase):
         options = self.get_options()
         if "419" in options:
             self._set_power_limits(min_power=-90, max_power=13)
+        if "080" in options:
+            self._enable_fom()
