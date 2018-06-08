@@ -2,7 +2,7 @@ from cmath import phase
 import math
 import numpy as np
 from qcodes import VisaInstrument, MultiParameter, InstrumentChannel, ArrayParameter, ChannelList
-from qcodes.utils.validators import Numbers
+from qcodes.utils.validators import Numbers, Enum, Bool
 import time
 import re
 
@@ -37,7 +37,7 @@ class FormattedSweep(PNASweep):
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
     """
-    def __init__(self, name, instrument, format, label, unit):
+    def __init__(self, name, instrument, format, label, unit, memory=False):
         super().__init__(name,
                          instrument=instrument,
                          label=label,
@@ -47,30 +47,41 @@ class FormattedSweep(PNASweep):
                          setpoint_units=('Hz',)
                          )
         self.format = format
-        
+        self.memory = memory
+
     def get_raw(self):
+        root_instr = self._instrument.root_instrument
+        # Check if we should run a new sweep
+        if root_instr.auto_sweep():
+            prev_mode = self.run_sweep()
+        # Ask for data, setting the format to the requested form
+        self._instrument.write(f'CALC:FORM {self.format}')
+        data = np.array(root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA', datatype='f', is_big_endian=True))
+        # Restore previous state if it was changed
+        if root_instr.auto_sweep():
+            root_instr.sweep_mode(prev_mode)
+
+        return data
+
+    def run_sweep(self):
+        root_instr = self._instrument.root_instrument
+        # Store previous mode
+        prev_mode = root_instr.sweep_mode()
         # Take instrument out of continuous mode, and send triggers equal to the number of averages
-        self._instrument.write('SENS:AVER:CLE')
-        self._instrument.write('TRIG:SOUR IMM')
-        avg = self._instrument.averages()
-        self._instrument.write('SENS:SWE:GRO:COUN {0}'.format(avg))
-        self._instrument.write('SENS:SWE:MODE GRO')
+        if root_instr.averages_enabled:
+            avg = root_instr.averages()
+            root_instr.write('SENS:AVER:CLE')
+            root_instr.write('SENS:SWE:GRO:COUN {0}'.format(avg))
+            root_instr.root_instrument.sweep_mode('GRO')
+        else:
+            root_instr.root_instrument.sweep_mode('SING')
 
         # Once the sweep mode is in hold, we know we're done
-        while True:
-            if self._instrument.ask('SENS:SWE:MODE?') == 'HOLD':
-                break
+        while root_instr.sweep_mode() != 'HOLD':
             time.sleep(0.1)
-        
-        # Ask for magnitude
-        self._instrument.write('CALC:FORM %s' % self.format)
-        data_str = self._instrument.ask('CALC:DATA? FDATA').split(',')
-        data_list = np.fromiter((float(v) for v in data_str), float)
 
-        # Return the instrument state
-        self._instrument.write('SENS:SWE:MODE CONT')
-                      
-        return data_list    
+        # Return previous mode, incase we want to restore this
+        return prev_mode
 
 class PNAPort(InstrumentChannel):
     """
@@ -93,7 +104,7 @@ class PNAPort(InstrumentChannel):
                            get_cmd=pow_cmd + "?",
                            set_cmd=pow_cmd + "{}",
                            get_parser=float)
-    
+
     def _set_power_limits(self, min_power, max_power):
         """
         Set port power limits
@@ -109,18 +120,32 @@ class PNATrace(InstrumentChannel):
         super().__init__(parent, name)
         self.trace = trace
 
-        # Name of parameter
+        # Name of parameter (i.e. S11, S21 ...)
         self.add_parameter('trace',
                            label='Trace',
                            get_cmd='CALC:PAR:SEL?'.format(self.trace),
-                           get_parser=self._Sparam
+                           get_parser=self._Sparam,
+                           set_cmd=self._set_Sparam
                            )
+        # Format
+        # Note: Currently parameters that return complex values are not supported
+        # as there isn't really a good way of saving them into the dataset
+        self.add_parameter('format',
+                           label='Format',
+                           get_cmd='CALC:FORM?',
+                           set_cmd='CALC:FORM {}',
+                           vals=Enum('MLIN', 'MLOG', 'PHAS', 'UPH', 'IMAG', 'REAL'))
 
         # And a list of individual formats
         self.add_parameter('magnitude',
                            format='MLOG',
                            label='Magnitude',
                            unit='dB',
+                           parameter_class=FormattedSweep)
+        self.add_parameter('linear_magnitude',
+                           format='MLIN',
+                           label='Magnitude',
+                           unit='ratio',
                            parameter_class=FormattedSweep)
         self.add_parameter('phase',
                            format='PHAS',
@@ -165,6 +190,14 @@ class PNATrace(InstrumentChannel):
         Extrace S_parameter from returned PNA format
         """
         return self.parse_paramstring(paramspec)[1]
+    def _set_Sparam(self, val):
+        """
+        Set an S-parameter, in the format S<a><b>, where a and b
+        can range from 1-4
+        """
+        if not re.match("S[1-4][1-4]"):
+            raise ValueError("Invalid S parameter spec")
+        self.write(f"CALC:PAR:MOD:EXT {val}")
 
 class PNABase(VisaInstrument):
     """
@@ -175,7 +208,7 @@ class PNABase(VisaInstrument):
           traces, but using traces across multiple channels may have unexpected results.
     """
 
-    def __init__(self, name, address, 
+    def __init__(self, name, address,
                  min_freq, max_freq, # Set frequency ranges
                  min_power, max_power, # Set power ranges
                  nports, # Number of ports on the PNA
@@ -199,13 +232,7 @@ class PNABase(VisaInstrument):
                            set_cmd='SOUR:POW {:.2f}',
                            unit='dBm',
                            vals=Numbers(min_value=min_power,max_value=max_power))
-        self.add_parameter('sweep_time',
-                           label='Time',
-                           get_cmd='SENS:SWE:TIME?',
-                           get_parser=float,
-                           unit='s',
-                           vals=Numbers(0,1e6))
-        
+
         # IF bandwidth
         self.add_parameter('if_bandwidth',
                            label='IF Bandwidth',
@@ -214,13 +241,13 @@ class PNABase(VisaInstrument):
                            set_cmd='SENS:BAND {:.2f}',
                            unit='Hz',
                            vals=Numbers(min_value=1,max_value=15e6))
-        
+
         # Number of averages (also resets averages)
         self.add_parameter('averages_enabled',
-                            label='Averages Enabled',
-                            get_cmd="SENS:AVER?",
-                            set_cmd="SENS:AVER {}",
-                            val_mapping={True: '1', False: '0'})
+                           label='Averages Enabled',
+                           get_cmd="SENS:AVER?",
+                           set_cmd="SENS:AVER {}",
+                           val_mapping={True: '1', False: '0'})
         self.add_parameter('averages',
                            label='Averages',
                            get_cmd='SENS:AVER:COUN?',
@@ -228,7 +255,7 @@ class PNABase(VisaInstrument):
                            set_cmd='SENS:AVER:COUN {:d}',
                            unit='',
                            vals=Numbers(min_value=1,max_value=65536))
-        
+
         # Setting frequency range
         self.add_parameter('start',
                            label='Start Frequency',
@@ -244,16 +271,16 @@ class PNABase(VisaInstrument):
                            set_cmd='SENS:FREQ:STOP {}',
                            unit='',
                            vals=Numbers(min_value=min_freq,max_value=max_freq))
-        
+
         # Number of points in a sweep
         self.add_parameter('points',
                            label='Points',
                            get_cmd='SENS:SWE:POIN?',
                            get_parser=int,
-                           set_cmd='SENS:FREQ:STOP {}',
+                           set_cmd='SENS:SWE:POIN {}',
                            unit='',
                            vals=Numbers(min_value=1, max_value=100001))
-        
+
         # Electrical delay
         self.add_parameter('electrical_delay',
                            label='Electrical Delay',
@@ -262,6 +289,20 @@ class PNABase(VisaInstrument):
                            set_cmd='CALC:CORR:EDEL:TIME {:.6e}',
                            unit='s',
                            vals=Numbers(min_value=0, max_value=100000))
+
+        # Sweep Time
+        self.add_parameter('sweep_time',
+                           label='Time',
+                           get_cmd='SENS:SWE:TIME?',
+                           get_parser=float,
+                           unit='s',
+                           vals=Numbers(0,1e6))
+        # Sweep Mode
+        self.add_parameter('sweep_mode',
+                           label='Mode',
+                           get_cmd='SENS:SWE:MODE?',
+                           set_cmd='SENS:SWE:MODE {}',
+                           vals=Enum("HOLD", "CONT", "GRO", "SING"))
 
         # Traces
         # Note: These will be accessed through the traces property which updates
@@ -274,7 +315,17 @@ class PNABase(VisaInstrument):
             self.parameters[param.name] = param
         # By default we should also pull any following values from this trace
         self.write("CALC:PAR:MNUM 1")
-                    
+
+        # Set auto_sweep parameter
+        # If we want to return multiple traces per setpoint without sweeping
+        # multiple times, we should set this to false
+        self._auto_sweep = True
+        self.add_parameter('auto_sweep',
+                           label='Auto Sweep',
+                           set_cmd=self._set_auto_sweep,
+                           get_cmd=lambda: self._auto_sweep,
+                           vals=Bool())
+
         # Functions
         # Clear averages
         self.add_function('reset_averages',
@@ -304,12 +355,13 @@ class PNABase(VisaInstrument):
             trace = PNATrace(self, "tr{}".format(trnum), int(trnum))
             self._traces.append(trace)
         return self._traces
-    
 
     def get_options(self):
         # Query the instrument for what options are installed
         return self.ask('*OPT?').strip('"').split(',')
 
+    def _set_auto_sweep(self, val):
+        self._auto_sweep = val
     def _set_power_limits(self, min_power, max_power):
         """
         Set port power limits
@@ -319,13 +371,13 @@ class PNABase(VisaInstrument):
             port._set_power_limits(min_power, max_power)
 
 class PNAxBase(PNABase):
-    def __init__(self, name, address, 
+    def __init__(self, name, address,
                  min_freq, max_freq, # Set frequency ranges
                  min_power, max_power, # Set power ranges
                  nports, # Number of ports on the PNA
                  **kwargs):
 
-        super().__init__(name, address, 
+        super().__init__(name, address,
                        min_freq, max_freq,
                        min_power, max_power,
                        nports,
