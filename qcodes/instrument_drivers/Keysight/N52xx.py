@@ -20,16 +20,16 @@ class PNASweep(ArrayParameter):
                  **kwargs
                  )
 
-    @property
-    def shape(self) -> Sequence[int]:
+    @property # type: ignore
+    def shape(self) -> Sequence[int]: # type: ignore
         if self._instrument is None:
             return (0,)
         return (self._instrument.root_instrument.points(),)
     @shape.setter
     def shape(self, val: Sequence[int]) -> None:
         pass
-    @property
-    def setpoints(self) -> Sequence:
+    @property # type: ignore
+    def setpoints(self) -> Sequence: # type: ignore
         start = self._instrument.root_instrument.start()
         stop = self._instrument.root_instrument.stop()
         return (np.linspace(start, stop, self.shape[0]),)
