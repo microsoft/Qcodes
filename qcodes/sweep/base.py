@@ -17,8 +17,8 @@ class BaseSweepObject:
 
     def _generator_factory(self) ->Iterator:
         """
-        When called, this method returns the param setter iterable appropriate
-        for this measurement
+        This generator should yield a dictionary at each iteration. We will
+        use add_results to add this dictionary to a data set
         """
         raise NotImplementedError("Please subclass BaseSweepObject")
 
