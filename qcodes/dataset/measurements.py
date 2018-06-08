@@ -116,8 +116,6 @@ class DataSaver:
                     input_size = array_size
             elif any(isinstance(value, t) for t in non_array_like_types):
                 pass
-            elif value is None:
-                pass
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
