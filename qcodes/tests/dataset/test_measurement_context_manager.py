@@ -11,7 +11,7 @@ import numpy as np
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.instrument.parameter import ArrayParameter
@@ -50,6 +50,11 @@ def DMM():
     yield dmm
     dmm.close()
 
+@pytest.fixture
+def channel_array_instrument():
+    channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
+    yield channelarrayinstrument
+    channelarrayinstrument.close()
 
 @pytest.fixture
 def SpectrumAnalyzer():
@@ -705,6 +710,41 @@ def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
                                  (tspec, tspec.get()))
 
     assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500))
+def test_datasaver_array_parameters_channel(experiment, channel_array_instrument,
+                                    DAC, N):
+
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_array_parameter
+
+    meas.register_parameter(array_param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(array_param, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N * M
 
 
 def test_load_legacy_files_2D(experiment):
