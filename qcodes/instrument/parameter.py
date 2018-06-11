@@ -658,7 +658,23 @@ class _BaseParameter(Metadatable):
             raise TypeError('vals must be a Validator')
 
     @property
+    def instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the first instrument that this parameter is bound to.
+        E.g if this is bound to a channel it will return the channel
+        and not the instrument that the channel is bound too. Use
+        :meth:`root_instrument` to get the real instrument.
+        """
+        return self._instrument
+
+    @property
     def root_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the fundamental instrument that this parameter belongs too.
+        E.g if the parameter is bound to a channel this will return the
+        fundamental instrument that that channel belongs to. Use
+        :meth:`instrument` to get the channel.
+        """
         if self._instrument is not None:
             return self._instrument.root_instrument
         else:
