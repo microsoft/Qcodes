@@ -489,8 +489,8 @@ class Instrument(InstrumentBase):
                 inst = cls.find_instrument(inststr)
                 log.info(f"Closing {inststr}")
                 inst.close()
-            except KeyError:
-                log.info(f"Failed to close {inststr}, ignored")
+            except:
+                log.exception(f"Failed to close {inststr}, ignored")
                 pass
 
     @classmethod
