@@ -18,6 +18,9 @@ from qcodes.dataset.data_set import DataSet
 
 log = logging.getLogger(__name__)
 
+array_like_types = (tuple, list, np.ndarray)
+non_array_like_types = (int, float, str)
+
 
 class ParameterTypeError(Exception):
     pass
@@ -101,7 +104,7 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            if isinstance(value, np.ndarray):
+            if any(isinstance(value, typ) for typ in array_like_types):
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
                 array_size = len(value)
@@ -111,17 +114,31 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            elif any(isinstance(value, t) for t in non_array_like_types):
+                pass
+            else:
+                raise ValueError('Wrong value type received. '
+                                 f'Got {type(value)}, but only int, float, '
+                                 'str, tuple, list, and np.ndarray is '
+                                 'allowed.')
+
             # TODO (WilliamHPNielsen): The following code block is ugly and
             # brittle and should be enough to convince us to abandon the
             # design of ArrayParameters (possibly) containing (some of) their
             # setpoints
             if isinstance(parameter, ArrayParameter):
-                sps = parameter.setpoints[0]
-                inst_name = getattr(parameter._instrument, 'name', '')
-                if inst_name:
-                    spname = f'{inst_name}_{parameter.setpoint_names[0]}'
+                if parameter.setpoints is not None:
+                    sps = parameter.setpoints[0]
                 else:
-                    spname = parameter.setpoint_names[0]
+                    raise RuntimeError("Got an array parameter without "
+                                       "setpoints. Cannot handle this")
+                inst_name = getattr(parameter._instrument, 'name', '')
+                sp_name_parts = []
+                if inst_name is not None:
+                    sp_name_parts.append(inst_name)
+                if parameter.setpoint_names is not None:
+                    sp_name_parts.append(parameter.setpoint_names[0])
+                spname = '_'.join(sp_name_parts)
 
                 if f'{paramstr}_setpoint' in self.parameters.keys():
                     res.append((f'{paramstr}_setpoint', sps))
@@ -245,8 +262,11 @@ class Runner:
             self.ds.add_metadata('snapshot',
                                  json.dumps({'station': station.snapshot()}))
 
-        for paramspec in self.parameters.values():
-            self.ds.add_parameter(paramspec)
+        if self.parameters is not None:
+            for paramspec in self.parameters.values():
+                self.ds.add_parameter(paramspec)
+        else:
+            raise RuntimeError("No parameters supplied")
 
         # register all subscribers
         for (callble, state) in self.subscribers:
@@ -398,12 +418,18 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        my_setpoints: Sequence[Union[str,_BaseParameter]]
+        my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
-            if parameter.setpoint_names:
-                spname = (f'{parameter._instrument.name}_'
-                          f'{parameter.setpoint_names[0]}')
+            spname_parts = []
+            if parameter.root_instrument is not None:
+                inst_name = parameter.root_instrument.name
+                if inst_name is not None:
+                    spname_parts.append(inst_name)
+            if parameter.setpoint_names is not None:
+                spname_parts.append(parameter.setpoint_names[0])
+            if len(spname_parts) > 0:
+                spname = '_'.join(spname_parts)
             else:
                 spname = f'{name}_setpoint'
             if parameter.setpoint_labels:
@@ -436,11 +462,11 @@ class Measurement:
         label = parameter.label
         unit = parameter.unit
 
-        if my_setpoints:
+        if my_setpoints is not None:
             sp_strings = [str(sp) for sp in my_setpoints]
         else:
             sp_strings = []
-        if basis:
+        if basis is not None:
             bs_strings = [str(bs) for bs in basis]
         else:
             bs_strings = []
