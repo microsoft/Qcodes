@@ -264,19 +264,19 @@ class TestDataArray(TestCase):
         # index = 1 * 10 + 7 - add 1 (for index 0) and you get 18
         # each index is 2% of the total, so this is 36%
         data[1, 7] = 1
-        self.assertEqual(data.fraction_complete(), 18/50)
+        self.assertEqual(data.fraction_complete(), 18 / 50)
 
         # add a last_saved_index but modified_range is still bigger
         data.mark_saved(13)
-        self.assertEqual(data.fraction_complete(), 18/50)
+        self.assertEqual(data.fraction_complete(), 18 / 50)
 
         # now last_saved_index wins
         data.mark_saved(19)
-        self.assertEqual(data.fraction_complete(), 20/50)
+        self.assertEqual(data.fraction_complete(), 20 / 50)
 
         # now pretend we get more info from syncing
         data.synced_index = 22
-        self.assertEqual(data.fraction_complete(), 23/50)
+        self.assertEqual(data.fraction_complete(), 23 / 50)
 
 
 class TestLoadData(TestCase):
@@ -473,9 +473,10 @@ class TestDataSet(TestCase):
         self.assertEqual(name, 'x_set')
 
         # test the fallback: no name matches, no non-setpoint array
-        x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.), is_setpoint=True)
-        m= new_data(arrays=(x,), name='onlysetpoint')
-        name=m.default_parameter_name(paramname='dummy')
+        x = DataArray(name='x', label='X', preset_data=(
+            1., 2., 3., 4., 5.), is_setpoint=True)
+        m = new_data(arrays=(x,), name='onlysetpoint')
+        name = m.default_parameter_name(paramname='dummy')
         self.assertEqual(name, 'x_set')
 
     def test_fraction_complete(self):
@@ -557,3 +558,9 @@ class TestDataSet(TestCase):
             self.assertTrue(log_index_new >= log_index, logs)
             log_index = log_index_new + len(line) + 1  # +1 for \n
         self.assertEqual(log_index, len(logs), logs)
+
+    def test_remove_array(self):
+        m = DataSet2D()
+        m.remove_array('z')
+        _ = m.__repr__()
+        self.assertFalse('z' in m.arrays)

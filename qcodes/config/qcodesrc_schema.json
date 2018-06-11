@@ -85,11 +85,43 @@
             },
             "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
         },
-        "user":{
-            "type" : "object",
-            "description": "controls user settings of qcodes",
-            "properties" : {}
+        "user": {
+            "type": "object",
+            "properties": {
+                "scriptfolder": {
+                    "type": "string",
+                    "default": "/",
+                    "description": "Location of scripts for general experiments"
+                },
+                "mainfolder": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Location of experiments"
+                }
+            },
+            "description": "Optional feature for qdev-wrappers package: controls user settings of qcodes"
+        },
+        "station_configurator": {
+            "type": "object",
+            "properties": {
+                "enable_forced_reconnect": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "if set to true, on instantiation of an existing instrument, the existing will be disconnected."
+                },
+                "default_folder": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "default folder where to look for a station configurator config file"
+                },
+                "default_file": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "default file name, specifying the file to load, when none is specified. Can be a relative or absolute path"
+                }
+            },
+            "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
         }
        },
-    "required":[ "gui", "core" , "user"]
+    "required":[ "gui", "core"]
 }
