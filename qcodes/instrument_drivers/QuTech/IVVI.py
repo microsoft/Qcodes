@@ -434,8 +434,8 @@ class IVVI(VisaInstrument):
         for ch in channels:
             self.pol_num[ch - 1] = val
             name = "dac" + str(ch)
-            self.set_parameter_bounds(name, val, val + 
-                                      self.Fullrange)
+            self.set_parameter_bounds(name, val, 
+                                      val + self.Fullrange)
 
         if get_all:
             self.get_all()
