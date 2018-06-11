@@ -21,11 +21,12 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
-                                        connect, create_run, get_parameters,
+                                        connect, create_run, completed,
+                                        get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
                                         length, modify_values,
-                                        add_meta_data, mark_run,
+                                        add_meta_data, mark_run_complete,
                                         modify_many_values, insert_values,
                                         insert_many_values,
                                         VALUE, VALUES, get_data,
@@ -78,7 +79,7 @@ class Subscriber(Thread):
         # whether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
-        self.conn = dataSet.conn
+        conn = dataSet.conn
         self.log = logging.getLogger(f"Subscriber {self.sub_id}")
 
         self.state = state
@@ -95,14 +96,14 @@ class Subscriber(Thread):
         param_sql = ",".join([f"NEW.{p.name}" for p in parameters])
         self.callbackid = f"callback{self.sub_id}"
 
-        self.conn.create_function(self.callbackid, -1, self.cache)
+        conn.create_function(self.callbackid, -1, self.cache)
         sql = f"""
         CREATE TRIGGER sub{self.sub_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callbackid}({param_sql});
         END;"""
-        atomic_transaction(self.conn, sql)
+        atomic_transaction(conn, sql)
         self.data: Queue = Queue()
         self._data_set_len = len(dataSet)
         super().__init__()
@@ -165,7 +166,18 @@ class Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str, conn=None) -> None:
+    def __init__(self, path_to_db: str, run_id: Optional[int]=None,
+                 conn=None) -> None:
+        """
+        Create a new DataSet object. The object can either be intended
+        to hold a new run or and old run.
+
+        Args:
+            path_to_db: path to the sqlite file on disk
+            run_id: provide this when loading an existing run, leave it
+              as None when creating a new run
+            conn: connection to the DB
+        """
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
@@ -174,7 +186,11 @@ class DataSet(Sized):
         else:
             self.conn = conn
 
+        self.run_id = run_id
         self._debug = False
+        self.subscribers: Dict[str, Subscriber] = {}
+        if run_id:
+            self._completed = completed(self.conn, self.run_id)
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
@@ -187,7 +203,6 @@ class DataSet(Sized):
 
         # this is really the UUID (an ever increasing count in the db)
         self.run_id = run_id
-        self.subscribers: Dict[str, Subscriber] = {}
         self._completed = False
 
     @property
@@ -228,6 +243,7 @@ class DataSet(Sized):
     def exp_id(self):
         return select_one_where(self.conn, "runs",
                                 "exp_id", "run_id", self.run_id)
+
 
     def toggle_debug(self):
         """
@@ -308,7 +324,8 @@ class DataSet(Sized):
     @completed.setter
     def completed(self, value):
         self._completed = value
-        mark_run(self.conn, self.run_id, value)
+        if value:
+            mark_run_complete(self.conn, self.run_id)
 
     def mark_complete(self) -> None:
         """Mark dataset as complete and thus read only and notify the
@@ -617,8 +634,7 @@ def load_by_id(run_id)->DataSet:
         the datasets
 
     """
-    d = DataSet(get_DB_location())
-    d.run_id = run_id
+    d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
@@ -632,7 +648,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    d = DataSet(get_DB_location())
+    conn = connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -641,8 +657,11 @@ def load_by_counter(counter, exp_id):
       result_counter= ? AND
       exp_id = ?
     """
-    c = transaction(d.conn, sql, counter, exp_id)
-    d.run_id = one(c, 'run_id')
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, 'run_id')
+    conn.close()
+    d = DataSet(get_DB_location(), run_id=run_id)
+
     return d
 
 
@@ -661,16 +680,27 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata:  the values to associate with the dataset
     """
     path_to_db = get_DB_location()
-    d = DataSet(path_to_db, conn=conn)
+    if conn is None:
+        tempcon = True
+        conn = connect(get_DB_location())
+    else:
+        tempcon = False
 
     if exp_id is None:
-        if len(get_experiments(d.conn)) > 0:
-            exp_id = get_last_experiment(d.conn)
+        if len(get_experiments(conn)) > 0:
+            exp_id = get_last_experiment(conn)
         else:
             raise ValueError("No experiments found."
                              "You can start a new one with:"
                              " new_experiment(name, sample_name)")
+    # This is admittedly a bit weird. We create a dataset, link it to some
+    # run in the DB and then (using _new) change what it's linked to
+    if tempcon:
+        conn.close()
+        conn = None
+    d = DataSet(path_to_db, run_id=None, conn=conn)
     d._new(name, exp_id, specs, values, metadata)
+
     return d
 
 
