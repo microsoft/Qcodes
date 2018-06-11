@@ -1,6 +1,7 @@
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
+import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
@@ -372,3 +373,49 @@ def test_numpy_nan(dataset):
     dataset.add_results(data_dict)
     retrieved = dataset.get_data("m")
     assert np.isnan(retrieved[1])
+
+
+def test_missing_keys(dataset):
+    """
+    Test that we can now have partial results with keys missing. This is for
+    example handy when having an interleaved 1D and 2D sweep.
+    """
+
+    x = ParamSpec("x", paramtype='numeric')
+    y = ParamSpec("y", paramtype='numeric')
+    a = ParamSpec("a", paramtype='numeric', depends_on=[x])
+    b = ParamSpec("b", paramtype='numeric', depends_on=[x, y])
+
+    dataset.add_parameter(x)
+    dataset.add_parameter(y)
+    dataset.add_parameter(a)
+    dataset.add_parameter(b)
+
+    def fa(xv):
+        return xv + 1
+
+    def fb(xv, yv):
+        return xv + 2 - yv * 3
+
+    results = []
+    xvals = [1, 2, 3]
+    yvals = [2, 3, 4]
+
+    for xv in xvals:
+        results.append({"x": xv, "a": fa(xv)})
+        for yv in yvals:
+            results.append({"x": xv, "y": yv, "b": fb(xv, yv)})
+
+    dataset.add_results(results)
+
+    assert dataset.get_values("x") == [[r["x"]] for r in results]
+    assert dataset.get_values("y") == [[r["y"]] for r in results if "y" in r]
+    assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
+    assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
+
+    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+
+    tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
+    expected_setpoints = [[[v] for v in vals] for vals in tmp]
+
+    assert dataset.get_setpoints("b") == expected_setpoints
