@@ -660,7 +660,10 @@ class _BaseParameter(Metadatable):
     @property
     def instrument(self) -> Optional['InstrumentBase']:
         """
-        Return the first instrument that this parameter is bound to
+        Return the first instrument that this parameter is bound to.
+        E.g if this is bound to a channel it will return the channel
+        and not the instrument that the channel is bound too. Use
+        :meth:`root_instrument` to get the real instrument.
         """
         return self._instrument
 
@@ -669,8 +672,8 @@ class _BaseParameter(Metadatable):
         """
         Return the fundamental instrument that this parameter belongs too.
         E.g if the parameter is bound to a channel this will return the
-        fundamental instrument that that channel belongs to.
-
+        fundamental instrument that that channel belongs to. Use
+        :meth:`instrument` to get the channel.
         """
         if self._instrument is not None:
             return self._instrument.root_instrument
