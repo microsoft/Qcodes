@@ -433,8 +433,9 @@ class IVVI(VisaInstrument):
         val = flagmap[flag.upper()]
         for ch in channels:
             self.pol_num[ch - 1] = val
-            self.set_parameter_bounds('dac%d' % (i+1), val, val + 
-                                      self.Fullrange.0)
+            name = "dac" + str(ch)
+            self.set_parameter_bounds(name, val, val + 
+                                      self.Fullrange)
 
         if get_all:
             self.get_all()
