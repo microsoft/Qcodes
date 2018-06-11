@@ -360,7 +360,7 @@ class DataSet(Sized):
 
         Args:
             - list of name, value dictionaries  where each
-              dictionary provides the values for of the parameters in
+              dictionary provides the values for the parameters in
               that result. If some parameters are missing the corresponding
               values are assumed to be None
 
