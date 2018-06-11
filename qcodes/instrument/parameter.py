@@ -658,7 +658,7 @@ class _BaseParameter(Metadatable):
             raise TypeError('vals must be a Validator')
 
     @property
-    def instument(self) -> Optional['InstrumentBase']:
+    def instrument(self) -> Optional['InstrumentBase']:
         """
         Return the first instrument that this parameter is bound to
         """
