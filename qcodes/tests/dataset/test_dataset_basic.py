@@ -7,7 +7,7 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
+from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
 from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import initialise_database
 
@@ -328,7 +328,7 @@ def test_database_upgrade(empty_temp_db):
                            " {}".format(userversion))
     sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
 
-    atomicTransaction(connection, sql)
+    atomic_transaction(connection, sql)
     set_user_version(connection, 1)
 
 
@@ -361,4 +361,14 @@ def test_numpy_floats(dataset):
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
     expected_result = [[tp(1.2)] for tp in numpy_floats]
-    assert dataset.get_data("y") == expected_result
+    assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+
+
+def test_numpy_nan(dataset):
+    parameter_m = ParamSpec("m", "numeric")
+    dataset.add_parameters([parameter_m])
+
+    data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
+    dataset.add_results(data_dict)
+    retrieved = dataset.get_data("m")
+    assert np.isnan(retrieved[1])

@@ -2,17 +2,17 @@ from qcodes.instrument_drivers.test import DriverTestCase
 import unittest
 
 try:
-    from .M3201A import Keysight_M3201A
+    from qcodes.instrument_drivers.Keysight.M3201A import Keysight_M3201A
     Keysight_M3201A_found = True
 except ImportError:
     Keysight_M3201A_found = False
 try:
-    from .M3300A import M3300A_AWG
+    from qcodes.instrument_drivers.Keysight.M3300A import M3300A_AWG
     M3300A_AWG_found = True
 except ImportError:
     M3300A_AWG_found = False
 try:
-    from .SD_common.SD_Module import SD_Module
+    from qcodes.instrument_drivers.Keysight.SD_common.SD_Module import SD_Module
     SD_Module_found = True
 except ImportError:
     SD_Module_found = False
