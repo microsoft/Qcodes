@@ -576,7 +576,7 @@ class AWG70000A(VisaInstrument):
         if len(shape) == 1:
             N = shape[0]
             markers_included = False
-        elif len(shape) == 2:
+        elif len(shape) in [2, 3, 4]:
             N = shape[1]
             markers_included = True
         else:
@@ -807,8 +807,8 @@ class AWG70000A(VisaInstrument):
 
         Args:
             data: Either a shape (N,) array with only a waveform or
-                a shape (3, N) array with waveform, marker1, marker2, i.e.
-                data = np.array([wfm, m1, m2]). The waveform data is assumed
+                a shape (M, N) array with waveform, marker1, marker2, marker3, i.e.
+                data = np.array([wfm, m1, ...]). The waveform data is assumed
                 to be in V.
             amplitude: The peak-to-peak amplitude (V) assumed to be set on the
                 channel that will play this waveform. This information is
@@ -830,13 +830,10 @@ class AWG70000A(VisaInstrument):
             N = shape[1]
             M = shape[0]
             wfm = data[0, :]
-            if M == 2:
-                markers = data[1, :]
-            elif M == 3:
-                m1 = data[1, :]
-                m2 = data[2, :]
-                markers = m1+2*m2  # This is how one byte encodes both markers
-                markers = markers.astype(int)
+            markers = data[1, :]
+            for i in range(1, M-1):
+                markers += data[i+1, :] * (2**i)
+            markers = markers.astype(int)
             fmt = N*'B'  # endian-ness doesn't matter for one byte
             binary_marker = struct.pack(fmt, *markers)
 
@@ -925,15 +922,14 @@ class AWG70000A(VisaInstrument):
         for pos1 in seq.keys():
             for pos2 in seq[pos1]['content'].keys():
                 for ch, data in seq[pos1]['content'][pos2]['data'].items():
-                    # TODO: Add support for more than two markers
                     wfm = data['wfm']
-                    # TODO: can we add support for single markers?
-                    if 'm1' or 'm2' in data.keys():
-                        m1 = data.get('m1', np.zeros(len(wfm)))
-                        m2 = data.get('m2', np.zeros(len(wfm)))
-                        wfm_data = np.stack((wfm, m1, m2))
-                    else:
-                        wfm_data = wfm
+
+                    markerdata = []
+                    for mkey in ['m1', 'm2', 'm3', 'm4']:
+                        if mkey in data.keys():
+                            markerdata.append(data.get(mkey))
+                    wfm_data = np.stack((wfm, *markerdata))
+
                     awgchan = channel_mapping[ch]
                     wfmx = AWG70000A.makeWFMXFile(wfm_data,
                                                   amplitudes[awgchan-1])
@@ -943,6 +939,9 @@ class AWG70000A(VisaInstrument):
         ##########
         # STEP 2:
         # Make all subsequence .sml files
+
+        print('Waveforms done')
+        print(wfmx_filenames)
 
         subseqsml_files: List[str] = []
         subseqsml_filenames: List[str] = []
@@ -967,12 +966,14 @@ class AWG70000A(VisaInstrument):
                     seqings.append(pos_seqs)
 
                     ss_wfm_names.append([n for n in wfmx_filenames
-                                      if f'wfm_{pos1}_{pos2}' in n])
+                                         if f'wfm_{pos1}_{pos2}' in n])
 
                 seqing = {k: [d[k] for d in seqings]
                           for k in seqings[0].keys()}
 
                 subseqname = f'subsequence_{pos1}'
+
+                print(ss_wfm_names)
 
                 subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                                    nreps=seqing['nrep'],
@@ -980,7 +981,8 @@ class AWG70000A(VisaInstrument):
                                                    event_jump_to=seqing['jump_target'],
                                                    go_to=seqing['goto'],
                                                    elem_names=ss_wfm_names,
-                                                   seqname=subseqname)
+                                                   seqname=subseqname,
+                                                   chans=len(channel_mapping))
 
                 subseqsml_files.append(subseqsml)
                 subseqsml_filenames.append(f'{subseqname}')
@@ -1010,6 +1012,9 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
+        print('True debug')
+        print(asset_names)
+
         mainseqname = seqname
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                             nreps=seqing['nrep'],
@@ -1018,6 +1023,7 @@ class AWG70000A(VisaInstrument):
                                             go_to=seqing['goto'],
                                             elem_names=asset_names,
                                             seqname=mainseqname,
+                                            chans=len(channel_mapping),
                                             subseq_positions=subseq_positions)
 
         ##########
@@ -1115,11 +1121,15 @@ class AWG70000A(VisaInstrument):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]
 
-        flat_wfm_names = [name for lst in wfm_names for name in lst]
+        # This unfortunately assumes no subsequences
+        flat_wfm_names = list(np.reshape(np.array(wfm_names).transpose(),
+                                         (chans*elms,)))
 
         sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
                                           event_jumps, event_jump_to,
-                                          go_to, wfm_names, seqname)
+                                          go_to, wfm_names,
+                                          seqname,
+                                          chans)
 
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seqname)
@@ -1181,6 +1191,7 @@ class AWG70000A(VisaInstrument):
                      go_to: Sequence[int],
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
+                     chans: int,
                      subseq_positions: List[int]=[]) -> str:
         """
         Make an xml file describing a sequence.
@@ -1203,6 +1214,9 @@ class AWG70000A(VisaInstrument):
                  [wfmpos3ch1, wfmpos3ch2, ...], ...]
             seqname: The name of the sequence. This name will appear in
                 the sequence list of the instrument.
+            chans: The number of channels. Can not be inferred in the case
+                of a sequence containing only subsequences, so must be provided
+                up front.
             subseq_positions: The positions (step numbers) occupied by
                 subsequences
 
@@ -1228,7 +1242,6 @@ class AWG70000A(VisaInstrument):
                              ' number of sequencing steps.')
 
         N = lstlens[0]
-        chans = np.shape(elem_names)[0]
 
         # form the timestamp string
         timezone = time.timezone
