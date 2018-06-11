@@ -805,7 +805,9 @@ def new_experiment(conn: sqlite3.Connection,
     return curr.lastrowid
 
 
-def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
+# TODO(WilliamHPNielsen): we should remove the redundant
+# is_completed
+def mark_run_complete(conn: sqlite3.Connection, run_id: int):
     """ Mark run complete
 
     Args:
@@ -821,7 +823,7 @@ def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), complete, run_id)
+    atomic_transaction(conn, query, time.time(), True, run_id)
 
 
 def completed(conn: sqlite3.Connection, run_id)->bool:
