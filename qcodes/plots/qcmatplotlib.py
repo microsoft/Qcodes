@@ -222,7 +222,7 @@ class MatPlot(BasePlot):
         """
         if not isinstance(subplots, tuple):
             raise TypeError('Subplots {} must be a tuple'.format(subplots))
-        return (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
+        return (3 + 3 * subplots[1], 1 + 3 * subplots[0])
 
     def update_plot(self):
         """

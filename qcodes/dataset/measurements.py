@@ -116,8 +116,6 @@ class DataSaver:
                     input_size = array_size
             elif any(isinstance(value, t) for t in non_array_like_types):
                 pass
-            elif value is None:
-                pass
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
@@ -424,8 +422,8 @@ class Measurement:
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
             spname_parts = []
-            if parameter.root_instrument is not None:
-                inst_name = parameter.root_instrument.name
+            if parameter.instrument is not None:
+                inst_name = parameter.instrument.name
                 if inst_name is not None:
                     spname_parts.append(inst_name)
             if parameter.setpoint_names is not None:
