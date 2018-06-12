@@ -919,13 +919,13 @@ class TestSetContextManager(TestCase):
         del self.instrument
 
     def test_none_value(self):
-        with self.instrument.a.set(3):
+        with self.instrument.a.set_to(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() is None
 
     def test_context(self):
         self.instrument.a.set(2)
 
-        with self.instrument.a.set(3):
+        with self.instrument.a.set_to(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2

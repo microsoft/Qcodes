@@ -408,8 +408,6 @@ class _BaseParameter(Metadatable):
             try:
                 self.validate(value)
 
-                set_context_manager = _SetParamContext(self)
-
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
@@ -474,8 +472,6 @@ class _BaseParameter(Metadatable):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
-
-                return set_context_manager
 
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
@@ -707,6 +703,22 @@ class _BaseParameter(Metadatable):
             return self._instrument.root_instrument
         else:
             return None
+
+    def set_to(self, value):
+        """
+        Use a context manager to temporarily set the value of a parameter to
+        a value. Example:
+
+        >>> from qcodes import Parameter
+        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+        >>> with p.set_to(3):
+        ...    print(f"p value in with block {p.get()}")
+        >>> print(f"p value outside with block {p.get()}")
+        """
+        context_manager = _SetParamContext(self)
+        self.set(value)
+        return context_manager
+
 
 class Parameter(_BaseParameter):
     """
