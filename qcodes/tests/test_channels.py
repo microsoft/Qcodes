@@ -4,6 +4,7 @@ import unittest
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.channel import ChannelList
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -123,6 +124,35 @@ class TestChannels(TestCase):
 
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
         self.assertEquals(self.instrument.channels.temperature(), expected)
+
+    @given(start=hst.integers(-8,7), stop=hst.integers(-8,7), step=hst.integers(1,7))
+    def test_access_channels_by_slice(self, start, stop, step):
+        names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+        channels = tuple(DummyChannel(self.instrument,
+                                      'Chan'+name, name) for name in names)
+        chlist = ChannelList(self.instrument, 'channels',
+                             DummyChannel, channels)
+        if stop < start:
+            step = -step
+        myslice = slice(start, stop, step)
+        mychans = chlist[myslice]
+        expected_channels = names[myslice]
+        for chan, exp_chan in zip(mychans, expected_channels):
+            assert chan.name == f'testchanneldummy_Chan{exp_chan}'
+
+
+    @given(myindexs=hst.lists(elements=hst.integers(-8,7), min_size=1))
+    def test_access_channels_by_tuple(self, myindexs):
+        names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+        mytuple = tuple(myindexs)
+        channels = tuple(DummyChannel(self.instrument,
+                                      'Chan'+name, name) for name in names)
+        chlist = ChannelList(self.instrument, 'channels',
+                             DummyChannel, channels)
+
+        mychans = chlist[mytuple]
+        for chan, chanindex in zip(mychans, mytuple):
+            assert chan.name == f'testchanneldummy_Chan{names[chanindex]}'
 
 
 class TestChannelsLoop(TestCase):
