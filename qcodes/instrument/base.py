@@ -262,6 +262,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def root_instrument(self) -> 'InstrumentBase':
         return self
+
+    @property
+    def name_parts(self) -> List[str]:
+        name_parts = [self.short_name]
+        return name_parts
     #
     # shortcuts to parameters & setters & getters                           #
     #

@@ -68,6 +68,16 @@ class InstrumentChannel(InstrumentBase):
     def root_instrument(self) -> InstrumentBase:
         return self._parent.root_instrument
 
+    @property
+    def name_parts(self) -> List[str]:
+        name_parts = [self.short_name]
+        parent_inst = self._parent
+        while parent_inst is not None:
+            name_parts.append(parent_inst.short_name)
+            parent_inst = parent_inst.parent
+        name_parts.reverse()
+        return name_parts
+
 class MultiChannelInstrumentParameter(MultiParameter):
     """
     Parameter to get or set multiple channels simultaneously.
