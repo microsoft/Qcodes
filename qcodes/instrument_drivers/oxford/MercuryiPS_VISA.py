@@ -85,6 +85,7 @@ class MercurySlavePS(InstrumentChannel):
         self.add_parameter('field_target',
                            label='Target field',
                            get_cmd=partial(self._param_getter, 'SIG:FSET'),
+                           set_cmd=partial(self._param_setter, 'SIG:FSET'),
                            unit='T',
                            get_parser=partial(_signal_parser, 1))
 
