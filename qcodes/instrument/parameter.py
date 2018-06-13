@@ -720,6 +720,21 @@ class _BaseParameter(Metadatable):
         self.set(value)
         return context_manager
 
+    @property
+    def name_parts(self) -> List[str]:
+        name_parts = [self.name]
+        parent_inst = self._instrument
+        while parent_inst is not None:
+            name_parts.append(parent_inst.short_name)
+            parent_inst = parent_inst.parent
+        name_parts.reverse()
+        return name_parts
+
+    @property
+    def qualified_name(self):
+        return "_".join(self.name_parts[1:])
+        # TODO what should this be called
+
 
 class Parameter(_BaseParameter):
     """
