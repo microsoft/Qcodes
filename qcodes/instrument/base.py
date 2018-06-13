@@ -45,6 +45,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
         self.name = str(name)
+        self.short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
         self.functions: Dict[str, Function] = {}
@@ -252,8 +253,25 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 submodule.print_readable_snapshot(update, max_chars)
 
     @property
+    def parent(self):
+        """
+        Returns the parent instrument. By default this is None
+        Any SubInstrument should subclass this to return the parent instrument.
+        """
+        return None
+
+    @property
     def root_instrument(self) -> 'InstrumentBase':
         return self
+
+    @property
+    def name_parts(self) -> List[str]:
+        name_parts = [self.short_name]
+        return name_parts
+
+    @property
+    def full_name(self):
+        return "_".join(self.name_parts)
     #
     # shortcuts to parameters & setters & getters                           #
     #

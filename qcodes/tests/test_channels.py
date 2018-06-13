@@ -155,6 +155,53 @@ class TestChannels(TestCase):
             assert chan.name == f'testchanneldummy_Chan{names[chanindex]}'
 
 
+    def test_names(self):
+        ex_inst_name = 'testchanneldummy'
+        for channel in self.instrument.channels:
+            sub_channel = DummyChannel(channel, 'subchannel', 'subchannel')
+            channel.add_submodule('somesubchannel', sub_channel)
+        assert self.instrument.name == ex_inst_name
+        assert self.instrument.full_name == ex_inst_name
+        assert self.instrument.short_name == ex_inst_name
+        assert self.instrument.name_parts == [ex_inst_name]
+
+        # Parameters directly on instrument
+        assert self.instrument.IDN.name == 'IDN'
+        assert self.instrument.IDN.full_name == f"{ex_inst_name}_IDN"
+        for chan, name in zip(self.instrument.channels,
+                              ['A', 'B', 'C', 'D', 'E', 'F']):
+            ex_chan_name = f"Chan{name}"
+            ex_chan_full_name = f"{ex_inst_name}_{ex_chan_name}"
+
+            assert chan.short_name == ex_chan_name
+            assert chan.name == ex_chan_full_name
+            assert chan.full_name == ex_chan_full_name
+            assert chan.name_parts == [ex_inst_name, ex_chan_name]
+
+            ex_param_name = 'temperature'
+            assert chan.temperature.name == ex_param_name
+            assert chan.temperature.full_name == f'{ex_chan_full_name}_{ex_param_name}'
+            assert chan.temperature.short_name == ex_param_name
+            assert chan.temperature.name_parts == [ex_inst_name, ex_chan_name,
+                                                   ex_param_name]
+
+            ex_subchan_name = f"subchannel"
+            ex_subchan_full_name = f"{ex_chan_full_name}_{ex_subchan_name}"
+
+            assert chan.somesubchannel.short_name == ex_subchan_name
+            assert chan.somesubchannel.name == ex_subchan_full_name
+            assert chan.somesubchannel.full_name == ex_subchan_full_name
+            assert chan.somesubchannel.name_parts == [ex_inst_name,
+                                                      ex_chan_name,
+                                                      ex_subchan_name]
+
+            assert chan.somesubchannel.temperature.name == ex_param_name
+            assert chan.somesubchannel.temperature.full_name == f'{ex_subchan_full_name}_{ex_param_name}'
+            assert chan.somesubchannel.temperature.short_name == ex_param_name
+            assert chan.somesubchannel.temperature.name_parts == [ex_inst_name,
+                                                                  ex_chan_name,
+                                                                  ex_subchan_name,
+                                                                  ex_param_name]
 class TestChannelsLoop(TestCase):
 
     def setUp(self):
