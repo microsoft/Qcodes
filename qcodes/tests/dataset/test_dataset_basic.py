@@ -1,13 +1,14 @@
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
+import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction
+from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
 from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import initialise_database
 
@@ -21,6 +22,8 @@ n_experiments = 0
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
+    global n_experiments
+    n_experiments = 0
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
@@ -326,5 +329,93 @@ def test_database_upgrade(empty_temp_db):
                            " {}".format(userversion))
     sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
 
-    atomicTransaction(connection, sql)
+    atomic_transaction(connection, sql)
     set_user_version(connection, 1)
+
+
+def test_numpy_ints(dataset):
+    """
+     Test that we can insert numpy integers in the data set
+    """
+    xparam = ParamSpec('x', 'numeric')
+    dataset.add_parameters([xparam])
+
+    numpy_ints = [
+        np.int, np.int8, np.int16, np.int32, np.int64,
+        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
+    ]
+
+    results = [{"x": tp(1)} for tp in numpy_ints]
+    dataset.add_results(results)
+    expected_result = len(numpy_ints) * [[1]]
+    assert dataset.get_data("x") == expected_result
+
+
+def test_numpy_floats(dataset):
+    """
+    Test that we can insert numpy floats in the data set
+    """
+    float_param = ParamSpec('y', 'numeric')
+    dataset.add_parameters([float_param])
+
+    numpy_floats = [np.float, np.float16, np.float32, np.float64]
+    results = [{"y": tp(1.2)} for tp in numpy_floats]
+    dataset.add_results(results)
+    expected_result = [[tp(1.2)] for tp in numpy_floats]
+    assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+
+
+def test_numpy_nan(dataset):
+    parameter_m = ParamSpec("m", "numeric")
+    dataset.add_parameters([parameter_m])
+
+    data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
+    dataset.add_results(data_dict)
+    retrieved = dataset.get_data("m")
+    assert np.isnan(retrieved[1])
+
+
+def test_missing_keys(dataset):
+    """
+    Test that we can now have partial results with keys missing. This is for
+    example handy when having an interleaved 1D and 2D sweep.
+    """
+
+    x = ParamSpec("x", paramtype='numeric')
+    y = ParamSpec("y", paramtype='numeric')
+    a = ParamSpec("a", paramtype='numeric', depends_on=[x])
+    b = ParamSpec("b", paramtype='numeric', depends_on=[x, y])
+
+    dataset.add_parameter(x)
+    dataset.add_parameter(y)
+    dataset.add_parameter(a)
+    dataset.add_parameter(b)
+
+    def fa(xv):
+        return xv + 1
+
+    def fb(xv, yv):
+        return xv + 2 - yv * 3
+
+    results = []
+    xvals = [1, 2, 3]
+    yvals = [2, 3, 4]
+
+    for xv in xvals:
+        results.append({"x": xv, "a": fa(xv)})
+        for yv in yvals:
+            results.append({"x": xv, "y": yv, "b": fb(xv, yv)})
+
+    dataset.add_results(results)
+
+    assert dataset.get_values("x") == [[r["x"]] for r in results]
+    assert dataset.get_values("y") == [[r["y"]] for r in results if "y" in r]
+    assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
+    assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
+
+    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+
+    tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
+    expected_setpoints = [[[v] for v in vals] for vals in tmp]
+
+    assert dataset.get_setpoints("b") == expected_setpoints

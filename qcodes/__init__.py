@@ -77,15 +77,6 @@ from qcodes.dataset.experiment_container import new_experiment, load_experiment,
     load_last_experiment, experiments
 from qcodes.dataset.sqlite_settings import SQLiteSettings
 from qcodes.dataset.param_spec import ParamSpec
-# TODO: do we want this?
-from qcodes.dataset.sqlite_base import connect as _connect
-from qcodes.dataset.sqlite_base import init_db as _init_db
-
-_c = _connect(config["core"]["db_location"], config["core"]["db_debug"])
-# init is actually idempotent so it's safe to always call!
-_init_db(_c)
-_c.close()
-del _c
 
 try:
     get_ipython() # type: ignore # Check if we are in iPython
@@ -98,6 +89,24 @@ except NameError:
 except RuntimeError as e:
     print(e)
 
-# ensure to close all isntruments when interpreter is closed
+# ensure to close all instruments when interpreter is closed
 import atexit
 atexit.register(Instrument.close_all)
+
+def test(**kwargs):
+    """
+    Run QCoDeS tests. This requires the test requirements given
+    in test_requirements.txt to be installed.
+    All arguments are forwarded to pytest.main
+    """
+    try:
+        import pytest
+    except ImportError:
+        print("Need pytest to run tests")
+        return
+    args = ['--pyargs', 'qcodes.tests']
+    retcode = pytest.main(args, **kwargs)
+    return retcode
+
+
+test.__test__ = False # type: ignore # Don't try to run this method as a test

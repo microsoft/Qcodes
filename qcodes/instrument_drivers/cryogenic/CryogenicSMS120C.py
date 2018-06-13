@@ -51,10 +51,10 @@ class CryogenicSMS120C(VisaInstrument):
     """
 
     # Reg. exp. to match a float or exponent in a string
-    _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
+    _re_float_exp = r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
-                 current_ramp_limit=0.0506,reset=False, timeout=5, terminator='\r\n', **kwargs):
+                 current_ramp_limit=0.0506, reset=False, timeout=5, terminator='\r\n', **kwargs):
 
         log.debug('Initializing instrument')
         super().__init__(name, address, terminator=terminator, **kwargs)
@@ -136,7 +136,7 @@ class CryogenicSMS120C(VisaInstrument):
 
 
     def get_idn(self):
-        """
+        r"""
         Overwrites the get_idn function using constants as the hardware
         does not have a proper \*IDN function.
         """
@@ -447,9 +447,11 @@ class CryogenicSMS120C(VisaInstrument):
 
     # Between any two commands, there are must be around 200ms waiting time.
     def _set_field(self, val):
+        if not self.switchHeater(): # If switch heater is OFF
+            log.error('Unable to set field, switch heater is off, persistent mode may be active')
+            return
         # check ramp status is OK
         if self._can_startRamping():
-
             # Check that field is not outside max.field limit
             if (self._get_unit() == 1 and (val <= self._get_maxField())) or (
                     self._get_unit() == 0 and (val <= self._current_rating)):
@@ -457,12 +459,34 @@ class CryogenicSMS120C(VisaInstrument):
                 self._set_pauseRamp(1)
                 self.ask('SET MID %0.2f' % val)       # Set target field
                 self._set_pauseRamp(0)               # Unpause the controller
-                # Ramp magnet/field to MID (Note: Using standard write as read
-                # returns an error/is non-existent).
-                self.write('RAMP MID')
-                log.info('Ramping magnetic field...')
+                # Ramp magnet/field to MID or ZERO (Note: Using standard write
+                # as read returns an error/is non-existent).
+                if val == 0:
+                    self.write('RAMP ZERO')
+                    log.info('Ramping magnetic field to zero...')
+                else:
+                    self.write('RAMP MID')
+                    log.info('Ramping magnetic field...')
             else:
                 log.error(
                     'Target field is outside max. limits, please lower the target value.')
         else:
             log.error('Cannot set field - check magnet status.')
+
+    def _set_field_bidirectional(self, val):
+        polarity = self._get_polarity()
+        desired_polarity = '-' if val < 0 else '+'
+
+        if ((polarity == '+' and desired_polarity == '-') or
+                (polarity == '-' and desired_polarity == '+')):
+            self._set_field(0)
+            # This is, sadly, blocking
+            self._wait_for_field_zero(0)
+            self._set_polarity(desired_polarity)
+
+        self._set_field(abs(val))
+
+    def _wait_for_field_zero(self, field_threshold=0.003, refresh_time=0.1):
+        """Waits for the field to be within a certain threshold"""
+        while abs(self.field()) > field_threshold:
+            time.sleep(refresh_time)

@@ -36,7 +36,8 @@ script:
     # build docs with warnings as errors
     - |
       cd ..
-      mypy qcodes --ignore-missing-imports
+      mypy qcodes --ignore-missing-imports --no-strict-optional
+
     - |
       cd docs
       make SPHINXOPTS="-W" html-api
