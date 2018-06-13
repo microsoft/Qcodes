@@ -59,3 +59,63 @@ def test_repr(name):
         else:
             with pytest.raises(ValueError):
                 ps = ParamSpec(name, okt)
+
+alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
+
+@given(
+    name1=hst.text(min_size=4, alphabet=alphabet),
+    name2=hst.text(min_size=4, alphabet=alphabet),
+    name3=hst.text(min_size=4, alphabet=alphabet)
+)
+def test_add_depends_on(name1, name2, name3):
+
+    ps1 = ParamSpec(name1, "numeric")
+    ps2 = ParamSpec(name2, "numeric")
+    ps3 = ParamSpec(name3, "numeric")
+    ps1.add_depends_on([ps2, ps3])
+
+    assert ps1.depends_on == f"{ps2.name}, {ps3.name}"
+
+
+@given(
+    name1=hst.text(min_size=4, alphabet=alphabet),
+    name2=hst.text(min_size=4, alphabet=alphabet),
+    name3=hst.text(min_size=4, alphabet=alphabet)
+)
+def test_add_inferred_from(name1, name2, name3):
+
+    ps1 = ParamSpec(name1, "numeric")
+    ps2 = ParamSpec(name2, "numeric")
+    ps3 = ParamSpec(name3, "numeric")
+    ps1.add_inferred_from([ps2, ps3])
+
+    assert ps1.inferred_from == f"{ps2.name}, {ps3.name}"
+
+
+@given(
+    name1=hst.text(min_size=4, alphabet=alphabet),
+    name2=hst.text(min_size=4, alphabet=alphabet),
+    name3=hst.text(min_size=4, alphabet=alphabet),
+)
+def test_copy(name1, name2, name3):
+
+    ps_indep = ParamSpec(name1, "numeric")
+    ps_indep_2 = ParamSpec(name2, "numeric")
+    ps = ParamSpec(name3, "numeric", depends_on=[ps_indep])
+    ps_copy = ps.copy()
+
+    attributes = {}
+    for att in ["name", "type", "label", "unit"]:
+        val = getattr(ps, att)
+        valc = getattr(ps_copy, att)
+        assert val == valc
+        attributes[att] = val
+
+    # Modifying the copy should not change the original
+    for att in ["name", "type", "label", "unit"]:
+        setattr(ps_copy, att, attributes[att] + "_modified")
+        assert getattr(ps, att) == attributes[att]
+
+    ps_copy.add_depends_on([ps_indep_2])
+    assert ps_copy.depends_on == f"{ps_indep.name}, {ps_indep_2.name}"
+    assert ps.depends_on == f"{ps_indep.name}"

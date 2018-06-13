@@ -33,4 +33,4 @@ test_script:
   - cd ..\..
   - mypy qcodes --ignore-missing-imports --no-strict-optional
   - cd docs
-  - execute_notebooks.cmd
+  - make.bat htmlapi
