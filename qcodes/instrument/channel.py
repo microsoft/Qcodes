@@ -70,12 +70,8 @@ class InstrumentChannel(InstrumentBase):
 
     @property
     def name_parts(self) -> List[str]:
-        name_parts = [self.short_name]
-        parent_inst = self._parent
-        while parent_inst is not None:
-            name_parts.append(parent_inst.short_name)
-            parent_inst = parent_inst.parent
-        name_parts.reverse()
+        name_parts = self._parent.name_parts
+        name_parts.append(self.short_name)
         return name_parts
 
 class MultiChannelInstrumentParameter(MultiParameter):

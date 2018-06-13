@@ -722,12 +722,12 @@ class _BaseParameter(Metadatable):
 
     @property
     def name_parts(self) -> List[str]:
-        name_parts = [self.short_name]
-        parent_inst = self._instrument
-        while parent_inst is not None:
-            name_parts.append(parent_inst.short_name)
-            parent_inst = parent_inst.parent
-        name_parts.reverse()
+        if self.instrument is not None:
+            name_parts = self.instrument.name_parts
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
         return name_parts
 
 
