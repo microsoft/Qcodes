@@ -7,8 +7,11 @@ import array as arr
 
 from time import sleep, localtime
 from io import BytesIO
+from functools import wraps, WRAPPER_ASSIGNMENTS
+
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
 
 
@@ -903,7 +906,7 @@ class Tektronix_AWG5014(VisaInstrument):
         been changed from their default value and put them in a
         dictionary that can easily be written into an awg file, so as
         to prevent said awg file from falling back to default values.
-        (See self.generate_awg_file and self.AWG_FILE_FORMAT_CHANNEL)
+        (See self.make_awg_file and self.AWG_FILE_FORMAT_CHANNEL)
         NOTE: This only works for settings changed via the corresponding
         QCoDeS parameter.
 
@@ -1022,7 +1025,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
-    def generate_awg_file(self,
+
+    def _generate_awg_file(self,
                           packed_waveforms, wfname_l, nrep, trig_wait,
                           goto_state, jump_to, channel_cfg,
                           sequence_cfg=None,
@@ -1163,6 +1167,11 @@ class Tektronix_AWG5014(VisaInstrument):
                     wf_record_str.getvalue() + seq_record_str.getvalue())
         return awg_file
 
+    @deprecate(alternative='make_awg_file, _generate_awg_file')
+    @wraps(_generate_awg_file, assigned=(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    def generate_awg_file(self, *args, **kwargs):
+        self._generate_awg_file(*args, **kwargs)
+
     def send_awg_file(self, filename, awg_file, verbose=False):
         """
         Writes an .awg-file onto the disk of the AWG.
@@ -1172,7 +1181,7 @@ class Tektronix_AWG5014(VisaInstrument):
             filename (str): The name that the file will get on
                 the AWG.
             awg_file (bytes): A byte sequence containing the awg_file.
-                Usually the output of self.generate_awg_file.
+                Usually the output of self.make_awg_file.
             verbose (bool): A boolean to allow/suppress printing of messages
                 about the status of the filw writing. Default: False.
         """
@@ -1274,7 +1283,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         channel_cfg = {}
 
-        return self.generate_awg_file(
+        return self._generate_awg_file(
             packed_wfs, wavenamearray, nreps, trig_waits, goto_states,
             jump_tos, channel_cfg,
             preservechannelsettings=preservechannelsettings)
@@ -1640,3 +1649,4 @@ class Tektronix_AWG5014(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
+        
