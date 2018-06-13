@@ -1649,4 +1649,3 @@ class Tektronix_AWG5014(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
-        
