@@ -252,6 +252,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 submodule.print_readable_snapshot(update, max_chars)
 
     @property
+    def parent(self):
+        """
+        Returns the parent instrument. By default this is None
+        Any SubInstrument should subclass this to return the parent instrument.
+        """
+        return None
+
+    @property
     def root_instrument(self) -> 'InstrumentBase':
         return self
     #
