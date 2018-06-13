@@ -46,6 +46,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                  metadata: Optional[Dict]=None, **kwargs) -> None:
         self.name = str(name)
         self.short_name = str(name)
+        self.full_name = str(name)
 
         self.parameters = {} # type: Dict[str, _BaseParameter]
         self.functions = {} # type: Dict[str, Function]
