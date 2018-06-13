@@ -12,18 +12,21 @@ from threading import Thread
 import time
 import logging
 import hashlib
+import uuid
 from queue import Queue, Empty
+import warnings
 
 import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
+from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
-                                        connect, create_run, get_parameters,
+                                        connect, create_run, completed,
+                                        get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
                                         length, modify_values,
-                                        add_meta_data, mark_run,
+                                        add_meta_data, mark_run_complete,
                                         modify_many_values, insert_values,
                                         insert_many_values,
                                         VALUE, VALUES, get_data,
@@ -76,7 +79,7 @@ class Subscriber(Thread):
         # whether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
-        self.conn = dataSet.conn
+        conn = dataSet.conn
         self.log = logging.getLogger(f"Subscriber {self.sub_id}")
 
         self.state = state
@@ -93,14 +96,14 @@ class Subscriber(Thread):
         param_sql = ",".join([f"NEW.{p.name}" for p in parameters])
         self.callbackid = f"callback{self.sub_id}"
 
-        self.conn.create_function(self.callbackid, -1, self.cache)
+        conn.create_function(self.callbackid, -1, self.cache)
         sql = f"""
         CREATE TRIGGER sub{self.sub_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callbackid}({param_sql});
         END;"""
-        atomicTransaction(self.conn, sql)
+        atomic_transaction(conn, sql)
         self.data: Queue = Queue()
         self._data_set_len = len(dataSet)
         super().__init__()
@@ -163,12 +166,31 @@ class Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str) -> None:
+    def __init__(self, path_to_db: str, run_id: Optional[int]=None,
+                 conn=None) -> None:
+        """
+        Create a new DataSet object. The object can either be intended
+        to hold a new run or and old run.
+
+        Args:
+            path_to_db: path to the sqlite file on disk
+            run_id: provide this when loading an existing run, leave it
+              as None when creating a new run
+            conn: connection to the DB
+        """
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db)
+        if conn is None:
+            self.conn = connect(self.path_to_db)
+        else:
+            self.conn = conn
+
+        self.run_id = run_id
         self._debug = False
+        self.subscribers: Dict[str, Subscriber] = {}
+        if run_id:
+            self._completed = completed(self.conn, self.run_id)
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
@@ -181,7 +203,6 @@ class DataSet(Sized):
 
         # this is really the UUID (an ever increasing count in the db)
         self.run_id = run_id
-        self.subscribers: Dict[str, Subscriber] = {}
         self._completed = False
 
     @property
@@ -199,7 +220,7 @@ class DataSet(Sized):
         tabnam = self.table_name
         # TODO: is it better/faster to use the max index?
         sql = f'SELECT COUNT(*) FROM "{tabnam}"'
-        cursor = atomicTransaction(self.conn, sql)
+        cursor = atomic_transaction(self.conn, sql)
         return one(cursor, 'COUNT(*)')
 
     @property
@@ -222,6 +243,7 @@ class DataSet(Sized):
     def exp_id(self):
         return select_one_where(self.conn, "runs",
                                 "exp_id", "run_id", self.run_id)
+
 
     def toggle_debug(self):
         """
@@ -302,7 +324,8 @@ class DataSet(Sized):
     @completed.setter
     def completed(self, value):
         self._completed = value
-        mark_run(self.conn, self.run_id, value)
+        if value:
+            mark_run_complete(self.conn, self.run_id)
 
     def mark_complete(self) -> None:
         """Mark dataset as complete and thus read only and notify the
@@ -354,8 +377,9 @@ class DataSet(Sized):
 
         Args:
             - list of name, value dictionaries  where each
-              dictionary provides the values for all of the parameters in
-              that result.
+              dictionary provides the values for the parameters in
+              that result. If some parameters are missing the corresponding
+              values are assumed to be None
 
         Returns:
             - the index in the DataSet that the **first** result was stored at
@@ -364,9 +388,11 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
-        values = [list(val.values()) for val in results]
+        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        values = [[d.get(k, None) for k in expected_keys] for d in results]
+
         len_before_add = length(self.conn, self.table_name)
-        insert_many_values(self.conn, self.table_name, list(results[0].keys()),
+        insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         # TODO: should this not be made atomic?
         self.conn.commit()
@@ -543,7 +569,7 @@ class DataSet(Sized):
                   state: Optional[Any] = None,
                   callback_kwargs: Optional[Dict[str, Any]] = None,
                   subscriber_class=Subscriber) -> str:
-        sub_id = hash_from_parts(str(time.time()))
+        sub_id = uuid.uuid4().hex
         sub = Subscriber(self, sub_id, callback, state, min_wait, min_count,
                          callback_kwargs)
         self.subscribers[sub_id] = sub
@@ -569,7 +595,7 @@ class DataSet(Sized):
         Remove all subscribers
         """
         sql = "select * from sqlite_master where type = 'trigger';"
-        triggers = atomicTransaction(self.conn, sql).fetchall()
+        triggers = atomic_transaction(self.conn, sql).fetchall()
         with atomic(self.conn):
             for trigger in triggers:
                 self._remove_trigger(trigger['name'])
@@ -608,8 +634,7 @@ def load_by_id(run_id)->DataSet:
         the datasets
 
     """
-    d = DataSet(get_DB_location())
-    d.run_id = run_id
+    d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
@@ -623,7 +648,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    d = DataSet(get_DB_location())
+    conn = connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -632,14 +657,17 @@ def load_by_counter(counter, exp_id):
       result_counter= ? AND
       exp_id = ?
     """
-    c = transaction(d.conn, sql, counter, exp_id)
-    d.run_id = one(c, 'run_id')
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, 'run_id')
+    conn.close()
+    d = DataSet(get_DB_location(), run_id=run_id)
+
     return d
 
 
 def new_data_set(name, exp_id: Optional[int] = None,
                  specs: SPECS = None, values=None,
-                 metadata=None) -> DataSet:
+                 metadata=None, conn=None) -> DataSet:
     """ Create a new dataset.
     If exp_id is not specified the last experiment will be loaded by default.
 
@@ -651,15 +679,28 @@ def new_data_set(name, exp_id: Optional[int] = None,
         values: the values to associate with the parameters
         metadata:  the values to associate with the dataset
     """
-    d = DataSet(get_DB_location())
+    path_to_db = get_DB_location()
+    if conn is None:
+        tempcon = True
+        conn = connect(get_DB_location())
+    else:
+        tempcon = False
+
     if exp_id is None:
-        if len(get_experiments(d.conn)) > 0:
-            exp_id = get_last_experiment(d.conn)
+        if len(get_experiments(conn)) > 0:
+            exp_id = get_last_experiment(conn)
         else:
             raise ValueError("No experiments found."
                              "You can start a new one with:"
                              " new_experiment(name, sample_name)")
+    # This is admittedly a bit weird. We create a dataset, link it to some
+    # run in the DB and then (using _new) change what it's linked to
+    if tempcon:
+        conn.close()
+        conn = None
+    d = DataSet(path_to_db, run_id=None, conn=conn)
     d._new(name, exp_id, specs, values, metadata)
+
     return d
 
 
@@ -671,5 +712,8 @@ def hash_from_parts(*parts: str) -> str:
     Returns:
         hash created with the given parts
     """
+    warnings.warn("hash_from_parts has been deprecated and will be removed. "
+                  "Use stdlib uuid4 instead",
+                  stacklevel=2)
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()

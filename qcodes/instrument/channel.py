@@ -187,7 +187,7 @@ class ChannelList(Metadatable):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
-    def __getitem__(self, i: Union[int, slice]):
+    def __getitem__(self, i: Union[int, slice, tuple]):
         """
         Return either a single channel, or a new ChannelList containing only
         the specified channels
@@ -199,6 +199,10 @@ class ChannelList(Metadatable):
         if isinstance(i, slice):
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
+                               multichan_paramclass=self._paramclass)
+        elif isinstance(i, tuple):
+            return ChannelList(self._parent, self._name, self._chan_type,
+                               [self._channels[j] for j in i],
                                multichan_paramclass=self._paramclass)
         return self._channels[i]
 
