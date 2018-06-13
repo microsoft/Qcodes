@@ -1168,7 +1168,7 @@ class Tektronix_AWG5014(VisaInstrument):
         return awg_file
 
     @deprecate(alternative='make_awg_file, _generate_awg_file')
-    @wraps(_generate_awg_file, assigned=(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
     def generate_awg_file(self, *args, **kwargs):
         self._generate_awg_file(*args, **kwargs)
 
