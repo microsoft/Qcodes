@@ -1435,7 +1435,12 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         return self.ask('SYSTEM:ERRor:NEXT?')
 
-    def pack_waveform(self, wf, m1, m2):
+    @deprecate(reason='this function is for private use only.')
+    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    def pack_waveform(self, *args, **kwargs):
+        self._pack_waveform(*args, **kwargs)
+
+    def _pack_waveform(self, wf, m1, m2):
         """
         Converts/packs a waveform and two markers into a 16-bit format
         according to the AWG Integer format specification.
