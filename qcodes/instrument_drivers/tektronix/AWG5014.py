@@ -1022,6 +1022,45 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
+    def generate_awg_file_from_forged_sequence(self, seq):
+        # TODO: create channel_cfg, sequence_cfg, preservechannelsettings
+        packed_waveforms = {}
+        # unfortunately the definitions of the sequence elements in terms of channel and step in `generate_awg_file` and the forged sequence definition are transposed. Start by filling out after schema and transpose at the end
+        wfname_l = []
+        nrep = []
+        trig_wait = []
+        goto_state = []
+        jump_to = []
+        for step, elem in seq.items():
+            assert elem['type'] == 'element'
+            content = elem['content']
+            assert len(content.keys()) == 1
+            # get first element
+            # this seems very complicated but is probably necessary
+            # one could use pop, but this would change the content
+            content = content[list(content.keys())[0]]
+
+            # waveform data
+            datadict = content['data']
+            step_waveform_names = []
+            for channel_name, data in datadict.items():
+                waveform_name = f'Step{step}_Channel{channel_name}'
+                packed_waveforms[waveform_name] = data
+                step_waveform_names.append(waveform_name)
+            wfname_l.append(step_waveform_names)
+
+            # sequencing
+            seq_opts = elem['sequencing']
+            nrep.append(seq_opts.get('nrep', 1))
+            trig_wait.append(seq_opts.get('trig_wait', 0))
+            goto_state.append(seq_opts.get('goto_state',0))
+            jump_to.append(seq_opts.get('jump_to', 0))
+        # transpose list of lists
+        wfname_l = [list(x) for x in zip(*wfname_l)]
+        channel_cfg = {}
+        self.generate_awg_file(packed_waveforms, wfname_l, nrep, trig_wait,
+                               goto_state, jump_to, channel_cfg)
+
     def generate_awg_file(self,
                           packed_waveforms, wfname_l, nrep, trig_wait,
                           goto_state, jump_to, channel_cfg,
