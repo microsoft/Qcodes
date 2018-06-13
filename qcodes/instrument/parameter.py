@@ -200,6 +200,7 @@ class _BaseParameter(Metadatable):
                  delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
+        self.short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
