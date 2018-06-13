@@ -434,7 +434,7 @@ class IVVI(VisaInstrument):
         for ch in channels:
             self.pol_num[ch - 1] = val
             name = "dac" + str(ch)
-            self.set_parameter_bounds(name, val, 
+            self.set_parameter_bounds(name, val,
                                       val + self.Fullrange)
 
         if get_all:
@@ -460,7 +460,7 @@ class IVVI(VisaInstrument):
             return 'POS'
         else:
             return 'Invalid polarity in memory'
-        
+
     def set_parameter_bounds(self, name, min_value, max_value):
         parameter = self.parameters[name]
         if not isinstance(parameter.vals, Numbers):
