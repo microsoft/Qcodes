@@ -55,12 +55,6 @@ class ParamTable:
         self.check_unresolved()
         other.check_unresolved()
 
-        if len(self._nests) > 1:
-            # This for example occurs when we do
-            # nest(chain(sweep(x, [0, 1, 2]), sweep(y, [3, 4, 5]), p)
-            # Is p dependent on x or on y?
-            raise TypeError("Cannot nest in chained sweep object")
-
         param_specs = self.param_specs + other.param_specs
         nests = [self.nests[0] + nest for nest in other.nests]
 

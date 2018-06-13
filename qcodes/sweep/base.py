@@ -14,6 +14,7 @@ class BaseSweepObject:
 
         self._generator: Iterator = None
         self._parameter_table: ParamTable = None
+        self._measurable = False
 
     def _generator_factory(self) ->Iterator:
         """
@@ -38,6 +39,14 @@ class BaseSweepObject:
     @property
     def parameter_table(self) ->ParamTable:
         return self._parameter_table
+
+    @property
+    def measurable(self):
+        return self._measurable
+
+    @property
+    def has_chain(self):
+        return len(self.parameter_table.nests) > 1
 
 
 class IteratorSweep(BaseSweepObject):
@@ -80,8 +89,17 @@ class Nest(BaseSweepObject):
     Etc...
     """
 
-    def __init__(self, sweep_objects: List[BaseSweepObject]) ->None:
+    def __init__(self, *sweep_objects: BaseSweepObject) ->None:
         super().__init__()
+
+        if any([so.has_chain for so in sweep_objects[:-1]]):
+            raise TypeError("Cannot nest in chained sweep object")
+
+        if any(so.measurable for so in sweep_objects[:-1]):
+            raise TypeError("In a nest, only the last sweep object may be "
+                            "measurable")
+
+        self._measurable = sweep_objects[-1].measurable
         self._sweep_objects = sweep_objects
         self._parameter_table = param_table.prod(
             [so.parameter_table for so in sweep_objects]
@@ -112,12 +130,14 @@ class Chain(BaseSweepObject):
     Chain a list of sweep object to run one after the other
     """
 
-    def __init__(self, sweep_objects: List[BaseSweepObject]) ->None:
+    def __init__(self, *sweep_objects: BaseSweepObject) ->None:
         super().__init__()
         self._sweep_objects = sweep_objects
         self._parameter_table = param_table.add(
             [so.parameter_table for so in sweep_objects]
         )
+
+        self._measurable = any([so.measurable for so in sweep_objects])
 
     def _generator_factory(self) ->Iterator:
         for so in self._sweep_objects:
@@ -157,11 +177,9 @@ class ParameterSweep(BaseSweepObject):
 
 class ParameterWrapper(BaseSweepObject):
     """
-    A wrapper class which iterates once ans returns the value of a QCoDeS
-    parameter
-    Parameters
-    ----------
-    parameter: qcodes.StandardParameter
+    A wrapper class which iterates once and returns the get value of a QCoDeS
+    parameter. Since we are getting a parameter value, instances of
+    ParameterWrapper are measurable
     """
 
     def __init__(self, parameter: Parameter)->None:
@@ -177,6 +195,7 @@ class ParameterWrapper(BaseSweepObject):
         ])
 
         self._parameter = parameter
+        self._measurable = True
 
     def _generator_factory(self)->Iterator:
         yield {self._parameter.full_name: self._parameter.get()}

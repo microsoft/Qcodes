@@ -1,4 +1,3 @@
-import pytest
 from qcodes import ParamSpec
 from qcodes.sweep.base import ParamTable
 
@@ -111,23 +110,6 @@ def test_inferred_from():
     assert c.depends_on == ''
 
 
-def test_not_allowed():
-    """
-    We can make sweep objects which produce contradictory dependencies.
-    In this test, the table contains a contradiction whereby 'c' is
-    dependent on both 'only a' and 'only b'.
-    """
-    a = ParamSpec("a", paramtype="numeric")
-    b = ParamSpec("b", paramtype="numeric")
-    c = ParamSpec("c", paramtype="numeric")
-
-    table_a = ParamTable([a, b])
-    table_c = ParamTable([c])
-
-    with pytest.raises(ValueError):
-        table_a.nest(table_c)
-
-
 def test_chain():
     """
     Test simple chaining
@@ -226,25 +208,6 @@ def test_nest_chain_chain():
 
     assert table_specs[3].name == 'd'
     assert table_specs[3].depends_on == 'a'
-
-
-def test_not_allowed_2():
-    """
-    We can make sweep objects which produce contradictory dependencies.
-    In this test, the table contains a contradiction whereby 'c' is
-    dependent on both 'only a' and 'only b'. We use chaining to make the
-    contradiction
-    """
-    a = ParamSpec("a", paramtype="numeric")
-    b = ParamSpec("b", paramtype="numeric")
-    c = ParamSpec("c", paramtype="numeric")
-
-    table_a = ParamTable([a])
-    table_b = ParamTable([b])
-    table_c = ParamTable([c])
-
-    with pytest.raises(ValueError):
-        table_a.chain(table_b).nest(table_c)
 
 
 def test_nest_chain_nest():
