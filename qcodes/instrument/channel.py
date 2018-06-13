@@ -265,11 +265,11 @@ class ChannelList(Metadatable):
         Args:
             obj: Channel to remove from the list.
         """
-        if self._locked:
+        if isinstance(self._channels, tuple) or self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
-
-        self._channels.remove(obj)
-        self._channel_mapping.pop(obj.short_name)
+        else:
+            self._channels.remove(obj)
+            self._channel_mapping.pop(obj.short_name)
 
     def extend(self, objects):
         """
