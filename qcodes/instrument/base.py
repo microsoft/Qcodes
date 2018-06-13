@@ -46,7 +46,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                  metadata: Optional[Dict]=None, **kwargs) -> None:
         self.name = str(name)
         self.short_name = str(name)
-        self.full_name = str(name)
 
         self.parameters = {} # type: Dict[str, _BaseParameter]
         self.functions = {} # type: Dict[str, Function]
@@ -267,6 +266,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def name_parts(self) -> List[str]:
         name_parts = [self.short_name]
         return name_parts
+
+    @property
+    def full_name(self):
+        return "_".join(self.name_parts)
     #
     # shortcuts to parameters & setters & getters                           #
     #
