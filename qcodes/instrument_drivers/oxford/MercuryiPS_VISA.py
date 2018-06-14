@@ -9,6 +9,13 @@ from qcodes.math.field_vector import FieldVector
 log = logging.getLogger(__name__)
 
 
+def _response_preparser(bare_resp: str) -> str:
+    """
+    Pre-parse response from the instrument
+    """
+    return bare_resp.replace(':', '')
+
+
 def _signal_parser(our_scaling: float, response: str) -> float:
     """
     Parse a response string into a correct SI value.
@@ -26,7 +33,7 @@ def _signal_parser(our_scaling: float, response: str) -> float:
 
     numchars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-']
 
-    response = response.replace(':', '')
+    response = _response_preparser(response)
     digits = ''.join([d for d in response if d in numchars])
     scale_and_unit = response[len(digits):]
     if scale_and_unit == '':
@@ -127,6 +134,7 @@ class MercurySlavePS(InstrumentChannel):
                            label='Ramp status',
                            get_cmd=partial(self._param_getter, 'ACTN'),
                            set_cmd=partial(self._param_setter, 'ACTN'),
+                           get_parser=_response_preparser,
                            val_mapping={'HOLD': 'HOLD',
                                         'TO SET': 'RTOS',
                                         'CLAMP': 'CLMP'})
