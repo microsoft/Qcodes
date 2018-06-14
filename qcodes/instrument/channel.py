@@ -282,6 +282,7 @@ class ChannelList(Metadatable):
         if isinstance(self._channels, tuple) or self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
         else:
+            self._channels = cast(List[InstrumentChannel], self._channels)
             self._channels.remove(obj)
             self._channel_mapping.pop(obj.short_name)
 
