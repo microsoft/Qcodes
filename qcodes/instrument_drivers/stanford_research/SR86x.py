@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import logging
-from typing import Optional, Sequence, Dict
+from typing import Optional, Sequence, Dict, Callable
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -124,7 +124,8 @@ class SR86xBuffer(InstrumentChannel):
             "count_capture_bytes",
             label="capture bytes",
             get_cmd="CAPTUREBYTES?",
-            unit="B"
+            unit="B",
+            get_parser=int
         )
 
         self.add_parameter(
@@ -221,6 +222,23 @@ class SR86xBuffer(InstrumentChannel):
         """
         self.write("CAPTURESTOP")
 
+    def _calc_capture_size_in_kb(self, sample_count: int) ->int:
+        """
+        Given the number of samples to capture and the capture configuration, calculate the number of kb
+        """
+        capture_variables = self.capture_config().split(",")
+        n_variables = len(capture_variables)
+
+        total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
+        # The number of kb always needs to be even
+        if total_size_in_kb % 2 == 1:
+            total_size_in_kb += 1
+
+        if total_size_in_kb > 64:
+            raise ValueError("Number of samples specified is larger then the buffer size")
+
+        return total_size_in_kb
+
     def get_capture_data(self, sample_count: int) -> dict:
         """
         Read capture data from the buffer.
@@ -232,23 +250,20 @@ class SR86xBuffer(InstrumentChannel):
             data (dict): The keys in the dictionary is the variables we have captures. For instance, if before the
                             capture we specify 'capture_config("X,Y")', then the keys will be "X" and "Y".
         """
-        capture_variables = self.capture_config().split(",")
-        n_variables = len(capture_variables)
-
-        total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
-        # We will samples one kb more then strictly speaking required and trim the data length to the requested
-        # sample count. In this way, we are always sure that the user requested number of samples is returned.
-        total_size_in_kb += 1
-
-        if total_size_in_kb > 64:
-            raise ValueError("Number of samples specified is larger then the buffer size")
+        total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
 
         values = self._parent.visa_handle.query_binary_values("CAPTUREGET? 0,{}".format(total_size_in_kb),
                                                               datatype='f', is_big_endian=False)
         values = np.array(values)
         values = values[values != 0]
 
-        data = {k: v for k, v in zip(capture_variables, values.reshape((-1, n_variables)).T)}
+        capture_variables = self.capture_config().split(",")
+        n_variables = len(capture_variables)
+
+        values = values.reshape((-1, n_variables)).T
+        values = values[:, :sample_count]
+
+        data = {k: v for k, v in zip(capture_variables, values)}
 
         for capture_variable in capture_variables:
             buffer_parameter = getattr(self, capture_variable)
@@ -272,6 +287,47 @@ class SR86xBuffer(InstrumentChannel):
 
         self.start_capture("CONT", "IMM")
         time.sleep(capture_time)
+        self.stop_capture()
+
+        return self.get_capture_data(sample_count)
+
+    def capture_one_sample_per_trigger(self, trigger_count: int, start_triggers_pulsetrain: Callable) ->dict:
+        """
+        Capture one sample for each trigger and return when the specified number of triggers has been received
+
+        Args:
+            trigger_count (int)
+            start_triggers_pulsetrain (callable)
+                By calling this *non-blocking* function we start a pulse train
+        """
+        total_size_in_kb = self._calc_capture_size_in_kb(trigger_count)
+
+        self.capture_length_in_kb(total_size_in_kb)
+        self.start_capture("ONE", "SAMP")
+        start_triggers_pulsetrain()
+
+        n_bytes_captured = 0
+        while n_bytes_captured < trigger_count * self.bytes_per_sample:
+            n_bytes_captured = self.count_capture_bytes()
+
+        self.stop_capture()
+
+        return self.get_capture_data(trigger_count)
+
+    def start_capture_at_trigger(self, sample_count: int) ->dict:
+        """
+        Capture a number of samples after a trigger has been received. Please refer to page 135 of the manual
+        for details
+        """
+        total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
+
+        self.capture_length_in_kb(total_size_in_kb)
+        self.start_capture("ONE", "TRIG")
+
+        n_bytes_captured = 0
+        while n_bytes_captured < total_size_in_kb * 1024:
+            n_bytes_captured = self.count_capture_bytes()
+
         self.stop_capture()
 
         return self.get_capture_data(sample_count)
@@ -447,6 +503,34 @@ class SR86x(VisaInstrument):
                                         100: 16, 300: 17,
                                         1e3: 18, 3e3: 19,
                                         10e3: 20, 30e3: 21})
+
+        self.add_parameter(
+            name="trigger_reference",
+            label="Trigger Reference",
+            get_cmd="RTRG?",
+            set_cmd="RTRG {}",
+            val_mapping={
+                "SIN": 0,
+                "POS": 1,
+                "POSTTL": 1,
+                "NEGTTL": 2,
+                "NEG": 2
+            }
+        )
+
+        self.add_parameter(
+            name="source",
+            label="Source",
+            get_cmd="RSRC?",
+            set_cmd="RSRC {}",
+            val_mapping={
+                "INT": 0,
+                "EXT": 1,
+                "DUAL": 2,
+                "CHOP": 3
+            }
+        )
+
         # Auto functions
         self.add_function('auto_range', call_cmd='ARNG')
         self.add_function('auto_scale', call_cmd='ASCL')
@@ -518,6 +602,7 @@ class SR86x(VisaInstrument):
                            val_mapping={'OFF': 0,
                                         'X10': 1,
                                         'X100': 2})
+
         # Aux input/output
         for i in [0, 1, 2, 3]:
             self.add_parameter('aux_in{}'.format(i),
@@ -544,6 +629,9 @@ class SR86x(VisaInstrument):
 
         self.input_config()
         self.connect_message()
+
+
+
 
     def _set_units(self, unit):
         for param in [self.X, self.Y, self.R, self.sensitivity]:
