@@ -7,3 +7,6 @@ sip==4.19.3
 QtPy==1.3.1
 h5py==2.7.1
 jsonschema
+pyzmq>=16.0.2
+git+https://github.com/QCoDeS/broadbean.git
+schema
