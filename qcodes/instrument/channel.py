@@ -279,7 +279,7 @@ class ChannelList(Metadatable):
         Args:
             obj: Channel to remove from the list.
         """
-        if isinstance(self._channels, tuple) or self._locked:
+        if self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
         else:
             self._channels = cast(List[InstrumentChannel], self._channels)
