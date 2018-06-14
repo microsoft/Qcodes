@@ -5,11 +5,14 @@ import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
+from typing import Dict, Callable
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
+
+log = logging.getLogger(__name__)
 
 
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
@@ -166,7 +169,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions = OrderedDict()
+    background_functions: Dict[str, Callable] = OrderedDict()
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
@@ -246,14 +249,14 @@ class DataSet(DelegateAttributes):
         Args:
             delay (float): seconds between iterations. Default 1.5
         """
-        logging.info(
+        log.info(
             'waiting for DataSet <{}> to complete'.format(self.location))
 
         failing = {key: False for key in self.background_functions}
 
         completed = False
         while True:
-            logging.info('DataSet: {:.0f}% complete'.format(
+            log.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
             # first check if we're done
@@ -264,13 +267,13 @@ class DataSet(DelegateAttributes):
             # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
-                    logging.debug('calling {}: {}'.format(key, repr(fn)))
+                    log.debug('calling {}: {}'.format(key, repr(fn)))
                     fn()
                     failing[key] = False
                 except Exception:
-                    logging.info(format_exc())
+                    log.info(format_exc())
                     if failing[key]:
-                        logging.warning(
+                        log.warning(
                             'background function {} failed twice in a row, '
                             'removing it'.format(key))
                         del self.background_functions[key]
@@ -282,7 +285,7 @@ class DataSet(DelegateAttributes):
             # but only sleep if we're not already finished
             time.sleep(delay)
 
-        logging.info('DataSet <{}> is complete'.format(self.location))
+        log.info('DataSet <{}> is complete'.format(self.location))
 
     def get_changes(self, synced_indices):
         """
@@ -333,6 +336,23 @@ class DataSet(DelegateAttributes):
 
         # back-reference to the DataSet
         data_array.data_set = self
+
+    def remove_array(self, array_id):
+        """ Remove an array from a dataset
+
+        Throws an exception when the array specified is refereced by other
+        arrays in the dataset.
+
+        Args:
+            array_id (str): array_id of array to be removed
+        """
+        for a in self.arrays:
+            sa = self.arrays[a].set_arrays
+            if array_id in [a.array_id for a in sa]:
+                raise Exception(
+                    'cannot remove array %s as it is referenced by a' % array_id)
+        _ = self.arrays.pop(array_id)
+        self.action_id_map = self._clean_array_ids(self.arrays.values())
 
     def _clean_array_ids(self, arrays):
         """
@@ -387,8 +407,13 @@ class DataSet(DelegateAttributes):
         self.last_store = time.time()
         if (self.write_period is not None and
                 time.time() > self.last_write + self.write_period):
+            log.debug('Attempting to write')
             self.write()
             self.last_write = time.time()
+        # The below could be useful but as it writes at every single
+        # step of the loop its too verbose even at debug
+        # else:
+        #     log.debug('.store method: This is not the right time to write')
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
@@ -464,7 +489,7 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self, write_metadata=False):
+    def write(self, write_metadata=False, only_complete=True, filename=None):
         """
         Writes updates to the DataSet to storage.
         N.B. it is recommended to call data_set.finalize() when a DataSet is
@@ -472,14 +497,29 @@ class DataSet(DelegateAttributes):
 
         Args:
             write_metadata (bool): write the metadata to disk
+            only_complete (bool): passed on to the match_save_range inside
+                self.formatter.write. Used to ensure that all new data gets
+                saved even when some columns are strange.
+            filename (Optional[str]): The filename (minus extension) to use.
+                The file gets saved in the usual location.
         """
         if self.location is False:
             return
 
-        self.formatter.write(self,
-                             self.io,
-                             self.location,
-                             write_metadata=write_metadata)
+        # Only the gnuplot formatter has a "filename" kwarg
+        if isinstance(self.formatter, GNUPlotFormat):
+            self.formatter.write(self,
+                                 self.io,
+                                 self.location,
+                                 write_metadata=write_metadata,
+                                 only_complete=only_complete,
+                                 filename=filename)
+        else:
+            self.formatter.write(self,
+                                 self.io,
+                                 self.location,
+                                 write_metadata=write_metadata,
+                                 only_complete=only_complete)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
@@ -553,19 +593,28 @@ class DataSet(DelegateAttributes):
             self.snapshot()
             self.formatter.write_metadata(self, self.io, self.location)
 
-    def finalize(self):
+    def finalize(self, filename=None, write_metadata=True):
         """
         Mark the DataSet complete and write any remaining modifications.
 
         Also closes the data file(s), if the ``Formatter`` we're using
         supports that.
+
+        Args:
+            filename (Optional[str]): The file name (minus extension) to
+                write to. The location of the file is the usual one.
+            write_metadata (bool): Whether to save a snapshot. For e.g. dumping
+                raw data inside a loop, a snapshot is not wanted.
         """
-        self.write()
+        log.debug('Finalising the DataSet. Writing.')
+        # write all new data, not only (to?) complete columns
+        self.write(only_complete=False, filename=filename)
 
         if hasattr(self.formatter, 'close_file'):
             self.formatter.close_file(self)
 
-        self.save_metadata()
+        if write_metadata:
+            self.save_metadata()
 
     def snapshot(self, update=False):
         """JSON state of the DataSet."""

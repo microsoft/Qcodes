@@ -161,7 +161,12 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
-    def __init__(self, name, address, num_chans=48, update_currents=True):
+    def __init__(self,
+                 name,
+                 address,
+                 num_chans=48,
+                 update_currents=True,
+                 **kwargs):
         """
         Instantiates the instrument.
 
@@ -175,7 +180,7 @@ class QDac(VisaInstrument):
         Returns:
             QDac object
         """
-        super().__init__(name, address)
+        super().__init__(name, address, **kwargs)
         self._output_n_lines = 50
         handle = self.visa_handle
         self._get_status_performed = False
@@ -189,9 +194,6 @@ class QDac(VisaInstrument):
         handle.write_termination = '\n'
         # TODO: do we need a query delay for robust operation?
         self._write_response = ''
-
-        # The following bool is used in self.write
-        self.debugmode = False
 
         if self._get_firmware_version() < 0.170202:
             raise RuntimeError('''
@@ -645,8 +647,8 @@ class QDac(VisaInstrument):
         available in `_write_response`
 
         """
-        if self.debugmode:
-            log.info('Sending command string: {}'.format(cmd))
+
+        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)

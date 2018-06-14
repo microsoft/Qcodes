@@ -1,0 +1,67 @@
+# Simulated Keysight 34465A instrument
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Keysight, 34465A, 1000, 0.1"
+    properties:
+      voltage:
+        default: 10
+        getter:
+          q: "READ?"
+          r: "{}"
+      dc_autorange:
+        default: 0
+        getter:
+          q: "SENSe:VOLTage:DC:RANGe:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:RANGe:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      dc_range:
+        default: 1
+        getter:
+          q: "SENSe:VOLTage:DC:RANGe?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:RANGe {}"
+        specs:
+          valid: [0.1, 1, 10, 100, 1000]
+          type: float
+      NPLC:
+        default: 10.0
+        getter:
+          q: "SENSe:VOLTage:DC:NPLC?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:NPLC {}"
+        specs:
+          valid: [0.001, 0.002, 0.006, 0.02, 0.06, .2, 1, 10, 100]
+          type: float
+      resolution:
+        default: +3.00000000E-05
+        getter:
+          q: "SENSe:VOLTage:DC:RESolution?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:RESolution {}"
+      apterture_enabled:
+        default: 0
+        getter:
+          q: "SENSe:VOLTage:DC:APERture:ENABled?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:APERture:ENABled {}"
+
+
+resources:
+  GPIB::1::INSTR:
+     device: device 1

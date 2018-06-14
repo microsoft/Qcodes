@@ -1,10 +1,13 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple
+from collections import namedtuple, Iterable
 from unittest import TestCase
-from time import sleep
+from typing import Tuple
 
+import numpy as np
+from hypothesis import given, event, settings
+import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
@@ -13,24 +16,39 @@ import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
+
 class GettableParam(Parameter):
     """ Parameter that keeps track of number of get operations"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(42)
         return 42
+
+
+class BookkeepingValidator(vals.Validator):
+    """
+    Validator that keeps track of what it validates
+    """
+    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
+        self.values_validated = []
+
+    def validate(self, value, context=''):
+        self.values_validated.append(value)
+
+    is_numeric = True
 
 
 blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
     namedtuple('blank', 'name')('')  # blank .name
-)
+) # type: Tuple
 named_instrument = namedtuple('yesname', 'name')('astro')
+
 
 class MemoryParameter(Parameter):
     def __init__(self, get_cmd=None, **kwargs):
@@ -47,7 +65,7 @@ class MemoryParameter(Parameter):
             if func is not None:
                 val = func()
             else:
-                val = self._latest['value']
+                val = self._latest['raw_value']
             self.get_values.append(val)
             return val
         return get_func
@@ -134,6 +152,19 @@ class TestParameter(TestCase):
                      'setpoint_labels', 'full_names']:
             self.assertFalse(hasattr(p, attr), attr)
 
+    def test_number_of_validations(self):
+
+        p = Parameter('p', set_cmd=None, initial_value=0,
+                      vals=BookkeepingValidator())
+
+        self.assertEqual(p.vals.values_validated, [0])
+
+        p.step = 1
+        p.set(10)
+
+        self.assertEqual(p.vals.values_validated,
+                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
                                snapshot_value=True)
@@ -211,17 +242,228 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
-    def test_latest_value(self):
-        p = MemoryParameter(name='test_latest_value', get_cmd=lambda: 21)
+    # There are a number different scenarios for testing a parameter with scale
+    # and offset. Therefore a custom strategy for generating test parameters
+    # is implemented here. The possible cases are:
+    # for getting and setting a parameter: values can be
+    #    scalar:
+    #        offset and scale can be scalars
+    # for getting only:
+    #    array:
+    #        offset and scale can be scalars or arrays(of same legnth as values)
+    #        independently
 
-        p(42)
-        self.assertEqual(p.get_latest(), 42)
-        self.assertListEqual(p.get_values, [])
+    # define shorthands for strategies
+    TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x != 0)
+    SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
+    ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 
-        p.get_latest.max_val_age = 0.1
-        sleep(0.2)
-        self.assertEqual(p.get_latest(), 21)
-        self.assertEqual(p.get_values, [21])
+    # the following test stra
+    @hst.composite
+    def iterable_or_number(draw, values, size, values_scalar, is_values):
+        if draw(values_scalar):
+            # if parameter values are scalar, return scalar for values and scale/offset
+            return draw(values)
+        elif is_values:
+            # if parameter values are not scalar and parameter values are requested
+            # return a list of values of the given size
+            return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+        else:
+            # if parameter values are not scalar and scale/offset are requested
+            # make a random choice whether to return a list of the same size as the values
+            # or a simple scalar
+            if draw(hst.booleans()):
+                return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+            else:
+                return draw(values)
+
+    @settings(max_examples=500)  # default:100 increased
+    @given(values=iterable_or_number(TestFloats, SharedSize, ValuesScalar, True),
+           offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
+           scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False))
+    def test_scale_and_offset_raw_value_iterable(self, values, offsets, scales):
+        p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
+
+        # test that scale and offset does not change the default behaviour
+        p(values)
+        self.assertEqual(p.raw_value, values)
+
+        # test setting scale and offset does not change anything
+        p.scale = scales
+        p.offset = offsets
+        self.assertEqual(p.raw_value, values)
+
+
+        np_values = np.array(values)
+        np_offsets = np.array(offsets)
+        np_scales = np.array(scales)
+        np_get_values = np.array(p())
+        np.testing.assert_allclose(np_get_values, (np_values-np_offsets)/np_scales) # No set/get cmd performed
+
+        # test set, only for scalar values
+        if not isinstance(values, Iterable):
+            p(values)
+            np.testing.assert_allclose(np.array(p.raw_value), np_values*np_scales + np_offsets) # No set/get cmd performed
+
+            # testing conversion back and forth
+            p(values)
+            np_get_values = np.array(p())
+            np.testing.assert_allclose(np_get_values, np_values) # No set/get cmd performed
+
+        # adding statistics
+        if isinstance(offsets, Iterable):
+            event('Offset is array')
+        if isinstance(scales, Iterable):
+            event('Scale is array')
+        if isinstance(values, Iterable):
+            event('Value is array')
+        if isinstance(scales, Iterable) and isinstance(offsets, Iterable):
+            event('Scale is array and also offset')
+        if isinstance(scales, Iterable) and not isinstance(offsets, Iterable):
+            event('Scale is array but not offset')
+
+
+    @given(scale=hst.integers(1, 100),
+           value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_scaled(self, scale, value):
+        start_point = 0.0
+        p = MemoryParameter(name='p', scale=scale,
+                      initial_value=start_point)
+        assert p() == start_point
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        first_step = 1.0
+        second_step = 10.0
+        # do a step to start from a non zero starting point where
+        # scale matters
+        p.set(first_step)
+        np.testing.assert_allclose(np.array([p.get()]),
+                                   np.array([first_step]))
+
+        expected_raw_steps = np.linspace(start_point*scale, first_step*scale, 11)
+        # getting the raw values that are actually send to the instrument.
+        # these are scaled in the set_wrapper
+        np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
+        assert p.raw_value == first_step*scale
+        # then check the generated steps. They should not be scaled as the
+        # scaling happens when setting them
+        expected_steps = np.linspace(first_step+p.step,
+                                     second_step,90)
+        np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
+                                   expected_steps)
+        p.set(10)
+        np.testing.assert_allclose(np.array(p.set_values),
+                                   np.linspace(0.0*scale, 10*scale, 101))
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == value * scale
+
+    @given(value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_parser(self, value):
+        start_point = 0.0
+        p = MemoryParameter(name='p',
+                            set_parser=lambda x: -x,
+                            get_parser=lambda x: -x,
+                            initial_value=start_point)
+        assert p() == start_point
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        first_step = 1.0
+        second_step = 10.0
+        # do a step to start from a non zero starting point where
+        # scale matters
+        p.set(first_step)
+        assert p.get() == first_step
+        assert p.raw_value == - first_step
+        np.testing.assert_allclose(np.array([p.get()]),
+                                   np.array([first_step]))
+
+        expected_raw_steps = np.linspace(-start_point, -first_step, 11)
+        # getting the raw values that are actually send to the instrument.
+        # these are parsed in the set_wrapper
+        np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
+        assert p.raw_value == -first_step
+        # then check the generated steps. They should not be parsed as the
+        # scaling happens when setting them
+        expected_steps = np.linspace((first_step+p.step),
+                                     second_step,90)
+        np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
+                                   expected_steps)
+        p.set(second_step)
+        np.testing.assert_allclose(np.array(p.set_values),
+                                   np.linspace(-start_point, -second_step, 101))
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == - value
+
+
+
+    @given(scale=hst.integers(1, 100),
+           value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_parsed_scaled(self, scale, value):
+        start_point = 0.0
+        p = MemoryParameter(name='p',
+                            scale = scale,
+                            set_parser=lambda x: -x,
+                            get_parser=lambda x: -x,
+                            initial_value=start_point)
+        assert p() == start_point
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        first_step = 1.0
+        second_step = 10.0
+        p.set(first_step)
+        assert p.get() == first_step
+        assert p.raw_value == - first_step * scale
+        expected_raw_steps = np.linspace(-start_point*scale, -first_step*scale, 11)
+        # getting the raw values that are actually send to the instrument.
+        # these are parsed in the set_wrapper
+        np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
+        assert p.raw_value == - scale * first_step
+        expected_steps = np.linspace(first_step+p.step,second_step,90)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_steps)
+        p.set(second_step)
+        np.testing.assert_allclose(np.array(p.set_values),
+                                   np.linspace(-start_point*scale, -second_step*scale, 101))
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == -scale * value
+
+
+class TestValsandParseParameter(TestCase):
+
+    def setUp(self):
+        self.parameter = Parameter(name='foobar',
+                                   set_cmd=None, get_cmd=None,
+                                   set_parser=lambda x: int(round(x)),
+                                   vals=vals.PermissiveInts(0))
+
+    def test_setting_int_with_float(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+1)
+        for i in values:
+            self.parameter(i)
+            a = self.parameter()
+            assert isinstance(a, int)
+
+    def test_setting_int_with_float_not_close(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+2)
+        for i in values[1:-2]:
+            with self.assertRaises(TypeError):
+                self.parameter(i)
+
 
 class SimpleArrayParam(ArrayParameter):
     def __init__(self, return_val, *args, **kwargs):
@@ -229,7 +471,7 @@ class SimpleArrayParam(ArrayParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -237,7 +479,7 @@ class SimpleArrayParam(ArrayParameter):
 
 class SettableArray(SimpleArrayParam):
     # this is not allowed - just created to raise an error in the test below
-    def set(self, v):
+    def set_raw(self, v):
         self.v = v
 
 
@@ -260,19 +502,18 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'label': name,
-            'unit': '',
-            'value': [[1, 2, 3], [4, 5, 6]]
+            'unit': ''
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
 
         self.assertIn(name, p.__doc__)
 
-    def test_explicit_attrbutes(self):
+    def test_explicit_attributes(self):
         name = 'tiny_array'
         shape = (2,)
         label = 'it takes two to tango'
@@ -286,7 +527,7 @@ class TestArrayParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -299,14 +540,15 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'label': label,
             'unit': unit,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -360,7 +602,7 @@ class SimpleMultiParam(MultiParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -369,7 +611,7 @@ class SimpleMultiParam(MultiParameter):
 class SettableMulti(SimpleMultiParam):
     # this is not fully suported - just created to raise a warning in the test below.
     # We test that the warning is raised
-    def set(self, v):
+    def set_raw(self, v):
         print("Calling set")
         self.v = v
 
@@ -396,13 +638,12 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'units': [''] * 3
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -429,7 +670,7 @@ class TestMultiParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -444,7 +685,7 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'names': names,
@@ -452,7 +693,8 @@ class TestMultiParameter(TestCase):
             'units': units,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -622,6 +864,7 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
+
 class TestManualParameterValMapping(TestCase):
     def setUp(self):
         self.instrument = DummyInstrument('dummy_holder')
@@ -659,3 +902,30 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+
+class TestSetContextManager(TestCase):
+
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+        self.instrument.add_parameter(
+            "a",
+            set_cmd=None,
+            get_cmd=None
+        )
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+    def test_none_value(self):
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() is None
+
+    def test_context(self):
+        self.instrument.a.set(2)
+
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() == 2

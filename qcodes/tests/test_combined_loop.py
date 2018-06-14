@@ -28,7 +28,7 @@ class TestLoopCombined(TestCase):
                                   min_size=2, max_size=2, unique=True).map(sorted),
            z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=300)
     def testLoopCombinedParameterPrintTask(self, npoints, x_start_stop, y_start_stop, z_start_stop):
 
         x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints)
@@ -64,7 +64,7 @@ class TestLoopCombined(TestCase):
                                   min_size=2, max_size=2, unique=True).map(sorted),
            z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=300)
     def testLoopCombinedParameterTwice(self, npoints, x_start_stop, y_start_stop, z_start_stop):
         x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints)
         y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints)
@@ -102,7 +102,7 @@ class TestLoopCombined(TestCase):
                                   min_size=2, max_size=2, unique=True).map(sorted),
            z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=600)
     def testLoopCombinedParameterAndMore(self, npoints, x_start_stop, y_start_stop, z_start_stop):
         x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints)
         y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints)
@@ -134,15 +134,15 @@ class TestLoopCombined(TestCase):
         np.testing.assert_array_equal(data.arrays['dmm_somethingelse'].ndarray, np.ones(npoints))
         np.testing.assert_array_equal(data.arrays['dmm_voltage_2'].ndarray, np.arange(2, npoints * 2 + 1, 2))
 
-    @given(npoints=hst.integers(2, 100),
-           npoints_outer=hst.integers(2,100),
+    @given(npoints=hst.integers(2, 50),
+           npoints_outer=hst.integers(2,25),
            x_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted),
            y_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted),
            z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
                                   min_size=2, max_size=2, unique=True).map(sorted))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=None)
     def testLoopCombinedParameterInside(self, npoints, npoints_outer, x_start_stop, y_start_stop, z_start_stop):
         x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints_outer)
         y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints)

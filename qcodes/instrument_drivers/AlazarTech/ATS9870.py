@@ -1,4 +1,5 @@
-from .ATS import AlazarTech_ATS, AlazarParameter
+from .ATS import AlazarTech_ATS
+from .utils import AlazarParameter
 from qcodes.utils import validators
 
 
@@ -7,7 +8,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
     This class is the driver for the ATS9870 board
     it inherits from the ATS base class
 
-    it creates all necessary parameters for the Alazar card
+    It creates all necessary parameters for the Alazar card
     """
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -150,24 +151,45 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            unit='10 us',
                            value=0,
                            vals=validators.Ints(min_value=0))
+        self.add_parameter(name='aux_io_mode',
+                           parameter_class=AlazarParameter,
+                           label='AUX I/O Mode',
+                           unit=None,
+                           value='AUX_IN_AUXILIARY',
+                           byte_to_value_dict={0: 'AUX_OUT_TRIGGER',
+                                               1: 'AUX_IN_TRIGGER_ENABLE',
+                                               13: 'AUX_IN_AUXILIARY'})
+
+        self.add_parameter(name='aux_io_param',
+                           parameter_class=AlazarParameter,
+                           label='AUX I/O Param',
+                           unit=None,
+                           value='NONE',
+                           byte_to_value_dict={0: 'NONE',
+                                               1: 'TRIG_SLOPE_POSITIVE',
+                                               2: 'TRIG_SLOPE_NEGATIVE'})
+
 
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',
-                           parameter_class=AlazarParameter,
-                           label='Acquisiton mode',
+                           label='Acquisition mode',
                            unit=None,
-                           value='NPT',
-                           byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
+                           initial_value='NPT',
+                           get_cmd=None,
+                           set_cmd=None,
+                           val_mapping={'NPT': 0x200, 'TS': 0x400})
 
         # samples_per_record must be a multiple of of some number (64 in the
         # case of ATS9870) and and has some minimum (256 in the case of ATS9870)
         # These values can be found in the ATS-SDK programmar's guide
         self.add_parameter(name='samples_per_record',
-                           parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
-                           value=96000,
-                           vals=validators.Multiples(divisor=64, min_value=256))
+                           initial_value=96000,
+                           get_cmd=None,
+                           set_cmd=None,
+                           vals=validators.Multiples(
+                                divisor=64, min_value=256))
 
         # TODO(damazter) (M) figure out if this also has to be a multiple of
         # something,
@@ -181,83 +203,95 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
         #                      are writing, not limited by any actual ATS
         #                      feature.
         self.add_parameter(name='records_per_buffer',
-                           parameter_class=AlazarParameter,
                            label='Records per Buffer',
                            unit=None,
-                           value=1,
+                           initial_value=1,
+                           get_cmd=None,
+                           set_cmd=None,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='buffers_per_acquisition',
-                           parameter_class=AlazarParameter,
                            label='Buffers per Acquisition',
                            unit=None,
-                           value=1,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=1,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='channel_selection',
-                           parameter_class=AlazarParameter,
                            label='Channel Selection',
                            unit=None,
-                           value='AB',
-                           byte_to_value_dict={1: 'A', 2: 'B', 3: 'AB'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='AB',
+                           val_mapping={'A': 1, 'B': 2, 'AB': 3})
         self.add_parameter(name='transfer_offset',
-                           parameter_class=AlazarParameter,
-                           label='Transer Offset',
+                           label='Transfer Offset',
                            unit='Samples',
-                           value=0,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=0,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='external_startcapture',
-                           parameter_class=AlazarParameter,
                            label='External Startcapture',
                            unit=None,
-                           value='ENABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x1: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='ENABLED',
+                           val_mapping={'DISABLED': 0X0,
+                                        'ENABLED': 0x1})
         self.add_parameter(name='enable_record_headers',
                            parameter_class=AlazarParameter,
                            label='Enable Record Headers',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x8: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x8})
         self.add_parameter(name='alloc_buffers',
-                           parameter_class=AlazarParameter,
                            label='Alloc Buffers',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x20: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x20})
         self.add_parameter(name='fifo_only_streaming',
-                           parameter_class=AlazarParameter,
                            label='Fifo Only Streaming',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x800: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x800})
         self.add_parameter(name='interleave_samples',
-                           parameter_class=AlazarParameter,
                            label='Interleave Samples',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x1000: 'ENABLED'})
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISBALED': 0x0,
+                                        'ENABLED': 0x1000})
         self.add_parameter(name='get_processed_data',
-                           parameter_class=AlazarParameter,
                            label='Get Processed Data',
                            unit=None,
-                           value='DISABLED',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x2000: 'ENABLED'})
-
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value='DISABLED',
+                           val_mapping={'DISABLED': 0x0,
+                                        'ENABLED': 0x2000})
         self.add_parameter(name='allocated_buffers',
-                           parameter_class=AlazarParameter,
                            label='Allocated Buffers',
                            unit=None,
-                           value=1,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=1,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='buffer_timeout',
-                           parameter_class=AlazarParameter,
                            label='Buffer Timeout',
                            unit='ms',
-                           value=1000,
+                           get_cmd=None,
+                           set_cmd=None,
+                           initial_value=1000,
                            vals=validators.Ints(min_value=0))
 
         model = self.get_idn()['model']
