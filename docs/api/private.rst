@@ -6,7 +6,7 @@ Private
 =======
 
 Classes and Functions
-----------------------
+---------------------
 .. autosummary::
    :toctree: generated/
 

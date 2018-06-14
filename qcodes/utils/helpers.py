@@ -3,16 +3,21 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
+import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+from typing import Dict, List
+
+from asyncio import iscoroutinefunction
+from inspect import signature
 
 import numpy as np
 
-_tprint_times = {}
+_tprint_times= {} # type: Dict[str, float]
 
+log = logging.getLogger(__name__)
 
 class NumpyJSONEncoder(json.JSONEncoder):
     """Return numpy types as standard types."""
@@ -53,18 +58,6 @@ def tprint(string, dt=1, tag='default'):
         _tprint_times[tag] = time.time()
 
 
-def in_notebook():
-    """
-    Check if inside a notebook.
-    This could mean we are connected to a notebook, but this is not guaranteed.
-    see: http://stackoverflow.com/questions/15411967
-    Returns:
-        bool: True if the code is running with a ipython or jypyter
-
-    """
-    return 'ipy' in repr(sys.stdout)
-
-
 def is_sequence(obj):
     """
     Test if an object is a sequence.
@@ -72,7 +65,7 @@ def is_sequence(obj):
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators)
     """
-    return (isinstance(obj, (Iterator, Sequence)) and
+    return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
@@ -122,6 +115,48 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         elif types is not None and not isinstance(item, types):
             return False
     return True
+
+
+def is_function(f, arg_count, coroutine=False):
+    """
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form
+
+    Args:
+        f (callable): function to check
+        arg_count (int): number of argument f should accept
+        coroutine (bool): is a coroutine. Default: False
+
+    Return:
+        bool: is function and accepts the specified number of arguments
+
+    """
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 def full_class(obj):
@@ -319,9 +354,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = []
-    delegate_attr_objects = []
-    omit_delegate_attrs = []
+    delegate_attr_dicts = [] # type: List[str]
+    delegate_attr_objects = [] # type: List[str]
+    omit_delegate_attrs = [] # type: List[str]
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -462,3 +497,64 @@ def compare_dictionaries(dict_1, dict_2,
 def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
+
+def foreground_qt_window(window):
+    """
+    Try as hard as possible to bring a qt window to the front. This
+    will use pywin32 if installed and running on windows as this
+    seems to be the only reliable way to foreground a window. The
+    build-in qt functions often doesn't work. Note that to use this
+    with pyqtgraphs remote process you should use the ref in that module
+    as in the example below.
+
+    Args:
+        window: handle to qt window to foreground
+    Examples:
+        >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
+    """
+    try:
+        from win32gui import SetWindowPos
+        import win32con
+        # use the idea from
+        # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
+        SetWindowPos(window.winId(),
+                     win32con.HWND_TOPMOST, # = always on top. only reliable way to bring it to the front on windows
+                     0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+        SetWindowPos(window.winId(),
+                     win32con.HWND_NOTOPMOST, # disable the always on top, but leave window at its top position
+                     0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+    except ImportError:
+        pass
+    window.show()
+    window.raise_()
+    window.activateWindow()
+
+
+def add_to_spyder_UMR_excludelist(modulename: str):
+    """
+    Spyder tries to reload any user module. This does not work well for
+    qcodes because it overwrites Class variables. QCoDeS uses these to
+    store global attributes such as default station, monitor and list of
+    instruments. This "feature" can be disabled by the
+    gui. Unfortunately this cannot be disabled in a natural way
+    programmatically so in this hack we replace the global __umr__ instance
+    with a new one containing the module we want to exclude. This will do
+    nothing if Spyder is not found.
+    TODO is there a better way to detect if we are in spyder?
+    """
+
+
+    if any('SPYDER' in name for name in os.environ):
+        try:
+            from spyder.utils.site import sitecustomize
+            excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                              '').split(',')
+            if modulename not in excludednamelist:
+                log.info("adding {} to excluded modules".format(modulename))
+                excludednamelist.append(modulename)
+                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
+        except ImportError:
+            pass

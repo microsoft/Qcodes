@@ -27,7 +27,8 @@ def readme():
 extras = {
     'MatPlot': ('matplotlib', '2.0.2'),
     'QtPlot': ('pyqtgraph', '0.10.0'),
-    'coverage tests': ('coverage', '4.0')
+    'coverage tests': ('coverage', '4.0'),
+    'Slack': ('slacker', '0.9.42')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
@@ -35,8 +36,8 @@ setup(name='qcodes',
       version=get_version(),
       use_2to3=False,
 
-      maintainer='Giulio Ungaretti',
-      maintainer_email='unga@nbi.ku.dk',
+      maintainer='Jens H Nielsen',
+      maintainer_email='j.h.nielsen@nbi.ku.dk',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
@@ -46,21 +47,24 @@ setup(name='qcodes',
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 3 :: Only',
-          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Scientific/Engineering'
       ],
       license='MIT',
       # if we want to install without tests:
       # packages=find_packages(exclude=["*.tests", "tests"]),
       packages=find_packages(),
-      package_data={'qcodes': ['widgets/*.js', 'widgets/*.css', 'config/*.json']},
-      install_requires= [
-          'numpy>=1.10',
+      package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
+                               'monitor/dist/css/*', 'config/*.json',
+                               'instrument/sims/*.yaml',
+                               'tests/dataset/fixtures/2018-01-17/*/*']},
+      install_requires=[
+          'numpy>=1.10,<1.14',
           'pyvisa>=1.8',
-          'ipython>=4.1.0',
-          'ipykernel!=4.6.0', # https://github.com/ipython/ipykernel/issues/240 in 4.6
-          'jupyter>=1.0.0',
-          'h5py>=2.6'
+          'h5py>=2.6',
+          'websockets>=3.2',
+          'jsonschema',
+          'pyzmq'
       ],
 
       test_suite='qcodes.tests',

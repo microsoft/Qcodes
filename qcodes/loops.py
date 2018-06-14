@@ -65,6 +65,18 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 log = logging.getLogger(__name__)
 
 
+def active_loop():
+    return ActiveLoop.active_loop
+
+
+def active_data_set():
+    loop = active_loop()
+    if loop is not None and loop.data_set is not None:
+        return loop.data_set
+    else:
+        return None
+
+
 class Loop(Metadatable):
     """
     The entry point for creating measurement loops
@@ -338,6 +350,10 @@ class ActiveLoop(Metadatable):
     it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
 
+    # Currently active loop, is set when calling loop.run(set_active=True)
+    # is reset to None when active measurement is finished
+    active_loop = None
+
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
                  bg_final_task=None, bg_min_delay=None):
@@ -434,7 +450,7 @@ class ActiveLoop(Metadatable):
         data_arrays = [loop_array]
         # hack set_data into actions
         new_actions = self.actions[:]
-        if hasattr(self.sweep_values, "parameters"):
+        if hasattr(self.sweep_values, "parameters"): # combined parameter
             for parameter in self.sweep_values.parameters:
                 new_actions.append(parameter)
 
@@ -659,7 +675,7 @@ class ActiveLoop(Metadatable):
         return self.run(quiet=True, location=False, **kwargs)
 
     def run(self, use_threads=False, quiet=False, station=None,
-            progress_interval=False, *args, **kwargs):
+            progress_interval=False, set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
@@ -719,9 +735,12 @@ class ActiveLoop(Metadatable):
 
         data_set.save_metadata()
 
+        if set_active:
+            ActiveLoop.active_loop = self
+
         try:
             if not quiet:
-            	print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
+                print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             self._run_wrapper()
             ds = self.data_set
         finally:
@@ -734,6 +753,8 @@ class ActiveLoop(Metadatable):
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
             self.data_set = None
+            if set_active:
+                ActiveLoop.active_loop = None
 
         return ds
 
@@ -768,16 +789,16 @@ class ActiveLoop(Metadatable):
             return action
 
     def _run_wrapper(self, *args, **kwargs):
-        # try:
-        self._run_loop(*args, **kwargs)
-        # finally:
-        if hasattr(self, 'data_set'):
-            # TODO (giulioungaretti) WTF?
-            # somehow this does not show up in the data_set returned by
-            # run(), but it is saved to the metadata
-            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.data_set.add_metadata({'loop': {'ts_end': ts}})
-            self.data_set.finalize()
+        try:
+            self._run_loop(*args, **kwargs)
+        finally:
+            if hasattr(self, 'data_set'):
+                # TODO (giulioungaretti) WTF?
+                # somehow this does not show up in the data_set returned by
+                # run(), but it is saved to the metadata
+                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.data_set.add_metadata({'loop': {'ts_end': ts}})
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -799,7 +820,12 @@ class ActiveLoop(Metadatable):
         delay = max(self.delay, first_delay)
 
         callables = self._compile_actions(self.actions, action_indices)
-
+        n_callables = 0
+        for item in callables:
+            if hasattr(item, 'param_ids'):
+                n_callables += len(item.param_ids)
+            else:
+                n_callables += 1
         t0 = time.time()
         last_task = t0
         imax = len(self.sweep_values)
@@ -811,6 +837,10 @@ class ActiveLoop(Metadatable):
                 tprint('loop %s: %d/%d (%.1f [s])' % (
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
+                if i:
+                    tprint("Estimated finish time: %s" % (
+                        time.asctime(time.localtime(t0 + ((time.time() - t0) * imax / i)))),
+                           dt=self.progress_interval, tag="finish")
 
             set_val = self.sweep_values.set(value)
 
@@ -818,19 +848,25 @@ class ActiveLoop(Metadatable):
             new_values = current_values + (value,)
             data_to_store = {}
 
-            if hasattr(self.sweep_values, "parameters"):
+            if hasattr(self.sweep_values, "parameters"):  # combined parameter
                 set_name = self.data_set.action_id_map[action_indices]
                 if hasattr(self.sweep_values, 'aggregate'):
                     value = self.sweep_values.aggregate(*set_val)
+                # below is useful but too verbose even at debug
+                # log.debug('Calling .store method of DataSet because '
+                #           'sweep_values.parameters exist')
                 self.data_set.store(new_indices, {set_name: value})
+                # set_val list of values to set [param1_setpoint, param2_setpoint ..]
                 for j, val in enumerate(set_val):
-                    set_index = action_indices + (j+1, )
+                    set_index = action_indices + (j+n_callables, )
                     set_name = (self.data_set.action_id_map[set_index])
                     data_to_store[set_name] = val
             else:
                 set_name = self.data_set.action_id_map[action_indices]
                 data_to_store[set_name] = value
-
+            # below is useful but too verbose even at debug
+            # log.debug('Calling .store method of DataSet because a sweep step'
+            #           ' was taken')
             self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
@@ -839,6 +875,9 @@ class ActiveLoop(Metadatable):
 
             try:
                 for f in callables:
+                    # below is useful but too verbose even at debug
+                    # log.debug('Going through callables at this sweep step.'
+                    #           ' Calling {}'.format(f))
                     f(first_delay=delay,
                       loop_indices=new_indices,
                       current_values=new_values)
@@ -872,14 +911,18 @@ class ActiveLoop(Metadatable):
 
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
+            log.debug('Running the background task one last time.')
             self.bg_task()
 
         # the loop is finished - run the .then actions
+        #log.debug('Finishing loop, running the .then actions...')
         for f in self._compile_actions(self.then_actions, ()):
+            #log.debug('...running .then action {}'.format(f))
             f()
 
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
+            log.debug('Running the bg_final_task')
             self.bg_final_task()
 
     def _wait(self, delay):
