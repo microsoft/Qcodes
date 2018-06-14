@@ -123,6 +123,14 @@ class MercurySlavePS(InstrumentChannel):
                            get_parser=partial(_signal_parser, 1),
                            set_cmd=partial(self._param_setter, 'ATOB'))
 
+        self.add_parameter('ramp_status',
+                           label='Ramp status',
+                           get_cmd=partial(self._param_getter, 'ACTN'),
+                           set_cmd=partial(self._param_setter, 'ACTN'),
+                           val_mapping={'HOLD': 'HOLD',
+                                        'TO SET': 'RTOS',
+                                        'CLAMP': 'CLMP'})
+
     def _param_getter(self, get_cmd: str) -> str:
         """
         General getter function for parameters
