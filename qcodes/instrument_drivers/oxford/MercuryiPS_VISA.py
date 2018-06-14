@@ -143,7 +143,7 @@ class MercurySlavePS(InstrumentChannel):
 
     def _ramp_status_setter(self, cmd: str) -> None:
         status_now = self.ramp_status()
-        if status_now == 'CLMP' and cmd == 'TO SET':
+        if status_now == 'CLAMP' and cmd == 'TO SET':
             raise ValueError(f'Error in ramping unit {self.uid}: '
                              'Can not ramp to target value; power supply is '
                              'clamped. Unclamp first by setting ramp status '
