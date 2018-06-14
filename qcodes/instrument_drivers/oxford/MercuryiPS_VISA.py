@@ -204,7 +204,7 @@ class MercuryiPS(VisaInstrument):
         self.add_parameter('x_target',
                            label='X target field',
                            unit='T',
-                           get_cmd=self._target_vector.get_components('x'))
+                           get_cmd=lambda: self._target_vector.get_components('x'))
 
         self.connect_message()
 
