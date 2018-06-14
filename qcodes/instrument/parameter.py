@@ -78,6 +78,29 @@ if TYPE_CHECKING:
 
 Number = Union[float, int]
 
+
+class _SetParamContext:
+    """
+    This class is returned by the set method of parameters
+
+    Example usage:
+    >>> v = dac.voltage()
+    >>> with dac.voltage(-1):
+        ...     # Do stuff with the DAC output set to -1 V.
+        ...
+    >>> assert abs(dac.voltage() - v) <= tolerance
+    """
+    def __init__(self, parameter):
+        self._parameter = parameter
+        self._original_value = self._parameter._latest["value"]
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, typ, value, traceback):
+        self._parameter.set(self._original_value)
+
+
 class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
@@ -177,6 +200,7 @@ class _BaseParameter(Metadatable):
                  delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
+        self.short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -449,6 +473,7 @@ class _BaseParameter(Metadatable):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
@@ -636,12 +661,7 @@ class _BaseParameter(Metadatable):
     # Deprecated
     @property
     def full_name(self):
-#        This can fully be replaced by str(parameter) in the future we
-#        may want to deprecate this but the current dataset makes heavy use
-#        of it in more complicated ways so keep it for now.
-#        warnings.warn('Attribute `full_name` is deprecated, please use '
-#                      'str(parameter)')
-        return str(self)
+        return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
@@ -679,6 +699,32 @@ class _BaseParameter(Metadatable):
             return self._instrument.root_instrument
         else:
             return None
+
+    def set_to(self, value):
+        """
+        Use a context manager to temporarily set the value of a parameter to
+        a value. Example:
+
+        >>> from qcodes import Parameter
+        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+        >>> with p.set_to(3):
+        ...    print(f"p value in with block {p.get()}")
+        >>> print(f"p value outside with block {p.get()}")
+        """
+        context_manager = _SetParamContext(self)
+        self.set(value)
+        return context_manager
+
+    @property
+    def name_parts(self) -> List[str]:
+        if self.instrument is not None:
+            name_parts = self.instrument.name_parts
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
+
 
 class Parameter(_BaseParameter):
     """
