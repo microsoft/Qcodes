@@ -280,6 +280,19 @@ class ChannelList(Metadatable):
         self._channels = cast(List[InstrumentChannel], self._channels)
         return self._channels.append(obj)
 
+    def remove(self, obj: InstrumentChannel):
+        """
+        Removes obj from channellist if not locked.
+        Args:
+            obj: Channel to remove from the list.
+        """
+        if self._locked:
+            raise AttributeError("Cannot remove from a locked channel list")
+        else:
+            self._channels = cast(List[InstrumentChannel], self._channels)
+            self._channels.remove(obj)
+            self._channel_mapping.pop(obj.short_name)
+
     def extend(self, objects: Sequence[InstrumentChannel]):
         """
         Insert an iterable of objects into the list of channels.
