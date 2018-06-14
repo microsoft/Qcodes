@@ -906,7 +906,7 @@ class Tektronix_AWG5014(VisaInstrument):
         been changed from their default value and put them in a
         dictionary that can easily be written into an awg file, so as
         to prevent said awg file from falling back to default values.
-        (See self.make_awg_file and self.AWG_FILE_FORMAT_CHANNEL)
+        (See :meth:`~make_awg_file` and :meth:`qcodes.instrument_drivers.tektronix.AWG5014.Tektronix_AWG5014.AWG_FILE_FORMAT_CHANNEL`)
         NOTE: This only works for settings changed via the corresponding
         QCoDeS parameter.
 
@@ -1435,11 +1435,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         return self.ask('SYSTEM:ERRor:NEXT?')
 
-    @deprecate(reason='this function is for private use only.')
-    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
-    def pack_waveform(self, *args, **kwargs):
-        self._pack_waveform(*args, **kwargs)
-
     def _pack_waveform(self, wf, m1, m2):
         """
         Converts/packs a waveform and two markers into a 16-bit format
@@ -1486,6 +1481,11 @@ class Tektronix_AWG5014(VisaInstrument):
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
+
+    @deprecate(reason='this function is for private use only.')
+    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    def pack_waveform(self, *args, **kwargs):
+        self._pack_waveform(*args, **kwargs)
 
     ###########################
     # Waveform file functions #
