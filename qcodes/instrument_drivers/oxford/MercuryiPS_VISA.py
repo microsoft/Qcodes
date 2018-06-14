@@ -97,6 +97,8 @@ class MercurySlavePS(InstrumentChannel):
                            unit='T',
                            get_parser=partial(_signal_parser, 1))
 
+        # NB: The current ramp rate slavishly follows the field ramp rate
+        # (converted via the ATOB param)
         self.add_parameter('current_ramp_rate',
                            label='Ramp rate (current)',
                            unit='A/s',
@@ -133,11 +135,21 @@ class MercurySlavePS(InstrumentChannel):
         self.add_parameter('ramp_status',
                            label='Ramp status',
                            get_cmd=partial(self._param_getter, 'ACTN'),
-                           set_cmd=partial(self._param_setter, 'ACTN'),
+                           set_cmd=self._ramp_status_setter,
                            get_parser=_response_preparser,
                            val_mapping={'HOLD': 'HOLD',
                                         'TO SET': 'RTOS',
                                         'CLAMP': 'CLMP'})
+
+    def _ramp_status_setter(self, cmd: str) -> None:
+        status_now = self.ramp_status()
+        if status_now == 'CLMP' and cmd == 'TO SET':
+            raise ValueError(f'Error in ramping unit {self.uid}: '
+                             'Can not ramp to target value; power supply is '
+                             'clamped. Unclamp first by setting ramp status '
+                             'to HOLD.')
+        else:
+            partial(self._param_setter, 'ACTN')(cmd)
 
     def _param_getter(self, get_cmd: str) -> str:
         """
