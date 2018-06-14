@@ -4,6 +4,7 @@ import logging
 
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.math.field_vector import FieldVector
 
 log = logging.getLogger(__name__)
 
@@ -190,11 +191,20 @@ class MercuryiPS(VisaInstrument):
         # to ensure a correct snapshot, we must wrap the get function
         self.IDN.get = self.IDN._wrap_get(self._idn_getter)
 
-        # TODO: Query instrument to ensure which PSUs we have
+        # TODO: Query instrument to ensure which PSUs are actually present
         for grp in ['GRPX', 'GRPY', 'GRPZ']:
-            psu_name = grp.replace('GRP', '')
+            psu_name = grp
             psu = MercurySlavePS(self, psu_name, grp)
             self.add_submodule(psu_name, psu)
+
+        self._target_vector = FieldVector(x=self.GRPX.field(),
+                                          y=self.GRPY.field(),
+                                          z=self.GRPZ.field())
+
+        self.add_parameter('x_target',
+                           label='X target field',
+                           unit='T',
+                           get_cmd=self._target_vector.get_components('x'))
 
         self.connect_message()
 
