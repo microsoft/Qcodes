@@ -273,18 +273,6 @@ class ChannelList(Metadatable):
         self._channel_mapping[obj.short_name] = obj
         return self._channels.append(obj)
 
-    def remove(self, obj: InstrumentChannel):
-        """
-        Removes obj from channellist if not locked.
-        Args:
-            obj: Channel to remove from the list.
-        """
-        if isinstance(self._channels, tuple) or self._locked:
-            raise AttributeError("Cannot remove from a locked channel list")
-        else:
-            self._channels.remove(obj)
-            self._channel_mapping.pop(obj.short_name)
-
     def extend(self, objects):
         """
         Insert an iterable of objects into the list of channels.
