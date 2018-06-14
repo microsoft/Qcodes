@@ -16,3 +16,13 @@ def driver():
 
 def test_idn(driver):
     assert driver.IDN()['model'] == 'SIMULATED MERCURY iPS'
+
+
+def test_simple_setting(driver):
+    """
+    Some very simple setting of parameters. Mainly just to
+    sanity-check the pyvisa-sim setup.
+    """
+    assert driver.GRPX.field_target() == 0
+    driver.GRPX.field_target(0.1)
+    assert driver.GRPX.field_target() == 0.1
