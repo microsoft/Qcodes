@@ -107,6 +107,37 @@ class TestChannels(TestCase):
             self.instrument.channels.insert(2, channel)
         self.assertEqual(len(self.instrument.channels), n_channels + 1)
 
+    def test_remove_channel(self):
+        channels = self.instrument.channels
+        chanA = self.instrument.A
+        original_length = len(channels.temperature())
+        channels.remove(chanA)
+        with self.assertRaises(AttributeError):
+            getattr(channels, chanA.short_name)
+        self.assertEqual(len(channels), original_length-1)
+        self.assertEqual(len(channels.temperature()), original_length-1)
+
+    def test_remove_locked_channel(self):
+        channels = self.instrument.channels
+        chanA = self.instrument.A
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.remove(chanA)
+
+    def test_remove_tupled_channel(self):
+        channel_tuple = tuple(
+            DummyChannel(self.instrument, f'Chan{C}', C)
+            for C in ('A', 'B', 'C', 'D', 'E', 'F')
+        )
+        channels = ChannelList(self.instrument,
+                               "TempSensorsTuple",
+                               DummyChannel,
+                               channel_tuple,
+                               snapshotable=False)
+        chanA = channels.ChanA
+        with self.assertRaises(AttributeError):
+            channels.remove(chanA)
+
     @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
     def test_combine_channels(self, setpoints):
         self.assertEqual(len(self.instrument.channels), 6)
