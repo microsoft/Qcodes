@@ -7,7 +7,7 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CH
 
 import numpy as np
 if TYPE_CHECKING:
-    from qcodes.instrumet.channel import ChannelList
+    from qcodes.instrument.channel import ChannelList
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
@@ -47,9 +47,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.name = str(name)
         self.short_name = str(name)
 
-        self.parameters = {} # type: Dict[str, _BaseParameter]
-        self.functions = {} # type: Dict[str, Function]
-        self.submodules = {} # type: Dict[str, Union['InstrumentBase', 'ChannelList']]
+        self.parameters: Dict[str, _BaseParameter] = {}
+        self.functions: Dict[str, Function] = {}
+        self.submodules: Dict[str, Union['InstrumentBase',
+                                         'ChannelList']] = {}
         super().__init__(**kwargs)
 
     def add_parameter(self, name: str,
@@ -244,6 +245,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         for submodule in self.submodules.values():
             if hasattr(submodule, '_channels'):
+                submodule = cast('ChannelList', submodule)
                 if submodule._snapshotable:
                     for channel in submodule._channels:
                         channel.print_readable_snapshot()
