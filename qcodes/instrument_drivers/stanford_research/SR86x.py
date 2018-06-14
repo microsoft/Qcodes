@@ -304,6 +304,7 @@ class SR86xBuffer(InstrumentChannel):
 
         self.capture_length_in_kb(total_size_in_kb)
         self.start_capture("ONE", "SAMP")
+
         start_triggers_pulsetrain()
 
         n_bytes_captured = 0
@@ -314,15 +315,22 @@ class SR86xBuffer(InstrumentChannel):
 
         return self.get_capture_data(trigger_count)
 
-    def start_capture_at_trigger(self, sample_count: int) ->dict:
+    def start_capture_at_trigger(self, sample_count: int, start_triggers_pulsetrain: Callable) ->dict:
         """
         Capture a number of samples after a trigger has been received. Please refer to page 135 of the manual
         for details
+
+        Args:
+            trigger_count (int)
+            start_triggers_pulsetrain (callable)
+                By calling this *non-blocking* function we start a pulse train
         """
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
 
         self.capture_length_in_kb(total_size_in_kb)
         self.start_capture("ONE", "TRIG")
+
+        start_triggers_pulsetrain()
 
         n_bytes_captured = 0
         while n_bytes_captured < total_size_in_kb * 1024:
