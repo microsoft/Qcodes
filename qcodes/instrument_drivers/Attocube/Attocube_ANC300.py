@@ -68,7 +68,7 @@ class ANMxx0(InstrumentChannel):
             Args:
                 name: The expected name
                 ans: The answer from the instrument
-                unit: The expected unit. Defaults to None.
+                unit: The expected unit(s). String of list of strings. Defaults to None.
                 parser: Function to use to parse the value.
 
             Returns parser(value).
@@ -76,6 +76,9 @@ class ANMxx0(InstrumentChannel):
             ans = ans.strip().replace('=', ' ')
             ansparts = ans.split()
             ans_name, ans_val = ansparts[:2]
+
+            if type(unit) == str or unit is None:
+                unit = [unit,]
 
             if ans_val == '?':
                 return None
@@ -88,7 +91,7 @@ class ANMxx0(InstrumentChannel):
             if ans_name != name:
                 raise ValueError('Expected value name {!r}, '
                                  'received {!r}.'.format(name, ans_name))
-            if ans_unit != unit:
+            if not ans_unit in unit:
                 raise ValueError('Expected value unit {!r}, '
                                  'received {!r}.'.format(unit, ans_unit))
 
@@ -109,7 +112,7 @@ class ANMxx0(InstrumentChannel):
         self.add_parameter('step_frequency',
                            get_cmd='getf {}'.format(self.aid),
                            get_parser=partial(ans_parser, 'frequency',
-                                              unit='Hz', parser=int),
+                                              unit=['Hz','H'], parser=int),
                            set_cmd='setf {} {{:.0f}}'.format(self.aid),
                            label='Stepping frequency',
                            unit='Hz',
