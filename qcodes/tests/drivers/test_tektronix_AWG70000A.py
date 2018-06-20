@@ -45,6 +45,18 @@ def awg2():
 
 
 @pytest.fixture(scope='module')
+def random_wfm_m1_m2_package():
+    """
+    Make a random 2400 points np.array([wfm, m1, m2]).
+    The waveform has values in [-0.1, 0.1)
+    """
+    wfm = 0.2*(np.random.rand(2400) - 0.5)
+    m1 = np.random.randint(0, 2, 2400)
+    m2 = np.random.randint(0, 2, 2400)
+    return np.array([wfm, m1, m2])
+
+
+@pytest.fixture(scope='module')
 def forged_sequence():
     """
     Return an example forged sequence containing a
@@ -94,7 +106,7 @@ def test_init_awg2(awg2):
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-@settings(deadline=1500, max_examples=7)
+@settings(deadline=2500, max_examples=7)
 @given(N=hst.integers(1, 100))
 def test_SML_successful_generation_vary_length(N):
 
@@ -109,7 +121,7 @@ def test_SML_successful_generation_vary_length(N):
     seqname = 'seq'
 
     smlstring = AWG70000A._makeSMLFile(tw, nreps, ejs, ejt, goto,
-                                       wfm_names, seqname)
+                                       wfm_names, seqname, chans=3)
 
     # This line will raise an exception if the XML is not valid
     etree.parse(StringIO(smlstring))
@@ -196,3 +208,27 @@ def test_seqxfile_from_fs(forged_sequence):
             etree.XML(str_seq_sml, parser=parser)
 
 # TODO: Add some failing tests for inproper input
+
+
+def test_makeSEQXFile(awg2, random_wfm_m1_m2_package):
+    """
+    Test that this function works (for some input)
+    """
+
+    seqlen = 25
+    chans = 3
+
+    wfmpkg = random_wfm_m1_m2_package
+
+    trig_waits = [0]*seqlen
+    nreps = [1]*seqlen
+    event_jumps = [0]*seqlen
+    event_jump_to = [0]*seqlen
+    go_to = [0]*seqlen
+    wfms = [[wfmpkg for i in range(seqlen)] for j in range(chans)]
+    amplitudes = [0.5]*chans
+    seqname = "testseq"
+
+    seqxfile = awg2.makeSEQXFile(trig_waits, nreps, event_jumps,
+                                 event_jump_to, go_to, wfms,
+                                 amplitudes, seqname)

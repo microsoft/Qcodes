@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, Optional
 
 
 def _read_settings() -> Tuple[Dict[str, Union[str,int]],
@@ -19,7 +19,7 @@ def _read_settings() -> Tuple[Dict[str, Union[str,int]],
     """
     # For the limits, there are known default values
     # (known from https://www.sqlite.org/limits.html)
-    DEFAULT_LIMITS: Dict[str, Union[str, int]]
+    DEFAULT_LIMITS: Dict[str, Optional[Union[str, int]]]
     DEFAULT_LIMITS = {'MAX_ATTACHED': 10,
                       'MAX_COLUMN': 2000,
                       'MAX_COMPOUND_SELECT': 500,
@@ -36,7 +36,7 @@ def _read_settings() -> Tuple[Dict[str, Union[str,int]],
     opt_num = 0
     resp = ''
 
-    limits: Dict[str, Union[str,int]]
+    limits: Dict[str, Optional[Union[str, int]]]
     limits = DEFAULT_LIMITS.copy()
     settings = {}
 
@@ -48,13 +48,14 @@ def _read_settings() -> Tuple[Dict[str, Union[str,int]],
     while resp is not None:
         opt_num += 1
         lst = resp.split('=')
+        val: Optional[Union[str, int]]
         if len(lst) == 2:
-            val: Union[str,int]
             (param, val) = lst
             if val.isnumeric():
                 val = int(val)
         else:
-            (param, val) = lst + [None]
+            param = lst[0]
+            val = None
 
         if param in DEFAULT_LIMITS.keys():
             limits.update({param: val})
