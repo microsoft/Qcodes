@@ -7,7 +7,7 @@ from qcodes import Instrument, validators as vals
 
 
 class SignalHound_USB_SA124B(Instrument):
-    '''
+    """
     This is a direct port of the signal hound QTLab driver by Ramiro
     Edited by Adriaan Rol
 
@@ -16,7 +16,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     TODO:
         Add tracking generator mode
-    '''
+    """
     dll_path = 'C:\Windows\System32\sa_api.dll'
 
     saStatus = {
@@ -461,11 +461,11 @@ class SignalHound_USB_SA124B(Instrument):
         return np.array([freq_points, datamin, datamax])
 
     def get_power_at_freq(self, Navg=1):
-        '''
+        """
         Returns the maximum power in a window of 250kHz
         around the specified  frequency.
         The integration window is specified by the VideoBandWidth (set by vbw)
-        '''
+        """
         poweratfreq = 0
         for i in range(Navg):
             data = self.sweep()
