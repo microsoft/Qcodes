@@ -284,22 +284,9 @@ class SignalHound_USB_SA124B(Instrument):
                 """
             )
             raise IOError('The value for mode did not match any known value.')
-        # This error code does not exist!??
-        # elif err == self.saStatus['saAllocationLimitError']:
-        #     print('This value is returned in extreme circumstances. The API',
-        #           ' currently limits the amount of RAM usage to 1GB. When',
-        #           ' exceptional parameters are provided, such as very low ',
-        #           'bandwidths, or long sweep times, this error may be ',
-        #           'returned. At this point you have reached the boundaries of',
-        #           ' the device. The processing algorithms are optimized for',
-        #           ' speed at the expense of space, which is the reason',
-        #           ' this can occur.''')
-        #     raise IOError('Could not allocate sufficent RAM!')
         elif err == self.saStatus['saBandwidthErr']:
             raise IOError('RBW is larger than your span. (Sweep Mode)!')
         self.check_for_error(err)
-        # else:
-        #     raise IOError('Unknown error setting initiate! Error = %s' % err)
 
         return
 
