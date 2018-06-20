@@ -169,7 +169,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     def closeDevice(self):
         log.info('Closing Device with handle num: '
-                 f'self.deviceHandle.value')
+                 f'{self.deviceHandle.value}')
 
         try:
             self.dll.saAbort(self.deviceHandle)
