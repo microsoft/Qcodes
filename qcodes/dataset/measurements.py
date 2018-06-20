@@ -11,12 +11,15 @@ import numpy as np
 
 import qcodes as qc
 from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, Parameter
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 
 log = logging.getLogger(__name__)
+
+array_like_types = (tuple, list, np.ndarray)
+non_array_like_types = (int, float, str)
 
 
 class ParameterTypeError(Exception):
@@ -29,15 +32,23 @@ class DataSaver:
     datasaving to the database
     """
 
+    default_callback: Optional[dict] = None
+
     def __init__(self, dataset: DataSet, write_period: float,
                  parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
+        if DataSaver.default_callback is not None and 'run_tables_subscription_callback' in DataSaver.default_callback:
+            callback = DataSaver.default_callback['run_tables_subscription_callback']
+            min_wait = DataSaver.default_callback['run_tables_subscription_min_wait']
+            min_count = DataSaver.default_callback['run_tables_subscription_min_count']
+            snapshot = dataset.get_metadata('snapshot')
+            self._dataset.subscribe(callback, min_wait= min_wait, min_count= min_count, state={}, callback_kwargs={'run_id': self._dataset.run_id, 'snapshot': snapshot })
         self.write_period = write_period
         self.parameters = parameters
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
-        self._known_dependencies: Dict[str, str] = {}
+        self._known_dependencies: Dict[str, List[str]] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
                 self._known_dependencies.update({str(param):
@@ -93,8 +104,9 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            if isinstance(value, np.ndarray):
+            if any(isinstance(value, typ) for typ in array_like_types):
                 value = cast(np.ndarray, partial_result[1])
+                value = np.atleast_1d(value)
                 array_size = len(value)
                 if input_size > 1 and input_size != array_size:
                     raise ValueError('Incompatible array dimensions. Trying to'
@@ -102,17 +114,31 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
+            elif any(isinstance(value, t) for t in non_array_like_types):
+                pass
+            else:
+                raise ValueError('Wrong value type received. '
+                                 f'Got {type(value)}, but only int, float, '
+                                 'str, tuple, list, and np.ndarray is '
+                                 'allowed.')
+
             # TODO (WilliamHPNielsen): The following code block is ugly and
             # brittle and should be enough to convince us to abandon the
             # design of ArrayParameters (possibly) containing (some of) their
             # setpoints
             if isinstance(parameter, ArrayParameter):
-                sps = parameter.setpoints[0]
-                inst_name = getattr(parameter._instrument, 'name', '')
-                if inst_name:
-                    spname = f'{inst_name}_{parameter.setpoint_names[0]}'
+                if parameter.setpoints is not None:
+                    sps = parameter.setpoints[0]
                 else:
-                    spname = parameter.setpoint_names[0]
+                    raise RuntimeError("Got an array parameter without "
+                                       "setpoints. Cannot handle this")
+                inst_name = getattr(parameter._instrument, 'name', '')
+                sp_name_parts = []
+                if inst_name is not None:
+                    sp_name_parts.append(inst_name)
+                if parameter.setpoint_names is not None:
+                    sp_name_parts.append(parameter.setpoint_names[0])
+                spname = '_'.join(sp_name_parts)
 
                 if f'{paramstr}_setpoint' in self.parameters.keys():
                     res.append((f'{paramstr}_setpoint', sps))
@@ -125,7 +151,6 @@ class DataSaver:
         # Now check for missing setpoints
         for partial_result in res:
             param = str(partial_result[0])
-            value = partial_result[1]
             if param in self._known_dependencies.keys():
                 stuffweneed = set(self._known_dependencies[param])
                 stuffwehave = set(params)
@@ -140,10 +165,12 @@ class DataSaver:
             for partial_result in res:
                 param = str(partial_result[0])
                 value = partial_result[1]
-
                 # For compatibility with the old Loop, setpoints are
                 # tuples of numbers (usually tuple(np.linspace(...))
                 if hasattr(value, '__len__') and not(isinstance(value, str)):
+                    value = cast(Union[Sequence,np.ndarray], value)
+                    if isinstance(value, np.ndarray):
+                        value = np.atleast_1d(value)
                     res_dict.update({param: value[index]})
                 else:
                     res_dict.update({param: value})
@@ -218,12 +245,12 @@ class Runner:
             func(*args)
 
         # next set up the "datasaver"
-        if self.experiment:
-            eid = self.experiment.id
+        if self.experiment is not None:
+            self.ds = qc.new_data_set(
+                self.name, self.experiment.exp_id, conn=self.experiment.conn
+            )
         else:
-            eid = None
-
-        self.ds = qc.new_data_set(self.name, eid)
+            self.ds = qc.new_data_set(self.name)
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
@@ -235,8 +262,11 @@ class Runner:
             self.ds.add_metadata('snapshot',
                                  json.dumps({'station': station.snapshot()}))
 
-        for paramspec in self.parameters.values():
-            self.ds.add_parameter(paramspec)
+        if self.parameters is not None:
+            for paramspec in self.parameters.values():
+                self.ds.add_parameter(paramspec)
+        else:
+            raise RuntimeError("No parameters supplied")
 
         # register all subscribers
         for (callble, state) in self.subscribers:
@@ -362,8 +392,8 @@ class Measurement:
 
     def register_parameter(
             self, parameter: _BaseParameter,
-            setpoints: Tuple[_BaseParameter]=None,
-            basis: Tuple[_BaseParameter]=None) -> None:
+            setpoints: Sequence[_BaseParameter]=None,
+            basis: Sequence[_BaseParameter]=None) -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -388,11 +418,18 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-
+        my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
-            if parameter.setpoint_names:
-                spname = (f'{parameter._instrument.name}_'
-                          f'{parameter.setpoint_names[0]}')
+            parameter = cast(ArrayParameter, parameter)
+            spname_parts = []
+            if parameter.instrument is not None:
+                inst_name = parameter.instrument.name
+                if inst_name is not None:
+                    spname_parts.append(inst_name)
+            if parameter.setpoint_names is not None:
+                spname_parts.append(parameter.setpoint_names[0])
+            if len(spname_parts) > 0:
+                spname = '_'.join(spname_parts)
             else:
                 spname = f'{name}_setpoint'
             if parameter.setpoint_labels:
@@ -408,8 +445,10 @@ class Measurement:
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
-            setpoints = setpoints if setpoints else ()
-            setpoints += (spname,)
+            my_setpoints = list(setpoints) if setpoints else []
+            my_setpoints += [spname]
+        else:
+            my_setpoints = setpoints
 
         # We currently treat ALL parameters as 'numeric' and fail to add them
         # to the dataset if they can not be unraveled to fit that description
@@ -418,15 +457,16 @@ class Measurement:
         # requirement later and start saving binary blobs with the datasaver,
         # but for now binary blob saving is referred to using the DataSet
         # API directly
+        parameter = cast(Union[Parameter, ArrayParameter], parameter)
         paramtype = 'numeric'
         label = parameter.label
         unit = parameter.unit
 
-        if setpoints:
-            sp_strings = [str(sp) for sp in setpoints]
+        if my_setpoints is not None:
+            sp_strings = [str(sp) for sp in my_setpoints]
         else:
             sp_strings = []
-        if basis:
+        if basis is not None:
             bs_strings = [str(bs) for bs in basis]
         else:
             bs_strings = []

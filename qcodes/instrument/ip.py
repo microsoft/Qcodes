@@ -128,19 +128,25 @@ class IPInstrument(Instrument):
             self._disconnect()
 
         try:
+            log.info("Opening socket")
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            log.info("Connecting socket to {}:{}".format(self._address,
+                                                         self._port))
             self._socket.connect((self._address, self._port))
             self.set_timeout(self._timeout)
         except ConnectionRefusedError:
+            log.warning("Socket connection failed")
             self._socket.close()
             self._socket = None
 
     def _disconnect(self):
         if getattr(self, '_socket', None) is None:
             return
-
+        log.info("Socket shutdown")
         self._socket.shutdown(socket.SHUT_RDWR)
+        log.info("Socket closing")
         self._socket.close()
+        log.info("Socket closed")
         self._socket = None
 
     def set_timeout(self, timeout=None):
@@ -167,12 +173,14 @@ class IPInstrument(Instrument):
 
     def _send(self, cmd):
         data = cmd + self._terminator
+        log.debug(f"Writing {data} to instrument {self.name}")
         self._socket.sendall(data.encode())
 
     def _recv(self):
         result = b''
         while True:
             partresult = self._socket.recv(self._buffer_size)
+            log.debug(f"Got {partresult} from instrument {self.name}")
             result += partresult
             if partresult == b'':
                 log.warning("Got empty response from Socket recv() "
@@ -188,7 +196,6 @@ class IPInstrument(Instrument):
                                 "Discarding {}".format(result[rtloc+rtl:]))
                 result = result[0:rtloc]
                 break
-
         return result.decode()
 
     def close(self):

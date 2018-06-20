@@ -14,7 +14,7 @@ from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   LogCapture, strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder)
-from qcodes.utils.deferred_operations import is_function
+from qcodes.utils.helpers import is_function
 
 
 class TestIsFunction(TestCase):
@@ -104,7 +104,7 @@ class TestIsFunction(TestCase):
 
 
 class TestIsSequence(TestCase):
-    def a_func():
+    def a_func(self):
         raise RuntimeError('this function shouldn\'t get called')
 
     class AClass():

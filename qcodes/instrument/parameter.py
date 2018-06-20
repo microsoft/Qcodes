@@ -59,11 +59,11 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable
 from functools import partial, wraps
 import numpy
 
-from qcodes.utils.deferred_operations import DeferredOperations
+
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
@@ -74,10 +74,34 @@ from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
 if TYPE_CHECKING:
-    from .base import Instrument
+    from .base import Instrument, InstrumentBase
+
+Number = Union[float, int]
 
 
-class _BaseParameter(Metadatable, DeferredOperations):
+class _SetParamContext:
+    """
+    This class is returned by the set method of parameters
+
+    Example usage:
+    >>> v = dac.voltage()
+    >>> with dac.voltage(-1):
+        ...     # Do stuff with the DAC output set to -1 V.
+        ...
+    >>> assert abs(dac.voltage() - v) <= tolerance
+    """
+    def __init__(self, parameter):
+        self._parameter = parameter
+        self._original_value = self._parameter._latest["value"]
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, typ, value, traceback):
+        self._parameter.set(self._original_value)
+
+
+class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -109,6 +133,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
         scale (Optional[float]): Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
+
+        offset: Compensate for a parameter specific offset. (just as scale)
+            get value = raw value - offset.
+            set value = argument + offset.
+            If offset and scale are used in combination, when getting a value,
+            first an offset is added, then the scale is applied.
 
         inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
@@ -149,13 +179,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+    get_raw = None  # type: Optional[Callable]
+    set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Union[int, float]]=None,
-                 scale: Optional[Union[int, float]]=None,
+                 scale: Optional[Union[Number, Iterable[Number]]]=None,
+                 offset: Optional[Union[Number, Iterable[Number]]]=None,
                  inter_delay: Union[int, float]=0,
                  post_delay: Union[int, float]=0,
                  val_mapping: Optional[dict]=None,
@@ -164,9 +197,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None):
+                 delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
+        self.short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -179,6 +213,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         self.step = step
         self.scale = scale
+        self.offset = offset
         self.raw_value = None
         if delay is not None:
             warnings.warn("Delay kwarg is deprecated. Replace with "
@@ -203,14 +238,14 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw'):
+        if hasattr(self, 'get_raw') and self.get_raw is not None:
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw'):
+        if hasattr(self, 'set_raw') and self.set_raw is not None:
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
@@ -220,7 +255,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale',
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale', 'offset',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
@@ -253,7 +288,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                           ' Parameter {}'.format(self.name))
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> dict:
+                      params_to_skip_update: Sequence[str]=None) -> Dict[str, Any]:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -271,7 +306,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 and self._snapshot_value and update:
             self.get()
 
-        state = copy(self._latest)
+        state = copy(self._latest) # type: Dict[str, Any]
         state['__class__'] = full_class(self)
         state['full_name'] = str(self)
 
@@ -280,7 +315,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             state.pop('raw_value', None)
 
         if isinstance(state['ts'], datetime):
-            state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+            dttime = state['ts'] # type: datetime
+            state['ts'] = dttime.strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
             if attr == 'instrument' and self._instrument:
@@ -308,7 +344,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if (self.get_parser is None and
             self.set_parser is None and
             self.val_mapping is None and
-            self.scale is None):
+            self.scale is None and
+            self.offset is None):
                 self.raw_value = value
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
@@ -324,6 +361,20 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 if self.get_parser is not None:
                     value = self.get_parser(value)
 
+                # apply offset first (native scale)
+                if self.offset is not None:
+                    # offset values
+                    if isinstance(self.offset, collections.Iterable):
+                        # offset contains multiple elements, one for each value
+                        value = tuple(value - offset for value, offset
+                                      in zip(value, self.offset))
+                    elif isinstance(value, collections.Iterable):
+                        # Use single offset for all values
+                        value = tuple(value - self.offset for value in value)
+                    else:
+                        value -= self.offset
+
+                # scale second
                 if self.scale is not None:
                     # Scale values
                     if isinstance(self.scale, collections.Iterable):
@@ -366,25 +417,35 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 for step_index, val_step in enumerate(steps):
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
-                        mapped_value = self.val_mapping[val_step]
+                        raw_value = self.val_mapping[val_step]
                     else:
-                        mapped_value = val_step
+                        raw_value = val_step
 
+                    # transverse transformation in reverse order as compared to
+                    # getter:
+                    # apply scale first
                     if self.scale is not None:
                         if isinstance(self.scale, collections.Iterable):
                             # Scale contains multiple elements, one for each value
-                            scaled_mapped_value = tuple(val * scale for val, scale
-                                                        in zip(mapped_value, self.scale))
+                            raw_value = tuple(val * scale for val, scale
+                                              in zip(raw_value, self.scale))
                         else:
                             # Use single scale for all values
-                            scaled_mapped_value = mapped_value*self.scale
-                    else:
-                        scaled_mapped_value = mapped_value
+                            raw_value *= self.scale
 
+                    # apply offset next
+                    if self.offset is not None:
+                        if isinstance(self.offset, collections.Iterable):
+                            # offset contains multiple elements, one for each value
+                            raw_value = tuple(val + offset for val, offset
+                                              in zip(raw_value, self.offset))
+                        else:
+                            # Use single offset for all values
+                            raw_value += self.offset
+
+                    # parser last
                     if self.set_parser is not None:
-                        parsed_scaled_mapped_value = self.set_parser(scaled_mapped_value)
-                    else:
-                        parsed_scaled_mapped_value = scaled_mapped_value
+                        raw_value = self.set_parser(raw_value)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -396,8 +457,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(parsed_scaled_mapped_value, **kwargs)
-                    self.raw_value = parsed_scaled_mapped_value
+                    set_function(raw_value, **kwargs)
+                    self.raw_value = raw_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
                                              self.set_parser is None and
@@ -412,15 +473,17 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[float, int],
+    def get_ramp_values(self, value: Union[float, int, Sized],
                         step: Union[float, int]=None) -> List[Union[float,
-                                                                    int]]:
+                                                                    int,
+                                                                    Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -435,7 +498,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if step is None:
             return [value]
         else:
-            if isinstance(value, collections.Iterable) and len(value) > 1:
+            if isinstance(value, collections.Sized) and len(value) > 1:
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
@@ -495,7 +558,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             TypeError: if step is not a number
         """
         if step is None:
-            self._step = step
+            self._step = step # type: Optional[Union[float, int]]
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -598,12 +661,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     # Deprecated
     @property
     def full_name(self):
-#        This can fully be replaced by str(parameter) in the future we
-#        may want to deprecate this but the current dataset makes heavy use
-#        of it in more complicated ways so keep it for now.
-#        warnings.warn('Attribute `full_name` is deprecated, please use '
-#                      'str(parameter)')
-        return str(self)
+        return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
@@ -618,6 +676,54 @@ class _BaseParameter(Metadatable, DeferredOperations):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
+
+    @property
+    def instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the first instrument that this parameter is bound to.
+        E.g if this is bound to a channel it will return the channel
+        and not the instrument that the channel is bound too. Use
+        :meth:`root_instrument` to get the real instrument.
+        """
+        return self._instrument
+
+    @property
+    def root_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the fundamental instrument that this parameter belongs too.
+        E.g if the parameter is bound to a channel this will return the
+        fundamental instrument that that channel belongs to. Use
+        :meth:`instrument` to get the channel.
+        """
+        if self._instrument is not None:
+            return self._instrument.root_instrument
+        else:
+            return None
+
+    def set_to(self, value):
+        """
+        Use a context manager to temporarily set the value of a parameter to
+        a value. Example:
+
+        >>> from qcodes import Parameter
+        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+        >>> with p.set_to(3):
+        ...    print(f"p value in with block {p.get()}")
+        >>> print(f"p value outside with block {p.get()}")
+        """
+        context_manager = _SetParamContext(self)
+        self.set(value)
+        return context_manager
+
+    @property
+    def name_parts(self) -> List[str]:
+        if self.instrument is not None:
+            name_parts = self.instrument.name_parts
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
 
 
 class Parameter(_BaseParameter):
@@ -733,9 +839,9 @@ class Parameter(_BaseParameter):
                  set_cmd:  Optional[Union[str, Callable, bool]]=False,
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[str]=None,
+                 vals: Optional[Validator]=None,
                  docstring: Optional[str]=None,
-                 **kwargs):
+                 **kwargs) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
@@ -747,16 +853,16 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str = instrument.ask if instrument else None
-                self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
+                exec_str_ask = instrument.ask if instrument else None
+                self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw = partial(self._save_val, validate=False)
+                self.set_raw = partial(self._save_val, validate=False)# type: Callable
             else:
-                exec_str = instrument.write if instrument else None
-                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
+                exec_str_write = instrument.write if instrument else None
+                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
@@ -912,7 +1018,7 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: bool=None):
+                 metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
@@ -1088,7 +1194,7 @@ class MultiParameter(_BaseParameter):
                  docstring: str=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: Optional[dict]=None):
+                 metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
@@ -1167,7 +1273,7 @@ class MultiParameter(_BaseParameter):
         return self.names
 
 
-class GetLatest(DelegateAttributes, DeferredOperations):
+class GetLatest(DelegateAttributes):
     """
     Wrapper for a Parameter that just returns the last set or measured value
     stored in the Parameter itself.
@@ -1272,6 +1378,7 @@ class CombinedParameter(Metadatable):
             if unit is None:
                 unit = units
         self.parameter.unit = unit
+        self.setpoints=[]
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
@@ -1296,7 +1403,7 @@ class CombinedParameter(Metadatable):
             setFunction(value)
         return values
 
-    def sweep(self, *array: numpy.ndarray):
+    def sweep(self, *array: numpy.ndarray) -> 'CombinedParameter':
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
@@ -1318,26 +1425,26 @@ class CombinedParameter(Metadatable):
             dim = set([len(a) for a in array])
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
-            array = numpy.array(array).transpose()
+            nparray = numpy.array(array).transpose()
         else:
             # cast to array in case users
             # decide to not read docstring
             # and pass a 2d list
-            array = numpy.array(array[0])
+            nparray = numpy.array(array[0])
         new = copy(self)
         _error_msg = """ Dimensionality of array does not match\
                         the number of parameter combined. Expected a \
                         {} dimensional array, got a {} dimensional array. \
                         """
         try:
-            if array.shape[1] != self.dimensionality:
+            if nparray.shape[1] != self.dimensionality:
                 raise ValueError(_error_msg.format(self.dimensionality,
-                                                   array.shape[1]))
+                                                   nparray.shape[1]))
         except KeyError:
             # this means the array is 1d
             raise ValueError(_error_msg.format(self.dimensionality, 1))
 
-        new.setpoints = array.tolist()
+        new.setpoints = nparray.tolist()
         return new
 
     def _aggregate(self, *vals):

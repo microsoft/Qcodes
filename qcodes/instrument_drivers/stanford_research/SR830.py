@@ -15,7 +15,7 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: 'SR830', channel: int):
+    def __init__(self, name: str, instrument: 'SR830', channel: int) -> None:
         """
         Args:
             name (str): The name of the parameter
@@ -84,7 +84,7 @@ class ChannelBuffer(ArrayParameter):
         else:
             self._instrument._buffer2_ready = True
 
-    def get(self):
+    def get_raw(self):
         """
         Get command. Returns numpy array
         """

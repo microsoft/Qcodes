@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!---->
+<xs:schema elementFormDefault="qualified" targetNamespace="http://www.tektronix.com" xmlns="http://www.tektronix.com" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="DataSetsCollection">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="DataSets"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DataSets">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="DataDescription"/>
+				<xs:element ref="ProductSpecific"/>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:string" use="required"/>
+			<xs:attribute name="count" type="xs:integer" use="optional"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DataDescription">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="SequenceName" type="xs:string"/>
+				<xs:element minOccurs="0" name="Timestamp" type="xs:dateTime"/>
+				<xs:element minOccurs="0" name="JumpTiming" type="JumpTimingType"/>
+				<xs:element minOccurs="0" name="RecSampleRate" type="xs:double"/>
+				<xs:element minOccurs="0" name="RecAmplitude" type="xs:double"/>
+				<xs:element minOccurs="0" name="RecOffset" type="xs:double"/>
+				<xs:element minOccurs="0" name="RecFrequency" type="xs:double"/>
+				<xs:element minOccurs="0" name="RepeatFlag" type="xs:boolean"/>
+				<xs:element minOccurs="0" name="PatternJumpTable">
+					<xs:complexType>
+						<xs:sequence maxOccurs="unbounded" minOccurs="0">
+							<xs:element name="JumpTarget">
+								<xs:complexType>
+									<xs:simpleContent>
+										<xs:extension base="xs:integer">
+											<xs:attribute name="id" type="xs:integer" use="required"/>
+										</xs:extension>
+									</xs:simpleContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+						<xs:attribute name="Enabled" type="xs:boolean" use="required"/>
+						<xs:attribute name="Count" type="xs:integer" use="required"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element minOccurs="0" name="Steps">
+					<xs:complexType>
+						<xs:sequence maxOccurs="unbounded" minOccurs="0">
+							<xs:element name="Step">
+								<xs:complexType>
+									<xs:all>
+										<xs:element name="StepNumber" type="xs:string"/>
+										<xs:element minOccurs="0" name="Repeat" type="RepeatType"/>
+										<xs:element minOccurs="0" name="RepeatCount" type="xs:integer"/>
+										<xs:element minOccurs="0" name="WaitInput" type="WaitInputType"/>
+										<xs:element minOccurs="0" name="EventJumpInput" type="EventJumpInputType"/>
+										<xs:element minOccurs="0" name="EventJumpTo" type="EventJumpToType"/>
+										<xs:element minOccurs="0" name="EventJumpToStep" type="xs:integer"/>
+										<xs:element minOccurs="0" name="GoTo" type="GoToType"/>
+										<xs:element minOccurs="0" name="GoToStep" type="xs:integer"/>
+										<xs:element minOccurs="0" name="Assets">
+											<xs:complexType>
+												<xs:sequence maxOccurs="unbounded" minOccurs="0">
+													<xs:element name="Asset">
+														<xs:complexType>
+															<xs:all>
+																<xs:element name="AssetName" type="xs:string"/>
+																<xs:element name="AssetType" type="AssetTypeType"/>
+															</xs:all>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+										<xs:element minOccurs="0" name="Flags">
+											<xs:complexType>
+												<xs:sequence maxOccurs="unbounded" minOccurs="0">
+													<xs:element minOccurs="0" name="FlagSet">
+														<xs:complexType>
+															<xs:sequence maxOccurs="unbounded" minOccurs="0">
+																<xs:element name="Flag">
+																	<xs:complexType>
+																		<xs:simpleContent>
+																			<xs:extension base="FlagTypeType">
+																				<xs:attribute name="name" type="xs:string" use="required"/>
+																			</xs:extension>
+																		</xs:simpleContent>
+																	</xs:complexType>
+																</xs:element>
+															</xs:sequence>
+														</xs:complexType>
+													</xs:element>
+												</xs:sequence>
+											</xs:complexType>
+										</xs:element>
+									</xs:all>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+						<xs:attribute name="StepCount" type="xs:integer" use="required"/>
+						<xs:attribute name="TrackCount" type="xs:integer" use="required"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ProductSpecific">
+		<xs:complexType>
+			<xs:attribute name="name" type="xs:string" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="JumpTimingType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="RepeatType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="WaitInputType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="EventJumpInputType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="EventJumpToType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="GoToType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="AssetTypeType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="FlagTypeType">
+		<xs:restriction base="xs:string">
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

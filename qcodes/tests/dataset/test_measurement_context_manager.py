@@ -11,12 +11,14 @@ import numpy as np
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.database import initialise_database
+
 
 @pytest.fixture(scope="function")
 def empty_temp_db():
@@ -24,15 +26,7 @@ def empty_temp_db():
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         qc.config["core"]["db_debug"] = True
-        # this is somewhat annoying but these module scope variables
-        # are initialized at import time so they need to be overwritten
-        qc.dataset.experiment_container.DB = qc.config["core"]["db_location"]
-        qc.dataset.data_set.DB = qc.config["core"]["db_location"]
-        qc.dataset.experiment_container.debug_db = qc.config["core"]["db_debug"]
-        _c = connect(qc.config["core"]["db_location"],
-                     qc.config["core"]["db_debug"])
-        init_db(_c)
-        _c.close()
+        initialise_database()
         yield
 
 
@@ -56,11 +50,17 @@ def DMM():
     yield dmm
     dmm.close()
 
+@pytest.fixture
+def channel_array_instrument():
+    channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
+    yield channelarrayinstrument
+    channelarrayinstrument.close()
 
 @pytest.fixture
 def SpectrumAnalyzer():
     """
-    Yields a DummyInstrument that holds an ArrayParameter
+    Yields a DummyInstrument that holds ArrayParameters returning
+    different types
     """
 
     class Spectrum(ArrayParameter):
@@ -86,8 +86,22 @@ def SpectrumAnalyzer():
             # not the best SA on the market; it just returns noise...
             return np.random.randn(self.npts)
 
+    class ListSpectrum(Spectrum):
+
+        def get_raw(self):
+            output = super().get_raw()
+            return list(output)
+
+    class TupleSpectrum(Spectrum):
+
+        def get_raw(self):
+            output = super().get_raw()
+            return tuple(output)
+
     SA = DummyInstrument('dummy_SA')
     SA.add_parameter('spectrum', parameter_class=Spectrum)
+    SA.add_parameter('listspectrum', parameter_class=ListSpectrum)
+    SA.add_parameter('tuplespectrum', parameter_class=TupleSpectrum)
 
     yield SA
 
@@ -332,6 +346,17 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 
 def test_subscriptions(experiment, DAC, DMM):
+    """
+    Test that subscribers are called at the moment that data is flushed to database
+
+    Note that for the purpose of this test, flush_data_to_database method is called explicitly instead of waiting for
+    the data to be flushed automatically after the write_period passes after a add_result call.
+
+    Args:
+        experiment (qcodes.dataset.experiment_container.Experiment) : qcodes experiment object
+        DAC (qcodes.instrument.base.Instrument) : dummy instrument object
+        DMM (qcodes.instrument.base.Instrument) : another dummy instrument object
+    """
 
     def subscriber1(results, length, state):
         """
@@ -346,7 +371,7 @@ def test_subscriptions(experiment, DAC, DMM):
         for res in results:
             state += [pres for pres in res if pres > 7]
 
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
@@ -368,16 +393,58 @@ def test_subscriptions(experiment, DAC, DMM):
         assert res_dict == {}
         assert lt7s == []
 
+        as_and_bs = list(zip(range(5), range(3, 8)))
+
         for num in range(5):
 
-            (a, b) = 5*np.random.randn(2)
+            (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
-            sleep(meas.write_period)
+
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
+            datasaver.flush_data_to_database()
+
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
     assert len(datasaver._dataset.subscribers) == 0
+
+
+@settings(deadline=None, max_examples=25)
+@given(N=hst.integers(min_value=2000, max_value=3000))
+def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
+
+    def sub_get_x_vals(results, length, state):
+        """
+        A list of all x values
+        """
+        state += [res[0] for res in results]
+
+    def sub_get_y_vals(results, length, state):
+        """
+        A list of all y values
+        """
+        state += [res[1] for res in results]
+
+    meas = Measurement(exp=experiment)
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
+
+    xvals = []
+    yvals = []
+
+    meas.add_subscriber(sub_get_x_vals, state=xvals)
+    meas.add_subscriber(sub_get_y_vals, state=yvals)
+
+    given_xvals = range(N)
+    given_yvals = range(1, N+1)
+
+    with meas.run() as datasaver:
+
+        for x, y in zip(given_xvals, given_yvals):
+            datasaver.add_result((DAC.ch1, x), (DMM.v1, y))
+
+    assert xvals == list(given_xvals)
+    assert yvals == list(given_yvals)
 
 
 # There is no way around it: this test is slow. We test that write_period
@@ -407,7 +474,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
         assert datasaver._dataset.number_of_results == 0
-        sleep(write_period)
+        sleep(write_period * 1.1)
         datasaver.add_result((DAC.ch1, set_values[breakpoint]),
                              (DMM.v1, get_values[breakpoint]))
         assert datasaver.points_written == breakpoint + 1
@@ -428,7 +495,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
-def test_datasaver_arrays(empty_temp_db, N):
+def test_datasaver_arrays_lists_tuples(empty_temp_db, N):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -464,6 +531,7 @@ def test_datasaver_arrays(empty_temp_db, N):
                                    unit='Majorana flux',
                                    setpoints=('freqax', 'gate_voltage'))
 
+    # save arrays
     with meas.run() as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
         signal = np.random.randn(N)
@@ -471,6 +539,72 @@ def test_datasaver_arrays(empty_temp_db, N):
         datasaver.add_result(('freqax', freqax),
                              ('signal', signal),
                              ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+    # save lists
+    with meas.run() as datasaver:
+        freqax = list(np.linspace(1e6, 2e6, N))
+        signal = list(np.random.randn(N))
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+    # save tuples
+    with meas.run() as datasaver:
+        freqax = tuple(np.linspace(1e6, 2e6, N))
+        signal = tuple(np.random.randn(N))
+
+        datasaver.add_result(('freqax', freqax),
+                             ('signal', signal),
+                             ('gate_voltage', 0))
+
+    assert datasaver.points_written == N
+
+
+def test_datasaver_foul_input(experiment):
+
+    meas = Measurement()
+
+    meas.register_custom_parameter('foul',
+                                   label='something unnatural',
+                                   unit='Fahrenheit')
+
+    foul_stuff = [qc.Parameter('foul'), set((1, 2, 3))]
+
+    with meas.run() as datasaver:
+        for ft in foul_stuff:
+            with pytest.raises(ValueError):
+                datasaver.add_result(('foul', ft))
+
+
+@settings(max_examples=10, deadline=None)
+@given(N=hst.integers(min_value=2, max_value=500))
+def test_datasaver_unsized_arrays(empty_temp_db, N):
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='freqax',
+                                   label='Frequency axis',
+                                   unit='Hz')
+    meas.register_custom_parameter(name='signal',
+                                   label='qubit signal',
+                                   unit='Majorana number',
+                                   setpoints=('freqax',))
+    # note that np.array(some_number) is not the same as the number
+    # its also not an array with a shape. Check here that we handle it
+    # correctly
+    with meas.run() as datasaver:
+        freqax = np.linspace(1e6, 2e6, N)
+        signal = np.random.randn(N)
+        for i in range(N):
+            myfreq = np.array(freqax[i])
+            mysignal = np.array(signal[i])
+            datasaver.add_result(('freqax', myfreq), ('signal', mysignal))
 
     assert datasaver.points_written == N
 
@@ -508,6 +642,109 @@ def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
                                  (spectrum, spectrum.get()))
 
     assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_arrayparams_lists(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    lspec = SpectrumAnalyzer.listspectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(lspec)
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(lspec)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(lspec)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(lspec, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    lspec.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (lspec, lspec.get()))
+
+    assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500),
+       M=hst.integers(min_value=4, max_value=250))
+def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
+
+    tspec = SpectrumAnalyzer.tuplespectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(tspec)
+    assert len(meas.parameters) == 2
+    assert meas.parameters[str(tspec)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(tspec)].type == 'numeric'
+    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(tspec, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    tspec.npts = M
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (tspec, tspec.get()))
+
+    assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500))
+def test_datasaver_array_parameters_channel(experiment, channel_array_instrument,
+                                    DAC, N):
+
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_array_parameter
+
+    meas.register_parameter(array_param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(array_param, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N * M
 
 
 def test_load_legacy_files_2D(experiment):

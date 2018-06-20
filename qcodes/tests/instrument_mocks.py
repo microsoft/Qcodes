@@ -57,8 +57,6 @@ class MockMetaParabola(Instrument):
     '''
     Test for a meta instrument, has a tunable gain knob
     '''
-    # TODO (giulioungaretti) remove unneded shared_kwargs
-    shared_kwargs = ['mock_parabola_inst']
 
     def __init__(self, name, mock_parabola_inst, **kw):
         super().__init__(name, **kw)

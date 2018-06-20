@@ -21,11 +21,8 @@ branches:
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - pip install -r test_requirements.txt --upgrade
+    - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
-# Install a new version of Sphinx that correctly handles forward refs once 1.7.0 is out that should
-# be used instead
-    - pip install sphinx==1.7.0b2
     - pip install -e .
 
 before_script: # configure a headless display to test plot generation
@@ -38,7 +35,11 @@ script:
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     # build docs with warnings as errors
     - |
-      cd ../docs
+      cd ..
+      mypy qcodes --ignore-missing-imports --no-strict-optional
+
+    - |
+      cd docs
       make SPHINXOPTS="-W" html-api
     - cd ..
 

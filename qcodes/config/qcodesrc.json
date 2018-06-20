@@ -1,9 +1,10 @@
 {
     "core":{
-        "loglevel": "DEBUG",
+        "loglevel": "WARNING",
+        "file_loglevel": "INFO",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
         "register_magic": true,
-        "db_location": "./experiments.db",
+        "db_location": "~/experiments.db",
         "db_debug": false
     },
     "gui" :{
@@ -12,5 +13,13 @@
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot"
     },
-    "user": {}
+    "user": {
+        "scriptfolder": ".",
+        "mainfolder": "."
+    },
+    "station_configurator": {
+        "enable_forced_reconnect": false,
+        "default_folder": ".",
+        "default_file": "instrument_config.yml"
+    }
 }
