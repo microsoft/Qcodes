@@ -1,6 +1,7 @@
 import struct
 import logging
 import warnings
+import re
 
 import numpy as np
 import array as arr
@@ -1022,45 +1023,113 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
-    def generate_awg_file_from_forged_sequence(self, seq):
-        # TODO: create channel_cfg, sequence_cfg, preservechannelsettings
-        packed_waveforms = {}
-        # unfortunately the definitions of the sequence elements in terms of channel and step in `generate_awg_file` and the forged sequence definition are transposed. Start by filling out after schema and transpose at the end
-        wfname_l = []
-        nrep = []
-        trig_wait = []
-        goto_state = []
-        jump_to = []
+    
+    # def make_awg_file_from_forged_sequence(self, seq, channel_mapping: Dict[Union[str, int], Union[int, str]],
+    def make_awg_file_from_forged_sequence(self, seq, channel_mapping,
+                                           filename='customawgfile.awg', preservechannelsettings=True):
+        """
+        Makes an awg file form a forged sequence as produced by broadbean.sequence.Sequence.forge. The forged sequence is a dictionary (see broadbean.sequence.fs_schmema) that does not need to be created by broadbean.
+
+        Args:
+            seq: the sequence dictionary
+
+            channel_mapping: a dictionary that maps the abstract channel id as assigned (e.g. in broadbean) to a physical channel of the device. For this particular device the channels are integers starting at TODO: 1?. Unmapped channels will be ignored, so that one can create forged sequences accross several instruments.
+            filename: filename of the uploaded awg file. See :meth:`~make_send_and_load_awg_file`
+            preservechannelsettings: see :meth:`~make_send_and_load_awg_file`
+
+        """
+        n_channels = 4
+        self.available_signal_channels = list(range(1,n_channels+1))
+        self.available_marker_channels = [f'{m}M{c}'
+                                          for c in self.available_signal_channels
+                                          for m in [1,2]]
+        self.available_channels = self.available_signal_channels + self.available_marker_channels
+
+        waveforms = []
+        m1s = []
+        m2s = []
+        # unfortunately the definitions of the sequence elements in terms of channel and step in :meth:`make_and_send_awg_file` and the forged sequence definition are transposed. Start by filling out after schema and transpose at the end
+        # make...: [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+        # dict efectively: {elementid: {channelid: wfm}}
+        physical_channels = []
+
+        nreps = []
+        trig_waits = []
+        goto_states = []
+        jump_tos = []
+
+        first_step = True
         for step, elem in seq.items():
+            # TODO: add support for subsequences
             assert elem['type'] == 'element'
             content = elem['content']
             assert len(content.keys()) == 1
-            # get first element
-            # this seems very complicated but is probably necessary
-            # one could use pop, but this would change the content
-            content = content[list(content.keys())[0]]
-
+            # there is only one element int the dict with key `1` in case of type == element
+            # and no sequencing information, i.e. there is only one entry with key 'data'
             # waveform data
-            datadict = content['data']
-            step_waveform_names = []
-            for channel_name, data in datadict.items():
-                waveform_name = f'Step{step}_Channel{channel_name}'
-                packed_waveforms[waveform_name] = data
-                step_waveform_names.append(waveform_name)
-            wfname_l.append(step_waveform_names)
+            datadict = content[1]['data']
 
+            # obtain list of channels defined in the first step
+            if first_step:
+                mapped_channels = [channel_mapping.get(k, None) for k in datadict.keys()]
+                # filter out all channels that are not relevant for this instrument
+                physical_channels = [v for v in mapped_channels if v in self.available_signal_channels]
+                first_step = False
+
+            # create empty list with size of number of used channels
+            step_waveforms = [None] * len(physical_channels)
+            step_marker = [[None] * n_channels] * 2
+            for channel_id, data in datadict.items():
+                physical_channel = channel_mapping.get(channel_id, None)
+
+                if physical_channel in self.available_marker_channels:
+                    res  = re.match('^(?P<channel>\d+)M(?P<marker>\d+)$',
+                                    physical_channel)
+                    assert res is not None
+                    step_marker[int(res.group('marker'))-1][int(res.group('channel'))-1] = data
+                elif physical_channel in self.available_signal_channels:
+                    # treat the first step differently: here the channel order is defined
+                    try:
+                        index = physical_channels.index(physical_channel)
+                    except IndexError:
+                        #TODO: write error message
+                        raise
+                    step_waveforms[index] = data
+                else:
+                    # only proceed if the defined channel is available on the instrument
+                    # TODO: this needs some extra information in case we are using two instruments with the same channel names
+                    # e.g. always add a prefix with the instrument name.
+                    continue
+
+            if any(x is None for x in step_waveforms):
+                # TODO: error message
+                raise RuntimeError
+            #TODO: make more general such that one can create a sequence without signals but only markers
+            n_samples = len(step_waveforms[0])
+            for j in range(n_channels):
+                for i in range(2):
+                    if step_marker[i][j] is None:
+                        step_marker[i][j] = np.zeros(n_samples)
+            waveforms.append(step_waveforms)
+            m1s.append(step_marker[0])
+            m2s.append(step_marker[1])
             # sequencing
             seq_opts = elem['sequencing']
-            nrep.append(seq_opts.get('nrep', 1))
-            trig_wait.append(seq_opts.get('trig_wait', 0))
-            goto_state.append(seq_opts.get('goto_state',0))
-            jump_to.append(seq_opts.get('jump_to', 0))
+            nreps.append(seq_opts.get('nrep', 1))
+            trig_waits.append(seq_opts.get('trig_wait', 0))
+            goto_states.append(seq_opts.get('goto_state',0))
+            jump_tos.append(seq_opts.get('jump_to', 0))
         # transpose list of lists
-        wfname_l = [list(x) for x in zip(*wfname_l)]
+        waveforms = [list(x) for x in zip(*waveforms)]
         channel_cfg = {}
-        self.generate_awg_file(packed_waveforms, wfname_l, nrep, trig_wait,
-                               goto_state, jump_to, channel_cfg)
 
+
+        self.make_send_and_load_awg_file(waveforms, m1s, m2s,
+                                    nreps, trig_waits,
+                                    goto_states, jump_tos,
+                                    channels=physical_channels,
+                                    filename=filename,
+                                    preservechannelsettings=preservechannelsettings)
     def generate_awg_file(self,
                           packed_waveforms, wfname_l, nrep, trig_wait,
                           goto_state, jump_to, channel_cfg,
