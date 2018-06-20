@@ -42,8 +42,8 @@ class N51x1(VisaInstrument):
 
         self.add_parameter('rf_output',
                            get_cmd='OUTP:STAT?',
-                           set_cmd='OUTP:STAT ' + '{:s}',
-                           val_mapping={'on': '1', 'off': '0'})
+                           set_cmd='OUTP:STAT {}',
+                           val_mapping={'on': 1, 'off': 0})
                             
         self.connect_message()
         
