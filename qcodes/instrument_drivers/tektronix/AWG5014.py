@@ -7,8 +7,11 @@ import array as arr
 
 from time import sleep, localtime
 from io import BytesIO
+from functools import wraps, WRAPPER_ASSIGNMENTS
+
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
 
 
@@ -903,7 +906,7 @@ class Tektronix_AWG5014(VisaInstrument):
         been changed from their default value and put them in a
         dictionary that can easily be written into an awg file, so as
         to prevent said awg file from falling back to default values.
-        (See self.generate_awg_file and self.AWG_FILE_FORMAT_CHANNEL)
+        (See :meth:`~make_awg_file` and :meth:`qcodes.instrument_drivers.tektronix.AWG5014.Tektronix_AWG5014.AWG_FILE_FORMAT_CHANNEL`)
         NOTE: This only works for settings changed via the corresponding
         QCoDeS parameter.
 
@@ -1022,7 +1025,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
-    def generate_awg_file(self,
+
+    def _generate_awg_file(self,
                           packed_waveforms, wfname_l, nrep, trig_wait,
                           goto_state, jump_to, channel_cfg,
                           sequence_cfg=None,
@@ -1163,6 +1167,11 @@ class Tektronix_AWG5014(VisaInstrument):
                     wf_record_str.getvalue() + seq_record_str.getvalue())
         return awg_file
 
+    @deprecate(alternative='make_awg_file, _generate_awg_file')
+    @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    def generate_awg_file(self, *args, **kwargs):
+        self._generate_awg_file(*args, **kwargs)
+
     def send_awg_file(self, filename, awg_file, verbose=False):
         """
         Writes an .awg-file onto the disk of the AWG.
@@ -1172,7 +1181,7 @@ class Tektronix_AWG5014(VisaInstrument):
             filename (str): The name that the file will get on
                 the AWG.
             awg_file (bytes): A byte sequence containing the awg_file.
-                Usually the output of self.generate_awg_file.
+                Usually the output of self.make_awg_file.
             verbose (bool): A boolean to allow/suppress printing of messages
                 about the status of the filw writing. Default: False.
         """
@@ -1201,6 +1210,83 @@ class Tektronix_AWG5014(VisaInstrument):
         self.visa_handle.write_raw(s)
         # we must update the appropriate parameter(s) for the sequence
         self.sequence_length.set(self.sequence_length.get())
+
+    def make_awg_file(self, waveforms, m1s, m2s,
+                      nreps, trig_waits,
+                      goto_states, jump_tos,
+                      channels=None, preservechannelsettings=True):
+        """
+        Args:
+            waveforms (list): A list of the waveforms to be packed. The list
+                should be filled like so:
+                [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+                Each waveform should be a numpy array with values in the range
+                -1 to 1 (inclusive). If you do not wish to send waveforms to
+                channels 1 and 2, use the channels parameter.
+
+            m1s (list): A list of marker 1's. The list should be filled
+                like so:
+                [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            m2s (list): A list of marker 2's. The list should be filled
+                like so:
+                [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            nreps (list): List of integers specifying the no. of
+                repetions per sequence element.  Allowed values: 0 to
+                65536. O corresponds to Infinite repetions.
+
+            trig_waits (list): List of len(segments) of integers specifying the
+                trigger wait state of each sequence element.
+                Allowed values: 0 (OFF) or 1 (ON).
+
+            goto_states (list): List of len(segments) of integers
+                specifying the goto state of each sequence
+                element. Allowed values: 0 to 65536 (0 means next)
+
+            jump_tos (list): List of len(segments) of integers specifying
+                the logic jump state for each sequence element. Allowed values:
+                0 (OFF) or 1 (ON).
+
+            channels (list): List of channels to send the waveforms to.
+                Example: [1, 3, 2]
+
+            preservechannelsettings (bool): If True, the current channel
+                settings are found from the parameter history and added to
+                the .awg file. Else, channel settings are not written in the
+                file and will be reset to factory default when the file is
+                loaded. Default: True.
+            """
+        packed_wfs = {}
+        waveform_names = []
+        if not isinstance(waveforms[0], list):
+            waveforms = [waveforms]
+            m1s = [m1s]
+            m2s = [m2s]
+        for ii in range(len(waveforms)):
+            namelist = []
+            for jj in range(len(waveforms[ii])):
+                if channels is None:
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
+                else:
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
+                namelist.append(thisname)
+                package = self.pack_waveform(waveforms[ii][jj],
+                                             m1s[ii][jj],
+                                             m2s[ii][jj])
+                packed_wfs[thisname] = package
+            waveform_names.append(namelist)
+
+        wavenamearray = np.array(waveform_names, dtype='str')
+
+        channel_cfg = {}
+
+        return self._generate_awg_file(
+            packed_wfs, wavenamearray, nreps, trig_waits, goto_states,
+            jump_tos, channel_cfg,
+            preservechannelsettings=preservechannelsettings)
 
     def make_send_and_load_awg_file(self, waveforms, m1s, m2s,
                                     nreps, trig_waits,
@@ -1259,40 +1345,15 @@ class Tektronix_AWG5014(VisaInstrument):
                 default values. Default: True.
         """
 
+        # waveform names and the dictionary of packed waveforms
+        awg_file = self.make_awg_file(
+            waveforms, m1s, m2s, nreps, trig_waits,
+            goto_states, jump_tos, channels=channels,
+            preservechannelsettings=preservechannelsettings)
+
         # by default, an unusable directory is targeted on the AWG
         self.visa_handle.write('MMEMory:CDIRectory ' +
                                '"C:\\Users\\OEM\\Documents"')
-
-        # waveform names and the dictionary of packed waveforms
-        packed_wfs = {}
-        waveform_names = []
-        if not isinstance(waveforms[0], list):
-            waveforms = [waveforms]
-            m1s = [m1s]
-            m2s = [m2s]
-        for ii in range(len(waveforms)):
-            namelist = []
-            for jj in range(len(waveforms[ii])):
-                if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
-                else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
-                namelist.append(thisname)
-                package = self.pack_waveform(waveforms[ii][jj],
-                                             m1s[ii][jj],
-                                             m2s[ii][jj])
-                packed_wfs[thisname] = package
-            waveform_names.append(namelist)
-
-        wavenamearray = np.array(waveform_names, dtype='str')
-
-        channel_cfg = {}
-
-        awg_file = self.generate_awg_file(packed_wfs,
-                                          wavenamearray,
-                                          nreps, trig_waits, goto_states,
-                                          jump_tos, channel_cfg,
-                                          preservechannelsettings=preservechannelsettings)
 
         self.send_awg_file(filename, awg_file)
         currentdir = self.visa_handle.query('MMEMory:CDIRectory?')
@@ -1347,46 +1408,19 @@ class Tektronix_AWG5014(VisaInstrument):
             channels (list): List of channels to send the waveforms to.
                 Example: [1, 3, 2]
 
-            filename (str): The full path of the .awg-file. Should end with the
-                .awg extension. Default: 'customawgfile.awg'
-
             preservechannelsettings (bool): If True, the current channel
                 settings are found from the parameter history and added to
                 the .awg file. Else, channel settings are not written in the
                 file and will be reset to factory default when the file is
                 loaded. Default: True.
+
+            filename (str): The full path of the .awg-file. Should end with the
+                .awg extension. Default: 'customawgfile.awg'
         """
-
-        packed_wfs = {}
-        waveform_names = []
-        if not isinstance(waveforms[0], list):
-            waveforms = [waveforms]
-            m1s = [m1s]
-            m2s = [m2s]
-        for ii in range(len(waveforms)):
-            namelist = []
-            for jj in range(len(waveforms[ii])):
-                if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
-                else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
-                namelist.append(thisname)
-                package = self.pack_waveform(waveforms[ii][jj],
-                                             m1s[ii][jj],
-                                             m2s[ii][jj])
-                packed_wfs[thisname] = package
-            waveform_names.append(namelist)
-
-        wavenamearray = np.array(waveform_names, dtype='str')
-
-        channel_cfg = {}
-
-        awg_file = self.generate_awg_file(packed_wfs,
-                                          wavenamearray,
-                                          nreps, trig_waits, goto_states,
-                                          jump_tos, channel_cfg,
-                                          preservechannelsettings=preservechannelsettings)
-
+        awg_file = self.make_awg_file(
+            waveforms, m1s, m2s, nreps, trig_waits,
+            goto_states, jump_tos, channels=channels,
+            preservechannelsettings=preservechannelsettings)
         with open(filename, 'wb') as fid:
             fid.write(awg_file)
 
@@ -1401,7 +1435,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         return self.ask('SYSTEM:ERRor:NEXT?')
 
-    def pack_waveform(self, wf, m1, m2):
+    def _pack_waveform(self, wf, m1, m2):
         """
         Converts/packs a waveform and two markers into a 16-bit format
         according to the AWG Integer format specification.
@@ -1447,6 +1481,11 @@ class Tektronix_AWG5014(VisaInstrument):
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
+
+    @deprecate(reason='this function is for private use only.')
+    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    def pack_waveform(self, *args, **kwargs):
+        self._pack_waveform(*args, **kwargs)
 
     ###########################
     # Waveform file functions #

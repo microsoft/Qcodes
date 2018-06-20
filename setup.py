@@ -47,7 +47,6 @@ setup(name='qcodes',
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 3 :: Only',
-          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Topic :: Scientific/Engineering'
       ],
@@ -56,13 +55,16 @@ setup(name='qcodes',
       # packages=find_packages(exclude=["*.tests", "tests"]),
       packages=find_packages(),
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
-                               'monitor/dist/css/*', 'config/*.json']},
+                               'monitor/dist/css/*', 'config/*.json',
+                               'instrument/sims/*.yaml',
+                               'tests/dataset/fixtures/2018-01-17/*/*']},
       install_requires=[
-          'numpy>=1.10',
+          'numpy>=1.10,<1.14',
           'pyvisa>=1.8',
           'h5py>=2.6',
-          'websockets>=3.2,<3.4',
-          'jsonschema'
+          'websockets>=3.2',
+          'jsonschema',
+          'pyzmq'
       ],
 
       test_suite='qcodes.tests',

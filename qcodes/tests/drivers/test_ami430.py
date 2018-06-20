@@ -8,7 +8,7 @@ import logging
 from typing import List, Dict
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
+from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.math.field_vector import FieldVector
 
@@ -263,7 +263,7 @@ def test_measured(current_driver, set_target):
                                      cartesian_z])
 
 
-def get_time_dict(messages: List[str]) -> Dict[float, str]:
+def get_time_dict(messages: List[str]) -> Dict[str, float]:
     """
     Helper function used in test_ramp_down_first
     """
@@ -385,17 +385,16 @@ def test_warning_increased_max_ramp_rate():
     ramp rate. We want the user to be really sure what he or she is
     doing, as this could risk quenching the magnet
     """
-    max_ramp_rate = AMI430_VISA.default_current_ramp_limit
+    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
     # Increasing the maximum ramp rate should raise a warning
     target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.raises(Warning) as excinfo:
+    with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
         AMI430_VISA("testing_increased_max_ramp_rate",
                     address='GPIB::4::65535::INSTR', visalib=visalib,
                     terminator='\n', port=1,
                     current_ramp_limit=target_ramp_rate)
-
-    assert "Increasing maximum ramp rate" in excinfo.value.args[0]
+        assert len(excinfo) >= 1 # Check we at least one warning.
 
 
 def test_ramp_rate_exception(current_driver):
@@ -403,13 +402,13 @@ def test_ramp_rate_exception(current_driver):
     Test that an exception is raised if we try to set the ramp rate
     to a higher value than is allowed
     """
-    max_ramp_rate = AMI430_VISA.default_current_ramp_limit
+    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
     target_ramp_rate = max_ramp_rate + 0.01
     ix = current_driver._instrument_x
 
     with pytest.raises(Exception) as excinfo:
         ix.ramp_rate(target_ramp_rate)
 
-    errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
+        errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
 
-    assert errmsg in excinfo.value.args[0]
+        assert errmsg in excinfo.value.args[0]

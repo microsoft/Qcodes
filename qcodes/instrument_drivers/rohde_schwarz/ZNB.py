@@ -1,9 +1,9 @@
 import logging
+from typing import Optional
 
 from qcodes import VisaInstrument
 from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
-from cmath import phase
 import numpy as np
 from qcodes import MultiParameter, ArrayParameter
 
@@ -12,27 +12,7 @@ log = logging.getLogger(__name__)
 
 class FrequencySweepMagPhase(MultiParameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz ZNB trace.
-
-    Instrument returns an list of transmission data in the form of a list of
-    complex numbers taken from a frequency sweep.
-
-    This is a multiparameter containing both amplitude and phase
-
-    Args:
-        name: parameter name
-        instrument: instrument the parameter belongs to
-        start: starting frequency of sweep
-        stop: ending frequency of sweep
-        npts: number of points in frequency sweep
-
-    Methods:
-          set_sweep(start, stop, npts): sets the shapes and
-              setpoint arrays of the parameter to correspond with the sweep
-          get(): executes a sweep and returns magnitude and phase arrays
-
-    TODO:
-      - ability to choose for linear or db in magnitude return
+    Sweep that return magnitude and phase.
     """
 
     def __init__(self, name, instrument, start, stop, npts, channel):
@@ -42,11 +22,12 @@ class FrequencySweepMagPhase(MultiParameter):
         self._channel = channel
         self.names = ('magnitude',
                       'phase')
-        self.labels = ('{} magnitude'.format(instrument._vna_parameter),
-                       '{} phase'.format(instrument._vna_parameter))
+        self.labels = ('{} magnitude'.format(instrument.short_name),
+                       '{} phase'.format(instrument.short_name))
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
-        self.setpoint_names = (('frequency',), ('frequency',))
+        self.setpoint_labels = (('{} frequency'.format(instrument.short_name),), ('{} frequency'.format(instrument.short_name),))
+        self.setpoint_names = (('{}_frequency'.format(instrument.short_name),), ('{}_frequency'.format(instrument.short_name),))
 
     def set_sweep(self, start, stop, npts):
         #  needed to update config of the software parameter on sweep change
@@ -55,38 +36,12 @@ class FrequencySweepMagPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get(self):
-        if not self._instrument._parent.rf_power():
-            log.warning("RF output is off when getting mag phase")
-        # it is possible that the instrument and qcodes disagree about
-        # which parameter is measured on this channel
-        instrument_parameter = self._instrument.vna_parameter()
-        if instrument_parameter != self._instrument._vna_parameter:
-            raise RuntimeError("Invalid parameter. Tried to measure "
-                               "{} got {}".format(self._instrument._vna_parameter,
-                                                  instrument_parameter))
-        self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
-        self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
-        self._instrument._parent.cont_meas_off()
-
-        # instrument averages over its last 'avg' number of sweeps
-        # need to ensure averaged result is returned
-        for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-        data_str = self._instrument.ask(
-            'CALC{}:DATA? SDAT'.format(self._channel)).split(',')
-        data_list = [float(v) for v in data_str]
-
-        # data_list of complex numbers [re1,im1,re2,im2...]
-        data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
-        mag_array, phase_array = [], []
-        for comp in data_arr:
-            complex_num = complex(comp[0], comp[1])
-            mag_array.append(abs(complex_num))
-            phase_array.append(phase(complex_num))
-        self._instrument._parent.cont_meas_on()
-        return mag_array, phase_array
-
+    def get_raw(self):
+        old_format = self._instrument.format()
+        self._instrument.format('Complex')
+        data = self._instrument._get_sweep_data(force_polar = True)
+        self._instrument.format(old_format)
+        return abs(data), np.angle(data)
 
 class FrequencySweep(ArrayParameter):
     """
@@ -108,15 +63,15 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
-
     def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
                          unit='dB',
                          label='{} magnitude'.format(
-                             instrument._vna_parameter),
+                             instrument.short_name),
                          setpoint_units=('Hz',),
-                         setpoint_names=('{}_frequency'.format(instrument._vna_parameter),))
+                         setpoint_labels=('{} frequency'.format(instrument.short_name),),
+                         setpoint_names=('{}_frequency'.format(instrument.short_name),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -127,43 +82,34 @@ class FrequencySweep(ArrayParameter):
         self.setpoints = (f,)
         self.shape = (npts,)
 
-    def get(self):
-        if not self._instrument._parent.rf_power():
-            log.warning("RF output is off when getting mag")
-        # it is possible that the instrument and qcodes disagree about
-        # which parameter is measured on this channel
-        instrument_parameter = self._instrument.vna_parameter()
-        if instrument_parameter != self._instrument._vna_parameter:
-            raise RuntimeError("Invalid parameter. Tried to measure "
-                               "{} got {}".format(self._instrument._vna_parameter,
-                                                  instrument_parameter))
-        self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
-        self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
-        self._instrument._parent.cont_meas_off()
-
-        # instrument averages over its last 'avg' number of sweeps
-        # need to ensure averaged result is returned
-        for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-        data_str = self._instrument.ask(
-            'CALC{}:DATA? FDAT'.format(self._channel))
-        data = np.array(data_str.rstrip().split(',')).astype('float64')
+    def get_raw(self):
+        data = self._instrument._get_sweep_data()
         if self._instrument.format() in ['Polar', 'Complex',
                                          'Smith', 'Inverse Smith']:
             log.warning("QCoDeS Dataset does not currently support Complex "
-                        "values. Will discard the imaginary part.")
-            data = data[0::2] + 1j * data[1::2]
-        self._instrument._parent.cont_meas_on()
+                        "values. Will discard the imaginary part. In order to "
+                        "acquire phase and amplitude use the "
+                        "FrequencySweepMagPhase parameter.")
         return data
 
 
 class ZNBChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent, name, channel, vna_parameter: str=None) -> None:
+        """
+        Args:
+            parent: Instrument that this channel is bound to.
+            name: Name to use for this channel.
+            vna_parameter: Name of parameter on the vna that this should
+                measure such as S12. If left empty this will fall back to
+                `name`.
+        """
         n = channel
         self._instrument_channel = channel
         self._tracename = "Trc{}".format(channel)
-        self._vna_parameter = name
+        if vna_parameter is None:
+            vna_parameter = name
+        self._vna_parameter = vna_parameter
         super().__init__(parent, name)
 
         # map hardware channel to measurement
@@ -172,6 +118,22 @@ class ZNBChannel(InstrumentChannel):
         self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
                                                        self._tracename,
                                                        self._vna_parameter))
+
+        # source power is dependent on model, but not well documented.
+        # here we assume -60 dBm for ZNB20, the others are set,
+        # due to lack of knowledge, to -80 dBm as of before the edit
+        full_modelname = self._parent.get_idn()['model']
+        model: Optional[str]
+        if full_modelname is not None:
+            model = full_modelname.split('-')[0]
+        else:
+            model = None
+        if model == 'ZNB4':
+            self._min_source_power = -80
+        elif model == 'ZNB8':
+            self._min_source_power = -80
+        elif model == 'ZNB20':
+            self._min_source_power = -60
 
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
@@ -183,15 +145,21 @@ class ZNBChannel(InstrumentChannel):
                            unit='dBm',
                            get_cmd='SOUR{}:POW?'.format(n),
                            set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
-                           get_parser=lambda x: int(round(float(x))),
-                           vals=vals.Numbers(-150, 25))
+                           get_parser=float,
+                           vals=vals.Numbers(self._min_source_power, 25))
+        # there is an 'increased bandwidth option' (p. 4 of manual) that does
+        # not get taken into account here
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            unit='Hz',
                            get_cmd='SENS{}:BAND?'.format(n),
                            set_cmd='SENS{}:BAND {{:.4f}}'.format(n),
                            get_parser=int,
-                           vals=vals.Numbers(1, 1e6))
+                           vals=vals.Enum(
+                               *np.append(10**6,
+                                          np.kron([1, 1.5, 2, 3, 5, 7],
+                                                  10**np.arange(6))))
+                           )
         self.add_parameter(name='avg',
                            label='Averages',
                            unit='',
@@ -289,7 +257,7 @@ class ZNBChannel(InstrumentChannel):
         self.write('CALC{}:FORM {}'.format(channel, val))
         self.trace.unit = unit_mapping[val]
         self.trace.label = "{} {}".format(
-            self.vna_parameter(), label_mapping[val])
+            self.short_name, label_mapping[val])
 
     def _strip(self, var):
         "Strip newline and quotes from instrument reply"
@@ -297,10 +265,8 @@ class ZNBChannel(InstrumentChannel):
 
     def _set_start(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:START {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:START {:.7f}'.format(channel, val))
         stop = self.stop()
-        npts = self.npts()
-
         if val >= stop:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
@@ -309,54 +275,90 @@ class ZNBChannel(InstrumentChannel):
         if val != start:
             log.warning(
                 "Could not set start to {} setting it to {}".format(val, start))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        self._update_traces()
 
     def _set_stop(self, val):
         channel = self._instrument_channel
         start = self.start()
-        npts = self.npts()
         if val <= start:
             raise ValueError(
                 "Stop frequency must be larger than start frequency.")
-        self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:STOP {:.7f}'.format(channel, val))
         # we get stop as the vna may not be able to set it to the exact value provided
         stop = self.stop()
         if val != stop:
             log.warning(
                 "Could not set stop to {} setting it to {}".format(val, stop))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        self._update_traces()
 
     def _set_npts(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:SWE:POIN {:.4f}'.format(channel, val))
-        start = self.start()
-        stop = self.stop()
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(start, stop, val)
-        self.trace_mag_phase.set_sweep(start, stop, val)
+        self.write('SENS{}:SWE:POIN {:.7f}'.format(channel, val))
+        self._update_traces()
 
     def _set_span(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:SPAN {:.4f}'.format(channel, val))
-        start = self.start()
-        stop = self.stop()
-        npts = self.npts()
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        self.write('SENS{}:FREQ:SPAN {:.7f}'.format(channel, val))
+        self._update_traces()
 
     def _set_center(self, val):
         channel = self._instrument_channel
-        self.write('SENS{}:FREQ:CENT {:.4f}'.format(channel, val))
+        self.write('SENS{}:FREQ:CENT {:.7f}'.format(channel, val))
+        self._update_traces()
+
+    def _update_traces(self):
+        """ updates start, stop and npts of all trace parameters"""
         start = self.start()
         stop = self.stop()
         npts = self.npts()
-        self.trace.set_sweep(start, stop, npts)
-        self.trace_mag_phase.set_sweep(start, stop, npts)
+        for _, parameter in self.parameters.items():
+            if isinstance(parameter, (ArrayParameter, MultiParameter)):
+                try:
+                    parameter.set_sweep(start, stop, npts)
+                except AttributeError:
+                    pass
 
+    def _get_sweep_data(self, force_polar=False):
+
+        if not self._parent.rf_power():
+            log.warning("RF output is off when getting sweep data")
+        # it is possible that the instrument and qcodes disagree about
+        # which parameter is measured on this channel
+        instrument_parameter = self.vna_parameter()
+        if instrument_parameter != self._vna_parameter:
+            raise RuntimeError("Invalid parameter. Tried to measure "
+                               "{} got {}".format(self._vna_parameter,
+                                                  instrument_parameter))
+        self.write('SENS{}:AVER:STAT ON'.format(self._instrument_channel))
+        self.write('SENS{}:AVER:CLE'.format(self._instrument_channel))
+
+        # preserve original state of the znb
+        initial_state = self.status()
+        self.status(1)
+        self._parent.cont_meas_off()
+        try:
+            # if force polar is set, the SDAT data format will be used. Here
+            # the data will be transfered as a complex number independet of
+            # the set format in the instrument.
+            if force_polar:
+                data_format_command = 'SDAT'
+            else:
+                data_format_command = 'FDAT'
+            # instrument averages over its last 'avg' number of sweeps
+            # need to ensure averaged result is returned
+            for avgcount in range(self.avg()):
+                self.write('INIT{}:IMM; *WAI'.format(self._instrument_channel))
+            data_str = self.ask(
+                'CALC{}:DATA? {}'.format(self._instrument_channel,
+                                         data_format_command))
+            data = np.array(data_str.rstrip().split(',')).astype('float64')
+            if self.format() in ['Polar', 'Complex',
+                                 'Smith', 'Inverse Smith']:
+                data = data[0::2] + 1j * data[1::2]
+        finally:
+            self._parent.cont_meas_on()
+            self.status(initial_state)
+        return data
 
 class ZNB(VisaInstrument):
     """
@@ -377,7 +379,10 @@ class ZNB(VisaInstrument):
     - check initialisation settings and test functions
     """
 
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
+    CHANNEL_CLASS = ZNBChannel
+
+
+    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 
@@ -386,7 +391,11 @@ class ZNB(VisaInstrument):
         # See page 1025 in the manual. 7.3.15.10 for details of max/min freq
         # no attempt to support ZNB40, not clear without one how the format
         # is due to variants
-        model = self.get_idn()['model'].split('-')[0]
+        fullmodel = self.get_idn()['model']
+        if fullmodel is not None:
+            model = fullmodel.split('-')[0]
+        else:
+            raise RuntimeError("Could not determine ZNB model")
         # format seems to be ZNB8-4Port
         if model == 'ZNB4':
             self._max_freq = 4.5e9
@@ -397,6 +406,8 @@ class ZNB(VisaInstrument):
         elif model == 'ZNB20':
             self._max_freq = 20e9
             self._min_freq = 100e3
+        else:
+            raise RuntimeError("Unsupported ZNB model {}".format(model))
         self.add_parameter(name='num_ports',
                            get_cmd='INST:PORT:COUN?',
                            get_parser=int)
@@ -418,27 +429,27 @@ class ZNB(VisaInstrument):
             num_ports, num_ports))
         self.add_function('display_single_window',
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
+        self.add_function('display_dual_window',
+                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
+        self.reset()
         self.clear_channels()
-        channels = ChannelList(self, "VNAChannels", ZNBChannel,
+        channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
                                snapshotable=True)
         self.add_submodule("channels", channels)
         if init_s_params:
-            n = 1
             for i in range(1, num_ports + 1):
                 for j in range(1, num_ports + 1):
                     ch_name = 'S' + str(i) + str(j)
                     self.add_channel(ch_name)
-                    n += 1
             self.channels.lock()
-
-        self.initialise()
-        self.connect_message()
-
-        if init_s_params:
             self.display_sij_split()
             self.channels.autoscale()
+
+        self.update_display_on()
+        self.rf_off()
+        self.connect_message()
 
     def display_grid(self, rows: int, cols: int):
         """
@@ -446,29 +457,21 @@ class ZNB(VisaInstrument):
         """
         self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
 
-    def add_channel(self, vna_parameter: str):
-        n_channels = len(self.channels)
-        channel = ZNBChannel(self, vna_parameter, n_channels + 1)
+    def add_channel(self, channel_name: str, **kwargs):
+        i_channel = len(self.channels) + 1
+        channel = self.CHANNEL_CLASS(self, channel_name, i_channel, **kwargs)
         self.channels.append(channel)
-        if n_channels == 0:
+        if i_channel == 1:
             self.display_single_window()
-
-    def _set_default_values(self):
-        for channel in self.channels:
-            channel.start(1e6)
-            channel.stop(2e6)
-            channel.npts(10)
-            channel.power(-50)
-
-    def initialise(self):
-        for n in range(1, len(self.channels)):
-            self.write('SENS{}:SWE:TYPE LIN'.format(n))
-            self.write('SENS{}:SWE:TIME:AUTO ON'.format(n))
-            self.write('TRIG{}:SEQ:SOUR IMM'.format(n))
-            self.write('SENS{}:AVER:STAT ON'.format(n))
-        self.update_display_on()
-        self._set_default_values()
-        self.rf_off()
+        if i_channel == 2:
+            self.display_dual_window()
+        # shortcut
+        setattr(self, channel_name, channel)
+        # initialising channel
+        self.write('SENS{}:SWE:TYPE LIN'.format(i_channel))
+        self.write('SENS{}:SWE:TIME:AUTO ON'.format(i_channel))
+        self.write('TRIG{}:SEQ:SOUR IMM'.format(i_channel))
+        self.write('SENS{}:AVER:STAT ON'.format(i_channel))
 
     def clear_channels(self):
         """
