@@ -141,6 +141,8 @@ class SignalHound_USB_SA124B(Instrument):
         self.device_type()
 
         t1 = time()
+        # poor-man's connect_message. We could overwrite get_idn
+        # instead and use connect_message.
         print('Initialized SignalHound in %.2fs' % (t1-t0))
 
     @classmethod
