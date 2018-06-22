@@ -1270,9 +1270,11 @@ class Tektronix_AWG5014(VisaInstrument):
                 else:
                     thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
                 namelist.append(thisname)
-                package = self.pack_waveform(waveforms[ii][jj],
-                                             m1s[ii][jj],
-                                             m2s[ii][jj])
+
+                package = self._pack_waveform(waveforms[ii][jj],
+                                              m1s[ii][jj],
+                                              m2s[ii][jj])
+
                 packed_wfs[thisname] = package
             waveform_names.append(namelist)
 
