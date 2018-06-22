@@ -1167,7 +1167,7 @@ class Tektronix_AWG5014(VisaInstrument):
     @deprecate(alternative='make_awg_file, _generate_awg_file')
     @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
     def generate_awg_file(self, *args, **kwargs):
-        self._generate_awg_file(*args, **kwargs)
+        return self._generate_awg_file(*args, **kwargs)
 
     def send_awg_file(self, filename, awg_file, verbose=False):
         """
@@ -1484,7 +1484,7 @@ class Tektronix_AWG5014(VisaInstrument):
     @deprecate(reason='this function is for private use only.')
     @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
     def pack_waveform(self, *args, **kwargs):
-        self._pack_waveform(*args, **kwargs)
+        return self._pack_waveform(*args, **kwargs)
 
     ###########################
     # Waveform file functions #
