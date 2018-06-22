@@ -1025,12 +1025,11 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
-
     def _generate_awg_file(self,
-                          packed_waveforms, wfname_l, nrep, trig_wait,
-                          goto_state, jump_to, channel_cfg,
-                          sequence_cfg=None,
-                          preservechannelsettings=False):
+                           packed_waveforms, wfname_l, nrep, trig_wait,
+                           goto_state, jump_to, channel_cfg,
+                           sequence_cfg=None,
+                           preservechannelsettings=False):
         """
         This function generates an .awg-file for uploading to the AWG.
         The .awg-file contains a waveform list, full sequencing information
