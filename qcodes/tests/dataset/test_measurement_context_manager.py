@@ -401,14 +401,47 @@ def test_subscriptions(experiment, DAC, DMM):
             expected_list += [c for c in (a, b) if c > 7]
 
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
-            datasaver.flush_data_to_database()
+            datasaver.flush_data_to_database()  # this is flaky, the same way. we can only assert once we are sure that subscriber callbacks have been executed, which happens if in _loop the queue is more than min_count; finally if there is a lot of stuff ghoing on on pc that the line on the calls to subscribers have not yet been execited while now the main thread tries to assert.
 
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
-    assert len(datasaver._dataset.subscribers) == 0
+    assert len(datasaver._dataset.subscribers) == 0 # tests that after runner cntx mng is exited, dataset is unsubscribed from subscribers
 
 
+def test_subscriptions_stop_before_queue_flushed(experiment, DAC):
+
+    def sub_get_x_vals(results, length, state):
+        """
+        A list of all x values
+        """
+        state += [res[0] for res in results]
+
+    meas = Measurement(exp=experiment)
+    meas.register_parameter(DAC.ch1)
+
+    xvals = []
+
+    meas.add_subscriber(sub_get_x_vals, state=xvals)
+
+    given_xvals = [0, 1, 2, 3]
+
+    with meas.run() as datasaver:
+
+        subscriber_obj = list(datasaver.dataset.subscribers.values())[0]
+        subscriber_obj.min_count = int(len(given_xvals) + 1)
+
+        for x in given_xvals:
+            datasaver.add_result((DAC.ch1, x))
+
+    print(f"xvals: {xvals}")
+    print(f"given_xvals: {list(given_xvals)}")
+
+    assert xvals == list(given_xvals)
+
+
+
+# @reproduce_failure('3.60.1', b'AAJf')
 @settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))
 def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
