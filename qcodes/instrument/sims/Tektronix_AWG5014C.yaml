@@ -38,6 +38,54 @@ devices:
         setter:
           q: "TRIGger:IMPedance {}"
 
+      clock source:
+        default: "INT"
+        getter:
+          q: "AWGControl:CLOCk:SOURce?"
+          r: "{}"
+        setter:
+          q: "AWGControl:CLOCk:SOURce {}"
+
+      reference source:
+        default: "INT"
+        getter:
+          q: "SOURce1:ROSCillator:SOURce?"
+          r: "{}"
+        setter:
+          q: "SOURce1:ROSCillator:SOURce {}"
+
+      trigger source:
+        default: "INT"
+        getter:
+          q: "TRIGger:SOURce?"
+          r: "{}"
+        setter:
+          q: "TRIGger:SOURce {}"
+
+      trigger level:
+        default: 0
+        getter:
+          q: "TRIGger:LEVel?"
+          r: "{}"
+        setter:
+          q: "TRIGger:LEVel {}"
+
+      event impedance:
+        default: 50
+        getter:
+          q: "EVENt:IMPedance?"
+          r: "{}"
+        setter:
+          q: "EVENt:IMPedance {}"
+
+      event level:
+        default: 0
+        getter:
+          q: "EVENt:LEVel?"
+          r: "{}"
+        setter:
+          q: "EVENt:LEVel {}"
+
 resources:
   GPIB::1::INSTR:
     device: device 1
