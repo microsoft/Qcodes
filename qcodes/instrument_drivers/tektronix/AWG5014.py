@@ -867,11 +867,9 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
-            'CLOCK_SOURCE': (1 if self.ask('AWGControl:CLOCk:' +
-                                           'SOURce?').startswith('INT')
+            'CLOCK_SOURCE': (1 if self.clock_source().startswith('INT')
                              else 2),  # Internal | External
-            'REFERENCE_SOURCE': (1 if self.ask('SOURce1:ROSCillator:' +
-                                               'SOURce?').startswith('INT')
+            'REFERENCE_SOURCE': (1 if self.ref_source().startswith('INT')
                                  else 2),  # Internal | External
             'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
             'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,
