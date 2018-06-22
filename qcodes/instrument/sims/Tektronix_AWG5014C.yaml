@@ -1,0 +1,43 @@
+# SIMULATED INSTRUMENT FOR TEKTRONIX AWG 5014C
+spec: "1.0"
+
+devices:
+  device 1:  # AWG5014C
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, AWG5014C, 1000, 0.1"
+
+    properties:
+
+      current_directory:
+        default: "\\Users\\OEM\\Documents"
+        getter:
+          q: "MMEMory:CDIRectory?"
+          r: "{}"
+        setter:
+          q: "MMEMory:CDIRectory {}"
+
+      clock frequency:
+        default: 1000000000
+        getter:
+          q: "SOURce:FREQuency?"
+          r: "{}"
+        setter:
+          q: "SOURce:FREQuency {}"
+
+      trigger impedance:
+        default: 50
+        getter:
+          q: "TRIGger:IMPedance?"
+          r: "{}"
+        setter:
+          q: "TRIGger:IMPedance {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
