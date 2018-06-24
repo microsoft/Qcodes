@@ -902,3 +902,30 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+
+class TestSetContextManager(TestCase):
+
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+        self.instrument.add_parameter(
+            "a",
+            set_cmd=None,
+            get_cmd=None
+        )
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+    def test_none_value(self):
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() is None
+
+    def test_context(self):
+        self.instrument.a.set(2)
+
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() == 2

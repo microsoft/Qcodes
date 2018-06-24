@@ -377,8 +377,9 @@ class DataSet(Sized):
 
         Args:
             - list of name, value dictionaries  where each
-              dictionary provides the values for all of the parameters in
-              that result.
+              dictionary provides the values for the parameters in
+              that result. If some parameters are missing the corresponding
+              values are assumed to be None
 
         Returns:
             - the index in the DataSet that the **first** result was stored at
@@ -387,9 +388,11 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
-        values = [list(val.values()) for val in results]
+        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        values = [[d.get(k, None) for k in expected_keys] for d in results]
+
         len_before_add = length(self.conn, self.table_name)
-        insert_many_values(self.conn, self.table_name, list(results[0].keys()),
+        insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         # TODO: should this not be made atomic?
         self.conn.commit()
