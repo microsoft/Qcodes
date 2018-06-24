@@ -2,14 +2,13 @@ from qcodes import VisaInstrument
 import numpy as np
 from qcodes.utils.validators import Numbers
 import time
-"""Driver for the Keysight PNA N5230A
-"""
+"""Driver for the Keysight PNA N5230A"""
 
 
 class N5230A(VisaInstrument):
     """
     This is the qcodes driver for Keysight/Agilent N5230A PNA-L Network Analyzer.
-    This should be simple to alter to work with other keysight PNA-L
+    This should be simple to alter to work with other keysight PNAs
     """
 
     def __init__(self, name, address, **kwargs):
