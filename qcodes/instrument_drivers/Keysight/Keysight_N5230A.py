@@ -55,35 +55,35 @@ class N5230A(VisaInstrument):
                            get_cmd=':SENS:BAND?',
                            set_cmd=':SENS:BAND {:.16f}',
                            get_parser=float,
-                           unit='hz')
+                           unit='Hz')
 
         self.add_parameter('center_frequency',
                            label='Center Frequency',
                            get_cmd=':SENS:FREQ:CENT?',
                            set_cmd=':SENS:FREQ:CENT {}',
                            get_parser=float,
-                           unit='hz')
+                           unit='Hz')
 
         self.add_parameter('start_frequency',
                            label='Start Frequency',
                            get_cmd=':SENS:FREQ:STAR?',
                            set_cmd=':SENS:FREQ:STAR {}',
                            get_parser=float,
-                           unit='hz')
+                           unit='Hz')
 
         self.add_parameter('stop_frequency',
                            label='Stop Frequency',
                            get_cmd=':SENS:FREQ:STOP?',
                            set_cmd=':SENS:FREQ:STOP {}',
                            get_parser=float,
-                           unit='hz')
+                           unit='Hz')
 
         self.add_parameter('span',
                            label='Span',
                            get_cmd=':SENS:FREQ:SPAN?',
                            set_cmd=':SENS:FREQ:SPAN {}',
                            get_parser=float,
-                           unit='hz')
+                           unit='Hz')
 
         self.add_parameter('s_parameter',
                            label='S parameter',
