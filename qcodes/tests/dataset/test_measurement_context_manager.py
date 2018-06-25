@@ -8,6 +8,8 @@ from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
 
+from qcodes.tests.common import retry_until_does_not_throw
+
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
@@ -416,8 +418,14 @@ def test_subscriptions(experiment, DAC, DMM):
             # queue which is populated via a trigger call from the SQL database, hence from this "main" thread it is
             # difficult to say whether the queue is empty because the subscriber callbacks have already been executed
             # or because the triggers of the SQL database has not been executed yet.
-            assert values_larger_than_7 == values_larger_than_7__expected
-            assert list(all_results_dict.keys()) == [result_number for result_number in range(1, num+1+1)]
+            #
+            # In order to overcome this problem, a special decorator is used to wrap the assertions. This is going to
+            # ensure that some time is given to the Subscriber threads to finish exhausting the queue.
+            @retry_until_does_not_throw(exception_class_to_expect=AssertionError, delay=0.5, tries=10)
+            def assert_states_updated_from_callbacks():
+                assert values_larger_than_7 == values_larger_than_7__expected
+                assert list(all_results_dict.keys()) == [result_number for result_number in range(1, num + 1 + 1)]
+            assert_states_updated_from_callbacks()
 
     # Ensure that after exiting the "run()" context, all subscribers get unsubscribed from the dataset
     assert len(datasaver._dataset.subscribers) == 0
