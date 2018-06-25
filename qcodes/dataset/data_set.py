@@ -78,7 +78,7 @@ class _Subscriber(Thread):
                  id_: str,
                  callback: Callable[..., None],
                  state: Optional[Any] = None,
-                 loop_sleep_time: int = 0,  # in seconds
+                 loop_sleep_time: int = 0,  # in milliseconds
                  min_queue_length: int = 1,
                  callback_kwargs: Optional[Dict[str, Any]]=None
                  ) -> None:
@@ -95,7 +95,7 @@ class _Subscriber(Thread):
         self.data_queue: Queue = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
-        self._loop_sleep_time = loop_sleep_time / 1000  # convert seconds to minutes
+        self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
         self.min_queue_length = min_queue_length
 
         if callback_kwargs is None:
