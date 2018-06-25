@@ -524,14 +524,14 @@ class SR86x(VisaInstrument):
                 "SIN": 0,
                 "POS": 1,
                 "POSTTL": 1,
+                "NEG": 2,
                 "NEGTTL": 2,
-                "NEG": 2
             }
         )
 
         self.add_parameter(
-            name="source",
-            label="Source",
+            name="reference_source",
+            label="Reference source",
             get_cmd="RSRC?",
             set_cmd="RSRC {}",
             val_mapping={
