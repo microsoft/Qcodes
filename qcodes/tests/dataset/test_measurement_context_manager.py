@@ -13,7 +13,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.sqlite_base import connect, init_db
+from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
@@ -421,6 +421,11 @@ def test_subscriptions(experiment, DAC, DMM):
 
     # Ensure that after exiting the "run()" context, all subscribers get unsubscribed from the dataset
     assert len(datasaver._dataset.subscribers) == 0
+
+    # Ensure that the triggers for each subscriber have been removed from the database
+    get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
+    triggers = atomic_transaction(datasaver._dataset.conn, get_triggers_sql).fetchall()
+    assert len(triggers) == 0
 
 
 def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment, DAC):

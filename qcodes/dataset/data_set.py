@@ -601,7 +601,7 @@ class DataSet(Sized):
             del self.subscribers[uuid]
 
     def _remove_trigger(self, name):
-        transaction(self.conn, f"DROP TRIGGER IF EXISTS name;")
+        transaction(self.conn, f"DROP TRIGGER IF EXISTS {name};")
 
     def unsubscribe_all(self):
         """
