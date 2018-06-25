@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Type
 from functools import wraps
 from time import sleep
 
@@ -12,7 +12,7 @@ def strip_qc(d, keys=('instrument', '__class__')):
     return d
 
 
-def retry_until_does_not_throw(exception_class_to_expect: Exception=AssertionError,
+def retry_until_does_not_throw(exception_class_to_expect: Type[Exception]=AssertionError,
                                tries: int=5,
                                delay: float=0.1) -> Callable:
     """
