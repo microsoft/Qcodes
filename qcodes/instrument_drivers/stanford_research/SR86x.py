@@ -170,15 +170,34 @@ class SR86xBuffer(InstrumentChannel):
         Returns:
             capture_len_in_kb (int)
         """
-        if capture_len_in_kb % 2:
-            log.warning("the capture length needs to be even. Setting to {}".format(capture_len_in_kb + 1))
-            capture_len_in_kb += 1
+        return self._parse_capture_length(capture_len_in_kb, issue_warning=True)
 
-        if not self.min_capture_length_in_kb <= capture_len_in_kb <= self.max_capture_length_in_kb:
+    def _parse_capture_length(self, capture_length_in_kb: int, issue_warning: bool=False) -> int:
+        """
+        Parse the capture length in kB according to the way buffer treats it. This method checks for the range
+        of the input value, and throws an error if the range is not satisfied. Additionally, if the input value
+        is odd, it is made even (and a warning is issued, if desired) since the capture length can only be set
+        in even numbers.
+
+        This method intended for use in other methods inside this class for calculation purposes. Setting issue_warning
+        argument to True allows this method to be used as well for set commands of the instrument parameters.
+
+        Args:
+            capture_length_in_kb (int): The desired capture length in kB.
+            issue_warning (bool): If True, a warning is issued when setting capture length to an odd number
+        Returns:
+            capture_len_in_kb (int)
+        """
+        if capture_length_in_kb % 2:
+            capture_length_in_kb += 1
+            if issue_warning:
+                log.warning("the capture length needs to be even. Setting to {}".format(capture_length_in_kb))
+
+        if not self.min_capture_length_in_kb <= capture_length_in_kb <= self.max_capture_length_in_kb:
             raise ValueError(f"the capture length should be between "
                              f"{self.min_capture_length_in_kb} and {self.max_capture_length_in_kb}")
 
-        return capture_len_in_kb
+        return capture_length_in_kb
 
     def set_capture_rate_to_maximum(self) -> None:
         """
@@ -256,7 +275,7 @@ class SR86xBuffer(InstrumentChannel):
         """
         n_variables = self._get_number_of_capture_variables()
         total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
-        return self._set_capture_len_parser(total_size_in_kb)
+        return self._parse_capture_length(total_size_in_kb, issue_warning=False)
 
     def get_capture_data(self, sample_count: int) -> dict:
         """
