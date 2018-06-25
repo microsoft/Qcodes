@@ -1,12 +1,12 @@
 import numpy as np
-import time
 import logging
-from typing import Optional, Sequence, Dict, Callable
+from typing import Sequence, Dict, Callable
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
 from qcodes.instrument.parameter import ArrayParameter
+
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +86,9 @@ class SR86xBuffer(InstrumentChannel):
             get_parser=int,
             unit="kB"
         )
+        self.bytes_per_sample = 4
+        self.min_capture_length_in_kb = 1
+        self.max_capture_length_in_kb = 4096
 
         self.add_parameter(  # Configure which parameters we want to capture
             "capture_config",
@@ -141,8 +144,6 @@ class SR86xBuffer(InstrumentChannel):
                 parameter_class=SR86xBufferReadout
             )
 
-        self.bytes_per_sample = 4
-
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
         if params_to_skip_update is None:
@@ -157,17 +158,34 @@ class SR86xBuffer(InstrumentChannel):
         snapshot = super().snapshot_base(update, params_to_skip_update)
         return snapshot
 
-    @staticmethod
-    def _set_capture_len_parser(value: int) -> int:
+    def _set_capture_len_parser(self, capture_len_in_kb: int) -> int:
+        """
+        According to the manual, the capture length is set in kB. This method checks for the range of the input value,
+        and throws an error if the range is not satisfied. Additionally, if the input value is odd, it is made even
+        (and a warning is issued) since the capture length can only be set in even numbers.
 
-        if value % 2:
-            log.warning("the capture length needs to be even. Setting to {}".format(value + 1))
-            value += 1
+        Args:
+            capture_len_in_kb (int): The desired capture length in kB.
 
-        if not 1 <= value <= 4096:
-            raise ValueError("the capture length should be between 1 and 4096")
+        Returns:
+            capture_len_in_kb (int)
+        """
+        if capture_len_in_kb % 2:
+            log.warning("the capture length needs to be even. Setting to {}".format(capture_len_in_kb + 1))
+            capture_len_in_kb += 1
 
-        return value
+        if not self.min_capture_length_in_kb <= capture_len_in_kb <= self.max_capture_length_in_kb:
+            raise ValueError(f"the capture length should be between "
+                             f"{self.min_capture_length} and {self.max_capture_length_in_kb}")
+
+        return capture_len_in_kb
+
+    def set_capture_rate_to_maximum(self) -> None:
+        """
+        Sets the capture rate to maximum. The maximum capture rate is retrieved from the device, and depends on
+        the current value of the time constant.
+        """
+        self.capture_rate(self.capture_rate_max())
 
     def _set_capture_rate_parser(self, capture_rate_hz: float) -> int:
         """
@@ -217,27 +235,28 @@ class SR86xBuffer(InstrumentChannel):
         self.write(cmd_str)
 
     def stop_capture(self):
-        """
-        Stop a capture
-        """
+        """Stop a capture"""
         self.write("CAPTURESTOP")
+
+    def _get_list_of_capture_variable_names(self):
+        """Retrieve the list of names of variables (readouts) that are set to be captured"""
+        return self.capture_config().split(",")
+
+    def _get_number_of_capture_variables(self):
+        """Retrieve the number of variables (readouts) that are set to be captured"""
+        capture_variables = self._get_list_of_capture_variable_names()
+        n_variables = len(capture_variables)
+        return n_variables
 
     def _calc_capture_size_in_kb(self, sample_count: int) ->int:
         """
-        Given the number of samples to capture and the capture configuration, calculate the number of kb
+        Given the number of samples to capture, calculate the capture length that the buffer needs to be set to
+        in order to fit the requested number of samples. Note that the number of activated readouts
+        is taken into account.
         """
-        capture_variables = self.capture_config().split(",")
-        n_variables = len(capture_variables)
-
+        n_variables = self._get_number_of_capture_variables()
         total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
-        # The number of kb always needs to be even
-        if total_size_in_kb % 2 == 1:
-            total_size_in_kb += 1
-
-        if total_size_in_kb > 64:
-            raise ValueError("Number of samples specified is larger then the buffer size")
-
-        return total_size_in_kb
+        return self._set_capture_len_parser(total_size_in_kb)
 
     def get_capture_data(self, sample_count: int) -> dict:
         """
@@ -257,8 +276,8 @@ class SR86xBuffer(InstrumentChannel):
         values = np.array(values)
         values = values[values != 0]
 
-        capture_variables = self.capture_config().split(",")
-        n_variables = len(capture_variables)
+        capture_variables = self._get_list_of_capture_variable_names()
+        n_variables = self._get_number_of_capture_variables()
 
         values = values.reshape((-1, n_variables)).T
         values = values[:, :sample_count]
@@ -271,69 +290,53 @@ class SR86xBuffer(InstrumentChannel):
 
         return data
 
-    def capture_samples(self, sample_count: int) ->dict:
+    def capture_one_sample_per_trigger(self, trigger_count: int, start_triggers_pulsetrain: Callable) -> dict:
         """
-        Capture a number of samples. This convenience function provides an example how we use the start and stop
-        methods. We acquire the samples by sleeping for a time and then reading the buffer.
-
-        Args:
-            sample_count (int)
-
-        Returns:
-            dict
-        """
-        capture_rate = self.capture_rate()
-        capture_time = sample_count / capture_rate
-
-        self.start_capture("CONT", "IMM")
-        time.sleep(capture_time)
-        self.stop_capture()
-
-        return self.get_capture_data(sample_count)
-
-    def capture_one_sample_per_trigger(self, trigger_count: int, start_triggers_pulsetrain: Callable) ->dict:
-        """
-        Capture one sample for each trigger and return when the specified number of triggers has been received
+        Capture one sample per each trigger, and return when the specified number of triggers has been received.
 
         Args:
             trigger_count (int)
             start_triggers_pulsetrain (callable)
-                By calling this *non-blocking* function we start a pulse train
+                By calling this *non-blocking* function, the train of trigger pulses should start
         """
+        # Set buffer size to fit the expected number of samples (one sample per one trigger)
         total_size_in_kb = self._calc_capture_size_in_kb(trigger_count)
-
         self.capture_length_in_kb(total_size_in_kb)
+
         self.start_capture("ONE", "SAMP")
 
         start_triggers_pulsetrain()
 
-        n_bytes_captured = 0
-        while n_bytes_captured < trigger_count * self.bytes_per_sample:
-            n_bytes_captured = self.count_capture_bytes()
+        n_captured_bytes = 0
+        n_bytes_to_capture = trigger_count * self.bytes_per_sample
+        while n_captured_bytes < n_bytes_to_capture:
+            n_captured_bytes = self.count_capture_bytes()
 
         self.stop_capture()
 
         return self.get_capture_data(trigger_count)
 
-    def start_capture_at_trigger(self, sample_count: int, start_triggers_pulsetrain: Callable) ->dict:
+    def start_capture_at_trigger(self, sample_count: int, send_trigger: Callable) -> dict:
         """
         Capture a number of samples after a trigger has been received. Please refer to page 135 of the manual
-        for details
+        for details.
 
         Args:
-            trigger_count (int)
-            start_triggers_pulsetrain (callable)
-                By calling this *non-blocking* function we start a pulse train
+            sample_count (int)
+            send_trigger (callable)
+                By calling this *non-blocking* function, one trigger should be sent that will initiate the capture
         """
+        # Set buffer size to fit the requested number of samples
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
-
         self.capture_length_in_kb(total_size_in_kb)
+
         self.start_capture("ONE", "TRIG")
 
-        start_triggers_pulsetrain()
+        send_trigger()
 
         n_bytes_captured = 0
-        while n_bytes_captured < total_size_in_kb * 1024:
+        n_bytes_to_capture = sample_count * self.bytes_per_sample
+        while n_bytes_captured < n_bytes_to_capture:
             n_bytes_captured = self.count_capture_bytes()
 
         self.stop_capture()
