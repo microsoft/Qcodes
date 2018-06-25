@@ -176,7 +176,7 @@ class SR86xBuffer(InstrumentChannel):
 
         if not self.min_capture_length_in_kb <= capture_len_in_kb <= self.max_capture_length_in_kb:
             raise ValueError(f"the capture length should be between "
-                             f"{self.min_capture_length} and {self.max_capture_length_in_kb}")
+                             f"{self.min_capture_length_in_kb} and {self.max_capture_length_in_kb}")
 
         return capture_len_in_kb
 
