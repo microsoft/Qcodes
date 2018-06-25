@@ -621,7 +621,6 @@ class SR86x(VisaInstrument):
                                get_cmd='OAUX? {}'.format(i),
                                get_parser=float,
                                unit='V')
-
             self.add_parameter('aux_out{}'.format(i),
                                label='Aux output {}'.format(i),
                                get_cmd='AUXV? {}'.format(i),
@@ -640,9 +639,6 @@ class SR86x(VisaInstrument):
 
         self.input_config()
         self.connect_message()
-
-
-
 
     def _set_units(self, unit):
         for param in [self.X, self.Y, self.R, self.sensitivity]:
