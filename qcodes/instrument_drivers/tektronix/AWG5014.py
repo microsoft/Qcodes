@@ -1024,17 +1024,27 @@ class Tektronix_AWG5014(VisaInstrument):
         return AWG_channel_cfg
 
     
-    # def make_awg_file_from_forged_sequence(self, seq, channel_mapping: Dict[Union[str, int], Union[int, str]],
-    def make_awg_file_from_forged_sequence(self, seq, channel_mapping,
-                                           filename='customawgfile.awg', preservechannelsettings=True):
+    def parse_marker_channel_name(name:str)->Tupel[int, int]:
         """
-        Makes an awg file form a forged sequence as produced by broadbean.sequence.Sequence.forge. The forged sequence is a dictionary (see broadbean.sequence.fs_schmema) that does not need to be created by broadbean.
+        returns from the channel index and marker index from a marker descriptor string e.g. '1M1'->(1,1)
+        """
+        res  = re.match('^(?P<channel>\d+)M(?P<marker>\d+)$',
+                        name)
+        assert res is not None
+        MarkerDescriptor = namedtuple('MarkerDescriptor', 'marker', 'channel')
+        return MarkerDescriptor(int(res.group('marker')), int(res.group('channel')))
+
+    def make_awg_file_from_forged_sequence(self, seq, filename='customawgfile.awg', preservechannelsettings=True):
+        """
+        Makes an awg file form a forged sequence as produced by
+        broadbean.sequence.Sequence.forge. The forged sequence is a dictionary
+        (see :attr:`fs_schmea <broadbean.sequence.fs_schmema>`) that does not
+        need to be created by broadbean.
 
         Args:
             seq: the sequence dictionary
-
-            channel_mapping: a dictionary that maps the abstract channel id as assigned (e.g. in broadbean) to a physical channel of the device. For this particular device the channels are integers starting at TODO: 1?. Unmapped channels will be ignored, so that one can create forged sequences accross several instruments.
-            filename: filename of the uploaded awg file. See :meth:`~make_send_and_load_awg_file`
+            filename: filename of the uploaded awg file.
+                See :meth:`~make_send_and_load_awg_file`
             preservechannelsettings: see :meth:`~make_send_and_load_awg_file`
 
         """
@@ -1043,7 +1053,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.available_marker_channels = [f'{m}M{c}'
                                           for c in self.available_signal_channels
                                           for m in [1,2]]
-        self.available_channels = self.available_signal_channels + self.available_marker_channels
+        self.available_channels = (self.available_signal_channels +
+                                   self.available_marker_channels)
 
         waveforms = []
         m1s = []
