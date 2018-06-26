@@ -236,9 +236,13 @@ class MercuryiPS(VisaInstrument):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
                                unit='T',
-                               get_cmd=lambda: tv.get_components(f'{coord}')[0])
+                               get_cmd=partial(self._get_component,
+                                               f'{coord}'))
 
         self.connect_message()
+
+    def _get_component(self, coordinate: str) -> float:
+        return self._target_vector.get_components(coordinate)[0]
 
     def _idn_getter(self) -> Dict[str, str]:
         """
