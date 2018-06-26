@@ -12,15 +12,17 @@ def strip_qc(d, keys=('instrument', '__class__')):
     return d
 
 
-def retry_until_does_not_throw(exception_class_to_expect: Type[Exception]=AssertionError,
-                               tries: int=5,
-                               delay: float=0.1) -> Callable:
+def retry_until_does_not_throw(
+        exception_class_to_expect: Type[Exception]=AssertionError,
+        tries: int=5,
+        delay: float=0.1
+) -> Callable:
     """
-    Call the decorated function given number of times with given delay between the calls
-    until it does not throw an exception of a given class.
+    Call the decorated function given number of times with given delay between
+    the calls until it does not throw an exception of a given class.
 
-    If the function throws an exception of a different class, it gets propagated outside
-    (i.e. the function is not called anymore).
+    If the function throws an exception of a different class, it gets propagated
+    outside (i.e. the function is not called anymore).
 
     Usage:
         >>  x = False  # let's assume that another thread has access to "x",
@@ -28,9 +30,11 @@ def retry_until_does_not_throw(exception_class_to_expect: Type[Exception]=Assert
         >>  @retry_until_does_not_throw() ...
             def assert_x_is_true(): ...
                 assert x, "x is still False..." ...
-        >>  assert_x_is_true()  # depending on the settings of "retry_until_does_not_throw",
-                                # it will keep calling the function (with breaks in between) until
-                                # either it does not throw or the number of tries is exceeded.
+        >>  assert_x_is_true()  # depending on the settings of
+                                # "retry_until_does_not_throw", it will keep
+                                # calling the function (with breaks in between)
+                                # until either it does not throw or
+                                # the number of tries is exceeded.
 
     Args:
         exception_class_to_expect
@@ -41,7 +45,8 @@ def retry_until_does_not_throw(exception_class_to_expect: Type[Exception]=Assert
             Delay between retries of the function call, in seconds
 
     Returns:
-        A callable that runs the decorated function until it does not throw a given exception
+        A callable that runs the decorated function until it does not throw
+        a given exception
     """
     def retry_until_passes_decorator(func: Callable):
 
@@ -54,8 +59,9 @@ def retry_until_does_not_throw(exception_class_to_expect: Type[Exception]=Assert
                 except exception_class_to_expect:
                     tries_left -= 1
                     sleep(delay)
-            # the very last attempt to call the function is outside the "try-except" clause,
-            # so that the exception can propagate up the call stack
+            # the very last attempt to call the function is outside
+            # the "try-except" clause, so that the exception can propagate
+            # up the call stack
             return func(*args, **kwargs)
 
         return func_retry
