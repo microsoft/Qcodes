@@ -229,10 +229,13 @@ class MercuryiPS(VisaInstrument):
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
 
-        self.add_parameter('x_target',
-                           label='X target field',
-                           unit='T',
-                           get_cmd=lambda: self._target_vector.get_components('x'))
+        tv = self._target_vector
+
+        for coord in ['x', 'y', 'z', 'r', 'theta', 'phi']:
+            self.add_parameter(name=f'{coord}_target',
+                               label=f'{coord.upper()} target field',
+                               unit='T',
+                               get_cmd=lambda: tv.get_components(f'{coord}')[0])
 
         self.connect_message()
 
