@@ -139,7 +139,8 @@ class MercurySlavePS(InstrumentChannel):
                            get_parser=_response_preparser,
                            val_mapping={'HOLD': 'HOLD',
                                         'TO SET': 'RTOS',
-                                        'CLAMP': 'CLMP'})
+                                        'CLAMP': 'CLMP',
+                                        'TO ZERO': 'RTOZ'})
 
     def _ramp_status_setter(self, cmd: str) -> None:
         status_now = self.ramp_status()
