@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Callable
+from typing import Dict, Callable, List
 from functools import partial
 
 import numpy as np
@@ -365,7 +365,7 @@ class Infiniium(VisaInstrument):
                                       'HRESolution', 'SEGMented',
                                       'SEGPdetect', 'SEGHres')
                             )
-        
+
         self.add_parameter('acquire_timespan',
                             get_cmd=(lambda: self.acquire_points.get_latest() \
                                             /self.acquire_sample_rate.get_latest()),
@@ -402,3 +402,54 @@ class Infiniium(VisaInstrument):
         """
         self.trace_ready = False
         self.write(cmd.format(val))
+
+    def get_current_traces(self, channels: List = [1, 2, 3, 4]) -> Dict:
+        """get the current traces of 'channels' on the oscillsocope.
+        args:
+            channels: default [1, 2, 3, 4]
+                      list of integers representing the channels.
+                      gets the traces of these channels.
+                      the only valid integers are 1,2,3,4
+                      will turn any other channels off
+        returns:
+            a dict with keys 'ch1', 'ch2', 'ch3', 'ch4', 'time',
+            and values are np.ndarrays, corresponding to the voltages
+            of the four channels and the common time axis
+        """
+        # check that channels are valid
+        try:
+            assert all([ch in [1, 2, 3, 4] for ch in channels])
+        except:
+            raise Exception("invalid channel in %s, integers"
+                            " must be 1,2,3 or 4" % channels)
+
+        self.write('DIGitize')
+        all_data = {}
+        self.write(':SYSTem:HEADer OFF')
+
+        for i in channels:
+            self.data_source('CHAN%s' % i)
+            self.write(':WAVeform:FORMat WORD')
+            self.write(":waveform:byteorder LSBFirst")
+            self.write(':WAVeform:STReaming OFF')
+
+            data = self.visa_handle.query_binary_values(
+             'WAV:DATA?', datatype='h', is_big_endian=False)
+            all_data['ch%d' % i] = np.array(data)
+
+        x_incr = float(self.ask(":WAVeform:XINCrement?"))
+        y_incr = float(self.ask(":WAVeform:YINCrement?"))
+        y_origin = float(self.ask(":WAVeform:YORigin?"))
+
+        for i in channels:
+            all_data['ch%d' % i] = all_data['ch%d' % i] * y_incr + y_origin
+            self.write(':CHANnel{}:DISPlay ON'.format(i))
+        all_data['time'] = np.arange(0, len(all_data['ch%s' % channels[0]])) \
+            * x_incr
+
+        self.write(':RUN')
+        # turn the channels that were not requested off
+        for ch in [i for i in [1, 2, 3, 4] if i not in channels]:
+            self.write(':CHANnel{}:DISPlay OFF'.format(ch))
+
+        return all_data
