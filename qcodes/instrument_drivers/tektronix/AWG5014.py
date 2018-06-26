@@ -1026,15 +1026,19 @@ class Tektronix_AWG5014(VisaInstrument):
     
     def parse_marker_channel_name(name:str)->Tupel[int, int]:
         """
-        returns from the channel index and marker index from a marker descriptor string e.g. '1M1'->(1,1)
+        returns from the channel index and marker index from a marker
+        descriptor string e.g. '1M1'->(1,1)
         """
         res  = re.match('^(?P<channel>\d+)M(?P<marker>\d+)$',
                         name)
         assert res is not None
         MarkerDescriptor = namedtuple('MarkerDescriptor', 'marker', 'channel')
-        return MarkerDescriptor(int(res.group('marker')), int(res.group('channel')))
+        return MarkerDescriptor(int(res.group('marker')),
+                                int(res.group('channel')))
 
-    def make_awg_file_from_forged_sequence(self, seq, filename='customawgfile.awg', preservechannelsettings=True):
+    def make_awg_file_from_forged_sequence(self, seq,
+                                           filename='customawgfile.awg',
+                                           preservechannelsettings=True):
         """
         Makes an awg file form a forged sequence as produced by
         broadbean.sequence.Sequence.forge. The forged sequence is a dictionary
@@ -1059,7 +1063,10 @@ class Tektronix_AWG5014(VisaInstrument):
         waveforms = []
         m1s = []
         m2s = []
-        # unfortunately the definitions of the sequence elements in terms of channel and step in :meth:`make_and_send_awg_file` and the forged sequence definition are transposed. Start by filling out after schema and transpose at the end
+        # unfortunately the definitions of the sequence elements in terms of
+        # channel and step in :meth:`make_and_send_awg_file` and the forged
+        # sequence definition are transposed. Start by filling out after schema
+        # and transpose at the end.
         # make...: [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
         # dict efectively: {elementid: {channelid: wfm}}
         physical_channels = []
@@ -1075,16 +1082,20 @@ class Tektronix_AWG5014(VisaInstrument):
             assert elem['type'] == 'element'
             content = elem['content']
             assert len(content.keys()) == 1
-            # there is only one element int the dict with key `1` in case of type == element
-            # and no sequencing information, i.e. there is only one entry with key 'data'
+            # there is only one element int the dict with key `1` in case of
+            # type == element and no sequencing information, i.e. there is only
+            # one entry with key 'data'
             # waveform data
             datadict = content[1]['data']
 
             # obtain list of channels defined in the first step
             if first_step:
-                mapped_channels = [channel_mapping.get(k, None) for k in datadict.keys()]
-                # filter out all channels that are not relevant for this instrument
-                physical_channels = [v for v in mapped_channels if v in self.available_signal_channels]
+                mapped_channels = [channel_mapping.get(k, None)
+                                   for k in datadict.keys()]
+                # filter out all channels that are not relevant for this
+                # instrument
+                physical_channels = [v for v in mapped_channels
+                                     if v in self.available_signal_channels]
                 first_step = False
 
             # create empty list with size of number of used channels
@@ -1099,7 +1110,8 @@ class Tektronix_AWG5014(VisaInstrument):
                     assert res is not None
                     step_marker[int(res.group('marker'))-1][int(res.group('channel'))-1] = data
                 elif physical_channel in self.available_signal_channels:
-                    # treat the first step differently: here the channel order is defined
+                    # treat the first step differently: here the channel order
+                    # is defined
                     try:
                         index = physical_channels.index(physical_channel)
                     except IndexError:
@@ -1107,15 +1119,18 @@ class Tektronix_AWG5014(VisaInstrument):
                         raise
                     step_waveforms[index] = data
                 else:
-                    # only proceed if the defined channel is available on the instrument
-                    # TODO: this needs some extra information in case we are using two instruments with the same channel names
+                    # only proceed if the defined channel is available on the
+                    # instrument
+                    # TODO: this needs some extra information in case we are
+                    # using two instruments with the same channel names
                     # e.g. always add a prefix with the instrument name.
                     continue
 
             if any(x is None for x in step_waveforms):
                 # TODO: error message
                 raise RuntimeError
-            #TODO: make more general such that one can create a sequence without signals but only markers
+            #TODO: make more general such that one can create a sequence
+            # without signals but only markers
             n_samples = len(step_waveforms[0])
             for j in range(n_channels):
                 for i in range(2):
