@@ -12,6 +12,7 @@ from io import BytesIO
 from qcodes import VisaInstrument, validators as vals
 from pyvisa.errors import VisaIOError
 
+from broadbean.tools import forged_sequence_dict_to_list
 
 log = logging.getLogger(__name__)
 
@@ -1076,44 +1077,45 @@ class Tektronix_AWG5014(VisaInstrument):
         goto_states = []
         jump_tos = []
 
-        first_step = True
-        for step, elem in seq.items():
+        # convert to list
+        seq = forged_sequence_dict_to_list(seq)
+
+        # obtain list of channels defined in the first step
+        if len(seq) < 1:
+            # TODO: better error
+            raise RuntimeError('Sequences need to have at least one element')
+
+        # mapped_channels = [channel_mapping.get(k, None)
+        #                    for k in datadict.keys()]
+        # # filter out all channels that are not relevant for this
+        # # instrument
+        
+        # treat the first step differently: here the channel order
+        # is defined
+        used_channels = list(seq[0]['content'][0]['data'].keys())
+        # physical_channels = [v for v in mapped_channels
+        #                      if v in self.available_signal_channels]
+        for elem in seq:
             # TODO: add support for subsequences
             assert elem['type'] == 'element'
             content = elem['content']
-            assert len(content.keys()) == 1
+            assert len(content) == 1
             # there is only one element int the dict with key `1` in case of
             # type == element and no sequencing information, i.e. there is only
             # one entry with key 'data'
             # waveform data
-            datadict = content[1]['data']
-
-            # obtain list of channels defined in the first step
-            if first_step:
-                mapped_channels = [channel_mapping.get(k, None)
-                                   for k in datadict.keys()]
-                # filter out all channels that are not relevant for this
-                # instrument
-                physical_channels = [v for v in mapped_channels
-                                     if v in self.available_signal_channels]
-                first_step = False
+            datadict = content[0]['data']
 
             # create empty list with size of number of used channels
-            step_waveforms = [None] * len(physical_channels)
+            step_waveforms = [None] * len(used_channels)
             step_marker = [[None] * n_channels] * 2
-            for channel_id, data in datadict.items():
-                physical_channel = channel_mapping.get(channel_id, None)
-
-                if physical_channel in self.available_marker_channels:
-                    res  = re.match('^(?P<channel>\d+)M(?P<marker>\d+)$',
-                                    physical_channel)
-                    assert res is not None
-                    step_marker[int(res.group('marker'))-1][int(res.group('channel'))-1] = data
-                elif physical_channel in self.available_signal_channels:
-                    # treat the first step differently: here the channel order
-                    # is defined
+            for channel, data in datadict.items():
+                if channel in self.available_marker_channels:
+                    t = self.parse_marker_channel_name(channel)
+                    step_marker[t.marker-1][t.channel-1] = data
+                elif channel in self.available_signal_channels:
                     try:
-                        index = physical_channels.index(physical_channel)
+                        index = used_channels.index(channel)
                     except IndexError:
                         #TODO: write error message
                         raise
