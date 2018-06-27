@@ -13,13 +13,14 @@ log = logging.getLogger(__name__)
 
 class SR86xBufferReadout(ArrayParameter):
     """
-    The parameter array that holds read out data. We need this to be compatible with qcodes.Measure
+    The parameter array that holds read out data. We need this to be compatible
+    with qcodes.Measure
 
-    Args
-    ----
-        name (str)
-        instrument (SR86x): This argument is unused, but needed because the add_parameter method of the Instrument
-                            base class adds this as a kwarg.
+    Args:
+        name
+        instrument
+            This argument is unused, but needed because the add_parameter
+            method of the Instrument base class adds this as a kwarg.
     """
     def __init__(self, name: str, instrument: 'SR86x') ->None:
 
@@ -33,18 +34,18 @@ class SR86xBufferReadout(ArrayParameter):
                          setpoint_names=('Time',),
                          setpoint_labels=('Time',),
                          setpoint_units=('s',),
-                         docstring='Holds an acquired (part of the) data buffer of one channel.')
+                         docstring='Holds an acquired (part of the) data '
+                                   'buffer of one channel.')
 
         self.name = name
         self._capture_data = None
 
-    def prepare_readout(self, capture_data: np.array) ->None:
+    def prepare_readout(self, capture_data: np.array) -> None:
         """
         Prepare this parameter for readout.
 
-        Args
-        ----
-        capture_data (np.array)
+        Args:
+            capture_data
         """
         self._capture_data = capture_data
 
@@ -55,22 +56,24 @@ class SR86xBufferReadout(ArrayParameter):
         self.setpoint_labels = ('Sample number',)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-    def get_raw(self) ->np.ndarray:
+    def get_raw(self) -> np.ndarray:
         """
         Public method to access the capture data
         """
         if self._capture_data is None:
-            err_str = "Cannot return data for parameter {}. Please prepare for ".format(self.name)
-            err_str = err_str + "readout by calling 'get_capture_data' with appropriate configuration settings"
-            raise ValueError(err_str)
+            raise ValueError(f"Cannot return data for parameter {self.name}. "
+                             f"Please prepare for readout by calling "
+                             f"'get_capture_data' with appropriate "
+                             f"configuration settings")
 
         return self._capture_data
 
 
 class SR86xBuffer(InstrumentChannel):
     """
-    The buffer module for the SR86x driver. This driver has been verified to work with the SR860 and SR865.
-    For reference, please consult the SR860 manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
+    The buffer module for the SR86x driver. This driver has been verified to
+    work with the SR860 and SR865. For reference, please consult the SR860
+    manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
     def __init__(self, parent: 'SR86x', name: str) ->None:
@@ -194,56 +197,70 @@ class SR86xBuffer(InstrumentChannel):
 
     def set_capture_rate_to_maximum(self) -> None:
         """
-        Sets the capture rate to maximum. The maximum capture rate is retrieved from the device, and depends on
-        the current value of the time constant.
+        Sets the capture rate to maximum. The maximum capture rate is
+        retrieved from the device, and depends on the current value of the
+        time constant.
         """
         self.capture_rate(self.capture_rate_max())
 
     def _set_capture_rate_parser(self, capture_rate_hz: float) -> int:
         """
-        According to the manual, the capture rate query returns a value in Hz, but then setting this value it is
-        expected to give a value n, where the capture rate in Hz is given by capture_rate_hz =  max_rate / 2 ** n.
-        Please see page 136 of the manual. Here n is an integer in the range [0, 20]
+        According to the manual, the capture rate query returns a value in
+        Hz, but then setting this value it is expected to give a value n,
+        where the capture rate in Hz is given by
+        capture_rate_hz =  max_rate / 2 ** n. Please see page 136 of the
+        manual. Here n is an integer in the range [0, 20].
 
         Args:
-            capture_rate_hz (float): The desired capture rate in Hz. If the desired rate is more then 1 Hz from the
-                                        nearest valid rate, a warning is issued and the nearest valid rate it used.
+            capture_rate_hz
+                The desired capture rate in Hz. If the desired rate is more
+                than 1 Hz from the nearest valid rate, a warning is issued
+                and the nearest valid rate it used.
 
         Returns:
-            n_round (int)
+            n_round
         """
         max_rate = self.capture_rate_max()
         n = np.log2(max_rate / capture_rate_hz)
         n_round = int(round(n))
 
         if not 0 <= n_round <= 20:
-            raise ValueError("The chosen frequency is invalid. Please consult the SR860 manual at page 136. The maximum"
-                             " capture rate is {}".format(max_rate))
+            raise ValueError(f"The chosen frequency is invalid. Please "
+                             f"consult the SR860 manual at page 136. "
+                             f"The maximum capture rate is {max_rate}")
 
         nearest_valid_rate = max_rate / 2 ** n_round
         if abs(capture_rate_hz - nearest_valid_rate) > 1:
-            log.warning("Warning: Setting capture rate to {:.5} Hz".format(nearest_valid_rate))
-            available_frequencies = ", ".join([str(f) for f in self.available_frequencies])
-            log.warning("The available frequencies are: {}".format(available_frequencies))
+            available_frequencies = ", ".join(
+                [str(f) for f in self.available_frequencies])
+            log.warning("Warning: Setting capture rate to {:.5} Hz"
+                        .format(nearest_valid_rate))
+            log.warning("The available frequencies are: {}"
+                        .format(available_frequencies))
 
         return n_round
 
     def start_capture(self, acquisition_mode: str, trigger_mode: str) -> None:
         """
-        Start an acquisition. Please see page 137 of the manual for a detailed explanation.
+        Start an acquisition. Please see page 137 of the manual for a detailed
+        explanation.
 
         Args:
-            acquisition_mode (str):  "ONE" | "CONT".
-            trigger_mode (str): IMM | TRIG | SAMP
+            acquisition_mode
+                "ONE" | "CONT"
+            trigger_mode
+                "IMM" | "TRIG" | "SAMP"
         """
 
         if acquisition_mode not in ["ONE", "CONT"]:
-            raise ValueError("The acquisition mode needs to be either 'ONE' or 'CONT'")
+            raise ValueError(
+                "The acquisition mode needs to be either 'ONE' or 'CONT'")
 
         if trigger_mode not in ["IMM", "TRIG", "SAMP"]:
-            raise ValueError("The trigger mode needs to be either 'IMM', 'TRIG' or 'SAMP'")
+            raise ValueError(
+                "The trigger mode needs to be either 'IMM', 'TRIG' or 'SAMP'")
 
-        cmd_str = "CAPTURESTART  {},{}".format(acquisition_mode, trigger_mode)
+        cmd_str = f"CAPTURESTART {acquisition_mode}, {trigger_mode}"
         self.write(cmd_str)
 
     def stop_capture(self):
@@ -251,11 +268,17 @@ class SR86xBuffer(InstrumentChannel):
         self.write("CAPTURESTOP")
 
     def _get_list_of_capture_variable_names(self):
-        """Retrieve the list of names of variables (readouts) that are set to be captured"""
+        """
+        Retrieve the list of names of variables (readouts) that are
+        set to be captured
+        """
         return self.capture_config().split(",")
 
     def _get_number_of_capture_variables(self):
-        """Retrieve the number of variables (readouts) that are set to be captured"""
+        """
+        Retrieve the number of variables (readouts) that are
+        set to be captured
+        """
         capture_variables = self._get_list_of_capture_variable_names()
         n_variables = len(capture_variables)
         return n_variables
@@ -268,7 +291,9 @@ class SR86xBuffer(InstrumentChannel):
         taken into account.
         """
         n_variables = self._get_number_of_capture_variables()
-        total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
+        total_size_in_kb = int(
+            np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024)
+        )
         # Make sure that the total size in kb is an even number, as expected by
         # the instrument
         if total_size_in_kb % 2:
@@ -418,16 +443,31 @@ class SR86xBuffer(InstrumentChannel):
 
         return np.array(values)
 
-    def capture_one_sample_per_trigger(self, trigger_count: int, start_triggers_pulsetrain: Callable) -> dict:
+    def capture_one_sample_per_trigger(self,
+                                       trigger_count: int,
+                                       start_triggers_pulsetrain: Callable
+                                       ) -> dict:
         """
-        Capture one sample per each trigger, and return when the specified number of triggers has been received.
+        Capture one sample per each trigger, and return when the specified
+        number of triggers has been received.
 
         Args:
-            trigger_count (int)
-            start_triggers_pulsetrain (callable)
-                By calling this *non-blocking* function, the train of trigger pulses should start
+            trigger_count
+                Number of triggers to capture samples for
+            start_triggers_pulsetrain
+                By calling this *non-blocking* function, the train of trigger
+                pulses should start
+
+        Returns:
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
         """
-        # Set buffer size to fit the expected number of samples (one sample per one trigger)
+        # Set buffer size to fit the expected number of samples
+        # (one sample per one trigger)
         total_size_in_kb = self._calc_capture_size_in_kb(trigger_count)
         self.capture_length_in_kb(total_size_in_kb)
 
@@ -444,15 +484,28 @@ class SR86xBuffer(InstrumentChannel):
 
         return self.get_capture_data(trigger_count)
 
-    def start_capture_at_trigger(self, sample_count: int, send_trigger: Callable) -> dict:
+    def start_capture_at_trigger(self,
+                                 sample_count: int,
+                                 send_trigger: Callable
+                                 ) -> dict:
         """
-        Capture a number of samples after a trigger has been received. Please refer to page 135 of the manual
-        for details.
+        Capture a number of samples after a trigger has been received.
+        Please refer to page 135 of the manual for details.
 
         Args:
-            sample_count (int)
-            send_trigger (callable)
-                By calling this *non-blocking* function, one trigger should be sent that will initiate the capture
+            sample_count
+                Number of samples to capture
+            send_trigger
+                By calling this *non-blocking* function, one trigger should
+                be sent that will initiate the capture
+
+        Returns:
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
         """
         # Set buffer size to fit the requested number of samples
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
@@ -519,7 +572,10 @@ class SR86x(VisaInstrument):
                            get_cmd='FREQ?',
                            set_cmd='FREQ {}',
                            get_parser=float,
-                           vals=Numbers(min_value=1e-3, max_value=self._max_frequency))
+                           vals=Numbers(
+                               min_value=1e-3,
+                               max_value=self._max_frequency)
+                           )
         self.add_parameter(name='sine_outdc',
                            label='Sine out dc level',
                            unit='V',
