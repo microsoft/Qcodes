@@ -158,44 +158,27 @@ class SR86xBuffer(InstrumentChannel):
         snapshot = super().snapshot_base(update, params_to_skip_update)
         return snapshot
 
-    def _set_capture_len_parser(self, capture_len_in_kb: int) -> int:
+    def _set_capture_len_parser(self, capture_length_in_kb: int) -> int:
         """
-        According to the manual, the capture length is set in kB. This method checks for the range of the input value,
-        and throws an error if the range is not satisfied. Additionally, if the input value is odd, it is made even
-        (and a warning is issued) since the capture length can only be set in even numbers.
+        Parse the capture length in kB according to the way buffer treats it
+        (refer to the manual for details). The given value has to fit in the
+        range and has to be even, otherwise this function raises exceptions.
 
         Args:
-            capture_len_in_kb (int): The desired capture length in kB.
+            capture_length_in_kb: The desired capture length in kB.
 
         Returns:
-            capture_len_in_kb (int)
-        """
-        return self._parse_capture_length(capture_len_in_kb, issue_warning=True)
-
-    def _parse_capture_length(self, capture_length_in_kb: int, issue_warning: bool=False) -> int:
-        """
-        Parse the capture length in kB according to the way buffer treats it. This method checks for the range
-        of the input value, and throws an error if the range is not satisfied. Additionally, if the input value
-        is odd, it is made even (and a warning is issued, if desired) since the capture length can only be set
-        in even numbers.
-
-        This method intended for use in other methods inside this class for calculation purposes. Setting issue_warning
-        argument to True allows this method to be used as well for set commands of the instrument parameters.
-
-        Args:
-            capture_length_in_kb (int): The desired capture length in kB.
-            issue_warning (bool): If True, a warning is issued when setting capture length to an odd number
-        Returns:
-            capture_len_in_kb (int)
+            capture_length_in_kb
         """
         if capture_length_in_kb % 2:
-            capture_length_in_kb += 1
-            if issue_warning:
-                log.warning("the capture length needs to be even. Setting to {}".format(capture_length_in_kb))
+            raise ValueError("The capture length should be an even number")
 
-        if not self.min_capture_length_in_kb <= capture_length_in_kb <= self.max_capture_length_in_kb:
-            raise ValueError(f"the capture length should be between "
-                             f"{self.min_capture_length_in_kb} and {self.max_capture_length_in_kb}")
+        if not self.min_capture_length_in_kb \
+                <= capture_length_in_kb \
+                <= self.max_capture_length_in_kb:
+            raise ValueError(f"The capture length should be between "
+                             f"{self.min_capture_length_in_kb} and "
+                             f"{self.max_capture_length_in_kb}")
 
         return capture_length_in_kb
 
@@ -269,13 +252,18 @@ class SR86xBuffer(InstrumentChannel):
 
     def _calc_capture_size_in_kb(self, sample_count: int) ->int:
         """
-        Given the number of samples to capture, calculate the capture length that the buffer needs to be set to
-        in order to fit the requested number of samples. Note that the number of activated readouts
-        is taken into account.
+        Given the number of samples to capture, calculate the capture length
+        that the buffer needs to be set to in order to fit the requested
+        number of samples. Note that the number of activated readouts is
+        taken into account.
         """
         n_variables = self._get_number_of_capture_variables()
         total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
-        return self._parse_capture_length(total_size_in_kb, issue_warning=False)
+        # Make sure that the total size in kb is an even number, as expected by
+        # the instrument
+        if total_size_in_kb % 2:
+            total_size_in_kb += 1
+        return total_size_in_kb
 
     def get_capture_data(self, sample_count: int) -> dict:
         """
