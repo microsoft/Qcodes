@@ -87,8 +87,10 @@ class SR86xBuffer(InstrumentChannel):
             unit="kB"
         )
         self.bytes_per_sample = 4
-        self.min_capture_length_in_kb = 1
-        self.max_capture_length_in_kb = 4096
+        self.min_capture_length_in_kb = 1  # i.e. minimum buffer size
+        self.max_capture_length_in_kb = 4096  # i.e. maximum buffer size
+        # Maximum amount of kB that can be read per single CAPTUREGET command
+        self.max_size_per_reading_in_kb = 64
 
         self.add_parameter(  # Configure which parameters we want to capture
             "capture_config",
@@ -125,17 +127,25 @@ class SR86xBuffer(InstrumentChannel):
 
         self.add_parameter(
             "count_capture_bytes",
-            label="capture bytes",
+            label="captured bytes",
             get_cmd="CAPTUREBYTES?",
             unit="B",
-            get_parser=int
+            get_parser=int,
+            docstring="Number of bytes captured so far in the buffer. Can be "
+                      "used to track live progress."
         )
 
         self.add_parameter(
             "count_capture_kilobytes",
-            label="capture kilobytes",
+            label="captured kilobytes",
             get_cmd="CAPTUREPROG?",
-            unit="kB"
+            unit="kB",
+            docstring="Number of kilobytes captured so far in the buffer, "
+                      "rounded-up to 2 kilobyte chunks. Capture must be "
+                      "stopped before requesting the value of this "
+                      "parameter. If the acquisition wrapped during operating "
+                      "in Continuous mode, then the returned value is "
+                      "simply equal to the current capture length."
         )
 
         for parameter_name in ["X", "Y", "R", "T"]:
@@ -267,24 +277,29 @@ class SR86xBuffer(InstrumentChannel):
 
     def get_capture_data(self, sample_count: int) -> dict:
         """
-        Read capture data from the buffer.
+        Read the given number of samples of the capture data from the buffer.
 
         Args:
-             sample_count (int): number of samples to read from the buffer
+            sample_count
+                number of samples to read from the buffer
 
         Returns:
-            data (dict): The keys in the dictionary is the variables we have captures. For instance, if before the
-                            capture we specify 'capture_config("X,Y")', then the keys will be "X" and "Y".
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
         """
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
-
-        values = self._parent.visa_handle.query_binary_values("CAPTUREGET? 0,{}".format(total_size_in_kb),
-                                                              datatype='f', is_big_endian=False)
-        values = np.array(values)
-        values = values[values != 0]
-
         capture_variables = self._get_list_of_capture_variable_names()
         n_variables = self._get_number_of_capture_variables()
+
+        values = self._get_raw_capture_data(total_size_in_kb)
+
+        # Remove zeros which mark the end part of the buffer that is not
+        # filled with captured data
+        values = values[values != 0]
 
         values = values.reshape((-1, n_variables)).T
         values = values[:, :sample_count]
@@ -296,6 +311,112 @@ class SR86xBuffer(InstrumentChannel):
             buffer_parameter.prepare_readout(data[capture_variable])
 
         return data
+
+    def _get_raw_capture_data(self, size_in_kb: int) -> np.ndarray:
+        """
+        Read data from the buffer from its beginning avoiding the instrument
+        limit of 64 kilobytes per reading.
+
+        Args:
+            size_in_kb
+                Size of the data that needs to be read; if it exceeds the
+                capture length, an exception is raised.
+
+        Returns:
+            A one-dimensional numpy array of the requested data. Note that the
+            returned array contains data for all the variables that are
+            mentioned in the capture config.
+        """
+        current_capture_length = self.capture_length_in_kb()
+        if size_in_kb > current_capture_length:
+            raise ValueError(f"The size of the requested data ({size_in_kb}kB) "
+                             f"is larger than current capture length of the "
+                             f"buffer ({current_capture_length}kB).")
+
+        values = np.array([])
+        data_size_to_read_in_kb = size_in_kb
+        n_readings = 0
+
+        while data_size_to_read_in_kb > 0:
+            offset = n_readings * self.max_size_per_reading_in_kb
+
+            if data_size_to_read_in_kb > self.max_size_per_reading_in_kb:
+                size_of_this_reading = self.max_size_per_reading_in_kb
+            else:
+                size_of_this_reading = data_size_to_read_in_kb
+
+            data_from_this_reading = self._get_raw_capture_data_block(
+                size_of_this_reading,
+                offset_in_kb=offset)
+            values = np.append(values, data_from_this_reading)
+
+            data_size_to_read_in_kb -= size_of_this_reading
+            n_readings += 1
+
+        return values
+
+    def _get_raw_capture_data_block(self,
+                                    size_in_kb: int,
+                                    offset_in_kb: int=0
+                                    ) -> np.ndarray:
+        """
+        Read data from the buffer. The maximum amount of data that can be
+        read with this function (size_in_kb) is 64kB (this limitation comes
+        from the instrument). The offset argument can be used to navigate
+        along the buffer.
+
+        An exception will be raised if either size_in_kb or offset_in_kb are
+        longer that the *current* capture length (number of kB of data that is
+        captured so far rounded up to 2kB chunks). If (offset_in_kb +
+        size_in_kb) is longer than the *current* capture length,
+        the instrument returns the wrapped data.
+
+        For more information, refer to the description of the "CAPTUREGET"
+        command in the manual.
+
+        Args:
+            size_in_kb
+                Amount of data in kB that is to be read from the buffer
+            offset_in_kb
+                Offset within the buffer of where to read the data; for
+                example, when 0 is specified, the data is read from the start
+                of the buffer
+
+        Returns:
+            A one-dimensional numpy array of the requested data. Note that the
+            returned array contains data for all the variables that are
+            mentioned in the capture config.
+        """
+        if size_in_kb > self.max_size_per_reading_in_kb:
+            raise ValueError(f"The size of the requested data ({size_in_kb}kB) "
+                             f"is larger than maximum size that can be read "
+                             f"at once ({self.max_size_per_reading_in_kb}kB).")
+
+        # Calculate the size of the data captured so far, in kB, rounded up
+        # to 2kB chunks
+        size_of_currently_captured_data = int(
+            np.ceil(np.ceil(self.count_capture_bytes() / 1024) / 2) * 2
+        )
+
+        if size_in_kb > size_of_currently_captured_data:
+            raise ValueError(f"The size of the requested data ({size_in_kb}kB) "
+                             f"cannot be larger than the size of currently "
+                             f"captured data rounded up to 2kB chunks "
+                             f"({size_of_currently_captured_data}kB)")
+
+        if offset_in_kb > size_of_currently_captured_data:
+            raise ValueError(f"The offset for reading the requested data "
+                             f"({offset_in_kb}kB) cannot be larger than the "
+                             f"size of currently captured data rounded up to "
+                             f"2kB chunks "
+                             f"({size_of_currently_captured_data}kB)")
+
+        values = self._parent.visa_handle.query_binary_values(
+            f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
+            datatype='f',
+            is_big_endian=False)
+
+        return np.array(values)
 
     def capture_one_sample_per_trigger(self, trigger_count: int, start_triggers_pulsetrain: Callable) -> dict:
         """
