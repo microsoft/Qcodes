@@ -230,9 +230,7 @@ class MercuryiPS(VisaInstrument):
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
 
-        tv = self._target_vector
-
-        for coord in ['x', 'y', 'z', 'r', 'theta', 'phi']:
+        for coord in ['x', 'y', 'z', 'r', 'theta', 'phi', 'rho']:
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
                                unit='T',
@@ -243,6 +241,15 @@ class MercuryiPS(VisaInstrument):
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
+
+    def _set_target(self, coordinate: str, target: float) -> None:
+        """
+        for the XXX_target parameters
+        """
+        # first validate the new target
+        validation_vector = FieldVector.copy(self._target_vector)
+        validation_vector.set_component(**{coordinate: target})
+
 
     def _idn_getter(self) -> Dict[str, str]:
         """
