@@ -2,6 +2,9 @@ import struct
 import logging
 import warnings
 import re
+from collections import namedtuple
+
+from typing import Tuple
 
 import numpy as np
 import array as arr
@@ -1024,8 +1027,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
-    
-    def parse_marker_channel_name(name:str)->Tupel[int, int]:
+    @staticmethod 
+    def parse_marker_channel_name(name:str)->Tuple[int, int]:
         """
         returns from the channel index and marker index from a marker
         descriptor string e.g. '1M1'->(1,1)
@@ -1033,7 +1036,8 @@ class Tektronix_AWG5014(VisaInstrument):
         res  = re.match('^(?P<channel>\d+)M(?P<marker>\d+)$',
                         name)
         assert res is not None
-        MarkerDescriptor = namedtuple('MarkerDescriptor', 'marker', 'channel')
+        MarkerDescriptor = namedtuple('MarkerDescriptor',
+                                      ('marker', 'channel'))
         return MarkerDescriptor(int(res.group('marker')),
                                 int(res.group('channel')))
 
@@ -1070,7 +1074,6 @@ class Tektronix_AWG5014(VisaInstrument):
         # and transpose at the end.
         # make...: [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
         # dict efectively: {elementid: {channelid: wfm}}
-        physical_channels = []
 
         nreps = []
         trig_waits = []
@@ -1084,17 +1087,13 @@ class Tektronix_AWG5014(VisaInstrument):
         if len(seq) < 1:
             # TODO: better error
             raise RuntimeError('Sequences need to have at least one element')
-
-        # mapped_channels = [channel_mapping.get(k, None)
-        #                    for k in datadict.keys()]
-        # # filter out all channels that are not relevant for this
-        # # instrument
         
         # treat the first step differently: here the channel order
         # is defined
-        used_channels = list(seq[0]['content'][0]['data'].keys())
-        # physical_channels = [v for v in mapped_channels
-        #                      if v in self.available_signal_channels]
+        # TODO: this could made such that it fails if not all channels are
+        # accounted for. Now it will fail in the next step.
+        used_channels = [k for k in seq[0]['content'][0]['data'].keys()
+                         if k in self.available_signal_channels]
         for elem in seq:
             # TODO: add support for subsequences
             assert elem['type'] == 'element'
@@ -1155,7 +1154,7 @@ class Tektronix_AWG5014(VisaInstrument):
         self.make_send_and_load_awg_file(waveforms, m1s, m2s,
                                     nreps, trig_waits,
                                     goto_states, jump_tos,
-                                    channels=physical_channels,
+                                    channels=used_channels,
                                     filename=filename,
                                     preservechannelsettings=preservechannelsettings)
     def generate_awg_file(self,
