@@ -84,7 +84,7 @@ class ChannelBuffer(ArrayParameter):
         else:
             self._instrument._buffer2_ready = True
 
-    def get(self):
+    def get_raw(self):
         """
         Get command. Returns numpy array
         """
