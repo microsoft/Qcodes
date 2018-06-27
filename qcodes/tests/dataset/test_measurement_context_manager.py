@@ -11,7 +11,7 @@ import numpy as np
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.instrument.parameter import ArrayParameter
@@ -50,6 +50,11 @@ def DMM():
     yield dmm
     dmm.close()
 
+@pytest.fixture
+def channel_array_instrument():
+    channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
+    yield channelarrayinstrument
+    channelarrayinstrument.close()
 
 @pytest.fixture
 def SpectrumAnalyzer():
@@ -341,6 +346,17 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 
 def test_subscriptions(experiment, DAC, DMM):
+    """
+    Test that subscribers are called at the moment that data is flushed to database
+
+    Note that for the purpose of this test, flush_data_to_database method is called explicitly instead of waiting for
+    the data to be flushed automatically after the write_period passes after a add_result call.
+
+    Args:
+        experiment (qcodes.dataset.experiment_container.Experiment) : qcodes experiment object
+        DAC (qcodes.instrument.base.Instrument) : dummy instrument object
+        DMM (qcodes.instrument.base.Instrument) : another dummy instrument object
+    """
 
     def subscriber1(results, length, state):
         """
@@ -383,8 +399,10 @@ def test_subscriptions(experiment, DAC, DMM):
 
             (a, b) = as_and_bs[num]
             expected_list += [c for c in (a, b) if c > 7]
-            sleep(1.2*meas.write_period)
+
             datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
+            datasaver.flush_data_to_database()
+
             assert lt7s == expected_list
             assert list(res_dict.keys()) == [n for n in range(1, num+2)]
 
@@ -692,6 +710,41 @@ def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
                                  (tspec, tspec.get()))
 
     assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500))
+def test_datasaver_array_parameters_channel(experiment, channel_array_instrument,
+                                    DAC, N):
+
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_array_parameter
+
+    meas.register_parameter(array_param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(array_param, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N * M
 
 
 def test_load_legacy_files_2D(experiment):

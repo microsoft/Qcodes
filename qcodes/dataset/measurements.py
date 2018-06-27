@@ -127,12 +127,18 @@ class DataSaver:
             # design of ArrayParameters (possibly) containing (some of) their
             # setpoints
             if isinstance(parameter, ArrayParameter):
-                sps = parameter.setpoints[0]
-                inst_name = getattr(parameter._instrument, 'name', '')
-                if inst_name:
-                    spname = f'{inst_name}_{parameter.setpoint_names[0]}'
+                if parameter.setpoints is not None:
+                    sps = parameter.setpoints[0]
                 else:
-                    spname = parameter.setpoint_names[0]
+                    raise RuntimeError("Got an array parameter without "
+                                       "setpoints. Cannot handle this")
+                inst_name = getattr(parameter._instrument, 'name', '')
+                sp_name_parts = []
+                if inst_name is not None:
+                    sp_name_parts.append(inst_name)
+                if parameter.setpoint_names is not None:
+                    sp_name_parts.append(parameter.setpoint_names[0])
+                spname = '_'.join(sp_name_parts)
 
                 if f'{paramstr}_setpoint' in self.parameters.keys():
                     res.append((f'{paramstr}_setpoint', sps))
@@ -256,8 +262,11 @@ class Runner:
             self.ds.add_metadata('snapshot',
                                  json.dumps({'station': station.snapshot()}))
 
-        for paramspec in self.parameters.values():
-            self.ds.add_parameter(paramspec)
+        if self.parameters is not None:
+            for paramspec in self.parameters.values():
+                self.ds.add_parameter(paramspec)
+        else:
+            raise RuntimeError("No parameters supplied")
 
         # register all subscribers
         for (callble, state) in self.subscribers:
@@ -409,12 +418,18 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        my_setpoints: Sequence[Union[str,_BaseParameter]]
+        my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
-            if parameter.setpoint_names:
-                spname = (f'{parameter._instrument.name}_'
-                          f'{parameter.setpoint_names[0]}')
+            spname_parts = []
+            if parameter.instrument is not None:
+                inst_name = parameter.instrument.name
+                if inst_name is not None:
+                    spname_parts.append(inst_name)
+            if parameter.setpoint_names is not None:
+                spname_parts.append(parameter.setpoint_names[0])
+            if len(spname_parts) > 0:
+                spname = '_'.join(spname_parts)
             else:
                 spname = f'{name}_setpoint'
             if parameter.setpoint_labels:
@@ -447,11 +462,11 @@ class Measurement:
         label = parameter.label
         unit = parameter.unit
 
-        if my_setpoints:
+        if my_setpoints is not None:
             sp_strings = [str(sp) for sp in my_setpoints]
         else:
             sp_strings = []
-        if basis:
+        if basis is not None:
             bs_strings = [str(bs) for bs in basis]
         else:
             bs_strings = []

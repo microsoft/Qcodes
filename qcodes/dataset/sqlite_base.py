@@ -411,9 +411,9 @@ def insert_many_values(conn: sqlite3.Connection,
     # We demand that all values have the same length
     lengths = [len(val) for val in values]
     if len(np.unique(lengths)) > 1:
-        raise ValueError(f'Wrong input format for values. Must specify the '
+        raise ValueError('Wrong input format for values. Must specify the '
                          'same number of values for all columns. Received'
-                         ' lengths {lengths}.')
+                         f' lengths {lengths}.')
     no_of_rows = len(lengths)
     no_of_columns = lengths[0]
 
@@ -805,7 +805,9 @@ def new_experiment(conn: sqlite3.Connection,
     return curr.lastrowid
 
 
-def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
+# TODO(WilliamHPNielsen): we should remove the redundant
+# is_completed
+def mark_run_complete(conn: sqlite3.Connection, run_id: int):
     """ Mark run complete
 
     Args:
@@ -821,7 +823,7 @@ def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), complete, run_id)
+    atomic_transaction(conn, query, time.time(), True, run_id)
 
 
 def completed(conn: sqlite3.Connection, run_id)->bool:
@@ -1244,7 +1246,7 @@ def _create_run_table(conn: sqlite3.Connection,
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               parameters: List[ParamSpec],
+               parameters: Optional[List[ParamSpec]]=None,
                values:  List[Any] = None,
                metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
     """ Create a single run for the experiment.
@@ -1319,7 +1321,7 @@ def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
 def add_meta_data(conn: sqlite3.Connection,
                   row_id: int,
                   metadata: Dict[str, Any],
-                  table_name: Optional[str] = "runs") -> None:
+                  table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
 
