@@ -1148,6 +1148,8 @@ class Tektronix_AWG5014(VisaInstrument):
             jump_tos.append(seq_opts.get('jump_to', 0))
         # transpose list of lists
         waveforms = [list(x) for x in zip(*waveforms)]
+        m1s = [list(x) for x in zip(*m1s)]
+        m2s = [list(x) for x in zip(*m2s)]
         channel_cfg = {}
 
 
