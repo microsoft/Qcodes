@@ -300,6 +300,33 @@ class SR86xBuffer(InstrumentChannel):
             total_size_in_kb += 1
         return total_size_in_kb
 
+    def set_capture_length_to_fit_samples(self, sample_count: int) -> None:
+        """
+        Set the capture length of the buffer to fit the given number of
+        samples.
+
+        Args:
+            sample_count
+                Number of samples that the buffer has to fit
+        """
+        total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
+        self.capture_length_in_kb(total_size_in_kb)
+
+    def wait_until_samples_captured(self, sample_count: int) -> None:
+        """
+        Wait until the given number of samples is captured. This function
+        is blocking and has to be used with caution because it does not have
+        a timeout.
+
+        Args:
+            sample_count
+                Number of samples that needs to be captured
+        """
+        n_captured_bytes = 0
+        n_bytes_to_capture = sample_count * self.bytes_per_sample
+        while n_captured_bytes < n_bytes_to_capture:
+            n_captured_bytes = self.count_capture_bytes()
+
     def get_capture_data(self, sample_count: int) -> dict:
         """
         Read the given number of samples of the capture data from the buffer.
@@ -466,22 +493,11 @@ class SR86xBuffer(InstrumentChannel):
                 be "X" and "Y". The values in the dictionary are numpy arrays
                 of numbers.
         """
-        # Set buffer size to fit the expected number of samples
-        # (one sample per one trigger)
-        total_size_in_kb = self._calc_capture_size_in_kb(trigger_count)
-        self.capture_length_in_kb(total_size_in_kb)
-
+        self.set_capture_length_to_fit_samples(trigger_count)
         self.start_capture("ONE", "SAMP")
-
         start_triggers_pulsetrain()
-
-        n_captured_bytes = 0
-        n_bytes_to_capture = trigger_count * self.bytes_per_sample
-        while n_captured_bytes < n_bytes_to_capture:
-            n_captured_bytes = self.count_capture_bytes()
-
+        self.wait_until_samples_captured(trigger_count)
         self.stop_capture()
-
         return self.get_capture_data(trigger_count)
 
     def start_capture_at_trigger(self,
@@ -507,21 +523,11 @@ class SR86xBuffer(InstrumentChannel):
                 be "X" and "Y". The values in the dictionary are numpy arrays
                 of numbers.
         """
-        # Set buffer size to fit the requested number of samples
-        total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
-        self.capture_length_in_kb(total_size_in_kb)
-
+        self.set_capture_length_to_fit_samples(sample_count)
         self.start_capture("ONE", "TRIG")
-
         send_trigger()
-
-        n_bytes_captured = 0
-        n_bytes_to_capture = sample_count * self.bytes_per_sample
-        while n_bytes_captured < n_bytes_to_capture:
-            n_bytes_captured = self.count_capture_bytes()
-
+        self.wait_until_samples_captured(sample_count)
         self.stop_capture()
-
         return self.get_capture_data(sample_count)
 
 
