@@ -292,11 +292,11 @@ class Runner:
         for func, args in self.exitactions:
             func(*args)
 
-        self.ds.unsubscribe_all()
-
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_complete()
+
+        self.ds.unsubscribe_all()
 
 
 class Measurement:
