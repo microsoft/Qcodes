@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, Union
+from typing import Dict, Union, Optional, Callable
 import logging
 
 from qcodes.instrument.channel import InstrumentChannel
@@ -194,6 +194,7 @@ class MercuryiPS(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, visalib=None,
+                 field_limits: Optional[Callable]=None,
                  **kwargs) -> None:
         """
         Args:
@@ -202,7 +203,16 @@ class MercuryiPS(VisaInstrument):
                 socket connection to port 7020 must be made
             visalib: The VISA library to use. Leave blank if not in simulation
                 mode.
+            field_limits: A function describing the allowed field
+                range (T). The function shall take (x, y, z) as an input and
+                return a boolean describing whether that field value is
+                acceptable.
         """
+
+        if field_limits is not None and not(callable(field_limits)):
+            raise ValueError('Got wrong type of field_limits. Must be a '
+                             'function from (x, y, z) -> Bool. Received '
+                             f'{type(field_limits)} instead.')
 
         if visalib:
             visabackend = visalib.split('@')[1]
@@ -226,6 +236,8 @@ class MercuryiPS(VisaInstrument):
             psu = MercurySlavePS(self, psu_name, grp)
             self.add_submodule(psu_name, psu)
 
+        self._field_limits = field_limits
+
         self._target_vector = FieldVector(x=self.GRPX.field(),
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
@@ -234,8 +246,8 @@ class MercuryiPS(VisaInstrument):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
                                unit='T',
-                               get_cmd=partial(self._get_component,
-                                               f'{coord}'))
+                               get_cmd=partial(self._get_component, coord),
+                               set_cmd=partial(self._set_target, coord))
 
         self.connect_message()
 
@@ -244,12 +256,19 @@ class MercuryiPS(VisaInstrument):
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
+        The function to set a target value for a coordinate, i.e. the set_cmd
         for the XXX_target parameters
         """
         # first validate the new target
-        validation_vector = FieldVector.copy(self._target_vector)
-        validation_vector.set_component(**{coordinate: target})
+        valid_vec = FieldVector()
+        valid_vec.copy(self._target_vector)
+        valid_vec.set_component(**{coordinate: target})
 
+        if not self._field_limits(*valid_vec.get_components('x', 'y', 'z')):
+            raise ValueError(f'Cannot set {coordinate} target to {target}, '
+                             'that would violate the field_limits. ')
+
+        self._target_vector.set_component(**{coordinate: target})
 
     def _idn_getter(self) -> Dict[str, str]:
         """
