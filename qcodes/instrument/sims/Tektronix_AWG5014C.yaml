@@ -1,0 +1,91 @@
+# SIMULATED INSTRUMENT FOR TEKTRONIX AWG 5014C
+spec: "1.0"
+
+devices:
+  device 1:  # AWG5014C
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, AWG5014C, 1000, 0.1"
+
+    properties:
+
+      current_directory:
+        default: "\\Users\\OEM\\Documents"
+        getter:
+          q: "MMEMory:CDIRectory?"
+          r: "{}"
+        setter:
+          q: "MMEMory:CDIRectory {}"
+
+      clock frequency:
+        default: 1000000000
+        getter:
+          q: "SOURce:FREQuency?"
+          r: "{}"
+        setter:
+          q: "SOURce:FREQuency {}"
+
+      trigger impedance:
+        default: 50
+        getter:
+          q: "TRIGger:IMPedance?"
+          r: "{}"
+        setter:
+          q: "TRIGger:IMPedance {}"
+
+      clock source:
+        default: "INT"
+        getter:
+          q: "AWGControl:CLOCk:SOURce?"
+          r: "{}"
+        setter:
+          q: "AWGControl:CLOCk:SOURce {}"
+
+      reference source:
+        default: "INT"
+        getter:
+          q: "SOURce1:ROSCillator:SOURce?"
+          r: "{}"
+        setter:
+          q: "SOURce1:ROSCillator:SOURce {}"
+
+      trigger source:
+        default: "INT"
+        getter:
+          q: "TRIGger:SOURce?"
+          r: "{}"
+        setter:
+          q: "TRIGger:SOURce {}"
+
+      trigger level:
+        default: 0
+        getter:
+          q: "TRIGger:LEVel?"
+          r: "{}"
+        setter:
+          q: "TRIGger:LEVel {}"
+
+      event impedance:
+        default: 50
+        getter:
+          q: "EVENt:IMPedance?"
+          r: "{}"
+        setter:
+          q: "EVENt:IMPedance {}"
+
+      event level:
+        default: 0
+        getter:
+          q: "EVENt:LEVel?"
+          r: "{}"
+        setter:
+          q: "EVENt:LEVel {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
