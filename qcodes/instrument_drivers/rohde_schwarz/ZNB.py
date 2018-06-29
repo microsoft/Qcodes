@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from qcodes import VisaInstrument
 from qcodes import ChannelList, InstrumentChannel
@@ -121,7 +122,12 @@ class ZNBChannel(InstrumentChannel):
         # source power is dependent on model, but not well documented.
         # here we assume -60 dBm for ZNB20, the others are set,
         # due to lack of knowledge, to -80 dBm as of before the edit
-        model = self._parent.get_idn()['model'].split('-')[0]
+        full_modelname = self._parent.get_idn()['model']
+        model: Optional[str]
+        if full_modelname is not None:
+            model = full_modelname.split('-')[0]
+        else:
+            model = None
         if model == 'ZNB4':
             self._min_source_power = -80
         elif model == 'ZNB8':
