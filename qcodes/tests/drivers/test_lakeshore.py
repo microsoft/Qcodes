@@ -26,9 +26,10 @@ class MockVisaInstrument():
         # the values are the corresponding methods to be called on the mock
         # instrument.
 
-        # to facilitate the definition there are the decorators `@query' and `@command`
-        # these attach an attribute to the method, so that the dictionaries can be
-        # filled here in the constructor.
+        # to facilitate the definition there are the decorators `@query' and
+        # `@command`
+        # these attach an attribute to the method, so that the dictionaries can
+        # be filled here in the constructor.
         # (This is borderline abusive, but makes a it easy to define mocks)
         func_names = dir(self)
         # cycle through all methods
@@ -46,7 +47,8 @@ class MockVisaInstrument():
         cmd_str = cmd_parts[0].upper()
         if cmd_str in self.cmds:
             args = ''.join(cmd_parts[1:])
-            log.debug("Calling query on instrument Mock {}: {} for command {} with args {}".format(self.name, cmd, cmd_str, args))
+            log.debug(f'Calling query on instrument Mock {self.name}: '
+                      f'{cmd} for command {cmd_str} with args {args}')
             self.cmds[cmd_str](args)
         else:
             super().write_raw(cmd)
@@ -56,8 +58,10 @@ class MockVisaInstrument():
         query_str = query_parts[0].upper()
         if query_str in self.queries:
             args = ''.join(query_parts[1:])
-            log.debug("Calling query on instrument Mock {}: {} for command {} with args {}".format(self.name, query, query_str, args))
-            print("Calling query on instrument Mock {}: {} for command {} with args {}".format(self.name, query, query_str, args))
+            log.debug(f'Calling query on instrument Mock {self.name}: '
+                      f'{query} for command {query_str} with args {args}')
+            print(f'Calling query on instrument Mock {self.name}: '
+                  f'{query} for command {query_str} with args {args}')
             response = self.queries[query_str](args)
             log.debug(f"Got mock instrument response: {response}")
             return response
@@ -130,7 +134,9 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     @query('OUTMODE?')
     def outmodeq(self, arg):
         heater = self.heaters[arg]
-        return f'{heater.mode}, {heater.input_channel}, {heater.powerup_enable}, {heater.polarity}, {heater.filter}, {heater.delay}'
+        return (f'{heater.mode}, {heater.input_channel}, '
+                f'{heater.powerup_enable}, {heater.polarity}, '
+                f'{heater.filter}, {heater.delay}')
 
     @command('OUTMODE')
     @split_args()
@@ -144,7 +150,8 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         h.polarity = polarity
         h.filter = filter
         h.delay = delay
-        print(f'setting outputmode to {h.mode}, {input_channel}, {powerup_enable}, {polarity}, {filter}, {delay}')
+        print(f'setting outputmode to {h.mode}, {input_channel}, '
+              f'{powerup_enable}, {polarity}, {filter}, {delay}')
 
     @query('RANGE?')
     def rangeq(self, arg):
@@ -182,7 +189,8 @@ visalib = sims.__file__.replace('__init__.py', 'lakeshore_model372.yaml@sim')
 
 @pytest.fixture(scope='function')
 def lakeshore_372():
-    ls = Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::65535::INSTR', visalib=visalib, device_clear=False)
+    ls = Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::65535::INSTR',
+                        visalib=visalib, device_clear=False)
     yield ls
     ls.close()
 
