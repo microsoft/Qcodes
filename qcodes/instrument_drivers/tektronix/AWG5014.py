@@ -1042,7 +1042,7 @@ class Tektronix_AWG5014(VisaInstrument):
         return MarkerDescriptor(int(res.group('marker')),
                                 int(res.group('channel')))
 
-    def make_awg_file_from_forged_sequence(self, seq,
+    def make_send_and_load_awg_file_from_forged_sequence(self, seq,
                                            filename='customawgfile.awg',
                                            preservechannelsettings=True):
         """
