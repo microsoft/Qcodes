@@ -2,6 +2,7 @@
 from typing import Sequence
 import warnings
 import logging
+import time
 
 import visa
 import pyvisa.constants as vi_const
@@ -231,3 +232,26 @@ class VisaInstrument(Instrument):
         snap['timeout'] = self.timeout.get()
 
         return snap
+
+    def wait_till_complete(self, check_after = 5):
+        """
+        WARNING: This function repeatedly clears the Event Status Register (ESR).
+
+        The *OPC? command is used to query the machine when it completes an operation.
+        However, in some cases the operation is too long. There are 2 ways of dealing with this.
+
+        1. Change the timeout to an appropriate value (if you can determine how long the operation will take.)
+           This may cause issues while debugging.
+
+        2. Use the following function which asynchronously queries the Event Status Register and checks if the last bit (the OPC bit) is set.
+        """
+
+        try:
+            log.debug("Clearing ESR")
+            self.ask_raw("*ESR?")
+            self.write_raw("*OPC")
+            time.sleep(check_after)
+            while int(self.ask_raw("*ESR?").strip())%2==0:
+                    time.sleep(0.1)
+        except KeyboardInterrupt:
+            raise Exception("{} was interrupted during operation".format(self.name))
