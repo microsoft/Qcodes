@@ -98,6 +98,9 @@ class DictClass:
         for kwarg, value in kwargs.items():
             setattr(self, kwarg, value)
 
+import time
+import numpy as np
+
 class Model_372_Mock(MockVisaInstrument, Model_372):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -106,19 +109,40 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         self.heaters['0'] = DictClass(P=1, I=2, D=3,
                                       mode=5, input_channel=2,
                                       powerup_enable=0, polarity=0,
-                                      filter=0, delay=1,
-                                      output_range=0)
+                                      use_filter=0, delay=1,
+                                      output_range=0,
+                                      setpoint=4)
         self.heaters['1'] = DictClass(P=1, I=2, D=3,
                                       mode=5, input_channel=2,
                                       powerup_enable=0, polarity=0,
-                                      filter=0, delay=1,
-                                      output_range=0)
+                                      use_filter=0, delay=1,
+                                      output_range=0,
+                                      setpoint=4)
         self.heaters['2'] = DictClass(P=1, I=2, D=3,
                                       mode=5, input_channel=2,
                                       powerup_enable=0, polarity=0,
-                                      filter=0, delay=1,
-                                      output_range=0)
-        self.channels = {str(i): DictClass(tlimit=i) for i in range(1,17)}
+                                      use_filter=0, delay=1,
+                                      output_range=0,
+                                      setpoint=4)
+        self.channel_mock = {str(i): DictClass(tlimit=i, T=4) for i in range(1,17)}
+
+        # simulate delayed heating
+        self.simulate_heating = False
+        self.start_heating_time = time.perf_counter()
+
+    def start_heating(self):
+        self.start_heating_time = time.perf_counter()
+        self.simulate_heating = True
+
+    def get_T_when_heating(self):
+        """
+        Simply define a fixed setpoint of 4 k for now
+        """
+        delta = abs(time.perf_counter() - self.start_heating_time)
+        # make it simple to start with: linear ramp 1k per second
+        # start at 7k.
+        return max(4, 7 - delta)
+
 
     @query('PID?')
     def pidq(self, arg):
@@ -136,47 +160,66 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         heater = self.heaters[arg]
         return (f'{heater.mode}, {heater.input_channel}, '
                 f'{heater.powerup_enable}, {heater.polarity}, '
-                f'{heater.filter}, {heater.delay}')
+                f'{heater.use_filter}, {heater.delay}')
 
     @command('OUTMODE')
     @split_args()
     def outputmode(self, output, mode, input_channel, powerup_enable,
-                   polarity, filter, delay):
+                   polarity, use_filter, delay):
         h = self.heaters[output]
         h.output = output
         h.mode = mode
         h.input_channel = input_channel
         h.powerup_enable = powerup_enable
         h.polarity = polarity
-        h.filter = filter
+        h.use_filter = use_filter
         h.delay = delay
         print(f'setting outputmode to {h.mode}, {input_channel}, '
-              f'{powerup_enable}, {polarity}, {filter}, {delay}')
+              f'{powerup_enable}, {polarity}, {use_filter}, {delay}')
 
     @query('RANGE?')
-    def rangeq(self, arg):
-        heater = self.heaters[arg]
-        return f'{heater.output_range}'
+    def rangeq(self, heater):
+        h = self.heaters[heater]
+        return f'{h.output_range}'
 
     @command('RANGE')
     @split_args()
-    def range_cmd(self, output, output_range):
-        h = self.heaters[output]
+    def range_cmd(self, heater, output_range):
+        h = self.heaters[heater]
         h.output_range = output_range
         print(f'setting output_range to {h.output_range}')
 
+    @query('SETP?')
+    def setpointq(self, heater):
+        h = self.heaters[heater]
+        return f'{h.setpoint}'
+
+    @command('SETP')
+    @split_args()
+    def setpoint(self, heater, setpoint):
+        h = self.heaters[heater]
+        h.setpoint = setpoint
+        print(f'setting setpoint to {h.setpoint}')
+
     @query('TLIMIT?')
-    def tlimitq(self, arg):
-        chan = self.channels[arg]
+    def tlimitq(self, channel):
+        chan = self.channel_mock[channel]
         return f'{chan.tlimit}'
 
     @command('TLIMIT')
     @split_args()
-    def tlimitcmd(self, output, tlimit):
-        chan = self.channels[output]
+    def tlimitcmd(self, channel, tlimit):
+        chan = self.channel_mock[channel]
         chan.tlimit = tlimit
         print(f'setting TLIMIT to {chan.tlimit}')
 
+
+    @query('KRDG?')
+    def temperature(self, output):
+        chan = self.channel_mock[output]
+        if self.simulate_heating:
+            return self.get_T_when_heating()
+        return f'{chan.T}'
 # def test_instantiation_model_336():
 #     ls = Model_336('lakeshore_336', 'GPIB::2::65535::INSTR', visalib=visalib, device_clear=False)
 #     ls.close()
@@ -252,3 +295,24 @@ def test_tlimit(lakeshore_372):
     # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
     ls.ch01.t_limit(tlimit)
     assert ls.ch01.t_limit() == tlimit
+
+def test_setpoint(lakeshore_372):
+    ls = lakeshore_372
+    setpoint = 5.1
+    # for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
+    ls.sample_heater.setpoint(setpoint)
+    assert ls.sample_heater.setpoint() == setpoint
+
+def test_set_and_wait_for_T(lakeshore_372):
+    ls = lakeshore_372
+    ls.sample_heater.setpoint(4)
+    ls.start_heating()
+    ls.sample_heater.wait_until_set_point_reached()
+
+def test_select_range_limits(lakeshore_372):
+    h = lakeshore_372.sample_heater
+    ranges = list(range(1,8))
+    h.range_limits(ranges)
+    for i in ranges:
+        h.set_range_from_temperature(i-0.5)
+        assert h.output_range() == h.INVERSE_RANGES[i]
