@@ -316,3 +316,11 @@ def test_select_range_limits(lakeshore_372):
     for i in ranges:
         h.set_range_from_temperature(i-0.5)
         assert h.output_range() == h.INVERSE_RANGES[i]
+
+def test_blocking_T(lakeshore_372):
+    ls = lakeshore_372
+    h = lakeshore_372.sample_heater
+    ranges = list(range(1,8))
+    h.range_limits(ranges)
+    ls.start_heating()
+    h.blocking_T(4)

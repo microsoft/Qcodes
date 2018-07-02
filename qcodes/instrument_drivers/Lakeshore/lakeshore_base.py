@@ -145,6 +145,17 @@ class BaseOutput(InstrumentChannel):
                                  'within tolerance.', unit='')
         self.wait_equilibration_time(0.5)
 
+
+        self.add_parameter('blocking_T',
+                           vals=vals.Numbers(0, 400),
+                           get_parser=float,
+                           set_cmd=self._set_blocking_T)
+
+    def _set_blocking_T(self, T):
+        self.set_range_from_temperature(T)
+        self.setpoint(T)
+        self.wait_until_set_point_reached()
+
     def set_range_from_temperature(self, temperature):
         """
         Sets the output range of this given heatre from from a given
@@ -154,6 +165,12 @@ class BaseOutput(InstrumentChannel):
         the limits `range_limits[i-1]` and `range_limits[i]`, that is
         `range_limits` is the upper limit for using a certain heater current
         """
+        if self.range_limits.get_latest() is None:
+            raise RuntimeError('Error when calling set_range_from_temperature:'
+                               ' You must specify the output range limits '
+                               'before automatically setting the range '
+                               '(e.g. inst.range_limits([0.021, 0.01, 0.2, '
+                               '1.1, 2, 4, 8]))')
         i = bisect(self.range_limits.get_latest(), temperature)
         # there is a `+1` because `self.RANGES` includes `'off'` as the first
         # value.
