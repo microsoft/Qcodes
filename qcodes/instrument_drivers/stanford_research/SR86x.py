@@ -735,6 +735,23 @@ class SR86x(VisaInstrument):
             }
         )
 
+        self.add_parameter(
+            name="external_reference_trigger_input_resistance",
+            label="External reference trigger input resistance",
+            get_cmd="REFZ?",
+            set_cmd="REFZ {}",
+            val_mapping={
+                "50": 0,
+                "50OHMS": 0,
+                0: 0,
+                "1M": 1,
+                "1MEG": 1,
+                1: 1,
+            },
+            docstring="Input resistance of the input for the external "
+                      "reference signal"
+        )
+
         # Auto functions
         self.add_function('auto_range', call_cmd='ARNG')
         self.add_function('auto_scale', call_cmd='ASCL')
