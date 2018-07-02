@@ -600,7 +600,7 @@ class Sequence(Validator):
         if not isinstance(value, collections.Sequence):
             raise TypeError(
                 '{} is not a sequence; {}'.format(repr(value), context))
-        if not len(value) == self._length:
+        if self._length and not len(value) == self._length:
             raise ValueError(
                 f'{repr(value)} has not length {self._length} but {len(value)}')
         if self._require_sorted and sorted(value) != value:
