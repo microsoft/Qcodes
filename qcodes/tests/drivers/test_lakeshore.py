@@ -1,4 +1,5 @@
 import pytest
+from typing import Dict, Callable
 import logging
 from functools import wraps
 from contextlib import suppress
@@ -13,14 +14,21 @@ log = logging.getLogger(__name__)
 
 
 class MockVisaInstrument():
+    """
+    Mixin class that overrides write_raw and ask_raw to simulate an
+    instrument.
+    """
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        # ignore this line in mypy: Mypy does not support mixins yet
+        # and seen by itself with this class definition it does not make sense
+        # to call __init__ on the super()
+        super().__init__(*args, **kwargs)  # type: ignore
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
-        self.cmds = {}
+        self.cmds: Dict[str, Callable] = {}
         # and pyvisa_instrument.query() functions
-        self.queries = {}
+        self.queries: Dict[str, Callable] = {}
         # the keys are the issued VISA commands like '*IDN?' or '*OPC'
         # the values are the corresponding methods to be called on the mock
         # instrument.
@@ -101,7 +109,7 @@ class DictClass:
 class Model_372_Mock(MockVisaInstrument, Model_372):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.heaters = {}
+        self.heaters: Dict[str, DictClass] = {}
         # initial values
         self.heaters['0'] = DictClass(P=1, I=2, D=3,
                                       mode=5, input_channel=2,

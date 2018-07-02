@@ -28,7 +28,7 @@ class GroupParameter(Parameter):
 
 class Group():
     def __init__(self, parameters, set_cmd=None, get_cmd=None,
-                 get_parser=None, separator=',', types=None):
+                 get_parser=None, separator=',', types=None) -> None:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
         self.instrument = parameters[0].root_instrument
         for p in parameters:
@@ -68,14 +68,18 @@ class Group():
             p.get(result=ret[name])
 
 VAL_MAP_TYPE = ClassVar[Dict[str, int]]
+INVERSE_VAL_MAP_TYPE = ClassVar[Dict[int, str]]
 
 class BaseOutput(InstrumentChannel):
 
-    MODES: VAL_MAP_TYPE = {}
-    RANGES: VAL_MAP_TYPE = {}
+    MODES: ClassVar[Dict[str, int]] = {}
+    RANGES: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, parent, output_name, output_index):
+
+    def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name)
+        self.INVERSE_RANGES: Dict[int, str] = {
+            v: k for k, v in self.RANGES.items()}
         self._has_pid = True
         self.output_index = output_index
         self.add_parameter('mode',
@@ -94,11 +98,11 @@ class BaseOutput(InstrumentChannel):
                                           f'{{filter}}, {{delay}}',
                                   get_cmd=f'OUTMODE? {output_index}')
         if self._has_pid:
-            self.add_parameter('P', vals=vals.Numbers(0, 1000),
+            self.add_parameter('P', vals=validators.Numbers(0, 1000),
                             get_parser=float, parameter_class=GroupParameter)
-            self.add_parameter('I', vals=vals.Numbers(0, 1000),
+            self.add_parameter('I', vals=validators.Numbers(0, 1000),
                             get_parser=float, parameter_class=GroupParameter)
-            self.add_parameter('D', vals=vals.Numbers(0, 2500),
+            self.add_parameter('D', vals=validators.Numbers(0, 2500),
                             get_parser=float, parameter_class=GroupParameter)
             self.pid_group = Group([self.P, self.I, self.D],
                                 set_cmd=f"PID {output_index}, {{P}}, {{I}}, {{D}}",
@@ -110,7 +114,7 @@ class BaseOutput(InstrumentChannel):
                            get_cmd=f'RANGE? {output_index}')
 
         self.add_parameter('setpoint',
-                           vals=vals.Numbers(0, 400),
+                           vals=validators.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=f'SETP {output_index}, {{}}',
                            get_cmd=f'SETP? {output_index}')
@@ -146,7 +150,7 @@ class BaseOutput(InstrumentChannel):
 
 
         self.add_parameter('blocking_T',
-                           vals=vals.Numbers(0, 400),
+                           vals=validators.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=self._set_blocking_T)
 
@@ -281,7 +285,7 @@ class LakeshoreBase(VisaInstrument):
     channel_name_command: Dict[str,str] = {}
 
     def __init__(self, name: str, address: str,
-                 terminator: str ='\r\n', **kwargs):
+                 terminator: str ='\r\n', **kwargs) -> None:
         super().__init__(name, address, **kwargs)
         # Allow access to channels either by referring to the channel name
         # or through a channel list.

@@ -1,10 +1,13 @@
+from typing import Dict, ClassVar
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
-    LakeshoreBase, BaseOutput, Group, GroupParameter, VAL_MAP_TYPE)
+    LakeshoreBase, BaseOutput, Group, GroupParameter, VAL_MAP_TYPE,
+    INVERSE_VAL_MAP_TYPE)
 import qcodes.utils.validators as vals
 
-
 class Output_372(BaseOutput):
-    MODES: VAL_MAP_TYPE = {
+    # Probably Mypy bug
+    # should have been fixed in https://github.com/python/mypy/issues/4715
+    MODES: ClassVar[Dict[str, int]] = {  
         'off': 0,
         'monitor_out': 1,
         'open_loop': 2,
@@ -12,10 +15,10 @@ class Output_372(BaseOutput):
         'still': 4,
         'closed_loop': 5,
         'warm_up': 6}
-    POLARITIES: VAL_MAP_TYPE = {
+    POLARITIES: ClassVar[Dict[str, int]] = {  
         'unipolar': 0,
         'bipolar': 1}
-    RANGES: VAL_MAP_TYPE = {
+    RANGES: ClassVar[Dict[str, int]] = {  
         'off': 0,
         '31.6μA': 1,
         '100μA': 2,
@@ -26,9 +29,8 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
-    INVERSE_RANGES = {v: k for k, v in RANGES.items()}
 
-    def __init__(self, parent, output_name, output_index):
+    def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index)
         self.add_parameter('polarity',
                            val_mapping=self.POLARITIES,

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import ClassVar, Dict
 import logging
 from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel, VAL_MAP_TYPE
 import qcodes.utils.validators as vals
@@ -7,14 +7,14 @@ log = logging.getLogger(__name__)
 
 class Output_336(BaseOutput):
 
-    MODES: VAL_MAP_TYPE = {
+    MODES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'closed_loop': 1,
         'zone': 2,
         'open_loop': 3,
         'monitor_out': 4,
         'warm_up': 5}
-    RANGES: VAL_MAP_TYPE = {
+    RANGES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'low': 1,
         'medium': 2,
