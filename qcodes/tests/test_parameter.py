@@ -11,10 +11,11 @@ from hypothesis import given
 import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
-    Parameter, ArrayParameter, MultiParameter,
+    Parameter, ArrayParameter, MultiParameter, ManualParameter,
     InstrumentRefParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.instrument_drivers.devices import ParameterScaler
 
 
 class GettableParam(Parameter):
@@ -833,3 +834,53 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+class TestParameterScaler(TestCase):
+    def setUp(self):
+        self.target = ManualParameter(name='target_parameter', unit='V', initial_value=1.0)
+        self.scaler = ParameterScaler(self.target, name='scaled_value', division=1)
+
+    def test_divider(self):
+        test_division = 10
+        test_value = 5
+
+        self.scaler.division = test_division
+        self.scaler(test_value)
+        assert self.scaler() == test_value
+        assert self.target() == test_division * test_value
+        assert self.scaler.gain == 1/test_division
+
+    def test_multiplier(self):
+        test_multiplier= 10
+        test_value = 5
+
+        self.scaler.gain = test_multiplier
+        self.scaler(test_value)
+        assert self.scaler() == test_value
+        assert self.target() == test_value / test_multiplier
+        assert self.scaler.division == 1/test_multiplier
+
+    def test_unit(self):
+        assert self.scaler.unit == 'V'
+
+        self.scaler.unit = 'A'
+        assert self.scaler.unit == 'A'
+
+    def test_variable_gain(self):
+        test_value = 5
+
+        initial_gain = 2
+        gain = ManualParameter(name='gain', initial_value=initial_gain)
+        self.scaler.gain = gain
+        self.scaler(test_value)
+
+        assert self.scaler() == test_value
+        assert self.target() == test_value / initial_gain
+        assert self.scaler.division == 1/initial_gain
+
+        second_gain = 7
+        gain(second_gain)
+        assert self.target() == test_value / initial_gain   #target value must change on scaler value change, not on gain/division
+        self.scaler(test_value)
+        assert self.target() == test_value / second_gain
+        assert self.scaler.division == 1 / second_gain
