@@ -1,11 +1,10 @@
 import pytest
 import logging
-from collections import namedtuple
 from functools import wraps
 from contextlib import suppress
+import time
 
-import qcodes
-from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
+# from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 import qcodes.instrument.sims as sims
 
@@ -98,8 +97,6 @@ class DictClass:
         for kwarg, value in kwargs.items():
             setattr(self, kwarg, value)
 
-import time
-import numpy as np
 
 class Model_372_Mock(MockVisaInstrument, Model_372):
     def __init__(self, *args, **kwargs) -> None:

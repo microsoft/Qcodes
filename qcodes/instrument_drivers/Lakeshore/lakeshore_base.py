@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, ClassVar
+from typing import Dict, ClassVar
 import logging
 from collections import OrderedDict
 import time
@@ -7,7 +7,6 @@ from bisect import bisect
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
-import qcodes.utils.validators as vals
 
 log = logging.getLogger(__name__)
 
@@ -16,10 +15,10 @@ class GroupParameter(Parameter):
         self.group = None
         super().__init__(name, instrument, **kwargs)
 
-    def set_raw(self, value, **kwargs):
+    def set_raw(self, value, **kwargs):  # pylint: disable=E0202
         self.group.set(self, value)
 
-    def get_raw(self, result=None):
+    def get_raw(self, result=None):  # pylint: disable=E0202
         if not result:
             self.group.update()
             return self.raw_value

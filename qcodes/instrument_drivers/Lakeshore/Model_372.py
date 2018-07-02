@@ -1,8 +1,5 @@
-from typing import Dict, Union
-from enum import Enum
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument_drivers.Lakeshore.lakeshore_base import LakeshoreBase, BaseSensorChannel, BaseOutput, Group, GroupParameter, VAL_MAP_TYPE
-from qcodes.utils.command import Command
+from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
+    LakeshoreBase, BaseOutput, Group, GroupParameter, VAL_MAP_TYPE)
 import qcodes.utils.validators as vals
 
 
