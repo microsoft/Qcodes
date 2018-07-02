@@ -177,7 +177,6 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         chan.tlimit = tlimit
         print(f'setting TLIMIT to {chan.tlimit}')
 
-visalib = sims.__file__.replace('__init__.py', 'lakeshore_model372.yaml@sim')
 # def test_instantiation_model_336():
 #     ls = Model_336('lakeshore_336', 'GPIB::2::65535::INSTR', visalib=visalib, device_clear=False)
 #     ls.close()
@@ -187,12 +186,27 @@ visalib = sims.__file__.replace('__init__.py', 'lakeshore_model372.yaml@sim')
 #     ls.close()
 
 
-@pytest.fixture(scope='function')
+def instrument_fixture(scope='function'):
+    def wrapper(func):
+        @pytest.fixture(scope = scope)
+        def wrapped_fixture():
+            inst = func()
+            try:
+                yield inst
+            except:
+                raise
+            finally:
+                inst.close()
+        return wrapped_fixture
+    return wrapper
+
+
+@instrument_fixture(scope='function')
 def lakeshore_372():
-    ls = Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::65535::INSTR',
-                        visalib=visalib, device_clear=False)
-    yield ls
-    ls.close()
+    visalib = sims.__file__.replace('__init__.py',
+                                    'lakeshore_model372.yaml@sim')
+    return Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::65535::INSTR',
+                          visalib=visalib, device_clear=False)
 
 def test_pid_set(lakeshore_372):
     ls = lakeshore_372
