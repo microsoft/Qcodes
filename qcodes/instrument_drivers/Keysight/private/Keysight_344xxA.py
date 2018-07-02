@@ -183,21 +183,6 @@ class _Keysight_344xxA(VisaInstrument):
         if DIG:
             self._apt_times = apt_times[self.model]
 
-        def errorparser(rawmssg: str) -> (int, str):
-            """
-            Parses the error message.
-
-            Args:
-                rawmssg: The raw return value of 'SYSTem:ERRor?'
-
-            Returns:
-                The error code and the error message.
-            """
-            code = int(rawmssg.split(',')[0])
-            mssg = rawmssg.split(',')[1].strip().replace('"', '')
-
-            return code, mssg
-
         ####################################
         # PARAMETERS
 
@@ -319,13 +304,6 @@ class _Keysight_344xxA(VisaInstrument):
                            get_parser=float,
                            unit='s')
 
-        # SYSTEM
-        self.add_parameter('error',
-                           label='Error message',
-                           get_cmd='SYSTem:ERRor?',
-                           get_parser=errorparser
-                           )
-
         # The array parameter
         self.add_parameter('data_buffer',
                            parameter_class=ArrayMeasurement)
@@ -430,6 +408,19 @@ class _Keysight_344xxA(VisaInstrument):
         # NPLC settings change with resolution
 
         self.NPLC.get()
+
+    def error(self) -> (int, str):
+        """
+        Return the first error message in the queue.
+
+        Returns:
+            The error code and the error message.
+        """
+        rawmssg = self.ask('SYSTem:ERRor?')
+        code = int(rawmssg.split(',')[0])
+        mssg = rawmssg.split(',')[1].strip().replace('"', '')
+
+        return code, mssg
 
     def flush_error_queue(self, verbose: bool=True) -> None:
         """
