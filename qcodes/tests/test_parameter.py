@@ -1,13 +1,12 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple
+from collections import namedtuple, Iterable
 from unittest import TestCase
 from typing import Tuple
-from time import sleep
 
 import numpy as np
-from hypothesis import given
+from hypothesis import given, event, settings
 import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
@@ -16,6 +15,7 @@ from qcodes.instrument.parameter import (
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.instrument_drivers.devices import ParameterScaler
+
 
 
 class GettableParam(Parameter):
@@ -243,17 +243,86 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
-    def test_latest_value(self):
-        p = MemoryParameter(name='test_latest_value', get_cmd=lambda: 21)
+    # There are a number different scenarios for testing a parameter with scale
+    # and offset. Therefore a custom strategy for generating test parameters
+    # is implemented here. The possible cases are:
+    # for getting and setting a parameter: values can be
+    #    scalar:
+    #        offset and scale can be scalars
+    # for getting only:
+    #    array:
+    #        offset and scale can be scalars or arrays(of same legnth as values)
+    #        independently
 
-        p(42)
-        self.assertEqual(p.get_latest(), 42)
-        self.assertListEqual(p.get_values, [])
+    # define shorthands for strategies
+    TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x != 0)
+    SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
+    ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 
-        p.get_latest.max_val_age = 0.1
-        sleep(0.2)
-        self.assertEqual(p.get_latest(), 21)
-        self.assertEqual(p.get_values, [21])
+    # the following test stra
+    @hst.composite
+    def iterable_or_number(draw, values, size, values_scalar, is_values):
+        if draw(values_scalar):
+            # if parameter values are scalar, return scalar for values and scale/offset
+            return draw(values)
+        elif is_values:
+            # if parameter values are not scalar and parameter values are requested
+            # return a list of values of the given size
+            return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+        else:
+            # if parameter values are not scalar and scale/offset are requested
+            # make a random choice whether to return a list of the same size as the values
+            # or a simple scalar
+            if draw(hst.booleans()):
+                return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+            else:
+                return draw(values)
+
+    @settings(max_examples=500)  # default:100 increased
+    @given(values=iterable_or_number(TestFloats, SharedSize, ValuesScalar, True),
+           offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
+           scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False))
+    def test_scale_and_offset_raw_value_iterable(self, values, offsets, scales):
+        p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
+
+        # test that scale and offset does not change the default behaviour
+        p(values)
+        self.assertEqual(p.raw_value, values)
+
+        # test setting scale and offset does not change anything
+        p.scale = scales
+        p.offset = offsets
+        self.assertEqual(p.raw_value, values)
+
+
+        np_values = np.array(values)
+        np_offsets = np.array(offsets)
+        np_scales = np.array(scales)
+        np_get_values = np.array(p())
+        np.testing.assert_allclose(np_get_values, (np_values-np_offsets)/np_scales) # No set/get cmd performed
+
+        # test set, only for scalar values
+        if not isinstance(values, Iterable):
+            p(values)
+            np.testing.assert_allclose(np.array(p.raw_value), np_values*np_scales + np_offsets) # No set/get cmd performed
+
+            # testing conversion back and forth
+            p(values)
+            np_get_values = np.array(p())
+            np.testing.assert_allclose(np_get_values, np_values) # No set/get cmd performed
+
+        # adding statistics
+        if isinstance(offsets, Iterable):
+            event('Offset is array')
+        if isinstance(scales, Iterable):
+            event('Scale is array')
+        if isinstance(values, Iterable):
+            event('Value is array')
+        if isinstance(scales, Iterable) and isinstance(offsets, Iterable):
+            event('Scale is array and also offset')
+        if isinstance(scales, Iterable) and not isinstance(offsets, Iterable):
+            event('Scale is array but not offset')
+
 
     @given(scale=hst.integers(1, 100),
            value=hst.floats(min_value=1e-9, max_value=10))
@@ -835,6 +904,7 @@ class TestInstrumentRefParameter(TestCase):
         del self.a
         del self.d
 
+
 class TestParameterScaler(TestCase):
     def setUp(self):
         self.target = ManualParameter(name='target_parameter', unit='V', initial_value=1.0)
@@ -884,3 +954,30 @@ class TestParameterScaler(TestCase):
         self.scaler(test_value)
         assert self.target() == test_value / second_gain
         assert self.scaler.division == 1 / second_gain
+
+
+class TestSetContextManager(TestCase):
+
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+        self.instrument.add_parameter(
+            "a",
+            set_cmd=None,
+            get_cmd=None
+        )
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+    def test_none_value(self):
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() is None
+
+    def test_context(self):
+        self.instrument.a.set(2)
+
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() == 2

@@ -18,6 +18,7 @@ if "%1" == "" goto help
 if "%1" == "help" (
 	:help
 	echo.Please use `make ^<target^>` where ^<target^> is one of
+	echo.  htmlapi    to make standalone HTML including automatically generated API docs and notebooks
 	echo.  html       to make standalone HTML files
 	echo.  dirhtml    to make HTML files named index.html in directories
 	echo.  singlehtml to make a single large HTML file
@@ -75,11 +76,29 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
+	:HTML
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1
 	echo.
 	echo.Build finished. The HTML pages are in %BUILDDIR%/html.
 	goto end
+)
+
+if "%1" == "htmlapi" (
+	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
+	mkdir api\generated\
+	mkdir _notebooks
+	mkdir _notebooks\DataSet
+	mkdir _notebooks\DataSet\Real_instruments
+	mkdir _notebooks\driver_examples
+	mkdir _notebooks\benchmarking
+	copy _auto\qcodes.instrument_drivers.* api\generated\
+	jupyter-nbconvert --to rst "examples\*.ipynb" --output-dir=_notebooks
+	jupyter-nbconvert --to rst "examples\DataSet\Real_instruments\*.ipynb" --output-dir=_notebooks\DataSet\Real_instruments
+	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --execute "examples\DataSet\*.ipynb" --output-dir=_notebooks\DataSet
+	jupyter-nbconvert --to rst "examples\driver_examples\*.ipynb" --output-dir=_notebooks\driver_examples
+	jupyter-nbconvert --to rst "examples\benchmarking\*.ipynb" --output-dir=_notebooks\benchmarking
+	goto HTML
 )
 
 if "%1" == "dirhtml" (
