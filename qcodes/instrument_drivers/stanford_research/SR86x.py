@@ -732,7 +732,8 @@ class SR86x(VisaInstrument):
                 "EXT": 1,
                 "DUAL": 2,
                 "CHOP": 3
-            }
+            },
+            docstring="The source of the reference signal"
         )
 
         self.add_parameter(
