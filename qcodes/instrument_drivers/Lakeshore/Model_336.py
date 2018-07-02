@@ -1,6 +1,6 @@
 from typing import ClassVar, Dict
 import logging
-from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel, VAL_MAP_TYPE
+from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
 import qcodes.utils.validators as vals
 
 log = logging.getLogger(__name__)

@@ -1,13 +1,12 @@
 from typing import Dict, ClassVar
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
-    LakeshoreBase, BaseOutput, Group, GroupParameter, VAL_MAP_TYPE,
-    INVERSE_VAL_MAP_TYPE)
+    LakeshoreBase, BaseOutput, Group, GroupParameter)
 import qcodes.utils.validators as vals
 
 class Output_372(BaseOutput):
     # Probably Mypy bug
     # should have been fixed in https://github.com/python/mypy/issues/4715
-    MODES: ClassVar[Dict[str, int]] = {  
+    MODES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'monitor_out': 1,
         'open_loop': 2,
@@ -15,10 +14,10 @@ class Output_372(BaseOutput):
         'still': 4,
         'closed_loop': 5,
         'warm_up': 6}
-    POLARITIES: ClassVar[Dict[str, int]] = {  
+    POLARITIES: ClassVar[Dict[str, int]] = {
         'unipolar': 0,
         'bipolar': 1}
-    RANGES: ClassVar[Dict[str, int]] = {  
+    RANGES: ClassVar[Dict[str, int]] = {
         'off': 0,
         '31.6μA': 1,
         '100μA': 2,
@@ -60,4 +59,3 @@ class Model_372(LakeshoreBase):
         self.sample_heater = Output_372(self, 'sample_heater', 0)
         self.warmup_heater = Output_372(self, 'warmup_heater', 1)
         self.analog_heater = Output_372(self, 'analog_heater', 2)
-
