@@ -706,8 +706,8 @@ class SR86x(VisaInstrument):
                                         10e3: 20, 30e3: 21})
 
         self.add_parameter(
-            name="trigger_reference",
-            label="Trigger Reference",
+            name="external_reference_trigger",
+            label="External reference trigger mode",
             get_cmd="RTRG?",
             set_cmd="RTRG {}",
             val_mapping={
@@ -716,7 +716,10 @@ class SR86x(VisaInstrument):
                 "POSTTL": 1,
                 "NEG": 2,
                 "NEGTTL": 2,
-            }
+            },
+            docstring="The triggering mode for synchronization of the "
+                      "internal reference signal with the externally provided "
+                      "one"
         )
 
         self.add_parameter(
