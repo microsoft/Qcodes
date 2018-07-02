@@ -29,6 +29,8 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
+    INVERSE_RANGES = {v: k for k, v in RANGES.items()}
+
     def __init__(self, parent, output_name, output_index):
         super().__init__(parent, output_name, output_index)
         self.add_parameter('polarity',

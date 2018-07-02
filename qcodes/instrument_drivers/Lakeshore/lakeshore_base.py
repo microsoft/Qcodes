@@ -120,36 +120,53 @@ class BaseOutput(InstrumentChannel):
         self.add_parameter('range_limits',
                            set_cmd=None,
                            vals=validators.Sequence(validators.Numbers(0,400),
-                                                    require_sorted=True),
+                                                    require_sorted=True,
+                                                    length=7),
                            label='Temperature limits for ranges ', unit='K')
 
         self.add_parameter('wait_cycle_time',
                            set_cmd=None,
                            vals=validators.Numbers(0,100),
-                           label='Time between two readings when waiting for '
+                           label='Time between two readings when waiting for'
                                  'temperature to equilibrate', unit='s')
+        self.wait_cycle_time(0.1)
 
         self.add_parameter('wait_tolerance',
                            set_cmd=None,
                            vals=validators.Numbers(0,100),
                            label='Acceptable tolerance when waiting for '
                                  'temperature to equilibrate', unit='')
+        self.wait_tolerance(0.1)
+
         self.add_parameter('wait_equilibration_time',
                            set_cmd=None,
                            vals=validators.Numbers(0,100),
                            label='Duration during which temperature has to be '
                                  'within tolerance.', unit='')
+        self.wait_equilibration_time(0.5)
 
     def set_range_from_temperature(self, temperature):
+        """
+        Sets the output range of this given heatre from from a given
+        temperature.
+        The output range is determine by the limits given through the parameter
+        `range_limits`. The output range i is used for tempartures between
+        the limits `range_limits[i-1]` and `range_limits[i]`, that is
+        `range_limits` is the upper limit for using a certain heater current
+        """
         i = bisect(self.range_limits.get_latest(), temperature)
-        self.output_range(self.RANGES[i])
+        # there is a `+1` because `self.RANGES` includes `'off'` as the first
+        # value.
+        self.output_range(self.INVERSE_RANGES[i+1])
         return self.output_range
 
     def set_setpoint_and_range(self, temperature):
+        # TODO: Range should be selected according to current temperature,
+        # not according to current setpoint
         self.set_range_from_temperature(temperature)
         self.setpoint(temperature)
 
-    def wait_until_set_point_reached(*,wait_cycle_time: float=None,
+    def wait_until_set_point_reached(self, *,wait_cycle_time: float=None,
                                      wait_tolerance: float=None,
                                      wait_equilibration_time: float=None):
         wait_cycle_time =  wait_cycle_time or self.wait_cycle_time.get_latest()
@@ -158,7 +175,7 @@ class BaseOutput(InstrumentChannel):
                                    self.wait_equilibration_time.get_latest())
         active_channel_id = self.input_channel()
         active_channel = self.root_instrument.channels[active_channel_id]
-        assert active_channel._channel == active_channel_id
+        # assert active_channel._channel == active_channel_id
 
         t_setpoint = self.setpoint()
         t_reading = active_channel.temperature()
@@ -166,6 +183,7 @@ class BaseOutput(InstrumentChannel):
         is_in_tolerance_zone = False
         while True:
             t_reading = active_channel.temperature()
+            print(f'loop iteration with t reading of {t_reading}')
             # if temperature is lower than sensor range, keep on waiting
             # TODO(DV):only do this coming from one direction
             if t_reading:
@@ -177,6 +195,7 @@ class BaseOutput(InstrumentChannel):
                             break
                     else:
                         start_time_in_tolerance_zone = time.monotonic()
+                        is_in_tolerance_zone = True
                 else:
                     if is_in_tolerance_zone:
                         is_in_tolerance_zone = False
