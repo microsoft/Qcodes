@@ -67,8 +67,8 @@ class MockVisaInstrument():
             args = ''.join(query_parts[1:])
             log.debug(f'Calling query on instrument Mock {self.name}: '
                       f'{query} for command {query_str} with args {args}')
-            print(f'Calling query on instrument Mock {self.name}: '
-                  f'{query} for command {query_str} with args {args}')
+            # print(f'Calling query on instrument Mock {self.name}: '
+            #      f'{query} for command {query_str} with args {args}')
             response = self.queries[query_str](args)
             log.debug(f"Got mock instrument response: {response}")
             return response
@@ -179,8 +179,8 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         h.polarity = polarity
         h.use_filter = use_filter
         h.delay = delay
-        print(f'setting outputmode to {h.mode}, {input_channel}, '
-              f'{powerup_enable}, {polarity}, {use_filter}, {delay}')
+        # print(f'setting outputmode to {h.mode}, {input_channel}, '
+        #     f'{powerup_enable}, {polarity}, {use_filter}, {delay}')
 
     @query('RANGE?')
     def rangeq(self, heater):
@@ -192,7 +192,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     def range_cmd(self, heater, output_range):
         h = self.heaters[heater]
         h.output_range = output_range
-        print(f'setting output_range to {h.output_range}')
+        # print(f'setting output_range to {h.output_range}')
 
     @query('SETP?')
     def setpointq(self, heater):
@@ -204,7 +204,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     def setpoint(self, heater, setpoint):
         h = self.heaters[heater]
         h.setpoint = setpoint
-        print(f'setting setpoint to {h.setpoint}')
+        # print(f'setting setpoint to {h.setpoint}')
 
     @query('TLIMIT?')
     def tlimitq(self, channel):
@@ -216,7 +216,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     def tlimitcmd(self, channel, tlimit):
         chan = self.channel_mock[channel]
         chan.tlimit = tlimit
-        print(f'setting TLIMIT to {chan.tlimit}')
+        # print(f'setting TLIMIT to {chan.tlimit}')
 
 
     @query('KRDG?')

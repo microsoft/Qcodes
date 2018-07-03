@@ -42,7 +42,6 @@ class Group():
 
     def _separator_parser(self, separator, types):
         def parser(ret_str):
-            print(f'retr string is {ret_str}')
             keys = self.parameters.keys()
             values = ret_str.split(separator)
             return dict(zip(keys, values))
@@ -172,13 +171,13 @@ class BaseOutput(InstrumentChannel):
             raise RuntimeError('Error when calling set_range_from_temperature:'
                                ' You must specify the output range limits '
                                'before automatically setting the range '
-                               '(e.g. inst.range_limits([0.021, 0.01, 0.2, '
+                               '(e.g. inst.range_limits([0.021, 0.1, 0.2, '
                                '1.1, 2, 4, 8]))')
         i = bisect(self.range_limits.get_latest(), temperature)
         # there is a `+1` because `self.RANGES` includes `'off'` as the first
         # value.
         self.output_range(self.INVERSE_RANGES[i+1])
-        return self.output_range
+        return self.output_range()
 
     def set_setpoint_and_range(self, temperature):
         # TODO: Range should be selected according to current temperature,
@@ -203,7 +202,7 @@ class BaseOutput(InstrumentChannel):
         is_in_tolerance_zone = False
         while True:
             t_reading = active_channel.temperature()
-            print(f'loop iteration with t reading of {t_reading}')
+            log.debug(f'loop iteration with t reading of {t_reading}')
             # if temperature is lower than sensor range, keep on waiting
             # TODO(DV):only do this coming from one direction
             if t_reading:
