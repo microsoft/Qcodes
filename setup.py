@@ -64,6 +64,7 @@ setup(name='qcodes',
           'h5py>=2.6',
           'websockets>=3.2',
           'jsonschema',
+          'schema',
           'pyzmq'
       ],
 
