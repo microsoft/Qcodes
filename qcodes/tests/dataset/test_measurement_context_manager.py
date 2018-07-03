@@ -269,14 +269,14 @@ def test_register_parameter_from_dict():
     assert parameter.inferred_from == ''
     assert parameter.depends_on == 'some_instrument_some_parameter_setpoints'
 
-
-    outputdict['data'] = np.random.rand(100)
-    outputdict['setpoints'][0]['data'] = np.random.rand(100)
+    npoints = 100
+    outputdict['data'] = np.random.rand(npoints)
+    outputdict['setpoints'][0]['data'] = np.random.rand(npoints)
     with meas.run() as datasaver:
         datasaver.add_result((outputdict['full_name'], outputdict['data']),
                              (outputdict['setpoints'][0]['full_name'],
                               outputdict['setpoints'][0]['data']))
-
+    assert datasaver.points_written == npoints
 
 def test_unregister_parameter(DAC, DMM):
     """
