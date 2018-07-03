@@ -288,7 +288,7 @@ class TestChannelsLoop(TestCase):
 
     @given(loop_channels=hst.lists(hst.integers(0, 3), min_size=2, max_size=2, unique=True),
            measure_channel=hst.integers(0, 3))
-    @settings(max_examples=10, deadline=400)
+    @settings(max_examples=10, deadline=800)
     def test_nested_loop_over_channels(self, loop_channels, measure_channel):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
         loop = Loop(self.instrument.channels[loop_channels[0]].temperature.sweep(0, 10, 0.5))
