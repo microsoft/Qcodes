@@ -6,7 +6,7 @@ from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
                     MutableMapping, MutableSequence, Optional)
 from inspect import signature
 from numbers import Number
-
+import schema as sch
 import numpy as np
 
 import qcodes as qc
@@ -16,11 +16,35 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 
+
+
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
 non_array_like_types = (int, float, str)
 
+data_dict_schema = sch.Schema({'label': str,
+                               'name': str,
+                               'unit': str,
+                               'full_name': sch.And(str, len),
+                               'short_name': str,
+                               'name_parts': sch.Or([str],
+                                                    None),
+                               'data': sch.Or(np.ndarray, None),
+                               'setpoints': sch.Or([{'label': str,
+                                                     'name': str,
+                                                     'unit': str,
+                                                     'full_name': sch.And(str,
+                                                                          len),
+                                                     'short_name': str,
+                                                     'name_parts': sch.Or([str],
+                                                                           None),
+                                                     'data': sch.Or(np.ndarray,
+                                                                    None),
+                                                     'setpoints': None}],
+                                                      None)
+
+                              })
 
 class ParameterTypeError(Exception):
     pass
@@ -535,6 +559,78 @@ class Measurement:
             self.parameters.pop(name)
 
         self.parameters[name] = parspec
+
+    def register_dict_parameter(
+            self, parameter: dict,
+            basis=None,
+            setpoints=None) -> None:
+        """
+        Add a Parameter (and setpoints) defined in a Data Dict to the
+        dataset produced by running this measurement.
+        The DataDict is validated by the schemer
+        build before proceeding. The dict is meant as a minimum representaion
+        of the data using the same keys as the metadata members in the
+        parameters. The idea is to allow instruments to generate data suitable
+        for direct insertion into the dataset without using QCoDeS parameters
+        such as from a capture multiple traces function.
+
+        Args:
+            parameter: The parameter to add
+            basis: The parameters that this parameter is inferred from. If
+                this parameter is not inferred from any other parameters,
+                this should be left blank.
+            setpoints: A list of either QCoDeS Parameters or the names of
+                of parameters already registered in the measurement that
+                are the setpoints of this parameter
+            # TODO add support for external setpoints
+        """
+
+        data_dict_schema.validate(parameter)
+
+        name = parameter['full_name']
+        my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]] = []
+        if parameter['setpoints'] is not None:
+            for sp_data_parameter in parameter['setpoints']:
+                spname = sp_data_parameter['full_name']
+                sp = ParamSpec(name=spname, paramtype='numeric',
+                               label=sp_data_parameter['label'],
+                               unit=sp_data_parameter['unit'])
+
+                self.parameters[spname] = sp
+                my_setpoints.append(spname)
+        else:
+            my_setpoints = setpoints
+
+        paramtype = 'numeric'
+        label = parameter['label']
+        unit = parameter['unit']
+
+        if my_setpoints is not None:
+            sp_strings = [str(sp) for sp in my_setpoints]
+        else:
+            sp_strings = []
+        if basis is not None:
+            bs_strings = [str(bs) for bs in basis]
+        else:
+            bs_strings = []
+
+        # validate all dependencies
+        depends_on, inf_from = self._registration_validation(name, sp_strings,
+                                                             bs_strings)
+
+        paramspec = ParamSpec(name=name,
+                              paramtype=paramtype,
+                              label=label,
+                              unit=unit,
+                              inferred_from=inf_from,
+                              depends_on=depends_on)
+
+        # ensure the correct order
+        if name in self.parameters.keys():
+            self.parameters.pop(name)
+
+        self.parameters[name] = paramspec
+        log.info(f'Registered {name} in the Measurement.')
 
     def unregister_parameter(self,
                              parameter: Union[_BaseParameter, str]) -> None:

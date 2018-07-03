@@ -229,6 +229,55 @@ def test_register_custom_parameter(DAC):
                                        'label', 'unit', setpoints=(name,))
 
 
+def test_register_parameter_from_dict():
+    """
+    Test the registration of custom parameters
+    """
+    meas = Measurement()
+
+    outputdict = {'name': 'some_parameter',
+                  'full_name': 'some_instrument_some_parameter',
+                  'short_name': 'some_parameter',
+                  'data': None,
+                  'unit': 'V',
+                  'label': '',
+                  'name_parts': ['some_instrument', 'some_parameter'],
+                  'setpoints': [{
+                                'name': 'some_parameter_setpoints',
+                                'full_name': 'some_instrument'
+                                             '_some_parameter_setpoints',
+                                'short_name': 'some_parameter',
+                                'data': None,
+                                'unit': '',
+                                'label': '',
+                                'name_parts': ['some_instrument',
+                                               'some_parameter',
+                                               'setpoints'],
+                                'setpoints': None}]
+                  }
+
+    meas.register_dict_parameter(outputdict)
+    assert len(meas.parameters) == 2
+    setpoints = meas.parameters['some_instrument_some_parameter_setpoints']
+
+    assert setpoints.name == "some_instrument_some_parameter_setpoints"
+    assert setpoints.inferred_from == ''
+    assert setpoints.depends_on == ''
+
+    parameter = meas.parameters['some_instrument_some_parameter']
+    assert parameter.name == "some_instrument_some_parameter"
+    assert parameter.inferred_from == ''
+    assert parameter.depends_on == 'some_instrument_some_parameter_setpoints'
+
+
+    outputdict['data'] = np.random.rand(100)
+    outputdict['setpoints'][0]['data'] = np.random.rand(100)
+    with meas.run() as datasaver:
+        datasaver.add_result((outputdict['full_name'], outputdict['data']),
+                             (outputdict['setpoints'][0]['full_name'],
+                              outputdict['setpoints'][0]['data']))
+
+
 def test_unregister_parameter(DAC, DMM):
     """
     Test the unregistering of parameters.
