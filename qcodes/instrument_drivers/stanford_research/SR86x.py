@@ -530,6 +530,30 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(sample_count)
 
+    def capture_samples(self, sample_count: int) -> dict:
+        """
+        Capture a number of samples continuously and starting immediately.
+        The function blocks until the required number of samples is acquired,
+        and returns them.
+
+        Args:
+            sample_count
+                Number of samples to capture
+
+        Returns:
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
+        """
+        self.set_capture_length_to_fit_samples(sample_count)
+        self.start_capture("CONT", "IMM")
+        self.wait_until_samples_captured(sample_count)
+        self.stop_capture()
+        return self.get_capture_data(sample_count)
+
 
 class SR86x(VisaInstrument):
     """
