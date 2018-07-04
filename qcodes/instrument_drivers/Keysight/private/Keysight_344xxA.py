@@ -109,7 +109,7 @@ class _Keysight_344xxA(VisaInstrument):
         ranges (list): A list of the available voltage ranges
     """
 
-    def __init__(self, name, address, utility_freq=50, silent=False,
+    def __init__(self, name, address, silent=False,
                  **kwargs):
         """
         Create an instance of the instrument.
@@ -117,16 +117,11 @@ class _Keysight_344xxA(VisaInstrument):
         Args:
             name (str): Name used by QCoDeS. Appears in the DataSet
             address (str): Visa-resolvable instrument address.
-            utility_freq (int): The local utility frequency in Hz. Default: 50
             silent (bool): If True, the connect_message of the instrument
                 is supressed. Default: False
         Returns:
             _Keysight_344xxA
         """
-        if utility_freq not in [50, 60]:
-            raise ValueError('Can not set utility frequency to '
-                             '{}. '.format(utility_freq) +
-                             'Please enter either 50 Hz or 60 Hz.')
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -165,17 +160,6 @@ class _Keysight_344xxA(VisaInstrument):
             res_factors['34465A'] = [30e-6, 15e-6, 6e-6] + res_factors['34465A']
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
-        # Define the extreme aperture time values for the 34465A and 34470A
-        if utility_freq == 50:
-            apt_times = {'34465A': [0.3e-3, 2],
-                         '34470A': [0.3e-3, 2]}
-        if utility_freq == 60:
-            apt_times = {'34465A': [0.3e-3, 1.67],
-                         '34470A': [0.3e-3, 1.67]}
-        if DIG:
-            apt_times['34465A'][0] = 20e-6
-            apt_times['34470A'][0] = 20e-6
-
         self._resolution_factors = res_factors[self.model]
         self.ranges = ranges[self.model]
         self.NPLC_list = PLCs[self.model]
@@ -185,6 +169,12 @@ class _Keysight_344xxA(VisaInstrument):
 
         ####################################
         # PARAMETERS
+
+        self.add_parameter('line_frequency',
+                           get_cmd='SYSTem:LFRequency?',
+                           get_parser=int,
+                           label='Line Frequency',
+                           unit='Hz')
 
         self.add_parameter('NPLC',
                            get_cmd='SENSe:VOLTage:DC:NPLC?',
@@ -312,6 +302,17 @@ class _Keysight_344xxA(VisaInstrument):
         # Model-specific parameters
 
         if self.model in ['34465A', '34470A']:
+            # Define the extreme aperture time values for the 34465A and 34470A
+            utility_freq = self.line_frequency()
+            if utility_freq == 50:
+                apt_times = {'34465A': [0.3e-3, 2],
+                            '34470A': [0.3e-3, 2]}
+            elif utility_freq == 60:
+                apt_times = {'34465A': [0.3e-3, 1.67],
+                            '34470A': [0.3e-3, 1.67]}
+            if DIG:
+                apt_times['34465A'][0] = 20e-6
+                apt_times['34470A'][0] = 20e-6
 
             self.add_parameter('aperture_mode',
                                label='Aperture mode',
