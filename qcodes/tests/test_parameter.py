@@ -906,9 +906,100 @@ class TestInstrumentRefParameter(TestCase):
 
 
 class TestParameterScaler(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.parent_instrument = DummyInstrument('dummy')
+
     def setUp(self):
-        self.target = ManualParameter(name='target_parameter', unit='V', initial_value=1.0)
-        self.scaler = ParameterScaler(self.target, name='scaled_value', division=1)
+        self.target_name = 'target_parameter'
+        self.target_label = 'Target Parameter'
+        self.target_unit = 'V'
+
+        self.target = ManualParameter(name=self.target_name, label=self.target_label,
+                                      unit=self.target_unit, initial_value=1.0,
+                                      instrument=self.parent_instrument)
+        self.parent_instrument.add_parameter(self.target)
+        self.scaler = ParameterScaler(self.target, division=1)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.parent_instrument.close()
+        del cls.parent_instrument
+
+    def test_constructor(self):
+        #Test the behaviour of the constructor
+
+        # Require a wrapped parameter
+        with self.assertRaises(TypeError):
+            ParameterScaler()
+
+        # Require a scaling factor
+        with self.assertRaises(ValueError):
+            ParameterScaler(self.target)
+
+        # Require only one scaling factor
+        with self.assertRaises(ValueError):
+            ParameterScaler(self.target, division=1, gain=1)
+
+    def test_namelabel(self):
+        #Test handling of name and label
+
+        # Test correct inheritance
+        assert self.scaler.name == self.target_name + '_scaled'
+        assert self.scaler.label == self.target_label + '_scaled'
+
+        # Test correct name/label handling by the constructor
+        scaled_name = 'scaled'
+        scaled_label = "Scaled parameter"
+        scaler2 = ParameterScaler(self.target, division=1, name=scaled_name, label=scaled_label)
+        assert scaler2.name == scaled_name
+        assert scaler2.label == scaled_label
+
+    def test_unit(self):
+        # Test handling of the units 
+
+        # Check if the unit is correctly inherited
+        assert self.scaler.unit == 'V'
+
+        # Check if we can change succesfully the unit
+        self.scaler.unit = 'A'
+        assert self.scaler.unit == 'A'
+
+        # Check if unit is correctly set in the constructor
+        scaler2 = ParameterScaler(self.target, name='scaled_value', division=1, unit='K')
+        assert scaler2.unit == 'K'
+
+    def test_metadata(self):
+        #Test the metadata
+        
+        test_gain = 3
+        test_unit = 'V'
+        self.scaler.gain = test_gain
+        self.scaler.unit = test_unit
+
+        # Check if relevant fields are present in the snapshot
+        snap = self.scaler.snapshot()
+        print(snap)
+        snap_keys = snap.keys()
+        assert 'division' in snap_keys
+        assert 'gain' in snap_keys
+        assert 'role' in snap_keys
+        assert 'unit' in snap_keys
+        assert 'wrapped_instrument' in snap_keys
+        assert 'wrapped_parameter' in snap_keys
+
+        # Check if the fields are correct
+        assert snap['gain'] == test_gain
+        assert snap['division'] == 1/test_gain
+        assert snap['role'] == ParameterScaler.Role.GAIN
+        assert snap['unit'] == test_unit
+        assert snap['wrapped_instrument'] == self.parent_instrument
+        assert snap['wrapped_parameter'] == self.target
+
+    def test_wrapped_parameter(self):
+        #Test if the target parameter and parent instrument are correctly inherited
+        assert self.scaler.wrapped_instrument == self.parent_instrument
+        assert self.scaler.wrapped_parameter == self.target
 
     def test_divider(self):
         test_division = 10
@@ -919,6 +1010,7 @@ class TestParameterScaler(TestCase):
         assert self.scaler() == test_value
         assert self.target() == test_division * test_value
         assert self.scaler.gain == 1/test_division
+        assert self.scaler.role == ParameterScaler.Role.DIVISION
 
     def test_multiplier(self):
         test_multiplier= 10
@@ -929,12 +1021,7 @@ class TestParameterScaler(TestCase):
         assert self.scaler() == test_value
         assert self.target() == test_value / test_multiplier
         assert self.scaler.division == 1/test_multiplier
-
-    def test_unit(self):
-        assert self.scaler.unit == 'V'
-
-        self.scaler.unit = 'A'
-        assert self.scaler.unit == 'A'
+        assert self.scaler.role == ParameterScaler.Role.GAIN
 
     def test_variable_gain(self):
         test_value = 5

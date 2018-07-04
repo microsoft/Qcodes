@@ -1,13 +1,9 @@
 from typing import Union, cast
+from operator import xor
 import enum
 import warnings
 
 from qcodes import Parameter, ManualParameter, Instrument
-
-
-class Role(enum.Enum):
-    GAIN = enum.auto()
-    DIVISION = enum.auto()
 
 
 class ParameterScaler(Parameter):
@@ -48,6 +44,11 @@ class ParameterScaler(Parameter):
         unit: resulting unit. It uses the one of 'output' by default
     """
 
+    class Role(enum.Enum):
+        GAIN = enum.auto()
+        DIVISION = enum.auto()
+
+
     def __init__(self,
                  output: Parameter,
                  division: Union[int, float, Parameter] = None,
@@ -55,31 +56,29 @@ class ParameterScaler(Parameter):
                  name: str=None,
                  label: str=None,
                  unit: str=None) -> None:
-        self._wrapper_param = output
+        self.wrapped_parameter = output
+        self.wrapped_instrument = getattr(output, "_instrument", None)
 
         # Set the role, either as divider or amplifier
         # Raise an error if nothing is specified
         is_divider = division is not None
         is_amplifier = gain is not None
 
-        if not (is_divider ^ is_amplifier):
+        if not xor(is_divider, is_amplifier):
             raise ValueError('Provide only division OR gain')
 
         if is_divider:
-            self.role = Role.DIVISION
+            self.role = ParameterScaler.Role.DIVISION
             self._multiplier = division
         elif is_amplifier:
-            self.role = Role.GAIN
+            self.role = ParameterScaler.Role.GAIN
             self._multiplier = gain
 
         # Set the name
         if name:
             self.name = name
         else:
-            if self.role == Role.DIVISION:
-                self.name = "{}_attenuated".format(self._wrapper_param.name)
-            elif self.role == Role.GAIN:
-                self.name = "{}_amplified".format(self._wrapper_param.name)
+            self.name = "{}_scaled".format(self.wrapped_parameter.name)
 
         # Set label
         if label:
@@ -87,27 +86,26 @@ class ParameterScaler(Parameter):
         elif name:
             self.label = name
         else:
-            if self.role == Role.DIVISION:
-                self.label = "{}_attenuated".format(self._wrapper_param.label)
-            elif self.role == Role.GAIN:
-                self.label = "{}_amplified".format(self._wrapper_param.label)
+            self.label = "{}_scaled".format(self.wrapped_parameter.label)
 
         # Set the unit
         if unit:
             self.unit = unit
         else:
-            self.unit = self._wrapper_param.unit
+            self.unit = self.wrapped_parameter.unit
 
         super().__init__(
             name=self.name,
-            instrument=getattr(self._wrapper_param, "_instrument", None),
             label=self.label,
-            unit=self.unit,
-            metadata=self._wrapper_param.metadata)
+            unit=self.unit
+            )
 
         # extend metadata
         self._meta_attrs.extend(["division"])
         self._meta_attrs.extend(["gain"])
+        self._meta_attrs.extend(["role"])
+        self._meta_attrs.extend(["wrapped_parameter"])
+        self._meta_attrs.extend(["wrapped_instrument"])
 
     # Internal handling of the multiplier
     # can be either a Parameter or a scalar
@@ -126,27 +124,27 @@ class ParameterScaler(Parameter):
     # Division of the scaler
     @property
     def division(self):
-        if self.role == Role.DIVISION:
+        if self.role == ParameterScaler.Role.DIVISION:
             return self._multiplier()
-        elif self.role == Role.GAIN:
+        elif self.role == ParameterScaler.Role.GAIN:
             return 1 / self._multiplier()
 
     @division.setter
     def division(self, division: Union[int, float, Parameter]):
-        self.role = Role.DIVISION
+        self.role = ParameterScaler.Role.DIVISION
         self._multiplier = division
 
     # Gain of the scaler
     @property
     def gain(self):
-        if self.role == Role.GAIN:
+        if self.role == ParameterScaler.Role.GAIN:
             return self._multiplier()
-        elif self.role == Role.DIVISION:
+        elif self.role == ParameterScaler.Role.DIVISION:
             return 1 / self._multiplier()
 
     @gain.setter
     def gain(self, gain: Union[int, float, Parameter]):
-        self.role = Role.GAIN
+        self.role = ParameterScaler.Role.GAIN
         self._multiplier = gain
 
     # Getter and setter for the real value
@@ -155,36 +153,38 @@ class ParameterScaler(Parameter):
         Returns:
             number: value at which was set at the sample
         """
-        if self.role == Role.GAIN:
-            value = self._wrapper_param() * self._multiplier()
-        elif self.role == Role.DIVISION:
-            value = self._wrapper_param() / self._multiplier()
+        if self.role == ParameterScaler.Role.GAIN:
+            value = self.wrapped_parameter() * self._multiplier()
+        elif self.role == ParameterScaler.Role.DIVISION:
+            value = self.wrapped_parameter() / self._multiplier()
 
         self._save_val(value)
         return value
 
-    def get_instrument_value(self) -> Union[int, float]:
+    def get_wrapped_parameter_value(self) -> Union[int, float]:
         """
         Returns:
             number: value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
-        return self._wrapper_param.get()
+        return self.wrapped_parameter.get()
 
     def set_raw(self, value: Union[int, float]) -> None:
         """
-        Se the value on the instrument, accounting for the scaling
+        Set the value on the wrapped parameter, accounting for the scaling
         """
-        if self.role == Role.GAIN:
-            instrument_value = value / self._multiplier()
-        elif self.role == Role.DIVISION:
-            instrument_value = value * self._multiplier()
 
         # disable type check due to https://github.com/python/mypy/issues/2128
+        if self.role == ParameterScaler.Role.GAIN:
+            instrument_value = value / self._multiplier() # type: ignore
+        elif self.role == ParameterScaler.Role.DIVISION:
+            instrument_value = value * self._multiplier() # type: ignore
+
+        # don't leak unknow type 
         instrument_value = cast(Union[int, float], instrument_value)
 
         self._save_val(value)
-        self._wrapper_param.set(instrument_value)
+        self.wrapped_parameter.set(instrument_value)
 
 
 class VoltageDivider(Parameter):
