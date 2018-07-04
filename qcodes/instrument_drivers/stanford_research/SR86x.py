@@ -500,10 +500,10 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(trigger_count)
 
-    def start_capture_at_trigger(self,
-                                 sample_count: int,
-                                 send_trigger: Callable
-                                 ) -> dict:
+    def capture_samples_after_trigger(self,
+                                      sample_count: int,
+                                      send_trigger: Callable
+                                      ) -> dict:
         """
         Capture a number of samples after a trigger has been received.
         Please refer to page 135 of the manual for details.
