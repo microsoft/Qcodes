@@ -323,7 +323,8 @@ class SR86xBuffer(InstrumentChannel):
                 Number of samples that needs to be captured
         """
         n_captured_bytes = 0
-        n_bytes_to_capture = sample_count * self.bytes_per_sample
+        n_variables = self._get_number_of_capture_variables()
+        n_bytes_to_capture = sample_count * n_variables * self.bytes_per_sample
         while n_captured_bytes < n_bytes_to_capture:
             n_captured_bytes = self.count_capture_bytes()
 
