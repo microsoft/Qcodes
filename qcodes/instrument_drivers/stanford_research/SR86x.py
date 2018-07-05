@@ -614,7 +614,7 @@ class SR86x(VisaInstrument):
                            label='Sine out dc level',
                            unit='V',
                            get_cmd='SOFF?',
-                           set_cmd='SOFF {:.3f}',
+                           set_cmd='SOFF {}',
                            get_parser=float,
                            vals=Numbers(min_value=-5, max_value=5))
         self.add_parameter(name='amplitude',
