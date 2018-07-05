@@ -533,7 +533,10 @@ class SR86xBuffer(InstrumentChannel):
 
     def capture_samples(self, sample_count: int) -> dict:
         """
-        Capture a number of samples continuously and starting immediately.
+        Capture a number of samples at a capture rate, starting immediately.
+        Unlike the "continuous" capture mode, here the buffer does not get
+        overwritten with the new data once the buffer is full.
+
         The function blocks until the required number of samples is acquired,
         and returns them.
 
@@ -550,7 +553,7 @@ class SR86xBuffer(InstrumentChannel):
                 of numbers.
         """
         self.set_capture_length_to_fit_samples(sample_count)
-        self.start_capture("CONT", "IMM")
+        self.start_capture("ONE", "IMM")
         self.wait_until_samples_captured(sample_count)
         self.stop_capture()
         return self.get_capture_data(sample_count)
