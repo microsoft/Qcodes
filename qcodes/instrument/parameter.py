@@ -415,6 +415,9 @@ class _BaseParameter(Metadatable):
                 steps = self.get_ramp_values(value, step=self.step)
 
                 for step_index, val_step in enumerate(steps):
+                    # even if the final value is valid we may be generating
+                    # steps that are not so validate them too
+                    self.validate(val_step)
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
                         raw_value = self.val_mapping[val_step]
