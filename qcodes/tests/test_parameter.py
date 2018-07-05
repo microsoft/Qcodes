@@ -979,24 +979,25 @@ class TestParameterScaler(TestCase):
         # Check if relevant fields are present in the snapshot
         snap = self.scaler.snapshot()
         snap_keys = snap.keys()
+        metadata_keys = snap['metadata'].keys()
         assert 'division' in snap_keys
         assert 'gain' in snap_keys
         assert 'role' in snap_keys
         assert 'unit' in snap_keys
-        assert 'wrapped_instrument' in snap_keys
-        assert 'wrapped_parameter' in snap_keys
+        assert 'variable_multiplier' in metadata_keys
+        assert 'wrapped_parameter' in metadata_keys
+        assert 'wrapped_instrument' in metadata_keys
 
         # Check if the fields are correct
         assert snap['gain'] == test_gain
         assert snap['division'] == 1/test_gain
         assert snap['role'] == ParameterScaler.Role.GAIN
         assert snap['unit'] == test_unit
-        assert snap['wrapped_instrument'] == self.parent_instrument
-        assert snap['wrapped_parameter'] == self.target
+        assert snap['metadata']['variable_multiplier'] == False
+        assert snap['metadata']['wrapped_parameter'] == self.target.name
 
     def test_wrapped_parameter(self):
-        #Test if the target parameter and parent instrument are correctly inherited
-        assert self.scaler.wrapped_instrument == self.parent_instrument
+        #Test if the target parameter is correctly inherited
         assert self.scaler.wrapped_parameter == self.target
 
     def test_divider(self):
@@ -1025,7 +1026,8 @@ class TestParameterScaler(TestCase):
         test_value = 5
 
         initial_gain = 2
-        gain = ManualParameter(name='gain', initial_value=initial_gain)
+        variable_gain_name = 'gain'
+        gain = ManualParameter(name=variable_gain_name, initial_value=initial_gain)
         self.scaler.gain = gain
         self.scaler(test_value)
 
@@ -1039,6 +1041,8 @@ class TestParameterScaler(TestCase):
         self.scaler(test_value)
         assert self.target() == test_value / second_gain
         assert self.scaler.division == 1 / second_gain
+
+        assert self.scaler.metadata['variable_multiplier'] == variable_gain_name
 
 
 class TestSetContextManager(TestCase):

@@ -1599,8 +1599,34 @@ class ParameterScaler(Parameter):
                  name: str=None,
                  label: str=None,
                  unit: str=None) -> None:
-        self.wrapped_parameter = output
-        self.wrapped_instrument = getattr(output, "_instrument", None)
+        # Set the name
+        if name:
+            self.name = name
+        else:
+            self.name = "{}_scaled".format(output.name)
+
+        # Set label
+        if label:
+            self.label = label
+        elif name:
+            self.label = name
+        else:
+            self.label = "{}_scaled".format(output.label)
+
+        # Set the unit
+        if unit:
+            self.unit = unit
+        else:
+            self.unit = output.unit
+
+        super().__init__(
+            name=self.name,
+            label=self.label,
+            unit=self.unit
+            )
+
+        self._wrapped_parameter = output
+        self._wrapped_instrument = getattr(output, "_instrument", None)
 
         # Set the role, either as divider or amplifier
         # Raise an error if nothing is specified
@@ -1617,38 +1643,15 @@ class ParameterScaler(Parameter):
             self.role = ParameterScaler.Role.GAIN
             self._multiplier = gain
 
-        # Set the name
-        if name:
-            self.name = name
-        else:
-            self.name = "{}_scaled".format(self.wrapped_parameter.name)
-
-        # Set label
-        if label:
-            self.label = label
-        elif name:
-            self.label = name
-        else:
-            self.label = "{}_scaled".format(self.wrapped_parameter.label)
-
-        # Set the unit
-        if unit:
-            self.unit = unit
-        else:
-            self.unit = self.wrapped_parameter.unit
-
-        super().__init__(
-            name=self.name,
-            label=self.label,
-            unit=self.unit
-            )
-
         # extend metadata
         self._meta_attrs.extend(["division"])
         self._meta_attrs.extend(["gain"])
         self._meta_attrs.extend(["role"])
-        self._meta_attrs.extend(["wrapped_parameter"])
-        self._meta_attrs.extend(["wrapped_instrument"])
+        self.metadata['wrapped_parameter'] = self._wrapped_parameter.name
+        try:
+            self.metadata['wrapped_instrument'] = self._wrapped_instrument.name
+        except AttributeError:
+            pass
 
     # Internal handling of the multiplier
     # can be either a Parameter or a scalar
@@ -1660,9 +1663,11 @@ class ParameterScaler(Parameter):
     def _multiplier(self, multiplier: Union[int, float, Parameter]):
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
+            self.metadata['variable_multiplier'] = self._multiplier_parameter.name
         else:
             self._multiplier_parameter = ManualParameter(
                 'multiplier', initial_value=multiplier)
+            self.metadata['variable_multiplier'] = False
 
     # Division of the scaler
     @property
@@ -1697,12 +1702,20 @@ class ParameterScaler(Parameter):
             number: value at which was set at the sample
         """
         if self.role == ParameterScaler.Role.GAIN:
-            value = self.wrapped_parameter() * self._multiplier()
+            value = self._wrapped_parameter() * self._multiplier()
         elif self.role == ParameterScaler.Role.DIVISION:
-            value = self.wrapped_parameter() / self._multiplier()
+            value = self._wrapped_parameter() / self._multiplier()
 
         self._save_val(value)
         return value
+
+    @property
+    def wrapped_parameter(self) -> Parameter:
+        """
+        Returns:
+            the attached unscaled parameter
+        """
+        return self._wrapped_parameter
 
     def get_wrapped_parameter_value(self) -> Union[int, float]:
         """
@@ -1710,7 +1723,7 @@ class ParameterScaler(Parameter):
             number: value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
-        return self.wrapped_parameter.get()
+        return self._wrapped_parameter.get()
 
     def set_raw(self, value: Union[int, float]) -> None:
         """
@@ -1727,4 +1740,4 @@ class ParameterScaler(Parameter):
         instrument_value = cast(Union[int, float], instrument_value)
 
         self._save_val(value)
-        self.wrapped_parameter.set(instrument_value)
+        self._wrapped_parameter.set(instrument_value)
