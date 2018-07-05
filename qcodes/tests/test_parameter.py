@@ -165,13 +165,8 @@ class TestParameter(TestCase):
 
         p.step = 1
         p.set(10)
-        # Intermediate steps are both validated before setting and
-        # at save_val stage. The final step is not validated at save_val
-        # stage but before stepping and as the final step.
         self.assertEqual(p.vals.values_validated,
-                         [0, 0, 10, 1, 1, 2, 2, 3, 3,
-                          4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
-                          9, 9, 10])
+                         [0, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
