@@ -463,10 +463,7 @@ class _BaseParameter(Metadatable):
                     set_function(raw_value, **kwargs)
                     self.raw_value = raw_value
                     self._save_val(val_step,
-                                   validate=(self.val_mapping is None and
-                                             self.set_parser is None and
-                                             not(step_index == len(steps)-1 or
-                                                 len(steps) == 1)))
+                                   validate=False)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
