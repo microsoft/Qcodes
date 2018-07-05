@@ -64,6 +64,7 @@ from qcodes.instrument.parameter import (
     MultiParameter,
     StandardParameter,
     ManualParameter,
+    ParameterScaler,
     combine,
     CombinedParameter)
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues

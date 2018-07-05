@@ -11,10 +11,9 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter)
+    InstrumentRefParameter, ParameterScaler)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.instrument_drivers.devices import ParameterScaler
 
 
 
@@ -979,7 +978,6 @@ class TestParameterScaler(TestCase):
 
         # Check if relevant fields are present in the snapshot
         snap = self.scaler.snapshot()
-        print(snap)
         snap_keys = snap.keys()
         assert 'division' in snap_keys
         assert 'gain' in snap_keys
