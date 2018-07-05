@@ -157,14 +157,21 @@ class TestParameter(TestCase):
 
         p = Parameter('p', set_cmd=None, initial_value=0,
                       vals=BookkeepingValidator())
-
-        self.assertEqual(p.vals.values_validated, [0])
+        # in the set wrapper the final value is validated
+        # and then subsequently each step is validated.
+        # in this case there is one step so the final value
+        # is validated twice.
+        self.assertEqual(p.vals.values_validated, [0, 0])
 
         p.step = 1
         p.set(10)
-
+        # Intermediate steps are both validated before setting and
+        # at save_val stage. The final step is not validated at save_val
+        # stage but before stepping and as the final step.
         self.assertEqual(p.vals.values_validated,
-                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+                         [0, 0, 10, 1, 1, 2, 2, 3, 3,
+                          4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
+                          9, 9, 10])
 
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
