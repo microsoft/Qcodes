@@ -71,7 +71,6 @@ class VoltageDivider(Parameter):
 
         # extend metadata
         self._meta_attrs.extend(["division_value"])
-        warnings.warn('`VoltageDivider` is deprecated, use `ParameterScaler` instead')
 
     def set_raw(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value # type: ignore
