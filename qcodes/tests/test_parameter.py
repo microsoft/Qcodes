@@ -956,7 +956,7 @@ class TestParameterScaler(TestCase):
         assert scaler2.label == scaled_label
 
     def test_unit(self):
-        # Test handling of the units 
+        # Test handling of the units
 
         # Check if the unit is correctly inherited
         assert self.scaler.unit == 'V'
@@ -971,7 +971,7 @@ class TestParameterScaler(TestCase):
 
     def test_metadata(self):
         #Test the metadata
-        
+
         test_gain = 3
         test_unit = 'V'
         self.scaler.gain = test_gain

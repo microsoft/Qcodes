@@ -180,7 +180,7 @@ class ParameterScaler(Parameter):
         elif self.role == ParameterScaler.Role.DIVISION:
             instrument_value = value * self._multiplier() # type: ignore
 
-        # don't leak unknow type 
+        # don't leak unknow type
         instrument_value = cast(Union[int, float], instrument_value)
 
         self._save_val(value)
