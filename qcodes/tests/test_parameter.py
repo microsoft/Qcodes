@@ -4,6 +4,7 @@ Test suite for parameter
 from collections import namedtuple, Iterable
 from unittest import TestCase
 from typing import Tuple
+import pytest
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -14,7 +15,7 @@ from qcodes.instrument.parameter import (
     InstrumentRefParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
-
+from qcodes.utils.validators import Numbers
 
 
 class GettableParam(Parameter):
@@ -435,6 +436,31 @@ class TestParameter(TestCase):
         p.set(value)
         np.testing.assert_allclose(p.get(), value)
         assert p.raw_value == -scale * value
+
+    def test_steppeing_from_invalid_starting_point(self):
+
+        the_value = -10
+
+        def set_function(value):
+            nonlocal the_value
+            the_value = value
+
+        def get_function():
+            return the_value
+
+        a = Parameter('test', set_cmd=set_function, get_cmd=get_function,
+                      vals=Numbers(0, 100), step=5)
+        # We start out by setting the parameter to an
+        # invalid value. This is not possible using initial_value
+        # as the validator will catch that but perhaps this may happen
+        # if the instrument can return out of range values.
+        assert a.get() == -10
+        with pytest.raises(ValueError):
+            # trying to set to 10 should raise even with 10 valid
+            # as the steps demand that we first step to -5 which is not
+            a.set(10)
+        # afterwards the value should still be the same
+        assert a.get() == -10
 
 
 class TestValsandParseParameter(TestCase):
