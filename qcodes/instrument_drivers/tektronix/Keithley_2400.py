@@ -98,7 +98,7 @@ class Keithley_2400(VisaInstrument):
         if output == 1:
             msg = self.ask(':READ?')
         else:
-            msg = "nan,nan,nan,nan,nan"
+            raise RuntimeError("Cannot perform read with output off")
         return msg
 
     def _set_mode_and_sense(self, msg):
