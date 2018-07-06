@@ -1,8 +1,9 @@
 from functools import partial
-from typing import Optional, Union
+from typing import Optional
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
+
 
 def float_round(val):
     """
@@ -19,6 +20,7 @@ def float_round(val):
 
 class GS200Exception(Exception):
     pass
+
 
 class GS200_Monitor(InstrumentChannel):
     """
@@ -54,7 +56,8 @@ class GS200_Monitor(InstrumentChannel):
                                     'on': 1,
                                })
 
-            # Note: Measurement will only run if source and measurement is enabled.
+            # Note: Measurement will only run if source and
+            # measurement is enabled.
             self.add_parameter('measure',
                                label='<unset>', unit='V/I',
                                get_cmd=self._get_measurement)
@@ -156,6 +159,7 @@ class GS200_Monitor(InstrumentChannel):
         else:
             self.measure.label = 'Source Voltage'
             self.measure.unit = 'V'
+
 
 class GS200(VisaInstrument):
     """
@@ -309,7 +313,8 @@ class GS200(VisaInstrument):
         Args:
             ramp_to (float): The ramp target in Volt
             step (float): The ramp steps in Volt
-            delay (float): The time between finishing one step and starting another in seconds.
+            delay (float): The time between finishing one step and starting
+                           another in seconds.
         """
         self._assert_mode("VOLT")
         self._ramp_source(ramp_to, step, delay)
@@ -321,7 +326,8 @@ class GS200(VisaInstrument):
         Args:
             ramp_to (float): The ramp target in Ampere
             step (float): The ramp steps in Ampere
-            delay (float): The time between finishing one step and starting another in seconds.
+            delay (float): The time between finishing one step and starting
+                           another in seconds.
         """
         self._assert_mode("CURR")
         self._ramp_source(ramp_to, step, delay)
@@ -333,7 +339,8 @@ class GS200(VisaInstrument):
         Args:
             ramp_to (float): The ramp target in volts/amps
             step (float): The ramp steps in volts/ampere
-            delay (float): The time between finishing one step and starting another in seconds.
+            delay (float): The time between finishing one step and starting
+                           another in seconds.
         """
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
@@ -352,7 +359,8 @@ class GS200(VisaInstrument):
 
         Args:
             mode (str): "CURR" or "VOLT"
-            output_level (float), If missing, we assume that we are getting the current level. Else we are setting it
+            output_level (float), If missing, we assume that we are getting
+                                  the current level. Else we are setting it
         """
         self._assert_mode(mode)
         if output_level is not None:
@@ -366,7 +374,8 @@ class GS200(VisaInstrument):
         Set the output of the instrument.
 
         Args:
-            output_level (float): output level in Volt or Ampere, depending on the current mode
+            output_level (float): output level in Volt or Ampere, depending
+            on the current mode
         """
         auto_enabled = self.auto_range()
 
@@ -403,8 +412,9 @@ class GS200(VisaInstrument):
                                        " auto mode and range is unknown.")
             # If we are still out of range, raise a value error
             if abs(output_level) > abs(self_range):
-                raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
-                    self_range=self_range))
+                raise ValueError("Desired output level not in range "
+                                 "[-{self_range:.3}, {self_range:.3}]".format(
+                                  self_range=self_range))
 
         if auto_enabled:
             auto_str = ":AUTO"
@@ -413,7 +423,8 @@ class GS200(VisaInstrument):
         cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str=None, source_range: float=None) -> None:
+    def _update_measurement_module(self, source_mode: str=None,
+                                   source_range: float=None) -> None:
         """
         Update validators/units as source mode/range changes
 
@@ -442,7 +453,8 @@ class GS200(VisaInstrument):
         self._auto_range = val
         # Disable measurement if auto range is on
         if self.measure.present:
-            # Disable the measurement module if auto range is enabled, because the measurement does not work in the
+            # Disable the measurement module if auto range is enabled, because
+            # the measurement does not work in the
             # 10mV/100mV ranges
             self.measure._enabled &= not val
 
