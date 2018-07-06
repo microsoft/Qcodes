@@ -150,8 +150,5 @@ class Keithley_2400(VisaInstrument):
 
     def _resistance_parser(self, msg):
         fields = [float(x) for x in msg.split(',')]
-        try:
-            res = fields[0] / fields[1]
-        except ZeroDivisionError:
-            res = float('NaN')
+        res = fields[0] / fields[1]
         return res
