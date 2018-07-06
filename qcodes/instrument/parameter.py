@@ -1648,10 +1648,8 @@ class ScaledParameter(Parameter):
         self._meta_attrs.extend(["gain"])
         self._meta_attrs.extend(["role"])
         self.metadata['wrapped_parameter'] = self._wrapped_parameter.name
-        try:
-            self.metadata['wrapped_instrument'] = self._wrapped_instrument.name
-        except AttributeError:
-            pass
+        if self._wrapped_instrument:
+            self.metadata['wrapped_instrument'] = getattr(self._wrapped_instrument, "name", None)
 
     # Internal handling of the multiplier
     # can be either a Parameter or a scalar
