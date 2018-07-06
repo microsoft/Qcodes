@@ -38,14 +38,27 @@ class Keithley_2400(VisaInstrument):
                            get_parser=self._volt_parser,
                            set_cmd=':SOUR:VOLT:LEV {:.8f}',
                            label='Voltage',
-                           unit='V')
+                           unit='V',
+                           docstring="Sets voltage in 'VOLT' mode. "
+                                     "Get returns measured voltage if "
+                                     "sensing 'VOLT' otherwise it returns "
+                                     "setpoint value. "
+                                     "Note that it is an error to read voltage with "
+                                     "output off")
 
         self.add_parameter('curr',
                            get_cmd=self._get_read_output_protected,
                            get_parser=self._curr_parser,
                            set_cmd=':SOUR:CURR:LEV {:.8f}',
                            label='Current',
-                           unit='A')
+                           unit='A',
+                           docstring = "Sets current in 'CURR' mode. "
+                                        "Get returns measured current if "
+                                        "sensing 'CURR' otherwise it returns "
+                                        "setpoint value. "
+                                        "Note that it is an error to read current with "
+                                        "output off")
+
 
         self.add_parameter('mode',
                            vals=Enum('VOLT', 'CURR'),
@@ -80,7 +93,10 @@ class Keithley_2400(VisaInstrument):
                            get_cmd=self._get_read_output_protected,
                            get_parser=self._resistance_parser,
                            label='Resistance',
-                           unit='Ohm')
+                           unit='Ohm',
+                           docstring="Measure resistance from current and voltage "
+                                     "Note that it is an error to read current "
+                                     "and voltage with output off")
 
     def _get_read_output_protected(self) -> str:
         """
