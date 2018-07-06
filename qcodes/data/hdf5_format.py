@@ -14,7 +14,7 @@ class HDF5Format(Formatter):
     HDF5 formatter for saving qcodes datasets.
 
     Capable of storing (write) and recovering (read) qcodes datasets.
-           
+
     """
 
     _format_tag = 'hdf5'
@@ -22,7 +22,7 @@ class HDF5Format(Formatter):
     def close_file(self, data_set):
         """
         Closes the hdf5 file open in the dataset.
-        
+
         Args:
             data_set (DataSet): DataSet object
         """
@@ -101,7 +101,7 @@ class HDF5Format(Formatter):
             if 'shape' in dat_arr.attrs.keys():
                 # extend with NaN if needed
                 esize = np.prod(dat_arr.attrs['shape'])
-                vals=np.append(vals, [np.nan]*(esize-vals.size))
+                vals = np.append(vals, [np.nan] * (esize - vals.size))
                 vals = vals.reshape(dat_arr.attrs['shape'])
             if array_id not in data_set.arrays.keys():  # create new array
                 d_array = DataArray(
@@ -212,10 +212,10 @@ class HDF5Format(Formatter):
             x = data_set.arrays[array_id]
             try:
                 # get latest NaN element
-                new_dlen=(~np.isnan(x)).nonzero()[0][-1]+1
+                new_dlen = (~np.isnan(x)).nonzero()[0][-1] + 1
             except:
-                new_dlen=old_dlen
-            
+                new_dlen = old_dlen
+
             new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
