@@ -192,7 +192,7 @@ class GS200(VisaInstrument):
                            vals=Enum('VOLT', 'CURR'))
 
         # ensure that mode is up to date so we can used the cached value
-        self.source_mode.get()
+        source_mode = self.source_mode.get()
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
@@ -210,7 +210,10 @@ class GS200(VisaInstrument):
                            )
 
         # This is changed through the source_mode interface
-        self.range = self.voltage_range
+        if source_mode == 'VOLT':
+            self.range = self.voltage_range
+        elif source_mode == 'CURR':
+            self.range = self.current_range
 
         self._auto_range = False
         self.add_parameter('auto_range',
@@ -234,7 +237,10 @@ class GS200(VisaInstrument):
                            )
 
         # This is changed through the source_mode interface
-        self.output_level = self.voltage
+        if source_mode == 'VOLT':
+            self.output_level = self.voltage
+        elif source_mode == 'CURR':
+            self.output_level = self.current
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
