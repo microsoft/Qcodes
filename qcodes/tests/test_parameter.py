@@ -11,7 +11,7 @@ import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter, ManualParameter,
-    InstrumentRefParameter, ParameterScaler)
+    InstrumentRefParameter, ScaledParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
@@ -904,7 +904,7 @@ class TestInstrumentRefParameter(TestCase):
         del self.d
 
 
-class TestParameterScaler(TestCase):
+class TestScaledParameter(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.parent_instrument = DummyInstrument('dummy')
@@ -918,7 +918,7 @@ class TestParameterScaler(TestCase):
                                       unit=self.target_unit, initial_value=1.0,
                                       instrument=self.parent_instrument)
         self.parent_instrument.add_parameter(self.target)
-        self.scaler = ParameterScaler(self.target, division=1)
+        self.scaler = ScaledParameter(self.target, division=1)
 
     @classmethod
     def tearDownClass(cls):
@@ -930,15 +930,15 @@ class TestParameterScaler(TestCase):
 
         # Require a wrapped parameter
         with self.assertRaises(TypeError):
-            ParameterScaler()
+            ScaledParameter()
 
         # Require a scaling factor
         with self.assertRaises(ValueError):
-            ParameterScaler(self.target)
+            ScaledParameter(self.target)
 
         # Require only one scaling factor
         with self.assertRaises(ValueError):
-            ParameterScaler(self.target, division=1, gain=1)
+            ScaledParameter(self.target, division=1, gain=1)
 
     def test_namelabel(self):
         #Test handling of name and label
@@ -950,7 +950,7 @@ class TestParameterScaler(TestCase):
         # Test correct name/label handling by the constructor
         scaled_name = 'scaled'
         scaled_label = "Scaled parameter"
-        scaler2 = ParameterScaler(self.target, division=1, name=scaled_name, label=scaled_label)
+        scaler2 = ScaledParameter(self.target, division=1, name=scaled_name, label=scaled_label)
         assert scaler2.name == scaled_name
         assert scaler2.label == scaled_label
 
@@ -965,7 +965,7 @@ class TestParameterScaler(TestCase):
         assert self.scaler.unit == 'A'
 
         # Check if unit is correctly set in the constructor
-        scaler2 = ParameterScaler(self.target, name='scaled_value', division=1, unit='K')
+        scaler2 = ScaledParameter(self.target, name='scaled_value', division=1, unit='K')
         assert scaler2.unit == 'K'
 
     def test_metadata(self):
@@ -991,7 +991,7 @@ class TestParameterScaler(TestCase):
         # Check if the fields are correct
         assert snap['gain'] == test_gain
         assert snap['division'] == 1/test_gain
-        assert snap['role'] == ParameterScaler.Role.GAIN
+        assert snap['role'] == ScaledParameter.Role.GAIN
         assert snap['unit'] == test_unit
         assert snap['metadata']['variable_multiplier'] == False
         assert snap['metadata']['wrapped_parameter'] == self.target.name
@@ -1009,7 +1009,7 @@ class TestParameterScaler(TestCase):
         assert self.scaler() == test_value
         assert self.target() == test_division * test_value
         assert self.scaler.gain == 1/test_division
-        assert self.scaler.role == ParameterScaler.Role.DIVISION
+        assert self.scaler.role == ScaledParameter.Role.DIVISION
 
     def test_multiplier(self):
         test_multiplier= 10
@@ -1020,7 +1020,7 @@ class TestParameterScaler(TestCase):
         assert self.scaler() == test_value
         assert self.target() == test_value / test_multiplier
         assert self.scaler.division == 1/test_multiplier
-        assert self.scaler.role == ParameterScaler.Role.GAIN
+        assert self.scaler.role == ScaledParameter.Role.GAIN
 
     def test_variable_gain(self):
         test_value = 5

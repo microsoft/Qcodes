@@ -1549,7 +1549,7 @@ class ManualParameter(Parameter):
                          initial_value=initial_value, **kwargs)
 
 
-class ParameterScaler(Parameter):
+class ScaledParameter(Parameter):
     """
     Parameter Scaler
 
@@ -1566,13 +1566,13 @@ class ParameterScaler(Parameter):
 
     Examples:
         Resistive voltage divider
-        >>> vd = ParameterScaler(dac.chan0, division = 10)
+        >>> vd = ScaledParameter(dac.chan0, division = 10)
 
         Voltage multiplier
-        >>> vb = ParameterScaler(dac.chan0, gain = 30, name = 'Vb')
+        >>> vb = ScaledParameter(dac.chan0, gain = 30, name = 'Vb')
 
         Transimpedance amplifier
-        >>> Id = ParameterScaler(multimeter.amplitude, division = 1e6, name = 'Id', unit = 'A')
+        >>> Id = ScaledParameter(multimeter.amplitude, division = 1e6, name = 'Id', unit = 'A')
 
     Args:
         output: Physical Parameter that need conversion
@@ -1637,10 +1637,10 @@ class ParameterScaler(Parameter):
             raise ValueError('Provide only division OR gain')
 
         if is_divider:
-            self.role = ParameterScaler.Role.DIVISION
+            self.role = ScaledParameter.Role.DIVISION
             self._multiplier = division
         elif is_amplifier:
-            self.role = ParameterScaler.Role.GAIN
+            self.role = ScaledParameter.Role.GAIN
             self._multiplier = gain
 
         # extend metadata
@@ -1672,27 +1672,27 @@ class ParameterScaler(Parameter):
     # Division of the scaler
     @property
     def division(self):
-        if self.role == ParameterScaler.Role.DIVISION:
+        if self.role == ScaledParameter.Role.DIVISION:
             return self._multiplier()
-        elif self.role == ParameterScaler.Role.GAIN:
+        elif self.role == ScaledParameter.Role.GAIN:
             return 1 / self._multiplier()
 
     @division.setter
     def division(self, division: Union[int, float, Parameter]):
-        self.role = ParameterScaler.Role.DIVISION
+        self.role = ScaledParameter.Role.DIVISION
         self._multiplier = division
 
     # Gain of the scaler
     @property
     def gain(self):
-        if self.role == ParameterScaler.Role.GAIN:
+        if self.role == ScaledParameter.Role.GAIN:
             return self._multiplier()
-        elif self.role == ParameterScaler.Role.DIVISION:
+        elif self.role == ScaledParameter.Role.DIVISION:
             return 1 / self._multiplier()
 
     @gain.setter
     def gain(self, gain: Union[int, float, Parameter]):
-        self.role = ParameterScaler.Role.GAIN
+        self.role = ScaledParameter.Role.GAIN
         self._multiplier = gain
 
     # Getter and setter for the real value
@@ -1701,9 +1701,9 @@ class ParameterScaler(Parameter):
         Returns:
             number: value at which was set at the sample
         """
-        if self.role == ParameterScaler.Role.GAIN:
+        if self.role == ScaledParameter.Role.GAIN:
             value = self._wrapped_parameter() * self._multiplier()
-        elif self.role == ParameterScaler.Role.DIVISION:
+        elif self.role == ScaledParameter.Role.DIVISION:
             value = self._wrapped_parameter() / self._multiplier()
 
         self._save_val(value)
@@ -1731,9 +1731,9 @@ class ParameterScaler(Parameter):
         """
 
         # disable type check due to https://github.com/python/mypy/issues/2128
-        if self.role == ParameterScaler.Role.GAIN:
+        if self.role == ScaledParameter.Role.GAIN:
             instrument_value = value / self._multiplier() # type: ignore
-        elif self.role == ParameterScaler.Role.DIVISION:
+        elif self.role == ScaledParameter.Role.DIVISION:
             instrument_value = value * self._multiplier() # type: ignore
 
         # don't leak unknow type
