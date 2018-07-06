@@ -79,6 +79,7 @@ class HDF5Format(Formatter):
                 data_set._h5_base_group['Data Arrays'].keys()):
             # Decoding string is needed because of h5py/issues/379
             name = array_id  # will be overwritten if not in file
+            print('read array_id %s' % array_id)
             dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
 
             # write ensures these attributes always exist
@@ -99,6 +100,9 @@ class HDF5Format(Formatter):
             #     set_arrays = ()
             vals = dat_arr.value[:, 0]
             if 'shape' in dat_arr.attrs.keys():
+                # extend with NaN if needed
+                esize = np.prod(dat_arr.attrs['shape'])
+                vals=np.append(vals, [np.nan]*(esize-vals.size))
                 vals = vals.reshape(dat_arr.attrs['shape'])
             if array_id not in data_set.arrays.keys():  # create new array
                 d_array = DataArray(
@@ -207,7 +211,12 @@ class HDF5Format(Formatter):
             datasetshape = dset.shape
             old_dlen = datasetshape[0]
             x = data_set.arrays[array_id]
-            new_dlen = len(x[~np.isnan(x)])
+            try:
+                # get latest NaN element
+                new_dlen=(~np.isnan(x)).nonzero()[0][-1]+1
+            except:
+                new_dlen=old_dlen
+            
             new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
