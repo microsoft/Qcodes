@@ -187,10 +187,8 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # When getting the mode internally in the driver, look up the mode as recorded by the _cached_mode property,
-        # instead of calling source_mode(). This will prevent frequent VISA calls to the instrument. Calling
-        # _set_source_mode will change the chased value.
-        self._cached_mode = "VOLT"
+        # ensure that mode is up to date so we can used the cached value
+        self.source_mode.get()
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
@@ -372,7 +370,9 @@ class GS200(VisaInstrument):
         """
         auto_enabled = self.auto_range()
 
-        mode = self._cached_mode
+        mode = self.source_mode.get_latest()
+        if mode is None:
+            mode = self.source_mode.get()
         if mode == "CURR":
             cached_range = self.current_range.get_latest()
         elif mode == "VOLT":
@@ -425,7 +425,7 @@ class GS200(VisaInstrument):
             return
 
         if source_mode is None:
-            source_mode = self._cached_mode
+            source_mode = self.mode.get_latest()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()
@@ -454,8 +454,10 @@ class GS200(VisaInstrument):
         Args:
             mode (str): "CURR" or "VOLT"
         """
-        if self._cached_mode != mode:
-            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cached_mode))
+        cached_mode = self.source_mode.get_latest()
+        if cached_mode != mode:
+            raise ValueError(f"Cannot get/set {mode} settings while in"
+                             f" {cached_mode}")
 
     def _set_source_mode(self, mode: str) -> None:
         """
@@ -476,7 +478,6 @@ class GS200(VisaInstrument):
             self.output_level = self.current
 
         self.write("SOUR:FUNC {}".format(mode))
-        self._cached_mode = mode
         # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
