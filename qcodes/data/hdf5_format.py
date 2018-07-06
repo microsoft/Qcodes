@@ -79,7 +79,6 @@ class HDF5Format(Formatter):
                 data_set._h5_base_group['Data Arrays'].keys()):
             # Decoding string is needed because of h5py/issues/379
             name = array_id  # will be overwritten if not in file
-            print('read array_id %s' % array_id)
             dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
 
             # write ensures these attributes always exist
