@@ -212,7 +212,7 @@ class HDF5Format(Formatter):
             x = data_set.arrays[array_id]
             try:
                 # get latest NaN element
-                new_dlen = (~np.isnan(x)).flatten().nonzero()[0][-1] +1
+                new_dlen = (~np.isnan(x)).flatten().nonzero()[0][-1] + 1
             except IndexError:
                 new_dlen = old_dlen
 
