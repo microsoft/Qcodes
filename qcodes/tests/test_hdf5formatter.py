@@ -151,7 +151,7 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data2)
 
     def test_partial_dataset(self):
-        data = qcodes.data.data_set.DataSet(formatter=self.formatter)
+        data = qcodes.data.data_set.new_data(formatter=self.formatter)
         data_array = qcodes.data.data_array.DataArray(array_id = 'test_partial_dataset', shape = (10,))
         data_array.init_data()
         data_array.ndarray[0] = 1
