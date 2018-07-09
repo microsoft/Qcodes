@@ -248,7 +248,6 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            val_mapping={'DISABLED': 0X0,
                                         'ENABLED': 0x1})
         self.add_parameter(name='enable_record_headers',
-                           parameter_class=TraceParameter,
                            label='Enable Record Headers',
                            unit=None,
                            get_cmd=None,
