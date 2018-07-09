@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from shutil import copy
 
+import qcodes.data
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
@@ -148,6 +149,15 @@ class TestHDF5_Format(TestCase):
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
         self.formatter.close_file(data1)
         self.formatter.close_file(data2)
+
+    def test_partial_dataset(self):
+        data = qcodes.data.data_set.new_data(formatter=self.formatter)
+        data_array = qcodes.data.data_array.DataArray(array_id = 'test_partial_dataset', shape = (10,))
+        data_array.init_data()
+        data_array.ndarray[0] = 1
+        data.add_array(data_array)
+        data.write()
+        data.read()
 
     def test_loop_writing_2D(self):
         # pass
