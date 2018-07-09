@@ -857,7 +857,7 @@ class AlazarTech_ATS(Instrument):
         - Otherwise the arg is used directly
         """
         # create the argument list
-        args_out = []
+        args_out: List[int] = []
         update_params: List[Parameter] = []
         for arg in args:
             if isinstance(arg, Parameter):
