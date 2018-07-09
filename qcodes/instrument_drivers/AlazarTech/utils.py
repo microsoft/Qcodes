@@ -23,19 +23,3 @@ class TraceParameter(Parameter):
         self._instrument._parameters_synced = False
         self._synced_to_card = False
         self._save_val(value, validate=False)
-
-class TrivialDictionary:
-    """
-    This class looks like a dictionary to the outside world
-    every key maps to this key as a value (lambda x: x)
-    """
-    def __init__(self):
-        warnings.warn("TrivialDictionary is deprecated and will be removed")
-        pass
-
-    def __getitem__(self, item):
-        return item
-
-    def __contains__(self, item):
-        # this makes sure that this dictionary contains everything
-        return True
