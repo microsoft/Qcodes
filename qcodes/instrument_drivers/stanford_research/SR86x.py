@@ -7,6 +7,10 @@ from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
 from qcodes.instrument.parameter import ArrayParameter
 
+import visa
+
+
+need_to_fix_visa_bug = visa.__version__ == '1.9.0'
 
 log = logging.getLogger(__name__)
 
@@ -464,10 +468,19 @@ class SR86xBuffer(InstrumentChannel):
                              f"2kB chunks "
                              f"({size_of_currently_captured_data}kB)")
 
+        original_read_termination = \
+            self._parent.visa_handle._read_termination
+        if need_to_fix_visa_bug:
+            self._parent.visa_handle._read_termination = None
+
         values = self._parent.visa_handle.query_binary_values(
             f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
             datatype='f',
             is_big_endian=False)
+
+        if need_to_fix_visa_bug:
+            self._parent.visa_handle._read_termination = \
+                original_read_termination
 
         return np.array(values)
 
