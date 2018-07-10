@@ -18,7 +18,7 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
 
-from broadbean.tools import forged_sequence_dict_to_list
+from broadbean.tools import forged_sequence_dict_to_list, is_subsequence
 
 log = logging.getLogger(__name__)
 
@@ -1081,9 +1081,6 @@ class Tektronix_AWG5014(VisaInstrument):
         goto_states = []
         jump_tos = []
 
-        # convert to list
-        seq = forged_sequence_dict_to_list(seq)
-
         # obtain list of channels defined in the first step
         if len(seq) < 1:
             # TODO: better error
@@ -1093,18 +1090,12 @@ class Tektronix_AWG5014(VisaInstrument):
         # is defined
         # TODO: this could made such that it fails if not all channels are
         # accounted for. Now it will fail in the next step.
-        used_channels = [k for k in seq[0]['content'][0]['data'].keys()
+        used_channels = [k for k in seq[0]['data'].keys()
                          if k in self.available_signal_channels]
         for elem in seq:
             # TODO: add support for subsequences
-            assert elem['type'] == 'element'
-            content = elem['content']
-            assert len(content) == 1
-            # there is only one element int the dict with key `1` in case of
-            # type == element and no sequencing information, i.e. there is only
-            # one entry with key 'data'
-            # waveform data
-            datadict = content[0]['data']
+            assert not is_subsequence(elem)
+            datadict = elem['data']
 
             # create empty list with size of number of used channels
             step_waveforms = [None] * len(used_channels)
