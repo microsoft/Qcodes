@@ -362,6 +362,9 @@ class ActiveLoop(Metadatable):
     loop_indices = ()  # Current sweep index in loop
     active_action = None  # Currently active action (e.g. parameter)
     _is_stopped = False
+    # Perform any actions during looping (will be reset after measurement is done)
+    interleave_actions = []
+    interleave_action_results = [] # Stored interleaving results
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -974,6 +977,16 @@ class ActiveLoop(Metadatable):
                         # does this internally for each of its actions
                         ActiveLoop.action_indices = action_indices + (current_action_idx,)
                         ActiveLoop.active_action = f
+
+                    if ActiveLoop.interleave_actions:
+                        try:
+                            ActiveLoop.interleave_action_results = [
+                                action() for action in ActiveLoop.interleave_actions]
+                            print('Finished all interleaved actions')
+                        except Exception as e:
+                            traceback.print_tb(e.__traceback__)
+                        finally:
+                            ActiveLoop.interleave_actions = []
 
                     f(first_delay=delay,
                       action_indices=action_indices,
