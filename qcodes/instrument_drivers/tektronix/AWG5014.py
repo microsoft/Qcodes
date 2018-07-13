@@ -1099,7 +1099,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
             # create empty list with size of number of used channels
             step_waveforms = [None] * len(used_channels)
-            step_marker = [[None] * n_channels] * 2
+            step_marker = [[None] * n_channels,  [None] * n_channels]
             for channel, data in datadict.items():
                 if channel in self.available_marker_channels:
                     t = self.parse_marker_channel_name(channel)
