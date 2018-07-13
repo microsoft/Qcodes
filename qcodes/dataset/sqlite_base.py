@@ -8,6 +8,7 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
 from distutils.version import LooseVersion
+import itertools
 
 import qcodes as qc
 import unicodedata
@@ -456,8 +457,8 @@ def insert_many_values(conn: sqlite3.Connection,
                      """
             stop += chunk
             # we need to make values a flat list from a list of list
-            flattened_values = [item for sublist in values[start:stop]
-                                for item in sublist]
+            flattened_values = list(
+                itertools.chain.from_iterable(values[start:stop]))
 
             c = transaction(conn, query, *flattened_values)
 
