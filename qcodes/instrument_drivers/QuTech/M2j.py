@@ -24,6 +24,8 @@ class M2j(Instrument):
     
             module (int): module number as set on the hardware.
     
+        The gain and RF_level can only be set to the device, but not read from the device.
+        
         Parameters: 
             gain: Amplifier gain in dB, range 32 to 55 dB
             RF_level: Measured RF power after amplification (not calibrated)
