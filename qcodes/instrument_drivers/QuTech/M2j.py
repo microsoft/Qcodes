@@ -10,31 +10,30 @@ except ImportError:
 
 
 class M2j(Instrument):
-    """
-    Qcodes driver for the M2j RF amplifier SPI-rack module.
-
-    Args:
-        name (str): name of the instrument.
-
-        spi_rack (SPI_rack): instance of the SPI_rack class as defined in
-            the spirack package. This class manages communication with the
-            individual modules.
-
-        module (int): module number as set on the hardware.
-
-    Parameters: 
-        gain: Amplifier gain in dB, range 32 to 55 dB
-        RF_level: Measured RF power after amplification (not calibrated)
-    """
 
     def __init__(self, name, spi_rack, module, **kwargs):
+        """
+        Qcodes driver for the M2j RF amplifier SPI-rack module.
+    
+        Args:
+            name (str): name of the instrument.
+    
+            spi_rack (SPI_rack): instance of the SPI_rack class as defined in
+                the spirack package. This class manages communication with the
+                individual modules.
+    
+            module (int): module number as set on the hardware.
+    
+        Parameters: 
+            gain: Amplifier gain in dB, range 32 to 55 dB
+            RF_level: Measured RF power after amplification (not calibrated)
+        """
         super().__init__(name, **kwargs)
 
         self.m2j = M2j_module(spi_rack, module)
 
         self.add_parameter('gain',
                            label='gain',
-                           #                           set_cmd=self.m2j.set_gain,
                            set_cmd=self._set_gain,
                            unit='dB',
                            vals=Numbers())
@@ -71,9 +70,10 @@ class M2j(Instrument):
         self.m2j.set_gain(ref_scale)
 
     def _meas_power(self):
-        # Measure the power and convert it to dBm. Calibrated using an R&S
-        # SMA100 source. Linear relation between set power and measured data.
-        # Measurement range -80 to -40 dBm.
+        """ Measure the power and convert it to dBm. Calibrated using an R&S
+         SMA100 source. Linear relation between set power and measured data.
+         Measurement range -80 to -40 dBm.
+        """ 
         x = self.m2j.get_level()
         a = 0
         b = 1
