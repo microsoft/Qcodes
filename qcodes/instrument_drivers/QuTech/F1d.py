@@ -25,7 +25,7 @@ class F1d(Instrument):
         enable_remote: set module in remote mode, switched on the front panel then deactivated
         IQ_filter: Filter after demodulation: 1, 3 and 10 MHz possible
         I_gain, Q_gain: Gain of amplifier of demodulatd signal: low, mid, high
-        RF_level, LO_level: measured RF and LO level in dBm, range -30 to +10 dBm        
+        RF_level, LO_level: measured RF and LO level in dBm, range -30 to +10 dBm
 
     """
 
