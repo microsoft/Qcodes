@@ -20,6 +20,13 @@ class F1d(Instrument):
             individual modules.
 
         module (int): module number as set on the hardware.
+
+    Parameter:
+        enable_remote: set module in remote mode, switched on the front panel then deactivated
+        IQ_filter: Filter after demodulation: 1, 3 and 10 MHz possible
+        I_gain, Q_gain: Gain of amplifier of demodulatd signal: low, mid, high
+        RF_level, LO_level: measured RF and LO level in dBm, range -30 to +10 dBm        
+
     """
 
     def __init__(self, name, spi_rack, module, **kwargs):
@@ -34,8 +41,8 @@ class F1d(Instrument):
         self.add_parameter('IQ_filter',
                            label='IQ filter',
                            set_cmd=self.f1d.set_IQ_filter,
-                           units='MHz',
-                           vals=Enum(1, 3, 10, 20))
+                           unit='MHz',
+                           vals=Enum(1, 3, 10))
 
         self.add_parameter('I_gain',
                            label='I gain',
@@ -49,17 +56,21 @@ class F1d(Instrument):
 
         self.add_parameter('RF_level',
                            label='RF level',
-                           set_cmd=self.f1d.get_RF_level,
-                           units='dBm')
+                           get_cmd=self.f1d.get_RF_level,
+                           unit='dBm')
 
         self.add_parameter('LO_level',
                            label='LO level',
-                           set_cmd=self.f1d.get_LO_level,
-                           units='dBm')
+                           get_cmd=self.f1d.get_LO_level,
+                           unit='dBm')
 
-        self.add_function('enable_remote', call_cmd=self.f1d.enable_remote)
-        self.add_function('clear_rf_clip', call_cmd=self.f1d.clear_rf_clip)
-        self.add_function('is_rf_clipped', call_cmd=self.f1d.rf_clipped)
+        self.add_parameter('enable_remote',
+                           label='Enable remote',
+                           set_cmd=self.f1d.enable_remote)
+        self.add_function('clear_rf_clip',
+                          call_cmd=self.f1d.clear_rf_clip)
+        self.add_function('is_rf_clipped',
+                          call_cmd=self.f1d.rf_clipped)
 
     def get_remote_settings(self):
         return self.f1d.remote_settings
