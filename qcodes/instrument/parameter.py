@@ -1034,7 +1034,7 @@ class ArrayParameter(_BaseParameter):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
 
-        nt: Type[Any] = type(None)
+        nt: Type[None] = type(None)
 
         if not is_sequence_of(shape, int):
             raise ValueError('shapes must be a tuple of ints, not ' +
@@ -1214,7 +1214,7 @@ class MultiParameter(_BaseParameter):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
-        nt: Type[Any] = type(None)
+        nt: Type[None] = type(None)
 
         if (not is_sequence_of(shapes, int, depth=2) or
                 len(shapes) != len(names)):
