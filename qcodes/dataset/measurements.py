@@ -163,17 +163,22 @@ class DataSaver:
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
-                param = str(partial_result[0])
-                value = partial_result[1]
-                # For compatibility with the old Loop, setpoints are
-                # tuples of numbers (usually tuple(np.linspace(...))
-                if hasattr(value, '__len__') and not(isinstance(value, str)):
-                    value = cast(Union[Sequence,np.ndarray], value)
-                    if isinstance(value, np.ndarray):
-                        value = np.atleast_1d(value)
-                    res_dict.update({param: value[index]})
-                else:
-                    res_dict.update({param: value})
+                param_spec = self.parameters[str(partial_result[0])]
+                if param_spec.type == 'array' and index == 0:
+                    res_dict[str(partial_result[0])] = partial_result[1]
+                elif param_spec.type != 'array':
+                    param = str(partial_result[0])
+                    value = partial_result[1]
+                    # For compatibility with the old Loop, setpoints are
+                    # tuples of numbers (usually tuple(np.linspace(...))
+                    if hasattr(value, '__len__') and not(isinstance(value,
+                                                                    str)):
+                        value = cast(Union[Sequence, np.ndarray], value)
+                        if isinstance(value, np.ndarray):
+                            value = np.atleast_1d(value)
+                        res_dict.update({param: value[index]})
+                    else:
+                        res_dict.update({param: value})
 
             self._results.append(res_dict)
 
