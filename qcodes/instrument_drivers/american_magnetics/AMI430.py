@@ -570,32 +570,32 @@ class AMI430_3D(Instrument):
         # Get and set parameters for the set points of the coordinates
         self.add_parameter(
             'cartesian',
-            get_cmd=partial(self._get_setpoints, ['x', 'y', 'z']),
-            set_cmd=partial(self._set_setpoints, ['x', 'y', 'z']),
+            get_cmd=partial(self._get_setpoints, ('x', 'y', 'z')),
+            set_cmd=partial(self._set_setpoints, ('x', 'y', 'z')),
             unit='T',
             vals=Anything()
         )
 
         self.add_parameter(
             'x',
-            get_cmd=partial(self._get_setpoints, ['x']),
-            set_cmd=partial(self._set_setpoints, ['x']),
+            get_cmd=partial(self._get_setpoints, ('x',)),
+            set_cmd=partial(self._set_setpoints, ('x',)),
             unit='T',
             vals=Numbers()
         )
 
         self.add_parameter(
             'y',
-            get_cmd=partial(self._get_setpoints, ['y']),
-            set_cmd=partial(self._set_setpoints, ['y']),
+            get_cmd=partial(self._get_setpoints, ('y',)),
+            set_cmd=partial(self._set_setpoints, ('y',)),
             unit='T',
             vals=Numbers()
         )
 
         self.add_parameter(
             'z',
-            get_cmd=partial(self._get_setpoints, ['z']),
-            set_cmd=partial(self._set_setpoints, ['z']),
+            get_cmd=partial(self._get_setpoints, ('z',)),
+            set_cmd=partial(self._set_setpoints, ('z',)),
             unit='T',
             vals=Numbers()
         )
@@ -603,10 +603,10 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'spherical',
             get_cmd=partial(
-                self._get_setpoints, ['r', 'theta', 'phi']
+                self._get_setpoints, ('r', 'theta', 'phi')
             ),
             set_cmd=partial(
-                self._set_setpoints, ['r', 'theta', 'phi']
+                self._set_setpoints, ('r', 'theta', 'phi')
             ),
             unit='tuple?',
             vals=Anything()
@@ -614,24 +614,24 @@ class AMI430_3D(Instrument):
 
         self.add_parameter(
             'phi',
-            get_cmd=partial(self._get_setpoints, ['phi']),
-            set_cmd=partial(self._set_setpoints, ['phi']),
+            get_cmd=partial(self._get_setpoints, ('phi',)),
+            set_cmd=partial(self._set_setpoints, ('phi',)),
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'theta',
-            get_cmd=partial(self._get_setpoints, ['theta']),
-            set_cmd=partial(self._set_setpoints, ['theta']),
+            get_cmd=partial(self._get_setpoints, ('theta',)),
+            set_cmd=partial(self._set_setpoints, ('theta',)),
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'field',
-            get_cmd=partial(self._get_setpoints, ['r']),
-            set_cmd=partial(self._set_setpoints, ['r']),
+            get_cmd=partial(self._get_setpoints, ('r',)),
+            set_cmd=partial(self._set_setpoints, ('r',)),
             unit='T',
             vals=Numbers()
         )
@@ -639,10 +639,10 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'cylindrical',
             get_cmd=partial(
-                self._get_setpoints, ['rho', 'phi', 'z']
+                self._get_setpoints, ('rho', 'phi', 'z')
             ),
             set_cmd=partial(
-                self._set_setpoints, ['rho', 'phi', 'z']
+                self._set_setpoints, ('rho', 'phi', 'z')
             ),
             unit='tuple?',
             vals=Anything()
@@ -650,8 +650,8 @@ class AMI430_3D(Instrument):
 
         self.add_parameter(
             'rho',
-            get_cmd=partial(self._get_setpoints, ['rho']),
-            set_cmd=partial(self._set_setpoints, ['rho']),
+            get_cmd=partial(self._get_setpoints, ('rho',)),
+            set_cmd=partial(self._set_setpoints, ('rho',)),
             unit='T',
             vals=Numbers()
         )
