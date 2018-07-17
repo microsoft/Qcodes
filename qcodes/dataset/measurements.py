@@ -225,11 +225,14 @@ class Runner:
             write_period: float=None,
             parameters: Dict[str, ParamSpec]=None,
             name: str='',
-            subscribers: List=[]) -> None:
+            subscribers: List=None) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
-        self.subscribers = subscribers
+        if subscribers is None:
+            self.subscribers = []
+        else:
+            self.subscribers = subscribers
         self.experiment = experiment
         self.station = station
         self.parameters = parameters
