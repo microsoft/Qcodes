@@ -179,8 +179,8 @@ class DataSaver:
                         res_dict.update({param: value[index]})
                     else:
                         res_dict.update({param: value})
-
-            self._results.append(res_dict)
+            if len(res_dict) > 0:
+                self._results.append(res_dict)
 
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
