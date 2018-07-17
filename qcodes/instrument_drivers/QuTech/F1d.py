@@ -21,11 +21,8 @@ class F1d(Instrument):
 
         module (int): module number as set on the hardware.
 
-    Parameter:
-        enable_remote: set module in remote mode, switched on the front panel then deactivated
-        IQ_filter: Filter after demodulation: 1, 3 and 10 MHz possible
-        I_gain, Q_gain: Gain of amplifier of demodulatd signal: low, mid, high
-        RF_level, LO_level: measured RF and LO level in dBm, range -30 to +10 dBm
+    The `enable_remote` parameter sets the F1d module in remote mode. When settings are changed on the
+    hardware front panel, then the remote mode is deactivated
 
     """
 
@@ -42,17 +39,20 @@ class F1d(Instrument):
                            label='IQ filter',
                            set_cmd=self.f1d.set_IQ_filter,
                            unit='MHz',
-                           vals=Enum(1, 3, 10))
+                           vals=Enum(1, 3, 10),
+                           docstring='Low-pass filter after demodulation')
 
         self.add_parameter('I_gain',
                            label='I gain',
                            set_cmd=self.f1d.set_I_gain,
-                           vals=Enum('low', 'mid', 'high'))
+                           vals=Enum('low', 'mid', 'high'),
+                           docstring='Gain of amplifier of demodulatd signal')
 
         self.add_parameter('Q_gain',
                            label='Q gain',
                            set_cmd=self.f1d.set_Q_gain,
-                           vals=Enum('low', 'mid', 'high'))
+                           vals=Enum('low', 'mid', 'high'),
+                           docstring='Gain of amplifier of demodulatd signal')
 
         self.add_parameter('RF_level',
                            label='RF level',
@@ -66,7 +66,7 @@ class F1d(Instrument):
 
         self.add_parameter('enable_remote',
                            label='Enable remote',
-                           set_cmd=self.f1d.enable_remote)
+                           set_cmd=self.f1d.enable_remote, docstring='getting the remote status is not possible')
         self.add_function('clear_rf_clip',
                           call_cmd=self.f1d.clear_rf_clip)
         self.add_function('is_rf_clipped',
