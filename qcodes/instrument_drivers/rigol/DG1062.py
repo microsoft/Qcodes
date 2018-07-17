@@ -1,10 +1,3 @@
-"""
-Module for the Rigol DG1062 driver. We have only implemented:
-1) Setting/getting waveforms
-2) Setting/getting the impedance
-3) Setting/getting the polarity
-"""
-
 import logging
 from functools import partial
 from typing import Union, Dict
@@ -16,6 +9,10 @@ log = logging.getLogger(__name__)
 
 
 class DG1062Channel(InstrumentChannel):
+
+    min_impedance = 1
+    max_impedance = 10000
+
     def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
         """
         Args:
@@ -25,8 +22,6 @@ class DG1062Channel(InstrumentChannel):
         """
 
         super().__init__(parent, name)
-
-        self.parent = parent
         self.channel = channel
 
         # All waveforms except 'DC' and 'ARB' have these parameters
@@ -66,7 +61,23 @@ class DG1062Channel(InstrumentChannel):
             get_cmd=f":OUTPUT{channel}:IMP?",
             set_cmd=f":OUTPUT{channel}:IMP {{}}",
             unit="Ohm",
-            vals=vals.Ints(min_value=1, max_value=10000)
+            vals=vals.MultiType(
+                vals.Ints(
+                    min_value=DG1062Channel.min_impedance,
+                    max_value=DG1062Channel.max_impedance
+                ),
+                vals.Enum("INF", "MIN", "MAX", "HighZ")
+            ),
+            set_parser=lambda value: "INF" if value == "HighZ" else value,
+            get_parser=lambda value: "HighZ"
+            if float(value) > DG1062Channel.max_impedance else float(value)
+        )
+
+        self.add_parameter(
+            "sync",
+            get_cmd=f":OUTPUT{channel}:SYNC?",
+            set_cmd=f"OUTPUT{channel}:SYNC {{}}",
+            vals=vals.Enum(0, 1, "ON", "OFF"),
         )
 
         self.add_parameter(
