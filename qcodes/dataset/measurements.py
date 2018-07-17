@@ -396,7 +396,8 @@ class Measurement:
     def register_parameter(
             self, parameter: _BaseParameter,
             setpoints: Sequence[_BaseParameter]=None,
-            basis: Sequence[_BaseParameter]=None) -> None:
+            basis: Sequence[_BaseParameter]=None,
+            paramtype: str='numeric') -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -410,6 +411,7 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
+            paramtype: type of the parameter, i.e. the SQL storage class
         """
         # input validation
         if not isinstance(parameter, _BaseParameter):
@@ -444,7 +446,7 @@ class Measurement:
             else:
                 spunit = ''
 
-            sp = ParamSpec(name=spname, paramtype='numeric',
+            sp = ParamSpec(name=spname, paramtype=paramtype,
                            label=splabel, unit=spunit)
 
             self.parameters[spname] = sp
@@ -461,7 +463,7 @@ class Measurement:
         # but for now binary blob saving is referred to using the DataSet
         # API directly
         parameter = cast(Union[Parameter, ArrayParameter], parameter)
-        paramtype = 'numeric'
+
         label = parameter.label
         unit = parameter.unit
 
@@ -496,7 +498,8 @@ class Measurement:
             self, name: str,
             label: str=None, unit: str=None,
             basis: Sequence[Union[str, _BaseParameter]]=None,
-            setpoints: Sequence[Union[str, _BaseParameter]]=None) -> None:
+            setpoints: Sequence[Union[str, _BaseParameter]]=None,
+            paramtype: str='numeric') -> None:
         """
         Register a custom parameter with this measurement
 
@@ -512,6 +515,7 @@ class Measurement:
             setpoints: A list of either QCoDeS Parameters or the names of
                 of parameters already registered in the measurement that
                 are the setpoints of this parameter
+            paramtype: type of the parameter, i.e. the SQL storage class
         """
 
         # validate dependencies
@@ -528,7 +532,7 @@ class Measurement:
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)
 
-        parspec = ParamSpec(name=name, paramtype='numeric',
+        parspec = ParamSpec(name=name, paramtype=paramtype,
                             label=label, unit=unit,
                             inferred_from=inf_from,
                             depends_on=depends_on)
