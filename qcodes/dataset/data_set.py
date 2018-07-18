@@ -405,8 +405,6 @@ class DataSet(Sized):
         len_before_add = length(self.conn, self.table_name)
         insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
-        # TODO: should this not be made atomic?
-        self.conn.commit()
         return len_before_add
 
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
