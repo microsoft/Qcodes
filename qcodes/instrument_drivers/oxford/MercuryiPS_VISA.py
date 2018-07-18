@@ -236,7 +236,8 @@ class MercuryiPS(VisaInstrument):
             psu = MercurySlavePS(self, psu_name, grp)
             self.add_submodule(psu_name, psu)
 
-        self._field_limits = field_limits
+        self._field_limits = (field_limits if field_limits else
+                              lambda x, y, z: True)
 
         self._target_vector = FieldVector(x=self.GRPX.field(),
                                           y=self.GRPY.field(),
