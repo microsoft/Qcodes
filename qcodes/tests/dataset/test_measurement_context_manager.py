@@ -829,6 +829,67 @@ def test_datasaver_array_parameters_channel(experiment, channel_array_instrument
     assert datasaver.points_written == N * M
 
 
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500))
+def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
+                                    DAC, N):
+
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_array_parameter
+
+    meas.register_parameter(array_param, paramtype='Array')
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'array'
+    assert meas.parameters[dependency_name].type == 'array'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1, paramtype='numeric')
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype='array')
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N
+
+
+def test_datasaver_unravel_multidim_manual(experiment, SpectrumAnalyzer):
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    meas.register_parameter(x1, paramtype='array')
+    meas.register_parameter(x2, paramtype='array')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
+
+    with meas.run() as datasaver:
+        datasaver._dataset.add_result({
+                str(x1): np.random.rand(size1, size2),
+                str(x2): np.random.rand(size1, size2),
+                str(y1): np.random.rand(size1, size2),
+                str(y2): np.random.rand(size1, size2)})
+    assert datasaver.points_written == 1
+    dataset = load_by_id(datasaver.run_id)
+    for myid in ('x1', 'x2', 'y1', 'y2'):
+        assert dataset.get_data(myid)[0][0].shape == (size1, size2)
+
+
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
     dir = os.path.dirname(__file__)
