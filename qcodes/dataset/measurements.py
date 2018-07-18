@@ -95,6 +95,8 @@ class DataSaver:
         # proceeding.
         input_size = 1
         params = []
+        inserting_as_arrays = False
+        inserting_unrolled_array = False
         for partial_result in res:
             parameter = partial_result[0]
             paramstr = str(partial_result[0])
@@ -104,10 +106,16 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
+            param_spec = self.parameters[str(partial_result[0])]
+            if param_spec.type == 'array':
+                inserting_as_arrays = True
             if any(isinstance(value, typ) for typ in array_like_types):
+
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
                 array_size = len(value)
+                if param_spec.type != 'array' and array_size > 1:
+                    inserting_unrolled_array = True
                 if input_size > 1 and input_size != array_size:
                     raise ValueError('Incompatible array dimensions. Trying to'
                                      f' add arrays of dimension {input_size} '
@@ -159,7 +167,12 @@ class DataSaver:
                                      f'setpoint values for {param}:'
                                      f' {stuffweneed}.'
                                      f' Values only given for {params}.')
-
+        if inserting_unrolled_array and inserting_as_arrays:
+            raise RuntimeError("Trying to insert multiple data values both "
+                               "in array from and as numeric. This is not "
+                               "possible.")
+        elif inserting_as_arrays:
+            input_size = 1
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
