@@ -113,7 +113,7 @@ class DataSaver:
 
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
-                array_size = len(value)
+                array_size = len(value.ravel())
                 if param_spec.type != 'array' and array_size > 1:
                     inserting_unrolled_array = True
                 if input_size > 1 and input_size != array_size:
@@ -188,7 +188,7 @@ class DataSaver:
                                                                     str)):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
-                            value = np.atleast_1d(value)
+                            value = np.atleast_1d(value).ravel()
                         res_dict.update({param: value[index]})
                     else:
                         res_dict.update({param: value})
