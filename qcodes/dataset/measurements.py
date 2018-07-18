@@ -135,26 +135,29 @@ class DataSaver:
             # design of ArrayParameters (possibly) containing (some of) their
             # setpoints
             if isinstance(parameter, ArrayParameter):
-                if parameter.setpoints is not None:
-                    sps = parameter.setpoints[0]
-                else:
+                if parameter.setpoints is None:
                     raise RuntimeError("Got an array parameter without "
                                        "setpoints. Cannot handle this")
-                inst_name = getattr(parameter._instrument, 'name', '')
-                sp_name_parts = []
-                if inst_name is not None:
-                    sp_name_parts.append(inst_name)
-                if parameter.setpoint_names is not None:
-                    sp_name_parts.append(parameter.setpoint_names[0])
-                spname = '_'.join(sp_name_parts)
 
-                if f'{paramstr}_setpoint' in self.parameters.keys():
-                    res.append((f'{paramstr}_setpoint', sps))
-                elif spname in self.parameters.keys():
-                        res.append((spname, sps))
                 else:
-                    raise RuntimeError('No setpoints registered for '
-                                       f'ArrayParameter {paramstr}!')
+                    for i, sps in enumerate(parameter.setpoints):
+                        inst_name = getattr(parameter._instrument, 'name', '')
+                        sp_name_parts = []
+                        if inst_name is not None:
+                            sp_name_parts.append(inst_name)
+                        if parameter.setpoint_names is not None:
+                            sp_name_parts.append(parameter.setpoint_names[i])
+                        spname = '_'.join(sp_name_parts)
+
+                    if f'{paramstr}_setpoint' in self.parameters.keys():
+                        # for multidim arrays this needs to pick the right part
+                        # not all of it
+                        res.append((f'{paramstr}_setpoint', np.array(sps)))
+                    elif spname in self.parameters.keys():
+                        res.append((spname, np.array(sps)))
+                    else:
+                        raise RuntimeError('No setpoints registered for '
+                                           f'ArrayParameter {paramstr}!')
 
         # Now check for missing setpoints
         for partial_result in res:
