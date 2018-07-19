@@ -8,6 +8,82 @@ from qcodes import InstrumentChannel, ChannelList
 log = logging.getLogger(__name__)
 
 
+class DG1062Burst(InstrumentChannel):
+
+    def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
+        super().__init__(parent, name)
+        self.channel = channel
+
+        self.add_parameter(
+            "on",
+            get_cmd=f":SOUR{channel}:BURS?",
+            set_cmd=f":SOUR{channel}:BURS {{}}",
+            vals=vals.Enum(0, 1, "ON", "OFF")
+        )
+
+        self.add_parameter(
+            "polarity",
+            get_cmd=f":SOUR{channel}:BURS:GATE:POL?",
+            set_cmd=f":SOUR{channel}:BURS:GATE:POL {{}}",
+            vals=vals.Enum("NOR", "INV")
+        )
+
+        self.add_parameter(
+            "period",
+            get_cmd=f":SOUR{channel}:BURS:INT:PER ?",
+            set_cmd=f":SOUR{channel}:BURS:INT:PER {{}}",
+            vals=vals.MultiType(
+                vals.Numbers(min_value=3E-6, max_value=500),
+                vals.Enum("MIN", "MAX")
+            )
+        )
+
+        self.add_parameter(
+            "mode",
+            get_cmd=f":SOUR{channel}:BURS:MODE?",
+            set_cmd=f":SOUR{channel}:BURS:MODE {{}}",
+            vals=vals.Enum("TRIG","INF", "GAT")
+        )
+
+        self.add_parameter(
+            "ncycles",
+            get_cmd=f":SOUR{channel}:BURS:NCYC?",
+            set_cmd=f":SOUR{channel}:BURS:NCYC {{}}",
+            vals=vals.Numbers(min_value=1, max_value=500000)
+        )
+
+        self.add_parameter(
+            "phase",
+            get_cmd=f":SOUR{channel}:BURS:PHAS?",
+            set_cmd=f":SOUR{channel}:BURS:PHAS {{}}",
+            vals=vals.Numbers(min_value=0, max_value=360)
+        )
+
+        self.add_parameter(
+            "time_delay",
+            get_cmd=f":SOUR{channel}:BURS:TDEL?",
+            set_cmd=f":SOUR{channel}:BURS:TDEL {{}}",
+            vals=vals.Numbers(min_value=0)
+        )
+
+        self.add_parameter(
+            "trigger_slope",
+            get_cmd=f":SOUR{channel}:BURS:TRIG:SLOP?",
+            set_cmd=f":SOUR{channel}:BURS:TRIG:SLOP {{}}",
+            vals=vals.Enum("POS", "NEG")
+        )
+
+        self.add_parameter(
+            "source",
+            get_cmd=f":SOUR{channel}:BURS:TRIG:SOUR?",
+            set_cmd=f":SOUR{channel}:BURS:TRIG:SOUR {{}}",
+            vals=vals.Enum("INT", "EXT", "MAN")
+        )
+
+    def trigger(self):
+        self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
+
+
 class DG1062Channel(InstrumentChannel):
 
     min_impedance = 1
@@ -46,14 +122,12 @@ class DG1062Channel(InstrumentChannel):
                 param,
                 unit=unit,
                 set_cmd=partial(self._set_waveform_param, param),
-                get_cmd=partial(self._get_waveform_param, param)
+                get_cmd=partial(self._get_waveform_param, param),
             )
 
         self.add_parameter(
             "waveform",
             get_cmd=partial(self._get_waveform_param, "waveform")
-            # We set the waveform by calling the 'apply' method with
-            # appropriate parameters
         )
 
         self.add_parameter(
@@ -94,24 +168,15 @@ class DG1062Channel(InstrumentChannel):
             get_cmd=f"OUTPUT{channel}:STATE?",
         )
 
-    def __getattr__(self, item):
-        """
-        We want to be able to call waveform functions like so
-        >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
-        >>> help(gd.channels[0].sin)
-        >>> gd.channels[0].sin(freq=2E3, ampl=1.0, offset=0, phase=0)
-        """
-        waveform = item.upper()
-        if waveform not in self.waveform_params:
-            return super().__getitem__(item)
+        burst = DG1062Burst(self.parent, "burst", self.channel)
+        self.add_submodule("burst", burst)
 
-        def f(**kwargs):
-            return partial(self.apply, waveform=waveform)(**kwargs)
-
-        # By wrapping the partial in a function we can change the docstring
-        f.__doc__ = f"Arguments: {self.waveform_params[waveform]}"
-
-        return f
+        # We want to be able to do the following:
+        # >>> gd.channels[0].sin(freq=2E3, ampl=1.0, offset=0, phase=0)
+        for waveform in self.waveform_params:
+            f = partial(self.apply, waveform=waveform)
+            f.__doc__ = "Args: " + ", ".join(self.waveform_params[waveform])
+            setattr(self, waveform.lower(), f)
 
     def apply(self, **kwargs: Dict) ->Union[None, Dict]:
         """
@@ -134,7 +199,6 @@ class DG1062Channel(InstrumentChannel):
             return self._get_waveform_params()
 
         self._set_waveform_params(**kwargs)
-        return {}
 
     def _get_waveform_param(self, param: str) ->float:
         """
