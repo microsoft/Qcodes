@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, Union, Optional, Callable
+from typing import Dict, Union, Optional, Callable, List
 import logging
 
 from qcodes.instrument.channel import InstrumentChannel
@@ -262,14 +262,15 @@ class MercuryiPS(VisaInstrument):
             self.add_parameter(name=f'{coord}_measured',
                                label=f'{coord.upper()} measured field',
                                unit='T',
-                               get_cmd=partial(self._get_measured, coord))
+                               get_cmd=partial(self._get_measured, [coord]))
 
         self.connect_message()
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
 
-    def _get_measured(self, coordinate: str) -> float:
+    def _get_measured(self, coordinates: List[str]) -> Union[float,
+                                                             List[float]]:
         """
         Get the measured value of a coordinate. Measures all three fields
         and computes whatever coordinate we asked for.
@@ -278,7 +279,10 @@ class MercuryiPS(VisaInstrument):
                                  y=self.GRPY.field(),
                                  z=self.GRPZ.field())
 
-        return meas_field.get_components(coordinate)[0]
+        if len(coordinates) == 0:
+            return meas_field.get_components(*coordinates)[0]
+        else:
+            return meas_field.get_components(*coordinates)
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
