@@ -142,6 +142,15 @@ class MercurySlavePS(InstrumentChannel):
                                         'CLAMP': 'CLMP',
                                         'TO ZERO': 'RTOZ'})
 
+    def ramp_to_target(self) -> None:
+        """
+        Unconditionally ramp this PS to its target
+        """
+        status = self.ramp_status()
+        if status == 'CLAMP':
+            self.ramp_status('HOLD')
+        self.ramp_status('TO SET')
+
     def _ramp_status_setter(self, cmd: str) -> None:
         status_now = self.ramp_status()
         if status_now == 'CLAMP' and cmd == 'RTOS':
@@ -254,6 +263,13 @@ class MercuryiPS(VisaInstrument):
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
+
+    def _get_measured(self, coordinate: str) -> float:
+        """
+        Get the measured value of a coordinate. Measures all three fields
+        and computes whatever coordinate we asked for.
+        """
+        pass
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
