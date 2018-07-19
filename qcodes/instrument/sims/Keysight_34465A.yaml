@@ -60,6 +60,12 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:APERture:ENABled {}"
+      licenses:
+        default: "DIG"
+        getter:
+          q: "SYST:LIC:CAT?"
+          r: "{}"
+          type: string
 
 
 resources:
