@@ -349,6 +349,34 @@ class MercuryiPS(VisaInstrument):
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
 
+    def ramp(self, mode: str) -> None:
+        """
+        Ramp the fields to their present target value
+
+        Args:
+            mode: how to ramp, either 'simul' or 'safe'. In 'simul' mode,
+              the fields are ramping simultaneously in a non-blocking mode.
+              There is no safety check that the safe zone is not exceeded. In
+              'safe' mode, the fields are ramped one-by-one in a blocking way
+              that ensures that the total field stays within the safe region
+              (provided that this region is convex).
+        """
+        if mode not in ['simul', 'safe']:
+            raise ValueError('Invalid ramp mode. Please provide either "simul"'
+                             ' or "safe".')
+
+        meas_vals = self._get_measured(['x', 'y', 'z'])
+
+        for cur, slave in zip(meas_vals, self.submodules.values()):
+            if slave.field_target() != meas_vals:
+                if slave.field_ramp_rate() == 0:
+                    raise ValueError(f'Can not ramp {slave}; ramp rate set to'
+                                     ' zero!')
+
+        # then the actual ramp
+        {'simul': self._ramp_simultaneously,
+         'safe': self._ramp_safely}[mode]()
+
     def ask(self, cmd: str) -> str:
         """
         Since Oxford Instruments implement their own version of a SCPI-like
