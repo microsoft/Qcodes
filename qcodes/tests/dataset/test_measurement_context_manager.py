@@ -7,6 +7,7 @@ import json
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
+from numpy.testing import assert_array_equal
 
 from qcodes.tests.common import retry_until_does_not_throw
 
@@ -942,6 +943,39 @@ def test_datasaver_unravel_multidim(experiment, SpectrumAnalyzer):
     with meas.run() as datasaver:
         datasaver.add_result((array_param, array_param.get()))
     assert datasaver.points_written == points_expected
+
+
+def test_datasaver__multidim_as_array(experiment, SpectrumAnalyzer):
+
+    array_param = SpectrumAnalyzer.multidimspectrum
+    meas = Measurement()
+    meas.register_parameter(array_param, paramtype='array')
+    assert len(meas.parameters) == 4
+    with meas.run() as datasaver:
+        datasaver.add_result((array_param, array_param.get()))
+
+    assert datasaver.points_written == 1
+    ds = load_by_id(datasaver.run_id)
+    expected_shape = (100, 50, 20)
+    for i in range(3):
+        data = ds.get_data(f'dummy_SA_Frequency{i}')[0][0]
+        aux_shape = list(expected_shape)
+        aux_shape.pop(i)
+
+        assert data.shape == expected_shape
+        for j in range(aux_shape[0]):
+            for k in range(aux_shape[1]):
+                # todo There should be a simpler way of doing this
+                if i == 0:
+                    mydata = data[:, j, k]
+                if i == 1:
+                    mydata = data[j, :, k]
+                if i == 2:
+                    mydata = data[j, k, :]
+                assert_array_equal(mydata,
+                                   np.linspace(array_param.start,
+                                               array_param.stop,
+                                               array_param.npts[i]))
 
 
 def test_load_legacy_files_2D(experiment):
