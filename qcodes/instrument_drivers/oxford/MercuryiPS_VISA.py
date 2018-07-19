@@ -332,7 +332,7 @@ class MercuryiPS(VisaInstrument):
     def _ramp_safely(self) -> None:
         """
         Ramp all three fields to their target using the 'first-down-then-up'
-        sequential ramping procedure.
+        sequential ramping procedure. This function is BLOCKING.
         """
         meas_vals = self._get_measured(['x', 'y', 'z'])
         targ_vals = self._target_vector.get_components('x', 'y', 'z')
@@ -351,13 +351,16 @@ class MercuryiPS(VisaInstrument):
     def ask(self, cmd: str) -> str:
         """
         Since Oxford Instruments implement their own version of a SCPI-like
-        language, we implement our own reader.
+        language, we implement our own reader. Note that this command is used
+        for getting and setting (asking and writing) alike.
 
         Args:
             cmd: the command to send to the instrument
         """
 
+        log.debug(f"Writing to instrument {self.name}: {cmd}")
         resp = self.visa_handle.ask(cmd)
+        log.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:
             log.error('Invalid command. Got response: {}'.format(resp))
