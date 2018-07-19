@@ -134,6 +134,8 @@ class DataSaver:
             # brittle and should be enough to convince us to abandon the
             # design of ArrayParameters (possibly) containing (some of) their
             # setpoints
+            setpoint_axes = []
+            setpoint_meta = []
             if isinstance(parameter, ArrayParameter):
                 if parameter.setpoints is None:
                     raise RuntimeError("Got an array parameter without "
@@ -148,18 +150,24 @@ class DataSaver:
                         if parameter.setpoint_names is not None:
                             sp_name_parts.append(parameter.setpoint_names[i])
                         spname = '_'.join(sp_name_parts)
-                        if f'{paramstr}_setpoint' in self.parameters.keys() or spname in self.parameters.keys():
-                            reps = np.prod(parameter.shape) // sps.shape[i]
+                        if f'{paramstr}_setpoint' in self.parameters.keys() \
+                                or spname in self.parameters.keys():
                             while sps.ndim > 1:
                                 sps = sps[0]
-                            data = np.repeat(np.array(sps), reps)
-                            if f'{paramstr}_setpoint' in self.parameters.keys():
-                                res.append((f'{paramstr}_setpoint', data))
-                            elif spname in self.parameters.keys():
-                                res.append((spname, data))
+                            setpoint_meta.append({'paramstr': paramstr,
+                                                  'spname': spname})
+                            setpoint_axes.append(sps)
                         else:
                             raise RuntimeError('No setpoints registered for '
                                                f'ArrayParameter {paramstr}!')
+                    output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
+                    for grid, meta in zip(output_grids, setpoint_meta):
+                        if not inserting_as_arrays:
+                            grid = grid.ravel()
+                        if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
+                            res.append((f'{meta["paramstr"]}_setpoint', grid))
+                        elif meta['spname'] in self.parameters.keys():
+                            res.append((meta['spname'], grid))
 
         # Now check for missing setpoints
         for partial_result in res:
@@ -178,9 +186,13 @@ class DataSaver:
                                "possible.")
         elif inserting_as_arrays:
             input_size = 1
+
+        expected_shape = res[0][1].shape
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
+                if partial_result[1].shape != expected_shape:
+                    raise RuntimeError("This should never happen")
                 param_spec = self.parameters[str(partial_result[0])]
                 if param_spec.type == 'array' and index == 0:
                     res_dict[str(partial_result[0])] = partial_result[1]
