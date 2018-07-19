@@ -259,6 +259,11 @@ class MercuryiPS(VisaInstrument):
                                get_cmd=partial(self._get_component, coord),
                                set_cmd=partial(self._set_target, coord))
 
+            self.add_parameter(name=f'{coord}_measured',
+                               label=f'{coord.upper()} measured field',
+                               unit='T',
+                               get_cmd=partial(self._get_measured, coord))
+
         self.connect_message()
 
     def _get_component(self, coordinate: str) -> float:
@@ -269,7 +274,11 @@ class MercuryiPS(VisaInstrument):
         Get the measured value of a coordinate. Measures all three fields
         and computes whatever coordinate we asked for.
         """
-        pass
+        meas_field = FieldVector(x=self.GRPX.field(),
+                                 y=self.GRPY.field(),
+                                 z=self.GRPZ.field())
+
+        return meas_field.get_components(coordinate)
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
