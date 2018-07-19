@@ -57,6 +57,33 @@ devices:
           q: "READ:DEV:GRPZ:PSU:SIG:FLD"
           r: "{}"
 
+      x ramp status:
+        default: "HOLD"
+        getter:
+          q: "READ:DEV:GRPX:PSU:ACTN"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPX:PSU:ACTN:{}"
+          r: ""
+
+      y ramp status:
+        default: "HOLD"
+        getter:
+          q: "READ:DEV:GRPY:PSU:ACTN"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPY:PSU:ACTN:{}"
+          r: ""
+
+      z ramp status:
+        default: "HOLD"
+        getter:
+          q: "READ:DEV:GRPZ:PSU:ACTN"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPZ:PSU:ACTN:{}"
+          r: ""
+
 
 resources:
   GPIB::1::INSTR:

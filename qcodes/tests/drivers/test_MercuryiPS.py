@@ -1,6 +1,9 @@
+import io
+import logging
+from typing import List
+
 import pytest
 import numpy as np
-
 import hypothesis as hst
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
@@ -51,6 +54,37 @@ def driver_cyl_lim():
 
     yield mips_cl
     mips_cl.close()
+
+
+# for testing ramp orders, we need access to the instrument communication
+
+iostream = io.StringIO()
+logger = logging.getLogger('qcodes.instrument.visa')
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(created)s - %(message)s')
+lh = logging.StreamHandler(iostream)
+logger.addHandler(lh)
+lh.setLevel(logging.DEBUG)
+lh.setFormatter(formatter)
+
+
+def get_messages(iostream: io.StringIO) -> List[str]:
+    """
+    Get all the lines currently in the logging output stream
+    and clear them from the stream
+
+    Args:
+        iostream: the stream to which the logging module logs
+
+    Returns:
+        The messages one-by-one, under the assumption that VISA
+            uses '\n' termination.
+    """
+    messages = iostream.getvalue().split('\n')
+    iostream.seek(0)
+    iostream.truncate(0)
+
+    return messages
 
 
 def test_idn(driver):
@@ -104,3 +138,43 @@ def test_field_limits(x, y, z, driver_spher_lim, driver_cyl_lim):
                 mip.x_target(x)
                 mip.y_target(y)
                 mip.z_target(z)
+
+
+def get_ramp_order(ramp_messages):
+    """
+    Helper function used in test_ramp_safely
+    """
+    order = []
+    for mssg in ramp_messages:
+        if 'RTOS' in mssg:
+            axis = mssg[mssg.find('GRP')+3:mssg.find('GRP')+4]
+            order.append(axis.lower())
+    return order
+
+
+@hst.given(x=hst.strategies.floats(min_value=-3, max_value=3),
+           y=hst.strategies.floats(min_value=-3, max_value=3),
+           z=hst.strategies.floats(min_value=-3, max_value=3))
+def test_ramp_safely(driver, x, y, z):
+    """
+    Test that we get the first-down-then-up order right
+    """
+    # reset the instrument to default
+    driver.GRPX.ramp_status('HOLD')
+    driver.GRPY.ramp_status('HOLD')
+    driver.GRPZ.ramp_status('HOLD')
+
+    # the current field values are always zero for the sim. instr.
+
+    driver.x_target(x)
+    driver.y_target(y)
+    driver.z_target(z)
+
+    exp_order = np.array(['x', 'y', 'z'])[np.argsort(np.abs(np.array([x, y, z])))]
+
+    get_messages(iostream)  # clear the message queue
+    driver._ramp_safely()
+    #ramp_mssgs = [mssg for mssg in get_messages(iostream) if 'RTOS' in mssg]
+    ramp_order = get_ramp_order(get_messages(iostream))
+
+    assert ramp_order == list(exp_order)

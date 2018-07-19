@@ -337,7 +337,7 @@ class MercuryiPS(VisaInstrument):
         """
         meas_vals = self._get_measured(['x', 'y', 'z'])
         targ_vals = self._target_vector.get_components('x', 'y', 'z')
-        order = np.argsort(np.array(targ_vals) - np.array(meas_vals))
+        order = np.argsort(np.abs(np.array(targ_vals) - np.array(meas_vals)))
 
         for slave in np.array(list(self.submodules.values()))[order]:
             slave.ramp_to_target()
