@@ -148,16 +148,18 @@ class DataSaver:
                         if parameter.setpoint_names is not None:
                             sp_name_parts.append(parameter.setpoint_names[i])
                         spname = '_'.join(sp_name_parts)
-
-                    if f'{paramstr}_setpoint' in self.parameters.keys():
-                        # for multidim arrays this needs to pick the right part
-                        # not all of it
-                        res.append((f'{paramstr}_setpoint', np.array(sps)))
-                    elif spname in self.parameters.keys():
-                        res.append((spname, np.array(sps)))
-                    else:
-                        raise RuntimeError('No setpoints registered for '
-                                           f'ArrayParameter {paramstr}!')
+                        if f'{paramstr}_setpoint' in self.parameters.keys() or spname in self.parameters.keys():
+                            reps = np.prod(parameter.shape) // sps.shape[i]
+                            while sps.ndim > 1:
+                                sps = sps[0]
+                            data = np.repeat(np.array(sps), reps)
+                            if f'{paramstr}_setpoint' in self.parameters.keys():
+                                res.append((f'{paramstr}_setpoint', data))
+                            elif spname in self.parameters.keys():
+                                res.append((spname, data))
+                        else:
+                            raise RuntimeError('No setpoints registered for '
+                                               f'ArrayParameter {paramstr}!')
 
         # Now check for missing setpoints
         for partial_result in res:
@@ -447,32 +449,34 @@ class Measurement:
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
-            spname_parts = []
-            if parameter.instrument is not None:
-                inst_name = parameter.instrument.name
-                if inst_name is not None:
-                    spname_parts.append(inst_name)
-            if parameter.setpoint_names is not None:
-                spname_parts.append(parameter.setpoint_names[0])
-            if len(spname_parts) > 0:
-                spname = '_'.join(spname_parts)
-            else:
-                spname = f'{name}_setpoint'
-            if parameter.setpoint_labels:
-                splabel = parameter.setpoint_labels[0]
-            else:
-                splabel = ''
-            if parameter.setpoint_units:
-                spunit = parameter.setpoint_units[0]
-            else:
-                spunit = ''
-
-            sp = ParamSpec(name=spname, paramtype=paramtype,
-                           label=splabel, unit=spunit)
-
-            self.parameters[spname] = sp
             my_setpoints = list(setpoints) if setpoints else []
-            my_setpoints += [spname]
+            for i in range(len(parameter.setpoints)):
+                spname_parts = []
+                if parameter.instrument is not None:
+                    inst_name = parameter.instrument.name
+                    if inst_name is not None:
+                        spname_parts.append(inst_name)
+                if parameter.setpoint_names is not None:
+                    spname_parts.append(parameter.setpoint_names[i])
+                if len(spname_parts) > 0:
+                    spname = '_'.join(spname_parts)
+                else:
+                    spname = f'{name}_setpoint'
+                if parameter.setpoint_labels:
+                    splabel = parameter.setpoint_labels[i]
+                else:
+                    splabel = ''
+                if parameter.setpoint_units:
+                    spunit = parameter.setpoint_units[i]
+                else:
+                    spunit = ''
+
+                sp = ParamSpec(name=spname, paramtype=paramtype,
+                               label=splabel, unit=spunit)
+
+                self.parameters[spname] = sp
+
+                my_setpoints += [spname]
         else:
             my_setpoints = setpoints
 
