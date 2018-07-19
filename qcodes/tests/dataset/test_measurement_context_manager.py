@@ -88,6 +88,37 @@ def SpectrumAnalyzer():
             # not the best SA on the market; it just returns noise...
             return np.random.randn(self.npts)
 
+    class MultiDimSpectrum(ArrayParameter):
+
+        def __init__(self, name, instrument):
+            self.start = 0
+            self.stop = 2e6
+            self.npts = (100, 50, 20)
+            sp1 = np.linspace(self.start, self.stop,
+                              self.npts[0])
+            sp2 = np.linspace(self.start, self.stop,
+                              self.npts[1])
+            sp3 = np.linspace(self.start, self.stop,
+                              self.npts[2])
+            setpoints = (sp1,
+                         np.tile(sp2, (len(sp1), 1)),
+                         np.tile(sp3, (len(sp1), len(sp2), 1)))
+
+            super().__init__(name=name,
+                             instrument=instrument,
+                             setpoints=setpoints,
+                             shape=(100, 50, 20),
+                             label='Flower Power Spectrum in 3D',
+                             unit='V/sqrt(Hz)',
+                             setpoint_names=('Frequency0', 'Frequency1',
+                                             'Frequency2'),
+                             setpoint_units=('Hz', 'Other Hz', "Third Hz"))
+
+
+
+        def get_raw(self):
+            return np.random.randn(*self.npts)
+
     class ListSpectrum(Spectrum):
 
         def get_raw(self):
@@ -104,7 +135,7 @@ def SpectrumAnalyzer():
     SA.add_parameter('spectrum', parameter_class=Spectrum)
     SA.add_parameter('listspectrum', parameter_class=ListSpectrum)
     SA.add_parameter('tuplespectrum', parameter_class=TupleSpectrum)
-
+    SA.add_parameter('multidimspectrum', parameter_class=MultiDimSpectrum)
     yield SA
 
     SA.close()
@@ -888,6 +919,29 @@ def test_datasaver_unravel_multidim_manual(experiment, SpectrumAnalyzer):
     dataset = load_by_id(datasaver.run_id)
     for myid in ('x1', 'x2', 'y1', 'y2'):
         assert dataset.get_data(myid)[0][0].shape == (size1, size2)
+
+
+def test_datasaver_unravel_multidim(experiment, SpectrumAnalyzer):
+
+    meas = Measurement()
+
+    array_param = SpectrumAnalyzer.multidimspectrum
+
+    meas = Measurement()
+
+    meas.register_parameter(array_param, paramtype='numeric')
+
+    assert len(meas.parameters) == 4
+
+    M = array_param.npts
+    points_expected = 1
+    for m in M:
+        points_expected *= m
+
+
+    with meas.run() as datasaver:
+        datasaver.add_result((array_param, array_param.get()))
+    assert datasaver.points_written == points_expected
 
 
 def test_load_legacy_files_2D(experiment):
