@@ -10,6 +10,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.math.field_vector import FieldVector
 
 log = logging.getLogger(__name__)
+visalog = logging.getLogger('qcodes.instrument.visa')
 
 
 def _response_preparser(bare_resp: str) -> str:
@@ -358,9 +359,9 @@ class MercuryiPS(VisaInstrument):
             cmd: the command to send to the instrument
         """
 
-        log.debug(f"Writing to instrument {self.name}: {cmd}")
+        visalog.debug(f"Writing to instrument {self.name}: {cmd}")
         resp = self.visa_handle.ask(cmd)
-        log.debug(f"Got instrument response: {resp}")
+        visalog.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:
             log.error('Invalid command. Got response: {}'.format(resp))
