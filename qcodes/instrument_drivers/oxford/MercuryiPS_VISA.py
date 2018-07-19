@@ -279,7 +279,7 @@ class MercuryiPS(VisaInstrument):
                                  y=self.GRPY.field(),
                                  z=self.GRPZ.field())
 
-        if len(coordinates) == 0:
+        if len(coordinates) == 1:
             return meas_field.get_components(*coordinates)[0]
         else:
             return meas_field.get_components(*coordinates)
