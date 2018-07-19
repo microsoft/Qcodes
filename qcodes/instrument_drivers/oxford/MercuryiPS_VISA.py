@@ -278,7 +278,7 @@ class MercuryiPS(VisaInstrument):
                                  y=self.GRPY.field(),
                                  z=self.GRPZ.field())
 
-        return meas_field.get_components(coordinate)
+        return meas_field.get_components(coordinate)[0]
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
