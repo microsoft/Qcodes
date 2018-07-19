@@ -19,8 +19,7 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
 
-from broadbean.tools import (forged_sequence_dict_to_list,
-                             is_subsequence, get_element_channel_ids)
+from broadbean.tools import is_subsequence, get_element_channel_ids
 
 
 log = logging.getLogger(__name__)
