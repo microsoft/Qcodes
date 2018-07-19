@@ -51,13 +51,14 @@ class Task:
 
     """
 
-    def __init__(self, func, *args, N=None, condition=None, **kwargs):
+    def __init__(self, func, *args, N=None, condition=None, repetitions=1, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
 
         self.N = N
         self.idx = 0
+        self.repetitions = repetitions
 
         self.condition = condition
 
@@ -77,7 +78,8 @@ class Task:
         eval_kwargs = {k: (v() if callable(v) else v) for k, v in
                        self.kwargs.items()}
 
-        self.func(*eval_args, **eval_kwargs)
+        for repetition in range(self.repetitions):
+            self.func(*eval_args, **eval_kwargs)
 
     def snapshot(self, update=False):
         """
@@ -263,12 +265,23 @@ class BreakIf:
         return {'type': 'BreakIf', 'condition': repr(self.condition)}
 
 
-class ContinueIf(BreakIf):
+class SkipIf(BreakIf):
     """Perform continue, i.e. proceed to next loop, if condition is met.
 
     Behaviour is similar to BreakIf
     """
     pass
+
+
+class ContinueIf(SkipIf):
+    """Perform continue, i.e. proceed to next loop, if condition is met.
+
+    Behaviour is similar to BreakIf
+    """
+    def __call__(self, **ignore_kwargs):
+        logger.warning('Should use SkipIf instead')
+        super().__call__(**ignore_kwargs)
+
 
 class _QcodesBreak(Exception):
     pass
