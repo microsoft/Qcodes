@@ -215,6 +215,13 @@ class _Keysight_344xxA(VisaInstrument):
                            get_cmd='DISPLAY:TEXT?',
                            vals=vals.Strings())
 
+        self.add_parameter('autozero',
+                           label='Autozero',
+                           set_cmd='SENSe:VOLTage:DC:ZERO:AUTO {}',
+                           get_cmd='SENSe:VOLTage:DC:ZERO:AUTO?',
+                           val_mapping={'ON': 1, 'OFF': 0, 'ONCE': 'ONCE'},
+                           vals=vals.Enum('ON', 'OFF', 'ONCE'))
+
         # TRIGGERING
 
         self.add_parameter('trigger_count',
