@@ -1,6 +1,9 @@
+import time
 from functools import partial
 from typing import Dict, Union, Optional, Callable, List
 import logging
+
+import numpy as np
 
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
@@ -316,6 +319,34 @@ class MercuryiPS(VisaInstrument):
         # idn_string = ','.join([resps[2], resps[1], resps[3], resps[4]])
 
         return idn_dict
+
+    def _ramp_simultaneously(self) -> None:
+        """
+        Ramp all three fields to their target simultaneously at their given
+        ramp rates. NOTE: there is NO guarantee that this does not take you
+        out of your safe region. Use with care.
+        """
+        for slave in self.submodules.values():
+            slave.ramp_to_target()
+
+    def _ramp_safely(self) -> None:
+        """
+        Ramp all three fields to their target using the 'first-down-then-up'
+        sequential ramping procedure.
+        """
+        meas_vals = self._get_measured(['x', 'y', 'z'])
+        targ_vals = self._target_vector.get_components('x', 'y', 'z')
+        order = np.argsort(np.array(targ_vals) - np.array(meas_vals))
+
+        for slave in np.array(list(self.submodules.values()))[order]:
+            slave.ramp_to_target()
+            # now just wait for the ramp to finish
+            # (unless we are testing)
+            if self.visabackend == 'sim':
+                pass
+            else:
+                while slave.ramp_status() == 'TO SET':
+                    time.sleep(0.1)
 
     def ask(self, cmd: str) -> str:
         """
