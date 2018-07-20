@@ -8,7 +8,40 @@ from qcodes import InstrumentChannel, ChannelList
 log = logging.getLogger(__name__)
 
 
+def sane_partial(func, docstring, **kwargs):
+    """
+    We want to have a partial function which will allow us access the docstring
+    through the python built-in help function. This is particularly important
+    for client-facing driver methods, whose arguments might not be obvious.
+
+    Consider the follow example why this is needed:
+
+    >>> from functools import partial
+    >>> def f():
+    >>> ... pass
+    >>> g = partial(f)
+    >>> g.__doc__ = "bla"
+    >>> help(g) # this will print an unhelpful message
+
+    Args:
+        func (callable)
+        docstring (str)
+    """
+    ex = partial(func, **kwargs)
+
+    def inner(**inner_kwargs):
+        ex(**inner_kwargs)
+
+    inner.__doc__ = docstring
+
+    return inner
+
+
 class DG1062Burst(InstrumentChannel):
+    """
+    Burst commands for the DG1062. We make a separate channel for these to
+    group burst commands together.
+    """
 
     def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
         super().__init__(parent, name)
@@ -80,7 +113,21 @@ class DG1062Burst(InstrumentChannel):
             vals=vals.Enum("INT", "EXT", "MAN")
         )
 
-    def trigger(self):
+        self.add_parameter(
+            "idle",
+            get_cmd=f":SOUR{channel}:BURST:IDLE?",
+            set_cmd=f":SOUR{channel}:BURST:IDLE {{}}",
+            vals=vals.MultiType(
+                vals.Enum("FPT", "TOP", "BOTTOM", "CENTER"),
+                vals.Numbers()  # DIY
+            )
+        )
+
+    def trigger(self) ->None:
+        """
+        Send a soft trigger to the instrument. This only works if the trigger
+        source is set to manual.
+        """
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
 
 
@@ -88,6 +135,16 @@ class DG1062Channel(InstrumentChannel):
 
     min_impedance = 1
     max_impedance = 10000
+
+    waveform_params = {
+        waveform: ["freq", "ampl", "offset", "phase"] for waveform in
+        ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER"]
+    }
+
+    waveform_params["DC"] = ["freq", "ampl", "offset"]
+    waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
+
+    waveforms = list(waveform_params.keys())
 
     def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
         """
@@ -99,17 +156,6 @@ class DG1062Channel(InstrumentChannel):
 
         super().__init__(parent, name)
         self.channel = channel
-
-        # All waveforms except 'DC' and 'ARB' have these parameters
-        default_wave_params = ["freq", "ampl", "offset", "phase"]
-
-        self.waveform_params = {
-            waveform: default_wave_params for waveform in
-            ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER"]
-        }
-
-        self.waveform_params["DC"] = ["freq", "ampl", "offset"]
-        self.waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
         for param, unit in [
             ("freq", "Hz"),
@@ -172,10 +218,16 @@ class DG1062Channel(InstrumentChannel):
         self.add_submodule("burst", burst)
 
         # We want to be able to do the following:
+        # >>> help(gd.channels[0].sin)
         # >>> gd.channels[0].sin(freq=2E3, ampl=1.0, offset=0, phase=0)
-        for waveform in self.waveform_params:
-            f = partial(self.apply, waveform=waveform)
-            f.__doc__ = "Args: " + ", ".join(self.waveform_params[waveform])
+        # We do not use add_function as it is more cumbersome to use.
+        for waveform in self.waveforms:
+            f = sane_partial(
+                self.apply,
+                docstring="Args: " + ", ".join(self.waveform_params[waveform]),
+                waveform=waveform
+            )
+
             setattr(self, waveform.lower(), f)
 
     def apply(self, **kwargs: Dict) ->Union[None, Dict]:
@@ -188,7 +240,7 @@ class DG1062Channel(InstrumentChannel):
 
         Valid waveforms are: HARM, NOIS, RAMP, SIN, SQU, TRI, USER, DC, ARB
         To find the correct arguments of each waveform we can e.g. do:
-        >>> help(gd.channels[0].sin)
+        >>> print(gd.channels[0].sin.__doc__)
         Notice the lower case when accessing the waveform through convenience
         functions.
 
@@ -268,6 +320,12 @@ class DG1062Channel(InstrumentChannel):
 
 
 class DG1062(VisaInstrument):
+    """
+    Instrument driver for the Rigol DG1062
+    """
+
+    waveforms = DG1062Channel.waveforms
+
     def __init__(self, name: str, address: str,
                  **kwargs: Dict) ->None:
 
@@ -284,5 +342,4 @@ class DG1062(VisaInstrument):
 
         channels.lock()
         self.add_submodule("channels", channels)
-
         self.connect_message()
