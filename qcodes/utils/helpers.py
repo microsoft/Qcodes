@@ -12,6 +12,7 @@ from typing import Dict, List, Any
 from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
+from functools import partial
 
 import numpy as np
 
@@ -581,3 +582,32 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
     setattr(object_, attribute_name, new_value)
     yield
     setattr(object_, attribute_name, old_value)
+
+
+def sane_partial(func, docstring, **kwargs):
+    """
+    We want to have a partial function which will allow us access the docstring
+    through the python built-in help function. This is particularly important
+    for client-facing driver methods, whose arguments might not be obvious.
+
+    Consider the follow example why this is needed:
+
+    >>> from functools import partial
+    >>> def f():
+    >>> ... pass
+    >>> g = partial(f)
+    >>> g.__doc__ = "bla"
+    >>> help(g) # this will print an unhelpful message
+
+    Args:
+        func (callable)
+        docstring (str)
+    """
+    ex = partial(func, **kwargs)
+
+    def inner(**inner_kwargs):
+        ex(**inner_kwargs)
+
+    inner.__doc__ = docstring
+
+    return inner

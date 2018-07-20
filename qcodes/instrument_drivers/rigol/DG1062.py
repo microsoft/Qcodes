@@ -4,37 +4,9 @@ from typing import Dict, cast
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
+from qcodes.utils.helpers import sane_partial
 
 log = logging.getLogger(__name__)
-
-
-def sane_partial(func, docstring, **kwargs):
-    """
-    We want to have a partial function which will allow us access the docstring
-    through the python built-in help function. This is particularly important
-    for client-facing driver methods, whose arguments might not be obvious.
-
-    Consider the follow example why this is needed:
-
-    >>> from functools import partial
-    >>> def f():
-    >>> ... pass
-    >>> g = partial(f)
-    >>> g.__doc__ = "bla"
-    >>> help(g) # this will print an unhelpful message
-
-    Args:
-        func (callable)
-        docstring (str)
-    """
-    ex = partial(func, **kwargs)
-
-    def inner(**inner_kwargs):
-        ex(**inner_kwargs)
-
-    inner.__doc__ = docstring
-
-    return inner
 
 
 class DG1062Burst(InstrumentChannel):
