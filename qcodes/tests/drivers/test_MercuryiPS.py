@@ -56,25 +56,6 @@ def driver_cyl_lim():
     mips_cl.close()
 
 
-def get_messages(iostream: io.StringIO) -> List[str]:
-    """
-    Get all the lines currently in the logging output stream
-    and clear them from the stream
-
-    Args:
-        iostream: the stream to which the logging module logs
-
-    Returns:
-        The messages one-by-one, under the assumption that VISA
-            uses '\n' termination.
-    """
-    messages = iostream.getvalue().split('\n')
-    iostream.seek(0)
-    iostream.truncate(0)
-
-    return messages
-
-
 def test_idn(driver):
     assert driver.IDN()['model'] == 'SIMULATED MERCURY iPS'
 
