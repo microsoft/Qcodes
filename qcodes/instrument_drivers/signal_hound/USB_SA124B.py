@@ -10,14 +10,7 @@ log = logging.getLogger(__name__)
 
 class SignalHound_USB_SA124B(Instrument):
     """
-    This is a direct port of the signal hound QTLab driver by Ramiro
-    Edited by Adriaan Rol and others (use git blame for details)
-
-    Status: Beta version.
-        This driver is functional but not all features have been implemented.
-
-    TODO:
-        Add tracking generator mode
+    QCoDeS driver for the SignalHound USB SA124B
     """
     dll_path = 'C:\Windows\System32\sa_api.dll'
 
