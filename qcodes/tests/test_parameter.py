@@ -4,6 +4,7 @@ Test suite for parameter
 from collections import namedtuple, Iterable
 from unittest import TestCase
 from typing import Tuple
+import pytest
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -14,7 +15,7 @@ from qcodes.instrument.parameter import (
     InstrumentRefParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
-
+from qcodes.utils.validators import Numbers
 
 
 class GettableParam(Parameter):
@@ -156,14 +157,16 @@ class TestParameter(TestCase):
 
         p = Parameter('p', set_cmd=None, initial_value=0,
                       vals=BookkeepingValidator())
-
-        self.assertEqual(p.vals.values_validated, [0])
+        # in the set wrapper the final value is validated
+        # and then subsequently each step is validated.
+        # in this case there is one step so the final value
+        # is validated twice.
+        self.assertEqual(p.vals.values_validated, [0, 0])
 
         p.step = 1
         p.set(10)
-
         self.assertEqual(p.vals.values_validated,
-                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+                         [0, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
@@ -435,6 +438,31 @@ class TestParameter(TestCase):
         p.set(value)
         np.testing.assert_allclose(p.get(), value)
         assert p.raw_value == -scale * value
+
+    def test_steppeing_from_invalid_starting_point(self):
+
+        the_value = -10
+
+        def set_function(value):
+            nonlocal the_value
+            the_value = value
+
+        def get_function():
+            return the_value
+
+        a = Parameter('test', set_cmd=set_function, get_cmd=get_function,
+                      vals=Numbers(0, 100), step=5)
+        # We start out by setting the parameter to an
+        # invalid value. This is not possible using initial_value
+        # as the validator will catch that but perhaps this may happen
+        # if the instrument can return out of range values.
+        assert a.get() == -10
+        with pytest.raises(ValueError):
+            # trying to set to 10 should raise even with 10 valid
+            # as the steps demand that we first step to -5 which is not
+            a.set(10)
+        # afterwards the value should still be the same
+        assert a.get() == -10
 
 
 class TestValsandParseParameter(TestCase):
@@ -902,3 +930,30 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+
+class TestSetContextManager(TestCase):
+
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+        self.instrument.add_parameter(
+            "a",
+            set_cmd=None,
+            get_cmd=None
+        )
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+    def test_none_value(self):
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() is None
+
+    def test_context(self):
+        self.instrument.a.set(2)
+
+        with self.instrument.a.set_to(3):
+            assert self.instrument.a.get() == 3
+        assert self.instrument.a.get() == 2
