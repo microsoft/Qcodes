@@ -164,9 +164,6 @@ class _Keysight_344xxA(VisaInstrument):
         self.ranges = ranges[self.model]
         self.NPLC_list = PLCs[self.model]
 
-        if DIG:
-            self._apt_times = apt_times[self.model]
-
         ####################################
         # PARAMETERS
 
@@ -333,7 +330,7 @@ class _Keysight_344xxA(VisaInstrument):
                                set_cmd=self._set_apt_time,
                                get_cmd='SENSe:VOLTage:DC:APERture?',
                                get_parser=float,
-                               vals=vals.Numbers(*self._apt_times),
+                               vals=vals.Numbers(*apt_times[self.model]),
                                docstring=('Setting the aperture time '
                                           'automatically enables the aperture'
                                           ' mode.'))
