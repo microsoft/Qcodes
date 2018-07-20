@@ -302,7 +302,13 @@ class MercuryiPS(VisaInstrument):
             raise ValueError(f'Cannot set {coordinate} target to {target}, '
                              'that would violate the field_limits. ')
 
+        # update our internal target cache
         self._target_vector.set_component(**{coordinate: target})
+
+        # actually assign the target on the slaves
+        cartesian_targ = self._target_vector.get_components('x', 'y', 'z')
+        for targ, slave in zip(cartesian_targ, self.submodules.values()):
+            slave.field_target(targ)
 
     def _idn_getter(self) -> Dict[str, str]:
         """
