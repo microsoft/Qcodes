@@ -349,6 +349,23 @@ class MercuryiPS(VisaInstrument):
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
 
+    def set_new_field_limits(self, limit_func: Callable) -> None:
+        """
+        Assign a new field limit function to the driver
+
+        Args:
+            limit_func: must be a function mapping (Bx, By, Bz) -> True/False
+              where True means that the field is INSIDE the allowed region
+        """
+
+        # first check that the current target is allowed
+        if not limit_func(*self._target_vector.get_components('x', 'y', 'z')):
+            raise ValueError('Can not assign new limit function; present '
+                             'target is illegal. Please change the target '
+                             'and try again.')
+
+        self._field_limits = limit_func
+
     def ramp(self, mode: str) -> None:
         """
         Ramp the fields to their present target value
