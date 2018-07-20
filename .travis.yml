@@ -36,6 +36,7 @@ script:
       py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
+    # run benchmarking
     - |
       cd benchmarking
       asv machine --yes
