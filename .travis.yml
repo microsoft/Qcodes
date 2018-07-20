@@ -13,9 +13,9 @@ addons:
 python:
   - "3.6"
   # whitelist
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
 
 # command to install dependencies
 install:
