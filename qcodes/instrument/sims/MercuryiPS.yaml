@@ -16,7 +16,7 @@ devices:
         default: 0
         getter:
           q: "READ:DEV:GRPX:PSU:SIG:FSET"
-          r: "{}"  # should there be a unit appended? How does the instrument do it?
+          r: "{}"
         setter:
           q: "SET:DEV:GRPX:PSU:SIG:FSET:{}"
           r: ""  # response is needed, since the instrument actually responds to sets
@@ -31,7 +31,7 @@ devices:
         default: 0
         getter:
           q: "READ:DEV:GRPY:PSU:SIG:FSET"
-          r: "{}"  # should there be a unit appended? How does the instrument do it?
+          r: "{}"
         setter:
           q: "SET:DEV:GRPY:PSU:SIG:FSET:{}"
           r: ""  # response is needed, since the instrument actually responds to sets
@@ -46,7 +46,7 @@ devices:
         default: 0
         getter:
           q: "READ:DEV:GRPZ:PSU:SIG:FSET"
-          r: "{}"  # should there be a unit appended? How does the instrument do it?
+          r: "{}"
         setter:
           q: "SET:DEV:GRPZ:PSU:SIG:FSET:{}"
           r: ""  # response is needed, since the instrument actually responds to sets
