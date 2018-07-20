@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Union, Dict, cast
+from typing import Dict, cast
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
