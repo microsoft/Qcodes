@@ -332,7 +332,7 @@ class DG1062(VisaInstrument):
         super().__init__(name, address, terminator="\n", **kwargs)
 
         channels = ChannelList(self, "channel", DG1062Channel,
-                               snapshotable=True)
+                               snapshotable=False)
 
         for ch_num in [1, 2]:
             ch_name = "ch{}".format(ch_num)
