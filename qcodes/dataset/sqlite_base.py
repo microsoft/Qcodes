@@ -8,6 +8,7 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
 from distutils.version import LooseVersion
+import itertools
 
 import qcodes as qc
 import unicodedata
@@ -445,24 +446,25 @@ def insert_many_values(conn: sqlite3.Connection,
     start = 0
     stop = 0
 
-    for ii, chunk in enumerate(chunks):
-        _values_x_params = ",".join([_values] * chunk)
+    with atomic(conn):
+        for ii, chunk in enumerate(chunks):
+            _values_x_params = ",".join([_values] * chunk)
 
-        query = f"""INSERT INTO "{formatted_name}"
-                    ({_columns})
-                    VALUES
-                    {_values_x_params}
-                 """
-        stop += chunk
-        # we need to make values a flat list from a list of list
-        flattened_values = [item for sublist in values[start:stop]
-                            for item in sublist]
+            query = f"""INSERT INTO "{formatted_name}"
+                        ({_columns})
+                        VALUES
+                        {_values_x_params}
+                     """
+            stop += chunk
+            # we need to make values a flat list from a list of list
+            flattened_values = list(
+                itertools.chain.from_iterable(values[start:stop]))
 
-        c = atomic_transaction(conn, query, *flattened_values)
+            c = transaction(conn, query, *flattened_values)
 
-        if ii == 0:
-            return_value = c.lastrowid
-        start += chunk
+            if ii == 0:
+                return_value = c.lastrowid
+            start += chunk
 
     return return_value
 

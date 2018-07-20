@@ -8,12 +8,13 @@ import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List
-
+from typing import Dict, List, Any
+from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
 
 import numpy as np
+
 
 _tprint_times= {} # type: Dict[str, float]
 
@@ -558,3 +559,25 @@ def add_to_spyder_UMR_excludelist(modulename: str):
                 sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
+
+
+@contextmanager
+def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
+    """
+    This context manager allows to change a given attribute of a given object
+    to a new value, and the original value is reverted upon exit of the context
+    manager.
+
+    Args:
+        object_
+            The object which attribute value is to be changed
+        attribute_name
+            The name of the attribute that is to be changed
+        new_value
+            The new value to which the attribute of the object is to be changed
+    """
+
+    old_value = getattr(object_, attribute_name)
+    setattr(object_, attribute_name, new_value)
+    yield
+    setattr(object_, attribute_name, old_value)
