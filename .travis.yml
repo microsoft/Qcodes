@@ -39,7 +39,7 @@ script:
     # run benchmarking
     - |
       cd benchmarking
-      asv machine --yes
+      asv machine --machine travis
       asv run --python=same
     - cd ..
     # build docs with warnings as errors
