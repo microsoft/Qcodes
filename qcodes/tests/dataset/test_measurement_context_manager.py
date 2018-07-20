@@ -8,12 +8,14 @@ from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
 
+from qcodes.tests.common import retry_until_does_not_throw
+
 import qcodes as qc
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.sqlite_base import connect, init_db
+from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
@@ -50,6 +52,11 @@ def DMM():
     yield dmm
     dmm.close()
 
+@pytest.fixture
+def channel_array_instrument():
+    channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
+    yield channelarrayinstrument
+    channelarrayinstrument.close()
 
 @pytest.fixture
 def SpectrumAnalyzer():
@@ -341,59 +348,152 @@ def test_enter_and_exit_actions(experiment, DAC, words):
 
 
 def test_subscriptions(experiment, DAC, DMM):
+    """
+    Test that subscribers are called at the moment the data is flushed to database
 
-    def subscriber1(results, length, state):
+    Note that for the purpose of this test, flush_data_to_database method is
+    called explicitly instead of waiting for the data to be flushed
+    automatically after the write_period passes after a add_result call.
+    """
+
+    def collect_all_results(results, length, state):
         """
-        A dict of all results
+        Updates the *state* to contain all the *results* acquired
+        during the experiment run
         """
+        # Due to the fact that by default subscribers only hold 1 data value
+        # in their internal queue, this assignment should work (i.e. not
+        # overwrite values in the "state" object) assuming that at the start
+        # of the experiment both the dataset and the *state* objects have
+        # the same length.
         state[length] = results
 
-    def subscriber2(results, length, state):
+    def collect_values_larger_than_7(results, length, state):
         """
-        A list of all parameter values larger than 7
+        Appends to the *state* only the values from *results*
+        that are larger than 7
         """
-        for res in results:
-            state += [pres for pres in res if pres > 7]
+        for result_tuple in results:
+            state += [value for value in result_tuple if value > 7]
 
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
 
-    res_dict = {}
-    lt7s = []
+    # key is the number of the result tuple,
+    # value is the result tuple itself
+    all_results_dict = {}
+    values_larger_than_7 = []
 
-    meas.add_subscriber(subscriber1, state=res_dict)
+    meas.add_subscriber(collect_all_results, state=all_results_dict)
     assert len(meas.subscribers) == 1
-    meas.add_subscriber(subscriber2, state=lt7s)
+    meas.add_subscriber(collect_values_larger_than_7, state=values_larger_than_7)
     assert len(meas.subscribers) == 2
 
     meas.write_period = 0.2
 
-    expected_list = []
-
     with meas.run() as datasaver:
 
+        # Assert that the measurement, runner, and datasaver
+        # have added subscribers to the dataset
         assert len(datasaver._dataset.subscribers) == 2
-        assert res_dict == {}
-        assert lt7s == []
 
-        as_and_bs = list(zip(range(5), range(3, 8)))
+        assert all_results_dict == {}
+        assert values_larger_than_7 == []
+
+        dac_vals_and_dmm_vals = list(zip(range(5), range(3, 8)))
+        values_larger_than_7__expected = []
 
         for num in range(5):
+            (dac_val, dmm_val) = dac_vals_and_dmm_vals[num]
+            values_larger_than_7__expected += \
+                [val for val in (dac_val, dmm_val) if val > 7]
 
-            (a, b) = as_and_bs[num]
-            expected_list += [c for c in (a, b) if c > 7]
-            sleep(1.2*meas.write_period)
-            datasaver.add_result((DAC.ch1, a), (DMM.v1, b))
-            assert lt7s == expected_list
-            assert list(res_dict.keys()) == [n for n in range(1, num+2)]
+            datasaver.add_result((DAC.ch1, dac_val), (DMM.v1, dmm_val))
 
+            # Ensure that data is flushed to the database despite the write
+            # period, so that the database triggers are executed, which in turn
+            # add data to the queues within the subscribers
+            datasaver.flush_data_to_database()
+
+            # In order to make this test deterministic, we need to ensure that
+            # just enough time has passed between the moment the data is flushed
+            # to database and the "state" object (that is passed to subscriber
+            # constructor) has been updated by the corresponding subscriber's
+            # callback function. At the moment, there is no robust way to ensure
+            # this. The reason is that the subscribers have internal queue which
+            # is populated via a trigger call from the SQL database, hence from
+            # this "main" thread it is difficult to say whether the queue is
+            # empty because the subscriber callbacks have already been executed
+            # or because the triggers of the SQL database has not been executed
+            # yet.
+            #
+            # In order to overcome this problem, a special decorator is used
+            # to wrap the assertions. This is going to ensure that some time
+            # is given to the Subscriber threads to finish exhausting the queue.
+            @retry_until_does_not_throw(
+                exception_class_to_expect=AssertionError, delay=0.5, tries=10)
+            def assert_states_updated_from_callbacks():
+                assert values_larger_than_7 == values_larger_than_7__expected
+                assert list(all_results_dict.keys()) == \
+                    [result_index for result_index in range(1, num + 1 + 1)]
+            assert_states_updated_from_callbacks()
+
+    # Ensure that after exiting the "run()" context,
+    # all subscribers get unsubscribed from the dataset
     assert len(datasaver._dataset.subscribers) == 0
+
+    # Ensure that the triggers for each subscriber
+    # have been removed from the database
+    get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
+    triggers = atomic_transaction(
+        datasaver._dataset.conn, get_triggers_sql).fetchall()
+    assert len(triggers) == 0
+
+
+def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment, DAC):
+    """
+    Upon quitting the "run()" context, verify that in case the queue is
+    not empty, the subscriber's callback is still called on that data.
+    This situation is created by setting the minimum length of the queue
+    to a number that is larger than the number of value written to the dataset.
+    """
+    def collect_x_vals(results, length, state):
+        """
+        Collects first elements of results tuples in *state*
+        """
+        index_of_x = 0
+        state += [res[index_of_x] for res in results]
+
+    meas = Measurement(exp=experiment)
+    meas.register_parameter(DAC.ch1)
+
+    collected_x_vals = []
+
+    meas.add_subscriber(collect_x_vals, state=collected_x_vals)
+
+    given_x_vals = [0, 1, 2, 3]
+
+    with meas.run() as datasaver:
+        # Set the minimum queue size of the subscriber to more that
+        # the total number of values being added to the dataset;
+        # this way the subscriber callback is not called before
+        # we exit the "run()" context.
+        subscriber = list(datasaver.dataset.subscribers.values())[0]
+        subscriber.min_queue_length = int(len(given_x_vals) + 1)
+
+        for x in given_x_vals:
+            datasaver.add_result((DAC.ch1, x))
+            # Verify that the subscriber callback is not called yet
+            assert collected_x_vals == []
+
+    # Verify that the subscriber callback is finally called
+    assert collected_x_vals == given_x_vals
 
 
 @settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))
-def test_subscriptions_getting_all_points(experiment, DAC, DMM, N):
+def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
 
     def sub_get_x_vals(results, length, state):
         """
@@ -692,6 +792,41 @@ def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
                                  (tspec, tspec.get()))
 
     assert datasaver.points_written == N*M
+
+
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500))
+def test_datasaver_array_parameters_channel(experiment, channel_array_instrument,
+                                    DAC, N):
+
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_array_parameter
+
+    meas.register_parameter(array_param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(array_param, setpoints=[DAC.ch1])
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+
+    with meas.run() as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N * M
 
 
 def test_load_legacy_files_2D(experiment):

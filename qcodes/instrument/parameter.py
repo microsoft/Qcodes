@@ -59,7 +59,8 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
+    Dict, Any, Sized, Iterable, Type
 from functools import partial, wraps
 import numpy
 
@@ -77,6 +78,29 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 Number = Union[float, int]
+
+
+class _SetParamContext:
+    """
+    This class is returned by the set method of parameters
+
+    Example usage:
+    >>> v = dac.voltage()
+    >>> with dac.voltage(-1):
+        ...     # Do stuff with the DAC output set to -1 V.
+        ...
+    >>> assert abs(dac.voltage() - v) <= tolerance
+    """
+    def __init__(self, parameter):
+        self._parameter = parameter
+        self._original_value = self._parameter._latest["value"]
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, typ, value, traceback):
+        self._parameter.set(self._original_value)
+
 
 class _BaseParameter(Metadatable):
     """
@@ -177,6 +201,7 @@ class _BaseParameter(Metadatable):
                  delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
+        self.short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -391,6 +416,9 @@ class _BaseParameter(Metadatable):
                 steps = self.get_ramp_values(value, step=self.step)
 
                 for step_index, val_step in enumerate(steps):
+                    # even if the final value is valid we may be generating
+                    # steps that are not so validate them too
+                    self.validate(val_step)
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
                         raw_value = self.val_mapping[val_step]
@@ -436,10 +464,7 @@ class _BaseParameter(Metadatable):
                     set_function(raw_value, **kwargs)
                     self.raw_value = raw_value
                     self._save_val(val_step,
-                                   validate=(self.val_mapping is None and
-                                             self.set_parser is None and
-                                             not(step_index == len(steps)-1 or
-                                                 len(steps) == 1)))
+                                   validate=False)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -449,6 +474,7 @@ class _BaseParameter(Metadatable):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
@@ -636,12 +662,7 @@ class _BaseParameter(Metadatable):
     # Deprecated
     @property
     def full_name(self):
-#        This can fully be replaced by str(parameter) in the future we
-#        may want to deprecate this but the current dataset makes heavy use
-#        of it in more complicated ways so keep it for now.
-#        warnings.warn('Attribute `full_name` is deprecated, please use '
-#                      'str(parameter)')
-        return str(self)
+        return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
@@ -658,11 +679,53 @@ class _BaseParameter(Metadatable):
             raise TypeError('vals must be a Validator')
 
     @property
+    def instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the first instrument that this parameter is bound to.
+        E.g if this is bound to a channel it will return the channel
+        and not the instrument that the channel is bound too. Use
+        :meth:`root_instrument` to get the real instrument.
+        """
+        return self._instrument
+
+    @property
     def root_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the fundamental instrument that this parameter belongs too.
+        E.g if the parameter is bound to a channel this will return the
+        fundamental instrument that that channel belongs to. Use
+        :meth:`instrument` to get the channel.
+        """
         if self._instrument is not None:
             return self._instrument.root_instrument
         else:
             return None
+
+    def set_to(self, value):
+        """
+        Use a context manager to temporarily set the value of a parameter to
+        a value. Example:
+
+        >>> from qcodes import Parameter
+        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+        >>> with p.set_to(3):
+        ...    print(f"p value in with block {p.get()}")
+        >>> print(f"p value outside with block {p.get()}")
+        """
+        context_manager = _SetParamContext(self)
+        self.set(value)
+        return context_manager
+
+    @property
+    def name_parts(self) -> List[str]:
+        if self.instrument is not None:
+            name_parts = self.instrument.name_parts
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
+
 
 class Parameter(_BaseParameter):
     """
@@ -971,7 +1034,7 @@ class ArrayParameter(_BaseParameter):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
 
-        nt = type(None)
+        nt: Type[None] = type(None)
 
         if not is_sequence_of(shape, int):
             raise ValueError('shapes must be a tuple of ints, not ' +
@@ -1151,7 +1214,7 @@ class MultiParameter(_BaseParameter):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
-        nt = type(None)
+        nt: Type[None] = type(None)
 
         if (not is_sequence_of(shapes, int, depth=2) or
                 len(shapes) != len(names)):
