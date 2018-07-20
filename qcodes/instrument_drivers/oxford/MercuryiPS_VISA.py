@@ -368,7 +368,7 @@ class MercuryiPS(VisaInstrument):
         meas_vals = self._get_measured(['x', 'y', 'z'])
 
         for cur, slave in zip(meas_vals, self.submodules.values()):
-            if slave.field_target() != meas_vals:
+            if slave.field_target() != cur:
                 if slave.field_ramp_rate() == 0:
                     raise ValueError(f'Can not ramp {slave}; ramp rate set to'
                                      ' zero!')
