@@ -150,8 +150,8 @@ def plot_by_id(run_id: int,
 
         else:
             log.warning('Multi-dimensional data encountered. '
-                        f'parameter {data[-1].name} depends on '
-                        f'{len(data-1)} parameters, cannot plot '
+                        f'parameter {data[-1]["name"]} depends on '
+                        f'{len(data)-1} parameters, cannot plot '
                         f'that.')
             new_colorbars.append(None)
 
