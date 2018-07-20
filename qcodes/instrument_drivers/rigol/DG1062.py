@@ -125,8 +125,8 @@ class DG1062Burst(InstrumentChannel):
 
     def trigger(self) ->None:
         """
-        Send a soft trigger to the instrument. This only works if the trigger
-        source is set to manual.
+        Send a software trigger to the instrument. This only works if the
+        trigger source is set to manual.
         """
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
 
