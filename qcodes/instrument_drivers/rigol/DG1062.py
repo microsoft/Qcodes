@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Union, Dict
+from typing import Union, Dict, cast
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
@@ -214,7 +214,7 @@ class DG1062Channel(InstrumentChannel):
             get_cmd=f"OUTPUT{channel}:STATE?",
         )
 
-        burst = DG1062Burst(self.parent, "burst", self.channel)
+        burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
         self.add_submodule("burst", burst)
 
         # We want to be able to do the following:
@@ -230,9 +230,9 @@ class DG1062Channel(InstrumentChannel):
 
             setattr(self, waveform.lower(), f)
 
-    def apply(self, **kwargs: Dict) ->Union[None, Dict]:
+    def apply(self, **kwargs: Dict) ->None:
         """
-        Apply a waveform on the channel
+        Public interface to apply a waveform on the channel
 
         Example:
         >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
@@ -240,17 +240,18 @@ class DG1062Channel(InstrumentChannel):
 
         Valid waveforms are: HARM, NOIS, RAMP, SIN, SQU, TRI, USER, DC, ARB
         To find the correct arguments of each waveform we can e.g. do:
-        >>> print(gd.channels[0].sin.__doc__)
+        >>> help(gd.channels[0].sin)
         Notice the lower case when accessing the waveform through convenience
         functions.
 
         If not kwargs are given a dictionary with the current waveform
         parameters are returned.
         """
-        if len(kwargs) == 0:
-            return self._get_waveform_params()
-
         self._set_waveform_params(**kwargs)
+
+    def current_waveform(self) ->Dict:
+        """Public interface to get the current waveform"""
+        return self._get_waveform_params()
 
     def _get_waveform_param(self, param: str) ->float:
         """
