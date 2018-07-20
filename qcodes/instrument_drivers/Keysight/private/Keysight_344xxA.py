@@ -170,8 +170,12 @@ class _Keysight_344xxA(VisaInstrument):
         self.add_parameter('line_frequency',
                            get_cmd='SYSTem:LFRequency?',
                            get_parser=int,
+                           set_cmd=False,
                            label='Line Frequency',
-                           unit='Hz')
+                           unit='Hz',
+                           docstring=('The frequency of the power line where'
+                                      'the instrument is plugged')
+                           )
 
         self.add_parameter('NPLC',
                            get_cmd='SENSe:VOLTage:DC:NPLC?',
