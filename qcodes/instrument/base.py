@@ -107,6 +107,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             KeyError: if this instrument already has a function with this
                 name.
         """
+
+        warnings.warn("The use of 'add_function' has been deprecated. Please "
+                      "use a normal bound method instead.")
+
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
         func = Function(name=name, instrument=self, **kwargs)
