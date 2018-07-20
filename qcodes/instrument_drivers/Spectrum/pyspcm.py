@@ -1,7 +1,6 @@
 import os
 import platform
 import sys
-from ctypes import c_int8, c_int16, c_int32, c_int64, c_uint8, c_uint16, c_uint32, c_uint64, c_char_p, POINTER, c_void_p, cdll
 from ctypes import *
 
 # load registers for easier access
@@ -55,14 +54,14 @@ if os.name == 'nt':
         # for unknown reasons c_void_p gets messed up on Win7/64bit, but this works:
         drv_handle = POINTER(c_uint64)
     else:
-        drv_handle = c_void_p # type: ignore
+        drv_handle = c_void_p
 
     # Load DLL into memory.
     # use windll because all driver access functions use _stdcall calling convention under windows
     if (bIs64Bit == 1):
-        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win64.dll") # type: ignore
+        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win64.dll")
     else:
-        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win32.dll") # type: ignore
+        spcmDll = windll.LoadLibrary ("c:\\windows\\system32\\spcm_win32.dll")
 
     # load spcm_hOpen
     if (bIs64Bit):
@@ -157,11 +156,11 @@ elif os.name == 'posix':
     sys.stdout.write("Linux found")
 
     # define card handle type
-    drv_handle = c_void_p # type: ignore
+    drv_handle = c_void_p
 
     # Load DLL into memory.
     # use cdll because all driver access functions use cdecl calling convention under linux 
-    spcmDll = cdll.LoadLibrary ("libspcm_linux.so") # type: ignore
+    spcmDll = cdll.LoadLibrary ("libspcm_linux.so")
 
     # load spcm_hOpen
     spcm_hOpen = getattr (spcmDll, "spcm_hOpen")
