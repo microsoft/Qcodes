@@ -56,18 +56,6 @@ def driver_cyl_lim():
     mips_cl.close()
 
 
-# for testing ramp orders, we need access to the instrument communication
-
-iostream = io.StringIO()
-logger = logging.getLogger('qcodes.instrument.visa')
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(created)s - %(message)s')
-lh = logging.StreamHandler(iostream)
-logger.addHandler(lh)
-lh.setLevel(logging.DEBUG)
-lh.setFormatter(formatter)
-
-
 def get_messages(iostream: io.StringIO) -> List[str]:
     """
     Get all the lines currently in the logging output stream
@@ -140,12 +128,13 @@ def test_field_limits(x, y, z, driver_spher_lim, driver_cyl_lim):
                 mip.z_target(z)
 
 
-def get_ramp_order(ramp_messages):
+def get_ramp_order(caplog_records):
     """
     Helper function used in test_ramp_safely
     """
     order = []
-    for mssg in ramp_messages:
+    for record in caplog_records:
+        mssg = record.message
         if 'RTOS' in mssg:
             axis = mssg[mssg.find('GRP')+3:mssg.find('GRP')+4]
             order.append(axis.lower())
@@ -155,7 +144,7 @@ def get_ramp_order(ramp_messages):
 @hst.given(x=hst.strategies.floats(min_value=-3, max_value=3),
            y=hst.strategies.floats(min_value=-3, max_value=3),
            z=hst.strategies.floats(min_value=-3, max_value=3))
-def test_ramp_safely(driver, x, y, z):
+def test_ramp_safely(driver, x, y, z, caplog):
     """
     Test that we get the first-down-then-up order right
     """
@@ -172,9 +161,9 @@ def test_ramp_safely(driver, x, y, z):
 
     exp_order = np.array(['x', 'y', 'z'])[np.argsort(np.abs(np.array([x, y, z])))]
 
-    get_messages(iostream)  # clear the message queue
-    driver._ramp_safely()
-    #ramp_mssgs = [mssg for mssg in get_messages(iostream) if 'RTOS' in mssg]
-    ramp_order = get_ramp_order(get_messages(iostream))
+    with caplog.at_level(logging.DEBUG, logger='qcodes.instrument.visa'):
+        caplog.clear()
+        driver._ramp_safely()
+        ramp_order = get_ramp_order(caplog.records)
 
     assert ramp_order == list(exp_order)
