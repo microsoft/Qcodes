@@ -66,6 +66,11 @@ devices:
           q: "SYST:LIC:CAT?"
           r: "{}"
           type: string
+      line_frequency:
+        default: 50
+        getter:
+          q: "SYSTem:LFRequency?"
+          r: "+{}"
 
 
 resources:
