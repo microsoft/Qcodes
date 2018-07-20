@@ -497,7 +497,11 @@ class QtPlot(BasePlot):
         buffer.open(self.rpg.QtCore.QIODevice.ReadWrite)
         image.save(buffer, 'PNG')
         buffer.close()
-        return bytes(byte_array._getValue())
+
+        if hasattr(byte_array, '_getValue'):
+            return bytes(byte_array._getValue())
+        else:
+            return bytes(byte_array)
 
     def save(self, filename=None):
         """
