@@ -1,6 +1,6 @@
 import time
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List
+from typing import Dict, Union, Optional, Callable, List, cast
 import logging
 
 import numpy as np
@@ -389,6 +389,8 @@ class MercuryiPS(VisaInstrument):
                              ' or "safe".')
 
         meas_vals = self._get_measured(['x', 'y', 'z'])
+        # we asked for three coordinates, so we know that we got a list
+        meas_vals = cast(List[float], meas_vals)
 
         for cur, slave in zip(meas_vals, self.submodules.values()):
             if slave.field_target() != cur:
