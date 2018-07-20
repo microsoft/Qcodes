@@ -1,6 +1,4 @@
-import io
 import logging
-from typing import List
 
 import pytest
 import numpy as np
