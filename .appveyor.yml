@@ -31,6 +31,6 @@ test_script:
   - cd tests
   - pytest
   - cd ..\..
-  - mypy qcodes --ignore-missing-imports --no-strict-optional
+  - mypy qcodes
   - cd docs
   - make.bat htmlapi
