@@ -281,6 +281,9 @@ class ChannelList(Metadatable):
         return self._channels.append(obj)
 
     def clear(self):
+        """
+        Clear all items from the channel list.
+        """
         if self._locked:
             raise AttributeError("Cannot clear a locked channel list")
         self._channels.clear()
