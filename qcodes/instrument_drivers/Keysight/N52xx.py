@@ -1,15 +1,13 @@
-from cmath import phase
-import math
 import numpy as np
-from qcodes import Instrument, VisaInstrument, MultiParameter, InstrumentChannel, ArrayParameter, ChannelList
+from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter, ChannelList
 from qcodes.utils.validators import Numbers, Enum, Bool
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable, Tuple
+from typing import Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable, Tuple
 import time
 import re
 
 class PNASweep(ArrayParameter):
-    def __init__(self, 
-                 name: str, 
+    def __init__(self,
+                 name: str,
                  instrument: 'PNABase',
                  **kwargs: Any) -> None:
 
@@ -42,12 +40,12 @@ class FormattedSweep(PNASweep):
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
     """
-    def __init__(self, 
-                 name: str, 
-                 instrument: 'PNABase', 
-                 format: str, 
-                 label: str, 
-                 unit: str, 
+    def __init__(self,
+                 name: str,
+                 instrument: 'PNABase',
+                 sweep_format: str,
+                 label: str,
+                 unit: str,
                  memory: bool=False) -> None:
         super().__init__(name,
                          instrument=instrument,
@@ -57,7 +55,7 @@ class FormattedSweep(PNASweep):
                          setpoint_labels=('Frequency',),
                          setpoint_units=('Hz',)
                          )
-        self.format = format
+        self.sweep_format = format
         self.memory = memory
 
     def get_raw(self) -> Sequence[float]:
@@ -66,7 +64,7 @@ class FormattedSweep(PNASweep):
         if root_instr.auto_sweep():
             prev_mode = self.run_sweep()
         # Ask for data, setting the format to the requested form
-        self._instrument.write(f'CALC:FORM {self.format}')
+        self._instrument.write(f'CALC:FORM {self.sweep_format}')
         data = np.array(root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA', datatype='f', is_big_endian=True))
         # Restore previous state if it was changed
         if root_instr.auto_sweep():
@@ -100,11 +98,11 @@ class PNAPort(InstrumentChannel):
     Note: This can be expanded to include a large number of extra parameters...
     """
 
-    def __init__(self, 
-                 parent: 'PNABase', 
-                 name: str, 
+    def __init__(self,
+                 parent: 'PNABase',
+                 name: str,
                  port: int,
-                 min_power: Union[int, float], 
+                 min_power: Union[int, float],
                  max_power: Union[int, float]) -> None:
         super().__init__(parent, name)
 
@@ -120,8 +118,8 @@ class PNAPort(InstrumentChannel):
                            set_cmd=pow_cmd + "{}",
                            get_parser=float)
 
-    def _set_power_limits(self, 
-                          min_power: Union[int, float], 
+    def _set_power_limits(self,
+                          min_power: Union[int, float],
                           max_power: Union[int, float]) -> None:
         """
         Set port power limits
@@ -133,9 +131,9 @@ class PNATrace(InstrumentChannel):
     Allow operations on individual PNA traces.
     """
 
-    def __init__(self, 
-                 parent: 'PNABase', 
-                 name: str, 
+    def __init__(self,
+                 parent: 'PNABase',
+                 name: str,
                  trace: int) -> None:
         super().__init__(parent, name)
         self.trace = trace
@@ -143,7 +141,7 @@ class PNATrace(InstrumentChannel):
         # Name of parameter (i.e. S11, S21 ...)
         self.add_parameter('trace',
                            label='Trace',
-                           get_cmd='CALC:PAR:SEL?'.format(self.trace),
+                           get_cmd='CALC:PAR:SEL?',
                            get_parser=self._Sparam,
                            set_cmd=self._set_Sparam
                            )
@@ -228,8 +226,8 @@ class PNABase(VisaInstrument):
           traces, but using traces across multiple channels may have unexpected results.
     """
 
-    def __init__(self, 
-                 name: str, 
+    def __init__(self,
+                 name: str,
                  address: str,
                  min_freq: Union[int, float], max_freq: Union[int, float], # Set frequency ranges
                  min_power: Union[int, float], max_power: Union[int, float], # Set power ranges
@@ -384,8 +382,8 @@ class PNABase(VisaInstrument):
 
     def _set_auto_sweep(self, val: bool) -> None:
         self._auto_sweep = val
-    def _set_power_limits(self, 
-                          min_power: Union[int, float], 
+    def _set_power_limits(self,
+                          min_power: Union[int, float],
                           max_power: Union[int, float]) -> None:
         """
         Set port power limits
@@ -395,8 +393,8 @@ class PNABase(VisaInstrument):
             port._set_power_limits(min_power, max_power)
 
 class PNAxBase(PNABase):
-    def __init__(self, 
-                 name: str, 
+    def __init__(self,
+                 name: str,
                  address: str,
                  min_freq: Union[int, float], max_freq: Union[int, float], # Set frequency ranges
                  min_power: Union[int, float], max_power: Union[int, float], # Set power ranges
