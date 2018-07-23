@@ -30,6 +30,25 @@ automatically. The benchmarks are executed in the same way:
 
   asv run
 
+Either of the commands above will execute benchmarking for the latest commit
+of the master branch.
+
+If you want to run benchmarking for a particular commit, use the same syntax
+as there is used for `git log` (commit id with `^!` at the end; note that in
+some terminals you will need to type `^` two times like this `^^!`):
+
+.. code:: bash
+
+  asv run ed9b6fe8^!
+
+Use the `--bench` option with a regular expression to tell `asv` which
+benchmarks you would like to execute. For example, use the following syntax
+to execute a benchmark called `saving` in `data.py` benchmark module:
+
+.. code:: bash
+
+  asv run --bench data.saving
+
 Refer to `asv documentation`_ for more information on the various ways the
 benchmarking can be executed (for example, how to run a particular
 benchmark, how to compare results between commits, etc).
@@ -47,15 +66,24 @@ to generate a convenient website
 and the following command to start a simple server that could host the
 website locally (the generated website is not static, hence the server)
 
-  .. code:: bash
+.. code:: bash
 
-    asv preview
+  asv preview
 
 The `asv preview` command will print a URL that you can enter in your
 browser to access the generated website.
 
 Note that the benchmarking results are created locally on your machine, and
 they get accumulated.
+
+In order to compare benchmarking results of two commits, use the following
+command (note that the benchmarking results for these two commits should
+already exist):
+
+.. code:: bash
+
+  asv compare ed859c0a 8984aefb
+
 
 Profile during benchmarking
 ```````````````````````````
