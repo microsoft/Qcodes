@@ -2,7 +2,7 @@ import time
 import logging
 import numpy as np
 from functools import partial
-from math import sqrt
+from math import sqrt, log10
 
 from typing import Callable, List, Union, cast
 
@@ -656,7 +656,7 @@ class Scope(MultiParameter):
 
         return (ch1data, ch2data)
 
-class ZIUHFLI(Instrument):
+class _ZILI_generic(Instrument):
     """
     QCoDeS driver for ZI UHF-LI.
 
@@ -670,7 +670,7 @@ class ZIUHFLI(Instrument):
         * Add zoom-FFT
     """
 
-    def __init__(self, name: str, device_ID: str, **kwargs) -> None:
+    def __init__(self, name: str, device_ID: str, api_level: int, **kwargs) -> None:
         """
         Create an instance of the instrument.
 
@@ -680,8 +680,7 @@ class ZIUHFLI(Instrument):
         """
 
         super().__init__(name, **kwargs)
-        self.api_level = 5
-        zisession = zhinst.utils.create_api_session(device_ID, self.api_level)
+        zisession = zhinst.utils.create_api_session(device_ID, api_level)
         (self.daq, self.device, self.props) = zisession
 
         self.daq.setDebugLevel(3)
@@ -690,12 +689,14 @@ class ZIUHFLI(Instrument):
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
         self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
+
+    def _create_parameters(self, num_osc, num_demod, out_map):
         ########################################
         # INSTRUMENT PARAMETERS
 
         ########################################
         # Oscillators
-        for oscs in range(1,3):
+        for oscs in range(1,num_osc+1):
             self.add_parameter('oscillator{}_freq'.format(oscs),
                                label='Frequency of oscillator {}'.format(oscs),
                                unit='Hz',
@@ -708,7 +709,7 @@ class ZIUHFLI(Instrument):
         ########################################
         # DEMODULATOR PARAMETERS
 
-        for demod in range(1, 9):
+        for demod in range(1, num_demod+1):
             self.add_parameter('demod{}_order'.format(demod),
                                label='Filter order',
                                get_cmd=partial(self._getter, 'demods',
@@ -725,7 +726,7 @@ class ZIUHFLI(Instrument):
                                                demod-1, 1, 'harmonic'),
                                set_cmd=partial(self._setter, 'demods',
                                                demod-1, 1, 'harmonic'),
-                               vals=vals.Ints(1, 999)
+                               vals=vals.Ints(1, 1023)
                                )
 
             self.add_parameter('demod{}_timeconstant'.format(demod),
@@ -757,22 +758,9 @@ class ZIUHFLI(Instrument):
                                get_cmd=partial(self._getter, 'demods',
                                                demod-1, 1, 'phaseshift'),
                                set_cmd=partial(self._setter, 'demods',
-                                               demod-1, 1, 'phaseshift')
+                                               demod-1, 1, 'phaseshift'),
+                               vals=vals.Numbers(-180, 180),
                                )
-
-            # val_mapping for the demodX_signalin parameter
-            dmsigins = {'Sig In 1': 0,
-                        'Sig In 2': 1,
-                        'Trigger 1': 2,
-                        'Trigger 2': 3,
-                        'Aux Out 1': 4,
-                        'Aux Out 2': 5,
-                        'Aux Out 3': 6,
-                        'Aux Out 4': 7,
-                        'Aux In 1': 8,
-                        'Aux In 2': 9,
-                        'Phi Demod 4': 10,
-                        'Phi Demod 8': 11}
 
             self.add_parameter('demod{}_signalin'.format(demod),
                                label='Signal input',
@@ -780,8 +768,6 @@ class ZIUHFLI(Instrument):
                                                demod-1, 0,'adcselect'),
                                set_cmd=partial(self._setter, 'demods',
                                                demod-1, 0, 'adcselect'),
-                               val_mapping=dmsigins,
-                               vals=vals.Enum(*list(dmsigins.keys()))
                                )
 
             self.add_parameter('demod{}_sinc'.format(demod),
@@ -804,31 +790,12 @@ class ZIUHFLI(Instrument):
                                vals=vals.Enum('ON', 'OFF')
                                )
 
-            dmtrigs = {'Continuous': 0,
-                       'Trigger in 3 Rise': 1,
-                       'Trigger in 3 Fall': 2,
-                       'Trigger in 3 Both': 3,
-                       'Trigger in 3 High': 32,
-                       'Trigger in 3 Low': 16,
-                       'Trigger in 4 Rise': 4,
-                       'Trigger in 4 Fall': 8,
-                       'Trigger in 4 Both': 12,
-                       'Trigger in 4 High': 128,
-                       'Trigger in 4 Low': 64,
-                       'Trigger in 3|4 Rise': 5,
-                       'Trigger in 3|4 Fall': 10,
-                       'Trigger in 3|4 Both': 15,
-                       'Trigger in 3|4 High': 160,
-                       'Trigger in 3|4 Low': 80}
-
             self.add_parameter('demod{}_trigger'.format(demod),
                                label='Trigger',
                                get_cmd=partial(self._getter, 'demods',
                                                demod-1, 0, 'trigger'),
                                set_cmd=partial(self._setter, 'demods',
                                                demod-1, 0, 'trigger'),
-                               val_mapping=dmtrigs,
-                               vals=vals.Enum(*list(dmtrigs.keys()))
                                )
 
             self.add_parameter('demod{}_sample'.format(demod),
@@ -892,22 +859,16 @@ class ZIUHFLI(Instrument):
                                vals=vals.Enum(50, 1000)
                                )
 
-            sigindiffs = {'Off': 0, 'Inverted': 1, 'Input 1 - Input 2': 2,
-                          'Input 2 - Input 1': 3}
             self.add_parameter('signal_input{}_diff'.format(sigin),
                                label='Input signal subtraction',
                                set_cmd=partial(self._setter, 'sigins',
                                                 sigin-1, 0, 'diff'),
                                get_cmd=partial(self._getter, 'sigins',
-                                               sigin-1, 0, 'diff'),
-                               val_mapping=sigindiffs,
-                               vals=vals.Enum(*list(sigindiffs.keys())))
+                                               sigin-1, 0, 'diff')
+                              )
 
         ########################################
         # SIGNAL OUTPUTS
-        outputamps = {1: 'amplitudes/3', 2: 'amplitudes/7'}
-        outputampenable = {1: 'enables/3', 2: 'enables/7'}
-
         for sigout in range(1,3):
 
             self.add_parameter('signal_output{}_on'.format(sigout),
@@ -928,19 +889,19 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
+            amp_node = f'amplitudes/{out_map[sigout]}'
             self.add_parameter('signal_output{}_amplitude'.format(sigout),
                                 label='Signal output amplitude',
                                 set_cmd=partial(self._sigout_setter,
-                                                sigout-1, 1, outputamps[sigout]),
+                                                sigout-1, 1, amp_node),
                                 get_cmd=partial(self._sigout_getter,
-                                               sigout-1, 1, outputamps[sigout]),
+                                               sigout-1, 1, amp_node),
                                 unit='V')
 
             self.add_parameter('signal_output{}_ampdef'.format(sigout),
                                 get_cmd=None, set_cmd=None,
                                 initial_value='Vpk',
                                 label="Signal output amplitude's definition",
-                                unit='V',
                                 vals=vals.Enum('Vpk','Vrms', 'dBm'))
 
             self.add_parameter('signal_output{}_range'.format(sigout),
@@ -948,8 +909,7 @@ class ZIUHFLI(Instrument):
                                 set_cmd=partial(self._sigout_setter,
                                                 sigout-1, 1, 'range'),
                                 get_cmd=partial(self._sigout_getter,
-                                                sigout-1, 1, 'range'),
-                                vals=vals.Enum(0.075, 0.15, 0.75, 1.5))
+                                                sigout-1, 1, 'range'))
 
             self.add_parameter('signal_output{}_offset'.format(sigout),
                                 label='Signal output offset',
@@ -957,7 +917,6 @@ class ZIUHFLI(Instrument):
                                                 sigout-1, 1, 'offset'),
                                 get_cmd=partial(self._sigout_getter,
                                                 sigout-1, 1, 'offset'),
-                                vals=vals.Numbers(-1.5, 1.5),
                                 unit='V')
 
             self.add_parameter('signal_output{}_autorange'.format(sigout),
@@ -969,14 +928,15 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
+            out_enable_node = f'enables/{out_map[sigout]}'
             self.add_parameter('signal_output{}_enable'.format(sigout),
                                 label="Enable signal output's amplitude.",
                                 set_cmd=partial(self._sigout_setter,
                                                 sigout-1, 0,
-                                                outputampenable[sigout]),
+                                                out_enable_node),
                                 get_cmd=partial(self._sigout_getter,
                                                 sigout-1, 0,
-                                                outputampenable[sigout]),
+                                                out_enable_node),
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
@@ -1654,8 +1614,13 @@ class ZIUHFLI(Instrument):
             nonlocal value
             toget = params['signal_output{}_ampdef'.format(number+1)]
             ampdef_val = toget.get()
-            toget = params['signal_output{}_autorange'.format(number+1)]
-            autorange_val = toget.get()
+
+            autorange_name = 'signal_output{}_autorange'.format(number+1)
+            if autorange_name in params.keys():
+                toget = params[autorange_name]
+                autorange_val = toget.get()
+            else:
+                autorange_val = 'OFF'
 
             if autorange_val == 'ON':
                 toget = params['signal_output{}_imp50'.format(number+1)]
@@ -1675,6 +1640,7 @@ class ZIUHFLI(Instrument):
             if -range_val < amp_val_dict[ampdef_val](value) > range_val:
                 raise ValueError('Signal Output:'
                                  + ' Amplitude too high for chosen range.')
+            value /= range_val
             value = amp_val_dict[ampdef_val](value)
 
         def offset_valid():
@@ -1687,10 +1653,16 @@ class ZIUHFLI(Instrument):
             if -range_val< value+amp_val > range_val:
                 raise ValueError('Signal Output: Offset too high for '
                                  'chosen range.')
+            value /= range_val
 
         def range_valid():
             nonlocal value
             nonlocal number
+
+            #Don't validate again if another validator is set
+            if hasattr(params[f'signal_output{number+1}_range'], 'vals'):
+                return
+
             toget = params['signal_output{}_autorange'.format(number+1)]
             autorange_val = toget.get()
             imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
@@ -1704,23 +1676,6 @@ class ZIUHFLI(Instrument):
                 raise ValueError('Signal Output: Choose a valid range:'
                                  '[0.75, 0.075] if imp50 is on, [1.5, 0.15]'
                                  ' otherwise.')
-
-        def ampdef_valid():
-            # check which amplitude definition you can use.
-            # dBm is only possible with 50 Ohm imp ON
-            imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
-            imp50_ampdef_dict = {'ON': ['Vpk','Vrms', 'dBm'],
-                                 'OFF': ['Vpk','Vrms']}
-            if value not in imp50_ampdef_dict[imp50_val]:
-                raise ValueError("Signal Output: Choose a valid amplitude "
-                                 "definition; ['Vpk','Vrms', 'dBm'] if imp50 is"
-                                 " on, ['Vpk','Vrms'] otherwise.")
-
-        dynamic_validation = {'range': range_valid,
-                              'ampdef': ampdef_valid,
-                              'amplitudes/3': amp_valid,
-                              'amplitudes/7': amp_valid,
-                              'offset': offset_valid}
 
         def update_range_offset_amp():
             range_val = params['signal_output{}_range'.format(number+1)].get()
@@ -1738,29 +1693,29 @@ class ZIUHFLI(Instrument):
             self.parameters['signal_output{}_amplitude'.format(number+1)].get()
 
         def update_range():
-            self.parameters['signal_output{}_autorange'.format(number+1)].get()
+            self.parameters['signal_output{}_range'.format(number+1)].get()
+
+        #Do the validation of the parameter
+        dynamic_validation = {'range': range_valid,
+                              'amplitudes': amp_valid,
+                              'offset': offset_valid}
+        setbase = setting.split('/')[0]
+        if setbase in dynamic_validation:
+            dynamic_validation[setbase]()
+
+        #Set the value
+        self._setter('sigouts', number, mode, setting, value)
 
         # parameters which will potentially change other parameters
+        # so we update all the relevant ones
         changing_param = {'imp50': [update_range_offset_amp, update_range],
                           'autorange': [update_range],
                           'range': [update_offset, update_amp],
-                          'amplitudes/3': [update_range, update_amp],
-                          'amplitudes/7': [update_range, update_amp],
+                          'amplitudes': [update_range, update_amp],
                           'offset': [update_range]
                          }
-
-        setstr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
-
-        if setting in dynamic_validation:
-            dynamic_validation[setting]()
-
-        if mode == 0:
-            self.daq.setInt(setstr, value)
-        if mode == 1:
-            self.daq.setDouble(setstr, value)
-
-        if setting in changing_param:
-            [f() for f in changing_param[setting]]
+        if setbase in changing_param:
+            [f() for f in changing_param[setbase]]
 
     def _sigout_getter(self, number, mode, setting):
         """
@@ -1774,11 +1729,26 @@ class ZIUHFLI(Instrument):
             setting (str): The module's setting to set.
         """
 
-        querystr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
-        if mode == 0:
-            value = self.daq.getInt(querystr)
-        if mode == 1:
-            value = self.daq.getDouble(querystr)
+        # convenient reference
+        params = self.parameters
+
+        value = self._getter('sigouts', number, mode, setting)
+
+        #Correct values for range, if needed
+        setbase = setting.split('/')[0]
+        if setbase.startswith('amplitudes') or setbase == 'offset':
+            range_val = params['signal_output{}_range'.format(number+1)].get()
+            value *= range_val
+
+        # Adjust value according to amplitude definition
+        if setbase.startswith('amplitudes'):
+            toget = params['signal_output{}_ampdef'.format(number+1)]
+            ampdef_val = toget.get()
+            amp_val_dict={'Vpk': lambda value: value,
+                          'Vrms': lambda value: value/sqrt(2),
+                          'dBm': lambda value: 10+20*log10(value)
+                         }
+            value = amp_val_dict[ampdef_val](value)
 
         return value
 
