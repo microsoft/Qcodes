@@ -4,7 +4,7 @@ from typing import Dict, cast
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
-from qcodes.utils.helpers import sane_partial
+from qcodes.utils.helpers import partial_with_docstring
 
 log = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ class DG1062Channel(InstrumentChannel):
         # >>> gd.channels[0].sin(freq=2E3, ampl=1.0, offset=0, phase=0)
         # We do not use add_function as it is more cumbersome to use.
         for waveform in self.waveforms:
-            f = sane_partial(
+            f = partial_with_docstring(
                 self.apply,
                 docstring="Args: " + ", ".join(self.waveform_params[waveform]),
                 waveform=waveform

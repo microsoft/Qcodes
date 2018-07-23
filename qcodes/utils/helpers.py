@@ -584,7 +584,7 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
     setattr(object_, attribute_name, old_value)
 
 
-def sane_partial(func, docstring, **kwargs):
+def partial_with_docstring(func, docstring, **kwargs):
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
