@@ -1,8 +1,8 @@
 from .private.Keysight_344xxA import _Keysight_344xxA
 
-class Keysight_34465A(_Keysight_344xxA):
+class Keysight_34461A(_Keysight_344xxA):
     """
-    This is the qcodes driver for the Keysight 34465A Multimeter
+    This is the qcodes driver for the Keysight 34461A Multimeter
     """
     def __init__(self, name, address, silent=False,
                  **kwargs):
