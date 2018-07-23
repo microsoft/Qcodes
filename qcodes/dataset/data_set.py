@@ -21,11 +21,12 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
-                                        connect, create_run, get_parameters,
+                                        connect, create_run, completed,
+                                        get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
                                         length, modify_values,
-                                        add_meta_data, mark_run,
+                                        add_meta_data, mark_run_complete,
                                         modify_many_values, insert_values,
                                         insert_many_values,
                                         VALUE, VALUES, get_data,
@@ -59,66 +60,79 @@ class CompletedError(RuntimeError):
     pass
 
 
-class Subscriber(Thread):
+class _Subscriber(Thread):
     """
     Class to add a subscriber to a DataSet. The subscriber gets called
     every time an insert is made to the results_table.
 
-    The Subscriber is not meant to be instantiated directly, but rather used
+    The _Subscriber is not meant to be instantiated directly, but rather used
     via the 'subscribe' method of the DataSet.
 
-    NOTE: A subscriber should be added *after* all parameters have added.
+    NOTE: A subscriber should be added *after* all parameters have been added.
+
+    NOTE: Special care shall be taken when using the *state* object: it is the user's
+    responsibility to operate with it in a thread-safe way.
     """
-    def __init__(self, dataSet, sub_id: str,
+    def __init__(self,
+                 dataSet,
+                 id_: str,
                  callback: Callable[..., None],
-                 state: Optional[Any] = None, min_wait: int = 100,
-                 min_count: int = 1,
-                 callback_kwargs: Optional[Dict[str, Any]]=None) -> None:
-        self.sub_id = sub_id
-        # whether or not this is actually thread safe I am not sure :P
+                 state: Optional[Any] = None,
+                 loop_sleep_time: int = 0,  # in milliseconds
+                 min_queue_length: int = 1,
+                 callback_kwargs: Optional[Dict[str, Any]]=None
+                 ) -> None:
+        super().__init__()
+
+        self._id = id_
+
         self.dataSet = dataSet
         self.table_name = dataSet.table_name
-        self.conn = dataSet.conn
-        self.log = logging.getLogger(f"Subscriber {self.sub_id}")
+        self._data_set_len = len(dataSet)
 
         self.state = state
-        self.min_wait = min_wait
-        self.min_count = min_count
-        self._send_queue: int = 0
+
+        self.data_queue: Queue = Queue()
+        self._queue_length: int = 0
+        self._stop_signal: bool = False
+        self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
+        self.min_queue_length = min_queue_length
+
         if callback_kwargs is None:
             self.callback = callback
         else:
             self.callback = functools.partial(callback, **callback_kwargs)
-        self._stop_signal: bool = False
+
+        self.callback_id = f"callback{self._id}"
+
+        conn = dataSet.conn
+
+        conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
 
         parameters = dataSet.get_parameters()
-        param_sql = ",".join([f"NEW.{p.name}" for p in parameters])
-        self.callbackid = f"callback{self.sub_id}"
-
-        self.conn.create_function(self.callbackid, -1, self.cache)
-        sql = f"""
-        CREATE TRIGGER sub{self.sub_id}
+        sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
+        sql_create_trigger_for_callback = f"""
+        CREATE TRIGGER sub{self._id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
-            SELECT {self.callbackid}({param_sql});
+            SELECT {self.callback_id}({sql_param_list});
         END;"""
-        atomic_transaction(self.conn, sql)
-        self.data: Queue = Queue()
-        self._data_set_len = len(dataSet)
-        super().__init__()
+        atomic_transaction(conn, sql_create_trigger_for_callback)
 
-    def cache(self, *args) -> None:
-        self.log.debug(f"Args:{args} put into queue for {self.callbackid}")
-        self.data.put(args)
+        self.log = logging.getLogger(f"_Subscriber {self._id}")
+
+    def _cache_data_to_queue(self, *args) -> None:
+        self.log.debug(f"Args:{args} put into queue for {self.callback_id}")
+        self.data_queue.put(args)
         self._data_set_len += 1
-        self._send_queue += 1
+        self._queue_length += 1
 
     def run(self) -> None:
         self.log.debug("Starting subscriber")
         self._loop()
 
     @staticmethod
-    def _exhaust_queue(queue) -> List:
+    def _exhaust_queue(queue: Queue) -> List:
         result_list = []
         while True:
             try:
@@ -127,45 +141,54 @@ class Subscriber(Thread):
                 break
         return result_list
 
-    def _send(self) -> List:
-        result_list = self._exhaust_queue(self.data)
+    def _call_callback_on_queue_data(self) -> None:
+        result_list = self._exhaust_queue(self.data_queue)
         self.callback(result_list, self._data_set_len, self.state)
         self.log.debug(f"{self.callback} called with "
                        f"result_list: {result_list}.")
-        # TODO (WilliamHPNielsen): why does this method return smth?
-        return result_list
 
     def _loop(self) -> None:
         while True:
             if self._stop_signal:
                 self._clean_up()
                 break
-            if self._send_queue >= self.min_count:
-                self._send()
-                self._send_queue = 0
 
-            # if nothing happens we let the word go foward
-            time.sleep(self.min_wait / 1000)
+            if self._queue_length >= self.min_queue_length:
+                self._call_callback_on_queue_data()
+                self._queue_length = 0
+
+            time.sleep(self._loop_sleep_time)
+
             if self.dataSet.completed:
-                self._send()
+                self._call_callback_on_queue_data()
                 break
 
     def done_callback(self) -> None:
         self.log.debug("Done callback")
-        self._send()
+        self._call_callback_on_queue_data()
 
-    def schedule_stop(self):
+    def schedule_stop(self) -> None:
         if not self._stop_signal:
             self.log.debug("Scheduling stop")
             self._stop_signal = True
 
     def _clean_up(self) -> None:
-        # TODO: just a temp implemation (remove?)
         self.log.debug("Stopped subscriber")
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str, conn=None) -> None:
+    def __init__(self, path_to_db: str, run_id: Optional[int]=None,
+                 conn=None) -> None:
+        """
+        Create a new DataSet object. The object can either be intended
+        to hold a new run or and old run.
+
+        Args:
+            path_to_db: path to the sqlite file on disk
+            run_id: provide this when loading an existing run, leave it
+              as None when creating a new run
+            conn: connection to the DB
+        """
         # TODO: handle fail here by defaulting to
         # a standard db
         self.path_to_db = path_to_db
@@ -174,7 +197,11 @@ class DataSet(Sized):
         else:
             self.conn = conn
 
+        self.run_id = run_id
         self._debug = False
+        self.subscribers: Dict[str, _Subscriber] = {}
+        if run_id:
+            self._completed = completed(self.conn, self.run_id)
 
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
@@ -187,7 +214,6 @@ class DataSet(Sized):
 
         # this is really the UUID (an ever increasing count in the db)
         self.run_id = run_id
-        self.subscribers: Dict[str, Subscriber] = {}
         self._completed = False
 
     @property
@@ -228,6 +254,7 @@ class DataSet(Sized):
     def exp_id(self):
         return select_one_where(self.conn, "runs",
                                 "exp_id", "run_id", self.run_id)
+
 
     def toggle_debug(self):
         """
@@ -308,7 +335,8 @@ class DataSet(Sized):
     @completed.setter
     def completed(self, value):
         self._completed = value
-        mark_run(self.conn, self.run_id, value)
+        if value:
+            mark_run_complete(self.conn, self.run_id)
 
     def mark_complete(self) -> None:
         """Mark dataset as complete and thus read only and notify the
@@ -360,8 +388,9 @@ class DataSet(Sized):
 
         Args:
             - list of name, value dictionaries  where each
-              dictionary provides the values for all of the parameters in
-              that result.
+              dictionary provides the values for the parameters in
+              that result. If some parameters are missing the corresponding
+              values are assumed to be None
 
         Returns:
             - the index in the DataSet that the **first** result was stored at
@@ -370,12 +399,12 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
-        values = [list(val.values()) for val in results]
+        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        values = [[d.get(k, None) for k in expected_keys] for d in results]
+
         len_before_add = length(self.conn, self.table_name)
-        insert_many_values(self.conn, self.table_name, list(results[0].keys()),
+        insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
-        # TODO: should this not be made atomic?
-        self.conn.commit()
         return len_before_add
 
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
@@ -544,17 +573,19 @@ class DataSet(Sized):
         return setpoints
 
     # NEED to pass Any for some reason
-    def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
-                  min_wait: int = 0, min_count: int = 1,
+    def subscribe(self,
+                  callback: Callable[[Any, int, Optional[Any]], None],
+                  min_wait: int = 0,
+                  min_count: int = 1,
                   state: Optional[Any] = None,
-                  callback_kwargs: Optional[Dict[str, Any]] = None,
-                  subscriber_class=Subscriber) -> str:
-        sub_id = uuid.uuid4().hex
-        sub = Subscriber(self, sub_id, callback, state, min_wait, min_count,
-                         callback_kwargs)
-        self.subscribers[sub_id] = sub
-        sub.start()
-        return sub.sub_id
+                  callback_kwargs: Optional[Dict[str, Any]] = None
+                  ) -> str:
+        subscriber_id = uuid.uuid4().hex
+        subscriber = _Subscriber(self, subscriber_id, callback, state, min_wait, min_count,
+                                 callback_kwargs)
+        self.subscribers[subscriber_id] = subscriber
+        subscriber.start()
+        return subscriber_id
 
     def unsubscribe(self, uuid: str) -> None:
         """
@@ -568,7 +599,7 @@ class DataSet(Sized):
             del self.subscribers[uuid]
 
     def _remove_trigger(self, name):
-        transaction(self.conn, f"DROP TRIGGER IF EXISTS name;")
+        transaction(self.conn, f"DROP TRIGGER IF EXISTS {name};")
 
     def unsubscribe_all(self):
         """
@@ -614,8 +645,7 @@ def load_by_id(run_id)->DataSet:
         the datasets
 
     """
-    d = DataSet(get_DB_location())
-    d.run_id = run_id
+    d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
@@ -629,7 +659,7 @@ def load_by_counter(counter, exp_id):
     Returns:
         the dataset
     """
-    d = DataSet(get_DB_location())
+    conn = connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -638,8 +668,11 @@ def load_by_counter(counter, exp_id):
       result_counter= ? AND
       exp_id = ?
     """
-    c = transaction(d.conn, sql, counter, exp_id)
-    d.run_id = one(c, 'run_id')
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, 'run_id')
+    conn.close()
+    d = DataSet(get_DB_location(), run_id=run_id)
+
     return d
 
 
@@ -658,16 +691,27 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata:  the values to associate with the dataset
     """
     path_to_db = get_DB_location()
-    d = DataSet(path_to_db, conn=conn)
+    if conn is None:
+        tempcon = True
+        conn = connect(get_DB_location())
+    else:
+        tempcon = False
 
     if exp_id is None:
-        if len(get_experiments(d.conn)) > 0:
-            exp_id = get_last_experiment(d.conn)
+        if len(get_experiments(conn)) > 0:
+            exp_id = get_last_experiment(conn)
         else:
             raise ValueError("No experiments found."
                              "You can start a new one with:"
                              " new_experiment(name, sample_name)")
+    # This is admittedly a bit weird. We create a dataset, link it to some
+    # run in the DB and then (using _new) change what it's linked to
+    if tempcon:
+        conn.close()
+        conn = None
+    d = DataSet(path_to_db, run_id=None, conn=conn)
     d._new(name, exp_id, specs, values, metadata)
+
     return d
 
 

@@ -8,6 +8,7 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
 from distutils.version import LooseVersion
+import itertools
 
 import qcodes as qc
 import unicodedata
@@ -108,6 +109,19 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
+def _convert_numeric(value: bytes) -> Union[float, int]:
+    numeric = float(value)
+    if np.isnan(numeric) or numeric != int(numeric):
+        return numeric
+    return int(numeric)
+
+
+def _adapt_float(fl: float) -> Union[float, str]:
+    if np.isnan(fl):
+        return "nan"
+    return float(fl)
+
+
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     """Get the value of one column from one row
     Args:
@@ -188,8 +202,10 @@ def connect(name: str, debug: bool = False) -> sqlite3.Connection:
     ]:
         sqlite3.register_adapter(numpy_int, int)
 
+    sqlite3.register_converter("numeric", _convert_numeric)
+
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
-        sqlite3.register_adapter(numpy_float, float)
+        sqlite3.register_adapter(numpy_float, _adapt_float)
 
     if debug:
         conn.set_trace_callback(print)
@@ -396,9 +412,9 @@ def insert_many_values(conn: sqlite3.Connection,
     # We demand that all values have the same length
     lengths = [len(val) for val in values]
     if len(np.unique(lengths)) > 1:
-        raise ValueError(f'Wrong input format for values. Must specify the '
+        raise ValueError('Wrong input format for values. Must specify the '
                          'same number of values for all columns. Received'
-                         ' lengths {lengths}.')
+                         f' lengths {lengths}.')
     no_of_rows = len(lengths)
     no_of_columns = lengths[0]
 
@@ -430,24 +446,25 @@ def insert_many_values(conn: sqlite3.Connection,
     start = 0
     stop = 0
 
-    for ii, chunk in enumerate(chunks):
-        _values_x_params = ",".join([_values] * chunk)
+    with atomic(conn):
+        for ii, chunk in enumerate(chunks):
+            _values_x_params = ",".join([_values] * chunk)
 
-        query = f"""INSERT INTO "{formatted_name}"
-                    ({_columns})
-                    VALUES
-                    {_values_x_params}
-                 """
-        stop += chunk
-        # we need to make values a flat list from a list of list
-        flattened_values = [item for sublist in values[start:stop]
-                            for item in sublist]
+            query = f"""INSERT INTO "{formatted_name}"
+                        ({_columns})
+                        VALUES
+                        {_values_x_params}
+                     """
+            stop += chunk
+            # we need to make values a flat list from a list of list
+            flattened_values = list(
+                itertools.chain.from_iterable(values[start:stop]))
 
-        c = atomic_transaction(conn, query, *flattened_values)
+            c = transaction(conn, query, *flattened_values)
 
-        if ii == 0:
-            return_value = c.lastrowid
-        start += chunk
+            if ii == 0:
+                return_value = c.lastrowid
+            start += chunk
 
     return return_value
 
@@ -790,7 +807,9 @@ def new_experiment(conn: sqlite3.Connection,
     return curr.lastrowid
 
 
-def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
+# TODO(WilliamHPNielsen): we should remove the redundant
+# is_completed
+def mark_run_complete(conn: sqlite3.Connection, run_id: int):
     """ Mark run complete
 
     Args:
@@ -806,7 +825,7 @@ def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), complete, run_id)
+    atomic_transaction(conn, query, time.time(), True, run_id)
 
 
 def completed(conn: sqlite3.Connection, run_id)->bool:
@@ -1229,7 +1248,7 @@ def _create_run_table(conn: sqlite3.Connection,
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               parameters: List[ParamSpec],
+               parameters: Optional[List[ParamSpec]]=None,
                values:  List[Any] = None,
                metadata: Optional[Dict[str, Any]]=None)->Tuple[int, int, str]:
     """ Create a single run for the experiment.
@@ -1304,7 +1323,7 @@ def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
 def add_meta_data(conn: sqlite3.Connection,
                   row_id: int,
                   metadata: Dict[str, Any],
-                  table_name: Optional[str] = "runs") -> None:
+                  table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
 

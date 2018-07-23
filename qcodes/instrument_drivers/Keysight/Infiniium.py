@@ -8,6 +8,7 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
 from qcodes import ArrayParameter
 from qcodes.utils.validators import Enum, Numbers
+from qcodes.utils.workarounds import visa_query_binary_values_fix_for
 
 
 log = logging.getLogger(__name__)
@@ -110,8 +111,10 @@ class RawTrace(ArrayParameter):
         instr.write(':WAVeform:STReaming OFF')
 
         # request the actual transfer
-        data = instr._parent.visa_handle.query_binary_values(
-            'WAV:DATA?', datatype='h', is_big_endian=False)
+        with visa_query_binary_values_fix_for(instr._parent.visa_handle):
+            data = instr._parent.visa_handle.query_binary_values(
+                'WAV:DATA?', datatype='h', is_big_endian=False)
+
         if len(data) != self.shape[0]:
             raise TraceSetPointsChanged('{} points have been aquired and {} \
             set points have been prepared in \

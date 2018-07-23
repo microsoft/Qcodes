@@ -497,7 +497,11 @@ class QtPlot(BasePlot):
         buffer.open(self.rpg.QtCore.QIODevice.ReadWrite)
         image.save(buffer, 'PNG')
         buffer.close()
-        return bytes(byte_array._getValue())
+
+        if hasattr(byte_array, '_getValue'):
+            return bytes(byte_array._getValue())
+        else:
+            return bytes(byte_array)
 
     def save(self, filename=None):
         """
@@ -527,8 +531,7 @@ class QtPlot(BasePlot):
         """
         # seem to be a bug in mypy but the type of self.subplots cannot be
         # deducted even when typed above so ignore it and cast for now
-        subplots = self.subplots # type: ignore
-        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        subplots = self.subplots
         for subplot in subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
@@ -567,8 +570,7 @@ class QtPlot(BasePlot):
         standardunits = self.standardunits
         # seem to be a bug in mypy but the type of self.subplots cannot be
         # deducted even when typed above so ignore it and cast for now
-        subplots = self.subplots # type: ignore
-        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        subplots = self.subplots
         for i, plot in enumerate(subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
