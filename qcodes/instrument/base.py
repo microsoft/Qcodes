@@ -604,14 +604,13 @@ class Instrument(InstrumentBase):
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError('Instrument {} has been removed'.format(name))
-        inst = cast('Instrument', ins)
         if instrument_class is not None:
-            if not isinstance(inst, instrument_class):
+            if not isinstance(ins, instrument_class):
                 raise TypeError(
                     'Instrument {} is {} but {} was requested'.format(
-                        name, type(inst), instrument_class))
+                        name, type(ins), instrument_class))
 
-        return inst
+        return ins
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
