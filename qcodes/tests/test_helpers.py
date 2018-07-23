@@ -14,7 +14,7 @@ from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   LogCapture, strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder,
-                                  sane_partial)
+                                  partial_with_docstring)
 from qcodes.utils.helpers import is_function, attribute_set_to
 
 
@@ -755,12 +755,12 @@ class TestAttributeSetToContextManager(TestCase):
         assert original_object is x.y
 
 
-class TestSanePartial(TestCase):
+class TestPartialWithDocstring(TestCase):
     """Test the sane partial function"""
     def test_main(self):
         def f():
             pass
 
         docstring = "some docstring"
-        g = sane_partial(f, docstring)
+        g = partial_with_docstring(f, docstring)
         self.assertEqual(g.__doc__, docstring)
