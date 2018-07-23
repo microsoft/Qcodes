@@ -1,7 +1,7 @@
 import numpy as np
 from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter, ChannelList
 from qcodes.utils.validators import Numbers, Enum, Bool
-from typing import Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable, Tuple
+from typing import Sequence, Union, Any, Tuple
 import time
 import re
 
