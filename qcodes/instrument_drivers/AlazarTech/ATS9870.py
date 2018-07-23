@@ -269,7 +269,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            get_cmd=None,
                            set_cmd=None,
                            initial_value='DISABLED',
-                           val_mapping={'DISBALED': 0x0,
+                           val_mapping={'DISABLED': 0x0,
                                         'ENABLED': 0x1000})
         self.add_parameter(name='get_processed_data',
                            label='Get Processed Data',
