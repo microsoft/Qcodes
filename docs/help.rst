@@ -18,13 +18,6 @@ the slack channel. Please include a few lines about who you are and
 how you use or want to use QCoDeS.
 
 
-Office hours
-------------
-
-QCoDeS core developers have office hours every second week.
-Everybody is welcome to join, if you want to know more send us an email.
-
-
 More
 ----
 For more info  on how to contribute check out the :ref:`Community` section.
