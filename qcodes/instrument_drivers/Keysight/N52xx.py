@@ -26,6 +26,7 @@ class PNASweep(ArrayParameter):
     @shape.setter
     def shape(self, val: Sequence[int]) -> None:
         pass
+
     @property # type: ignore
     def setpoints(self) -> Sequence: # type: ignore
         start = self._instrument.root_instrument.start()
@@ -114,8 +115,8 @@ class PNAPort(InstrumentChannel):
         self.add_parameter("source_power",
                            label="power",
                            unit="dBm",
-                           get_cmd=pow_cmd + "?",
-                           set_cmd=pow_cmd + "{}",
+                           get_cmd=f"{pow_cmd}?",
+                           set_cmd=f"{pow_cmd} {{}}",
                            get_parser=float)
 
     def _set_power_limits(self,
@@ -187,6 +188,7 @@ class PNATrace(InstrumentChannel):
         """
         super().write("CALC:PAR:MNUM {}".format(self.trace))
         super().write(cmd)
+
     def ask(self, cmd: str) -> str:
         """
         Select correct trace before querying
@@ -208,6 +210,7 @@ class PNATrace(InstrumentChannel):
         Extrace S_parameter from returned PNA format
         """
         return self.parse_paramstring(paramspec)[1]
+
     def _set_Sparam(self, val: str) -> None:
         """
         Set an S-parameter, in the format S<a><b>, where a and b
@@ -382,6 +385,7 @@ class PNABase(VisaInstrument):
 
     def _set_auto_sweep(self, val: bool) -> None:
         self._auto_sweep = val
+
     def _set_power_limits(self,
                           min_power: Union[int, float],
                           max_power: Union[int, float]) -> None:
