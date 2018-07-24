@@ -217,9 +217,27 @@ class MeasurementSubsystem(InstrumentChannel):
                            get_parser=float,
                            unit='V')
 
+        self.add_parameter(name='overshoot',
+                           label='Voltage overshoot',
+                           get_cmd=self._meas('VOVershoot'),
+                           get_parser=float,
+                           unit='V')
+
         self.add_parameter(name='vpp',
                            label='Voltage peak-to-peak',
                            get_cmd=self._meas('VPP'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='rms',
+                           label='Voltage RMS',
+                           get_cmd=self._meas('VRMS') + 'DISPlay, DC',
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='rms_no_DC',
+                           label='Voltage RMS',
+                           get_cmd=self._meas('VRMS') + 'DISPlay, AC',
                            get_parser=float,
                            unit='V')
 
