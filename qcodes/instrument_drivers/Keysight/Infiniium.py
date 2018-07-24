@@ -169,6 +169,67 @@ class MeasurementSubsystem(InstrumentChannel):
                            get_cmd=partial(self._get_source, 1),
                            val_mapping={i: f'CHAN{i}' for i in range(1, 5)})
 
+        self.add_parameter(name='source_2',
+                           label='Measurement secondary source',
+                           set_cmd=partial(self._set_source, 2),
+                           get_cmd=partial(self._get_source, 2),
+                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)})
+
+        self.add_parameter(name='amplitude',
+                           label='Voltage amplitude',
+                           get_cmd=self._meas('VAMPlitude'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='average',
+                           label='Voltage average',
+                           get_cmd=self._meas('VAVerage'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='base',
+                           label='Statistical base',
+                           get_cmd=self._meas('VBASe'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='lower',
+                           label='Voltage lower',
+                           get_cmd=self._meas('VLOWer'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='max',
+                           label='Voltage maximum',
+                           get_cmd=self._meas('VMAX'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='middle',
+                           label='Middle threshold voltage',
+                           get_cmd=self._meas('VMIDle'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='min',
+                           label='Voltage minimum',
+                           get_cmd=self._meas('VMIN'),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter(name='vpp',
+                           label='Voltage peak-to-peak',
+                           get_cmd=self._meas('VPP'),
+                           get_parser=float,
+                           unit='V')
+
+
+    def _meas(self, cmd: str) -> str:
+        """
+        Helper function to avoid typos
+        """
+        return f':MEASure:{cmd}?'
+
     def _set_source(self, rank: int, source: str) -> None:
         """
         Set the measurement source, either primary (rank==1) or secondary
@@ -188,6 +249,7 @@ class MeasurementSubsystem(InstrumentChannel):
         sources = self.ask(':MEASure:SOURCE?').split(',')
 
         return sources[rank-1]
+
 
 class InfiniiumChannel(InstrumentChannel):
 
