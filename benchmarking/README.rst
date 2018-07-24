@@ -2,13 +2,13 @@ Benchmarking QCoDeS
 ===================
 
 This directory contains benchmarks implemented for usage with airspeed
-velocity `asv` benchmarking package. Refer to `asv documentation`_ for
+velocity ``asv`` benchmarking package. Refer to `asv documentation`_ for
 information on how to use it.
 
 .. _asv documentation: https://asv.readthedocs.io/en/stable/index.html
 
-The `asv.conf.json` file in this directory configures `asv` to work correctly
-with QCoDeS.
+The ``asv.conf.json`` file in this directory configures ``asv`` to work
+correctly with QCoDeS.
 
 Usage
 -----
@@ -23,7 +23,7 @@ following command from this directory:
 
   asv run python=same
 
-If you do not have an environment set, then `asv` can set it up
+If you do not have an environment set, then ``asv`` can set it up
 automatically. The benchmarks are executed in the same way:
 
 .. code:: bash
@@ -34,16 +34,16 @@ Either of the commands above will execute benchmarking for the latest commit
 of the master branch.
 
 If you want to run benchmarking for a particular commit, use the same syntax
-as there is used for `git log` (commit id with `^!` at the end; note that in
-some terminals you will need to type `^` two times like this `^^!`):
+as there is used for ``git log`` (commit id with ``^!`` at the end; note that in
+some terminals you will need to type ``^`` two times like this ``^^!``):
 
 .. code:: bash
 
   asv run ed9b6fe8^!
 
-Use the `--bench` option with a regular expression to tell `asv` which
+Use the ``--bench`` option with a regular expression to tell ``asv`` which
 benchmarks you would like to execute. For example, use the following syntax
-to execute a benchmark called `saving` in `data.py` benchmark module:
+to execute a benchmark called ``saving`` in ``data.py`` benchmark module:
 
 .. code:: bash
 
@@ -64,13 +64,18 @@ to generate a convenient website
   asv publish
 
 and the following command to start a simple server that could host the
-website locally (the generated website is not static, hence the server)
+website locally (the generated website is not static, hence the server is
+needed)
 
 .. code:: bash
 
-  asv preview
+  asv preview -b
 
-The `asv preview` command will print a URL that you can enter in your
+The ``-b`` option opens the website automatically in your default browser. In
+order to stop the server, press ``Ctrl+C`` in the terminal where you've
+started it.
+
+The ``asv preview`` command will print a URL that you can enter in your
 browser to access the generated website.
 
 Note that the benchmarking results are created locally on your machine, and
@@ -104,7 +109,7 @@ command or
 command.
 
 In case you would like to use a visualization tool for the profile results,
-you can install one, for example, `snakeviz`, and run benchmarking with
+you can install one, for example, ``snakeviz``, and run benchmarking with
 profiling as follows:
 
 .. code:: bash
@@ -115,7 +120,4 @@ profiling as follows:
 ToDo for QCoDeS/core
 --------------------
 
-- add benchmarking to CI
-- host html results on GitHub pages
-
-
+- host results and their html representation (GitHub pages?)
