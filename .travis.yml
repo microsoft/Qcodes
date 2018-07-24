@@ -40,7 +40,7 @@ script:
     - |
       cd benchmarking
       asv machine --machine travis
-      asv dev
+      asv dev --machine travis
     - cd ..
     # build docs with warnings as errors
     - |
