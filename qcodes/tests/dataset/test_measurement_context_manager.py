@@ -12,6 +12,7 @@ from numpy.testing import assert_array_equal
 from qcodes.tests.common import retry_until_does_not_throw
 
 import qcodes as qc
+from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
@@ -861,7 +862,7 @@ def test_datasaver_array_parameters_channel(experiment, channel_array_instrument
     assert datasaver.points_written == N * M
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None, use_coverage=False)
 @given(N=hst.integers(min_value=5, max_value=500))
 def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
                                     DAC, N):
@@ -894,6 +895,24 @@ def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
     assert datasaver.points_written == N
+    ds = load_by_id(datasaver.run_id)
+
+    data_num = ds.get_data('dummy_dac_ch1')
+    assert len(data_num) == N
+
+
+    setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
+    data_arrays = ds.get_data('dummy_channel_inst_ChanA_dummy_array_parameter')
+    assert len(setpoint_arrays) == N
+    assert len(data_arrays) == N
+
+    assert len(setpoint_arrays) == N
+    assert len(data_arrays) == N
+
+    for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
+        assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
+        assert_array_equal(data_arrays[0], np.array([2., 2., 2., 2., 2.]))
+
 
 
 def test_datasaver_unravel_multidim_manual(experiment, SpectrumAnalyzer):
