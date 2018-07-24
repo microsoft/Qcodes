@@ -166,8 +166,8 @@ class MeasurementSubsystem(InstrumentChannel):
         self.add_parameter(name='source_1',
                            label='Measurement primary source',
                            set_cmd=partial(self._set_source, 1),
-                           get_cmd=partial(self._get_source, 2),
-
+                           get_cmd=partial(self._get_source, 1),
+                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)})
 
     def _set_source(self, rank: int, source: str) -> None:
         """
