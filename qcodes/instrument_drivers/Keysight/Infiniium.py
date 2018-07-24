@@ -207,7 +207,7 @@ class MeasurementSubsystem(InstrumentChannel):
 
         self.add_parameter(name='middle',
                            label='Middle threshold voltage',
-                           get_cmd=self._meas('VMIDle'),
+                           get_cmd=self._meas('VMIDdle'),
                            get_parser=float,
                            unit='V')
 
