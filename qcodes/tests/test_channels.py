@@ -1,3 +1,5 @@
+import logging
+
 from unittest import TestCase
 import unittest
 from hypothesis import given, settings
@@ -12,6 +14,24 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import ChannelList
 from qcodes.loops import Loop
 
+
+@pytest.fixture(scope='function')
+def dci():
+
+    dci = DummyChannelInstrument(name='dci')
+    yield dci
+    dci.close()
+
+
+def test_channels_call_function(dci, caplog):
+
+        with caplog.at_level(logging.DEBUG,
+                             logger='qcodes.tests.instrument_mocks'):
+            caplog.clear()
+            dci.channels.log_my_name()
+            mssgs = [rec.message for rec in caplog.records]
+            names = [ch.name.replace('dci_', '') for ch in dci.channels]
+            assert mssgs == names
 
 
 class TestChannels(TestCase):
