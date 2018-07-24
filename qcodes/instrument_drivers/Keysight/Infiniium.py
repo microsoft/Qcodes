@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import InstrumentChannel, ChannelList, Instrument
 from qcodes import ArrayParameter
 from qcodes.utils.validators import Enum, Numbers
 from qcodes.utils.workarounds import visa_query_binary_values_fix_for
@@ -151,6 +151,43 @@ class RawTrace(ArrayParameter):
 
         return channel_data
 
+
+class MeasurementSubsystem(InstrumentChannel):
+    """
+    Submodule containing the measurement subsystem commands and associated
+    parameters
+    """
+    # note: this is not really a channel, but InstrumentChannel does everything
+    # a 'Submodule' class should do
+
+    def __init__(self, parent: Instrument, name: str, **kwargs) -> None:
+        super().__init__(parent, name, **kwargs)
+
+        self.add_parameter(name='source_1',
+                           label='Measurement primary source',
+                           set_cmd=partial(self._set_source, 1),
+                           get_cmd=partial(self._get_source, 2),
+
+
+    def _set_source(self, rank: int, source: str) -> None:
+        """
+        Set the measurement source, either primary (rank==1) or secondary
+        (rank==2)
+        """
+        sources = self.ask(':MEASure:SOURCE?').split(',')
+        if rank == 1:
+            self.write(f':MEASure:SOURCE {source}, {sources[1]}')
+        else:
+            self.write(f':MEASure:SOURCE {sources[0]}, {source}')
+
+    def _get_source(self, rank: int) -> str:
+        """
+        Get the measurement source, either primary (rank==1) or secondary
+        (rank==2)
+        """
+        sources = self.ask(':MEASure:SOURCE?').split(',')
+
+        return sources[rank-1]
 
 class InfiniiumChannel(InstrumentChannel):
 
@@ -368,7 +405,7 @@ class Infiniium(VisaInstrument):
                                       'HRESolution', 'SEGMented',
                                       'SEGPdetect', 'SEGHres')
                             )
-        
+
         self.add_parameter('acquire_timespan',
                             get_cmd=(lambda: self.acquire_points.get_latest() \
                                             /self.acquire_sample_rate.get_latest()),
@@ -394,6 +431,9 @@ class Infiniium(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
+        # Submodules
+        meassubsys = MeasurementSubsystem(self, 'measure')
+        self.add_submodule('measure', meassubsys)
 
     def _cmd_and_invalidate(self, cmd: str) -> Callable:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
