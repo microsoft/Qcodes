@@ -152,6 +152,7 @@ class DataSaver:
                         spname = '_'.join(sp_name_parts)
                         if f'{paramstr}_setpoint' in self.parameters.keys() \
                                 or spname in self.parameters.keys():
+                            sps = np.array(sps)
                             while sps.ndim > 1:
                                 sps = sps[0]
                             setpoint_meta.append({'paramstr': paramstr,
@@ -187,12 +188,9 @@ class DataSaver:
         elif inserting_as_arrays:
             input_size = 1
 
-        expected_shape = res[0][1].shape
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
-                if partial_result[1].shape != expected_shape:
-                    raise RuntimeError("This should never happen")
                 param_spec = self.parameters[str(partial_result[0])]
                 if param_spec.type == 'array' and index == 0:
                     res_dict[str(partial_result[0])] = partial_result[1]
@@ -461,8 +459,9 @@ class Measurement:
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
+            print(setpoints)
             my_setpoints = list(setpoints) if setpoints else []
-            for i in range(len(parameter.setpoints)):
+            for i in range(len(parameter.shape)):
                 spname_parts = []
                 if parameter.instrument is not None:
                     inst_name = parameter.instrument.name
