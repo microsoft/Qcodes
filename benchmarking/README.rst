@@ -71,12 +71,10 @@ needed)
 
   asv preview -b
 
-The ``-b`` option opens the website automatically in your default browser. In
+The ``-b`` option opens the website automatically in your default browser
+(the URL that it opens automatically is also printed to the terminal). In
 order to stop the server, press ``Ctrl+C`` in the terminal where you've
 started it.
-
-The ``asv preview`` command will print a URL that you can enter in your
-browser to access the generated website.
 
 Note that the benchmarking results are created locally on your machine, and
 they get accumulated.
