@@ -100,8 +100,6 @@ class RawTrace(ArrayParameter):
         # transfer the data
         # ---------------------------------------------------------------------
 
-        # switch the response header off for lower overhead
-        instr.write(':SYSTem:HEADer OFF')
         # select the channel from which to read
         instr._parent.data_source('CHAN{}'.format(self._channel))
         # specifiy the data format in which to read
@@ -319,12 +317,12 @@ class InfiniiumChannel(InstrumentChannel):
             vals=Numbers(),
         )
 
-
         # Acquisition
         self.add_parameter(name='trace',
                            channel=channel,
                            parameter_class=RawTrace
                            )
+
 
 class Infiniium(VisaInstrument):
     """
@@ -348,6 +346,10 @@ class Infiniium(VisaInstrument):
 
         # Scope trace boolean
         self.trace_ready = False
+
+        # switch the response header off,
+        # else none of our parameters will work
+        self.write(':SYSTem:HEADer OFF')
 
         # functions
 
