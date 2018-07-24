@@ -1,17 +1,17 @@
 from unittest import TestCase
 import unittest
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+import pytest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import ChannelList
-
-from hypothesis import given, settings
-import hypothesis.strategies as hst
 from qcodes.loops import Loop
 
-import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
 
 
 class TestChannels(TestCase):
