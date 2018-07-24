@@ -231,16 +231,15 @@ class MeasurementSubsystem(InstrumentChannel):
 
         self.add_parameter(name='rms',
                            label='Voltage RMS',
-                           get_cmd=self._meas('VRMS') + 'DISPlay, DC',
+                           get_cmd=self._meas('VRMS') + ' DISPlay, DC',
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='rms_no_DC',
                            label='Voltage RMS',
-                           get_cmd=self._meas('VRMS') + 'DISPlay, AC',
+                           get_cmd=self._meas('VRMS') + ' DISPlay, AC',
                            get_parser=float,
                            unit='V')
-
 
     def _meas(self, cmd: str) -> str:
         """
