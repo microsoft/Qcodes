@@ -126,7 +126,7 @@ class ScopeArray(ArrayParameter):
         if match:
             size = int(match[1])
             block_nh = block[11:]  # Strip header
-            block_nh = block_nh.strip()  # Strip \n
+            block_nh = block_nh.strip(b'\x00\r\n')  # Strip \n
 
             if size == len(block_nh):
                 return block_nh
