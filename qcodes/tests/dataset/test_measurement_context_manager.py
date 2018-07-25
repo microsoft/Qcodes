@@ -1048,8 +1048,9 @@ def test_datasaver_multidimarrayparameter_as_array(experiment,
     meas = Measurement()
     meas.register_parameter(array_param, paramtype='array')
     assert len(meas.parameters) == 4
+    inserted_data = array_param.get()
     with meas.run() as datasaver:
-        datasaver.add_result((array_param, array_param.get()))
+        datasaver.add_result((array_param, inserted_data))
 
     assert datasaver.points_written == 1
     ds = load_by_id(datasaver.run_id)
@@ -1074,6 +1075,35 @@ def test_datasaver_multidimarrayparameter_as_array(experiment,
                                                array_param.stop,
                                                array_param.npts[i]))
 
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 1
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 4
+        for i, datadict in enumerate(datadict_list):
+
+            datadict['data'].shape = (np.prod(expected_shape), )
+            if i == 0:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[0])
+                expected_data = np.repeat(temp_data,
+                                          expected_shape[1]*expected_shape[2])
+            if i == 1:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
+                                        expected_shape[0])
+            if i == 2:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(temp_data,
+                                        expected_shape[0]*expected_shape[1])
+            if i == 3:
+                expected_data = inserted_data.ravel()
+            assert_allclose(datadict['data'], expected_data)
+
 
 def test_datasaver_multidimarrayparameter_as_numeric(experiment,
                                                      SpectrumAnalyzer):
@@ -1085,7 +1115,7 @@ def test_datasaver_multidimarrayparameter_as_numeric(experiment,
     array_param = SpectrumAnalyzer.multidimspectrum
     meas = Measurement()
     meas.register_parameter(array_param, paramtype='numeric')
-
+    expected_shape = array_param.shape
     dims = len(array_param.shape)
     assert len(meas.parameters) == dims+1
 
@@ -1113,7 +1143,34 @@ def test_datasaver_multidimarrayparameter_as_numeric(experiment,
     data = np.array(ds.get_data('dummy_SA_multidimspectrum')).squeeze()
     assert_allclose(data, inserted_data.ravel())
 
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 1
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 4
+        for i, datadict in enumerate(datadict_list):
 
+            datadict['data'].shape = (np.prod(expected_shape), )
+            if i == 0:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[0])
+                expected_data = np.repeat(temp_data,
+                                          expected_shape[1]*expected_shape[2])
+            if i == 1:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
+                                        expected_shape[0])
+            if i == 2:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(temp_data,
+                                        expected_shape[0]*expected_shape[1])
+            if i == 3:
+                expected_data = inserted_data.ravel()
+            assert_allclose(datadict['data'], expected_data)
 
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
