@@ -193,6 +193,8 @@ class DS4000(VisaInstrument):
         super().__init__(name, address, device_clear=False, timeout=timeout, **kwargs)
         self.connect_message()
 
+        self._check_firmware_version()
+
         # functions
         self.add_function('run',
                           call_cmd=':RUN',
@@ -250,3 +252,11 @@ class DS4000(VisaInstrument):
 
         channels.lock()
         self.add_submodule('channels', channels)
+
+    def _check_firmware_version(self):
+        #Require version 00.02.03
+
+        idn = self.get_idn()
+        ver = [int(x) for x in idn['firmware'].split('.')]
+        if ver < [0,2,3]:
+            raise RuntimeError('Firmware version must be at least 00.02.03')
