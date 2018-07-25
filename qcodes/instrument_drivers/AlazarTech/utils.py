@@ -81,7 +81,6 @@ class AlazarParameter(Parameter):
 
         super().__init__(name=name, label=label, unit=unit, vals=vals,
                          instrument=instrument)
-        self.instrument = instrument
         self._byte = None
         self._uptodate_flag = False
 
