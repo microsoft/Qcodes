@@ -2,6 +2,7 @@ from typing import List, Any, Sequence, Tuple
 import logging
 
 import numpy as np
+import pandas as pd
 
 from qcodes.dataset.sqlite_base import (get_dependencies, get_dependents,
                                         get_layout)
@@ -59,14 +60,47 @@ def get_data_by_id(run_id: int) -> List:
             size = axis['data'].size
             if size < max_size:
                 if max_size % size != 0:
-                    raise RuntimeError("Inconsistent shapes of data.")
+                    raise RuntimeError("Inconsistent shapes of data. Got "
+                                       f"{size} which is not a whole fraction"
+                                       f"of {maxsize}")
                 axis['data'] = np.repeat(axis['data'], max_size//size)
-                if axis['data'].size != max_size:
-                    raise RuntimeError("Something is very wrong.")
 
         my_output.append(data_axis)
         output.append(my_output)
     return output
+
+
+def get_data_as_pandas_df(run_id):
+    data = get_data_by_id(run_id)
+    output_arrays = []
+    for subset in data:
+        templist = []
+        names = []
+        for parameter in subset:
+            # usual checks for empty label and unit with name fallback
+            name = f"{parameter['label']} ({parameter['unit']})"
+            templist.append(pd.Series(parameter['data'], name=name))
+            names.append(name)
+        names.pop()
+        output_arrays.append(pd.concat(templist, axis=1)) #.set_index(names)
+    return output_arrays
+
+
+def get_data_as_xarray(run_id):
+    import xarray as xr
+    data = get_data_by_id(run_id)
+    for subset in data:
+        output = {}
+        names = []
+        for parameter in subset:
+            names.append(parameter['name'])
+            output[parameter['name']] = xr.DataArray(parameter['data'],
+                                                     attrs={'label': parameter['label'],
+                                                            'unit': parameter['unit']})
+        names.pop()
+        ds = xr.Dataset(output)
+        return ds
+    #return output
 
 
 def _all_steps_multiples_of_min_step(rows: Sequence[np.ndarray]) -> bool:
