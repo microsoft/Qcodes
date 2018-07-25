@@ -28,13 +28,13 @@ def test_channels_call_function(dci, caplog):
     Test that dci.channels.some_function() calls
     some_function on each of the channels
     """
-        with caplog.at_level(logging.DEBUG,
-                             logger='qcodes.tests.instrument_mocks'):
-            caplog.clear()
-            dci.channels.log_my_name()
-            mssgs = [rec.message for rec in caplog.records]
-            names = [ch.name.replace('dci_', '') for ch in dci.channels]
-            assert mssgs == names
+    with caplog.at_level(logging.DEBUG,
+                         logger='qcodes.tests.instrument_mocks'):
+        caplog.clear()
+        dci.channels.log_my_name()
+        mssgs = [rec.message for rec in caplog.records]
+        names = [ch.name.replace('dci_', '') for ch in dci.channels]
+        assert mssgs == names
 
 
 class TestChannels(TestCase):
