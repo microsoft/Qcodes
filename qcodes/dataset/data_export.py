@@ -44,11 +44,25 @@ def get_data_by_id(run_id: int) -> List:
         data_axis['data'] = flatten_1D_data_for_plot(rawdata)
         raw_setpoint_data = data.get_setpoints(data_axis['name'])
         my_output = []
-
+        max_size = 0
         for i, dependency in enumerate(dependencies):
             axis = get_layout(conn, dependency[0])
             axis['data'] = flatten_1D_data_for_plot(raw_setpoint_data[i])
+            size = axis['data'].size
+            if size > max_size:
+                max_size = size
             my_output.append(axis)
+
+
+        for i, dependency in enumerate(dependencies):
+            axis = my_output[i]
+            size = axis['data'].size
+            if size < max_size:
+                if max_size % size != 0:
+                    raise RuntimeError("Inconsistent shapes of data.")
+                axis['data'] = np.repeat(axis['data'], max_size//size)
+                if axis['data'].size != max_size:
+                    raise RuntimeError("Something is very wrong.")
 
         my_output.append(data_axis)
         output.append(my_output)
