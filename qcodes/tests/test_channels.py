@@ -24,7 +24,10 @@ def dci():
 
 
 def test_channels_call_function(dci, caplog):
-
+    """
+    Test that dci.channels.some_function() calls
+    some_function on each of the channels
+    """
         with caplog.at_level(logging.DEBUG,
                              logger='qcodes.tests.instrument_mocks'):
             caplog.clear()
