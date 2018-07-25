@@ -459,7 +459,6 @@ class Measurement:
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             parameter = cast(ArrayParameter, parameter)
-            print(setpoints)
             my_setpoints = list(setpoints) if setpoints else []
             for i in range(len(parameter.shape)):
                 spname_parts = []
