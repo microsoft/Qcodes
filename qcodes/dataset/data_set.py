@@ -267,9 +267,18 @@ class DataSet(Sized):
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def run_timestamp(self) -> float:
+    def run_timestamp_raw(self) -> float:
         """Returns run timestamp as number of seconds since the Epoch"""
         return get_run_timestamp_from_run_id(self.conn, self.run_id)
+
+    @property
+    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
+        """
+        Returns run timestamp in a human-readable format
+
+        Consult with `time.strftime` for information about the format.
+        """
+        return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     def toggle_debug(self):
         """
