@@ -225,8 +225,8 @@ class ZNBChannel(InstrumentChannel):
                            channel=n,
                            parameter_class=FrequencySweep)
 
-        self.add_function('autoscale',
-                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
+    def autoscale(self) -> None:
+        self.write(f'DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{self.tracename}"')
 
     def _set_format(self, val):
         unit_mapping = {'MLOG\n': 'dB',
@@ -417,7 +417,7 @@ class ZNB(VisaInstrument):
                            get_cmd='OUTP1?',
                            set_cmd='OUTP1 {}',
                            val_mapping={True: '1\n', False: '0\n'})
-        self.add_function('reset', call_cmd='*RST')
+
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
         self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
         self.add_function('cont_meas_on', call_cmd='INIT:CONT:ALL ON')
@@ -433,6 +433,7 @@ class ZNB(VisaInstrument):
                           call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
+
         self.reset()
         self.clear_channels()
         channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
@@ -450,6 +451,10 @@ class ZNB(VisaInstrument):
         self.update_display_on()
         self.rf_off()
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
+
 
     def display_grid(self, rows: int, cols: int):
         """

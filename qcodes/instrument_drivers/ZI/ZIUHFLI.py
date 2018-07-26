@@ -1553,17 +1553,14 @@ class ZIUHFLI(Instrument):
                            get_parser=int
                            )
 
-        self.add_function('scope_reset_avg',
-                            call_cmd=partial(self.scope.set,
-                                             'scopeModule/averager/restart', 1),
-                            )
-
         ########################################
         # THE SCOPE ITSELF
         self.add_parameter('Scope',
                            parameter_class=Scope,
                            )
 
+    def scope_reset_avg(self) -> None:
+        self.scope.set('scopeModule/averager/restart', 1)
 
     def _setter(self, module, number, mode, setting, value):
         """

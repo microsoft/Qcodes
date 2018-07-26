@@ -288,10 +288,10 @@ class GS200(VisaInstrument):
         measure = GS200_Monitor(self, 'measure', monitor_present)
         self.add_submodule('measure', measure)
 
-        # Reset function
-        self.add_function('reset', call_cmd='*RST')
-
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
 
     def on(self):
         """Turn output on"""

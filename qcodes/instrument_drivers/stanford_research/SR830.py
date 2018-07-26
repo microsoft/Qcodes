@@ -426,43 +426,9 @@ class SR830(VisaInstrument):
                            get_cmd='SPTS ?',
                            get_parser=int)
 
-        # Auto functions
-        self.add_function('auto_gain', call_cmd='AGAN')
-        self.add_function('auto_reserve', call_cmd='ARSV')
-        self.add_function('auto_phase', call_cmd='APHS')
-        self.add_function('auto_offset', call_cmd='AOFF {0}',
-                          args=[Enum(1, 2, 3)])
-
         # Interface
-        self.add_function('reset', call_cmd='*RST')
-
         self.add_function('disable_front_panel', call_cmd='OVRM 0')
         self.add_function('enable_front_panel', call_cmd='OVRM 1')
-
-        self.add_function('send_trigger', call_cmd='TRIG',
-                          docstring=("Send a software trigger. "
-                                     "This command has the same effect as a "
-                                     "trigger at the rear panel trigger"
-                                     " input."))
-
-        self.add_function('buffer_start', call_cmd='STRT',
-                          docstring=("The buffer_start command starts or "
-                                     "resumes data storage. buffer_start"
-                                     " is ignored if storage is already in"
-                                     " progress."))
-
-        self.add_function('buffer_pause', call_cmd='PAUS',
-                          docstring=("The buffer_pause command pauses data "
-                                     "storage. If storage is already paused "
-                                     "or reset then this command is ignored."))
-
-        self.add_function('buffer_reset', call_cmd='REST',
-                          docstring=("The buffer_reset command resets the data"
-                                     " buffers. The buffer_reset command can "
-                                     "be sent at any time - any storage in "
-                                     "progress, paused or not, will be reset."
-                                     " This command will erase the data "
-                                     "buffer."))
 
         # Initialize the proper units of the outputs and sensitivities
         self.input_config()
@@ -472,6 +438,54 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
+
+    def auto_gain(self) -> None:
+        self.write('AGAN')
+
+    def auto_reserve(self) -> None:
+        self.write('ARSV')
+
+    def auto_phase(self) -> None:
+        self.write('APHS')
+
+    def auto_offset(self, option: int) -> None:
+        """
+        Auto offset either X (option=1), Y (option=2), or R (option=3)
+        """
+        if option not in [1, 2, 3]:
+            raise ValueError('Invalid option. Must be 1, 2, or 3')
+        self.write(f'AOFF {option}')
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def send_trigger(self) -> None:
+        """
+        Send a software trigger. Has the same effect as a trigger at the rear
+        panel trigger input
+        """
+        self.write('TRIG')
+
+    def buffer_start(self) -> None:
+        """
+        Start or resume data storage. Is ignored if storage is already in
+        progress
+        """
+        self.write('STRT')
+
+    def buffer_pause(self) -> None:
+        """
+        Pause data storage. Is ignored if storage is already paused or reset
+        """
+        self.write('PAUS')
+
+    def buffer_reset(self) -> None:
+        """
+        Reset the data buffers. This function can be called at any time - any
+        storage in progress, paused or not, will be reset. Calling this
+        function erases the data buffer.
+        """
+        self.write('REST')
 
     def _set_buffer_SR(self, SR):
         self.write('SRAT {}'.format(SR))
