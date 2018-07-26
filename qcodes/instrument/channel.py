@@ -447,6 +447,14 @@ class ChannelList(Metadatable):
                                      setpoint_labels=setpoint_labels)
             return param
 
+        # if it is not a parameter, we fall back to simply getting that attr
+        elif hasattr(self._channels[0], name):
+            def multi_attr(*args, **kwargs):
+                out = tuple(getattr(chan, name)(*args, **kwargs)
+                            for chan in self._channels)
+                return out
+            return multi_attr
+
         try:
             return self._channel_mapping[name]
         except KeyError:
