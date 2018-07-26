@@ -34,7 +34,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_setpoints,
                                         get_metadata, one,
                                         get_experiment_name_from_experiment_id,
-                                        get_sample_name_from_experiment_id)
+                                        get_sample_name_from_experiment_id,
+                                        get_run_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -264,6 +265,10 @@ class DataSet(Sized):
     @property
     def sample_name(self) -> str:
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
+
+    @property
+    def run_timestamp(self):
+        return get_run_timestamp_from_run_id(self.conn, self.run_id)
 
     def toggle_debug(self):
         """

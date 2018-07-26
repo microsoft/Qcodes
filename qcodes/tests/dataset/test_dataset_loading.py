@@ -1,4 +1,5 @@
 import os
+import time
 
 import pytest
 import tempfile
@@ -64,3 +65,15 @@ def test_experiment_info_in_dataset(empty_temp_db):
     assert ds.exp_id == exp.exp_id
     assert ds.exp_name == exp.name
     assert ds.sample_name == exp.sample_name
+
+
+def test_run_timestamp(empty_temp_db):
+    _ = new_experiment(name="for_loading", sample_name="no_sample")
+
+    t_before_data_set = time.time()
+    ds = new_data_set("my_first_ds")
+    t_after_data_set = time.time()
+
+    actual_run_timestamp = ds.run_timestamp
+
+    assert t_before_data_set < actual_run_timestamp < t_after_data_set
