@@ -72,6 +72,7 @@ class InstrumentChannel(InstrumentBase):
         name_parts.append(self.short_name)
         return name_parts
 
+
 class MultiChannelInstrumentParameter(MultiParameter):
     """
     Parameter to get or set multiple channels simultaneously.
@@ -120,6 +121,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         """
 
         return self.names
+
 
 class ChannelList(Metadatable):
     """
