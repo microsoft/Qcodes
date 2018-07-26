@@ -133,8 +133,6 @@ class AMI430(IPInstrument):
         self._parent_instrument = None
         self.has_current_rating = has_current_rating
 
-        # Add reset function
-        self.add_function('reset', call_cmd='*RST')
         if reset:
             self.reset()
 
@@ -218,8 +216,6 @@ class AMI430(IPInstrument):
         self.add_parameter('is_quenched',
                            get_cmd='QU?',
                            val_mapping={True: 1, False: 0})
-        self.add_function('reset_quench', call_cmd='QU 0')
-        self.add_function('set_quenched', call_cmd='QU 1')
         self.add_parameter('ramping_state',
                            get_cmd='STATE?',
                            get_parser=int,
@@ -240,16 +236,31 @@ class AMI430(IPInstrument):
         switch_heater = AMI430SwitchHeater(self)
         self.add_submodule("switch_heater", switch_heater)
 
-        # Add interaction functions
-        self.add_function('get_error', call_cmd='SYST:ERR?')
-        self.add_function('ramp', call_cmd='RAMP')
-        self.add_function('pause', call_cmd='PAUSE')
-        self.add_function('zero', call_cmd='ZERO')
-
         # Correctly assign all units
         self._update_units()
 
         self.connect_message()
+
+    def reset(self):
+        self.write('*RST')
+
+    def reset_quench(self):
+        self.write('QU 0')
+
+    def set_quenched(self):
+        self.write('QU 1')
+
+    def get_error(self):
+        self.write('SYST:ERR?')
+
+    def ramp(self):
+        self.write('RAMP')
+
+    def pause(self):
+        self.write('PAUSE')
+
+    def zero(self):
+        self.write('ZERO')
 
     def _sleep(self, t):
         """
