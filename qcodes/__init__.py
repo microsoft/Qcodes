@@ -52,7 +52,7 @@ from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.io import DiskIO
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, find_or_create_instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
