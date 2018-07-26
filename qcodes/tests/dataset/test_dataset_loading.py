@@ -55,3 +55,12 @@ def test_load_by_counter(empty_temp_db):
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
     assert loaded_ds.completed is True
+
+
+def test_experiment_info_in_dataset(empty_temp_db):
+    exp = new_experiment(name="for_loading", sample_name="no_sample")
+    ds = new_data_set("my_first_ds")
+
+    assert ds.exp_id == exp.exp_id
+    assert ds.exp_name == exp.name
+    assert ds.sample_name == exp.sample_name
