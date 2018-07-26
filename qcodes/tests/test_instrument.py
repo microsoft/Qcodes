@@ -2,7 +2,7 @@
 Test suite for  instument.*
 """
 from unittest import TestCase
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, find_or_create_instrument
 from .instrument_mocks import DummyInstrument, MockParabola
 from qcodes.instrument.parameter import Parameter
 import gc
@@ -115,3 +115,38 @@ class TestInstrument(TestCase):
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
+
+class TestFindOrCreateInstrument(TestCase):
+    """Tests for find_or_create_instrument function"""
+
+    def test_find(self):
+        """Test finding and existing instrument"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        instr_2 = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual(instr_2, instr)
+        self.assertEqual(instr_2.name, instr.name)
+
+        instr.close()
+
+    def test_create(self):
+        """Test creating an instrument that does not yet exist"""
+        instr = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual('instr', instr.name)
+
+        instr.close()
+
+    def test_other_exception(self):
+        """Test an unexpected exception occurred during finding instrument"""
+        with self.assertRaises(TypeError) as cm:
+            # in order to raise an unexpected exception, and make sure it is
+            # passed through the call stack, let's pass an empty dict instead
+            # of a string with instrument name
+            _ = find_or_create_instrument(DummyInstrument, {})
+        self.assertEqual(str(cm.exception), "unhashable type: 'dict'")
