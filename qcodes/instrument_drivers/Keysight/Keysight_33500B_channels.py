@@ -298,12 +298,24 @@ class Keysight_33500B_Channels(VisaInstrument):
                            get_parser=errorparser
                            )
 
-        self.add_function('force_trigger', call_cmd='*TRG')
-
-        self.add_function('sync_channel_phases', call_cmd='PHAS:SYNC')
-
         if not silent:
             self.connect_message()
+
+    def force_trigger(self) -> None:
+        """
+        Force a trigger event. Equivalent to pressing 'Trigger' on the front
+        panel
+        """
+        self.write('*TRG')
+
+    def sync_channel_phases(self) -> None:
+        """
+        Simultaneously reset all phase generators in the instrument, including
+        the modulation phase generators, to establish a common, internal phase
+        zero reference point. This command does not affect PHASe setting of
+        either channel.
+        """
+        self.write('PHASe:SYNChronize')
 
     def flush_error_queue(self, verbose=True):
         """

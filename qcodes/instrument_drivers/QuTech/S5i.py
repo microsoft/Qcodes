@@ -47,7 +47,7 @@ class S5i(Instrument):
                            units='Hz',
                            vals=Numbers())
 
-        self.add_function('optimize_for_frequency', call_cmd=self._optimize)
+        self.optimize_for_frequency = self._optimize
 
     def _use_external_reference(self):
         return self.s5i.use_external

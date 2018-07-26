@@ -275,10 +275,15 @@ class Keysight_33500B(VisaInstrument):
                            get_parser=errorparser
                            )
 
-        self.add_function('force_trigger', call_cmd='*TRG')
-
         if not silent:
             self.connect_message()
+
+    def force_trigger(self) -> None:
+        """
+        Force a trigger event. Equivalent to pressing 'Trigger' on the front
+        panel
+        """
+        self.write('*TRG')
 
     def flush_error_queue(self, verbose=True):
         """

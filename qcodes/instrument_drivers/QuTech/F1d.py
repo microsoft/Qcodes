@@ -57,9 +57,9 @@ class F1d(Instrument):
                            set_cmd=self.f1d.get_LO_level,
                            units='dBm')
 
-        self.add_function('enable_remote', call_cmd=self.f1d.enable_remote)
-        self.add_function('clear_rf_clip', call_cmd=self.f1d.clear_rf_clip)
-        self.add_function('is_rf_clipped', call_cmd=self.f1d.rf_clipped)
+        self.enable_remote = self.f1d.enable_remote
+        self.clear_rf_clip = self.f1d.clear_rf_clip
+        self.is_rf_clipped = self.f1d.rf_clipped
 
     def get_remote_settings(self):
         return self.f1d.remote_settings

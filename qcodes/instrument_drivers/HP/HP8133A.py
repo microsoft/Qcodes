@@ -85,6 +85,7 @@ class HP8133A(VisaInstrument):
         self.amplitude(0.1)
         self.amplitude_offset(0)
 
-
-        self.add_function('reset', call_cmd='*RST')
         self.connect_message()
+
+    def reset(self):
+        self.write('*RST')
