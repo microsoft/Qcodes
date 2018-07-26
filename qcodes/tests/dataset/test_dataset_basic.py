@@ -10,7 +10,8 @@ from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
 from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
 from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database
+from qcodes.dataset.database import initialise_database, \
+    initialise_or_create_database_at
 
 import qcodes.dataset.experiment_container
 import pytest
@@ -54,6 +55,43 @@ def test_tabels_exists(empty_temp_db):
     for row, expected_table in zip(cursor, expected_tables):
         assert expected_table in row['sql']
     conn.close()
+
+
+def test_initialise_database_at_for_nonexisting_db():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        db_location = os.path.join(tmpdirname, 'temp.db')
+        assert not os.path.exists(db_location)
+
+        initialise_or_create_database_at(db_location)
+
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+
+        test_tabels_exists(None)
+
+
+def test_initialise_database_at_for_existing_db():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # Define DB location
+        db_location = os.path.join(tmpdirname, 'temp.db')
+        assert not os.path.exists(db_location)
+
+        # Create DB file
+        qc.config["core"]["db_location"] = db_location
+        initialise_database()
+
+        # Check if it has been created correctly
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+        test_tabels_exists(None)
+
+        # Call function under test
+        initialise_or_create_database_at(db_location)
+
+        # Check if the DB is still correct
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+        test_tabels_exists(None)
 
 
 @given(experiment_name=hst.text(min_size=1),
