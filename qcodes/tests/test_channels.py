@@ -107,6 +107,20 @@ class TestChannels(TestCase):
             self.instrument.channels.insert(2, channel)
         self.assertEqual(len(self.instrument.channels), n_channels + 1)
 
+    def test_clear_channels(self):
+        channels = self.instrument.channels
+        original_length = len(channels)
+        channels.clear()
+        self.assertEqual(len(channels), 0)
+
+    def test_clear_locked_channels(self):
+        channels = self.instrument.channels
+        original_length = len(channels)
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.clear()
+        self.assertEqual(len(channels), original_length)
+
     def test_remove_channel(self):
         channels = self.instrument.channels
         chanA = self.instrument.A
