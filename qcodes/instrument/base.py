@@ -399,8 +399,6 @@ class Instrument(InstrumentBase):
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
 
-        self._meta_attrs = ['name']
-
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
