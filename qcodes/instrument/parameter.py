@@ -61,7 +61,8 @@ import os
 import collections
 import warnings
 import enum
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable, cast
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
+    Dict, Any, Sized, Iterable, cast, Type
 from functools import partial, wraps
 import numpy
 
@@ -417,6 +418,9 @@ class _BaseParameter(Metadatable):
                 steps = self.get_ramp_values(value, step=self.step)
 
                 for step_index, val_step in enumerate(steps):
+                    # even if the final value is valid we may be generating
+                    # steps that are not so validate them too
+                    self.validate(val_step)
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
                         raw_value = self.val_mapping[val_step]
@@ -462,10 +466,7 @@ class _BaseParameter(Metadatable):
                     set_function(raw_value, **kwargs)
                     self.raw_value = raw_value
                     self._save_val(val_step,
-                                   validate=(self.val_mapping is None and
-                                             self.set_parser is None and
-                                             not(step_index == len(steps)-1 or
-                                                 len(steps) == 1)))
+                                   validate=False)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -1035,7 +1036,7 @@ class ArrayParameter(_BaseParameter):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
 
-        nt = type(None)
+        nt: Type[None] = type(None)
 
         if not is_sequence_of(shape, int):
             raise ValueError('shapes must be a tuple of ints, not ' +
@@ -1215,7 +1216,7 @@ class MultiParameter(_BaseParameter):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
-        nt = type(None)
+        nt: Type[None] = type(None)
 
         if (not is_sequence_of(shapes, int, depth=2) or
                 len(shapes) != len(names)):

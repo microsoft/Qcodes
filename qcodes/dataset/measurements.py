@@ -420,7 +420,6 @@ class Measurement:
         name = str(parameter)
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
-            parameter = cast(ArrayParameter, parameter)
             spname_parts = []
             if parameter.instrument is not None:
                 inst_name = parameter.instrument.name
