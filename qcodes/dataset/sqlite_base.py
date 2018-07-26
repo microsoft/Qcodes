@@ -1354,3 +1354,15 @@ def get_user_version(conn: sqlite3.Connection) -> int:
 def set_user_version(conn: sqlite3.Connection, version: int) -> None:
 
     atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
+
+
+def get_experiment_name_from_experiment_id(
+        conn: sqlite3.Connection, exp_id: int) -> str:
+    return select_one_where(
+        conn, "experiments", "name", "exp_id", exp_id)
+
+
+def get_sample_name_from_experiment_id(
+        conn: sqlite3.Connection, exp_id: int) -> str:
+    return select_one_where(
+        conn, "experiments", "sample_name", "exp_id", exp_id)
