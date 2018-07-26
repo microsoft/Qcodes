@@ -698,11 +698,11 @@ class Instrument(InstrumentBase):
                 type(self).__name__))
 
 
-def find_or_create_instrument(instrument_class: type,
+def find_or_create_instrument(instrument_class: Type[Instrument],
                               name: str,
                               *args,
                               **kwargs
-                              ) -> Type[Instrument]:
+                              ) -> Instrument:
     """
     Find an instrument with the given name of a given class, or create one if
     it is not found.
