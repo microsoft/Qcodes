@@ -111,6 +111,9 @@ class TestInstrument(TestCase):
 
         snapshot = self.instrument.snapshot()
 
+        self.assertIn('name', snapshot)
+        self.assertEqual('testdummy', snapshot['name'])
+
         self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
