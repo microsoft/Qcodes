@@ -12,7 +12,7 @@ class E8267(VisaInstrument):
 
     def __init__(self, name, address, reset=False,  **kwargs):
         super().__init__(name, address,  terminator='\n', **kwargs)
-# general commands
+        # general commands
         self.add_parameter(name='frequency',
                            label='Frequency',
                            unit='Hz',
@@ -76,13 +76,15 @@ class E8267(VisaInstrument):
                            set_cmd='OUTP:MOD {}',
                            val_mapping={'OFF': 0,
                                         'ON': 1})
-# reset values after each reconnect
+        # reset values after each reconnect
         self.power(0)
         self.power_offset(0)
         self.connect_message()
-        self.add_function('reset', call_cmd='*RST')
 
-# functions to convert between rad and deg
+    def reset(self) -> None:
+        self.write('*RST')
+
+    # functions to convert between rad and deg
 
     @staticmethod
     def deg_to_rad(angle_deg):
