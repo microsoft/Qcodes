@@ -2,7 +2,7 @@
 Test suite for  instument.*
 """
 from unittest import TestCase
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, InstrumentBase
 from .instrument_mocks import DummyInstrument, MockParabola
 from qcodes.instrument.parameter import Parameter
 import gc
@@ -115,3 +115,17 @@ class TestInstrument(TestCase):
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
+
+class TestInstrumentBase(TestCase):
+    """
+    This class contains tests that are relevant to the InstrumentBase class.
+    """
+
+    def test_snapshot(self):
+        """Test snapshot method of InstrumentBase"""
+        instr = InstrumentBase('instr')
+
+        self.assertEqual(instr.name, 'instr')
+
+        instr.snapshot()
