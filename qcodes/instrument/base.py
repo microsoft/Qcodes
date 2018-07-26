@@ -107,7 +107,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                       "use a normal bound method instead.")
 
         if name in self.parameters:
-            raise KeyError('Duplicate function name {}'.format(name))
+            raise KeyError(f'A parameter with the name {name} already exists.')
         func = Function(name=name, instrument=self, **kwargs)
         self.__setattr__(func.name, func)
 
