@@ -613,6 +613,34 @@ class Instrument(InstrumentBase):
 
         return ins
 
+    @classmethod
+    def exist(cls, name: str, instrument_class: Optional[type]=None) -> bool:
+        """
+        Check if an instrument with a given names exists (i.e. is already
+        instantiated).
+
+        Args:
+            name: name of the instrument
+            instrument_class: The type of instrument you are looking for.
+        """
+        instrument_exists = True
+
+        try:
+            _ = Instrument.find_instrument(
+                name, instrument_class=instrument_class)
+
+        except KeyError as exception:
+            instrument_is_not_found = \
+                any(str_ in str(exception)
+                    for str_ in [name, 'has been removed'])
+
+            if instrument_is_not_found:
+                instrument_exists = False
+            else:
+                raise exception
+
+        return instrument_exists
+
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
@@ -701,11 +729,13 @@ class Instrument(InstrumentBase):
 def find_or_create_instrument(instrument_class: Type[Instrument],
                               name: str,
                               *args,
+                              recreate: bool=False,
                               **kwargs
                               ) -> Instrument:
     """
     Find an instrument with the given name of a given class, or create one if
-    it is not found.
+    it is not found. In case the instrument was found, and `recreate` is True,
+    the instrument will be re-instantiated.
 
     This function is very convenient because it allows not to bother about
     which instruments are already instantiated and which are not.
@@ -718,17 +748,22 @@ def find_or_create_instrument(instrument_class: Type[Instrument],
             Class of the instrument to find or create
         name
             Name of the instrument to find or create
+        recreate
+            When True, the instruments gets recreated if it is found
 
     Returns:
         The found or created instrument
     """
-    try:
+    if not Instrument.exist(name, instrument_class=instrument_class):
+        instrument = instrument_class(name, *args, **kwargs)
+    else:
         instrument = Instrument.find_instrument(
             name, instrument_class=instrument_class)
-        instrument.connect_message()  # prints the message
-    except KeyError as exception:
-        if any(str_ in str(exception) for str_ in [name, 'has been removed']):
+
+        if recreate:
+            instrument.close()
             instrument = instrument_class(name, *args, **kwargs)
         else:
-            raise exception
+            instrument.connect_message()  # prints the message
+
     return instrument

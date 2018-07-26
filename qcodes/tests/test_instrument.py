@@ -1,6 +1,7 @@
 """
 Test suite for  instument.*
 """
+import weakref
 from unittest import TestCase
 from qcodes.instrument.base import Instrument, find_or_create_instrument
 from .instrument_mocks import DummyInstrument, MockParabola
@@ -150,3 +151,26 @@ class TestFindOrCreateInstrument(TestCase):
             # of a string with instrument name
             _ = find_or_create_instrument(DummyInstrument, {})
         self.assertEqual(str(cm.exception), "unhashable type: 'dict'")
+
+    def test_recreate(self):
+        """Test the case when instrument needs to be recreated"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+        instr_ref = weakref.ref(instr)
+
+        self.assertListEqual(
+            ['instr'], list(Instrument._all_instruments.keys()))
+
+        instr_2 = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2'],
+            recreate=True
+        )
+        instr_2_ref = weakref.ref(instr_2)
+
+        self.assertListEqual(
+            ['instr'], list(Instrument._all_instruments.keys()))
+
+        self.assertIn(instr_2_ref, Instrument._all_instruments.values())
+        self.assertNotIn(instr_ref, Instrument._all_instruments.values())
+
+        instr_2.close()
