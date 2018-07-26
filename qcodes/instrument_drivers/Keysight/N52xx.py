@@ -56,14 +56,14 @@ class FormattedSweep(PNASweep):
                          setpoint_labels=('Frequency',),
                          setpoint_units=('Hz',)
                          )
-        self.sweep_format = format
+        self.sweep_format = sweep_format
         self.memory = memory
 
     def get_raw(self) -> Sequence[float]:
         root_instr = self._instrument.root_instrument
         # Check if we should run a new sweep
         if root_instr.auto_sweep():
-            prev_mode = self.run_sweep()
+            prev_mode = self._instrument.run_sweep()
         # Ask for data, setting the format to the requested form
         self._instrument.write(f'CALC:FORM {self.sweep_format}')
         data = np.array(root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA', datatype='f', is_big_endian=True))
@@ -72,26 +72,6 @@ class FormattedSweep(PNASweep):
             root_instr.sweep_mode(prev_mode)
 
         return data
-
-    def run_sweep(self) -> str:
-        root_instr = self._instrument.root_instrument
-        # Store previous mode
-        prev_mode = root_instr.sweep_mode()
-        # Take instrument out of continuous mode, and send triggers equal to the number of averages
-        if root_instr.averages_enabled:
-            avg = root_instr.averages()
-            root_instr.write('SENS:AVER:CLE')
-            root_instr.write('SENS:SWE:GRO:COUN {0}'.format(avg))
-            root_instr.root_instrument.sweep_mode('GRO')
-        else:
-            root_instr.root_instrument.sweep_mode('SING')
-
-        # Once the sweep mode is in hold, we know we're done
-        while root_instr.sweep_mode() != 'HOLD':
-            time.sleep(0.1)
-
-        # Return previous mode, incase we want to restore this
-        return prev_mode
 
 class PNAPort(InstrumentChannel):
     """
@@ -157,30 +137,60 @@ class PNATrace(InstrumentChannel):
 
         # And a list of individual formats
         self.add_parameter('magnitude',
-                           format='MLOG',
+                           sweep_format='MLOG',
                            label='Magnitude',
                            unit='dB',
                            parameter_class=FormattedSweep)
         self.add_parameter('linear_magnitude',
-                           format='MLIN',
+                           sweep_format='MLIN',
                            label='Magnitude',
                            unit='ratio',
                            parameter_class=FormattedSweep)
         self.add_parameter('phase',
-                           format='PHAS',
+                           sweep_format='PHAS',
                            label='Phase',
                            unit='deg',
                            parameter_class=FormattedSweep)
+        self.add_parameter('unwrapped_phase',
+                           sweep_format='UPH',
+                           label='Phase',
+                           unit='deg',
+                           parameter_class=FormattedSweep)
+        self.add_parameter("group_delay",
+                           sweep_format='GDEL',
+                           label='Group Delay',
+                           unit='s',
+                           parameter_class=FormattedSweep)
         self.add_parameter('real',
-                           format='REAL',
+                           sweep_format='REAL',
                            label='Real',
                            unit='LinMag',
                            parameter_class=FormattedSweep)
         self.add_parameter('imaginary',
-                           format='IMAG',
+                           sweep_format='IMAG',
                            label='Imaginary',
                            unit='LinMag',
                            parameter_class=FormattedSweep)
+
+    def run_sweep(self) -> str:
+        root_instr = self.root_instrument
+        # Store previous mode
+        prev_mode = root_instr.sweep_mode()
+        # Take instrument out of continuous mode, and send triggers equal to the number of averages
+        if root_instr.averages_enabled:
+            avg = root_instr.averages()
+            root_instr.write('SENS:AVER:CLE')
+            root_instr.write('SENS:SWE:GRO:COUN {0}'.format(avg))
+            root_instr.root_instrument.sweep_mode('GRO')
+        else:
+            root_instr.root_instrument.sweep_mode('SING')
+
+        # Once the sweep mode is in hold, we know we're done
+        while root_instr.sweep_mode() != 'HOLD':
+            time.sleep(0.1)
+
+        # Return previous mode, incase we want to restore this
+        return prev_mode
 
     def write(self, cmd: str) -> None:
         """
