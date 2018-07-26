@@ -3,7 +3,8 @@ import logging
 import time
 import warnings
 import weakref
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING, cast
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
+    TYPE_CHECKING, cast, Type
 
 import numpy as np
 if TYPE_CHECKING:
@@ -695,3 +696,39 @@ class Instrument(InstrumentBase):
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
+
+
+def find_or_create_instrument(instrument_class: type,
+                              name: str,
+                              *args,
+                              **kwargs
+                              ) -> Type[Instrument]:
+    """
+    Find an instrument with the given name of a given class, or create one if
+    it is not found.
+
+    This function is very convenient because it allows not to bother about
+    which instruments are already instantiated and which are not.
+
+    If an instrument is found, a connection message is printed, as if the
+    instrument has just been instantiated.
+
+    Args:
+        instrument_class
+            Class of the instrument to find or create
+        name
+            Name of the instrument to find or create
+
+    Returns:
+        The found or created instrument
+    """
+    try:
+        instrument = Instrument.find_instrument(
+            name, instrument_class=instrument_class)
+        instrument.connect_message()  # prints the message
+    except KeyError as exception:
+        if any(str_ in str(exception) for str_ in [name, 'has been removed']):
+            instrument = instrument_class(name, *args, **kwargs)
+        else:
+            raise exception
+    return instrument
