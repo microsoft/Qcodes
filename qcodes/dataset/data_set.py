@@ -267,7 +267,8 @@ class DataSet(Sized):
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def run_timestamp(self):
+    def run_timestamp(self) -> float:
+        """Returns run timestamp as number of seconds since the Epoch"""
         return get_run_timestamp_from_run_id(self.conn, self.run_id)
 
     def toggle_debug(self):
