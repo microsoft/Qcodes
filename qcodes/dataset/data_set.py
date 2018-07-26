@@ -254,7 +254,7 @@ class DataSet(Sized):
         return dict(zip(param_names, params))
 
     @property
-    def exp_id(self):
+    def exp_id(self) -> int:
         return select_one_where(self.conn, "runs",
                                 "exp_id", "run_id", self.run_id)
 
