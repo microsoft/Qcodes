@@ -122,10 +122,19 @@ class TestInstrumentBase(TestCase):
     This class contains tests that are relevant to the InstrumentBase class.
     """
 
-    def test_snapshot(self):
-        """Test snapshot method of InstrumentBase"""
+    def test_snapshot_and_meta_attrs(self):
+        """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
         instr = InstrumentBase('instr')
 
         self.assertEqual(instr.name, 'instr')
 
-        instr.snapshot()
+        self.assertTrue(hasattr(instr, '_meta_attrs'))
+        self.assertListEqual(instr._meta_attrs, ['name'])
+
+        snapshot = instr.snapshot()
+
+        self.assertIn('name', snapshot)
+        self.assertEqual('instr', snapshot['name'])
+
+        self.assertIn('__class__', snapshot)
+        self.assertIn('InstrumentBase', snapshot['__class__'])
