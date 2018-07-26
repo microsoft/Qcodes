@@ -121,6 +121,12 @@ class TestInstrument(TestCase):
 class TestFindOrCreateInstrument(TestCase):
     """Tests for find_or_create_instrument function"""
 
+    def setUp(self):
+        Instrument.close_all()
+
+    def tearDown(self):
+        Instrument.close_all()
+
     def test_find(self):
         """Test finding and existing instrument"""
         instr = DummyInstrument(
