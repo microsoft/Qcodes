@@ -1366,3 +1366,7 @@ def get_sample_name_from_experiment_id(
         conn: sqlite3.Connection, exp_id: int) -> str:
     return select_one_where(
         conn, "experiments", "sample_name", "exp_id", exp_id)
+
+
+def get_run_timestamp_from_run_id(conn: sqlite3.Connection, run_id: int) -> int:
+    return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
