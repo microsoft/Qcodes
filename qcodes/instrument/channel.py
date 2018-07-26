@@ -35,7 +35,6 @@ class InstrumentChannel(InstrumentBase):
 
         self.name = "{}_{}".format(parent.name, str(name))
         self.short_name = str(name)
-        self._meta_attrs = ['name']
 
         self._parent = parent
 
