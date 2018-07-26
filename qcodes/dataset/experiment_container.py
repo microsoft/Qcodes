@@ -240,3 +240,29 @@ def load_experiment_by_name(name: str,
     else:
         e.exp_id = rows[0]['exp_id']
     return e
+
+
+def load_or_create_experiment(experiment_name: str,
+                              sample_name: str
+                              ) -> Experiment:
+    """
+    Find and return an experiment with the given name and sample name,
+    or create one if not found.
+
+    Args:
+        experiment_name
+            Name of the experiment to find or create
+        sample_name
+            Name of the sample
+
+    Returns:
+        The found or created experiment
+    """
+    try:
+        experiment = load_experiment_by_name(experiment_name, sample_name)
+    except ValueError as exception:
+        if "Experiment not found" in str(exception):
+            experiment = new_experiment(experiment_name, sample_name)
+        else:
+            raise exception
+    return experiment
