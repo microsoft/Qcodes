@@ -78,6 +78,7 @@ from qcodes.dataset.experiment_container import new_experiment, load_experiment,
     load_last_experiment, experiments
 from qcodes.dataset.sqlite_settings import SQLiteSettings
 from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.database import initialise_database
 
 try:
     get_ipython() # type: ignore # Check if we are in iPython
