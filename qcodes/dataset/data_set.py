@@ -271,7 +271,6 @@ class DataSet(Sized):
         """Returns run timestamp as number of seconds since the Epoch"""
         return get_run_timestamp_from_run_id(self.conn, self.run_id)
 
-    @property
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format

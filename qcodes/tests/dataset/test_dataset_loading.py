@@ -89,7 +89,7 @@ def test_run_timestamp_with_default_format(empty_temp_db):
 
     # Note that here we also test the default format of `run_timestamp`
     actual_run_timestamp_raw = time.mktime(
-        time.strptime(ds.run_timestamp, "%Y-%m-%d %H:%M:%S"))
+        time.strptime(ds.run_timestamp(), "%Y-%m-%d %H:%M:%S"))
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison
