@@ -54,9 +54,6 @@ class Cryocon_26(VisaInstrument):
                                get_cmd='input? {}:offset'.format(channel),
                                get_parser=float)
 
-        self.add_function('stop_control_loops', call_cmd='stop')
-        self.add_function('start_control_loops', call_cmd='control')
-
         # TODO: check case of returned strings
         self.add_parameter('control_enabled',
                            get_cmd='control?',
@@ -151,3 +148,9 @@ class Cryocon_26(VisaInstrument):
                                set_cmd='loop {}:maxp {{}}'.format(loop),
                                vals=Numbers(0, 100),
                                unit='%')
+
+    def stop_control_loops(self) -> None:
+        self.write('stop')
+
+    def start_control_loops(self) -> None:
+        self.write('control')
