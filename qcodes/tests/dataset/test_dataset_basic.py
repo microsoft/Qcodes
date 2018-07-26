@@ -47,7 +47,7 @@ def dataset(experiment):
     dataset.conn.close()
 
 
-def test_tabels_exists(empty_temp_db):
+def test_tables_exist(empty_temp_db):
     print(qc.config["core"]["db_location"])
     conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
     cursor = conn.execute("select sql from sqlite_master where type = 'table'")
@@ -67,7 +67,7 @@ def test_initialise_database_at_for_nonexisting_db():
         assert os.path.exists(db_location)
         assert qc.config["core"]["db_location"] == db_location
 
-        test_tabels_exists(None)
+        test_tables_exist(None)
 
 
 def test_initialise_database_at_for_existing_db():
@@ -83,7 +83,7 @@ def test_initialise_database_at_for_existing_db():
         # Check if it has been created correctly
         assert os.path.exists(db_location)
         assert qc.config["core"]["db_location"] == db_location
-        test_tabels_exists(None)
+        test_tables_exist(None)
 
         # Call function under test
         initialise_or_create_database_at(db_location)
@@ -91,7 +91,7 @@ def test_initialise_database_at_for_existing_db():
         # Check if the DB is still correct
         assert os.path.exists(db_location)
         assert qc.config["core"]["db_location"] == db_location
-        test_tabels_exists(None)
+        test_tables_exist(None)
 
 
 @given(experiment_name=hst.text(min_size=1),
