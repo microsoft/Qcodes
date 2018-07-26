@@ -109,7 +109,6 @@ class TestChannels(TestCase):
 
     def test_clear_channels(self):
         channels = self.instrument.channels
-        original_length = len(channels)
         channels.clear()
         self.assertEqual(len(channels), 0)
 
