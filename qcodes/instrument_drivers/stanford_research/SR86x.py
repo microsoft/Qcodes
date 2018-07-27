@@ -1,25 +1,27 @@
 import numpy as np
-import time
 import logging
-from typing import Optional, Sequence, Dict
+from typing import Sequence, Dict, Callable
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Ints, Enum
 from qcodes.instrument.parameter import ArrayParameter
+from qcodes.utils.workarounds import visa_query_binary_values_fix_for
+
 
 log = logging.getLogger(__name__)
 
 
 class SR86xBufferReadout(ArrayParameter):
     """
-    The parameter array that holds read out data. We need this to be compatible with qcodes.Measure
+    The parameter array that holds read out data. We need this to be compatible
+    with qcodes.Measure
 
-    Args
-    ----
-        name (str)
-        instrument (SR86x): This argument is unused, but needed because the add_parameter method of the Instrument
-                            base class adds this as a kwarg.
+    Args:
+        name
+        instrument
+            This argument is unused, but needed because the add_parameter
+            method of the Instrument base class adds this as a kwarg.
     """
     def __init__(self, name: str, instrument: 'SR86x') ->None:
 
@@ -33,18 +35,18 @@ class SR86xBufferReadout(ArrayParameter):
                          setpoint_names=('Time',),
                          setpoint_labels=('Time',),
                          setpoint_units=('s',),
-                         docstring='Holds an acquired (part of the) data buffer of one channel.')
+                         docstring='Holds an acquired (part of the) data '
+                                   'buffer of one channel.')
 
         self.name = name
         self._capture_data = None
 
-    def prepare_readout(self, capture_data: np.array) ->None:
+    def prepare_readout(self, capture_data: np.array) -> None:
         """
         Prepare this parameter for readout.
 
-        Args
-        ----
-        capture_data (np.array)
+        Args:
+            capture_data
         """
         self._capture_data = capture_data
 
@@ -55,22 +57,24 @@ class SR86xBufferReadout(ArrayParameter):
         self.setpoint_labels = ('Sample number',)
         self.setpoints = (tuple(np.arange(0, data_len)),)
 
-    def get_raw(self) ->np.ndarray:
+    def get_raw(self) -> np.ndarray:
         """
         Public method to access the capture data
         """
         if self._capture_data is None:
-            err_str = "Cannot return data for parameter {}. Please prepare for ".format(self.name)
-            err_str = err_str + "readout by calling 'get_capture_data' with appropriate configuration settings"
-            raise ValueError(err_str)
+            raise ValueError(f"Cannot return data for parameter {self.name}. "
+                             f"Please prepare for readout by calling "
+                             f"'get_capture_data' with appropriate "
+                             f"configuration settings")
 
         return self._capture_data
 
 
 class SR86xBuffer(InstrumentChannel):
     """
-    The buffer module for the SR86x driver. This driver has been verified to work with the SR860 and SR865.
-    For reference, please consult the SR860 manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
+    The buffer module for the SR86x driver. This driver has been verified to
+    work with the SR860 and SR865. For reference, please consult the SR860
+    manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
     def __init__(self, parent: 'SR86x', name: str) ->None:
@@ -86,6 +90,11 @@ class SR86xBuffer(InstrumentChannel):
             get_parser=int,
             unit="kB"
         )
+        self.bytes_per_sample = 4
+        self.min_capture_length_in_kb = 1  # i.e. minimum buffer size
+        self.max_capture_length_in_kb = 4096  # i.e. maximum buffer size
+        # Maximum amount of kB that can be read per single CAPTUREGET command
+        self.max_size_per_reading_in_kb = 64
 
         self.add_parameter(  # Configure which parameters we want to capture
             "capture_config",
@@ -122,16 +131,25 @@ class SR86xBuffer(InstrumentChannel):
 
         self.add_parameter(
             "count_capture_bytes",
-            label="capture bytes",
+            label="captured bytes",
             get_cmd="CAPTUREBYTES?",
-            unit="B"
+            unit="B",
+            get_parser=int,
+            docstring="Number of bytes captured so far in the buffer. Can be "
+                      "used to track live progress."
         )
 
         self.add_parameter(
             "count_capture_kilobytes",
-            label="capture kilobytes",
+            label="captured kilobytes",
             get_cmd="CAPTUREPROG?",
-            unit="kB"
+            unit="kB",
+            docstring="Number of kilobytes captured so far in the buffer, "
+                      "rounded-up to 2 kilobyte chunks. Capture must be "
+                      "stopped before requesting the value of this "
+                      "parameter. If the acquisition wrapped during operating "
+                      "in Continuous mode, then the returned value is "
+                      "simply equal to the current capture length."
         )
 
         for parameter_name in ["X", "Y", "R", "T"]:
@@ -139,8 +157,6 @@ class SR86xBuffer(InstrumentChannel):
                 parameter_name,
                 parameter_class=SR86xBufferReadout
             )
-
-        self.bytes_per_sample = 4
 
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
@@ -156,99 +172,193 @@ class SR86xBuffer(InstrumentChannel):
         snapshot = super().snapshot_base(update, params_to_skip_update)
         return snapshot
 
-    @staticmethod
-    def _set_capture_len_parser(value: int) -> int:
+    def _set_capture_len_parser(self, capture_length_in_kb: int) -> int:
+        """
+        Parse the capture length in kB according to the way buffer treats it
+        (refer to the manual for details). The given value has to fit in the
+        range and has to be even, otherwise this function raises exceptions.
 
-        if value % 2:
-            log.warning("the capture length needs to be even. Setting to {}".format(value + 1))
-            value += 1
+        Args:
+            capture_length_in_kb: The desired capture length in kB.
 
-        if not 1 <= value <= 4096:
-            raise ValueError("the capture length should be between 1 and 4096")
+        Returns:
+            capture_length_in_kb
+        """
+        if capture_length_in_kb % 2:
+            raise ValueError("The capture length should be an even number")
 
-        return value
+        if not self.min_capture_length_in_kb \
+                <= capture_length_in_kb \
+                <= self.max_capture_length_in_kb:
+            raise ValueError(f"The capture length should be between "
+                             f"{self.min_capture_length_in_kb} and "
+                             f"{self.max_capture_length_in_kb}")
+
+        return capture_length_in_kb
+
+    def set_capture_rate_to_maximum(self) -> None:
+        """
+        Sets the capture rate to maximum. The maximum capture rate is
+        retrieved from the device, and depends on the current value of the
+        time constant.
+        """
+        self.capture_rate(self.capture_rate_max())
 
     def _set_capture_rate_parser(self, capture_rate_hz: float) -> int:
         """
-        According to the manual, the capture rate query returns a value in Hz, but then setting this value it is
-        expected to give a value n, where the capture rate in Hz is given by capture_rate_hz =  max_rate / 2 ** n.
-        Please see page 136 of the manual. Here n is an integer in the range [0, 20]
+        According to the manual, the capture rate query returns a value in
+        Hz, but then setting this value it is expected to give a value n,
+        where the capture rate in Hz is given by
+        capture_rate_hz =  max_rate / 2 ** n. Please see page 136 of the
+        manual. Here n is an integer in the range [0, 20].
 
         Args:
-            capture_rate_hz (float): The desired capture rate in Hz. If the desired rate is more then 1 Hz from the
-                                        nearest valid rate, a warning is issued and the nearest valid rate it used.
+            capture_rate_hz
+                The desired capture rate in Hz. If the desired rate is more
+                than 1 Hz from the nearest valid rate, a warning is issued
+                and the nearest valid rate it used.
 
         Returns:
-            n_round (int)
+            n_round
         """
         max_rate = self.capture_rate_max()
         n = np.log2(max_rate / capture_rate_hz)
         n_round = int(round(n))
 
         if not 0 <= n_round <= 20:
-            raise ValueError("The chosen frequency is invalid. Please consult the SR860 manual at page 136. The maximum"
-                             " capture rate is {}".format(max_rate))
+            raise ValueError(f"The chosen frequency is invalid. Please "
+                             f"consult the SR860 manual at page 136. "
+                             f"The maximum capture rate is {max_rate}")
 
         nearest_valid_rate = max_rate / 2 ** n_round
         if abs(capture_rate_hz - nearest_valid_rate) > 1:
-            log.warning("Warning: Setting capture rate to {:.5} Hz".format(nearest_valid_rate))
-            available_frequencies = ", ".join([str(f) for f in self.available_frequencies])
-            log.warning("The available frequencies are: {}".format(available_frequencies))
+            available_frequencies = ", ".join(
+                [str(f) for f in self.available_frequencies])
+            log.warning("Warning: Setting capture rate to {:.5} Hz"
+                        .format(nearest_valid_rate))
+            log.warning("The available frequencies are: {}"
+                        .format(available_frequencies))
 
         return n_round
 
     def start_capture(self, acquisition_mode: str, trigger_mode: str) -> None:
         """
-        Start an acquisition. Please see page 137 of the manual for a detailed explanation.
+        Start an acquisition. Please see page 137 of the manual for a detailed
+        explanation.
 
         Args:
-            acquisition_mode (str):  "ONE" | "CONT".
-            trigger_mode (str): IMM | TRIG | SAMP
+            acquisition_mode
+                "ONE" | "CONT"
+            trigger_mode
+                "IMM" | "TRIG" | "SAMP"
         """
 
         if acquisition_mode not in ["ONE", "CONT"]:
-            raise ValueError("The acquisition mode needs to be either 'ONE' or 'CONT'")
+            raise ValueError(
+                "The acquisition mode needs to be either 'ONE' or 'CONT'")
 
         if trigger_mode not in ["IMM", "TRIG", "SAMP"]:
-            raise ValueError("The trigger mode needs to be either 'IMM', 'TRIG' or 'SAMP'")
+            raise ValueError(
+                "The trigger mode needs to be either 'IMM', 'TRIG' or 'SAMP'")
 
-        cmd_str = "CAPTURESTART  {},{}".format(acquisition_mode, trigger_mode)
+        cmd_str = f"CAPTURESTART {acquisition_mode}, {trigger_mode}"
         self.write(cmd_str)
 
     def stop_capture(self):
-        """
-        Stop a capture
-        """
+        """Stop a capture"""
         self.write("CAPTURESTOP")
+
+    def _get_list_of_capture_variable_names(self):
+        """
+        Retrieve the list of names of variables (readouts) that are
+        set to be captured
+        """
+        return self.capture_config().split(",")
+
+    def _get_number_of_capture_variables(self):
+        """
+        Retrieve the number of variables (readouts) that are
+        set to be captured
+        """
+        capture_variables = self._get_list_of_capture_variable_names()
+        n_variables = len(capture_variables)
+        return n_variables
+
+    def _calc_capture_size_in_kb(self, sample_count: int) ->int:
+        """
+        Given the number of samples to capture, calculate the capture length
+        that the buffer needs to be set to in order to fit the requested
+        number of samples. Note that the number of activated readouts is
+        taken into account.
+        """
+        n_variables = self._get_number_of_capture_variables()
+        total_size_in_kb = int(
+            np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024)
+        )
+        # Make sure that the total size in kb is an even number, as expected by
+        # the instrument
+        if total_size_in_kb % 2:
+            total_size_in_kb += 1
+        return total_size_in_kb
+
+    def set_capture_length_to_fit_samples(self, sample_count: int) -> None:
+        """
+        Set the capture length of the buffer to fit the given number of
+        samples.
+
+        Args:
+            sample_count
+                Number of samples that the buffer has to fit
+        """
+        total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
+        self.capture_length_in_kb(total_size_in_kb)
+
+    def wait_until_samples_captured(self, sample_count: int) -> None:
+        """
+        Wait until the given number of samples is captured. This function
+        is blocking and has to be used with caution because it does not have
+        a timeout.
+
+        Args:
+            sample_count
+                Number of samples that needs to be captured
+        """
+        n_captured_bytes = 0
+        n_variables = self._get_number_of_capture_variables()
+        n_bytes_to_capture = sample_count * n_variables * self.bytes_per_sample
+        while n_captured_bytes < n_bytes_to_capture:
+            n_captured_bytes = self.count_capture_bytes()
 
     def get_capture_data(self, sample_count: int) -> dict:
         """
-        Read capture data from the buffer.
+        Read the given number of samples of the capture data from the buffer.
 
         Args:
-             sample_count (int): number of samples to read from the buffer
+            sample_count
+                number of samples to read from the buffer
 
         Returns:
-            data (dict): The keys in the dictionary is the variables we have captures. For instance, if before the
-                            capture we specify 'capture_config("X,Y")', then the keys will be "X" and "Y".
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
         """
-        capture_variables = self.capture_config().split(",")
-        n_variables = len(capture_variables)
+        total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
+        capture_variables = self._get_list_of_capture_variable_names()
+        n_variables = self._get_number_of_capture_variables()
 
-        total_size_in_kb = int(np.ceil(n_variables * sample_count * self.bytes_per_sample / 1024))
-        # We will samples one kb more then strictly speaking required and trim the data length to the requested
-        # sample count. In this way, we are always sure that the user requested number of samples is returned.
-        total_size_in_kb += 1
+        values = self._get_raw_capture_data(total_size_in_kb)
 
-        if total_size_in_kb > 64:
-            raise ValueError("Number of samples specified is larger then the buffer size")
-
-        values = self._parent.visa_handle.query_binary_values("CAPTUREGET? 0,{}".format(total_size_in_kb),
-                                                              datatype='f', is_big_endian=False)
-        values = np.array(values)
+        # Remove zeros which mark the end part of the buffer that is not
+        # filled with captured data
         values = values[values != 0]
 
-        data = {k: v for k, v in zip(capture_variables, values.reshape((-1, n_variables)).T)}
+        values = values.reshape((-1, n_variables)).T
+        values = values[:, :sample_count]
+
+        data = {k: v for k, v in zip(capture_variables, values)}
 
         for capture_variable in capture_variables:
             buffer_parameter = getattr(self, capture_variable)
@@ -256,24 +366,198 @@ class SR86xBuffer(InstrumentChannel):
 
         return data
 
-    def capture_samples(self, sample_count: int) ->dict:
+    def _get_raw_capture_data(self, size_in_kb: int) -> np.ndarray:
         """
-        Capture a number of samples. This convenience function provides an example how we use the start and stop
-        methods. We acquire the samples by sleeping for a time and then reading the buffer.
+        Read data from the buffer from its beginning avoiding the instrument
+        limit of 64 kilobytes per reading.
 
         Args:
-            sample_count (int)
+            size_in_kb
+                Size of the data that needs to be read; if it exceeds the
+                capture length, an exception is raised.
 
         Returns:
-            dict
+            A one-dimensional numpy array of the requested data. Note that the
+            returned array contains data for all the variables that are
+            mentioned in the capture config.
         """
-        capture_rate = self.capture_rate()
-        capture_time = sample_count / capture_rate
+        current_capture_length = self.capture_length_in_kb()
+        if size_in_kb > current_capture_length:
+            raise ValueError(f"The size of the requested data ({size_in_kb}kB) "
+                             f"is larger than current capture length of the "
+                             f"buffer ({current_capture_length}kB).")
 
-        self.start_capture("CONT", "IMM")
-        time.sleep(capture_time)
+        values = np.array([])
+        data_size_to_read_in_kb = size_in_kb
+        n_readings = 0
+
+        while data_size_to_read_in_kb > 0:
+            offset = n_readings * self.max_size_per_reading_in_kb
+
+            if data_size_to_read_in_kb > self.max_size_per_reading_in_kb:
+                size_of_this_reading = self.max_size_per_reading_in_kb
+            else:
+                size_of_this_reading = data_size_to_read_in_kb
+
+            data_from_this_reading = self._get_raw_capture_data_block(
+                size_of_this_reading,
+                offset_in_kb=offset)
+            values = np.append(values, data_from_this_reading)
+
+            data_size_to_read_in_kb -= size_of_this_reading
+            n_readings += 1
+
+        return values
+
+    def _get_raw_capture_data_block(self,
+                                    size_in_kb: int,
+                                    offset_in_kb: int=0
+                                    ) -> np.ndarray:
+        """
+        Read data from the buffer. The maximum amount of data that can be
+        read with this function (size_in_kb) is 64kB (this limitation comes
+        from the instrument). The offset argument can be used to navigate
+        along the buffer.
+
+        An exception will be raised if either size_in_kb or offset_in_kb are
+        longer that the *current* capture length (number of kB of data that is
+        captured so far rounded up to 2kB chunks). If (offset_in_kb +
+        size_in_kb) is longer than the *current* capture length,
+        the instrument returns the wrapped data.
+
+        For more information, refer to the description of the "CAPTUREGET"
+        command in the manual.
+
+        Args:
+            size_in_kb
+                Amount of data in kB that is to be read from the buffer
+            offset_in_kb
+                Offset within the buffer of where to read the data; for
+                example, when 0 is specified, the data is read from the start
+                of the buffer
+
+        Returns:
+            A one-dimensional numpy array of the requested data. Note that the
+            returned array contains data for all the variables that are
+            mentioned in the capture config.
+        """
+        if size_in_kb > self.max_size_per_reading_in_kb:
+            raise ValueError(f"The size of the requested data ({size_in_kb}kB) "
+                             f"is larger than maximum size that can be read "
+                             f"at once ({self.max_size_per_reading_in_kb}kB).")
+
+        # Calculate the size of the data captured so far, in kB, rounded up
+        # to 2kB chunks
+        size_of_currently_captured_data = int(
+            np.ceil(np.ceil(self.count_capture_bytes() / 1024) / 2) * 2
+        )
+
+        if size_in_kb > size_of_currently_captured_data:
+            raise ValueError(f"The size of the requested data ({size_in_kb}kB) "
+                             f"cannot be larger than the size of currently "
+                             f"captured data rounded up to 2kB chunks "
+                             f"({size_of_currently_captured_data}kB)")
+
+        if offset_in_kb > size_of_currently_captured_data:
+            raise ValueError(f"The offset for reading the requested data "
+                             f"({offset_in_kb}kB) cannot be larger than the "
+                             f"size of currently captured data rounded up to "
+                             f"2kB chunks "
+                             f"({size_of_currently_captured_data}kB)")
+
+        with visa_query_binary_values_fix_for(self._parent.visa_handle):
+            values = self._parent.visa_handle.query_binary_values(
+                f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
+                datatype='f',
+                is_big_endian=False)
+
+        return np.array(values)
+
+    def capture_one_sample_per_trigger(self,
+                                       trigger_count: int,
+                                       start_triggers_pulsetrain: Callable
+                                       ) -> dict:
+        """
+        Capture one sample per each trigger, and return when the specified
+        number of triggers has been received.
+
+        Args:
+            trigger_count
+                Number of triggers to capture samples for
+            start_triggers_pulsetrain
+                By calling this *non-blocking* function, the train of trigger
+                pulses should start
+
+        Returns:
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
+        """
+        self.set_capture_length_to_fit_samples(trigger_count)
+        self.start_capture("ONE", "SAMP")
+        start_triggers_pulsetrain()
+        self.wait_until_samples_captured(trigger_count)
         self.stop_capture()
+        return self.get_capture_data(trigger_count)
 
+    def capture_samples_after_trigger(self,
+                                      sample_count: int,
+                                      send_trigger: Callable
+                                      ) -> dict:
+        """
+        Capture a number of samples after a trigger has been received.
+        Please refer to page 135 of the manual for details.
+
+        Args:
+            sample_count
+                Number of samples to capture
+            send_trigger
+                By calling this *non-blocking* function, one trigger should
+                be sent that will initiate the capture
+
+        Returns:
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
+        """
+        self.set_capture_length_to_fit_samples(sample_count)
+        self.start_capture("ONE", "TRIG")
+        send_trigger()
+        self.wait_until_samples_captured(sample_count)
+        self.stop_capture()
+        return self.get_capture_data(sample_count)
+
+    def capture_samples(self, sample_count: int) -> dict:
+        """
+        Capture a number of samples at a capture rate, starting immediately.
+        Unlike the "continuous" capture mode, here the buffer does not get
+        overwritten with the new data once the buffer is full.
+
+        The function blocks until the required number of samples is acquired,
+        and returns them.
+
+        Args:
+            sample_count
+                Number of samples to capture
+
+        Returns:
+            data
+                The keys in the dictionary correspond to the captured
+                variables. For instance, if before the capture, the capture
+                config was set as 'capture_config("X,Y")', then the keys will
+                be "X" and "Y". The values in the dictionary are numpy arrays
+                of numbers.
+        """
+        self.set_capture_length_to_fit_samples(sample_count)
+        self.start_capture("ONE", "IMM")
+        self.wait_until_samples_captured(sample_count)
+        self.stop_capture()
         return self.get_capture_data(sample_count)
 
 
@@ -324,12 +608,15 @@ class SR86x(VisaInstrument):
                            get_cmd='FREQ?',
                            set_cmd='FREQ {}',
                            get_parser=float,
-                           vals=Numbers(min_value=1e-3, max_value=self._max_frequency))
+                           vals=Numbers(
+                               min_value=1e-3,
+                               max_value=self._max_frequency)
+                           )
         self.add_parameter(name='sine_outdc',
                            label='Sine out dc level',
                            unit='V',
                            get_cmd='SOFF?',
-                           set_cmd='SOFF {:.3f}',
+                           set_cmd='SOFF {}',
                            get_parser=float,
                            vals=Numbers(min_value=-5, max_value=5))
         self.add_parameter(name='amplitude',
@@ -447,6 +734,55 @@ class SR86x(VisaInstrument):
                                         100: 16, 300: 17,
                                         1e3: 18, 3e3: 19,
                                         10e3: 20, 30e3: 21})
+
+        self.add_parameter(
+            name="external_reference_trigger",
+            label="External reference trigger mode",
+            get_cmd="RTRG?",
+            set_cmd="RTRG {}",
+            val_mapping={
+                "SIN": 0,
+                "POS": 1,
+                "POSTTL": 1,
+                "NEG": 2,
+                "NEGTTL": 2,
+            },
+            docstring="The triggering mode for synchronization of the "
+                      "internal reference signal with the externally provided "
+                      "one"
+        )
+
+        self.add_parameter(
+            name="reference_source",
+            label="Reference source",
+            get_cmd="RSRC?",
+            set_cmd="RSRC {}",
+            val_mapping={
+                "INT": 0,
+                "EXT": 1,
+                "DUAL": 2,
+                "CHOP": 3
+            },
+            docstring="The source of the reference signal"
+        )
+
+        self.add_parameter(
+            name="external_reference_trigger_input_resistance",
+            label="External reference trigger input resistance",
+            get_cmd="REFZ?",
+            set_cmd="REFZ {}",
+            val_mapping={
+                "50": 0,
+                "50OHMS": 0,
+                0: 0,
+                "1M": 1,
+                "1MEG": 1,
+                1: 1,
+            },
+            docstring="Input resistance of the input for the external "
+                      "reference signal"
+        )
+
         # Auto functions
         self.add_function('auto_range', call_cmd='ARNG')
         self.add_function('auto_scale', call_cmd='ASCL')
@@ -518,6 +854,7 @@ class SR86x(VisaInstrument):
                            val_mapping={'OFF': 0,
                                         'X10': 1,
                                         'X100': 2})
+
         # Aux input/output
         for i in [0, 1, 2, 3]:
             self.add_parameter('aux_in{}'.format(i),
@@ -525,7 +862,6 @@ class SR86x(VisaInstrument):
                                get_cmd='OAUX? {}'.format(i),
                                get_parser=float,
                                unit='V')
-
             self.add_parameter('aux_out{}'.format(i),
                                label='Aux output {}'.format(i),
                                get_cmd='AUXV? {}'.format(i),

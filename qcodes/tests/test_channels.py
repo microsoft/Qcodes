@@ -1,17 +1,40 @@
+import logging
+
 from unittest import TestCase
 import unittest
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+import pytest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import ChannelList
-
-from hypothesis import given, settings
-import hypothesis.strategies as hst
 from qcodes.loops import Loop
 
-import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
+
+@pytest.fixture(scope='function')
+def dci():
+
+    dci = DummyChannelInstrument(name='dci')
+    yield dci
+    dci.close()
+
+
+def test_channels_call_function(dci, caplog):
+    """
+    Test that dci.channels.some_function() calls
+    some_function on each of the channels
+    """
+    with caplog.at_level(logging.DEBUG,
+                         logger='qcodes.tests.instrument_mocks'):
+        caplog.clear()
+        dci.channels.log_my_name()
+        mssgs = [rec.message for rec in caplog.records]
+        names = [ch.name.replace('dci_', '') for ch in dci.channels]
+        assert mssgs == names
 
 
 class TestChannels(TestCase):
@@ -106,6 +129,37 @@ class TestChannels(TestCase):
             channel = DummyChannel(self.instrument, 'Chan' + name, name)
             self.instrument.channels.insert(2, channel)
         self.assertEqual(len(self.instrument.channels), n_channels + 1)
+
+    def test_remove_channel(self):
+        channels = self.instrument.channels
+        chanA = self.instrument.A
+        original_length = len(channels.temperature())
+        channels.remove(chanA)
+        with self.assertRaises(AttributeError):
+            getattr(channels, chanA.short_name)
+        self.assertEqual(len(channels), original_length-1)
+        self.assertEqual(len(channels.temperature()), original_length-1)
+
+    def test_remove_locked_channel(self):
+        channels = self.instrument.channels
+        chanA = self.instrument.A
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.remove(chanA)
+
+    def test_remove_tupled_channel(self):
+        channel_tuple = tuple(
+            DummyChannel(self.instrument, f'Chan{C}', C)
+            for C in ('A', 'B', 'C', 'D', 'E', 'F')
+        )
+        channels = ChannelList(self.instrument,
+                               "TempSensorsTuple",
+                               DummyChannel,
+                               channel_tuple,
+                               snapshotable=False)
+        chanA = channels.ChanA
+        with self.assertRaises(AttributeError):
+            channels.remove(chanA)
 
     @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
     def test_combine_channels(self, setpoints):
@@ -257,7 +311,7 @@ class TestChannelsLoop(TestCase):
 
     @given(loop_channels=hst.lists(hst.integers(0, 3), min_size=2, max_size=2, unique=True),
            measure_channel=hst.integers(0, 3))
-    @settings(max_examples=10, deadline=400)
+    @settings(max_examples=10, deadline=800)
     def test_nested_loop_over_channels(self, loop_channels, measure_channel):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
         loop = Loop(self.instrument.channels[loop_channels[0]].temperature.sweep(0, 10, 0.5))
