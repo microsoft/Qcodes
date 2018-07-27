@@ -226,7 +226,7 @@ class ZNBChannel(InstrumentChannel):
                            parameter_class=FrequencySweep)
 
     def autoscale(self) -> None:
-        self.write(f'DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{self.tracename}"')
+        self.write(f'DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{self._tracename}"')
 
     def _set_format(self, val):
         unit_mapping = {'MLOG\n': 'dB',
