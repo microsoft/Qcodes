@@ -352,7 +352,8 @@ class PNABase(VisaInstrument):
         trace1 = PNATrace(self, "tr1", 1)
         for param in trace1.parameters.values():
             self.parameters[param.name] = param
-        # By default we should also pull any following values from this trace
+        # Set this trace to be the default (it's possible to end up in a situation where
+        # no traces are selected, causing parameter snapshots to fail)
         self.active_trace(1)
 
         # Set auto_sweep parameter
