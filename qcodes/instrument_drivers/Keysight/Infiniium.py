@@ -191,6 +191,17 @@ class MeasurementSubsystem(InstrumentChannel):
                            get_parser=float,
                            unit='V')
 
+        self.add_parameter(name='frequency',
+                           label='Signal frequency',
+                           get_cmd=self._meas('FREQuency'),
+                           get_parser=float,
+                           unit='Hz',
+                           docstring="""
+                                     measure the frequency of the first
+                                     complete cycle on the screen using
+                                     the mid-threshold levels of the waveform
+                                     """)
+
         self.add_parameter(name='lower',
                            label='Voltage lower',
                            get_cmd=self._meas('VLOWer'),
