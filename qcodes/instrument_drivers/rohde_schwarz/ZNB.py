@@ -455,7 +455,6 @@ class ZNB(VisaInstrument):
     def reset(self) -> None:
         self.write('*RST')
 
-
     def display_grid(self, rows: int, cols: int):
         """
         Display a grid of channels rows by cols
