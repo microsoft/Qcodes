@@ -196,14 +196,14 @@ class PNATrace(InstrumentChannel):
         """
         Select correct trace before querying
         """
-        super().active_trace(self.trace)
+        self.root_instrument.active_trace(self.trace)
         super().write(cmd)
 
     def ask(self, cmd: str) -> str:
         """
         Select correct trace before querying
         """
-        super().active_trace(self.trace)
+        self.root_instrument.active_trace(self.trace)
         return super().ask(cmd)
 
     @staticmethod
