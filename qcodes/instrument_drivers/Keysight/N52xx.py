@@ -196,14 +196,14 @@ class PNATrace(InstrumentChannel):
         """
         Select correct trace before querying
         """
-        super().write("CALC:PAR:MNUM {}".format(self.trace))
+        super().active_trace(self.trace)
         super().write(cmd)
 
     def ask(self, cmd: str) -> str:
         """
         Select correct trace before querying
         """
-        super().write("CALC:PAR:MNUM {}".format(self.trace))
+        super().active_trace(self.trace)
         return super().ask(cmd)
 
     @staticmethod
@@ -338,7 +338,13 @@ class PNABase(VisaInstrument):
                            vals=Enum("HOLD", "CONT", "GRO", "SING"))
 
         # Traces
-        # Note: These will be accessed through the traces property which updates
+        self.add_parameter('active_trace',
+                           label='Active Trace',
+                           get_cmd="CALC:PAR:MNUM?",
+                           get_parser=int,
+                           set_cmd="CALC:PAR:MNUM {}",
+                           vals=Numbers(min_value=1, max_value=24))
+        # Note: Traces will be accessed through the traces property which updates
         # the channellist to include only active trace numbers
         self._traces = ChannelList(self, "PNATraces", PNATrace)
         self.add_submodule("traces", self._traces)
@@ -347,28 +353,17 @@ class PNABase(VisaInstrument):
         for param in trace1.parameters.values():
             self.parameters[param.name] = param
         # By default we should also pull any following values from this trace
-        self.write("CALC:PAR:MNUM 1")
+        self.active_trace(1)
 
         # Set auto_sweep parameter
         # If we want to return multiple traces per setpoint without sweeping
         # multiple times, we should set this to false
-        self._auto_sweep = True
         self.add_parameter('auto_sweep',
                            label='Auto Sweep',
-                           set_cmd=self._set_auto_sweep,
-                           get_cmd=lambda: self._auto_sweep,
-                           vals=Bool())
-
-        # Functions
-        # Clear averages
-        self.add_function('reset_averages',
-                          call_cmd='SENS:AVER:CLE')
-        # Averages ON
-        self.add_function('averages_on',
-                          call_cmd='SENS:AVER ON')
-        # Averages OFF
-        self.add_function('averages_off',
-                          call_cmd='SENS:AVER OFF')
+                           set_cmd=None,
+                           get_cmd=None,
+                           vals=Bool(),
+                           initial_value=True)
 
         # A default output format on initialisation
         self.write('FORM REAL,32')
@@ -392,6 +387,24 @@ class PNABase(VisaInstrument):
     def get_options(self) -> Sequence[str]:
         # Query the instrument for what options are installed
         return self.ask('*OPT?').strip('"').split(',')
+
+    def reset_averages(self):
+        """
+        Reset averaging
+        """
+        self.write("SENS:AVER:CLE")
+
+    def averages_on(self):
+        """
+        Turn on trace averaging
+        """
+        self.averages_enabled(True)
+
+    def averages_off(self):
+        """
+        Turn off trace averaging
+        """
+        self.averages_enabled(False)
 
     def _set_auto_sweep(self, val: bool) -> None:
         self._auto_sweep = val
