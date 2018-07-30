@@ -839,6 +839,25 @@ def completed(conn: sqlite3.Connection, run_id)->bool:
                                  "run_id", run_id))
 
 
+def get_completed_timestamp_from_run_id(
+        conn: sqlite3.Connection, run_id: int) -> float:
+    """
+    Retrieve the timestamp when the given measurement run was completed
+
+    If the measurement run has not been marked as completed, then the returned
+    value is None.
+
+    Args:
+        conn: database connection
+        run_id: id of the run
+
+    Returns:
+        timestamp in seconds since the Epoch, or None
+    """
+    return select_one_where(conn, "runs", "completed_timestamp",
+                            "run_id", run_id)
+
+
 def finish_experiment(conn: sqlite3.Connection, exp_id: int):
     """ Finish experiment
 

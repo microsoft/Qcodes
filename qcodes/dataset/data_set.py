@@ -35,7 +35,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_metadata, one,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
-                                        get_run_timestamp_from_run_id)
+                                        get_run_timestamp_from_run_id,
+                                        get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -286,6 +287,16 @@ class DataSet(Sized):
         Consult with `time.strftime` for information about the format.
         """
         return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+
+    @property
+    def completed_timestamp_raw(self) -> float:
+        """
+        Returns timestamp when measurement run was completed
+        as number of seconds since the Epoch
+
+        If the run (or the dataset) is not completed, then returns None
+        """
+        return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
     def toggle_debug(self):
         """
