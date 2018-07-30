@@ -268,12 +268,20 @@ class DataSet(Sized):
 
     @property
     def run_timestamp_raw(self) -> float:
-        """Returns run timestamp as number of seconds since the Epoch"""
+        """
+        Returns run timestamp as number of seconds since the Epoch
+
+        The run timestamp is the moment when the measurement for this run
+        started.
+        """
         return get_run_timestamp_from_run_id(self.conn, self.run_id)
 
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format
+
+        The run timestamp is the moment when the measurement for this run
+        started.
 
         Consult with `time.strftime` for information about the format.
         """
