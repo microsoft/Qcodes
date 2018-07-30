@@ -98,3 +98,27 @@ def test_run_timestamp_with_default_format(empty_temp_db):
     assert t_before_data_set_secs \
            <= actual_run_timestamp_raw \
            <= t_after_data_set_secs + 1
+
+
+def test_completed_timestamp(empty_temp_db):
+    _ = new_experiment(name="for_loading", sample_name="no_sample")
+    ds = new_data_set("my_first_ds")
+
+    t_before_complete = time.time()
+    ds.mark_complete()
+    t_after_complete = time.time()
+
+    actual_completed_timestamp_raw = ds.completed_timestamp_raw
+
+    assert t_before_complete \
+           <= actual_completed_timestamp_raw \
+           <= t_after_complete
+
+
+def test_completed_timestamp_for_not_completed_dataset(empty_temp_db):
+    _ = new_experiment(name="for_loading", sample_name="no_sample")
+    ds = new_data_set("my_first_ds")
+
+    assert False is ds.completed
+
+    assert None is ds.completed_timestamp_raw
