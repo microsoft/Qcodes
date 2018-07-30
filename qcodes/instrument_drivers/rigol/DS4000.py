@@ -1,5 +1,5 @@
 import numpy as np
-import time, re, logging
+import time, re, logging, warnings
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Ints, Bool
@@ -7,6 +7,8 @@ from qcodes import ArrayParameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 from collections import namedtuple
+
+from distutils.version import LooseVersion
 
 log = logging.getLogger(__name__)
 
@@ -257,6 +259,6 @@ class DS4000(VisaInstrument):
         #Require version 00.02.03
 
         idn = self.get_idn()
-        ver = [int(x) for x in idn['firmware'].split('.')]
-        if ver < [0,2,3]:
-            raise RuntimeError('Firmware version must be at least 00.02.03')
+        ver = LooseVersion(idn['firmware'])
+        if ver < LooseVersion('00.02.03'):
+            warnings.warn('Firmware version should be at least 00.02.03, data transfert may not work correctly')
