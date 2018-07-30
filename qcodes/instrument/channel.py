@@ -280,6 +280,15 @@ class ChannelList(Metadatable):
         self._channels = cast(List[InstrumentChannel], self._channels)
         return self._channels.append(obj)
 
+    def clear(self):
+        """
+        Clear all items from the channel list.
+        """
+        if self._locked:
+            raise AttributeError("Cannot clear a locked channel list")
+        self._channels.clear()
+        self._channel_mapping.clear()
+
     def remove(self, obj: InstrumentChannel):
         """
         Removes obj from channellist if not locked.
