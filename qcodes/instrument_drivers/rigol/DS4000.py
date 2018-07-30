@@ -261,4 +261,5 @@ class DS4000(VisaInstrument):
         idn = self.get_idn()
         ver = LooseVersion(idn['firmware'])
         if ver < LooseVersion('00.02.03'):
-            warnings.warn('Firmware version should be at least 00.02.03, data transfert may not work correctly')
+            warnings.warn('Firmware version should be at least 00.02.03,'
+                          'data transfer may not work correctly')
