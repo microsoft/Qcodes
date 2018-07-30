@@ -77,7 +77,7 @@ def test_run_timestamp(empty_temp_db):
 
     actual_run_timestamp_raw = ds.run_timestamp_raw
 
-    assert t_before_data_set < actual_run_timestamp_raw < t_after_data_set
+    assert t_before_data_set <= actual_run_timestamp_raw <= t_after_data_set
 
 
 def test_run_timestamp_with_default_format(empty_temp_db):
