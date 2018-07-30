@@ -298,6 +298,26 @@ class DataSet(Sized):
         """
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
+    def completed_timestamp(self,
+                            fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
+        """
+        Returns timestamp when measurement run was completed
+        in a human-readable format
+
+        If the run (or the dataset) is not completed, then returns None.
+
+        Consult with `time.strftime` for information about the format.
+        """
+        completed_timestamp_raw = self.completed_timestamp_raw
+
+        if completed_timestamp_raw:
+            completed_timestamp = time.strftime(
+                fmt, time.localtime(completed_timestamp_raw))
+        else:
+            completed_timestamp = None
+
+        return completed_timestamp
+
     def toggle_debug(self):
         """
         Toggle debug mode, if debug mode is on

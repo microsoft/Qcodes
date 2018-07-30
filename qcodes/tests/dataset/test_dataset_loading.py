@@ -122,3 +122,26 @@ def test_completed_timestamp_for_not_completed_dataset(empty_temp_db):
     assert False is ds.completed
 
     assert None is ds.completed_timestamp_raw
+
+    assert None is ds.completed_timestamp()
+
+
+def test_completed_timestamp_with_default_format(empty_temp_db):
+    _ = new_experiment(name="for_loading", sample_name="no_sample")
+    ds = new_data_set("my_first_ds")
+
+    t_before_complete = time.time()
+    ds.mark_complete()
+    t_after_complete = time.time()
+
+    # Note that here we also test the default format of `completed_timestamp`
+    actual_completed_timestamp_raw = time.mktime(
+        time.strptime(ds.completed_timestamp(), "%Y-%m-%d %H:%M:%S"))
+
+    # Note that because the default format precision is 1 second, we add this
+    # second to the right side of the comparison
+    t_before_complete_secs = floor(t_before_complete)
+    t_after_complete_secs = floor(t_after_complete)
+    assert t_before_complete_secs \
+           <= actual_completed_timestamp_raw \
+           <= t_after_complete_secs + 1
