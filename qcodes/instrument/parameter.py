@@ -1727,12 +1727,10 @@ class ScaledParameter(Parameter):
         """
         Set the value on the wrapped parameter, accounting for the scaling
         """
-
-        # disable type check due to https://github.com/python/mypy/issues/2128
         if self.role == ScaledParameter.Role.GAIN:
-            instrument_value = value / self._multiplier() # type: ignore
+            instrument_value = value / self._multiplier()
         elif self.role == ScaledParameter.Role.DIVISION:
-            instrument_value = value * self._multiplier() # type: ignore
+            instrument_value = value * self._multiplier()
 
         # don't leak unknow type
         instrument_value = cast(Union[int, float], instrument_value)
