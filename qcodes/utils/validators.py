@@ -190,7 +190,6 @@ class Numbers(Validator):
             raise TypeError('min_value must be a number')
 
         valuesok = max_value > min_value  # type: ignore
-        valuesok = cast(bool, valuesok)
 
         if isinstance(max_value, self.validtypes) and valuesok:
             self._max_value = max_value
@@ -407,7 +406,7 @@ class PermissiveMultiples(Validator):
             # multiply our way out of the problem by constructing true
             # multiples in the relevant range and see if `value` is one
             # of them (within rounding errors)
-            divs = int(divmod(value, self.divisor)[0]) # type: ignore
+            divs = int(divmod(value, self.divisor)[0])
             true_vals = np.array([n*self.divisor for n in range(divs, divs+2)])
             abs_errs = [abs(tv-value) for tv in true_vals]
             if min(abs_errs) > self.precision:
@@ -492,7 +491,6 @@ class Arrays(Validator):
             raise TypeError('min_value must be a number')
 
         valuesok = max_value > min_value  # type: ignore
-        valuesok = cast(bool, valuesok)
 
         if isinstance(max_value, self.validtypes) and valuesok:
             self._max_value = max_value

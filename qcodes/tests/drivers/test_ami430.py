@@ -1,5 +1,6 @@
 import io
 import numpy as np
+import re
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import floats
@@ -263,19 +264,18 @@ def test_measured(current_driver, set_target):
                                      cartesian_z])
 
 
-def get_time_dict(messages: List[str]) -> Dict[str, float]:
-    """
-    Helper function used in test_ramp_down_first
-    """
-    relevant_messages = [line for line in messages
-                         if 'CONF:FIELD:TARG' in line]
-    time_dict = {}
-    for rm in relevant_messages:
-        time = rm.split(' - ')[0]
-        name = rm[rm.find(':')-1: rm.find(':')]
-        time_dict.update({name: float(time)})
+def get_ramp_down_order(messages: List[str]) -> List[str]:
+    order = []
 
-    return time_dict
+    for msg in messages:
+        if "CONF:FIELD:TARG" not in msg:
+            continue
+
+        g = re.search("(.): CONF:FIELD:TARG", msg)
+        name = g.groups()[0]
+        order.append(name)
+
+    return order
 
 
 def test_ramp_down_first(current_driver):
@@ -307,12 +307,10 @@ def test_ramp_down_first(current_driver):
         current_driver.cartesian(set_point)
         # get the logging outputs from the instruments.
         messages = get_messages(iostream)
-        # extract the time stamps
-        times = get_time_dict(messages)
-
-        for ramp_up_name in np.delete(names, count):
-            # ramp down occurs before ramp up.
-            assert times[ramp_down_name] < times[ramp_up_name]
+        # get the order in which the ramps down occur
+        order = get_ramp_down_order(messages)
+        # the first one should be the one for which delta < 0
+        assert order[0] == names[count]
 
 
 def test_field_limit_exception(current_driver):
@@ -341,6 +339,9 @@ def test_field_limit_exception(current_driver):
                 current_driver.cartesian(set_point)
 
             assert "field would exceed limit" in excinfo.value.args[0]
+            assert not all([a == b for a, b in zip(
+                current_driver.cartesian(), set_point
+            )])
 
 
 def test_cylindrical_poles(current_driver):
@@ -412,3 +413,4 @@ def test_ramp_rate_exception(current_driver):
         errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
 
         assert errmsg in excinfo.value.args[0]
+
