@@ -175,25 +175,25 @@ class MeasurementSubsystem(InstrumentChannel):
 
         self.add_parameter(name='amplitude',
                            label='Voltage amplitude',
-                           get_cmd=self._meas('VAMPlitude'),
+                           get_cmd=self._make_meas_cmd('VAMPlitude'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='average',
                            label='Voltage average',
-                           get_cmd=self._meas('VAVerage'),
+                           get_cmd=self._make_meas_cmd('VAVerage'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='base',
                            label='Statistical base',
-                           get_cmd=self._meas('VBASe'),
+                           get_cmd=self._make_meas_cmd('VBASe'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='frequency',
                            label='Signal frequency',
-                           get_cmd=self._meas('FREQuency'),
+                           get_cmd=self._make_meas_cmd('FREQuency'),
                            get_parser=float,
                            unit='Hz',
                            docstring="""
@@ -204,53 +204,54 @@ class MeasurementSubsystem(InstrumentChannel):
 
         self.add_parameter(name='lower',
                            label='Voltage lower',
-                           get_cmd=self._meas('VLOWer'),
+                           get_cmd=self._make_meas_cmd('VLOWer'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='max',
                            label='Voltage maximum',
-                           get_cmd=self._meas('VMAX'),
+                           get_cmd=self._make_meas_cmd('VMAX'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='middle',
                            label='Middle threshold voltage',
-                           get_cmd=self._meas('VMIDdle'),
+                           get_cmd=self._make_meas_cmd('VMIDdle'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='min',
                            label='Voltage minimum',
-                           get_cmd=self._meas('VMIN'),
+                           get_cmd=self._make_meas_cmd('VMIN'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='overshoot',
                            label='Voltage overshoot',
-                           get_cmd=self._meas('VOVershoot'),
+                           get_cmd=self._make_meas_cmd('VOVershoot'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='vpp',
                            label='Voltage peak-to-peak',
-                           get_cmd=self._meas('VPP'),
+                           get_cmd=self._make_meas_cmd('VPP'),
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='rms',
                            label='Voltage RMS',
-                           get_cmd=self._meas('VRMS') + ' DISPlay, DC',
+                           get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, DC',
                            get_parser=float,
                            unit='V')
 
         self.add_parameter(name='rms_no_DC',
                            label='Voltage RMS',
-                           get_cmd=self._meas('VRMS') + ' DISPlay, AC',
+                           get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, AC',
                            get_parser=float,
                            unit='V')
 
-    def _meas(self, cmd: str) -> str:
+    @staticmethod
+    def _make_meas_cmd(cmd: str) -> str:
         """
         Helper function to avoid typos
         """
@@ -504,7 +505,6 @@ class Infiniium(VisaInstrument):
                             unit='s',
                             get_parser=float
                             )
-
 
         # time of the first point
         self.add_parameter('waveform_xorigin',
