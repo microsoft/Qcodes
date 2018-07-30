@@ -289,12 +289,12 @@ class DataSet(Sized):
         return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
-    def completed_timestamp_raw(self) -> float:
+    def completed_timestamp_raw(self) -> Union[float, None]:
         """
         Returns timestamp when measurement run was completed
         as number of seconds since the Epoch
 
-        If the run (or the dataset) is not completed, then returns None
+        If the run (or the dataset) is not completed, then returns None.
         """
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
