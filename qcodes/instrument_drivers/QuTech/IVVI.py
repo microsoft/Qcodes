@@ -121,9 +121,6 @@ class IVVI(VisaInstrument):
 
         # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
-        for i in range(int(self._numdacs / 4)):
-            self.set_pol_dacrack(polarity[i], np.arange(1 + i * 4, 1 + (i + 1) * 4),
-                                 get_all=False)
 
         for i in range(1, numdacs + 1):
             self.add_parameter(
@@ -137,6 +134,10 @@ class IVVI(VisaInstrument):
                 step=dac_step,
                 inter_delay=dac_delay,
                 max_val_age=10)
+            
+        for i in range(int(self._numdacs / 4)):
+            self.set_pol_dacrack(polarity[i], np.arange(1 + i * 4, 1 + (i + 1) * 4),
+                                 get_all=False)
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
