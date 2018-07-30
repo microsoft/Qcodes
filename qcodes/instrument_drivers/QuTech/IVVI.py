@@ -134,7 +134,7 @@ class IVVI(VisaInstrument):
                 step=dac_step,
                 inter_delay=dac_delay,
                 max_val_age=10)
-            
+
         for i in range(int(self._numdacs / 4)):
             self.set_pol_dacrack(polarity[i], np.arange(1 + i * 4, 1 + (i + 1) * 4),
                                  get_all=False)
