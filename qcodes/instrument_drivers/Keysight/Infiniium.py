@@ -165,31 +165,36 @@ class MeasurementSubsystem(InstrumentChannel):
                            label='Measurement primary source',
                            set_cmd=partial(self._set_source, 1),
                            get_cmd=partial(self._get_source, 1),
-                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)})
+                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)},
+                           snapshot_value=False)
 
         self.add_parameter(name='source_2',
                            label='Measurement secondary source',
                            set_cmd=partial(self._set_source, 2),
                            get_cmd=partial(self._get_source, 2),
-                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)})
+                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)},
+                           snapshot_value=False)
 
         self.add_parameter(name='amplitude',
                            label='Voltage amplitude',
                            get_cmd=self._make_meas_cmd('VAMPlitude'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='average',
                            label='Voltage average',
                            get_cmd=self._make_meas_cmd('VAVerage'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='base',
                            label='Statistical base',
                            get_cmd=self._make_meas_cmd('VBASe'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='frequency',
                            label='Signal frequency',
@@ -200,55 +205,64 @@ class MeasurementSubsystem(InstrumentChannel):
                                      measure the frequency of the first
                                      complete cycle on the screen using
                                      the mid-threshold levels of the waveform
-                                     """)
+                                     """,
+                           snapshot_value=False)
 
         self.add_parameter(name='lower',
                            label='Voltage lower',
                            get_cmd=self._make_meas_cmd('VLOWer'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='max',
                            label='Voltage maximum',
                            get_cmd=self._make_meas_cmd('VMAX'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='middle',
                            label='Middle threshold voltage',
                            get_cmd=self._make_meas_cmd('VMIDdle'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='min',
                            label='Voltage minimum',
                            get_cmd=self._make_meas_cmd('VMIN'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='overshoot',
                            label='Voltage overshoot',
                            get_cmd=self._make_meas_cmd('VOVershoot'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='vpp',
                            label='Voltage peak-to-peak',
                            get_cmd=self._make_meas_cmd('VPP'),
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='rms',
                            label='Voltage RMS',
                            get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, DC',
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
         self.add_parameter(name='rms_no_DC',
                            label='Voltage RMS',
                            get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, AC',
                            get_parser=float,
-                           unit='V')
+                           unit='V',
+                           snapshot_value=False)
 
     @staticmethod
     def _make_meas_cmd(cmd: str) -> str:
