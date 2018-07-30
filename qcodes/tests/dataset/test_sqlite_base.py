@@ -54,6 +54,11 @@ def test_insert_many_values_raises(experiment):
                                values=[[1], [1, 3]])
 
 
+def test_get_metadata_raises(experiment):
+    with pytest.raises(OperationalError, match="no such column: something"):
+        mut.get_metadata(experiment.conn, 'something', 'results')
+
+
 @given(table_name=hst.text(max_size=50))
 def test__validate_table_raises(table_name):
     should_raise = False
