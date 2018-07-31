@@ -49,7 +49,7 @@ class ZIUHFLI(_ZILI_generic):
                         'Phi Demod 8': 11}
             param = getattr(self, f'demod{demod}_signalin')
             param.val_mapping = dmsigins
-            param.vals = vals.Enum(*list(dmsigins.keys())
+            param.vals = vals.Enum(*list(dmsigins.keys()))
 
             dmtrigs = {'Continuous': 0,
                        'Trigger in 3 Rise': 1,
@@ -69,7 +69,7 @@ class ZIUHFLI(_ZILI_generic):
                        'Trigger in 3|4 Low': 80}
             param = getattr(self, f'demod{demod}_trigger')
             param.val_mapping = dmtrigs
-            param.vals = vals.Enum(*list(dmtrigs.keys())
+            param.vals = vals.Enum(*list(dmtrigs.keys()))
 
         ########################################
         # SIGNAL INPUTS
@@ -83,7 +83,7 @@ class ZIUHFLI(_ZILI_generic):
                           'Input 2 - Input 1': 3}         
             param = getattr(self, f'signal_input{sigin}_diff')
             param.val_mapping = sigindiffs
-            param.vals = vals.Enum(*list(sigindiffs.keys())
+            param.vals = vals.Enum(*list(sigindiffs.keys()))
 
         ########################################
         # SIGNAL OUTPUTS
