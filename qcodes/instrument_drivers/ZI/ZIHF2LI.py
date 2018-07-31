@@ -28,7 +28,7 @@ class ZIHF2LI(_ZILI_generic):
         DIO1_LOW = 128
 
 
-    def __init__(self, name: str, device_ID: str, **kwargs):
+    def __init__(self, name: str, device_ID: str, **kwargs) -> None:
         super().__init__(name, device_ID, api_level=1, **kwargs)
 
         #TODO: Add check for MF option
