@@ -68,8 +68,6 @@ class ZIHF2LI(_ZILI_generic):
             param = getattr(self, f'signal_input{sigin}_range')
             param.vals = vals.Numbers(0.0001, 2)
 
-            del self.parameters[f'signal_input{sigin}_scaling']
-  
             param = getattr(self, f'signal_input{sigin}_diff')
             param.val_mapping = {'ON': 1, 'OFF': 0}
             param.vals = vals.Enum('ON', 'OFF')
@@ -77,9 +75,6 @@ class ZIHF2LI(_ZILI_generic):
         ########################################
         # SIGNAL OUTPUTS
         for sigout in range(1,3):
-            del self.parameters[f'signal_output{sigout}_imp50']
-            del self.parameters[f'signal_output{sigout}_autorange']
-
             param = getattr(self, f'signal_output{sigout}_range')
             param.vals = vals.Enum(0.01, 0.1, 1, 10)
 

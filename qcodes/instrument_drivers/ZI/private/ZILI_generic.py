@@ -831,14 +831,6 @@ class _ZILI_generic(Instrument):
                                                sigin-1, 1, 'range'),
                                unit='V')
 
-            self.add_parameter('signal_input{}_scaling'.format(sigin),
-                               label='Input scaling',
-                               set_cmd=partial(self._setter, 'sigins',
-                                               sigin-1, 1, 'scaling'),
-                               get_cmd=partial(self._getter, 'sigins',
-                                               sigin-1, 1, 'scaling'),
-                               )
-
             self.add_parameter('signal_input{}_AC'.format(sigin),
                                label='AC coupling',
                                set_cmd=partial(self._setter,'sigins',
@@ -880,15 +872,6 @@ class _ZILI_generic(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
-            self.add_parameter('signal_output{}_imp50'.format(sigout),
-                                label='Switch to turn on 50 Ohm impedance',
-                                set_cmd=partial(self._sigout_setter,
-                                                sigout-1, 0, 'imp50'),
-                                get_cmd=partial(self._sigout_getter,
-                                                sigout-1, 0, 'imp50'),
-                                val_mapping={'ON': 1, 'OFF': 0},
-                                vals=vals.Enum('ON', 'OFF') )
-
             amp_node = f'amplitudes/{out_map[sigout]}'
             self.add_parameter('signal_output{}_amplitude'.format(sigout),
                                 label='Signal output amplitude',
@@ -918,15 +901,6 @@ class _ZILI_generic(Instrument):
                                 get_cmd=partial(self._sigout_getter,
                                                 sigout-1, 1, 'offset'),
                                 unit='V')
-
-            self.add_parameter('signal_output{}_autorange'.format(sigout),
-                                label='Enable signal output range.',
-                                set_cmd=partial(self._sigout_setter,
-                                                sigout-1, 0, 'autorange'),
-                                get_cmd=partial(self._sigout_getter,
-                                                sigout-1, 0, 'autorange'),
-                                val_mapping={'ON': 1, 'OFF': 0},
-                                vals=vals.Enum('ON', 'OFF') )
 
             out_enable_node = f'enables/{out_map[sigout]}'
             self.add_parameter('signal_output{}_enable'.format(sigout),

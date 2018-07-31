@@ -79,6 +79,14 @@ class ZIUHFLI(_ZILI_generic):
             param = getattr(self, f'signal_input{sigin}_range')
             param.vals = vals.Numbers(0.0001, 2)
 
+            self.add_parameter('signal_input{}_scaling'.format(sigin),
+                               label='Input scaling',
+                               set_cmd=partial(self._setter, 'sigins',
+                                               sigin-1, 1, 'scaling'),
+                               get_cmd=partial(self._getter, 'sigins',
+                                               sigin-1, 1, 'scaling'),
+                               )
+
             sigindiffs = {'Off': 0, 'Inverted': 1, 'Input 1 - Input 2': 2,
                           'Input 2 - Input 1': 3}         
             param = getattr(self, f'signal_input{sigin}_diff')
@@ -90,3 +98,21 @@ class ZIUHFLI(_ZILI_generic):
         for sigout in range(1,3):
             param = getattr(self, f'signal_output{sigout}_offset')
             param.vals = vals.Numbers(-1.5, 1.5)
+
+            self.add_parameter('signal_output{}_imp50'.format(sigout),
+                   label='Switch to turn on 50 Ohm impedance',
+                   set_cmd=partial(self._sigout_setter,
+                                   sigout - 1, 0, 'imp50'),
+                   get_cmd=partial(self._sigout_getter,
+                                   sigout - 1, 0, 'imp50'),
+                   val_mapping={'ON': 1, 'OFF': 0},
+                   vals=vals.Enum('ON', 'OFF'))
+
+            self.add_parameter('signal_output{}_autorange'.format(sigout),
+                   label='Enable signal output range.',
+                   set_cmd=partial(self._sigout_setter,
+                                   sigout - 1, 0, 'autorange'),
+                   get_cmd=partial(self._sigout_getter,
+                                   sigout - 1, 0, 'autorange'),
+                   val_mapping={'ON': 1, 'OFF': 0},
+                   vals=vals.Enum('ON', 'OFF'))
