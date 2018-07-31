@@ -107,9 +107,11 @@ class ParamSpec:
         if not isinstance(other, ParamSpec):
             return False
 
-        for attr in ['name', 'type', 'label', 'unit', '_inferred_from',
-                     '_depends_on']:
+        for attr in ['name', 'type', 'label', 'unit']:
             if not getattr(self, attr) == getattr(other, attr):
+                return False
+        for attr in ['_inferred_from', '_depends_on']:
+            if not sorted(getattr(self, attr)) == sorted(getattr(other, attr)):
                 return False
 
         return True
