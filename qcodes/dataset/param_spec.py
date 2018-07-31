@@ -102,3 +102,14 @@ class ParamSpec:
 
     def __repr__(self):
         return f"{self.name} ({self.type})"
+
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpec):
+            return False
+
+        for attr in ['name', 'type', 'label', 'unit', '_inferred_from',
+                     '_depends_on']:
+            if not getattr(self, attr) == getattr(other, attr):
+                return False
+
+        return True
