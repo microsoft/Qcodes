@@ -32,7 +32,11 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         VALUE, VALUES, get_data,
                                         get_values,
                                         get_setpoints,
-                                        get_metadata, one)
+                                        get_metadata, one,
+                                        get_experiment_name_from_experiment_id,
+                                        get_sample_name_from_experiment_id,
+                                        get_run_timestamp_from_run_id,
+                                        get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -251,10 +255,68 @@ class DataSet(Sized):
         return dict(zip(param_names, params))
 
     @property
-    def exp_id(self):
+    def exp_id(self) -> int:
         return select_one_where(self.conn, "runs",
                                 "exp_id", "run_id", self.run_id)
 
+    @property
+    def exp_name(self) -> str:
+        return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
+
+    @property
+    def sample_name(self) -> str:
+        return get_sample_name_from_experiment_id(self.conn, self.exp_id)
+
+    @property
+    def run_timestamp_raw(self) -> float:
+        """
+        Returns run timestamp as number of seconds since the Epoch
+
+        The run timestamp is the moment when the measurement for this run
+        started.
+        """
+        return get_run_timestamp_from_run_id(self.conn, self.run_id)
+
+    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
+        """
+        Returns run timestamp in a human-readable format
+
+        The run timestamp is the moment when the measurement for this run
+        started.
+
+        Consult with `time.strftime` for information about the format.
+        """
+        return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+
+    @property
+    def completed_timestamp_raw(self) -> Union[float, None]:
+        """
+        Returns timestamp when measurement run was completed
+        as number of seconds since the Epoch
+
+        If the run (or the dataset) is not completed, then returns None.
+        """
+        return get_completed_timestamp_from_run_id(self.conn, self.run_id)
+
+    def completed_timestamp(self,
+                            fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
+        """
+        Returns timestamp when measurement run was completed
+        in a human-readable format
+
+        If the run (or the dataset) is not completed, then returns None.
+
+        Consult with `time.strftime` for information about the format.
+        """
+        completed_timestamp_raw = self.completed_timestamp_raw
+
+        if completed_timestamp_raw:
+            completed_timestamp = time.strftime(
+                fmt, time.localtime(completed_timestamp_raw))
+        else:
+            completed_timestamp = None
+
+        return completed_timestamp
 
     def toggle_debug(self):
         """
