@@ -1,5 +1,6 @@
 from typing import List, Union, cast
 from itertools import combinations
+import json
 
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.data_set import new_data_set, load_by_id
@@ -44,11 +45,16 @@ def merge(datasets: List[Union[int, DataSet]]) -> DataSet:
 
     # Step 3: fill in the data of the old datasets
     results = []
+    snapshots = {}
     for ds in dsets:
         params = ds.get_parameters()
         data = ds.get_data(*params)
         for data_point in data:
             results.append({p.name: val for p, val in zip(params, data_point)})
+        snapshot = ds.get_metadata('snapshot')
+        snapshot = "{}" if snapshot is None else snapshot
+        snapshots[ds.run_id] = json.loads(snapshot)
     new_ds.add_results(results)
+    new_ds.add_metadata('parent_snapshots', json.dumps(snapshots))
 
     return new_ds
