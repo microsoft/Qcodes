@@ -285,7 +285,7 @@ class LakeshoreBase(VisaInstrument):
 
     def __init__(self, name: str, address: str,
                  terminator: str ='\r\n', **kwargs) -> None:
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
         # Allow access to channels either by referring to the channel name
         # or through a channel list.
         # i.e. instr.A.temperature() and instr.channels[0].temperature()
