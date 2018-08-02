@@ -10,6 +10,7 @@ from qcodes.utils import validators
 
 log = logging.getLogger(__name__)
 
+
 class GroupParameter(Parameter):
     def __init__(self, name, instrument, **kwargs):
         self.group = None
@@ -69,11 +70,11 @@ class Group():
 VAL_MAP_TYPE = ClassVar[Dict[str, int]]
 INVERSE_VAL_MAP_TYPE = ClassVar[Dict[int, str]]
 
+
 class BaseOutput(InstrumentChannel):
 
     MODES: ClassVar[Dict[str, int]] = {}
     RANGES: ClassVar[Dict[str, int]] = {}
-
 
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name)
@@ -224,6 +225,7 @@ class BaseOutput(InstrumentChannel):
                       f'{t_reading}, delta:{delta}')
             time.sleep(wait_cycle_time)
 
+
 class BaseSensorChannel(InstrumentChannel):
 
     def __init__(self, parent, name, channel):
@@ -270,8 +272,6 @@ class BaseSensorChannel(InstrumentChannel):
                            label='Sensor_Name')
 
 
-
-
 class LakeshoreBase(VisaInstrument):
     """
     This Base class has been written to be that base for the
@@ -281,7 +281,7 @@ class LakeshoreBase(VisaInstrument):
     """
     CHANNEL_CLASS = BaseSensorChannel
 
-    channel_name_command: Dict[str,str] = {}
+    channel_name_command: Dict[str, str] = {}
 
     def __init__(self, name: str, address: str,
                  terminator: str ='\r\n', **kwargs) -> None:
