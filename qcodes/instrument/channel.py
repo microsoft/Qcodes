@@ -35,7 +35,6 @@ class InstrumentChannel(InstrumentBase):
 
         self.name = "{}_{}".format(parent.name, str(name))
         self.short_name = str(name)
-        self._meta_attrs = ['name']
 
         self._parent = parent
 
@@ -72,6 +71,7 @@ class InstrumentChannel(InstrumentBase):
         name_parts = self._parent.name_parts
         name_parts.append(self.short_name)
         return name_parts
+
 
 class MultiChannelInstrumentParameter(MultiParameter):
     """
@@ -121,6 +121,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         """
 
         return self.names
+
 
 class ChannelList(Metadatable):
     """
@@ -279,6 +280,15 @@ class ChannelList(Metadatable):
         self._channel_mapping[obj.short_name] = obj
         self._channels = cast(List[InstrumentChannel], self._channels)
         return self._channels.append(obj)
+
+    def clear(self):
+        """
+        Clear all items from the channel list.
+        """
+        if self._locked:
+            raise AttributeError("Cannot clear a locked channel list")
+        self._channels.clear()
+        self._channel_mapping.clear()
 
     def remove(self, obj: InstrumentChannel):
         """
