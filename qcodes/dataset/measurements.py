@@ -211,9 +211,9 @@ class DataSaver:
                             if value.ndim == 0:
                                 value = value.reshape(1)
                             value = value.ravel()
-                        res_dict.update({param: value[index]})
+                        res_dict[param] = value[index]
                     else:
-                        res_dict.update({param: value})
+                        res_dict[param] = value
             if len(res_dict) > 0:
                 self._results.append(res_dict)
 
