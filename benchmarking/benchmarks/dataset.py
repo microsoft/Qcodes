@@ -36,8 +36,10 @@ class Adding5Params:
     # latter case asv will run the benchmark for all the combinations of the
     # values
     params = [
-        {'n_values': 10000, 'n_times': 2},
-        {'n_values': 100, 'n_times': 200}
+        {'n_values': 10000, 'n_times': 2, 'paramtype': 'array'},
+        {'n_values': 100, 'n_times': 200, 'paramtype': 'array'},
+        {'n_values': 10000, 'n_times': 2, 'paramtype': 'numeric'},
+        {'n_values': 100, 'n_times': 200, 'paramtype': 'numeric'},
     ]
 
     def __init__(self):
@@ -69,11 +71,13 @@ class Adding5Params:
         y1 = ManualParameter('y1')
         y2 = ManualParameter('y2')
 
-        meas.register_parameter(x1)
-        meas.register_parameter(x2)
-        meas.register_parameter(x3)
-        meas.register_parameter(y1, setpoints=[x1, x2, x3])
-        meas.register_parameter(y2, setpoints=[x1, x2, x3])
+        meas.register_parameter(x1, paramtype=bench_param['paramtype'])
+        meas.register_parameter(x2, paramtype=bench_param['paramtype'])
+        meas.register_parameter(x3, paramtype=bench_param['paramtype'])
+        meas.register_parameter(y1, setpoints=[x1, x2, x3],
+                                paramtype=bench_param['paramtype'])
+        meas.register_parameter(y2, setpoints=[x1, x2, x3],
+                                paramtype=bench_param['paramtype'])
 
         self.parameters = [x1, x2, x3, y1, y2]
 
