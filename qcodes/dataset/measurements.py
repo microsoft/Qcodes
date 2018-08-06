@@ -203,7 +203,14 @@ class DataSaver:
                                                                     str)):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
-                            value = np.atleast_1d(value).ravel()
+                            # this is significantly faster than atleast_1d
+                            # espcially for non 0D arrays
+                            # because we already know that this is a numpy
+                            # array and just one numpy array. atleast_1d
+                            # performs additional checks.
+                            if value.ndim == 0:
+                                value = value.reshape(1)
+                            value = value.ravel()
                         res_dict.update({param: value[index]})
                     else:
                         res_dict.update({param: value})
