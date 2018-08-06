@@ -5,6 +5,7 @@ database used under the QCoDeS dataset.
 import shutil
 import tempfile
 import os
+import time
 
 import numpy as np
 
@@ -41,6 +42,10 @@ class Adding5Params:
         {'n_values': 10000, 'n_times': 2, 'paramtype': 'numeric'},
         {'n_values': 100, 'n_times': 200, 'paramtype': 'numeric'},
     ]
+    # we are less interested in the cpu time used and more interested in
+    # the wall clock time used to insert the data so use a timer that measures
+    # wallclock time
+    timer = time.perf_counter
 
     def __init__(self):
         self.parameters = list()
