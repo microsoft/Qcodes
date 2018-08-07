@@ -265,10 +265,15 @@ class Runner:
             write_period: float=None,
             parameters: Dict[str, ParamSpec]=None,
             name: str='',
-            subscribers: List=None) -> None:
+            subscribers: Sequence[Tuple[Callable,
+                                        Union[MutableSequence,
+                                              MutableMapping]]]=None) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
+        self.subscribers: Sequence[Tuple[Callable,
+                                         Union[MutableSequence,
+                                               MutableMapping]]]
         if subscribers is None:
             self.subscribers = []
         else:
