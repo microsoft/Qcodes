@@ -987,7 +987,7 @@ def test_datasaver_multidim_array(experiment):
     assert len(datadicts) == 2
     for datadict_list in datadicts:
         assert len(datadict_list) == 3
-        for i, datadict in enumerate(datadict_list):
+        for datadict in datadict_list:
             dataindex = data_mapping[datadict['name']]
             expected_data = data[dataindex, :, :].ravel()
             assert_allclose(datadict['data'], expected_data)
@@ -1026,6 +1026,7 @@ def test_datasaver_multidim_numeric(experiment):
         assert len(mydata) == size1*size2
         assert len(mydata[0]) == 1
         assert isinstance(mydata[0][0], float)
+        assert_allclose(np.array(mydata).ravel(), expected.ravel())
 
     datadicts = get_data_by_id(datasaver.run_id)
     assert len(datadicts) == 2
