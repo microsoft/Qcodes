@@ -56,7 +56,7 @@ while keep_going:
         # Incoming message from existing connection
         else:
             data = sock.recv(RECEIVE_BUFFER_SIZE).decode('utf-8')
-            log.debug(f'Recieved data: {data}')
+            log.debug(f'Received data: {data}')
             if data:
                 data = data.replace('\n', '\r')
                 data = data.replace('\r\r', '\r')
@@ -67,16 +67,17 @@ while keep_going:
             command = cmd_buffer[:idx].upper().strip(' ')
             cmd_buffer = cmd_buffer[idx+1:]
             if command == 'EXIT':
-                sock.send('Server exiting.' + LINE_TERM)
+                sock.send(bytes(f'Server exiting. {LINE_TERM}', 'utf-8'))
                 print('Server exiting.')
                 keep_going = False
             elif command == 'CLOSE':
-                sock.send('Closing connection.' + LINE_TERM)
+                sock.send(bytes(f'Closing connection. {LINE_TERM}'), 'utf-8')
                 print('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
+                log.info('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
                 socket_dict.pop(sock, None)
                 sock.close()
             else:
                 response = command_handler(command)
-                sock.send(bytes(f'{response}', 'utf-8'))
+                sock.send(bytes(f'{response}{LINE_TERM}', 'utf-8'))
 
 server_socket.close()
