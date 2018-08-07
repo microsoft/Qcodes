@@ -454,6 +454,10 @@ class Measurement:
             paramtype: type of the parameter, i.e. the SQL storage class
         """
         # input validation
+        if paramtype not in ParamSpec.allowed_types:
+            raise RuntimeError("Trying to regiser a parameter with type"
+                               f"{paramtype}. However, only "
+                               f"{ParamSpec.allowed_types} are supported.")
         if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
