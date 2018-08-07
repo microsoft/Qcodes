@@ -76,7 +76,7 @@ class CommandHandler:
             is_query = True
         else:
             cmd = self._sets[cmd_head]
-            args = list(float(arg) for arg in cmd_str.split(', ')[1:])
+            args = list(float(arg) for arg in cmd_str[5:].split(', '))
             is_query = False
 
         output = (CmdArgs(cmd=cmd, args=args), is_query)
