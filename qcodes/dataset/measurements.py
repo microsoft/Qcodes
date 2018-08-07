@@ -460,7 +460,7 @@ class Measurement:
         """
         # input validation
         if paramtype not in ParamSpec.allowed_types:
-            raise RuntimeError("Trying to regiser a parameter with type"
+            raise RuntimeError("Trying to regiser a parameter with type "
                                f"{paramtype}. However, only "
                                f"{ParamSpec.allowed_types} are supported.")
         if not isinstance(parameter, _BaseParameter):

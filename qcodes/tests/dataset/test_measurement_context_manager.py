@@ -891,7 +891,7 @@ def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
 
     array_param = channel_array_instrument.A.dummy_array_parameter
 
-    meas.register_parameter(array_param, paramtype='Array')
+    meas.register_parameter(array_param, paramtype='array')
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
