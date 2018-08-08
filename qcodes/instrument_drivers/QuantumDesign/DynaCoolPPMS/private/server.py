@@ -3,9 +3,8 @@ import select
 import msvcrt
 import logging
 
-# what is the canical way to get rid of this long line? Keep in mind that this
-# server is to be run as a script (no relative imports)
-from qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.private.commandhandler import CommandHandler
+from qcodes.instrument_drivers.QuantumDesign.\
+    DynaCoolPPMS.private.commandhandler import CommandHandler
 
 command_handler = CommandHandler()
 
