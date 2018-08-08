@@ -32,6 +32,7 @@ class CommandHandler:
     """
 
     def __init__(self, inst_type: str='dynacool') -> None:
+        self.inst_type = inst_type
         pythoncom.CoInitialize()
         client_id = f'QD.MULTIVU.{inst_type.upper()}.1'
         try:
@@ -48,9 +49,17 @@ class CommandHandler:
                                             _variants['VT_I4']]),
                       'CHAT': CmdArgs(cmd=self._mvu.GetChamberTemp,
                                       args=[_variants['VT_R8'],
-                                            _variants['VT_I4']])}
+                                            _variants['VT_I4']]),
+                      'GLTS': CmdArgs(cmd=self._mvu.GetLastTempSetpoint,
+                                      args=[_variants['VT_R8'],
+                                            _variants['VT_R8'],
+                                            _variants['VT_I4']]),
+                      '*IDN': CmdArgs(cmd=self.make_idn_string, args=[])}
 
         self._sets = {'TEMP': self._mvu.SetTemperature}
+
+    def make_idn_string(self) -> str:
+        return f'0, DynaCool, {self.inst_type}, N/A, N/A'
 
     def preparser(self, cmd_str: str) -> Tuple[CmdArgs, bool]:
         """

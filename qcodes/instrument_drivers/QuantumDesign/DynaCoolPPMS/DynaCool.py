@@ -1,6 +1,7 @@
 from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
+from typing import Dict, Optional
 
 from visa import VisaIOError
 
@@ -63,22 +64,12 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 1, float),
                            get_cmd='CHAT?')
 
-        # Dirty; we save values for parameters that can not be queried.
-        # It's not pretty, but what else can we do?
-        # NOTE: any parameter that has a get_parser, set_parser, val_mapping,
-        # a scale, or an offset will NOT set its raw_value via _save_val
-
-        #self.temperature_setpoint._save_val(temperature_setpoint)
-        #self.temperature_rate.raw_value = temperature_rate*60
-        #self.temperature_rate._save_val(temperature_rate)
-        #ts_raw = self.temperature_settling.val_mapping[temperature_settling]
-        #self.temperature_settling.raw_value = ts_raw
-        #elf.temperature_settling._save_val(temperature_settling)
+        # The error code of the latest command
+        self._error_code = 0
 
         self._update_temperatures()
 
-        # The error code of the latest command
-        self._error_code = 0
+        self.connect_message()
 
     @property
     def error_code(self):
@@ -93,10 +84,17 @@ class DynaCool(VisaInstrument):
         """
         return parser(resp.split(', ')[which_one])
 
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        response = self.ask('*IDN?')
+        # just clip out the error code
+        idparts = response[2:].split(', ')
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
     def _update_temperatures(self) -> None:
         """
         This function queries the last temperature setpoint (w. rate and mode)
-        from the instrument. Should only be called once, during __init__
+        from the instrument.
         """
         raw_response = self.ask('GLTS?')
         sp = DynaCool._pick_one(1, float, raw_response)
@@ -112,9 +110,9 @@ class DynaCool(VisaInstrument):
         self.temperature_settling._save_val(inv_map[mode])
 
     def _temp_setter(self, param: str, value: float) -> None:
+        self._update_temperatures()
         params = ['temperature_setpoint', 'temperature_rate',
                   'temperature_settling']
-        # these parameters are not gettable, so this is the best we can do
         vals = list(self.parameters[par].raw_value for par in params)
         vals[params.index(param)] = value
 
