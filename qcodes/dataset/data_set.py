@@ -567,9 +567,9 @@ class DataSet(Sized):
                  start: Optional[int] = None,
                  end: Optional[int] = None) -> List[List[Any]]:
         """ Returns the values stored in the DataSet for the specified parameters.
-        The values are returned as a list of lists, rows by columns, e.g.
-        datapoint by parameter. The data type of each element is based on the
-        datatype provided when the DataSet was created. The parameter list may
+        The values are returned as a list of lists, SQL rows by SQL columns,
+        e.g. datapoints by parameters. The data type of each element is based on
+        the datatype provided when the DataSet was created. The parameter list may
         contain a mix of string parameter names, QCoDeS Parameter objects, and
         ParamSpec objects. As long as they have a `name` field. If provided,
         the start and end parameters select a range of results by result count
@@ -590,8 +590,9 @@ class DataSet(Sized):
             - end:
 
         Returns:
-            - list of rows of data. Each row will contain a list of columns
-              and each element will be of the datatype stored in the database
+            - list of lists SQL rows of data by SQL columns. Each SQL row
+              is a datapoint and each SQL column is a parameter.  Each element
+              will be of the datatypes stored in the database
               (numeric, array or string)
         """
         valid_param_names = []
