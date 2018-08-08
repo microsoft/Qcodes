@@ -45,6 +45,9 @@ class CommandHandler:
         # Hard-code what we know about the MultiVu API
         self._gets = {'TEMP': CmdArgs(cmd=self._mvu.GetTemperature,
                                       args=[_variants['VT_R8'],
+                                            _variants['VT_I4']]),
+                      'CHAT': CmdArgs(cmd=self._mvu.GetChamberTemp,
+                                      args=[_variants['VT_R8'],
                                             _variants['VT_I4']])}
 
         self._sets = {'TEMP': self._mvu.SetTemperature}

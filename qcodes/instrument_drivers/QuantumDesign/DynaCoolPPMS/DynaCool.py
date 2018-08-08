@@ -61,6 +61,12 @@ class DynaCool(VisaInstrument):
                            set_cmd=partial(self._temp_setter,
                                            'temperature_settling'))
 
+        self.add_parameter('chamber_temperature',
+                           label='Chamber Temperature',
+                           unit='K',
+                           get_parser=partial(DynaCool._pick_one, 1, float),
+                           get_cmd='CHAT?')
+
         # Dirty; we save values for parameters that can not be queried.
         # It's not pretty, but what else can we do?
 
