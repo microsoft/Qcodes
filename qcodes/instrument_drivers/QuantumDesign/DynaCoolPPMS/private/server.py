@@ -71,7 +71,7 @@ while keep_going:
                 print('Server exiting.')
                 keep_going = False
             elif command == 'CLOSE':
-                sock.send(bytes(f'Closing connection. {LINE_TERM}'), 'utf-8')
+                sock.send(bytes(f'Closing connection. {LINE_TERM}', 'utf-8'))
                 print('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
                 log.info('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
                 socket_dict.pop(sock, None)
