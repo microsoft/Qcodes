@@ -69,7 +69,8 @@ class DynaCool(VisaInstrument):
         self.temperature_settling._save_val(
             self.temperature_settling.val_mapping[temperature_settling])
 
-    def _pick_one(self, which_one: int, parser: type, resp: str) -> str:
+    @staticmethod
+    def _pick_one(which_one: int, parser: type, resp: str) -> str:
         """
         Since most of the API calls return several values in a comma-seperated
         string, here's a convenience function to pick out the substring of
