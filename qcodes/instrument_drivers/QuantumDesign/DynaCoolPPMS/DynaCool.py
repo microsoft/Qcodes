@@ -95,7 +95,7 @@ class DynaCool(VisaInstrument):
         params = ['temperature_setpoint', 'temperature_rate',
                   'temperature_settling']
         # these parameters are not gettable, so this is the best we can do
-        vals = list(self.parameters[par].get_latest() for par in params)
+        vals = list(self.parameters[par].raw_value for par in params)
         vals[params.index(param)] = value
 
         self.write(f'TEMP {vals[0]}, {vals[1]}, {vals[2]}')
