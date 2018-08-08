@@ -2,6 +2,8 @@ from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
 
+from visa import VisaIOError
+
 import qcodes.utils.validators as vals
 
 log = logging.getLogger(__name__)
@@ -19,16 +21,10 @@ class DynaCool(VisaInstrument):
         address: The VISA ressource name.
           E.g. 'TCPIP0::127.0.0.1::5000::SOCKET' with the appropriate IP
           address instead of 127.0.0.1
-        temperature_setpoint: The initial temperature setpoint (K)
-        temperature_rate: The initial temperature rate (K/s)
-        temperature_settling: The initial temperature settling mode
     """
 
     def __init__(self, name: str,
                  address: str,
-                 temperature_setpoint: float=300,
-                 temperature_rate: float=0.01,
-                 temperature_settling: str='fast settle',
                  **kwargs) -> None:
         super().__init__(name=name, address=address, terminator='\r\n',
                          **kwargs)
@@ -36,7 +32,7 @@ class DynaCool(VisaInstrument):
         self.add_parameter('temperature',
                            label='Temperature',
                            unit='K',
-                           get_parser=partial(self._pick_one, 1, float),
+                           get_parser=partial(DynaCool._pick_one, 1, float),
                            get_cmd='TEMP?')
 
         self.add_parameter('temperature_setpoint',
@@ -69,11 +65,17 @@ class DynaCool(VisaInstrument):
 
         # Dirty; we save values for parameters that can not be queried.
         # It's not pretty, but what else can we do?
+        # NOTE: any parameter that has a get_parser, set_parser, val_mapping,
+        # a scale, or an offset will NOT set its raw_value via _save_val
 
-        self.temperature_setpoint._save_val(temperature_setpoint)
-        self.temperature_rate._save_val(temperature_rate*60)
-        self.temperature_settling._save_val(
-            self.temperature_settling.val_mapping[temperature_settling])
+        #self.temperature_setpoint._save_val(temperature_setpoint)
+        #self.temperature_rate.raw_value = temperature_rate*60
+        #self.temperature_rate._save_val(temperature_rate)
+        #ts_raw = self.temperature_settling.val_mapping[temperature_settling]
+        #self.temperature_settling.raw_value = ts_raw
+        #elf.temperature_settling._save_val(temperature_settling)
+
+        self._update_temperatures()
 
         # The error code of the latest command
         self._error_code = 0
@@ -91,6 +93,24 @@ class DynaCool(VisaInstrument):
         """
         return parser(resp.split(', ')[which_one])
 
+    def _update_temperatures(self) -> None:
+        """
+        This function queries the last temperature setpoint (w. rate and mode)
+        from the instrument. Should only be called once, during __init__
+        """
+        raw_response = self.ask('GLTS?')
+        sp = DynaCool._pick_one(1, float, raw_response)
+        rate = DynaCool._pick_one(2, float, raw_response)
+        mode = DynaCool._pick_one(3, int, raw_response)
+
+        self.temperature_setpoint._save_val(sp)
+        self.temperature_rate.raw_value = rate
+        self.temperature_rate._save_val(rate/60)
+        self.temperature_settling.raw_value = mode
+        inv_map = {val: key for (key, val) in
+                   self.temperature_settling.val_mapping.items()}
+        self.temperature_settling._save_val(inv_map[mode])
+
     def _temp_setter(self, param: str, value: float) -> None:
         params = ['temperature_setpoint', 'temperature_rate',
                   'temperature_settling']
@@ -106,14 +126,6 @@ class DynaCool(VisaInstrument):
         """
         super().write(cmd)
         self._error_code = self.visa_handle.read()
-
-    def ask(self, cmd: str) -> str:
-        """
-        Since the error code is always returned, we must read it back
-        """
-        response = super().ask(cmd)
-        self._error_code = DynaCool._pick_one(0, str, response)
-        return response
 
     def ask(self, cmd: str) -> str:
         """
