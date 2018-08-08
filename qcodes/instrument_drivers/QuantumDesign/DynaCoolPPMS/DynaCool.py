@@ -108,3 +108,15 @@ class DynaCool(VisaInstrument):
         response = super().ask(cmd)
         self._error_code = DynaCool._pick_one(0, str, response)
         return response
+
+    def ask(self, cmd: str) -> str:
+        """
+        Since the error code is always returned, we must read it back
+        """
+        response = super().ask(cmd)
+        self._error_code = DynaCool._pick_one(0, str, response)
+        return response
+
+    def close(self) -> None:
+        """
+        Make sure to nicely close the server connection
