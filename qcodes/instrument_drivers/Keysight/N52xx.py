@@ -407,9 +407,6 @@ class PNABase(VisaInstrument):
         """
         self.averages_enabled(False)
 
-    def _set_auto_sweep(self, val: bool) -> None:
-        self._auto_sweep = val
-
     def _set_power_limits(self,
                           min_power: Union[int, float],
                           max_power: Union[int, float]) -> None:
