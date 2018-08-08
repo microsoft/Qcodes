@@ -69,6 +69,13 @@ class DynaCool(VisaInstrument):
         self.temperature_settling._save_val(
             self.temperature_settling.val_mapping[temperature_settling])
 
+        # The error code of the latest command
+        self._error_code = 0
+
+    @property
+    def error_code(self):
+        return self._error_code
+
     @staticmethod
     def _pick_one(which_one: int, parser: type, resp: str) -> str:
         """
@@ -87,3 +94,17 @@ class DynaCool(VisaInstrument):
 
         self.write(f'TEMP {vals[0]}, {vals[1]}, {vals[2]}')
 
+    def write(self, cmd: str) -> None:
+        """
+        Since the error code is always returned, we must read it back
+        """
+        super().write(cmd)
+        self._error_code = self.visa_handle.read()
+
+    def ask(self, cmd: str) -> str:
+        """
+        Since the error code is always returned, we must read it back
+        """
+        response = super().ask(cmd)
+        self._error_code = DynaCool._pick_one(0, str, response)
+        return response
