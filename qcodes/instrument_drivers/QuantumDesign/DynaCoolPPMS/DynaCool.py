@@ -120,3 +120,11 @@ class DynaCool(VisaInstrument):
     def close(self) -> None:
         """
         Make sure to nicely close the server connection
+        """
+        try:
+            log.debug('Closing server connection.')
+            self.write('CLOSE')
+        except VisaIOError:
+            log.info('Could not close connection to server, perhaps the '
+                     'server is down?')
+        super().close()
