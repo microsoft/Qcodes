@@ -19,9 +19,17 @@ class DynaCool(VisaInstrument):
         address: The VISA ressource name.
           E.g. 'TCPIP0::127.0.0.1::5000::SOCKET' with the appropriate IP
           address instead of 127.0.0.1
+        temperature_setpoint: The initial temperature setpoint (K)
+        temperature_rate: The initial temperature rate (K/s)
+        temperature_settling: The initial temperature settling mode
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str,
+                 address: str,
+                 temperature_setpoint: float=300,
+                 temperature_rate: float=0.01,
+                 temperature_settling: str='fast settle',
+                 **kwargs) -> None:
         super().__init__(name=name, address=address, terminator='\r\n',
                          **kwargs)
 
@@ -56,9 +64,10 @@ class DynaCool(VisaInstrument):
         # Dirty; we save values for parameters that can not be queried.
         # It's not pretty, but what else can we do?
 
-        self.temperature_setpoint._save_val(300)
-        self.temperature_rate._save_val(0.01)
-        self.temperature_settling._save_val(0)
+        self.temperature_setpoint._save_val(temperature_setpoint)
+        self.temperature_rate._save_val(temperature_rate*60)
+        self.temperature_settling._save_val(
+            self.temperature_settling.val_mapping[temperature_settling])
 
     def _pick_one(self, which_one: int, parser: type, resp: str) -> str:
         """
