@@ -56,6 +56,9 @@ class CommandHandler:
                                             _variants['long']]),
                       'CHAM': CmdArgs(cmd=self._mvu.GetChamber,
                                       args=[_variants['long']]),
+                      'FELD': CmdArgs(cmd=self._mvu.GetField,
+                                      args=[_variants['double'],
+                                            _variants['long']]),
                       '*IDN': CmdArgs(cmd=self.make_idn_string, args=[])}
 
         self._sets = {'TEMP': self._mvu.SetTemperature}

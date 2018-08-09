@@ -82,6 +82,30 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 2, int),
                            get_cmd='TEMP?')
 
+        self.add_parameter('field',
+                           label='Field strength',
+                           unit='A/m',
+                           get_cmd=self._field_getter)
+
+        self.add_parameter('magnet_state',
+                           label='Magnet state',
+                           val_mapping={'stable': 1,
+                                        'switch warming': 2,
+                                        'switch cool': 3,
+                                        'holding': 4,
+                                        'iterate': 5,
+                                        'ramping': 6,
+                                        'ramping ': 7,  # map must be bijection
+                                        'resetting': 8,
+                                        'current error': 9,
+                                        'switch error': 10,
+                                        'quenching': 11,
+                                        'charging error': 12,
+                                        'power supply error': 14,
+                                        'failure': 15},
+                           get_parser=partial(DynaCool._pick_one, 2, int),
+                           get_cmd='FELD?')
+
         self.add_parameter('chamber_temperature',
                            label='Chamber Temperature',
                            unit='K',
