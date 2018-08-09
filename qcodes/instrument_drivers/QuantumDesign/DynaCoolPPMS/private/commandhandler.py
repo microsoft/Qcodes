@@ -39,7 +39,7 @@ class CommandHandler:
             self._mvu = win32com.client.Dispatch(client_id)
         except pythoncom.com_error:
             error_mssg = ('Could not connect to Multivu Application. Please '
-                          'make sure that the Multi Application is running.')
+                          'make sure that the MultiVu Application is running.')
             log.exception(error_mssg)
             raise ValueError(error_mssg)
 
