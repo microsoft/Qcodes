@@ -30,6 +30,7 @@ class DynaCool(VisaInstrument):
     field_params = ['field_setpoint', 'field_rate', 'field_approach']
 
     _errors = {-2: lambda: warnings.warn('Unknown command'),
+               1: lambda: None,
                0: lambda: None}
 
     def __init__(self, name: str,
