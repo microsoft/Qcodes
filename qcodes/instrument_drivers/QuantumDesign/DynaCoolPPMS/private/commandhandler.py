@@ -16,8 +16,8 @@ except ImportError as e:
 
 
 # Variable types
-_variants = {'VT_R8': win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
-             'VT_I4': win32com.client.VARIANT(VT_BYREF | VT_I4, 0)}
+_variants = {'double': win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
+             'long': win32com.client.VARIANT(VT_BYREF | VT_I4, 0)}
 CmdArgs = namedtuple('cmd_and_args', 'cmd args')
 
 
@@ -45,15 +45,15 @@ class CommandHandler:
 
         # Hard-code what we know about the MultiVu API
         self._gets = {'TEMP': CmdArgs(cmd=self._mvu.GetTemperature,
-                                      args=[_variants['VT_R8'],
-                                            _variants['VT_I4']]),
+                                      args=[_variants['double'],
+                                            _variants['long']]),
                       'CHAT': CmdArgs(cmd=self._mvu.GetChamberTemp,
-                                      args=[_variants['VT_R8'],
-                                            _variants['VT_I4']]),
+                                      args=[_variants['double'],
+                                            _variants['long']]),
                       'GLTS': CmdArgs(cmd=self._mvu.GetLastTempSetpoint,
-                                      args=[_variants['VT_R8'],
-                                            _variants['VT_R8'],
-                                            _variants['VT_I4']]),
+                                      args=[_variants['double'],
+                                            _variants['double'],
+                                            _variants['long']]),
                       '*IDN': CmdArgs(cmd=self.make_idn_string, args=[])}
 
         self._sets = {'TEMP': self._mvu.SetTemperature}
