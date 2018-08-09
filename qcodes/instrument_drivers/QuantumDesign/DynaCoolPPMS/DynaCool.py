@@ -246,7 +246,7 @@ class DynaCool(VisaInstrument):
         Since the error code is always returned, we must read it back
         """
         super().write(cmd)
-        self._error_code = self.visa_handle.read()
+        self._error_code = int(self.visa_handle.read())
         self._errors[self._error_code]()
 
     def ask(self, cmd: str) -> str:
@@ -254,7 +254,7 @@ class DynaCool(VisaInstrument):
         Since the error code is always returned, we must read it back
         """
         response = super().ask(cmd)
-        self._error_code = DynaCool._pick_one(0, str, response)
+        self._error_code = DynaCool._pick_one(0, int, response)
         self._errors[self._error_code]()
         return response
 
