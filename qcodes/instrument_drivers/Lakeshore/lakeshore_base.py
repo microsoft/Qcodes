@@ -271,6 +271,53 @@ class BaseSensorChannel(InstrumentChannel):
                            vals=validators.Strings(15),
                            label='Sensor_Name')
 
+        # Parameters related to Input Channel Parameter Command (INSET)
+        self.add_parameter('enabled',
+                           label='Enabled',
+                           docstring='Specifies whether the input/channel is enabled or disabled. '
+                                     'At least one measurement input channel must be enabled. '
+                                     'If all are configured to disabled, channel 1 will change to enabled.',
+                           val_mapping={True: 1, False: 0},
+                           parameter_class=GroupParameter)
+        self.add_parameter('dwell',
+                           label='Dwell',
+                           docstring='Specifies a value for the autoscanning dwell time. '
+                                     'Not applicable for <input/channel> = A (control input).',
+                           unit='s',
+                           get_parser=int,  # not applicable to channel A for 372 (see manual)
+                           vals=validators.Numbers(1, 200),
+                           parameter_class=GroupParameter)
+        self.add_parameter('pause',
+                           label='Change pause time',
+                           docstring='Specifies a value for the change pause time',
+                           unit='s',
+                           get_parser=int,
+                           vals=validators.Numbers(3, 200),
+                           parameter_class=GroupParameter)
+        self.add_parameter('curve_number',
+                           label='Curve',
+                           docstring='Specifies which curve the channel uses: '
+                                     '0 = no curve, 1 to 59 = standard/user curves.'
+                                     'Do not change this parameter unless you know '
+                                     'what you are doing.',
+                           get_parser=int,
+                           vals=validators.Numbers(0, 59),
+                           parameter_class=GroupParameter)
+        self.add_parameter('temperature_coefficient',
+                           label='Change pause time',
+                           docstring='Sets the temperature coefficient that will be used for '
+                                     'temperature control if no curve is selected (negative or positive). '
+                                     'Do not change this parameter unless you know '
+                                     'what you are doing.',
+                           val_mapping={'negative': 1, 'positive': 2},
+                           parameter_class=GroupParameter)
+        self.output_group = Group([self.enabled, self.dwell, self.pause, self.curve_number,
+                                  self.temperature_coefficient],
+                                  set_cmd=f'INSET {self._channel}, {{enabled}}, '
+                                          f'{{dwell}}, {{pause}}, {{curve_number}}, '
+                                          f'{{temperature_coefficient}}',
+                                  get_cmd=f'INSET? {self._channel}')
+
 
 class LakeshoreBase(VisaInstrument):
     """
