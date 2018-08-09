@@ -221,8 +221,8 @@ class BaseOutput(InstrumentChannel):
                         is_in_tolerance_zone = False
                         start_time_in_tolerance_zone = None
 
-            log.debug(f'waiting to reach setpoint: temp at '
-                      f'{t_reading}, delta:{delta}')
+                log.debug(f'waiting to reach setpoint: temp at '
+                          f'{t_reading}, delta:{delta}')
             time.sleep(wait_cycle_time)
 
 
