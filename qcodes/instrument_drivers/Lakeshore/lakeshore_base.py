@@ -114,6 +114,8 @@ class BaseOutput(InstrumentChannel):
                            get_cmd=f'RANGE? {output_index}')
 
         self.add_parameter('setpoint',
+                           docstring='Note that the units are used from '
+                                     'the preferred units of the "input_channel"',
                            vals=validators.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=f'SETP {output_index}, {{}}',
@@ -317,6 +319,67 @@ class BaseSensorChannel(InstrumentChannel):
                                           f'{{dwell}}, {{pause}}, {{curve_number}}, '
                                           f'{{temperature_coefficient}}',
                                   get_cmd=f'INSET? {self._channel}')
+
+        # Parameters related to Input Setup Command (INTYPE)
+        self.add_parameter('excitation_mode',
+                           label='Excitation mode',
+                           docstring='Specifies excitation mode',
+                           val_mapping={'voltage': 0, 'current': 1},
+                           parameter_class=GroupParameter)
+        self.add_parameter('excitation_range_number',
+                           label='Excitation range number',
+                           docstring='Specifies excitation range number (1-12 for voltage excitation, '
+                                     '1-22 for current excitation); refer to the manual for the table of ranges',
+                           get_parser=int,  # TODO: use val_mapping?
+                           vals=validators.Numbers(1, 22),  # TODO: this needs to change based on 'excitation_mode' value
+                           parameter_class=GroupParameter)
+        self.add_parameter('auto_range',
+                           label='Auto range',
+                           docstring='Specifies auto range setting',
+                           val_mapping={'off': 0, 'current': 1},
+                           parameter_class=GroupParameter)
+        self.add_parameter('range',
+                           label='Range',
+                           val_mapping={'2.0 mOhm': 1,
+                                        '6.32 mOhm': 2,
+                                        '20.0 mOhm': 3,
+                                        '63.2 mOhm': 4,
+                                        '200 mOhm': 5,
+                                        '632 mOhm': 6,
+                                        '2.00 Ohm': 7,
+                                        '6.32 Ohm': 8,
+                                        '20.0 Ohm': 9,
+                                        '63.2 Ohm': 10,
+                                        '200 Ohm': 11,
+                                        '632 Ohm': 12,
+                                        '2.00 kOhm': 13,
+                                        '6.32 kOhm': 14,
+                                        '20.0 kOhm': 15,
+                                        '63.2 kOhm': 16,
+                                        '200 kOhm': 17,
+                                        '632 kOhm': 18,
+                                        '2.0 MOhm': 19,
+                                        '6.32 MOhm': 20,
+                                        '20.0 MOhm': 21,
+                                        '63.2 MOhm': 22},
+                           parameter_class=GroupParameter)
+        self.add_parameter('current_source_shunted',
+                           label='Current source shunt',
+                           docstring='Current source either not shunted (excitation on), or shunted (excitation off)',
+                           val_mapping={False: 0, True: 1},
+                           parameter_class=GroupParameter)
+        self.add_parameter('units',
+                           label='Preferred units',
+                           docstring='Specifies the preferred units parameter for sensor readings'
+                                     'and for the control setpoint (kelvin or ohms)',
+                           val_mapping={'kelvin': 1, 'ohms': 2},
+                           parameter_class=GroupParameter)
+        self.output_group = Group([self.excitation_mode, self.excitation_range_number, self.auto_range, self.range,
+                                  self.current_source_shunted, self.units],
+                                  set_cmd=f'INTYPE {self._channel}, {{excitation_mode}}, '
+                                          f'{{excitation_range_number}}, {{auto_range}}, {{range}}, '
+                                          f'{{current_source_shunted}}, {{units}}',
+                                  get_cmd=f'INTYPE? {self._channel}')
 
 
 class LakeshoreBase(VisaInstrument):
