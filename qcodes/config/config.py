@@ -92,6 +92,7 @@ class Config():
     _diff_schema: Dict[str, dict] = {}
 
     def __init__(self, path=None):
+        self.config_file_path = path
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config(path=path)
 
@@ -122,7 +123,7 @@ class Config():
         """
         config = copy.deepcopy(self.defaults)
         self.current_schema = copy.deepcopy(self.defaults_schema)
-
+        path = path or self.config_file_path
         if path is not None:
             config_file = "{}/{}".format(path, config_file_name)
             schema_file = config_file.replace(config_file_name,
