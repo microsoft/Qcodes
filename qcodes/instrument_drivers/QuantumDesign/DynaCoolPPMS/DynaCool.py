@@ -2,6 +2,7 @@ from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
 from typing import Dict, Optional, Union, cast, Any
+import warnings
 
 from visa import VisaIOError
 
@@ -27,6 +28,9 @@ class DynaCool(VisaInstrument):
     temp_params = ['temperature_setpoint', 'temperature_rate',
                    'temperature_settling']
     field_params = ['field_setpoint', 'field_rate', 'field_approach']
+
+    _errors = {-2: lambda: warnings.warn('Unknown command'),
+               0: lambda: None}
 
     def __init__(self, name: str,
                  address: str,
@@ -243,6 +247,7 @@ class DynaCool(VisaInstrument):
         """
         super().write(cmd)
         self._error_code = self.visa_handle.read()
+        self._errors[self._error_code]()
 
     def ask(self, cmd: str) -> str:
         """
@@ -250,6 +255,7 @@ class DynaCool(VisaInstrument):
         """
         response = super().ask(cmd)
         self._error_code = DynaCool._pick_one(0, str, response)
+        self._errors[self._error_code]()
         return response
 
     def close(self) -> None:

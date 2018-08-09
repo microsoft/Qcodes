@@ -83,8 +83,8 @@ class CommandHandler:
             A tuple of a CmdArgs tuple and a bool indicating whether this was
             a query
         """
-        def err_func():
-            return 'ERROR: unknown command'
+        def err_func() -> int:
+            return -2
 
         cmd_head = cmd_str[:4]
 
