@@ -74,7 +74,9 @@ class CommandHandler:
 
     def preparser(self, cmd_str: str) -> Tuple[CmdArgs, bool]:
         """
-        Parse the raw SCPI-like input string into a list of strings
+        Parse the raw SCPI-like input string into a CmdArgs tuple containing
+        the corresponding MultiVu API function and a boolean indicating whether
+        we expect the MultiVu function to modify its input (i.e. be a query)
 
         Args:
             cmd_str: A SCPI-like string, e.g. 'TEMP?' or 'TEMP 300, 0.1, 1'
