@@ -1,7 +1,7 @@
 from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, cast, Any
 
 from visa import VisaIOError
 
@@ -172,7 +172,7 @@ class DynaCool(VisaInstrument):
         return self._error_code
 
     @staticmethod
-    def _pick_one(which_one: int, parser: type, resp: str) -> str:
+    def _pick_one(which_one: int, parser: type, resp: str) -> Any:
         """
         Since most of the API calls return several values in a comma-seperated
         string, here's a convenience function to pick out the substring of
@@ -189,7 +189,7 @@ class DynaCool(VisaInstrument):
 
     def _present_field_getter(self) -> float:
         resp = self.ask('FELD?')
-        number_in_oersted = DynaCool._pick_one(1, float, resp)
+        number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
         number_in_SI = number_in_oersted/79.57747
         return number_in_SI
 
