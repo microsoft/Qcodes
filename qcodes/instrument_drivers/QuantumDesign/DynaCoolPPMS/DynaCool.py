@@ -162,6 +162,9 @@ class DynaCool(VisaInstrument):
         # The error code of the latest command
         self._error_code = 0
 
+        # we must know all parameter values because of interlinked parameters
+        self.snapshot(update=True)
+
         self.connect_message()
 
     @property
