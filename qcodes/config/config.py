@@ -94,7 +94,7 @@ class Config():
     def __init__(self, path=None):
         self.config_file_path = path
         self.defaults, self.defaults_schema = self.load_default()
-        self.update_config(path=path)
+        self.update_config()
 
     def load_default(self):
         defaults = self.load_config(self.default_file_name)
