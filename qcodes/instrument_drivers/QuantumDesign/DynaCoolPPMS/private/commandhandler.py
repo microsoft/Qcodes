@@ -70,7 +70,7 @@ class CommandHandler:
                       'FELD': self._mvu.SetField}
 
     def make_idn_string(self) -> str:
-        return f'0, DynaCool, {self.inst_type}, N/A, N/A'
+        return f'0, QuantumDesign, {self.inst_type}, N/A, N/A'
 
     def preparser(self, cmd_str: str) -> Tuple[CmdArgs, bool]:
         """
