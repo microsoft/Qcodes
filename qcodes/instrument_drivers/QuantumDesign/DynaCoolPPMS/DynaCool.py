@@ -1,7 +1,7 @@
 from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from visa import VisaIOError
 
@@ -24,6 +24,9 @@ class DynaCool(VisaInstrument):
           address instead of 127.0.0.1
     """
 
+    temp_params = ['temperature_setpoint', 'temperature_rate',
+                   'temperature_settling']
+
     def __init__(self, name: str,
                  address: str,
                  **kwargs) -> None:
@@ -41,6 +44,8 @@ class DynaCool(VisaInstrument):
                            unit='K',
                            vals=vals.Numbers(1.8, 400),
                            set_cmd=partial(self._temp_setter,
+                                           'temperature_setpoint'),
+                           get_cmd=partial(self._temp_getter,
                                            'temperature_setpoint'))
 
         self.add_parameter('temperature_rate',
@@ -48,7 +53,10 @@ class DynaCool(VisaInstrument):
                            unit='K/s',
                            vals=vals.Numbers(0.0002, 0.3),
                            set_parser=lambda x: x*60,  # conversion to K/min
+                           get_parser=lambda x: x/60,  # conversion to K/s
                            set_cmd=partial(self._temp_setter,
+                                           'temperature_rate'),
+                           get_cmd=partial(self._temp_getter,
                                            'temperature_rate'))
 
         self.add_parameter('temperature_settling',
@@ -56,6 +64,8 @@ class DynaCool(VisaInstrument):
                            val_mapping={'fast settle': 0,
                                         'no overshoot': 1},
                            set_cmd=partial(self._temp_setter,
+                                           'temperature_settling'),
+                           get_cmd=partial(self._temp_getter,
                                            'temperature_settling'))
 
         self.add_parameter('chamber_temperature',
@@ -67,7 +77,7 @@ class DynaCool(VisaInstrument):
         # The error code of the latest command
         self._error_code = 0
 
-        self._update_temperatures()
+        #self._update_temperatures()
 
         self.connect_message()
 
@@ -91,7 +101,7 @@ class DynaCool(VisaInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def _update_temperatures(self) -> None:
+    def _temp_getter(self, param_name: str) -> Union[int, float]:
         """
         This function queries the last temperature setpoint (w. rate and mode)
         from the instrument.
@@ -101,20 +111,23 @@ class DynaCool(VisaInstrument):
         rate = DynaCool._pick_one(2, float, raw_response)
         mode = DynaCool._pick_one(3, int, raw_response)
 
-        self.temperature_setpoint._save_val(sp)
-        self.temperature_rate.raw_value = rate
-        self.temperature_rate._save_val(rate/60)
-        self.temperature_settling.raw_value = mode
-        inv_map = {val: key for (key, val) in
-                   self.temperature_settling.val_mapping.items()}
-        self.temperature_settling._save_val(inv_map[mode])
+        return dict(zip(self.temp_params, [sp, rate, mode]))[param_name]
+
+        #self.temperature_setpoint._save_val(sp)
+        #self.temperature_rate.raw_value = rate
+        #self.temperature_rate._save_val(rate/60)
+        #self.temperature_settling.raw_value = mode
+        #inv_map = {val: key for (key, val) in
+        #           self.temperature_settling.val_mapping.items()}
+        #self.temperature_settling._save_val(inv_map[mode])
 
     def _temp_setter(self, param: str, value: float) -> None:
-        self._update_temperatures()
-        params = ['temperature_setpoint', 'temperature_rate',
-                  'temperature_settling']
-        vals = list(self.parameters[par].raw_value for par in params)
-        vals[params.index(param)] = value
+        """
+        The setter function for the temperature parameters. All three are set
+        with the same call to the instrument API
+        """
+        vals = list(self.parameters[par].raw_value for par in self.temp_params)
+        vals[self.temp_params.index(param)] = value
 
         self.write(f'TEMP {vals[0]}, {vals[1]}, {vals[2]}')
 
