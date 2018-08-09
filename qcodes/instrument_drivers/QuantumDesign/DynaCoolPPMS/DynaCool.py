@@ -88,6 +88,20 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 1, float),
                            get_cmd='CHAT?')
 
+        self.add_parameter('chamber_state',
+                           label='Chamber vacuum state',
+                           val_mapping={'purged and sealed': 1,
+                                        'vented and sealed': 2,
+                                        'sealed': 3,
+                                        'performing purge/seal': 4,
+                                        'performing vent/seal': 5,
+                                        'pre-high vacuum': 6,
+                                        'high vacuum': 7,
+                                        'pumping continuously': 8,
+                                        'flooding continuously': 9},
+                           get_parser=partial(DynaCool._pick_one, 1, int),
+                           get_cmd='CHAM?')
+
         # The error code of the latest command
         self._error_code = 0
 
