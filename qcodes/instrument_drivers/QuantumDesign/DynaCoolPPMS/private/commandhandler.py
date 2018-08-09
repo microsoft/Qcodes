@@ -54,6 +54,11 @@ class CommandHandler:
                                       args=[_variants['double'],
                                             _variants['double'],
                                             _variants['long']]),
+                      'GLFS': CmdArgs(cmd=self._mvu.GetFieldSetpoints,
+                                      args=[_variants['double'],
+                                            _variants['double'],
+                                            _variants['long'],
+                                            _variants['long']]),
                       'CHAM': CmdArgs(cmd=self._mvu.GetChamber,
                                       args=[_variants['long']]),
                       'FELD': CmdArgs(cmd=self._mvu.GetField,
@@ -61,7 +66,8 @@ class CommandHandler:
                                             _variants['long']]),
                       '*IDN': CmdArgs(cmd=self.make_idn_string, args=[])}
 
-        self._sets = {'TEMP': self._mvu.SetTemperature}
+        self._sets = {'TEMP': self._mvu.SetTemperature,
+                      'FELD': self._mvu.SetField}
 
     def make_idn_string(self) -> str:
         return f'0, DynaCool, {self.inst_type}, N/A, N/A'

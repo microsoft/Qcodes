@@ -26,6 +26,7 @@ class DynaCool(VisaInstrument):
 
     temp_params = ['temperature_setpoint', 'temperature_rate',
                    'temperature_settling']
+    field_params = ['field_setpoint', 'field_rate', 'field_approach']
 
     def __init__(self, name: str,
                  address: str,
@@ -85,7 +86,39 @@ class DynaCool(VisaInstrument):
         self.add_parameter('field',
                            label='Field strength',
                            unit='A/m',
-                           get_cmd=self._field_getter)
+                           get_cmd=self._present_field_getter)
+
+        self.add_parameter('field_setpoint',
+                           label='Field setpoint',
+                           unit='A/m',
+                           get_parser=lambda x: x/79.57747,  # Oe to A/m
+                           set_parser=lambda x: x*79.57747,  # A/m to Oe
+                           set_cmd=partial(self._field_setter,
+                                           'field_setpoint'),
+                           get_cmd=partial(self._field_getter,
+                                           'field_setpoint'),
+                           vals=vals.Numbers(-1755, 1755))
+
+        self.add_parameter('field_rate',
+                           label='Field rate',
+                           unit='A/m/s',
+                           get_parser=lambda x: x/79.57747,  # Oe to A/m
+                           set_parser=lambda x: x*79.57747,  # A/m to Oe
+                           set_cmd=partial(self._field_setter,
+                                           'field_rate'),
+                           get_cmd=partial(self._field_getter,
+                                           'field_rate'),
+                           vals=vals.Numbers(-125.6, 125.6))
+
+        self.add_parameter('field_approach',
+                           label='Field ramp approach',
+                           val_mapping={'linear': 0,
+                                        'no overshoot': 1,
+                                        'oscillate': 2},
+                           set_cmd=partial(self._field_setter,
+                                           'field_approach'),
+                           get_cmd=partial(self._field_getter,
+                                           'field_approach'))
 
         self.add_parameter('magnet_state',
                            label='Magnet state',
@@ -150,6 +183,34 @@ class DynaCool(VisaInstrument):
         idparts = response[2:].split(', ')
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
+    def _present_field_getter(self) -> float:
+        resp = self.ask('FELD?')
+        number_in_oersted = DynaCool._pick_one(1, float, resp)
+        number_in_SI = number_in_oersted/79.57747
+        return number_in_SI
+
+    def _field_getter(self, param_name: str) -> Union[int, float]:
+        """
+        The combined get function for the three field parameters,
+        field_setpoint, field_rate, and field_approach
+        """
+        raw_response = self.ask('GLFS?')
+        sp = DynaCool._pick_one(1, float, raw_response)
+        rate = DynaCool._pick_one(2, float, raw_response)
+        approach = DynaCool._pick_one(3, int, raw_response)
+
+        return dict(zip(self.field_params, [sp, rate, approach]))[param_name]
+
+    def _field_setter(self, param: str, value: float) -> None:
+        """
+        The combined set function for the three field parameters,
+        field_setpoint, field_rate, and field_approach
+        """
+        vals = list(self.parameters[p].raw_value for p in self.field_params)
+        vals[self.field_params.index(param)] = value
+
+        self.write(f'FELD {vals[0]}, {vals[1]}, {vals[2]}, 0')
 
     def _temp_getter(self, param_name: str) -> Union[int, float]:
         """
