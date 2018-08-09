@@ -68,6 +68,13 @@ class DynaCool(VisaInstrument):
                            get_cmd=partial(self._temp_getter,
                                            'temperature_settling'))
 
+        self.add_parameter('temperature_state',
+                           label='Temperature tracking state',
+                           val_mapping={"tracking": 2,
+                                        'stable': 1},
+                           get_parser=partial(DynaCool._pick_one, 2, int),
+                           get_cmd='TEMP?')
+
         self.add_parameter('chamber_temperature',
                            label='Chamber Temperature',
                            unit='K',
@@ -76,8 +83,6 @@ class DynaCool(VisaInstrument):
 
         # The error code of the latest command
         self._error_code = 0
-
-        #self._update_temperatures()
 
         self.connect_message()
 
@@ -112,14 +117,6 @@ class DynaCool(VisaInstrument):
         mode = DynaCool._pick_one(3, int, raw_response)
 
         return dict(zip(self.temp_params, [sp, rate, mode]))[param_name]
-
-        #self.temperature_setpoint._save_val(sp)
-        #self.temperature_rate.raw_value = rate
-        #self.temperature_rate._save_val(rate/60)
-        #self.temperature_settling.raw_value = mode
-        #inv_map = {val: key for (key, val) in
-        #           self.temperature_settling.val_mapping.items()}
-        #self.temperature_settling._save_val(inv_map[mode])
 
     def _temp_setter(self, param: str, value: float) -> None:
         """
