@@ -123,8 +123,8 @@ class Config():
         """
         config = copy.deepcopy(self.defaults)
         self.current_schema = copy.deepcopy(self.defaults_schema)
-        path = path or self.config_file_path
-        if path is not None:
+        self.config_file_path = path or self.config_file_path
+        if self.config_file_path is not None:
             config_file = "{}/{}".format(path, config_file_name)
             schema_file = config_file.replace(config_file_name,
                                               schema_file_name)
