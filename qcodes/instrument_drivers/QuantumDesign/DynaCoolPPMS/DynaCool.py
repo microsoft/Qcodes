@@ -71,7 +71,14 @@ class DynaCool(VisaInstrument):
         self.add_parameter('temperature_state',
                            label='Temperature tracking state',
                            val_mapping={"tracking": 2,
-                                        'stable': 1},
+                                        'stable': 1,
+                                        'near': 5,
+                                        'chasing': 6,
+                                        'pot operation': 7,
+                                        'standby': 10,
+                                        'diagnostic': 13,
+                                        'impedance control error': 14,
+                                        'failure': 15},
                            get_parser=partial(DynaCool._pick_one, 2, int),
                            get_cmd='TEMP?')
 
