@@ -91,9 +91,9 @@ class Config():
     _diff_config: Dict[str, dict] = {}
     _diff_schema: Dict[str, dict] = {}
 
-    def __init__(self):
+    def __init__(self, path=None):
         self.defaults, self.defaults_schema = self.load_default()
-        self.current_config = self.update_config()
+        self.update_config(path=path)
 
     def load_default(self):
         defaults = self.load_config(self.default_file_name)
@@ -101,9 +101,10 @@ class Config():
         self.validate(defaults, defaults_schema)
         return defaults, defaults_schema
 
-    def update_config(self):
+    def update_config(self, path=None):
         """
-        Load defaults and validates.
+        Load defaults updates with config file in path
+        (or cwd, env or home if path not specified) and validates.
         A  configuration file must be called qcodesrc.json
         A schema file must be called schema.json
         Configuration files (and their schema) are loaded and updated from the
@@ -122,25 +123,34 @@ class Config():
         config = copy.deepcopy(self.defaults)
         self.current_schema = copy.deepcopy(self.defaults_schema)
 
-        if os.path.isfile(self.home_file_name):
-            home_config = self.load_config(self.home_file_name)
-            config = update(config, home_config)
+        if path is not None:
+            config_file = "{}/{}".format(path, config_file_name)
+            schema_file = config_file.replace(config_file_name,
+                                              schema_file_name)
+            path_config = self.load_config(path)
+            config = update(config, path_config)
             self.validate(config, self.current_schema,
-                          self.schema_home_file_name)
+                          schema_file)
+        else:
+            if os.path.isfile(self.home_file_name):
+                home_config = self.load_config(self.home_file_name)
+                config = update(config, home_config)
+                self.validate(config, self.current_schema,
+                              self.schema_home_file_name)
 
-        if os.path.isfile(self.env_file_name):
-            env_config = self.load_config(self.env_file_name)
-            config = update(config, env_config)
-            self.validate(config, self.current_schema,
-                          self.schema_env_file_name)
+            if os.path.isfile(self.env_file_name):
+                env_config = self.load_config(self.env_file_name)
+                config = update(config, env_config)
+                self.validate(config, self.current_schema,
+                              self.schema_env_file_name)
 
-        if os.path.isfile(self.cwd_file_name):
-            cwd_config = self.load_config(self.cwd_file_name)
-            config = update(config, cwd_config)
-            self.validate(config, self.current_schema,
-                          self.schema_cwd_file_name)
+            if os.path.isfile(self.cwd_file_name):
+                cwd_config = self.load_config(self.cwd_file_name)
+                config = update(config, cwd_config)
+                self.validate(config, self.current_schema,
+                              self.schema_cwd_file_name)
 
-        return config
+        self._current_config = config
 
     def validate(self, json_config=None, schema=None, extra_schema_path=None):
         """
