@@ -124,7 +124,7 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
-            elif is_number(value):
+            elif is_number(value) or isinstance(value, str):
                 pass
             else:
                 raise ValueError('Wrong value type received. '
