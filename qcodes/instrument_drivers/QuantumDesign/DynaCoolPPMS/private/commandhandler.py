@@ -102,9 +102,7 @@ class CommandHandler:
             args = list(float(arg) for arg in cmd_str[5:].split(', '))
             is_query = False
 
-        output = (CmdArgs(cmd=cmd, args=args), is_query)
-
-        return output
+        return (CmdArgs(cmd=cmd, args=args), is_query)
 
     @staticmethod
     def postparser(error_code: int, vals: List) -> str:
@@ -113,8 +111,8 @@ class CommandHandler:
         can send back to the client
 
         Args:
-            inp: A tuple of (error_code, vals), where vals is a List of the
-              returned values (empty in case of a set command)
+            error_code: the error code returned from the MultiVu call
+            vals: A list of the returned values (empty in case of a set cmd)
         """
         response = f'{error_code}'
 
