@@ -11,7 +11,9 @@ class InterDependencies:
     methods for validation and extraction of data
 
     My idea is to have the helper functions for plotting (get_layout, get_XX)
-    not call the SQLite database but this object instead
+    not call the SQLite database but this object instead. That is to say,
+    the dependencies text will be read out, but all further processing happens
+    via this object
     """
 
     def __init__(self, *paramspecs: ParamSpec) -> None:
