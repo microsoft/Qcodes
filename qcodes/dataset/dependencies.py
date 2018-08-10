@@ -30,6 +30,12 @@ class InterDependencies:
         output += ')'
         return output
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, InterDependencies):
+            return False
+        if not self.paramspecs == other.paramspecs:
+            return False
+        return True
 
 def interdeps_to_yaml(idp: InterDependencies) -> str:
     """
