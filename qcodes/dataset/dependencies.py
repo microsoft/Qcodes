@@ -37,6 +37,7 @@ class InterDependencies:
             return False
         return True
 
+
 def interdeps_to_yaml(idp: InterDependencies) -> str:
     """
     Output the dependencies as a yaml string
@@ -56,5 +57,5 @@ def yaml_to_interdeps(yaml_str: str) -> InterDependencies:
     yaml = YAML()
     yaml.register_class(ParamSpec)
     paramspecs = yaml.load(yaml_str)['Parameters']
-    return InterDependencies(paramspecs)
+    return InterDependencies(*paramspecs)
 
