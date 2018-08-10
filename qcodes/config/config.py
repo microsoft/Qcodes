@@ -69,7 +69,7 @@ class Config():
                                                       schema_file_name)
 
     # home dir, os independent
-    home_file_name = expanduser("~/{}".format(config_file_name))
+    home_file_name = expanduser(os.path.join("~", config_file_name))
     schema_home_file_name = home_file_name.replace(config_file_name,
                                                    schema_file_name)
 
@@ -78,7 +78,7 @@ class Config():
     schema_env_file_name = env_file_name.replace(config_file_name,
                                                  schema_file_name)
     # current working dir
-    cwd_file_name = "{}/{}".format(Path.cwd(), config_file_name)
+    cwd_file_name = os.path.join(Path.cwd(), config_file_name)
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
 
@@ -125,7 +125,7 @@ class Config():
         self.current_schema = copy.deepcopy(self.defaults_schema)
         self.config_file_path = path or self.config_file_path
         if self.config_file_path is not None:
-            config_file = "{}/{}".format(self.config_file_path, self.config_file_name)
+            config_file = os.path.join(self.config_file_path, self.config_file_name)
             schema_file = config_file.replace(self.config_file_name,
                                               self.schema_file_name)
             path_config = self.load_config(config_file)
