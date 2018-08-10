@@ -19,6 +19,17 @@ class InterDependencies:
     def __init__(self, *paramspecs: ParamSpec) -> None:
         self.paramspecs = paramspecs
 
+    def __repr__(self) -> str:
+        output = self.__class__.__name__
+        output += '('
+        for ii, paramspec in enumerate(self.paramspecs):
+            if ii == 0:
+                output += f'{paramspec}'
+            else:
+                output += f', {paramspec}'
+        output += ')'
+        return output
+
 
 def interdeps_to_yaml(idp: InterDependencies) -> str:
     """
