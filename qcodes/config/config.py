@@ -125,10 +125,10 @@ class Config():
         self.current_schema = copy.deepcopy(self.defaults_schema)
         self.config_file_path = path or self.config_file_path
         if self.config_file_path is not None:
-            config_file = "{}/{}".format(path, config_file_name)
-            schema_file = config_file.replace(config_file_name,
-                                              schema_file_name)
-            path_config = self.load_config(path)
+            config_file = "{}/{}".format(self.config_file_path, self.config_file_name)
+            schema_file = config_file.replace(self.config_file_name,
+                                              self.schema_file_name)
+            path_config = self.load_config(config_file)
             config = update(config, path_config)
             self.validate(config, self.current_schema,
                           schema_file)
@@ -151,7 +151,7 @@ class Config():
                 self.validate(config, self.current_schema,
                               self.schema_cwd_file_name)
 
-        self._current_config = config
+        self.current_config = config
 
     def validate(self, json_config=None, schema=None, extra_schema_path=None):
         """
