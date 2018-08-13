@@ -656,6 +656,14 @@ class AMI430_3D(Instrument):
             vals=Numbers()
         )
 
+        self.add_parameter(
+            'block_during_ramp',
+            set_cmd=None,
+            initial_value=True,
+            unit='',
+            vals=Bool()
+        )
+
     def _verify_safe_setpoint(self, setpoint_values):
 
         if repr(self._field_limit).isnumeric():
@@ -710,7 +718,8 @@ class AMI430_3D(Instrument):
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
-                instrument.set_field(value, perform_safety_check=False)
+                instrument.set_field(value, perform_safety_check=False,
+                                     block=self.block_during_ramp.get())
 
     def _request_field_change(self, instrument, value):
         """
