@@ -78,7 +78,7 @@ def test_default_callback(experiment):
 
 def test_numpy_types(experiment):
     """
-    Test that we can save numpy types in the dataset
+    Test that we can save numpy types in the data set
     """
 
     p = ParamSpec("p", "numeric")
@@ -91,3 +91,16 @@ def test_numpy_types(experiment):
 
     for dtype in dtypes:
         data_saver.add_result(("p", dtype(2)))
+
+
+def test_string(experiment):
+    """
+    Test that we can save text in the data set
+    """
+    p = ParamSpec("p", "text")
+
+    test_set = qc.new_data_set("test-dataset")
+    data_saver = DataSaver(
+        dataset=test_set, write_period=0, parameters={"p": p})
+
+    data_saver.add_result(("p", "some text"))
