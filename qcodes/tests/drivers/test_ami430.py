@@ -391,11 +391,12 @@ def test_warning_increased_max_ramp_rate():
     target_ramp_rate = max_ramp_rate + 0.01
 
     with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
-        AMI430_VISA("testing_increased_max_ramp_rate",
-                    address='GPIB::4::65535::INSTR', visalib=visalib,
-                    terminator='\n', port=1,
-                    current_ramp_limit=target_ramp_rate)
+        inst = AMI430_VISA("testing_increased_max_ramp_rate",
+                           address='GPIB::4::65535::INSTR', visalib=visalib,
+                           terminator='\n', port=1,
+                           current_ramp_limit=target_ramp_rate)
         assert len(excinfo) >= 1 # Check we at least one warning.
+        inst.close()
 
 
 def test_ramp_rate_exception(current_driver):
