@@ -1,8 +1,11 @@
 import pytest
 import os
 import tempfile
+import numpy as np
+
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
+from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.dataset.database import initialise_database
 
@@ -71,3 +74,20 @@ def test_default_callback(experiment):
         DataSaver.default_callback = None
         if test_set is not None:
             test_set.conn.close()
+
+
+def test_numpy_types(experiment):
+    """
+    Test that we can save numpy types in the dataset
+    """
+
+    p = ParamSpec("p", "numeric")
+    test_set = qc.new_data_set("test-dataset")
+    data_saver = DataSaver(
+        dataset=test_set, write_period=0, parameters={"p": p})
+
+    dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
+              np.float64]
+
+    for dtype in dtypes:
+        data_saver.add_result(("p", dtype(2)))

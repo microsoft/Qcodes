@@ -66,7 +66,7 @@ class DataSaver:
 
     def add_result(self,
                    *res_tuple: Tuple[Union[_BaseParameter, str],
-                                     Union[str, int, float, np.ndarray]])-> None:
+                                     Union[str, int, float, np.dtype, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
