@@ -195,12 +195,17 @@ class BaseOutput(InstrumentChannel):
         wait_tolerance = wait_tolerance or self.wait_tolerance.get_latest()
         wait_equilibration_time = (wait_equilibration_time or
                                    self.wait_equilibration_time.get_latest())
+
         active_channel_id = self.input_channel()
         active_channel_number_in_list = active_channel_id - 1
         active_channel = self.root_instrument.channels[active_channel_number_in_list]
+
+        if active_channel.units() != 'kelvin':
+            raise ValueError(f"Waiting until the setpoint is reached requires "
+                             f"channel's {active_channel._channel!r} units to be "
+                             f"set to 'kelvin'.")
         
         t_setpoint = self.setpoint()
-        t_reading = active_channel.temperature()
         start_time_in_tolerance_zone = None
         is_in_tolerance_zone = False
         while True:
@@ -209,7 +214,7 @@ class BaseOutput(InstrumentChannel):
             # if temperature is lower than sensor range, keep on waiting
             # TODO(DV):only do this coming from one direction
             if t_reading:
-                delta = abs(t_reading-t_setpoint)/t_reading
+                delta = abs(t_reading - t_setpoint)/t_reading
                 if delta < wait_tolerance:
                     if is_in_tolerance_zone:
                         if (time.monotonic() - start_time_in_tolerance_zone
