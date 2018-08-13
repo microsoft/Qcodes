@@ -196,9 +196,9 @@ class BaseOutput(InstrumentChannel):
         wait_equilibration_time = (wait_equilibration_time or
                                    self.wait_equilibration_time.get_latest())
         active_channel_id = self.input_channel()
-        active_channel = self.root_instrument.channels[active_channel_id]
-        # assert active_channel._channel == active_channel_id
-
+        active_channel_number_in_list = active_channel_id - 1
+        active_channel = self.root_instrument.channels[active_channel_number_in_list]
+        
         t_setpoint = self.setpoint()
         t_reading = active_channel.temperature()
         start_time_in_tolerance_zone = None
@@ -232,10 +232,11 @@ class BaseSensorChannel(InstrumentChannel):
 
     def __init__(self, parent, name, channel):
         # args:
-        #    channel: 1-4 numerical identifier of the channel
+        #    channel: string identifier of the channel as referenced in commands;
+        #             for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
         super().__init__(parent, name)
 
-        self._channel = channel  # Channel on the temperature controller. Can be A-D
+        self._channel = channel  # Channel on the temperature controller
 
         # Add the various channel parameters
         self.add_parameter('temperature',
