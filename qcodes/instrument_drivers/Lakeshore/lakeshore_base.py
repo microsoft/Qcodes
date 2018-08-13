@@ -206,30 +206,37 @@ class BaseOutput(InstrumentChannel):
                              f"set to 'kelvin'.")
         
         t_setpoint = self.setpoint()
+        
         start_time_in_tolerance_zone = None
         is_in_tolerance_zone = False
+
         while True:
             t_reading = active_channel.temperature()
-            log.debug(f'loop iteration with t reading of {t_reading}')
             # if temperature is lower than sensor range, keep on waiting
             # TODO(DV):only do this coming from one direction
-            if t_reading:
-                delta = abs(t_reading - t_setpoint)/t_reading
-                if delta < wait_tolerance:
-                    if is_in_tolerance_zone:
-                        if (time.monotonic() - start_time_in_tolerance_zone
-                            > wait_equilibration_time):
-                            break
-                    else:
-                        start_time_in_tolerance_zone = time.monotonic()
-                        is_in_tolerance_zone = True
-                else:
-                    if is_in_tolerance_zone:
-                        is_in_tolerance_zone = False
-                        start_time_in_tolerance_zone = None
+            delta = abs(t_reading - t_setpoint)/t_reading
+            log.debug(f'loop iteration with t reading of {t_reading}, delta {delta}')
 
-                log.debug(f'waiting to reach setpoint: temp at '
-                          f'{t_reading}, delta:{delta}')
+            if delta < wait_tolerance:
+                log.debug(f'delta ({delta}) is within wait_tolerance ({wait_tolerance})')
+                if is_in_tolerance_zone:
+                    if (time.monotonic() - start_time_in_tolerance_zone
+                        > wait_equilibration_time):
+                        log.debug(f'wait_equilibration_time ({wait_equilibration_time}) within tolerance zone has passed')
+                        break
+                    else:
+                        log.debug(f'wait_equilibration_time ({wait_equilibration_time}) within tolerance zone has not passed yet')
+                else:
+                    log.debug(f'entering tolerance zone')
+                    start_time_in_tolerance_zone = time.monotonic()
+                    is_in_tolerance_zone = True
+            else:
+                log.debug(f'delta ({delta}) is not within wait_tolerance ({wait_tolerance})')
+                if is_in_tolerance_zone:
+                    log.debug('exiting tolerance zone')
+                    is_in_tolerance_zone = False
+                    start_time_in_tolerance_zone = None
+            
             time.sleep(wait_cycle_time)
 
 
