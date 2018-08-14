@@ -36,7 +36,7 @@ class BaseOutput(InstrumentChannel):
                            val_mapping={True: 1, False: 0},
                            parameter_class=GroupParameter)
         self.output_group = Group([self.mode, self.input_channel,
-                                  self.powerup_enable],
+                                   self.powerup_enable],
                                   set_cmd=f'OUTMODE {output_index}, {{mode}}, '
                                           f'{{input_channel}}, '
                                           f'{{powerup_enable}}',
@@ -44,14 +44,15 @@ class BaseOutput(InstrumentChannel):
 
         if self._has_pid:
             self.add_parameter('P', vals=validators.Numbers(0, 1000),
-                            get_parser=float, parameter_class=GroupParameter)
+                               get_parser=float, parameter_class=GroupParameter)
             self.add_parameter('I', vals=validators.Numbers(0, 1000),
-                            get_parser=float, parameter_class=GroupParameter)
+                               get_parser=float, parameter_class=GroupParameter)
             self.add_parameter('D', vals=validators.Numbers(0, 2500),
-                            get_parser=float, parameter_class=GroupParameter)
+                               get_parser=float, parameter_class=GroupParameter)
             self.pid_group = Group([self.P, self.I, self.D],
-                                set_cmd=f"PID {output_index}, {{P}}, {{I}}, {{D}}",
-                                get_cmd=f'PID? {output_index}')
+                                   set_cmd=f"PID {output_index}, "
+                                           f"{{P}}, {{I}}, {{D}}",
+                                   get_cmd=f'PID? {output_index}')
 
         self.add_parameter('output_range',
                            val_mapping=self.RANGES,
@@ -59,40 +60,51 @@ class BaseOutput(InstrumentChannel):
                            get_cmd=f'RANGE? {output_index}')
 
         self.add_parameter('setpoint',
-                           docstring='Note that the units are used from '
-                                     'the preferred units of the "input_channel"',
+                           docstring='Note that the units are used from the '
+                                     'preferred units of the "input_channel"',
                            vals=validators.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=f'SETP {output_index}, {{}}',
                            get_cmd=f'SETP? {output_index}')
 
-        # additional non Visa parameters
+        # Additional non-Visa parameters
+
         self.add_parameter('range_limits',
                            set_cmd=None,
-                           vals=validators.Sequence(validators.Numbers(0,400),
+                           vals=validators.Sequence(validators.Numbers(0, 400),
                                                     require_sorted=True,
                                                     length=7),
-                           label='Temperature limits for ranges ', unit='K')
+                           label='Temperature limits for output ranges',
+                           unit='K',
+                           docstring='Use this parameter to define which '
+                                     'temperature corresponds to which output '
+                                     'range; then use the '
+                                     '`set_range_from_temperature` method to '
+                                     'set the output range via temperature '
+                                     'instead of doing it directly')
 
         self.add_parameter('wait_cycle_time',
                            set_cmd=None,
-                           vals=validators.Numbers(0,100),
+                           vals=validators.Numbers(0, 100),
                            label='Time between two readings when waiting for'
-                                 'temperature to equilibrate', unit='s')
+                                 'temperature to equilibrate',
+                           unit='s')
         self.wait_cycle_time(0.1)
 
         self.add_parameter('wait_tolerance',
                            set_cmd=None,
-                           vals=validators.Numbers(0,100),
+                           vals=validators.Numbers(0, 100),
                            label='Acceptable tolerance when waiting for '
-                                 'temperature to equilibrate', unit='')
+                                 'temperature to equilibrate',
+                           unit='')
         self.wait_tolerance(0.1)
 
         self.add_parameter('wait_equilibration_time',
                            set_cmd=None,
-                           vals=validators.Numbers(0,100),
+                           vals=validators.Numbers(0, 100),
                            label='Duration during which temperature has to be '
-                                 'within tolerance.', unit='')
+                                 'within tolerance',
+                           unit='')
         self.wait_equilibration_time(0.5)
 
 
@@ -108,16 +120,24 @@ class BaseOutput(InstrumentChannel):
 
     def set_range_from_temperature(self, temperature):
         """
-        Sets the output range of this given heatre from from a given
-        temperature.
-        The output range is determine by the limits given through the parameter
-        `range_limits`. The output range i is used for tempartures between
-        the limits `range_limits[i-1]` and `range_limits[i]`, that is
-        `range_limits` is the upper limit for using a certain heater current
+        Sets the output range of this given heater from a given temperature.
+
+        The output range is determined by the limits given through the parameter
+        `range_limits`. The output range is used for temperatures between
+        the limits `range_limits[i-1]` and `range_limits[i]`; that is
+        `range_limits` is the upper limit for using a certain heater current.
+
+        Args:
+            temperature
+                temperature to set the range from
+
+        Returns:
+            the value of the resulting `output_range`, that is also available
+            from the `output_range` parameter itself
         """
         if self.range_limits.get_latest() is None:
-            raise RuntimeError('Error when calling set_range_from_temperature:'
-                               ' You must specify the output range limits '
+            raise RuntimeError('Error when calling set_range_from_temperature: '
+                               'You must specify the output range limits '
                                'before automatically setting the range '
                                '(e.g. inst.range_limits([0.021, 0.1, 0.2, '
                                '1.1, 2, 4, 8]))')
@@ -133,10 +153,34 @@ class BaseOutput(InstrumentChannel):
         self.set_range_from_temperature(temperature)
         self.setpoint(temperature)
 
-    def wait_until_set_point_reached(self, *,wait_cycle_time: float=None,
+    def wait_until_set_point_reached(self,
+                                     wait_cycle_time: float=None,
                                      wait_tolerance: float=None,
                                      wait_equilibration_time: float=None):
-        wait_cycle_time =  wait_cycle_time or self.wait_cycle_time.get_latest()
+        """
+        This function runs a loop that monitors the value of the heater's
+        input channel until the read values is close to the setpoint value
+        that has been set before.
+
+        Args:
+            wait_cycle_time
+                this time is being waited between the readings (same as
+                `wait_cycle_time` parameter); if None, then the value of the
+                corresponding `wait_cycle_time` parameter is used
+            wait_tolerance
+                this value is used to determine if the reading value is
+                close enough to the setpoint value according to the
+                following formula:
+                `abs(t_reading - t_setpoint)/t_reading < wait_tolerance`
+                (same as `wait_tolerance` parameter); if None, then the
+                value of the corresponding `wait_tolerance` parameter is used
+            wait_equilibration_time:
+                within this time, the reading value has to stay within the
+                defined tolerance in order for this function to return (same as
+                `wait_equilibration_time` parameter); if None, then the value
+                of the corresponding `wait_equilibration_time` parameter is used
+        """
+        wait_cycle_time = wait_cycle_time or self.wait_cycle_time.get_latest()
         wait_tolerance = wait_tolerance or self.wait_tolerance.get_latest()
         wait_equilibration_time = (wait_equilibration_time or
                                    self.wait_equilibration_time.get_latest())
@@ -147,8 +191,8 @@ class BaseOutput(InstrumentChannel):
 
         if active_channel.units() != 'kelvin':
             raise ValueError(f"Waiting until the setpoint is reached requires "
-                             f"channel's {active_channel._channel!r} units to be "
-                             f"set to 'kelvin'.")
+                             f"channel's {active_channel._channel!r} units to "
+                             f"be set to 'kelvin'.")
         
         t_setpoint = self.setpoint()
         
@@ -157,26 +201,34 @@ class BaseOutput(InstrumentChannel):
 
         while True:
             t_reading = active_channel.temperature()
-            # if temperature is lower than sensor range, keep on waiting
-            # TODO(DV):only do this coming from one direction
+            # TODO(MA): if T is lower than sensor range, it keeps on waiting...
+            # TODO(DV): only do this coming from one direction
             delta = abs(t_reading - t_setpoint)/t_reading
-            log.debug(f'loop iteration with t reading of {t_reading}, delta {delta}')
+            log.debug(f'loop iteration with '
+                      f't reading of {t_reading}, delta {delta}')
 
             if delta < wait_tolerance:
-                log.debug(f'delta ({delta}) is within wait_tolerance ({wait_tolerance})')
+                log.debug(f'delta ({delta}) is within '
+                          f'wait_tolerance ({wait_tolerance})')
                 if is_in_tolerance_zone:
-                    if (time.monotonic() - start_time_in_tolerance_zone
-                        > wait_equilibration_time):
-                        log.debug(f'wait_equilibration_time ({wait_equilibration_time}) within tolerance zone has passed')
+                    if time.monotonic() - start_time_in_tolerance_zone \
+                            > wait_equilibration_time:
+                        log.debug(f'the reading is within the tolerance zone '
+                                  f'for more than wait_equilibration_time '
+                                  f'({wait_equilibration_time}), hence exit '
+                                  f'the loop')
                         break
                     else:
-                        log.debug(f'wait_equilibration_time ({wait_equilibration_time}) within tolerance zone has not passed yet')
+                        log.debug(f'wait_equilibration_time '
+                                  f'({wait_equilibration_time}) within '
+                                  f'tolerance zone has not passed yet')
                 else:
                     log.debug(f'entering tolerance zone')
                     start_time_in_tolerance_zone = time.monotonic()
                     is_in_tolerance_zone = True
             else:
-                log.debug(f'delta ({delta}) is not within wait_tolerance ({wait_tolerance})')
+                log.debug(f'delta ({delta}) is not within '
+                          f'wait_tolerance ({wait_tolerance})')
                 if is_in_tolerance_zone:
                     log.debug('exiting tolerance zone')
                     is_in_tolerance_zone = False
@@ -186,16 +238,25 @@ class BaseOutput(InstrumentChannel):
 
 
 class BaseSensorChannel(InstrumentChannel):
+    """
+    Base class for Lakeshore Temperature Controller sensor channels
 
+    Args:
+        parent
+            instrument instance that this channel belongs to
+        name
+            name of the channel
+        channel
+            string identifier of the channel as referenced in commands;
+            for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
+    """
     def __init__(self, parent, name, channel):
-        # args:
-        #    channel: string identifier of the channel as referenced in commands;
-        #             for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
         super().__init__(parent, name)
 
         self._channel = channel  # Channel on the temperature controller
 
         # Add the various channel parameters
+
         self.add_parameter('temperature',
                            get_cmd='KRDG? {}'.format(self._channel),
                            get_parser=float,
@@ -225,7 +286,7 @@ class BaseSensorChannel(InstrumentChannel):
                            label='Sensor_Status')
 
         self.add_parameter('sensor_name',
-                           get_cmd='INNAME? {}'.format(self._channel),
+                           get_cmd=f'INNAME? {self._channel}',
                            get_parser=str,
                            set_cmd=f'INNAME {self._channel},\"{{}}\"',
                            vals=validators.Strings(15),
@@ -234,22 +295,26 @@ class BaseSensorChannel(InstrumentChannel):
         # Parameters related to Input Channel Parameter Command (INSET)
         self.add_parameter('enabled',
                            label='Enabled',
-                           docstring='Specifies whether the input/channel is enabled or disabled. '
-                                     'At least one measurement input channel must be enabled. '
-                                     'If all are configured to disabled, channel 1 will change to enabled.',
+                           docstring='Specifies whether the input/channel is '
+                                     'enabled or disabled. At least one '
+                                     'measurement input channel must be '
+                                     'enabled. If all are configured to '
+                                     'disabled, channel 1 will change to '
+                                     'enabled.',
                            val_mapping={True: 1, False: 0},
                            parameter_class=GroupParameter)
         self.add_parameter('dwell',
                            label='Dwell',
-                           docstring='Specifies a value for the autoscanning dwell time. '
-                                     'Not applicable for <input/channel> = A (control input).',
+                           docstring='Specifies a value for the autoscanning '
+                                     'dwell time.',
                            unit='s',
-                           get_parser=int,  # not applicable to channel A for 372 (see manual)
+                           get_parser=int,
                            vals=validators.Numbers(1, 200),
                            parameter_class=GroupParameter)
         self.add_parameter('pause',
                            label='Change pause time',
-                           docstring='Specifies a value for the change pause time',
+                           docstring='Specifies a value for '
+                                     'the change pause time',
                            unit='s',
                            get_parser=int,
                            vals=validators.Numbers(3, 200),
@@ -257,24 +322,27 @@ class BaseSensorChannel(InstrumentChannel):
         self.add_parameter('curve_number',
                            label='Curve',
                            docstring='Specifies which curve the channel uses: '
-                                     '0 = no curve, 1 to 59 = standard/user curves.'
-                                     'Do not change this parameter unless you know '
-                                     'what you are doing.',
+                                     '0 = no curve, 1 to 59 = standard/user '
+                                     'curves. Do not change this parameter '
+                                     'unless you know what you are doing.',
                            get_parser=int,
                            vals=validators.Numbers(0, 59),
                            parameter_class=GroupParameter)
         self.add_parameter('temperature_coefficient',
                            label='Change pause time',
-                           docstring='Sets the temperature coefficient that will be used for '
-                                     'temperature control if no curve is selected (negative or positive). '
-                                     'Do not change this parameter unless you know '
-                                     'what you are doing.',
+                           docstring='Sets the temperature coefficient that '
+                                     'will be used for temperature control if '
+                                     'no curve is selected (negative or '
+                                     'positive). Do not change this parameter '
+                                     'unless you know what you are doing.',
                            val_mapping={'negative': 1, 'positive': 2},
                            parameter_class=GroupParameter)
-        self.output_group = Group([self.enabled, self.dwell, self.pause, self.curve_number,
-                                  self.temperature_coefficient],
-                                  set_cmd=f'INSET {self._channel}, {{enabled}}, '
-                                          f'{{dwell}}, {{pause}}, {{curve_number}}, '
+        self.output_group = Group([self.enabled, self.dwell, self.pause,
+                                   self.curve_number,
+                                   self.temperature_coefficient],
+                                  set_cmd=f'INSET {self._channel}, '
+                                          f'{{enabled}}, {{dwell}}, {{pause}}, '
+                                          f'{{curve_number}}, '
                                           f'{{temperature_coefficient}}',
                                   get_cmd=f'INSET? {self._channel}')
 
@@ -293,10 +361,12 @@ class BaseSensorChannel(InstrumentChannel):
         # only because it is a part of a group.
         self.add_parameter('excitation_range_number',
                            label='Excitation range number',
-                           docstring='Specifies excitation range number (1-12 for voltage excitation, '
-                                     '1-22 for current excitation); refer to the manual for the table of ranges',
+                           docstring='Specifies excitation range number '
+                                     '(1-12 for voltage excitation, 1-22 for '
+                                     'current excitation); refer to the manual '
+                                     'for the table of ranges',
                            get_parser=int,
-                           vals=validators.Numbers(1, 22),  # TODO: this needs to change based on 'excitation_mode' value
+                           vals=validators.Numbers(1, 22),
                            parameter_class=GroupParameter)
         self.add_parameter('auto_range',
                            label='Auto range',
@@ -330,30 +400,40 @@ class BaseSensorChannel(InstrumentChannel):
                            parameter_class=GroupParameter)
         self.add_parameter('current_source_shunted',
                            label='Current source shunt',
-                           docstring='Current source either not shunted (excitation on), or shunted (excitation off)',
+                           docstring='Current source either not shunted '
+                                     '(excitation on), or shunted '
+                                     '(excitation off)',
                            val_mapping={False: 0, True: 1},
                            parameter_class=GroupParameter)
         self.add_parameter('units',
                            label='Preferred units',
-                           docstring='Specifies the preferred units parameter for sensor readings'
-                                     'and for the control setpoint (kelvin or ohms)',
+                           docstring='Specifies the preferred units parameter '
+                                     'for sensor readings and for the control '
+                                     'setpoint (kelvin or ohms)',
                            val_mapping={'kelvin': 1, 'ohms': 2},
                            parameter_class=GroupParameter)
-        self.output_group = Group([self.excitation_mode, self.excitation_range_number, self.auto_range, self.range,
-                                  self.current_source_shunted, self.units],
-                                  set_cmd=f'INTYPE {self._channel}, {{excitation_mode}}, '
-                                          f'{{excitation_range_number}}, {{auto_range}}, {{range}}, '
-                                          f'{{current_source_shunted}}, {{units}}',
+        self.output_group = Group([self.excitation_mode,
+                                   self.excitation_range_number,
+                                   self.auto_range, self.range,
+                                   self.current_source_shunted, self.units],
+                                  set_cmd=f'INTYPE {self._channel}, '
+                                          f'{{excitation_mode}}, '
+                                          f'{{excitation_range_number}}, '
+                                          f'{{auto_range}}, {{range}}, '
+                                          f'{{current_source_shunted}}, '
+                                          f'{{units}}',
                                   get_cmd=f'INTYPE? {self._channel}')
 
 
 class LakeshoreBase(VisaInstrument):
     """
-    This Base class has been written to be that base for the
-    Lakeshore 336 and 372. There are probably other lakeshore modes that can
-    use the functionality provided here. If you add another lakeshore driver
+    This base class has been written to be that base for the Lakeshore 336
+    and 372. There are probably other lakeshore modes that can use the
+    functionality provided here. If you add another lakeshore driver
     please make sure to extend this class accordingly, or create a new one.
     """
+    # Redefine this in the model-specific class in case you want to use a
+    # different class for sensor channels
     CHANNEL_CLASS = BaseSensorChannel
 
     # This dict has channel name in the driver as keys, and channel "name" that
@@ -362,13 +442,17 @@ class LakeshoreBase(VisaInstrument):
     # will contain {'B': '2'} entry.
     channel_name_command: Dict[str, str] = {}
 
-    def __init__(self, name: str, address: str,
-                 terminator: str ='\r\n', **kwargs) -> None:
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 terminator: str ='\r\n',
+                 **kwargs
+                 ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
+
         # Allow access to channels either by referring to the channel name
-        # or through a channel list.
-        # i.e. instr.A.temperature() and instr.channels[0].temperature()
-        # refer to the same parameter.
+        # or through a channel list, i.e. instr.A.temperature() and
+        # instr.channels[0].temperature() refer to the same parameter.
         self.channels = ChannelList(self, "TempSensors",
                                     self.CHANNEL_CLASS, snapshotable=False)
         for name, command in self.channel_name_command.items():
