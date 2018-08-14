@@ -45,8 +45,8 @@ class Model_336(LakeshoreBase):
     """
     Lakeshore Model 336 Temperature Controller Driver
     """
-    channel_name_command: Dict[str,str] = {'A': 'A',
-                                           'B': 'B',
-                                           'C': 'C',
-                                           'D': 'D'}
+    channel_name_command: Dict[str,str] = {'A': '1',
+                                           'B': '2',
+                                           'C': '3',
+                                           'D': '4'}
     CHANNEL_CLASS = Model_336_Channel
