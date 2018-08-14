@@ -412,6 +412,10 @@ class LakeshoreBase(VisaInstrument):
     """
     CHANNEL_CLASS = BaseSensorChannel
 
+    # This dict has channel name in the driver as keys, and channel "name" that
+    # is used in instrument commands as values. For example, if channel called
+    # "B" is referred to in instrument commands as '2', then this dictionary
+    # will contain {'B': '2'} entry.
     channel_name_command: Dict[str, str] = {}
 
     def __init__(self, name: str, address: str,
