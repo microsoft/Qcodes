@@ -39,7 +39,7 @@ class GroupParameter(Parameter):
         self.group = None
         super().__init__(name, instrument=instrument, **kwargs)
 
-    def set_raw(self, value, **kwargs):  # pylint: disable=E0202
+    def set_raw(self, value):  # pylint: disable=E0202
         self.group.set(self, value)
 
     def get_raw(self, result=None):  # pylint: disable=E0202
@@ -130,7 +130,7 @@ class Group:
             individual parsing of their values)
     """
     def __init__(self, parameters, set_cmd=None, get_cmd=None,
-                 get_parser=None, separator=',', types=None) -> None:
+                 get_parser=None, separator=',') -> None:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
         self.instrument = parameters[0].root_instrument
         for p in parameters:
@@ -140,9 +140,9 @@ class Group:
         if get_parser:
             self.get_parser = get_parser
         else:
-            self.get_parser = self._separator_parser(separator, types)
+            self.get_parser = self._separator_parser(separator)
 
-    def _separator_parser(self, separator, types):
+    def _separator_parser(self, separator):
         """A default separator-based string parser"""
         def parser(ret_str):
             keys = self.parameters.keys()
@@ -175,11 +175,6 @@ class Group:
         the `get_cmd`
         """
         ret = self.get_parser(self.instrument.ask(self.get_cmd))
-        # if any(p.get_latest() != ret[] for name, p in self.parameters if p
-        # is not get_parameter):
-        #     log.warn('a value has changed on the device')
-        # TODO(DV): this is odd, but the only way to call the wrapper
-        # accordingly
         for name, p in list(self.parameters.items()):
             p.get(result=ret[name])
 
