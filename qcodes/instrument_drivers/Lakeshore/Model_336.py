@@ -1,14 +1,10 @@
 from typing import ClassVar, Dict
-import logging
+
 from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
 import qcodes.utils.validators as vals
 
 
-log = logging.getLogger(__name__)
-
-
 class Output_336(BaseOutput):
-
     MODES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'closed_loop': 1,
@@ -20,12 +16,12 @@ class Output_336(BaseOutput):
         'off': 0,
         'low': 1,
         'medium': 2,
-        'heigh': 3}
+        'high': 3}
 
     def __init__(self, parent, output_name, output_index):
-        if output_name not in ['A','B']:
+        if output_name not in ['A', 'B']:
             self._has_pid = False
-        
+
         super().__init__(parent, output_name, output_index)
 
         self.P.vals = vals.Numbers(0.1, 1000)
@@ -33,7 +29,7 @@ class Output_336(BaseOutput):
         self.D.vals = vals.Numbers(0, 200)
 
         self.range_limits.vals = vals.Sequence(
-            vals.Numbers(0,400),length=2, require_sorted=True)
+            vals.Numbers(0, 400), length=2, require_sorted=True)
 
 
 class Model_336_Channel(BaseSensorChannel):
@@ -45,10 +41,10 @@ class Model_336(LakeshoreBase):
     """
     Lakeshore Model 336 Temperature Controller Driver
     """
-    channel_name_command: Dict[str,str] = {'A': '1',
-                                           'B': '2',
-                                           'C': '3',
-                                           'D': '4'}
+    channel_name_command: Dict[str, str] = {'A': '1',
+                                            'B': '2',
+                                            'C': '3',
+                                            'D': '4'}
     CHANNEL_CLASS = Model_336_Channel
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
