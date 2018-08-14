@@ -31,6 +31,9 @@ class Output_372(BaseOutput):
 
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index)
+
+        # Add more parameters for OUTMODE command 
+        # and redefine the corresponding group
         self.add_parameter('polarity',
                            val_mapping=self.POLARITIES,
                            parameter_class=GroupParameter)
@@ -40,11 +43,13 @@ class Output_372(BaseOutput):
         self.add_parameter('delay', vals=vals.Ints(0, 255),
                            get_parser=int,
                            parameter_class=GroupParameter)
-
         self.output_group = Group([self.mode, self.input_channel,
                                   self.powerup_enable, self.polarity,
                                   self.use_filter, self.delay],
-                                  set_cmd=f"OUTMODE {output_index}, {{mode}}, {{input_channel}}, {{powerup_enable}}, {{polarity}}, {{use_filter}}, {{delay}}",
+                                  set_cmd=f'OUTMODE {output_index}, {{mode}}, '
+                                          f'{{input_channel}}, '
+                                          f'{{powerup_enable}}, {{polarity}}, '
+                                          f'{{use_filter}}, {{delay}}',
                                   get_cmd=f'OUTMODE? {output_index}')
 
 

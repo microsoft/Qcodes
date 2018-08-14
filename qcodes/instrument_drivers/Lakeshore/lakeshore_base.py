@@ -82,6 +82,7 @@ class BaseOutput(InstrumentChannel):
             v: k for k, v in self.RANGES.items()}
         self._has_pid = True
         self.output_index = output_index
+
         self.add_parameter('mode',
                            val_mapping=self.MODES,
                            parameter_class=GroupParameter)
@@ -94,9 +95,9 @@ class BaseOutput(InstrumentChannel):
                                   self.powerup_enable],
                                   set_cmd=f'OUTMODE {output_index}, {{mode}}, '
                                           f'{{input_channel}}, '
-                                          f'{{powerup_enable}}, {{polarity}}, '
-                                          f'{{filter}}, {{delay}}',
+                                          f'{{powerup_enable}}',
                                   get_cmd=f'OUTMODE? {output_index}')
+
         if self._has_pid:
             self.add_parameter('P', vals=validators.Numbers(0, 1000),
                             get_parser=float, parameter_class=GroupParameter)
