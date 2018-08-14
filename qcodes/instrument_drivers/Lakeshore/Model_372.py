@@ -1,6 +1,7 @@
 from typing import Dict, ClassVar
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
-    LakeshoreBase, BaseOutput, Group, GroupParameter)
+    LakeshoreBase, BaseOutput)
+from qcodes.instrument.group_parameter import GroupParameter, Group
 import qcodes.utils.validators as vals
 
 class Output_372(BaseOutput):
