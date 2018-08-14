@@ -11,10 +11,6 @@ from qcodes.utils import validators
 log = logging.getLogger(__name__)
 
 
-VAL_MAP_TYPE = ClassVar[Dict[str, int]]
-INVERSE_VAL_MAP_TYPE = ClassVar[Dict[int, str]]
-
-
 class BaseOutput(InstrumentChannel):
 
     MODES: ClassVar[Dict[str, int]] = {}
