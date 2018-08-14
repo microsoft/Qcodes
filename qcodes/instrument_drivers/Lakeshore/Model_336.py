@@ -3,7 +3,9 @@ import logging
 from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
 import qcodes.utils.validators as vals
 
+
 log = logging.getLogger(__name__)
+
 
 class Output_336(BaseOutput):
 
@@ -23,13 +25,15 @@ class Output_336(BaseOutput):
     def __init__(self, parent, output_name, output_index):
         if output_name not in ['A','B']:
             self._has_pid = False
+        
         super().__init__(parent, output_name, output_index)
+
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
         self.D.vals = vals.Numbers(0, 200)
 
-        self.range_limits.vals = validators.Sequence(
-            validators.Numbers(0,400),length=2, require_sorted=True)
+        self.range_limits.vals = vals.Sequence(
+            vals.Numbers(0,400),length=2, require_sorted=True)
 
 
 class Model_336_Channel(BaseSensorChannel):
