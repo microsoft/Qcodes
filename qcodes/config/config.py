@@ -153,6 +153,8 @@ class Config():
 
         self.current_config = config
 
+        return config
+
     def validate(self, json_config=None, schema=None, extra_schema_path=None):
         """
         Validate configuration, if no arguments are passed, the default
