@@ -111,7 +111,5 @@ def test_string(experiment):
         dataset=test_set, write_period=0, parameters={"p": p})
 
     data_saver.add_result(("p", "some text"))
-    test_set.mark_complete()
-
     data_saver.flush_data_to_database()
     assert test_set.get_data("p") == [["some text"]]
