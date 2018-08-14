@@ -240,18 +240,20 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> None:
     if start_version != 0:
         return
 
-    cur = atomicTransaction(conn, "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'")
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    cur = atomic_transaction(conn, sql)
     n_run_tables = len(cur.fetchall())
 
     if n_run_tables == 1:
-        atomicTransaction(conn, _uuid_table_schema)
-        cur = atomicTransaction(conn, 'select run_id, exp_id from runs')
+        atomic_transaction(conn, _uuid_table_schema)
+        cur = atomic_transaction(conn, 'select run_id, exp_id from runs')
         run_and_exp_ids = many_many(cur, 'run_id', 'exp_id')
 
         for run_id, exp_id in run_and_exp_ids:
-            cur = atomicTransaction(conn,
-                                    'SELECT uuid, run_id, exp_id FROM uuids WHERE run_id=? and exp_id=?',
-                                    run_id, exp_id)
+            cur = atomic_transaction(conn,
+                                     ('SELECT uuid, run_id, exp_id FROM uuids '
+                                      'WHERE run_id=? and exp_id=?'),
+                                     run_id, exp_id)
             data = many_many(cur, 'uuid', 'run_id', 'exp_id')
             if len(data) == 0:
                 with atomic(conn):

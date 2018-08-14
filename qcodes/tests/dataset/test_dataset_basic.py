@@ -9,7 +9,9 @@ from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
 
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomicTransaction, perform_db_upgrade_0_to_1
+from qcodes.dataset.sqlite_base import (get_user_version, set_user_version,
+                                        atomic_transaction,
+                                        perform_db_upgrade_0_to_1)
 
 from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import initialise_database, \
@@ -368,23 +370,19 @@ def test_database_upgrade(empty_temp_db):
                            " but your database is version"
                            " {}".format(userversion))
     sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
-    atomicTransaction(connection, sql)
-    set_user_version(connection, userversion + 1)
-    upgraded_userversion = get_user_version(connection)
-    assert upgraded_userversion == userversion + 1
+    atomic_transaction(connection, sql)
+    set_user_version(connection, 1)
 
 
 def test_perform_actual_upgrade_0_to_1(dataset):
     connection = connect(qc.config["core"]["db_location"],
-                 qc.config["core"]["db_debug"])
+                         qc.config["core"]["db_debug"])
     set_user_version(connection, 0)
-    atomicTransaction(connection, 'drop table uuids')
+    atomic_transaction(connection, 'drop table uuids')
     perform_db_upgrade_0_to_1(connection)
     assert get_user_version(connection) == 1
-    cur = atomicTransaction(connection, "SELECT name FROM sqlite_master WHERE type='table' AND name='uuids'")
+    cur = atomic_transaction(connection, "SELECT name FROM sqlite_master WHERE type='table' AND name='uuids'")
     assert len(cur.fetchall()) ==  1
-    atomic_transaction(connection, sql)
-    set_user_version(connection, 1)
 
 
 def test_numpy_ints(dataset):
