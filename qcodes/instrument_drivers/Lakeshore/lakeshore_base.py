@@ -340,11 +340,18 @@ class BaseSensorChannel(InstrumentChannel):
                            docstring='Specifies excitation mode',
                            val_mapping={'voltage': 0, 'current': 1},
                            parameter_class=GroupParameter)
+        # The allowed values for this parameter change based on the value of
+        # the 'excitation_mode' parameter. Moreover, there is a table in the
+        # manual that assigns the numbers to particular voltage/current ranges.
+        # Once this parameter is heavily used, it can be implemented properly
+        # (i.e. using val_mapping, and that val_mapping is updated based on the
+        # value of 'excitation_mode'). At the moment, this parameter is added
+        # only because it is a part of a group.
         self.add_parameter('excitation_range_number',
                            label='Excitation range number',
                            docstring='Specifies excitation range number (1-12 for voltage excitation, '
                                      '1-22 for current excitation); refer to the manual for the table of ranges',
-                           get_parser=int,  # TODO: use val_mapping?
+                           get_parser=int,
                            vals=validators.Numbers(1, 22),  # TODO: this needs to change based on 'excitation_mode' value
                            parameter_class=GroupParameter)
         self.add_parameter('auto_range',
