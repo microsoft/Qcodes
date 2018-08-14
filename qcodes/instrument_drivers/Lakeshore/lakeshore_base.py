@@ -69,7 +69,7 @@ class BaseOutput(InstrumentChannel):
                            set_cmd=None,
                            vals=validators.Sequence(validators.Numbers(0, 400),
                                                     require_sorted=True,
-                                                    length=7),
+                                                    length=len(self.RANGES)-1),
                            label='Temperature limits for output ranges',
                            unit='K',
                            docstring='Use this parameter to define which '
@@ -102,7 +102,6 @@ class BaseOutput(InstrumentChannel):
                                  'within tolerance',
                            unit='')
         self.wait_equilibration_time(0.5)
-
 
         self.add_parameter('blocking_T',
                            vals=validators.Numbers(0, 400),
