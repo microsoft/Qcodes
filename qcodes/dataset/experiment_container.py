@@ -10,11 +10,12 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         get_run_counter, get_runs,
                                         get_last_run,
                                         connect, transaction,
-                                        get_last_experiment, get_experiments)
+                                        get_last_experiment, get_experiments,
+                                        get_experiment_name_from_experiment_id,
+                                        get_sample_name_from_experiment_id)
 from qcodes.dataset.sqlite_base import new_experiment as ne
+from qcodes.dataset.database import get_DB_location, get_DB_debug
 
-DB = qcodes.config["core"]["db_location"]
-debug_db = qcodes.config["core"]["db_debug"]
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 class Experiment(Sized):
     def __init__(self, path_to_db: str) -> None:
         self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db, debug_db)
+        self.conn = connect(self.path_to_db, get_DB_debug())
         self._debug = False
 
     def _new(self,
@@ -40,13 +41,11 @@ class Experiment(Sized):
 
     @property
     def name(self) -> str:
-        return select_one_where(self.conn, "experiments",
-                                "name", "exp_id", self.exp_id)
+        return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
     def sample_name(self) -> str:
-        return select_one_where(self.conn, "experiments",
-                                "sample_name", "exp_id", self.exp_id)
+        return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
     def last_counter(self) -> int:
@@ -136,8 +135,8 @@ def experiments()->List[Experiment]:
         All the experiments in the container
 
     """
-    log.info("loading experiments from {}".format(DB))
-    rows = get_experiments(connect(DB, debug_db))
+    log.info("loading experiments from {}".format(get_DB_location()))
+    rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
     experiments = []
     for row in rows:
         experiments.append(load_experiment(row['exp_id']))
@@ -157,8 +156,8 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
-    log.info("creating new experiment in {}".format(DB))
-    e = Experiment(DB)
+    log.info("creating new experiment in {}".format(get_DB_location()))
+    e = Experiment(get_DB_location())
     e._new(name, sample_name, format_string)
     return e
 
@@ -172,7 +171,7 @@ def load_experiment(exp_id: int) -> Experiment:
     Returns:
         experiment with the specified id
     """
-    e = Experiment(DB)
+    e = Experiment(get_DB_location())
     e.exp_id = exp_id
     return e
 
@@ -184,7 +183,7 @@ def load_last_experiment() -> Experiment:
     Returns:
         last experiment
     """
-    e = Experiment(DB)
+    e = Experiment(get_DB_location())
     e.exp_id = get_last_experiment(e.conn)
     return e
 
@@ -206,7 +205,7 @@ def load_experiment_by_name(name: str,
     Raises:
         ValueError if the name is not unique and sample name is None.
     """
-    e = Experiment(DB)
+    e = Experiment(get_DB_location())
     if sample:
         sql = """
         SELECT
@@ -241,3 +240,29 @@ def load_experiment_by_name(name: str,
     else:
         e.exp_id = rows[0]['exp_id']
     return e
+
+
+def load_or_create_experiment(experiment_name: str,
+                              sample_name: str
+                              ) -> Experiment:
+    """
+    Find and return an experiment with the given name and sample name,
+    or create one if not found.
+
+    Args:
+        experiment_name
+            Name of the experiment to find or create
+        sample_name
+            Name of the sample
+
+    Returns:
+        The found or created experiment
+    """
+    try:
+        experiment = load_experiment_by_name(experiment_name, sample_name)
+    except ValueError as exception:
+        if "Experiment not found" in str(exception):
+            experiment = new_experiment(experiment_name, sample_name)
+        else:
+            raise exception
+    return experiment

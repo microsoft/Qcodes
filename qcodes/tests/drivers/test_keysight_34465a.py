@@ -25,6 +25,7 @@ def test_NPLC(driver):
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
     assert driver.NPLC.get() == 0.2
+    driver.NPLC.set(10.0)
 
 
 def test_get_voltage(driver):

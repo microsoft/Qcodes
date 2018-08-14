@@ -3,15 +3,19 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
 import os
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
-from typing import Dict, List
+from typing import Dict, List, Any
+from contextlib import contextmanager
+from asyncio import iscoroutinefunction
+from inspect import signature
+from functools import partial
 
 import numpy as np
+
 
 _tprint_times= {} # type: Dict[str, float]
 
@@ -113,6 +117,48 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         elif types is not None and not isinstance(item, types):
             return False
     return True
+
+
+def is_function(f, arg_count, coroutine=False):
+    """
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form
+
+    Args:
+        f (callable): function to check
+        arg_count (int): number of argument f should accept
+        coroutine (bool): is a coroutine. Default: False
+
+    Return:
+        bool: is function and accepts the specified number of arguments
+
+    """
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 def full_class(obj):
@@ -454,6 +500,7 @@ def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
+
 def foreground_qt_window(window):
     """
     Try as hard as possible to bring a qt window to the front. This
@@ -513,3 +560,54 @@ def add_to_spyder_UMR_excludelist(modulename: str):
                 sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
+
+
+@contextmanager
+def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
+    """
+    This context manager allows to change a given attribute of a given object
+    to a new value, and the original value is reverted upon exit of the context
+    manager.
+
+    Args:
+        object_
+            The object which attribute value is to be changed
+        attribute_name
+            The name of the attribute that is to be changed
+        new_value
+            The new value to which the attribute of the object is to be changed
+    """
+
+    old_value = getattr(object_, attribute_name)
+    setattr(object_, attribute_name, new_value)
+    yield
+    setattr(object_, attribute_name, old_value)
+
+
+def partial_with_docstring(func, docstring, **kwargs):
+    """
+    We want to have a partial function which will allow us access the docstring
+    through the python built-in help function. This is particularly important
+    for client-facing driver methods, whose arguments might not be obvious.
+
+    Consider the follow example why this is needed:
+
+    >>> from functools import partial
+    >>> def f():
+    >>> ... pass
+    >>> g = partial(f)
+    >>> g.__doc__ = "bla"
+    >>> help(g) # this will print an unhelpful message
+
+    Args:
+        func (callable)
+        docstring (str)
+    """
+    ex = partial(func, **kwargs)
+
+    def inner(**inner_kwargs):
+        ex(**inner_kwargs)
+
+    inner.__doc__ = docstring
+
+    return inner
