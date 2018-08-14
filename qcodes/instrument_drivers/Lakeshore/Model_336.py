@@ -50,3 +50,9 @@ class Model_336(LakeshoreBase):
                                            'C': '3',
                                            'D': '4'}
     CHANNEL_CLASS = Model_336_Channel
+
+    def __init__(self, name: str, address: str, **kwargs) -> None:
+        super().__init__(name, address, **kwargs)
+
+        self.output_1 = Output_336(self, 'output_1', 1)
+        self.output_2 = Output_336(self, 'output_2', 2)
