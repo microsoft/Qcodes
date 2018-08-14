@@ -1,8 +1,10 @@
 from typing import Dict, ClassVar
+
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase, BaseOutput)
 from qcodes.instrument.group_parameter import GroupParameter, Group
 import qcodes.utils.validators as vals
+
 
 class Output_372(BaseOutput):
     # Probably Mypy bug
@@ -29,7 +31,6 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
-
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index)
 
@@ -45,8 +46,8 @@ class Output_372(BaseOutput):
                            get_parser=int,
                            parameter_class=GroupParameter)
         self.output_group = Group([self.mode, self.input_channel,
-                                  self.powerup_enable, self.polarity,
-                                  self.use_filter, self.delay],
+                                   self.powerup_enable, self.polarity,
+                                   self.use_filter, self.delay],
                                   set_cmd=f'OUTMODE {output_index}, {{mode}}, '
                                           f'{{input_channel}}, '
                                           f'{{powerup_enable}}, {{polarity}}, '
@@ -61,7 +62,8 @@ class Model_372(LakeshoreBase):
     Note that interaction with the control input (referred to as 'A' in the 
     Computer Interface Operation section of the manual) is not implemented.
     """
-    channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i) for i in range(1, 17)}
+    channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i)
+                                            for i in range(1, 17)}
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
