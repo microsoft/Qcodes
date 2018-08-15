@@ -65,8 +65,9 @@ class Group:
     `Group`'s constructor, it is possible to change the separator, and even
     the parser of the output of the get command.
 
-    The get and set commands are called via the instrument that the
-    parameters belong to.
+    The get and set commands are called via the instrument that the first
+    parameter belongs to. It is assumed that all the parameters within the
+    group belong to the same instrument.
 
     Example:
         ```
@@ -123,11 +124,15 @@ class Group:
     def __init__(self, parameters, set_cmd=None, get_cmd=None,
                  get_parser=None, separator=',') -> None:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
-        self.instrument = parameters[0].root_instrument
+
         for p in parameters:
             p.group = self
+
+        self.instrument = parameters[0].root_instrument
+
         self.set_cmd = set_cmd
         self.get_cmd = get_cmd
+
         if get_parser:
             self.get_parser = get_parser
         else:
@@ -139,6 +144,7 @@ class Group:
             keys = self.parameters.keys()
             values = ret_str.split(separator)
             return dict(zip(keys, values))
+
         return parser
 
     def set(self, set_parameter, value):
@@ -158,7 +164,7 @@ class Group:
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
         command_str = self.set_cmd.format(**calling_dict)
-        set_parameter.root_instrument.write(command_str)
+        self.instrument.write(command_str)
 
     def update(self):
         """
