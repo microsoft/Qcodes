@@ -71,6 +71,10 @@ class Output_372(BaseOutput):
                                           f'{{use_filter}}, {{delay}}',
                                   get_cmd=f'OUTMODE? {output_index}')
 
+        self.P.vals = vals.Numbers(0.0, 1000)
+        self.I.vals = vals.Numbers(0.0, 10000)
+        self.D.vals = vals.Numbers(0, 2500)
+
 
 class Model_372(LakeshoreBase):
     """

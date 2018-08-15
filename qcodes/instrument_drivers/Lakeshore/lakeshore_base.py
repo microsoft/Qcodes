@@ -50,15 +50,30 @@ class BaseOutput(InstrumentChannel):
 
         # Parameters for Closed Loop PID Parameter Command
         if self._has_pid:
-            self.add_parameter('P', vals=validators.Numbers(0, 1000),
-                               get_parser=float, parameter_class=GroupParameter)
-            self.add_parameter('I', vals=validators.Numbers(0, 1000),
-                               get_parser=float, parameter_class=GroupParameter)
-            self.add_parameter('D', vals=validators.Numbers(0, 2500),
-                               get_parser=float, parameter_class=GroupParameter)
+            self.add_parameter('P',
+                               label='P value of closed-loop controller',
+                               docstring='The value for control loop '
+                                         'Proportional (gain)',
+                               vals=validators.Numbers(0, 1000),
+                               get_parser=float,
+                               parameter_class=GroupParameter)
+            self.add_parameter('I',
+                               label='I value of closed-loop controller',
+                               docstring='The value for control loop '
+                                         'Integral (reset)',
+                               vals=validators.Numbers(0, 1000),
+                               get_parser=float,
+                               parameter_class=GroupParameter)
+            self.add_parameter('D',
+                               label='D value of closed-loop controller',
+                               docstring='The value for control loop '
+                                         'Derivative (rate)',
+                               vals=validators.Numbers(0, 1000),
+                               get_parser=float,
+                               parameter_class=GroupParameter)
             self.pid_group = Group([self.P, self.I, self.D],
-                                   set_cmd=f"PID {output_index}, "
-                                           f"{{P}}, {{I}}, {{D}}",
+                                   set_cmd=f'PID {output_index}, '
+                                           f'{{P}}, {{I}}, {{D}}',
                                    get_cmd=f'PID? {output_index}')
 
         self.add_parameter('output_range',
