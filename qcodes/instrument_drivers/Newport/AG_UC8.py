@@ -6,8 +6,8 @@ import logging
 import time
 from typing import Optional, Dict, Callable
 
-from qcodes import Instrument, VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Bool, Numbers, Ints, Anything
+from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes.utils.validators import Numbers, Ints, Anything
 
 log = logging.getLogger(__name__)
 
