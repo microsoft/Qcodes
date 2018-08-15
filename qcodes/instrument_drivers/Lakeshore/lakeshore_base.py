@@ -529,7 +529,7 @@ class BaseSensorChannel(InstrumentChannel):
         >>> get_sum_terms(terms, 96)
         ... [64, 32]  # This is correct because 96=64+32
         """
-        terms_in_number = []
+        terms_in_number: List[int] = []
 
         # Sort the list of available_terms from largest to smallest
         terms_left = np.sort(available_terms)[::-1]
