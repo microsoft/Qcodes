@@ -1,3 +1,4 @@
+import os
 from typing import ClassVar, Dict
 
 from qcodes.instrument.group_parameter import GroupParameter
@@ -42,6 +43,14 @@ class Output_336(BaseOutput):
                                      'measurement inputs are available)',
                            val_mapping=_channel_name_to_command_map,
                            parameter_class=GroupParameter)
+
+        # Add a remark to `mode` parameter docstring
+        self.mode.__doc__ += os.linesep.join((
+            self.mode.__doc__,
+            '',
+            'Modes `monitor_out` (4) and `warm_up` (5) are '
+            'only valid for Analog Outputs, C (3) and D (4).'
+        ))
 
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
