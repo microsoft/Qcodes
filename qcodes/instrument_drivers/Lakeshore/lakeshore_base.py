@@ -1,7 +1,9 @@
-from typing import Dict, ClassVar
+from typing import Dict, ClassVar, List
 import logging
 import time
 from bisect import bisect
+
+import numpy as np
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.instrument.group_parameter import GroupParameter, Group
@@ -312,7 +314,9 @@ class BaseSensorChannel(InstrumentChannel):
             for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
     """
 
-    SENSOR_STATUSES: ClassVar[Dict[str, int]] = {}
+    # A dictionary of sensor statuses that assigns a string representation of
+    # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
+    SENSOR_STATUSES: ClassVar[Dict[int, str]] = {}
 
     def __init__(self, parent, name, channel):
         super().__init__(parent, name)
@@ -347,7 +351,7 @@ class BaseSensorChannel(InstrumentChannel):
 
         self.add_parameter('sensor_status',
                            get_cmd=f'RDGST? {self._channel}',
-                           val_mapping=self.SENSOR_STATUSES,
+                           get_parser=self._decode_sensor_status,
                            label='Sensor status')
 
         self.add_parameter('sensor_name',
@@ -488,6 +492,64 @@ class BaseSensorChannel(InstrumentChannel):
                                           f'{{current_source_shunted}}, '
                                           f'{{units}}',
                                   get_cmd=f'INTYPE? {self._channel}')
+
+    def _decode_sensor_status(self, sum_of_codes):
+        """
+        Parses the sum of status code according to the `SENSOR_STATUSES` using
+        an algorithm defined in `_get_sum_terms` method.
+        """
+        codes = self._get_sum_terms(list(self.SENSOR_STATUSES.keys()),
+                                    int(sum_of_codes))
+        return ", ".join([self.SENSOR_STATUSES[k] for k in codes])
+
+    @staticmethod
+    def _get_sum_terms(available_terms: List[int], number: int):
+        """
+        Returns a list of terms which make the given number when summed up
+
+        This method is intended to be used for cases where the given list
+        of terms contains powers of 2, which corresponds to status codes
+        that an instrument returns. With that said, this method is not
+        guaranteed to work for an arbitrary number and an arbitrary list of
+        available terms.
+
+        If available_terms contains an entry for 0, then it is treated as a
+        special case: if number is also equal to 0, then [0] is returned as a
+        list of terms; if number is larger than 0, then 0 is automatically
+        excluded from the list of available terms, and is not looked for.
+
+        Example:
+        >>> terms = [1, 16, 32, 64, 128]
+        >>> get_sum_terms(terms, 96)
+        ... [64, 32]  # This is correct because 96=64+32
+        """
+        terms_in_number = []
+
+        # Sort the list of available_terms from largest to smallest
+        terms_left = np.sort(available_terms)[::-1]
+
+        if 0 in terms_left:
+            if number == 0:
+                terms_left = np.empty(0)
+                terms_in_number = [0]
+            else:
+                terms_left = terms_left[terms_left != 0]
+
+        # Get rid of the terms that are bigger than the number because they
+        # will obviously will not make it to the returned list
+        terms_left = terms_left[terms_left <= number]
+
+        # Keep subtracting the largest term from `number`, and always update
+        # the list of available_terms so that they are always smaller than
+        # the current value of `number`, until there are no more available_terms
+        # to subtract
+        while len(terms_left) > 0:
+            term = terms_left[0]
+            number -= term
+            terms_in_number.append(term)
+            terms_left = terms_left[terms_left <= number]
+
+        return terms_in_number
 
 
 class LakeshoreBase(VisaInstrument):

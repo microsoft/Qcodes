@@ -64,12 +64,12 @@ class Output_336(BaseOutput):
 
 
 class Model_336_Channel(BaseSensorChannel):
-    SENSOR_STATUSES = {'OK': 0,
-                       'Invalid Reading': 1,
-                       'Temp Underrange': 16,
-                       'Temp Overrange': 32,
-                       'Sensor Units Zero': 64,
-                       'Sensor Units Overrange': 128}
+    SENSOR_STATUSES = {0: 'OK',
+                       1: 'Invalid Reading',
+                       16: 'Temp Underrange',
+                       32: 'Temp Overrange',
+                       64: 'Sensor Units Zero',
+                       128: 'Sensor Units Overrange'}
 
     def __init__(self, parent, name, channel):
         super().__init__(parent, name, channel)
