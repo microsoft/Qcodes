@@ -1,6 +1,7 @@
 from collections import OrderedDict
+from typing import List, Union, Callable, Dict, Any
 
-from qcodes import Parameter
+from qcodes import Parameter, Instrument
 
 
 class GroupParameter(Parameter):
@@ -26,14 +27,14 @@ class GroupParameter(Parameter):
             instrument that this parameter belongs to; this instrument is
             used by the group to call its get and set commands
     """
-    def __init__(self, name, instrument, **kwargs):
-        self.group = None
+    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
+        self.group: Union[Group, None] = None
         super().__init__(name, instrument=instrument, **kwargs)
 
-    def set_raw(self, value):  # pylint: disable=E0202
+    def set_raw(self, value: Any):
         self.group.set(self, value)
 
-    def get_raw(self, result=None):  # pylint: disable=E0202
+    def get_raw(self, result: Any=None):
         if not result:
             self.group.update()
             return self.raw_value
@@ -121,8 +122,13 @@ class Group:
             note that parsers within the parameters will take care of
             individual parsing of their values)
     """
-    def __init__(self, parameters, set_cmd=None, get_cmd=None,
-                 get_parser=None, separator=',') -> None:
+    def __init__(self,
+                 parameters: List[GroupParameter],
+                 set_cmd: str=None,
+                 get_cmd: str=None,
+                 get_parser: Union[Callable[[str], Dict[str, Any]], None]=None,
+                 separator: str=','
+                 ) -> None:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
 
         for p in parameters:
@@ -138,16 +144,17 @@ class Group:
         else:
             self.get_parser = self._separator_parser(separator)
 
-    def _separator_parser(self, separator):
+    def _separator_parser(self, separator: str
+                          ) -> Callable[[str], Dict[str, Any]]:
         """A default separator-based string parser"""
-        def parser(ret_str):
+        def parser(ret_str: str) -> Dict[str, Any]:
             keys = self.parameters.keys()
             values = ret_str.split(separator)
             return dict(zip(keys, values))
 
         return parser
 
-    def set(self, set_parameter, value):
+    def set(self, set_parameter: GroupParameter, value: Any):
         """
         Sets the value of the given parameter within a group to the given
         value by calling the `set_cmd`
