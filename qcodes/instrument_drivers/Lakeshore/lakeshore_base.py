@@ -12,6 +12,21 @@ log = logging.getLogger(__name__)
 
 
 class BaseOutput(InstrumentChannel):
+    """
+    Base class for the outputs of Lakeshore temperature controllers
+
+    Args:
+        parent
+            instrument that this channel belongs to
+        output_name
+            name of this output
+        output_index
+            identifier for this output that is used in VISA commands of the
+            instrument
+        has_pid
+            if True, then the output supports closed loop control,
+            hence it will have three parameters to set it up: 'P', 'I', and 'D'
+    """
 
     MODES: ClassVar[Dict[str, int]] = {}
     RANGES: ClassVar[Dict[str, int]] = {}
