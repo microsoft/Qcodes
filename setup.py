@@ -37,7 +37,7 @@ setup(name='qcodes',
       use_2to3=False,
 
       maintainer='Jens H Nielsen',
-      maintainer_email='j.h.nielsen@nbi.ku.dk',
+      maintainer_email='Jens.Nielsen@microsoft.com',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
