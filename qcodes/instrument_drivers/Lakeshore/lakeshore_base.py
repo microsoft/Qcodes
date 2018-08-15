@@ -121,6 +121,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('range_limits',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Sequence(validators.Numbers(0, 400),
                                                     require_sorted=True,
                                                     length=len(self.RANGES)-1),
@@ -135,6 +136,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('wait_cycle_time',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Numbers(0, 100),
                            label='Waiting cycle time',
                            docstring='Time between two readings when waiting '
@@ -144,6 +146,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('wait_tolerance',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Numbers(0, 100),
                            label='Waiting tolerance',
                            docstring='Acceptable tolerance when waiting for '
@@ -153,6 +156,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('wait_equilibration_time',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Numbers(0, 100),
                            label='Waiting equilibration time',
                            docstring='Duration during which temperature has to '
