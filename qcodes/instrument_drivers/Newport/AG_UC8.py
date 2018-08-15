@@ -142,7 +142,7 @@ class Newport_AG_UC8_Axis(InstrumentChannel):
             position (int): Current position in range 0 .. 1000 representing
                 steps of 1/1000 of total travel.
         """
-        return self._slow_command("%dMA" % self.axis)
+        return self._slow_command("%dMA" % self.axis, "")
 
     def move_abs(self, position: int) -> int:
         """Move to absolute position.
@@ -154,7 +154,7 @@ class Newport_AG_UC8_Axis(InstrumentChannel):
                 steps of 1/1000 of total travel.
         """
         assert position >= 0 and position <= 1000
-        return self._slow_command("%dPA%d" % (self.axis, position))
+        return self._slow_command("%dPA" % self.axis, "%d" % position)
 
     def move_rel(self, steps: int) -> None:
         """Start a relative move to current position.
@@ -173,7 +173,7 @@ class Newport_AG_UC8_Axis(InstrumentChannel):
         """Reset the step counter to zero."""
         self.write("%dZP" % self.axis)
 
-    def _slow_command(self, cmd: str) -> int:
+    def _slow_command(self, cmd: str, arg: str) -> int:
         """Execute a slow command with longer timeout and parse
         return value."""
 
@@ -183,7 +183,7 @@ class Newport_AG_UC8_Axis(InstrumentChannel):
 
         try:
             # Execute command.
-            resp = self.ask(cmd)
+            resp = self.ask(cmd + arg)
         finally:
             # Restore normal timeout.
             tmo = self.root_instrument.default_timeout
