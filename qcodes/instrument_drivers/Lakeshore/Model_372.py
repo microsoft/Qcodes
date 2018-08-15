@@ -6,6 +6,10 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 import qcodes.utils.validators as vals
 
 
+# There are 16 sensors channels (a.k.a. measurement inputs) in Model 372
+_n_channels = 16
+
+
 class Output_372(BaseOutput):
     # Probably Mypy bug
     # should have been fixed in https://github.com/python/mypy/issues/4715
@@ -33,6 +37,8 @@ class Output_372(BaseOutput):
 
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index)
+
+        self.input_channel.vals = vals.Numbers(1, _n_channels)
 
         # Add more parameters for OUTMODE command 
         # and redefine the corresponding group
@@ -63,7 +69,7 @@ class Model_372(LakeshoreBase):
     Computer Interface Operation section of the manual) is not implemented.
     """
     channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i)
-                                            for i in range(1, 17)}
+                                            for i in range(1, 1 + _n_channels)}
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
