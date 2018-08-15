@@ -21,7 +21,7 @@ class BaseOutput(InstrumentChannel):
         self.INVERSE_RANGES: Dict[int, str] = {
             v: k for k, v in self.RANGES.items()}
         self._has_pid = True
-        self.output_index = output_index
+        self._output_index = output_index
 
         self.add_parameter('mode',
                            label='Control mode',
