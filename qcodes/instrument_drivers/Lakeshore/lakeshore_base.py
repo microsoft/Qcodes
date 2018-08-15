@@ -160,7 +160,7 @@ class BaseOutput(InstrumentChannel):
                            unit='s')
         self.wait_equilibration_time(0.5)
 
-        self.add_parameter('blocking_T',
+        self.add_parameter('blocking_t',
                            label='Setpoint value with blocking until it is '
                                  'reached',
                            docstring='Sets the setpoint value, and input '
@@ -168,11 +168,11 @@ class BaseOutput(InstrumentChannel):
                                      'Added for compatibility with Loop.',
                            vals=validators.Numbers(0, 400),
                            get_parser=float,
-                           set_cmd=self._set_blocking_T)
+                           set_cmd=self._set_blocking_t)
 
-    def _set_blocking_T(self, T):
-        self.set_range_from_temperature(T)
-        self.setpoint(T)
+    def _set_blocking_t(self, temperature):
+        self.set_range_from_temperature(temperature)
+        self.setpoint(temperature)
         self.wait_until_set_point_reached()
 
     def set_range_from_temperature(self, temperature):
