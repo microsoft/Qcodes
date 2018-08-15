@@ -16,6 +16,11 @@ _channel_name_to_command_map: Dict[str, str] = {'A': '1',
 
 
 class Output_336(BaseOutput):
+    """
+    Class for control outputs 1 and 2 of model 336 that are variable DC current
+    sources referenced to chassis ground
+    """
+
     MODES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'closed_loop': 1,
@@ -23,6 +28,7 @@ class Output_336(BaseOutput):
         'open_loop': 3,
         'monitor_out': 4,
         'warm_up': 5}
+
     RANGES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'low': 1,
