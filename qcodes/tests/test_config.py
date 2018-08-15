@@ -1,9 +1,14 @@
 import copy
 import jsonschema
+import os
+import json
 
 from functools import partial
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
+import pytest
+import tempfile
+
 from qcodes.config import Config
 
 VALID_JSON = "{}"
@@ -133,6 +138,22 @@ def side_effect(map, name):
     return map[name]
 
 
+@pytest.fixture(scope="function")
+def path_to_config_file_on_disk():
+
+    contents = {"a": 13, "b": 22, "h": 22,
+                "user": {"foo":  "2"},
+                "c": 4, "bar": False, "z": 5}
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        with open(os.path.join(tmpdirname, 'qcodesrc.json'), 'w') as f:
+            f.write(json.dumps(contents))
+        with open(os.path.join(tmpdirname, 'qcodesrc_schema.json'), 'w') as f:
+            f.write(json.dumps(SCHEMA))
+
+        yield tmpdirname
+
+
 class TestConfig(TestCase):
     def setUp(self):
         self.conf = Config()
@@ -220,3 +241,17 @@ class TestConfig(TestCase):
         self.conf.add("foo", "bar", "string", "foo", "bar")
         self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
         self.assertEqual(self.conf.current_schema, UPDATED_SCHEMA)
+
+
+def test_update_from_path(path_to_config_file_on_disk):
+    cfg = Config()
+
+    # check that the default is still the default
+    cfg.update_config()
+    assert cfg["core"]["db_debug"] == False
+
+    cfg.update_config(path=path_to_config_file_on_disk)
+    assert cfg['a'] == 13
+    assert cfg['user']['foo'] == '2'
+    expected_path = os.path.join(path_to_config_file_on_disk, 'qcodesrc.json')
+    assert cfg.current_config_path == expected_path
