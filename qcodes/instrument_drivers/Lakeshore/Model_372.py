@@ -43,12 +43,23 @@ class Output_372(BaseOutput):
         # Add more parameters for OUTMODE command 
         # and redefine the corresponding group
         self.add_parameter('polarity',
+                           label='Output polarity',
+                           docstring='Specifies output polarity (not '
+                                     'applicable to warm-up heater)',
                            val_mapping=self.POLARITIES,
                            parameter_class=GroupParameter)
         self.add_parameter('use_filter',
+                           label='Use filter for readings',
+                           docstring='Specifies controlling on unfiltered or '
+                                     'filtered readings',
                            val_mapping={True: 1, False: 0},
                            parameter_class=GroupParameter)
-        self.add_parameter('delay', vals=vals.Ints(0, 255),
+        self.add_parameter('delay',
+                           label='Delay',
+                           unit='s',
+                           docstring='Delay in seconds for setpoint change '
+                                     'during Autoscanning',
+                           vals=vals.Ints(0, 255),
                            get_parser=int,
                            parameter_class=GroupParameter)
         self.output_group = Group([self.mode, self.input_channel,
