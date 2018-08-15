@@ -1,5 +1,5 @@
 import numpy as np
-import time, re, logging
+import time, re, logging, warnings
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Ints, Bool
@@ -7,6 +7,8 @@ from qcodes import ArrayParameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 from collections import namedtuple
+
+from distutils.version import LooseVersion
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ class ScopeArray(ArrayParameter):
 
         self.trace_ready = True
 
-    def get(self):
+    def get_raw(self):
         if not self.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for giving a trace.')
@@ -193,6 +195,8 @@ class DS4000(VisaInstrument):
         super().__init__(name, address, device_clear=False, timeout=timeout, **kwargs)
         self.connect_message()
 
+        self._check_firmware_version()
+
         # functions
         self.add_function('run',
                           call_cmd=':RUN',
@@ -250,3 +254,12 @@ class DS4000(VisaInstrument):
 
         channels.lock()
         self.add_submodule('channels', channels)
+
+    def _check_firmware_version(self):
+        #Require version 00.02.03
+
+        idn = self.get_idn()
+        ver = LooseVersion(idn['firmware'])
+        if ver < LooseVersion('00.02.03'):
+            warnings.warn('Firmware version should be at least 00.02.03,'
+                          'data transfer may not work correctly')

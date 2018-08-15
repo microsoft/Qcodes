@@ -5,18 +5,13 @@ import logging
 
 from qcodes import Instrument, validators as vals
 
+log = logging.getLogger(__name__)
+
 
 class SignalHound_USB_SA124B(Instrument):
-    '''
-    This is a direct port of the signal hound QTLab driver by Ramiro
-    Edited by Adriaan Rol
-
-    Status: Beta version.
-        This driver is functional but not all features have been implemented.
-
-    TODO:
-        Add tracking generator mode
-    '''
+    """
+    QCoDeS driver for the SignalHound USB SA124B
+    """
     dll_path = 'C:\Windows\System32\sa_api.dll'
 
     saStatus = {
@@ -57,9 +52,7 @@ class SignalHound_USB_SA124B(Instrument):
         t0 = time()
         super().__init__(name, **kwargs)
 
-        self.log = logging.getLogger('Main.DeviceInt')
-        logging.info(__name__ +
-                     ' : Initializing instrument SignalHound USB 124A')
+        log.info('Initializing instrument SignalHound USB 124A')
         self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = constants
 
@@ -141,6 +134,8 @@ class SignalHound_USB_SA124B(Instrument):
         self.device_type()
 
         t1 = time()
+        # poor-man's connect_message. We could overwrite get_idn
+        # instead and use connect_message.
         print('Initialized SignalHound in %.2fs' % (t1-t0))
 
     @classmethod
@@ -148,7 +143,7 @@ class SignalHound_USB_SA124B(Instrument):
         return 'USB'
 
     def openDevice(self):
-        self.log.info('Opening Device')
+        log.info('Opening Device')
         self.deviceHandle = ct.c_int(0)
         deviceHandlePnt = ct.pointer(self.deviceHandle)
         ret = self.dll.saOpenDevice(deviceHandlePnt)
@@ -166,28 +161,28 @@ class SignalHound_USB_SA124B(Instrument):
         self.get('device_type')
 
     def closeDevice(self):
-        self.log.info('Closing Device with handle num: ',
-                      self.deviceHandle.value)
+        log.info('Closing Device with handle num: '
+                 f'{self.deviceHandle.value}')
 
         try:
             self.dll.saAbort(self.deviceHandle)
-            self.log.info('Running acquistion aborted.')
+            log.info('Running acquistion aborted.')
         except Exception as e:
-            self.log.info('Could not abort acquisition: %s', e)
+            log.info(f'Could not abort acquisition: {e}')
 
         ret = self.dll.saCloseDevice(self.deviceHandle)
         if ret != self.saStatus['saNoError']:
             raise ValueError('Error closing device!')
-        print('Closed Device with handle num: ', self.deviceHandle.value)
+        log.info(f'Closed Device with handle num: {self.deviceHandle.value}')
         self.devOpen = False
         self.running(False)
 
     def abort(self):
-        self.log.info('Stopping acquisition')
+        log.info('Stopping acquisition')
 
         err = self.dll.saAbort(self.deviceHandle)
         if err == self.saStatus['saNoError']:
-            self.log.info('Call to abort succeeded.')
+            log.info('Call to abort succeeded.')
             self.running(False)
         elif err == self.saStatus['saDeviceNotOpenErr']:
             raise IOError('Device not open!')
@@ -198,20 +193,20 @@ class SignalHound_USB_SA124B(Instrument):
             raise IOError('Unknown error setting abort! Error = %s' % err)
 
     def preset(self):
-        self.log.warning('Performing hardware-reset of device!')
-        self.log.warning('Please ensure you close the device handle within '
-                         'two seconds of this call!')
+        log.warning('Performing hardware-reset of device!')
+        log.warning('Please ensure you close the device handle within '
+                    'two seconds of this call!')
 
         err = self.dll.saPreset(self.deviceHandle)
         if err == self.saStatus['saNoError']:
-            self.log.info('Call to preset succeeded.')
+            log.info('Call to preset succeeded.')
         elif err == self.saStatus['saDeviceNotOpenErr']:
             raise IOError('Device not open!')
         else:
-            raise IOError('Unknown error calling preset! Error = %s' % err)
+            raise IOError(f'Unknown error calling preset! Error = {err}')
 
     def _do_get_device_type(self):
-        self.log.info('Querying device for model information')
+        log.info('Querying device for model information')
 
         devType = ct.c_uint(0)
         devTypePnt = ct.pointer(devType)
@@ -263,39 +258,30 @@ class SignalHound_USB_SA124B(Instrument):
         ###################################
         if err == self.saStatus['saNoError']:
             self.running(True)
-            self.log.info('Call to initiate succeeded.')
+            log.info('Call to initiate succeeded.')
         elif err == self.saStatus['saDeviceNotOpenErr']:
             raise IOError('Device not open!')
         elif err == self.saStatus['saInvalidParameterErr']:
-            print('saInvalidParameterErr!')
-            print('In real-time mode, this value may be returned if the span',
-                  'limits defined in the API header are broken. Also in',
-                  'real-time mode, this error will be returned if the',
-                  ' resolution bandwidth is outside the limits defined in',
-                  ' the API header.')
-            print('In time-gate analysis mode this error will be returned if',
-                  ' span limits defined in the API header are broken. Also in',
-                  ' time gate analysis, this error is returned if the',
-                  ' bandwidth provided require more samples for processing',
-                  ' than is allowed in the gate length. To fix this, ',
-                  'increase rbw/vbw.')
+            log.error(
+                """
+                saInvalidParameterErr!
+                In real-time mode, this value may be returned if the span
+                limits defined in the API header are broken. Also in
+                real-time mode, this error will be returned if the
+                resolution bandwidth is outside the limits defined in
+                the API header.
+                In time-gate analysis mode this error will be returned if
+                span limits defined in the API header are broken. Also in
+                time gate analysis, this error is returned if the
+                bandwidth provided require more samples for processing
+                than is allowed in the gate length. To fix this
+                increase rbw/vbw.
+                """
+            )
             raise IOError('The value for mode did not match any known value.')
-        # This error code does not exist!??
-        # elif err == self.saStatus['saAllocationLimitError']:
-        #     print('This value is returned in extreme circumstances. The API',
-        #           ' currently limits the amount of RAM usage to 1GB. When',
-        #           ' exceptional parameters are provided, such as very low ',
-        #           'bandwidths, or long sweep times, this error may be ',
-        #           'returned. At this point you have reached the boundaries of',
-        #           ' the device. The processing algorithms are optimized for',
-        #           ' speed at the expense of space, which is the reason',
-        #           ' this can occur.''')
-        #     raise IOError('Could not allocate sufficent RAM!')
         elif err == self.saStatus['saBandwidthErr']:
             raise IOError('RBW is larger than your span. (Sweep Mode)!')
         self.check_for_error(err)
-        # else:
-        #     raise IOError('Unknown error setting initiate! Error = %s' % err)
 
         return
 
@@ -347,7 +333,7 @@ class SignalHound_USB_SA124B(Instrument):
         span = self.get('span')
         center = ct.c_double(frequency)
         span = ct.c_double(span)
-        self.log.info('Setting device CenterSpan configuration.')
+        log.info('Setting device CenterSpan configuration.')
 
         err = self.dll.saConfigCenterSpan(self.deviceHandle, center, span)
         self.check_for_error(err)
@@ -379,21 +365,21 @@ class SignalHound_USB_SA124B(Instrument):
         self.check_for_error(err)
 
         # Reference Level configuration
-        self.log.info('Setting device reference level configuration.')
+        log.info('Setting device reference level configuration.')
         err = self.dll.saConfigLevel(
             self.deviceHandle, ct.c_double(self.get('ref_lvl')))
         self.check_for_error(err)
 
         # External Reference configuration
         if self.external_reference():
-            self.log.info('Setting reference frequency from external source.')
+            log.info('Setting reference frequency from external source.')
             err = self.dll.saEnableExternalReference(self.deviceHandle)
             self.check_for_error(err)
 
         if self.device_mode() == 'sweeping':
             # Sweeping Configuration
             reject_var = ct.c_bool(rejection)
-            self.log.info('Setting device Sweeping configuration.')
+            log.info('Setting device Sweeping configuration.')
             err = self.dll.saConfigSweepCoupling(
                 self.deviceHandle, ct.c_double(self.get('rbw')),
                 ct.c_double(self.get('vbw')), reject_var)
@@ -461,11 +447,11 @@ class SignalHound_USB_SA124B(Instrument):
         return np.array([freq_points, datamin, datamax])
 
     def get_power_at_freq(self, Navg=1):
-        '''
+        """
         Returns the maximum power in a window of 250kHz
         around the specified  frequency.
         The integration window is specified by the VideoBandWidth (set by vbw)
-        '''
+        """
         poweratfreq = 0
         for i in range(Navg):
             data = self.sweep()
