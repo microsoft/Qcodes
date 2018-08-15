@@ -24,11 +24,21 @@ class BaseOutput(InstrumentChannel):
         self.output_index = output_index
 
         self.add_parameter('mode',
+                           label='Control mode',
+                           docstring='Specifies the control mode',
                            val_mapping=self.MODES,
                            parameter_class=GroupParameter)
-        self.add_parameter('input_channel', get_parser=int,
+        self.add_parameter('input_channel',
+                           label='Input channel',
+                           docstring='Specifies which measurement input to '
+                                     'control from (note that only '
+                                     'measurement inputs are available)',
+                           get_parser=int,
                            parameter_class=GroupParameter)
         self.add_parameter('powerup_enable',
+                           label='Power-up enable on/off',
+                           docstring='Specifies whether the output remains on '
+                                     'or shuts off after power cycle.',
                            val_mapping={True: 1, False: 0},
                            parameter_class=GroupParameter)
         self.output_group = Group([self.mode, self.input_channel,
@@ -38,6 +48,7 @@ class BaseOutput(InstrumentChannel):
                                           f'{{powerup_enable}}',
                                   get_cmd=f'OUTMODE? {output_index}')
 
+        # Parameters for Closed Loop PID Parameter Command
         if self._has_pid:
             self.add_parameter('P', vals=validators.Numbers(0, 1000),
                                get_parser=float, parameter_class=GroupParameter)
@@ -51,13 +62,23 @@ class BaseOutput(InstrumentChannel):
                                    get_cmd=f'PID? {output_index}')
 
         self.add_parameter('output_range',
+                           label='Heater range',
+                           docstring='Specifies heater output range. The range '
+                                     'setting has no effect if an output is in '
+                                     'the `Off` mode, and does not apply to '
+                                     'an output in `Monitor Out` mode. '
+                                     'An output in `Monitor Out` mode is '
+                                     'always on.',
                            val_mapping=self.RANGES,
                            set_cmd=f'RANGE {output_index}, {{}}',
                            get_cmd=f'RANGE? {output_index}')
 
         self.add_parameter('setpoint',
-                           docstring='Note that the units are used from the '
-                                     'preferred units of the "input_channel"',
+                           label='Setpoint value (in sensor units)',
+                           docstring='The value of the setpoint in the'
+                                     'preferred units of the control loop '
+                                     'sensor (which is set via '
+                                     '`input_channel` parameter)',
                            vals=validators.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=f'SETP {output_index}, {{}}',
@@ -82,28 +103,36 @@ class BaseOutput(InstrumentChannel):
         self.add_parameter('wait_cycle_time',
                            set_cmd=None,
                            vals=validators.Numbers(0, 100),
-                           label='Time between two readings when waiting for'
-                                 'temperature to equilibrate',
+                           label='Waiting cycle time',
+                           docstring='Time between two readings when waiting '
+                                     'for temperature to equilibrate',
                            unit='s')
         self.wait_cycle_time(0.1)
 
         self.add_parameter('wait_tolerance',
                            set_cmd=None,
                            vals=validators.Numbers(0, 100),
-                           label='Acceptable tolerance when waiting for '
-                                 'temperature to equilibrate',
+                           label='Waiting tolerance',
+                           docstring='Acceptable tolerance when waiting for '
+                                     'temperature to equilibrate',
                            unit='')
         self.wait_tolerance(0.1)
 
         self.add_parameter('wait_equilibration_time',
                            set_cmd=None,
                            vals=validators.Numbers(0, 100),
-                           label='Duration during which temperature has to be '
-                                 'within tolerance',
-                           unit='')
+                           label='Waiting equilibration time',
+                           docstring='Duration during which temperature has to '
+                                     'be within tolerance',
+                           unit='s')
         self.wait_equilibration_time(0.5)
 
         self.add_parameter('blocking_T',
+                           label='Setpoint value with blocking until it is '
+                                 'reached',
+                           docstring='Sets the setpoint value, and input '
+                                     'range, and waits until it is reached. '
+                                     'Added for compatibility with Loop.',
                            vals=validators.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=self._set_blocking_T)
@@ -255,19 +284,25 @@ class BaseSensorChannel(InstrumentChannel):
         self.add_parameter('temperature',
                            get_cmd='KRDG? {}'.format(self._channel),
                            get_parser=float,
-                           label='Temerature',
+                           label='Temperature',
                            unit='K')
 
-        self.add_parameter('t_limit', get_cmd=f'TLIMIT? {self._channel}',
+        self.add_parameter('t_limit',
+                           get_cmd=f'TLIMIT? {self._channel}',
                            set_cmd=f'TLIMIT {self._channel}, {{}}',
                            get_parser=float,
-                           label='Temerature limit',
+                           label='Temperature limit',
+                           docstring='The temperature limit in kelvin for '
+                                     'which to shut down all control outputs '
+                                     'when exceeded. A temperature limit of '
+                                     'zero turns the temperature limit '
+                                     'feature off for the given sensor input.',
                            unit='K')
 
         self.add_parameter('sensor_raw',
-                           get_cmd='SRDG? {}'.format(self._channel),
+                           get_cmd=f'SRDG? {self._channel}',
                            get_parser=float,
-                           label='Raw_Reading',
+                           label='Raw reading',
                            unit='Ohms')  # TODO: This will vary based on sensor type
 
         self.add_parameter('sensor_status',
@@ -285,7 +320,7 @@ class BaseSensorChannel(InstrumentChannel):
                            get_parser=str,
                            set_cmd=f'INNAME {self._channel},\"{{}}\"',
                            vals=validators.Strings(15),
-                           label='Sensor_Name')
+                           label='Sensor name')
 
         # Parameters related to Input Channel Parameter Command (INSET)
         self.add_parameter('enabled',
