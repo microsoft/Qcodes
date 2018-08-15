@@ -1,7 +1,17 @@
 from typing import ClassVar, Dict
 
+from qcodes.instrument.group_parameter import GroupParameter
 from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
 import qcodes.utils.validators as vals
+
+
+# There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
+# Unlike other Lakeshore models, Model 336 refers to the channels using
+# letters, and not numbers
+_channel_name_to_command_map: Dict[str, str] = {'A': '1',
+                                                'B': '2',
+                                                'C': '3',
+                                                'D': '4'}
 
 
 class Output_336(BaseOutput):
@@ -24,6 +34,15 @@ class Output_336(BaseOutput):
 
         super().__init__(parent, output_name, output_index)
 
+        # Redefine input_channel to use string names instead of numbers
+        self.add_parameter('input_channel',
+                           label='Input channel',
+                           docstring='Specifies which measurement input to '
+                                     'control from (note that only '
+                                     'measurement inputs are available)',
+                           val_mapping=_channel_name_to_command_map,
+                           parameter_class=GroupParameter)
+
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
         self.D.vals = vals.Numbers(0, 200)
@@ -41,10 +60,8 @@ class Model_336(LakeshoreBase):
     """
     Lakeshore Model 336 Temperature Controller Driver
     """
-    channel_name_command: Dict[str, str] = {'A': '1',
-                                            'B': '2',
-                                            'C': '3',
-                                            'D': '4'}
+    channel_name_command: Dict[str, str] = _channel_name_to_command_map
+
     CHANNEL_CLASS = Model_336_Channel
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
