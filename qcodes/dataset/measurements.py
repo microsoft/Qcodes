@@ -421,8 +421,8 @@ class Measurement:
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             spname_parts = []
-            if parameter.instrument is not None:
-                inst_name = parameter.instrument.name
+            if parameter._instrument is not None:
+                inst_name = parameter._instrument.name
                 if inst_name is not None:
                     spname_parts.append(inst_name)
             if parameter.setpoint_names is not None:
