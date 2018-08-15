@@ -1,26 +1,29 @@
+import itertools
+import time
+import tempfile
+import os
+
+import pytest
+import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
-import numpy as np
-import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
+from qcodes.dataset.sqlite_base import connect, _unicode_categories
 import qcodes.dataset.data_set
 
 from qcodes.dataset.sqlite_base import (get_user_version, set_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1)
 
-from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.data_set import CompletedError, generate_guid, parse_guid
 from qcodes.dataset.database import initialise_database, \
     initialise_or_create_database_at
 
 import qcodes.dataset.experiment_container
-import pytest
-import tempfile
-import os
+
 
 n_experiments = 0
 
@@ -471,3 +474,25 @@ def test_missing_keys(dataset):
     expected_setpoints = [[[v] for v in vals] for vals in tmp]
 
     assert dataset.get_setpoints("b") == expected_setpoints
+
+
+@settings(max_examples=50)
+@given(loc=hst.integers(0, 255), stat=hst.integers(0, 65535),
+       smpl=hst.integers(0, 4294967295))
+def test_generate_guid(loc, stat, smpl):
+    # update config to generate a particular guid. Read it back to verify
+    cfg = qc.Config()
+    cfg['GUID_components']['location'] = loc
+    cfg['GUID_components']['work_station'] = stat
+    cfg['GUID_components']['sample'] = smpl
+    cfg.save_to_home()
+
+    guid = generate_guid()
+    gen_time = int(np.round(time.time()*1000))
+
+    comps = parse_guid(guid)
+
+    assert comps['location'] == loc
+    assert comps['work_station'] == stat
+    assert comps['sample'] == smpl
+    assert comps['time'] - gen_time < 2
