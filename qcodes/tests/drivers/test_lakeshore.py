@@ -373,3 +373,17 @@ def test_get_term_sum_returns_empty_list():
     assert [] == \
            BaseSensorChannel._get_sum_terms(available_terms,
                                             15)
+
+def test_get_term_sum_when_zero_is_not_in_available_terms():
+    available_terms = [16, 32]
+
+    assert [] == \
+           BaseSensorChannel._get_sum_terms(available_terms,
+                                            3)
+
+    # Note that `_get_sum_terms` expects '0' to be in the available_terms,
+    # hence for this particular case it will still return a list with '0' in
+    # it although that '0' is not part of the available_terms
+    assert [0] == \
+           BaseSensorChannel._get_sum_terms(available_terms,
+                                            0)

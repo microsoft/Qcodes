@@ -513,10 +513,10 @@ class BaseSensorChannel(InstrumentChannel):
         guaranteed to work for an arbitrary number and an arbitrary list of
         available terms.
 
-        If available_terms contains an entry for 0, then it is treated as a
-        special case: if number is also equal to 0, then [0] is returned as a
-        list of terms; if number is larger than 0, then 0 is automatically
-        excluded from the list of available terms, and is not looked for.
+        Zeros are treated as a special case. If number is equal to 0,
+        then [0] is returned as a list of terms. Moreover, the function
+        assumes that the list of available terms contains 0 because this
+        is a usually the default status code for success.
 
         Example:
         >>> terms = [1, 16, 32, 64, 128]
@@ -528,16 +528,16 @@ class BaseSensorChannel(InstrumentChannel):
         # Sort the list of available_terms from largest to smallest
         terms_left = np.sort(available_terms)[::-1]
 
-        if 0 in terms_left:
-            if number == 0:
-                terms_left = np.empty(0)
-                terms_in_number = [0]
-            else:
-                terms_left = terms_left[terms_left != 0]
-
         # Get rid of the terms that are bigger than the number because they
-        # will obviously will not make it to the returned list
-        terms_left = terms_left[terms_left <= number]
+        # will obviously will not make it to the returned list; and also get
+        # rid of '0' as it will make the loop below infinite
+        terms_left = np.array(
+            [term for term in terms_left if term <= number and term != 0])
+
+        # Handle the special case of number being 0
+        if number == 0:
+            terms_left = np.empty(0)
+            terms_in_number = [0]
 
         # Keep subtracting the largest term from `number`, and always update
         # the list of available_terms so that they are always smaller than
