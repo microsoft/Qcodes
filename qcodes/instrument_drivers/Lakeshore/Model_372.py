@@ -1,7 +1,7 @@
 from typing import Dict, ClassVar
 
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
-    LakeshoreBase, BaseOutput)
+    LakeshoreBase, BaseOutput, BaseSensorChannel)
 from qcodes.instrument.group_parameter import GroupParameter, Group
 import qcodes.utils.validators as vals
 
@@ -76,6 +76,21 @@ class Output_372(BaseOutput):
         self.D.vals = vals.Numbers(0, 2500)
 
 
+class Model_372_Channel(BaseSensorChannel):
+    SENSOR_STATUSES = {'OK': 0,
+                       'CS OVL': 1,
+                       'VCM OVL': 2,
+                       'VMIX OVL': 4,
+                       'VDIF OVL': 8,
+                       'R. OVER': 16,
+                       'R. UNDER': 32,
+                       'T. OVER': 64,
+                       'T. UNDER': 128}
+
+    def __init__(self, parent, name, channel):
+        super().__init__(parent, name, channel)
+
+
 class Model_372(LakeshoreBase):
     """
     Lakeshore Model 372 Temperature Controller Driver
@@ -85,6 +100,8 @@ class Model_372(LakeshoreBase):
     """
     channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i)
                                             for i in range(1, 1 + _n_channels)}
+
+    CHANNEL_CLASS = Model_372_Channel
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)

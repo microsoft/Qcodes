@@ -289,6 +289,9 @@ class BaseSensorChannel(InstrumentChannel):
             string identifier of the channel as referenced in commands;
             for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
     """
+
+    SENSOR_STATUSES: ClassVar[Dict[str, int]] = {}
+
     def __init__(self, parent, name, channel):
         super().__init__(parent, name)
 
@@ -321,14 +324,9 @@ class BaseSensorChannel(InstrumentChannel):
                            unit='Ohms')  # TODO: This will vary based on sensor type
 
         self.add_parameter('sensor_status',
-                           get_cmd='RDGST? {}'.format(self._channel),
-                           val_mapping={'OK': 0,
-                                        'Invalid Reading': 1,
-                                        'Temp Underrange': 16,
-                                        'Temp Overrange': 32,
-                                        'Sensor Units Zero': 64,
-                                        'Sensor Units Overrange': 128},
-                           label='Sensor_Status')
+                           get_cmd=f'RDGST? {self._channel}',
+                           val_mapping=self.SENSOR_STATUSES,
+                           label='Sensor status')
 
         self.add_parameter('sensor_name',
                            get_cmd=f'INNAME? {self._channel}',
