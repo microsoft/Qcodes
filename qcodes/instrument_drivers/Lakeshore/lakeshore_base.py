@@ -493,10 +493,16 @@ class BaseSensorChannel(InstrumentChannel):
                                           f'{{units}}',
                                   get_cmd=f'INTYPE? {self._channel}')
 
-    def _decode_sensor_status(self, sum_of_codes):
+    def _decode_sensor_status(self, sum_of_codes: str):
         """
         Parses the sum of status code according to the `SENSOR_STATUSES` using
         an algorithm defined in `_get_sum_terms` method.
+
+        Args:
+            sum_of_codes
+                sum of status codes, it is an integer value in the form of a
+                string (e.g. "32"), as returned by the corresponding
+                instrument command
         """
         codes = self._get_sum_terms(list(self.SENSOR_STATUSES.keys()),
                                     int(sum_of_codes))
