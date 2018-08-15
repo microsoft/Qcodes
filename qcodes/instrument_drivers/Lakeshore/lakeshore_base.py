@@ -343,7 +343,7 @@ class BaseSensorChannel(InstrumentChannel):
                            get_cmd=f'SRDG? {self._channel}',
                            get_parser=float,
                            label='Raw reading',
-                           unit='Ohms')  # TODO: This will vary based on sensor type
+                           unit='Ohms')
 
         self.add_parameter('sensor_status',
                            get_cmd=f'RDGST? {self._channel}',
