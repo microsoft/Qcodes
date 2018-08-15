@@ -11,8 +11,8 @@ _n_channels = 16
 
 
 class Output_372(BaseOutput):
-    # Probably Mypy bug
-    # should have been fixed in https://github.com/python/mypy/issues/4715
+    """Class for control outputs (heaters) of model 372"""
+
     MODES: ClassVar[Dict[str, int]] = {
         'off': 0,
         'monitor_out': 1,
