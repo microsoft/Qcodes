@@ -564,6 +564,14 @@ class LakeshoreBase(VisaInstrument):
     and 372. There are probably other lakeshore modes that can use the
     functionality provided here. If you add another lakeshore driver
     please make sure to extend this class accordingly, or create a new one.
+
+    In order to use a variation of the `BaseSensorChannel` class for sensor
+    channels, just set `CHANNEL_CLASS` to that variation of the class inside
+    your `LakeshoreBase`'s subclass.
+
+    In order to add heaters (output channels) to the driver, add `BaseOutput`
+    instances (subclasses of those) in your `LakeshoreBase`'s subclass
+    constructor via `add_submodule` method.
     """
     # Redefine this in the model-specific class in case you want to use a
     # different class for sensor channels
