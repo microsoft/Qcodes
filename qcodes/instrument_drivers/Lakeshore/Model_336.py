@@ -35,11 +35,8 @@ class Output_336(BaseOutput):
         'medium': 2,
         'high': 3}
 
-    def __init__(self, parent, output_name, output_index):
-        if output_name not in ['A', 'B']:
-            self._has_pid = False
-
-        super().__init__(parent, output_name, output_index)
+    def __init__(self, parent, output_name, output_index, **kwargs):
+        super().__init__(parent, output_name, output_index, **kwargs)
 
         # Redefine input_channel to use string names instead of numbers
         self.add_parameter('input_channel',
@@ -89,5 +86,5 @@ class Model_336(LakeshoreBase):
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.output_1 = Output_336(self, 'output_1', 1)
-        self.output_2 = Output_336(self, 'output_2', 2)
+        self.output_1 = Output_336(self, 'output_1', 1, has_pid=True)
+        self.output_2 = Output_336(self, 'output_2', 2, has_pid=True)
