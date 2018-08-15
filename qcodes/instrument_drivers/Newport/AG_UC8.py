@@ -6,8 +6,6 @@ import logging
 import time
 from typing import Optional, Dict, Callable
 
-import serial
-
 from qcodes import Instrument, VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 
