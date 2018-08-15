@@ -5,7 +5,7 @@ from functools import wraps
 from contextlib import suppress
 import time
 
-# from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
+from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 import qcodes.instrument.sims as sims
 
