@@ -211,8 +211,6 @@ class BaseOutput(InstrumentChannel):
         return self.output_range()
 
     def set_setpoint_and_range(self, temperature):
-        # TODO: Range should be selected according to current temperature,
-        # not according to current setpoint
         self.set_range_from_temperature(temperature)
         self.setpoint(temperature)
 
@@ -264,8 +262,7 @@ class BaseOutput(InstrumentChannel):
 
         while True:
             t_reading = active_channel.temperature()
-            # TODO(MA): if T is lower than sensor range, it keeps on waiting...
-            # TODO(DV): only do this coming from one direction
+
             delta = abs(t_reading - t_setpoint)/t_reading
             log.debug(f'loop iteration with '
                       f't reading of {t_reading}, delta {delta}')
