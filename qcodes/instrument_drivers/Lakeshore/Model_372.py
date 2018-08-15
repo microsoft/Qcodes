@@ -35,8 +35,8 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
-    def __init__(self, parent, output_name, output_index) -> None:
-        super().__init__(parent, output_name, output_index)
+    def __init__(self, parent, output_name, output_index, **kwargs) -> None:
+        super().__init__(parent, output_name, output_index, **kwargs)
 
         self.input_channel.vals = vals.Numbers(1, _n_channels)
 
@@ -77,15 +77,15 @@ class Output_372(BaseOutput):
 
 
 class Model_372_Channel(BaseSensorChannel):
-    SENSOR_STATUSES = {'OK': 0,
-                       'CS OVL': 1,
-                       'VCM OVL': 2,
-                       'VMIX OVL': 4,
-                       'VDIF OVL': 8,
-                       'R. OVER': 16,
-                       'R. UNDER': 32,
-                       'T. OVER': 64,
-                       'T. UNDER': 128}
+    SENSOR_STATUSES = {0: 'OK',
+                       1: 'CS OVL',
+                       2: 'VCM OVL',
+                       4: 'VMIX OVL',
+                       8: 'VDIF OVL',
+                       16: 'R. OVER',
+                       32: 'R. UNDER',
+                       64: 'T. OVER',
+                       128: 'T. UNDER'}
 
     def __init__(self, parent, name, channel):
         super().__init__(parent, name, channel)

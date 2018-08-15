@@ -1,7 +1,9 @@
-from typing import Dict, ClassVar
+from typing import Dict, ClassVar, List
 import logging
 import time
 from bisect import bisect
+
+import numpy as np
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.instrument.group_parameter import GroupParameter, Group
@@ -12,16 +14,34 @@ log = logging.getLogger(__name__)
 
 
 class BaseOutput(InstrumentChannel):
+    """
+    Base class for the outputs of Lakeshore temperature controllers
+
+    Args:
+        parent
+            instrument that this channel belongs to
+        output_name
+            name of this output
+        output_index
+            identifier for this output that is used in VISA commands of the
+            instrument
+        has_pid
+            if True, then the output supports closed loop control,
+            hence it will have three parameters to set it up: 'P', 'I', and 'D'
+    """
 
     MODES: ClassVar[Dict[str, int]] = {}
     RANGES: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, parent, output_name, output_index) -> None:
+    def __init__(self, parent, output_name, output_index, had_pid: bool=True) \
+            -> None:
         super().__init__(parent, output_name)
+
         self.INVERSE_RANGES: Dict[int, str] = {
             v: k for k, v in self.RANGES.items()}
-        self._has_pid = True
-        self.output_index = output_index
+
+        self._has_pid = had_pid
+        self._output_index = output_index
 
         self.add_parameter('mode',
                            label='Control mode',
@@ -103,6 +123,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('range_limits',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Sequence(validators.Numbers(0, 400),
                                                     require_sorted=True,
                                                     length=len(self.RANGES)-1),
@@ -117,6 +138,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('wait_cycle_time',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Numbers(0, 100),
                            label='Waiting cycle time',
                            docstring='Time between two readings when waiting '
@@ -126,6 +148,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('wait_tolerance',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Numbers(0, 100),
                            label='Waiting tolerance',
                            docstring='Acceptable tolerance when waiting for '
@@ -135,6 +158,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('wait_equilibration_time',
                            set_cmd=None,
+                           get_cmd=None,
                            vals=validators.Numbers(0, 100),
                            label='Waiting equilibration time',
                            docstring='Duration during which temperature has to '
@@ -142,7 +166,7 @@ class BaseOutput(InstrumentChannel):
                            unit='s')
         self.wait_equilibration_time(0.5)
 
-        self.add_parameter('blocking_T',
+        self.add_parameter('blocking_t',
                            label='Setpoint value with blocking until it is '
                                  'reached',
                            docstring='Sets the setpoint value, and input '
@@ -150,11 +174,11 @@ class BaseOutput(InstrumentChannel):
                                      'Added for compatibility with Loop.',
                            vals=validators.Numbers(0, 400),
                            get_parser=float,
-                           set_cmd=self._set_blocking_T)
+                           set_cmd=self._set_blocking_t)
 
-    def _set_blocking_T(self, T):
-        self.set_range_from_temperature(T)
-        self.setpoint(T)
+    def _set_blocking_t(self, temperature):
+        self.set_range_from_temperature(temperature)
+        self.setpoint(temperature)
         self.wait_until_set_point_reached()
 
     def set_range_from_temperature(self, temperature):
@@ -290,7 +314,9 @@ class BaseSensorChannel(InstrumentChannel):
             for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
     """
 
-    SENSOR_STATUSES: ClassVar[Dict[str, int]] = {}
+    # A dictionary of sensor statuses that assigns a string representation of
+    # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
+    SENSOR_STATUSES: ClassVar[Dict[int, str]] = {}
 
     def __init__(self, parent, name, channel):
         super().__init__(parent, name)
@@ -321,11 +347,11 @@ class BaseSensorChannel(InstrumentChannel):
                            get_cmd=f'SRDG? {self._channel}',
                            get_parser=float,
                            label='Raw reading',
-                           unit='Ohms')  # TODO: This will vary based on sensor type
+                           unit='Ohms')
 
         self.add_parameter('sensor_status',
                            get_cmd=f'RDGST? {self._channel}',
-                           val_mapping=self.SENSOR_STATUSES,
+                           get_parser=self._decode_sensor_status,
                            label='Sensor status')
 
         self.add_parameter('sensor_name',
@@ -466,6 +492,70 @@ class BaseSensorChannel(InstrumentChannel):
                                           f'{{current_source_shunted}}, '
                                           f'{{units}}',
                                   get_cmd=f'INTYPE? {self._channel}')
+
+    def _decode_sensor_status(self, sum_of_codes: str):
+        """
+        Parses the sum of status code according to the `SENSOR_STATUSES` using
+        an algorithm defined in `_get_sum_terms` method.
+
+        Args:
+            sum_of_codes
+                sum of status codes, it is an integer value in the form of a
+                string (e.g. "32"), as returned by the corresponding
+                instrument command
+        """
+        codes = self._get_sum_terms(list(self.SENSOR_STATUSES.keys()),
+                                    int(sum_of_codes))
+        return ", ".join([self.SENSOR_STATUSES[k] for k in codes])
+
+    @staticmethod
+    def _get_sum_terms(available_terms: List[int], number: int):
+        """
+        Returns a list of terms which make the given number when summed up
+
+        This method is intended to be used for cases where the given list
+        of terms contains powers of 2, which corresponds to status codes
+        that an instrument returns. With that said, this method is not
+        guaranteed to work for an arbitrary number and an arbitrary list of
+        available terms.
+
+        Zeros are treated as a special case. If number is equal to 0,
+        then [0] is returned as a list of terms. Moreover, the function
+        assumes that the list of available terms contains 0 because this
+        is a usually the default status code for success.
+
+        Example:
+        >>> terms = [1, 16, 32, 64, 128]
+        >>> get_sum_terms(terms, 96)
+        ... [64, 32]  # This is correct because 96=64+32
+        """
+        terms_in_number: List[int] = []
+
+        # Sort the list of available_terms from largest to smallest
+        terms_left = np.sort(available_terms)[::-1]
+
+        # Get rid of the terms that are bigger than the number because they
+        # will obviously will not make it to the returned list; and also get
+        # rid of '0' as it will make the loop below infinite
+        terms_left = np.array(
+            [term for term in terms_left if term <= number and term != 0])
+
+        # Handle the special case of number being 0
+        if number == 0:
+            terms_left = np.empty(0)
+            terms_in_number = [0]
+
+        # Keep subtracting the largest term from `number`, and always update
+        # the list of available_terms so that they are always smaller than
+        # the current value of `number`, until there are no more available_terms
+        # to subtract
+        while len(terms_left) > 0:
+            term = terms_left[0]
+            number -= term
+            terms_in_number.append(term)
+            terms_left = terms_left[terms_left <= number]
+
+        return terms_in_number
 
 
 class LakeshoreBase(VisaInstrument):
