@@ -335,7 +335,7 @@ def transaction(conn: sqlite3.Connection,
 
 
 def atomic_transaction(conn: sqlite3.Connection,
-                      sql: str, *args: Any) -> sqlite3.Cursor:
+                       sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
     transaction is rolled back.
