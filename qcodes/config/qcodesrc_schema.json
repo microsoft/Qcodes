@@ -127,17 +127,17 @@
             "properties": {
                 "location": {
                     "type": "integer",
-                    "default": 0,
+                    "default": 170,
                     "description": "Geographical location code"
                 },
                 "work_station": {
                     "type": "integer",
-                    "default": 0,
+                    "default": 11184810,
                     "description": "Work station identification code"
                 },
                 "sample": {
                     "type": "integer",
-                    "default": 0,
+                    "default": 2863311530,
                     "description": "Sample identification code"
             }
         },
