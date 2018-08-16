@@ -18,7 +18,8 @@ from qcodes.dataset.sqlite_base import (get_user_version, set_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1)
 
-from qcodes.dataset.data_set import CompletedError, generate_guid, parse_guid
+from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.dataset.database import initialise_database, \
     initialise_or_create_database_at
 
@@ -378,10 +379,12 @@ def test_database_upgrade(empty_temp_db):
 
 
 def test_perform_actual_upgrade_0_to_1(dataset):
+    # first manually perform downgrade 1 -> 0
     connection = connect(qc.config["core"]["db_location"],
                          qc.config["core"]["db_debug"])
     set_user_version(connection, 0)
     atomic_transaction(connection, 'drop table uuids')
+
     perform_db_upgrade_0_to_1(connection)
     assert get_user_version(connection) == 1
     cur = atomic_transaction(connection, "SELECT name FROM sqlite_master WHERE type='table' AND name='uuids'")

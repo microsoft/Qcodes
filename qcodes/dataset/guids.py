@@ -1,9 +1,12 @@
-from typing import Union
+from typing import Union, Dict
+import time
+
+import numpy as np
 
 from qcodes.config import Config
 
 
-def generate_guid() -> str:
+def generate_guid(timeint: Union[int, None]=None) -> str:
     """
     Generate a guid string to go into the GUID column of the runs table.
     The GUID is based on the GUID-components in the qcodesrc file.
@@ -13,6 +16,9 @@ def generate_guid() -> str:
     location, the next 2+4 hex numbers are the 3 byte work station code, and
     the final 4+12 hex number give the 8 byte integer time in ms since epoch
     time
+
+    Args:
+        timeint: An integer of miliseconds since unix epoch time
     """
     cfg = Config()
 
@@ -25,12 +31,15 @@ def generate_guid() -> str:
     location = guid_comp['location']
     station = guid_comp['work_station']
     sample = guid_comp['sample']
-    tim = int(np.round(time.time()*1000))  # ms resolution, checked on windows
+
+    if timeint is None:
+        # ms resolution, checked on windows
+        timeint = int(np.round(time.time()*1000))
 
     loc_str = f'{location:02x}'
     stat_str = f'{station:06x}'
     smpl_str = f'{sample:08x}'
-    time_str = f'{tim:016x}'
+    time_str = f'{timeint:016x}'
 
     guid = (f'{smpl_str}-{loc_str}{stat_str[:2]}-{stat_str[2:]}-'
             f'{time_str[:4]}-{time_str[4:]}')
