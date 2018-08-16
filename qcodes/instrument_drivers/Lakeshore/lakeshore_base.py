@@ -7,7 +7,7 @@ import numpy as np
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.instrument.group_parameter import GroupParameter, Group
-from qcodes.utils import validators
+from qcodes.utils import validators as vals
 
 
 log = logging.getLogger(__name__)
@@ -74,21 +74,21 @@ class BaseOutput(InstrumentChannel):
                                label='P value of closed-loop controller',
                                docstring='The value for control loop '
                                          'Proportional (gain)',
-                               vals=validators.Numbers(0, 1000),
+                               vals=vals.Numbers(0, 1000),
                                get_parser=float,
                                parameter_class=GroupParameter)
             self.add_parameter('I',
                                label='I value of closed-loop controller',
                                docstring='The value for control loop '
                                          'Integral (reset)',
-                               vals=validators.Numbers(0, 1000),
+                               vals=vals.Numbers(0, 1000),
                                get_parser=float,
                                parameter_class=GroupParameter)
             self.add_parameter('D',
                                label='D value of closed-loop controller',
                                docstring='The value for control loop '
                                          'Derivative (rate)',
-                               vals=validators.Numbers(0, 1000),
+                               vals=vals.Numbers(0, 1000),
                                get_parser=float,
                                parameter_class=GroupParameter)
             self.pid_group = Group([self.P, self.I, self.D],
@@ -114,7 +114,7 @@ class BaseOutput(InstrumentChannel):
                                      'preferred units of the control loop '
                                      'sensor (which is set via '
                                      '`input_channel` parameter)',
-                           vals=validators.Numbers(0, 400),
+                           vals=vals.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=f'SETP {output_index}, {{}}',
                            get_cmd=f'SETP? {output_index}')
@@ -124,9 +124,9 @@ class BaseOutput(InstrumentChannel):
         self.add_parameter('range_limits',
                            set_cmd=None,
                            get_cmd=None,
-                           vals=validators.Sequence(validators.Numbers(0, 400),
-                                                    require_sorted=True,
-                                                    length=len(self.RANGES)-1),
+                           vals=vals.Sequence(vals.Numbers(0, 400),
+                                              require_sorted=True,
+                                              length=len(self.RANGES)-1),
                            label='Temperature limits for output ranges',
                            unit='K',
                            docstring='Use this parameter to define which '
@@ -139,7 +139,7 @@ class BaseOutput(InstrumentChannel):
         self.add_parameter('wait_cycle_time',
                            set_cmd=None,
                            get_cmd=None,
-                           vals=validators.Numbers(0, 100),
+                           vals=vals.Numbers(0, 100),
                            label='Waiting cycle time',
                            docstring='Time between two readings when waiting '
                                      'for temperature to equilibrate',
@@ -149,7 +149,7 @@ class BaseOutput(InstrumentChannel):
         self.add_parameter('wait_tolerance',
                            set_cmd=None,
                            get_cmd=None,
-                           vals=validators.Numbers(0, 100),
+                           vals=vals.Numbers(0, 100),
                            label='Waiting tolerance',
                            docstring='Acceptable tolerance when waiting for '
                                      'temperature to equilibrate',
@@ -159,7 +159,7 @@ class BaseOutput(InstrumentChannel):
         self.add_parameter('wait_equilibration_time',
                            set_cmd=None,
                            get_cmd=None,
-                           vals=validators.Numbers(0, 100),
+                           vals=vals.Numbers(0, 100),
                            label='Waiting equilibration time',
                            docstring='Duration during which temperature has to '
                                      'be within tolerance',
@@ -172,7 +172,7 @@ class BaseOutput(InstrumentChannel):
                            docstring='Sets the setpoint value, and input '
                                      'range, and waits until it is reached. '
                                      'Added for compatibility with Loop.',
-                           vals=validators.Numbers(0, 400),
+                           vals=vals.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=self._set_blocking_t)
 
@@ -355,7 +355,7 @@ class BaseSensorChannel(InstrumentChannel):
                            get_cmd=f'INNAME? {self._channel}',
                            get_parser=str,
                            set_cmd=f'INNAME {self._channel},\"{{}}\"',
-                           vals=validators.Strings(15),
+                           vals=vals.Strings(15),
                            label='Sensor name')
 
         # Parameters related to Input Setup Command (INTYPE)
@@ -378,7 +378,7 @@ class BaseSensorChannel(InstrumentChannel):
                                      'current excitation); refer to the manual '
                                      'for the table of ranges',
                            get_parser=int,
-                           vals=validators.Numbers(1, 22),
+                           vals=vals.Numbers(1, 22),
                            parameter_class=GroupParameter)
         self.add_parameter('auto_range',
                            label='Auto range',
