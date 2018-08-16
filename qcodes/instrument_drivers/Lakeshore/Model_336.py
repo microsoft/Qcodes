@@ -23,7 +23,7 @@ _channel_name_to_outmode_command_map: Dict[str, int] = \
      for num_for_cmd, ch_name in enumerate(_channel_name_to_command_map.keys())}
 
 
-class Output_336(BaseOutput):
+class Output_336_CurrentSource(BaseOutput):
     """
     Class for control outputs 1 and 2 of model 336 that are variable DC current
     sources referenced to chassis ground
@@ -33,9 +33,7 @@ class Output_336(BaseOutput):
         'off': 0,
         'closed_loop': 1,
         'zone': 2,
-        'open_loop': 3,
-        'monitor_out': 4,
-        'warm_up': 5}
+        'open_loop': 3}
 
     RANGES: ClassVar[Dict[str, int]] = {
         'off': 0,
@@ -55,20 +53,40 @@ class Output_336(BaseOutput):
                            val_mapping=_channel_name_to_outmode_command_map,
                            parameter_class=GroupParameter)
 
-        # Add a remark to `mode` parameter docstring
-        self.mode.__doc__ += os.linesep.join((
-            self.mode.__doc__,
-            '',
-            'Modes `monitor_out` (4) and `warm_up` (5) are '
-            'only valid for Analog Outputs, C (3) and D (4).'
-        ))
-
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
         self.D.vals = vals.Numbers(0, 200)
 
         self.range_limits.vals = vals.Sequence(
             vals.Numbers(0, 400), length=2, require_sorted=True)
+
+
+class Output_336_VoltageSource(BaseOutput):
+    """
+    Class for control outputs 3 and 4 of model 336 that are variable DC voltage
+    sources
+    """
+
+    MODES: ClassVar[Dict[str, int]] = {
+        'off': 0,
+        'closed_loop': 1,
+        'zone': 2,
+        'open_loop': 3,
+        'monitor_out': 4,
+        'warm_up': 5}
+
+    RANGES: ClassVar[Dict[str, int]] = {
+        'off': 0,
+        'low': 1,
+        'medium': 2,
+        'high': 3}
+
+    def __init__(self, parent, output_name, output_index):
+        super().__init__(parent, output_name, output_index, has_pid=False)
+
+        self.range_limits.vals = vals.Sequence(
+            vals.Numbers(0, 400), length=2, require_sorted=True)
+
 
 
 class Model_336_Channel(BaseSensorChannel):
@@ -147,5 +165,7 @@ class Model_336(LakeshoreBase):
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.output_1 = Output_336(self, 'output_1', 1, has_pid=True)
-        self.output_2 = Output_336(self, 'output_2', 2, has_pid=True)
+        self.output_1 = Output_336_CurrentSource(self, 'output_1', 1)
+        self.output_2 = Output_336_CurrentSource(self, 'output_2', 2)
+        self.output_3 = Output_336_VoltageSource(self, 'output_3', 3)
+        self.output_4 = Output_336_VoltageSource(self, 'output_4', 4)
