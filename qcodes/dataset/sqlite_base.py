@@ -276,12 +276,12 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> bool:
         try:
             with atomic(conn):
                 sql = "ALTER TABLE runs ADD COLUMN guid TEXT"
-                atomic_transaction(conn, sql)
+                transaction(conn, sql)
                 # now assign GUIDs to existing runs
-                cur = atomic_transaction(conn, 'SELECT run_id FROM runs')
+                cur = transaction(conn, 'SELECT run_id FROM runs')
                 run_ids = many_many(cur, 'run_id')
 
-                for run_id in run_ids[:3]:
+                for run_id in run_ids:
                     sql = f"""
                           UPDATE runs
                           SET guid = ?
