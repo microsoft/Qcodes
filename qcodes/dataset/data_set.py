@@ -39,6 +39,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.guids import generate_guid
 from qcodes.config import Config
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -216,6 +217,7 @@ class DataSet(Sized):
         the creation of a new dataset.
         """
         _, run_id, __ = create_run(self.conn, exp_id, name,
+                                   generate_guid(),
                                    specs, values, metadata)
 
         # this is really the UUID (an ever increasing count in the db)
@@ -792,59 +794,3 @@ def hash_from_parts(*parts: str) -> str:
                   stacklevel=2)
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()
-
-
-def generate_guid() -> str:
-    """
-    Generate a guid string to go into the GUID column of the runs table.
-    The GUID is based on the GUID-components in the qcodesrc file.
-    The generated string is of the format
-    '12345678-1234-1234-1234-123456789abc', where the first eight hex numbers
-    comprise the 4 byte sample code, the next 2 hex numbers comprise the 1 byte
-    location, the next 2+4 hex numbers are the 3 byte work station code, and
-    the final 4+12 hex number give the 8 byte integer time in ms since epoch
-    time
-    """
-    cfg = Config()
-
-    try:
-        guid_comp = cfg['GUID_components']
-    except KeyError:
-        raise RuntimeError('Invalid QCoDeS config file! No GUID_components '
-                           'specified. Can not proceed.')
-
-    location = guid_comp['location']
-    station = guid_comp['work_station']
-    sample = guid_comp['sample']
-    tim = int(np.round(time.time()*1000))  # ms resolution, checked on windows
-
-    loc_str = f'{location:02x}'
-    stat_str = f'{station:06x}'
-    smpl_str = f'{sample:08x}'
-    time_str = f'{tim:016x}'
-
-    guid = (f'{smpl_str}-{loc_str}{stat_str[:2]}-{stat_str[2:]}-'
-            f'{time_str[:4]}-{time_str[4:]}')
-
-    return guid
-
-
-def parse_guid(guid: str) -> Dict[str, int]:
-    """
-    Parse a guid back to its four constituents
-
-    Args:
-        guid: a valid guid str
-
-    Returns:
-        A dict with keys 'location', 'work_station', 'sample', and 'time'
-          and integer values
-    """
-    guid = guid.replace('-', '')
-    components = {}
-    components['sample'] = int(guid[:8], base=16)
-    components['location'] = int(guid[8:10], base=16)
-    components['work_station'] = int(guid[10:16], base=16)
-    components['time'] = int(guid[16:], base=16)
-
-    return components
