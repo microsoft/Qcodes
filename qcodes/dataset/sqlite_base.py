@@ -339,7 +339,9 @@ def atomic_transaction(conn: sqlite3.Connection,
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
     transaction is rolled back.
-
+    NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
+    but we want to guard any transaction that modifies the database (e.g. also
+    ALTER). 'BEGIN' marks a place to commit from/roll back to
 
     Args:
         conn: database connection
@@ -350,14 +352,25 @@ def atomic_transaction(conn: sqlite3.Connection,
         sqlite cursor
 
     """
+
+    if conn.in_transaction:
+        raise RuntimeError('SQLite connection has uncommited transactions. '
+                           'Please commit those before starting an atomic '
+                           'transaction.')
+
     try:
+        old_level = conn.isolation_level
+        conn.isolation_level = None
+        conn.cursor().execute('BEGIN')
         c = transaction(conn, sql, *args)
     except Exception as e:
         logging.exception("Could not execute transaction, rolling back")
         conn.rollback()
         raise e
-
-    conn.commit()
+    else:
+        conn.commit()
+    finally:
+        conn.isolation_level = old_level
     return c
 
 
@@ -367,11 +380,22 @@ def atomic(conn: sqlite3.Connection):
     Guard a series of transactions as atomic.
     If one fails the transaction is rolled back and no more transactions
     are performed.
+    NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
+    but we want to guard any transaction that modifies the database (e.g. also
+    ALTER)
 
     Args:
         - conn: connection to guard
     """
+    if conn.in_transaction:
+        raise RuntimeError('SQLite connection has uncommited transactions. '
+                           'Please commit those before starting an atomic '
+                           'transaction.')
+
     try:
+        old_level = conn.isolation_level
+        conn.isolation_level = None
+        conn.cursor().execute('BEGIN')
         yield
     except Exception as e:
         conn.rollback()
@@ -379,6 +403,8 @@ def atomic(conn: sqlite3.Connection):
         raise RuntimeError("Rolling back due to unhandled exception") from e
     else:
         conn.commit()
+    finally:
+        conn.isolation_level = old_level
 
 
 def init_db(conn: sqlite3.Connection)->None:
