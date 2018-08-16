@@ -68,22 +68,22 @@ class BaseOutput(InstrumentChannel):
         # Parameters for Closed Loop PID Parameter Command
         if self._has_pid:
             self.add_parameter('P',
-                               label='P value of closed-loop controller',
-                               docstring='The value for control loop '
+                               label='Proportional (closed-loop)',
+                               docstring='The value for closed control loop '
                                          'Proportional (gain)',
                                vals=vals.Numbers(0, 1000),
                                get_parser=float,
                                parameter_class=GroupParameter)
             self.add_parameter('I',
-                               label='I value of closed-loop controller',
-                               docstring='The value for control loop '
+                               label='Integral (closed-loop)',
+                               docstring='The value for closed control loop '
                                          'Integral (reset)',
                                vals=vals.Numbers(0, 1000),
                                get_parser=float,
                                parameter_class=GroupParameter)
             self.add_parameter('D',
-                               label='D value of closed-loop controller',
-                               docstring='The value for control loop '
+                               label='Derivative (closed-loop)',
+                               docstring='The value for closed control loop '
                                          'Derivative (rate)',
                                vals=vals.Numbers(0, 1000),
                                get_parser=float,
