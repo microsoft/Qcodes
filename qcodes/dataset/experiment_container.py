@@ -10,7 +10,9 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         get_run_counter, get_runs,
                                         get_last_run,
                                         connect, transaction,
-                                        get_last_experiment, get_experiments)
+                                        get_last_experiment, get_experiments,
+                                        get_experiment_name_from_experiment_id,
+                                        get_sample_name_from_experiment_id)
 from qcodes.dataset.sqlite_base import new_experiment as ne
 from qcodes.dataset.database import get_DB_location, get_DB_debug
 
@@ -39,13 +41,11 @@ class Experiment(Sized):
 
     @property
     def name(self) -> str:
-        return select_one_where(self.conn, "experiments",
-                                "name", "exp_id", self.exp_id)
+        return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
     def sample_name(self) -> str:
-        return select_one_where(self.conn, "experiments",
-                                "sample_name", "exp_id", self.exp_id)
+        return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
     def last_counter(self) -> int:
@@ -240,3 +240,29 @@ def load_experiment_by_name(name: str,
     else:
         e.exp_id = rows[0]['exp_id']
     return e
+
+
+def load_or_create_experiment(experiment_name: str,
+                              sample_name: str
+                              ) -> Experiment:
+    """
+    Find and return an experiment with the given name and sample name,
+    or create one if not found.
+
+    Args:
+        experiment_name
+            Name of the experiment to find or create
+        sample_name
+            Name of the sample
+
+    Returns:
+        The found or created experiment
+    """
+    try:
+        experiment = load_experiment_by_name(experiment_name, sample_name)
+    except ValueError as exception:
+        if "Experiment not found" in str(exception):
+            experiment = new_experiment(experiment_name, sample_name)
+        else:
+            raise exception
+    return experiment

@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence, Optional)
+                    MutableMapping, MutableSequence, Optional, Any)
 from inspect import signature
 from numbers import Number
 
@@ -19,11 +19,21 @@ from qcodes.dataset.data_set import DataSet
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
-non_array_like_types = (int, float, str)
 
 
 class ParameterTypeError(Exception):
     pass
+
+
+def is_number(thing: Any) -> bool:
+    """
+    Test if an object can be converted to a number
+    """
+    try:
+        float(thing)
+        return True
+    except (ValueError, TypeError):
+        return False
 
 
 class DataSaver:
@@ -56,7 +66,7 @@ class DataSaver:
 
     def add_result(self,
                    *res_tuple: Tuple[Union[_BaseParameter, str],
-                                     Union[str, int, float, np.ndarray]])-> None:
+                                     Union[str, int, float, np.dtype, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -114,7 +124,7 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
-            elif any(isinstance(value, t) for t in non_array_like_types):
+            elif is_number(value) or isinstance(value, str):
                 pass
             else:
                 raise ValueError('Wrong value type received. '
@@ -421,8 +431,8 @@ class Measurement:
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
             spname_parts = []
-            if parameter.instrument is not None:
-                inst_name = parameter.instrument.name
+            if parameter._instrument is not None:
+                inst_name = parameter._instrument.name
                 if inst_name is not None:
                     spname_parts.append(inst_name)
             if parameter.setpoint_names is not None:

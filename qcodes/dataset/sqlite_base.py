@@ -839,6 +839,25 @@ def completed(conn: sqlite3.Connection, run_id)->bool:
                                  "run_id", run_id))
 
 
+def get_completed_timestamp_from_run_id(
+        conn: sqlite3.Connection, run_id: int) -> float:
+    """
+    Retrieve the timestamp when the given measurement run was completed
+
+    If the measurement run has not been marked as completed, then the returned
+    value is None.
+
+    Args:
+        conn: database connection
+        run_id: id of the run
+
+    Returns:
+        timestamp in seconds since the Epoch, or None
+    """
+    return select_one_where(conn, "runs", "completed_timestamp",
+                            "run_id", run_id)
+
+
 def finish_experiment(conn: sqlite3.Connection, exp_id: int):
     """ Finish experiment
 
@@ -1354,3 +1373,19 @@ def get_user_version(conn: sqlite3.Connection) -> int:
 def set_user_version(conn: sqlite3.Connection, version: int) -> None:
 
     atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
+
+
+def get_experiment_name_from_experiment_id(
+        conn: sqlite3.Connection, exp_id: int) -> str:
+    return select_one_where(
+        conn, "experiments", "name", "exp_id", exp_id)
+
+
+def get_sample_name_from_experiment_id(
+        conn: sqlite3.Connection, exp_id: int) -> str:
+    return select_one_where(
+        conn, "experiments", "sample_name", "exp_id", exp_id)
+
+
+def get_run_timestamp_from_run_id(conn: sqlite3.Connection, run_id: int) -> int:
+    return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)

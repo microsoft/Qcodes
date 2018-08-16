@@ -54,6 +54,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                                          'ChannelList']] = {}
         super().__init__(**kwargs)
 
+        # This is needed for snapshot method to work
+        self._meta_attrs = ['name']
+
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
         """
@@ -396,8 +399,6 @@ class Instrument(InstrumentBase):
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-
-        self._meta_attrs = ['name']
 
         self.record_instance(self)
 
