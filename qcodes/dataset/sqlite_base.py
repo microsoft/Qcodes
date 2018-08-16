@@ -91,14 +91,6 @@ CREATE TABLE IF NOT EXISTS dependencies (
 );
 """
 
-_uuid_table_schema = """
-CREATE TABLE IF NOT EXISTS uuids (
-    uuid TEXT PRIMARY KEY,
-    run_id INTEGER,
-    exp_id INTEGER
-);
-"""
-
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 # utility function to allow sqlite/numpy type
 
@@ -413,7 +405,6 @@ def init_db(conn: sqlite3.Connection)->None:
         transaction(conn, _runs_table_schema)
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
-        transaction(conn, _uuid_table_schema)
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
@@ -1140,12 +1131,6 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                                time.time(),
                                False)
     run_id = curr.lastrowid
-    query = f"""
-    INSERT INTO uuids
-        (uuid, run_id, exp_id)
-    VALUES
-        (?,?,?)
-    """
     transaction(conn, query, str(bson.objectid.ObjectId()), run_id, exp_id)
     return run_counter, formatted_name, run_id
 
