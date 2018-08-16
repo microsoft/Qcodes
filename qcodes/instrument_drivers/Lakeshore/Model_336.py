@@ -9,10 +9,18 @@ import qcodes.utils.validators as vals
 # There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
 # Unlike other Lakeshore models, Model 336 refers to the channels using
 # letters, and not numbers
-_channel_name_to_command_map: Dict[str, str] = {'A': '1',
-                                                'B': '2',
-                                                'C': '3',
-                                                'D': '4'}
+_channel_name_to_command_map: Dict[str, str] = {'A': 'A',
+                                                'B': 'B',
+                                                'C': 'C',
+                                                'D': 'D'}
+
+# OUTMODE command of this model refers to the outputs via integer numbers,
+# while everywhere else within this model letters are used. This map is
+# created in order to preserve uniformity of referencing to sensor channels
+# within this driver.
+_channel_name_to_outmode_command_map: Dict[str, int] = \
+    {ch_name: num_for_cmd + 1
+     for num_for_cmd, ch_name in enumerate(_channel_name_to_command_map.keys())}
 
 
 class Output_336(BaseOutput):
@@ -44,7 +52,7 @@ class Output_336(BaseOutput):
                            docstring='Specifies which measurement input to '
                                      'control from (note that only '
                                      'measurement inputs are available)',
-                           val_mapping=_channel_name_to_command_map,
+                           val_mapping=_channel_name_to_outmode_command_map,
                            parameter_class=GroupParameter)
 
         # Add a remark to `mode` parameter docstring
