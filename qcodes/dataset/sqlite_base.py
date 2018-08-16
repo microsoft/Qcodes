@@ -270,13 +270,13 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> bool:
             transaction(conn, sql)
             # now assign GUIDs to existing runs
             cur = transaction(conn, 'SELECT run_id FROM runs')
-            run_ids = many_many(cur, 'run_id')
+            run_ids = [r[0] for r in many_many(cur, 'run_id')]
 
             for run_id in run_ids:
                 query = f"""
                         SELECT run_timestamp
                         FROM runs
-                        WHERE run_id = {run_id}
+                        WHERE run_id == {run_id}
                         """
                 cur = transaction(conn, query)
                 timestamp = one(cur, 'run_timestamp')
@@ -287,8 +287,8 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> bool:
                         where run_id == {run_id}
                         """
                 sampleint = 3736062718  # 'deafcafe'
-                cur.execute(sql, generate_guid(timeint=timeint,
-                                               sampleint=sampleint))
+                cur.execute(sql, (generate_guid(timeint=timeint,
+                                               sampleint=sampleint),))
     elif n_run_tables == 0:
         everything_ok = False
     else:
