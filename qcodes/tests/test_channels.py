@@ -1,17 +1,40 @@
+import logging
+
 from unittest import TestCase
 import unittest
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+import pytest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import ChannelList
-
-from hypothesis import given, settings
-import hypothesis.strategies as hst
 from qcodes.loops import Loop
 
-import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
+
+@pytest.fixture(scope='function')
+def dci():
+
+    dci = DummyChannelInstrument(name='dci')
+    yield dci
+    dci.close()
+
+
+def test_channels_call_function(dci, caplog):
+    """
+    Test that dci.channels.some_function() calls
+    some_function on each of the channels
+    """
+    with caplog.at_level(logging.DEBUG,
+                         logger='qcodes.tests.instrument_mocks'):
+        caplog.clear()
+        dci.channels.log_my_name()
+        mssgs = [rec.message for rec in caplog.records]
+        names = [ch.name.replace('dci_', '') for ch in dci.channels]
+        assert mssgs == names
 
 
 class TestChannels(TestCase):
@@ -106,6 +129,19 @@ class TestChannels(TestCase):
             channel = DummyChannel(self.instrument, 'Chan' + name, name)
             self.instrument.channels.insert(2, channel)
         self.assertEqual(len(self.instrument.channels), n_channels + 1)
+
+    def test_clear_channels(self):
+        channels = self.instrument.channels
+        channels.clear()
+        self.assertEqual(len(channels), 0)
+
+    def test_clear_locked_channels(self):
+        channels = self.instrument.channels
+        original_length = len(channels)
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.clear()
+        self.assertEqual(len(channels), original_length)
 
     def test_remove_channel(self):
         channels = self.instrument.channels

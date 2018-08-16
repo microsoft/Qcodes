@@ -64,6 +64,7 @@ from qcodes.instrument.parameter import (
     MultiParameter,
     StandardParameter,
     ManualParameter,
+    ScaledParameter,
     combine,
     CombinedParameter)
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
@@ -74,9 +75,11 @@ from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
 from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id
 from qcodes.dataset.experiment_container import new_experiment, load_experiment, load_experiment_by_name, \
-    load_last_experiment, experiments
+    load_last_experiment, experiments, load_or_create_experiment
 from qcodes.dataset.sqlite_settings import SQLiteSettings
 from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.database import initialise_database, \
+    initialise_or_create_database_at
 
 try:
     get_ipython() # type: ignore # Check if we are in iPython

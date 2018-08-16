@@ -330,10 +330,12 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
+        log.debug(f'Starting blocking ramp of {self.name} to {value}')
         while self.ramping_state() == 'ramping':
             self._sleep(0.3)
         self._sleep(2.0)
         state = self.ramping_state()
+        log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
         if state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -656,6 +658,14 @@ class AMI430_3D(Instrument):
             vals=Numbers()
         )
 
+        self.add_parameter(
+            'block_during_ramp',
+            set_cmd=None,
+            initial_value=True,
+            unit='',
+            vals=Bool()
+        )
+
     def _verify_safe_setpoint(self, setpoint_values):
 
         if repr(self._field_limit).isnumeric():
@@ -710,7 +720,8 @@ class AMI430_3D(Instrument):
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
-                instrument.set_field(value, perform_safety_check=False)
+                instrument.set_field(value, perform_safety_check=False,
+                                     block=self.block_during_ramp.get())
 
     def _request_field_change(self, instrument, value):
         """
