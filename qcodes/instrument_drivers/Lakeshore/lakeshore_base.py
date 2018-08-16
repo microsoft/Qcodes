@@ -29,14 +29,14 @@ class BaseOutput(InstrumentChannel):
     MODES: ClassVar[Dict[str, int]] = {}
     RANGES: ClassVar[Dict[str, int]] = {}
 
-    def __init__(self, parent, output_name, output_index, had_pid: bool=True) \
+    def __init__(self, parent, output_name, output_index, has_pid: bool=True) \
             -> None:
         super().__init__(parent, output_name)
 
         self.INVERSE_RANGES: Dict[int, str] = {
             v: k for k, v in self.RANGES.items()}
 
-        self._has_pid = had_pid
+        self._has_pid = has_pid
         self._output_index = output_index
 
         self.add_parameter('mode',

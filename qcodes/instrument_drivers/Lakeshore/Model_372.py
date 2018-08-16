@@ -35,8 +35,8 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
-    def __init__(self, parent, output_name, output_index, **kwargs) -> None:
-        super().__init__(parent, output_name, output_index, **kwargs)
+    def __init__(self, parent, output_name, output_index) -> None:
+        super().__init__(parent, output_name, output_index, has_pid=True)
 
         self.input_channel.vals = vals.Numbers(1, _n_channels)
 

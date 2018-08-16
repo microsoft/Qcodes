@@ -41,8 +41,8 @@ class Output_336_CurrentSource(BaseOutput):
         'medium': 2,
         'high': 3}
 
-    def __init__(self, parent, output_name, output_index, **kwargs):
-        super().__init__(parent, output_name, output_index, **kwargs)
+    def __init__(self, parent, output_name, output_index):
+        super().__init__(parent, output_name, output_index, has_pid=True)
 
         # Redefine input_channel to use string names instead of numbers
         self.add_parameter('input_channel',
