@@ -613,8 +613,8 @@ class Instrument(InstrumentBase):
 
         return ins
 
-    @classmethod
-    def exist(cls, name: str, instrument_class: Optional[type]=None) -> bool:
+    @staticmethod
+    def exist(name: str, instrument_class: Optional[type]=None) -> bool:
         """
         Check if an instrument with a given names exists (i.e. is already
         instantiated).
