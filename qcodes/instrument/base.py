@@ -737,6 +737,10 @@ def find_or_create_instrument(instrument_class: Type[Instrument],
     it is not found. In case the instrument was found, and `recreate` is True,
     the instrument will be re-instantiated.
 
+    Note that the class of the existing instrument has to be equal to the
+    instrument class of interest. For example, if an instrument with the same
+    name but of a different class exists, the function will raise an exception.
+
     This function is very convenient because it allows not to bother about
     which instruments are already instantiated and which are not.
 

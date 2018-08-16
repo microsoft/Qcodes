@@ -128,7 +128,7 @@ class TestFindOrCreateInstrument(TestCase):
         Instrument.close_all()
 
     def test_find(self):
-        """Test finding and existing instrument"""
+        """Test finding an existing instrument"""
         instr = DummyInstrument(
             name='instr', gates=['dac1', 'dac2', 'dac3'])
 
@@ -138,6 +138,28 @@ class TestFindOrCreateInstrument(TestCase):
         self.assertEqual(instr_2, instr)
         self.assertEqual(instr_2.name, instr.name)
 
+        instr.close()
+
+    def test_find_same_name_but_different_class(self):
+        """Test finding an existing instrument with different class"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        class GammyInstrument(Instrument):
+            some_other_attr = 25
+
+        # Find an instrument with the same name but of different class
+        with self.assertRaises(TypeError) as cm:
+            _ = find_or_create_instrument(
+                GammyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual("Instrument instr is <class "
+                         "'qcodes.tests.instrument_mocks.DummyInstrument'> but "
+                         "<class 'qcodes.tests.test_instrument"
+                         ".TestFindOrCreateInstrument"
+                         ".test_find_same_name_but_different_class.<locals>"
+                         ".GammyInstrument'> was requested",
+                         str(cm.exception))
         instr.close()
 
     def test_create(self):
