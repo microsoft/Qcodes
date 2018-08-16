@@ -148,7 +148,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         self.start_heating_time = time.perf_counter()
         self.simulate_heating = True
 
-    def get_T_when_heating(self):
+    def get_t_when_heating(self):
         """
         Simply define a fixed setpoint of 4 k for now
         """
@@ -262,7 +262,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
     def temperature(self, output):
         chan = self.channel_mock[output]
         if self.simulate_heating:
-            return self.get_T_when_heating()
+            return self.get_t_when_heating()
         return f'{chan.T}'
 
 
@@ -344,13 +344,6 @@ def test_setpoint(lakeshore_372):
         assert h.setpoint() == setpoint
 
 
-def test_set_and_wait_for_T(lakeshore_372):
-    ls = lakeshore_372
-    ls.sample_heater.setpoint(4)
-    ls.start_heating()
-    ls.sample_heater.wait_until_set_point_reached()
-
-
 def test_select_range_limits(lakeshore_372):
     h = lakeshore_372.sample_heater
     ranges = list(range(1, 9))
@@ -358,6 +351,13 @@ def test_select_range_limits(lakeshore_372):
     for i in ranges:
         h.set_range_from_temperature(i-0.5)
         assert h.output_range() == h.INVERSE_RANGES[i]
+
+
+def test_set_and_wait_unit_setpoint_reached(lakeshore_372):
+    ls = lakeshore_372
+    ls.sample_heater.setpoint(4)
+    ls.start_heating()
+    ls.sample_heater.wait_until_set_point_reached()
 
 
 def test_blocking_t(lakeshore_372):

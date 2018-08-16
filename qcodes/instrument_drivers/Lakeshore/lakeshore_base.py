@@ -239,13 +239,14 @@ class BaseOutput(InstrumentChannel):
                 of the corresponding `wait_equilibration_time` parameter is used
         """
         wait_cycle_time = wait_cycle_time or self.wait_cycle_time.get_latest()
-        wait_tolerance = wait_tolerance or self.wait_tolerance.get_latest()
-        wait_equilibration_time = (wait_equilibration_time or
+        tolerance = wait_tolerance or self.wait_tolerance.get_latest()
+        equilibration_time = (wait_equilibration_time or
                                    self.wait_equilibration_time.get_latest())
 
         active_channel_id = self.input_channel()
         active_channel_number_in_list = active_channel_id - 1
-        active_channel = self.root_instrument.channels[active_channel_number_in_list]
+        active_channel = \
+            self.root_instrument.channels[active_channel_number_in_list]
 
         if active_channel.units() != 'kelvin':
             raise ValueError(f"Waiting until the setpoint is reached requires "
@@ -253,28 +254,20 @@ class BaseOutput(InstrumentChannel):
                              f"be set to 'kelvin'.")
         
         t_setpoint = self.setpoint()
-        
-        start_time_in_tolerance_zone = None
-        is_in_tolerance_zone = False
 
-        while True:
+        time_now = time.perf_counter()
+        time_enter_tolerance_zone = time_now
+
+        while time_now - time_enter_tolerance_zone < equilibration_time:
+            time_now = time.perf_counter()
+
             t_reading = active_channel.temperature()
 
-            delta = abs(t_reading - t_setpoint)/t_reading
+            if abs(t_reading - t_setpoint) / t_reading > tolerance:
+                # Reset time_enter_tolerance_zone to time_now because we left
+                # the tolerance zone here (if we even were inside one)
+                time_enter_tolerance_zone = time_now
 
-            if delta < wait_tolerance:
-                if is_in_tolerance_zone:
-                    if time.monotonic() - start_time_in_tolerance_zone \
-                            > wait_equilibration_time:
-                        break
-                else:
-                    start_time_in_tolerance_zone = time.monotonic()
-                    is_in_tolerance_zone = True
-            else:
-                if is_in_tolerance_zone:
-                    is_in_tolerance_zone = False
-                    start_time_in_tolerance_zone = None
-            
             time.sleep(wait_cycle_time)
 
 
