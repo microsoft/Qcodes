@@ -168,7 +168,12 @@ class BaseOutput(InstrumentChannel):
                                  'reached',
                            docstring='Sets the setpoint value, and input '
                                      'range, and waits until it is reached. '
-                                     'Added for compatibility with Loop.',
+                                     'Added for compatibility with Loop. Note '
+                                     'that if the setpoint value is in '
+                                     'a different range, this function may '
+                                     'wait forever because that setpoint '
+                                     'cannot be reached within the current '
+                                     'range.',
                            vals=vals.Numbers(0, 400),
                            get_parser=float,
                            set_cmd=self._set_blocking_t)
@@ -219,6 +224,10 @@ class BaseOutput(InstrumentChannel):
         This function runs a loop that monitors the value of the heater's
         input channel until the read values is close to the setpoint value
         that has been set before.
+
+        Note that if the setpoint value is in a different range,
+        this function may wait forever because that setpoint cannot be
+        reached within the current range.
 
         Args:
             wait_cycle_time
