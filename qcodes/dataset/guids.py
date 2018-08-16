@@ -6,7 +6,8 @@ import numpy as np
 from qcodes.config import Config
 
 
-def generate_guid(timeint: Union[int, None]=None) -> str:
+def generate_guid(timeint: Union[int, None]=None,
+                  sampleint: Union[int, None]=None) -> str:
     """
     Generate a guid string to go into the GUID column of the runs table.
     The GUID is based on the GUID-components in the qcodesrc file.
@@ -30,15 +31,16 @@ def generate_guid(timeint: Union[int, None]=None) -> str:
 
     location = guid_comp['location']
     station = guid_comp['work_station']
-    sample = guid_comp['sample']
 
     if timeint is None:
         # ms resolution, checked on windows
         timeint = int(np.round(time.time()*1000))
+    if sampleint is None:
+        sampleint = guid_comp['sample']
 
     loc_str = f'{location:02x}'
     stat_str = f'{station:06x}'
-    smpl_str = f'{sample:08x}'
+    smpl_str = f'{sampleint:08x}'
     time_str = f'{timeint:016x}'
 
     guid = (f'{smpl_str}-{loc_str}{stat_str[:2]}-{stat_str[2:]}-'
