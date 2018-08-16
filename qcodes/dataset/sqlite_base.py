@@ -282,13 +282,19 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> bool:
                 run_ids = many_many(cur, 'run_id')
 
                 for run_id in run_ids:
+                    query = f"""
+                            SELECT run_timestamp
+                            FROM runs
+                            WHERE run_id = {run_id}
+                            """
+                    cur = transaction(conn, query)
+                    timestamp = one(cur, column)
+                    timeint = int(np.round(timestamp*1000))
                     sql = f"""
                           UPDATE runs
                           SET guid = ?
                           where run_id == {run_id}
                           """
-                    timestamp = get_run_timestamp_from_run_id(conn, run_id)
-                    timeint = int(np.round(timestamp*1000))
                     sampleint = 3736062718  # 'deafcafe'
                     cur.execute(sql, generate_guid(timeint=timeint,
                                                    sampleint=sampleint))
