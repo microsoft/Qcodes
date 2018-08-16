@@ -1131,7 +1131,6 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                                time.time(),
                                False)
     run_id = curr.lastrowid
-    transaction(conn, query, str(bson.objectid.ObjectId()), run_id, exp_id)
     return run_counter, formatted_name, run_id
 
 
