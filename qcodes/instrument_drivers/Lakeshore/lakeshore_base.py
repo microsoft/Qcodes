@@ -10,9 +10,6 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils import validators as vals
 
 
-log = logging.getLogger(__name__)
-
-
 class BaseOutput(InstrumentChannel):
     """
     Base class for the outputs of Lakeshore temperature controllers
@@ -264,33 +261,17 @@ class BaseOutput(InstrumentChannel):
             t_reading = active_channel.temperature()
 
             delta = abs(t_reading - t_setpoint)/t_reading
-            log.debug(f'loop iteration with '
-                      f't reading of {t_reading}, delta {delta}')
 
             if delta < wait_tolerance:
-                log.debug(f'delta ({delta}) is within '
-                          f'wait_tolerance ({wait_tolerance})')
                 if is_in_tolerance_zone:
                     if time.monotonic() - start_time_in_tolerance_zone \
                             > wait_equilibration_time:
-                        log.debug(f'the reading is within the tolerance zone '
-                                  f'for more than wait_equilibration_time '
-                                  f'({wait_equilibration_time}), hence exit '
-                                  f'the loop')
                         break
-                    else:
-                        log.debug(f'wait_equilibration_time '
-                                  f'({wait_equilibration_time}) within '
-                                  f'tolerance zone has not passed yet')
                 else:
-                    log.debug(f'entering tolerance zone')
                     start_time_in_tolerance_zone = time.monotonic()
                     is_in_tolerance_zone = True
             else:
-                log.debug(f'delta ({delta}) is not within '
-                          f'wait_tolerance ({wait_tolerance})')
                 if is_in_tolerance_zone:
-                    log.debug('exiting tolerance zone')
                     is_in_tolerance_zone = False
                     start_time_in_tolerance_zone = None
             
