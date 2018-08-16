@@ -182,7 +182,7 @@ class BaseOutput(InstrumentChannel):
         self.setpoint(temperature)
         self.wait_until_set_point_reached()
 
-    def set_range_from_temperature(self, temperature):
+    def set_range_from_temperature(self, temperature: float):
         """
         Sets the output range of this given heater from a given temperature.
 
@@ -211,7 +211,18 @@ class BaseOutput(InstrumentChannel):
         self.output_range(self.INVERSE_RANGES[i+1])
         return self.output_range()
 
-    def set_setpoint_and_range(self, temperature):
+    def set_setpoint_and_range(self, temperature: float):
+        """
+        Sets the range from the given temperature, and then sets the setpoint
+        to this given temperature.
+
+        Note that the preferred units of the heater output are expected to be
+        kelvin.
+
+        Args:
+            temperature
+                temperature in K
+        """
         self.set_range_from_temperature(temperature)
         self.setpoint(temperature)
 
