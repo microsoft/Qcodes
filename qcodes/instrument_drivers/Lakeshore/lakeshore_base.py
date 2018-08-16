@@ -1,5 +1,4 @@
 from typing import Dict, ClassVar, List
-import logging
 import time
 from bisect import bisect
 
