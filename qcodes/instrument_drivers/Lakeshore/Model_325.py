@@ -76,7 +76,7 @@ class Model_325_Channel(InstrumentChannel):
     def _get_sum_terms(components, number):
         """
         Example:
-        >>> components = [1, 16, 32, 64, 128]
+        >>> components = [0, 1, 16, 32, 64, 128]
         >>> _get_sum_terms(components, 96)
         >>> ...[64, 32]  # This is correct because 96=64+32
         """
@@ -188,6 +188,31 @@ class Output_325(InstrumentChannel):
             [self.P, self.I, self.D],
             set_cmd=f'PID {self._channel}, {{P}}, {{I}}, {{D}}',
             get_cmd=f'PID? {self._channel}'
+        )
+
+        if self._channel == 0:
+            valid_output_ranges = Enum(0, 1, 2)
+        else:
+            valid_output_ranges = Enum(0, 1)
+
+        self.add_parameter(
+            'output_range',
+            vals=valid_output_ranges,
+            set_cmd=f'RANGE {self._channel}, {{}}',
+            get_cmd=f'RANGE? {self._channel}',
+            val_mapping={
+                0: "Off",
+                1: "Low (2.5W)",
+                2: "High (25W)"
+            }
+        )
+
+        self.add_parameter(
+            'setpoint',
+            vals=Numbers(0, 400),
+            get_parser=float,
+            set_cmd=f'SETP {self._channel}, {{}}',
+            get_cmd=f'SETP? {self._channel}'
         )
 
         self.add_parameter(
