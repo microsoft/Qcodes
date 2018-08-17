@@ -5,7 +5,7 @@ from qcodes import Instrument
 
 
 class Dummy(Instrument):
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
         self._a = 0
@@ -29,13 +29,13 @@ class Dummy(Instrument):
             get_cmd="CMD?"
         )
 
-    def write(self, string):
-        result = re.search("CMD (.*), (.*)", string)
+    def write(self, cmd: str) -> None:
+        result = re.search("CMD (.*), (.*)", cmd)
         assert result is not None
         self._a, self._b = [int(i) for i in result.groups()]
 
-    def ask(self, string):
-        assert string == "CMD?"
+    def ask(self, cmd: str) -> str:
+        assert cmd == "CMD?"
         return ",".join([str(i) for i in [self._a, self._b]])
 
 
