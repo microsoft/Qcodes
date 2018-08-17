@@ -65,19 +65,22 @@ class Keithley_6500(VisaInstrument):
                            val_mapping=self._mode_map)
 
         self.add_parameter('nplc',
-                           get_cmd=partial(self._get_mode_param, 'NPLC', float),
+                           get_cmd=partial(
+                               self._get_mode_param, 'NPLC', float),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            vals=Numbers(min_value=0.01, max_value=10))
 
         #  TODO: validator, this one is more difficult since different modes
         #  require different validation ranges.
         self.add_parameter('range',
-                           get_cmd=partial(self._get_mode_param, 'RANG', float),
+                           get_cmd=partial(
+                               self._get_mode_param, 'RANG', float),
                            set_cmd=partial(self._set_mode_param, 'RANG'),
                            vals=Numbers())
 
         self.add_parameter('auto_range_enabled',
-                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO', parse_output_bool),
+                           get_cmd=partial(self._get_mode_param,
+                                           'RANG:AUTO', parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            vals=Bool())
 
@@ -87,17 +90,20 @@ class Keithley_6500(VisaInstrument):
                            vals=Ints(min_value=4, max_value=7))
 
         self.add_parameter('averaging_type',
-                           get_cmd=partial(self._get_mode_param, 'AVER:TCON', parse_output_string),
+                           get_cmd=partial(self._get_mode_param,
+                                           'AVER:TCON', parse_output_string),
                            set_cmd=partial(self._set_mode_param, 'AVER:TCON'),
                            vals=Enum('moving', 'repeat'))
 
         self.add_parameter('averaging_count',
-                           get_cmd=partial(self._get_mode_param, 'AVER:COUN', int),
+                           get_cmd=partial(self._get_mode_param,
+                                           'AVER:COUN', int),
                            set_cmd=partial(self._set_mode_param, 'AVER:COUN'),
                            vals=Ints(min_value=1, max_value=100))
 
         self.add_parameter('averaging_enabled',
-                           get_cmd=partial(self._get_mode_param, 'AVER:STAT', parse_output_bool),
+                           get_cmd=partial(self._get_mode_param,
+                                           'AVER:STAT', parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'AVER:STAT'),
                            vals=Bool())
 
@@ -144,7 +150,7 @@ class Keithley_6500(VisaInstrument):
         self.connect_message()
 
     def _read_next_value(self):
-          return float(self.ask('READ?'))
+        return float(self.ask('READ?'))
 
     def _get_mode_param(self, parameter, parser):
         """ Reads the current mode of the multimeter and ask for the given parameter.
