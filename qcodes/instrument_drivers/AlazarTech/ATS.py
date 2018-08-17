@@ -1230,4 +1230,10 @@ class AcquisitionController(Instrument):
             'This method should be implemented in a subclass')
 
     def buffer_done_callback(self, buffer_number):
+        """
+        This method is called when a buffer is completed. It can be used
+        if you want to implement an event that happens for each buffer.
+        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE` to wait
+        before starting capture of the next buffer.
+        """
         pass
