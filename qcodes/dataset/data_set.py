@@ -580,7 +580,7 @@ class DataSet(Sized):
 
         For a more type independent and easier to work with view of the data
         you may want to consider using
-        :py:meth:`qcodes.dataset.data_exporter.get_data_by_id`
+        :py:meth:`qcodes.dataset.data_export.get_data_by_id`
 
 
         Args:
