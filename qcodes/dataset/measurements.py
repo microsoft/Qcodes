@@ -86,6 +86,9 @@ class DataSaver:
         can be passed to add_result. The scalars are duplicated to match the
         arrays.
 
+        However, if the parameter is registered as array type the numpy arrays
+        are not unraveled but stored directly for improved performance.
+
         Args:
             res: a dictionary with keys that are parameter names and items
                 that are the corresponding values at this measurement point.
@@ -470,7 +473,7 @@ class Measurement:
         """
         # input validation
         if paramtype not in ParamSpec.allowed_types:
-            raise RuntimeError("Trying to regiser a parameter with type "
+            raise RuntimeError("Trying to register a parameter with type "
                                f"{paramtype}. However, only "
                                f"{ParamSpec.allowed_types} are supported.")
         if not isinstance(parameter, _BaseParameter):
