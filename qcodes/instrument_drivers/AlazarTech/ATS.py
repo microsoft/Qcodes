@@ -819,7 +819,7 @@ class AlazarTech_ATS(Instrument):
             while (buffers_completed < self.buffers_per_acquisition.get()):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
-                buf = self.buffer_list[buffers_completed % allocated_buffers ]
+                buf = self.buffer_list[buffers_completed % allocated_buffers]
                 self._call_dll('AlazarWaitAsyncBufferComplete',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
 
@@ -1229,11 +1229,15 @@ class AcquisitionController(Instrument):
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
-    def buffer_done_callback(self, buffer_number):
+    def buffer_done_callback(self, buffers_completed):
         """
         This method is called when a buffer is completed. It can be used
         if you want to implement an event that happens for each buffer.
         You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE` to wait
         before starting capture of the next buffer.
+
+        Args:
+            buffers_completed: how many buffers have been completed and copied
+            to local memory at the time of this callback.
         """
         pass
