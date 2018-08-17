@@ -5,6 +5,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import qcodes as qc
+from qcodes import load_by_id
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (datatype_from_setpoints_1d,
@@ -81,6 +82,12 @@ def plot_by_id(run_id: int,
                 unit = f'({unit})'
             cax.set_label(f'{lbl} {unit}')
 
+    # Retrieve info about the run for the title
+    dataset = load_by_id(run_id)
+    experiment_name = dataset.exp_name
+    sample_name = dataset.sample_name
+    title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
+
     alldata = get_data_by_id(run_id)
     nplots = len(alldata)
     if isinstance(axes, matplotlib.axes.Axes):
@@ -122,6 +129,7 @@ def plot_by_id(run_id: int,
 
             set_axis_labels(ax, data)
             new_colorbars.append(None)
+            ax.set_title(title)
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -147,6 +155,7 @@ def plot_by_id(run_id: int,
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
             set_axis_labels(ax, data, colorbar)
             new_colorbars.append(colorbar)
+            ax.set_title(title)
 
         else:
             log.warning('Multi-dimensional data encountered. '
