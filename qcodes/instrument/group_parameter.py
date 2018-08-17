@@ -31,15 +31,17 @@ class GroupParameter(Parameter):
         self.group: Union[Group, None] = None
         super().__init__(name, instrument=instrument, **kwargs)
 
-    def set_raw(self, value: Any):
-        self.group.set(self, value)
+        self.set_raw = lambda value: self.group.set(self, value)
+        self.set = self._wrap_set(self.set_raw)
 
-    def get_raw(self, result: Any=None):
-        if not result:
-            self.group.update()
-            return self.raw_value
-        else:
-            return result
+        self.get_raw = lambda result=None: result if result is not None \
+            else self._get_raw_value()
+
+        self.get = self._wrap_get(self.get_raw)
+
+    def _get_raw_value(self) -> Any:
+        self.group.update()
+        return self.raw_value
 
 
 class Group:
@@ -133,6 +135,10 @@ class Group:
 
         for p in parameters:
             p.group = self
+
+        if len(set([p.root_instrument for p in parameters])) > 1:
+            raise ValueError(
+                "All parameters should belong to the same instrument")
 
         self.instrument = parameters[0].root_instrument
 

@@ -5,6 +5,7 @@ database used under the QCoDeS dataset.
 import shutil
 import tempfile
 import os
+import time
 
 import numpy as np
 
@@ -36,9 +37,15 @@ class Adding5Params:
     # latter case asv will run the benchmark for all the combinations of the
     # values
     params = [
-        {'n_values': 10000, 'n_times': 2},
-        {'n_values': 100, 'n_times': 200}
+        {'n_values': 10000, 'n_times': 2, 'paramtype': 'array'},
+        {'n_values': 100, 'n_times': 200, 'paramtype': 'array'},
+        {'n_values': 10000, 'n_times': 2, 'paramtype': 'numeric'},
+        {'n_values': 100, 'n_times': 200, 'paramtype': 'numeric'},
     ]
+    # we are less interested in the cpu time used and more interested in
+    # the wall clock time used to insert the data so use a timer that measures
+    # wallclock time
+    timer = time.perf_counter
 
     def __init__(self):
         self.parameters = list()
@@ -69,11 +76,13 @@ class Adding5Params:
         y1 = ManualParameter('y1')
         y2 = ManualParameter('y2')
 
-        meas.register_parameter(x1)
-        meas.register_parameter(x2)
-        meas.register_parameter(x3)
-        meas.register_parameter(y1, setpoints=[x1, x2, x3])
-        meas.register_parameter(y2, setpoints=[x1, x2, x3])
+        meas.register_parameter(x1, paramtype=bench_param['paramtype'])
+        meas.register_parameter(x2, paramtype=bench_param['paramtype'])
+        meas.register_parameter(x3, paramtype=bench_param['paramtype'])
+        meas.register_parameter(y1, setpoints=[x1, x2, x3],
+                                paramtype=bench_param['paramtype'])
+        meas.register_parameter(y2, setpoints=[x1, x2, x3],
+                                paramtype=bench_param['paramtype'])
 
         self.parameters = [x1, x2, x3, y1, y2]
 
