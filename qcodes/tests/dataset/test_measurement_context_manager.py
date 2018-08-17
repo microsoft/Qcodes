@@ -827,7 +827,7 @@ def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
     assert datasaver.points_written == N*M
 
 
-@settings(max_examples=5, deadline=None, use_coverage=False)
+@settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
 def test_datasaver_array_parameters_channel(experiment,
                                             channel_array_instrument,
