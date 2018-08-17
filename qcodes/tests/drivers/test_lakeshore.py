@@ -128,10 +128,10 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
                                       setpoint=4)
 
         self.channel_mock = \
-            {str(i): DictClass(tlimit=i, T=4, enabled=True,
+            {str(i): DictClass(tlimit=i, T=4, enabled=1, # True
                                dwell=100, pause=3,
                                curve_number=0,
-                               temperature_coefficient='negative',
+                               temperature_coefficient=1, # 'negative',
                                excitation_mode=0, #'voltage',
                                excitation_range_number=1,
                                auto_range=0,#'off',
