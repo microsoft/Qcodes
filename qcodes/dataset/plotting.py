@@ -31,20 +31,28 @@ def plot_by_id(run_id: int,
        * 2D plots on filled out rectangular grids
        * 2D scatterplots (fallback)
 
-    The function can optionally be supplied with a matplotlib axes
-    or a list of axes that will be used for plotting. The user should ensure
-    that the number of axes matches the number of datasets to plot. To plot
-    several (1D) dataset in the same axes supply it several times. Colorbar
-    axes are created dynamically and cannot be supplied.
+    The function can optionally be supplied with a matplotlib axes or a list
+    of axes that will be used for plotting. The user should ensure that the
+    number of axes matches the number of datasets to plot. To plot several (1D)
+    dataset in the same axes supply it several times. Colorbar axes are
+    created dynamically and cannot be supplied.
+
+    The plot has a title that comprises run id, experiment name, and sample
+    name.
 
     Args:
-        run_id: ID of the dataset to plot
-        axes: Optional Matplotlib axes to plot on. If non provided new axes will be created
-        colorbars: Optional Matplotlib Colorbars to use for 2D plots. If non provided new ones will be createds
+        run_id:
+            ID of the run to plot
+        axes:
+            Optional Matplotlib axes to plot on. If non provided new axes
+            will be created
+        colorbars:
+            Optional Matplotlib Colorbars to use for 2D plots. If non
+            provided new ones will be created
 
     Returns:
-        a list of axes and a list of colorbars of the same length.
-        The colorbar axes may be None if no colorbar is created (e.g. for
+        a list of axes and a list of colorbars of the same length. The
+        colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
 
