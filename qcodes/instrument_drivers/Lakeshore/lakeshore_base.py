@@ -106,7 +106,7 @@ class BaseOutput(InstrumentChannel):
 
         self.add_parameter('setpoint',
                            label='Setpoint value (in sensor units)',
-                           docstring='The value of the setpoint in the'
+                           docstring='The value of the setpoint in the '
                                      'preferred units of the control loop '
                                      'sensor (which is set via '
                                      '`input_channel` parameter)',
