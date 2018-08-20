@@ -31,7 +31,34 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
 def get_data_by_id(run_id: int) -> List:
     """
     Load data from database and reshapes into 1D arrays with minimal
-    name, unit and label metadata.
+    name, unit and label metadata (see `get_layout` function).
+
+    Args:
+        run_id: run ID from the database
+
+    Returns:
+        a list of lists of dictionaries like this:
+
+        [
+          # each element in this list refers
+          # to one dependent (aka measured) parameter
+            [
+              # each element in this list refers
+              # to one independent (aka setpoint) parameter
+              # that the dependent parameter depends on;
+              # a dictionary with the data and metadata of the dependent
+              # parameter is in the *last* element in this list
+                ...
+                {
+                    'data': <1D numpy array of points>,
+                    'name': <name of the parameter>,
+                    'label': <label of the parameter or ''>,
+                    'unit': <unit of the parameter or ''>
+                },
+                ...
+            ],
+            ...
+        ]
     """
 
     data = load_by_id(run_id)
