@@ -62,28 +62,37 @@ def get_data_by_id(run_id: int) -> List:
     """
 
     data = load_by_id(run_id)
+
     conn = data.conn
     deps = get_dependents(conn, run_id)
+
     output = []
     for dep in deps:
 
         dependencies = get_dependencies(conn, dep)
+
         data_axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn, dep)
+
         rawdata = data.get_values(data_axis['name'])
         data_axis['data'] = flatten_1D_data_for_plot(rawdata)
+
         raw_setpoint_data = data.get_setpoints(data_axis['name'])
+
         my_output = []
+
         max_size = 0
         for i, dependency in enumerate(dependencies):
             axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn,
                                                                  dependency[0])
+
             mydata = flatten_1D_data_for_plot(raw_setpoint_data[i])
             axis['data'] = mydata
+
             size = mydata.size
             if size > max_size:
                 max_size = size
-            my_output.append(axis)
 
+            my_output.append(axis)
 
         for i, dependency in enumerate(dependencies):
             axis = my_output[i]
@@ -96,6 +105,7 @@ def get_data_by_id(run_id: int) -> List:
                 axis['data'] = np.repeat(axis['data'], max_size//size)
 
         my_output.append(data_axis)
+
         output.append(my_output)
     return output
 
