@@ -87,7 +87,8 @@ def plot_by_id(run_id: int,
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
-            _set_axis_labels(ax, data)
+            _set_data_axes_labels(ax, data)
+
             new_colorbars.append(None)
 
         elif len(data) == 3:  # 2D PLOTTING
@@ -112,7 +113,9 @@ def plot_by_id(run_id: int,
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
-            _set_axis_labels(ax, data, colorbar)
+
+            _set_data_axes_labels(ax, data, colorbar)
+
             new_colorbars.append(colorbar)
 
         else:
@@ -130,19 +133,23 @@ def plot_by_id(run_id: int,
 
 def _make_label_for_data_axis(data, axis_index):
     if data[axis_index]['label'] == '':
-        lbl = data[axis_index]['name']
+        label = data[axis_index]['name']
     else:
-        lbl = data[axis_index]['label']
+        label = data[axis_index]['label']
 
     if data[axis_index]['unit'] == '':
         unit = ''
     else:
         unit = data[axis_index]['unit']
 
-    return f'{lbl} ({unit})'
+    return _make_axis_label(label, unit)
 
 
-def _set_axis_labels(ax, data, cax=None):
+def _make_axis_label(label, unit):
+    return f'{label} ({unit})'
+
+
+def _set_data_axes_labels(ax, data, cax=None):
     ax.set_xlabel(_make_label_for_data_axis(data, 0))
     ax.set_ylabel(_make_label_for_data_axis(data, 1))
 
