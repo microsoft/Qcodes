@@ -565,7 +565,8 @@ class DataSet(Sized):
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
-                 end: Optional[int] = None) -> List[List[Any]]:
+                 end: Optional[int] = None,
+                 select_condition: Optional[str] = None) -> List[List[Any]]:
         """ Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a list of lists, SQL rows by SQL columns,
         e.g. datapoints by parameters. The data type of each element is based on
@@ -578,6 +579,13 @@ class DataSet(Sized):
         equal to the start, or if start is after the current end of the
         DataSet – then a list of empty arrays is returned.
 
+
+        You can also use the select_condition to subselect data according
+        to a SQLite where clause See http://www.sqlitetutorial.net/sqlite-where/
+        for examples. Note that as this is automatically combined with the
+        start end end conditions the where keyword is inserted automatically
+        and should be omitted from the string.
+
         For a more type independent and easier to work with view of the data
         you may want to consider using
         :py:meth:`qcodes.dataset.data_export.get_data_by_id`
@@ -588,6 +596,8 @@ class DataSet(Sized):
                ParamSpec objects
             - start:
             - end:
+            - select_condition: SQlite Where clause that is used to
+               subselect data e.g. 'my_column > 10'
 
         Returns:
             - list of lists SQL rows of data by SQL columns. Each SQL row
@@ -608,7 +618,7 @@ class DataSet(Sized):
                         "This parameter does not have  a name") from e
             valid_param_names.append(maybeParam)
         data = get_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
+                        start, end, select_condition)
         return data
 
     def get_values(self, param_name: str) -> List[List[Any]]:

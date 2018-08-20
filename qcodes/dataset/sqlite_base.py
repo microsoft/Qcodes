@@ -549,10 +549,12 @@ def get_data(conn: sqlite3.Connection,
              columns: List[str],
              start: int = None,
              end: int = None,
+             select_condition: str = None
              ) -> List[List[Any]]:
     """
     Get data from the columns of a table.
-    Allows to specfiy a range.
+    Allows to specfiy a range and selection
+    condition.
 
     Args:
         conn: database connection
@@ -560,11 +562,21 @@ def get_data(conn: sqlite3.Connection,
         columns: list of columns
         start: start of range (1 indedex)
         end: start of range (1 indedex)
+        select_condition: Subselect data according to this condition.
 
     Returns:
         the data requested
     """
     _columns = ",".join(columns)
+    if select_condition is not None:
+        if start or end:
+            select_condition = f"and {select_condition}"
+        else:
+            select_condition = f"where {select_condition}"
+    else:
+        select_condition = ''
+
+
     if start and end:
         query = f"""
         SELECT {_columns}
@@ -573,6 +585,7 @@ def get_data(conn: sqlite3.Connection,
             > {start} and
               rowid
             <= {end}
+            {select_condition}
         """
     elif start:
         query = f"""
@@ -580,6 +593,7 @@ def get_data(conn: sqlite3.Connection,
         FROM "{table_name}"
         WHERE rowid
             >= {start}
+            {select_condition}
         """
     elif end:
         query = f"""
@@ -587,11 +601,13 @@ def get_data(conn: sqlite3.Connection,
         FROM "{table_name}"
         WHERE rowid
             <= {end}
+            {select_condition}
         """
     else:
         query = f"""
         SELECT {_columns}
         FROM "{table_name}"
+        {select_condition}
         """
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
