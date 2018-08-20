@@ -178,7 +178,7 @@ class Newport_AG_UC8_Axis(InstrumentChannel):
         return value."""
 
         # Temporarily set long timeout to support slow command.
-        tmo = self.root_instrument.position_scan_timeout
+        tmo = self.root_instrument.slow_command_timeout
         self.root_instrument.timeout(tmo)
 
         try:
@@ -247,9 +247,9 @@ class Newport_AG_UC8(VisaInstrument):
     # By default, expect response to command within 1 second.
     default_timeout = 1.0
 
-    # Position scan commands (and absolute move commands) can take
+    # Some commands (position measurement and absolute move) can take
     # up to 2 minutes to complete.
-    position_scan_timeout = 120.0
+    slow_command_timeout = 120.0
 
     # After a command which does not generate a response, a short
     # delay is needed before we can send the following command.
@@ -291,8 +291,14 @@ class Newport_AG_UC8(VisaInstrument):
         """Send a TE command (get error of previous command) and return
         a numerical error code.
 
-        Return value 0 means no error.
-        See
+        Returns:
+            error (int): Error code for previous command.
+                Value 0 means no error (success).
+                See global table ERROR_CODES for the meaning of the codes.
+
+        This function is called automatically after each command sent
+        to the device. When a command results in error, exception
+        Newport_AG_UC8_ErrorCode is raised.
         """
         resp = self.ask('TE')
         if resp.startswith("TE"):
