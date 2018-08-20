@@ -1,8 +1,11 @@
 import logging
+from collections import OrderedDict
+from functools import partial
 from typing import Optional, List, Sequence, Union, Tuple
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 
@@ -21,7 +24,9 @@ def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
                               Sequence[matplotlib.axes.Axes]]]=None,
                colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                   Sequence[matplotlib.colorbar.Colorbar]]]=None) -> AxesTupleList:
+                                   Sequence[
+                                       matplotlib.colorbar.Colorbar]]]=None,
+               rescale_axes: bool=True) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -40,6 +45,10 @@ def plot_by_id(run_id: int,
         run_id: ID of the dataset to plot
         axes: Optional Matplotlib axes to plot on. If non provided new axes will be created
         colorbars: Optional Matplotlib Colorbars to use for 2D plots. If non provided new ones will be createds
+        rescale_axes: if True, tick labels and units for axes of parameters
+            with standard SI units will be rescaled so that, for example,
+            '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
+            axis ('n' is 'nano')
 
     Returns:
         a list of axes and a list of colorbars of the same length.
@@ -89,6 +98,9 @@ def plot_by_id(run_id: int,
 
             _set_data_axes_labels(ax, data)
 
+            if rescale_axes:
+                _rescale_ticks_and_units(ax, data, colorbar)
+
             new_colorbars.append(None)
 
         elif len(data) == 3:  # 2D PLOTTING
@@ -115,6 +127,9 @@ def plot_by_id(run_id: int,
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
 
             _set_data_axes_labels(ax, data, colorbar)
+
+            if rescale_axes:
+                _rescale_ticks_and_units(ax, data, colorbar)
 
             new_colorbars.append(colorbar)
 
@@ -225,3 +240,117 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     else:
         colorbar = ax.figure.colorbar(colormesh, ax=ax)
     return ax, colorbar
+
+
+_SI_UNITS = {'m', 's', 'A', 'K', 'mol', 'rad', 'Hz', 'N', 'Pa', 'J',
+             'W', 'C', 'V', 'F', 'ohm', 'Ohm',
+             '\N{GREEK CAPITAL LETTER OMEGA}', 'S', 'Wb', 'T', 'H'}
+
+_ENGINEERING_PREFIXES = OrderedDict({
+    -24: "y",
+    -21: "z",
+    -18: "a",
+    -15: "f",
+    -12: "p",
+     -9: "n",
+     -6: "\N{GREEK SMALL LETTER MU}",
+     -3: "m",
+      0: "",
+      3: "k",
+      6: "M",
+      9: "G",
+     12: "T",
+     15: "P",
+     18: "E",
+     21: "Z",
+     24: "Y"
+})
+
+_THRESHOLDS = OrderedDict(
+    {10**(scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()})
+
+
+def _scale_formatter(tick_value, pos, scale):
+    """
+    Function for matplotlib.ticker.FuncFormatter that scales the tick values
+    according to the given `scale` value.
+    """
+    return "{0:g}".format(tick_value * scale)
+
+
+def _make_rescaled_ticks_and_units(data_dict):
+    """
+    Create a ticks formatter and a new label for the data that is to be used
+    on the axes where the data is plotted.
+
+    ...
+
+    Args:
+        data_dict: a dictionary of the following structure
+            {
+                'data': <1D numpy array of points>,
+                'name': <name of the parameter>,
+                'label': <label of the parameter or ''>,
+                'unit': <unit of the parameter or ''>
+            }
+
+    Returns:
+        a tuple with the ticks formatter and the new label; in case it is not
+        possible to scale, the returned values are None's
+    """
+    ticks_formatter = None
+    new_label = None
+
+    unit = data_dict['unit']
+
+    if unit in _SI_UNITS:
+        maxval = np.nanmax(data_dict['data'])
+
+        for threshold, scale in _THRESHOLDS:
+            if maxval < threshold:
+                selected_scale = scale
+                prefix = _ENGINEERING_PREFIXES[scale]
+                break
+        else:
+            # here, maxval is larger than the largest threshold
+            largest_scale = max(list(_ENGINEERING_PREFIXES.keys()))
+            selected_scale = largest_scale
+            prefix = _ENGINEERING_PREFIXES[largest_scale]
+
+        new_unit = prefix + unit
+        label = data_dict['label']
+        new_label = _make_axis_label(label, new_unit)
+
+        ticks_formatter = FuncFormatter(
+            partial(_scale_formatter, scale=selected_scale))
+
+    return ticks_formatter, new_label
+
+
+def _rescale_ticks_and_units(ax, data, cax=None):
+    """
+    Rescale ticks and units for axes that are in standard SI units (i.e. V,
+    s, J) to milli (m), kilo (k), etc. Refer to the `_SI_UNITS` for the list
+    of units that are rescaled.
+
+    Note that combined or non-standard SI units do not get rescaled.
+    """
+    # for x axis
+    x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
+    if x_ticks_formatter is not None and new_x_label is not None:
+        ax.xaxis.set_major_formatter(x_ticks_formatter)
+        ax.set_xlabel(new_x_label)
+
+    # for y axis
+    y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
+    if y_ticks_formatter is not None and new_y_label is not None:
+        ax.yaxis.set_major_formatter(y_ticks_formatter)
+        ax.set_ylabel(new_y_label)
+
+    # for z aka colorbar axis
+    if cax is not None and len(data) > 2:
+        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
+        if z_ticks_formatter is not None and new_z_label is not None:
+            cax.set_label(new_z_label)
+            cax.formatter = z_ticks_formatter
+            cax.update_ticks()
