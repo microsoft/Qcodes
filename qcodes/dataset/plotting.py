@@ -270,12 +270,12 @@ _THRESHOLDS = OrderedDict(
     {10**(scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()})
 
 
-def _scale_formatter(tick_value, pos, scale):
+def _scale_formatter(tick_value, pos, factor):
     """
     Function for matplotlib.ticker.FuncFormatter that scales the tick values
     according to the given `scale` value.
     """
-    return "{0:g}".format(tick_value * scale)
+    return "{0:g}".format(tick_value*factor)
 
 
 def _make_rescaled_ticks_and_units(data_dict):
@@ -321,8 +321,9 @@ def _make_rescaled_ticks_and_units(data_dict):
         label = data_dict['label']
         new_label = _make_axis_label(label, new_unit)
 
+        scale_factor = 10**(-selected_scale)
         ticks_formatter = FuncFormatter(
-            partial(_scale_formatter, scale=selected_scale))
+            partial(_scale_formatter, factor=scale_factor))
 
     return ticks_formatter, new_label
 
