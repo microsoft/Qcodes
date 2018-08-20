@@ -46,43 +46,9 @@ def plot_by_id(run_id: int,
         The colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
-
-    def set_axis_labels(ax, data, cax=None):
-        if data[0]['label'] == '':
-            lbl = data[0]['name']
-        else:
-            lbl = data[0]['label']
-        if data[0]['unit'] == '':
-            unit = ''
-        else:
-            unit = data[0]['unit']
-            unit = f"({unit})"
-        ax.set_xlabel(f'{lbl} {unit}')
-
-        if data[1]['label'] == '':
-            lbl = data[1]['name']
-        else:
-            lbl = data[1]['label']
-        if data[1]['unit'] == '':
-            unit = ''
-        else:
-            unit = data[1]['unit']
-            unit = f'({unit})'
-        ax.set_ylabel(f'{lbl} {unit}')
-        if cax is not None and len(data) > 2:
-            if data[2]['label'] == '':
-                lbl = data[2]['name']
-            else:
-                lbl = data[2]['label']
-            if data[2]['unit'] == '':
-                unit = ''
-            else:
-                unit = data[2]['unit']
-                unit = f'({unit})'
-            cax.set_label(f'{lbl} {unit}')
-
     alldata = get_data_by_id(run_id)
     nplots = len(alldata)
+
     if isinstance(axes, matplotlib.axes.Axes):
         axes = [axes]
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
@@ -101,6 +67,7 @@ def plot_by_id(run_id: int,
     if colorbars is None:
         colorbars = len(axes)*[None]
     new_colorbars: List[matplotlib.colorbar.Colorbar] = []
+
     for data, ax, colorbar in zip(alldata, axes, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
@@ -120,7 +87,7 @@ def plot_by_id(run_id: int,
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
-            set_axis_labels(ax, data)
+            _set_axis_labels(ax, data)
             new_colorbars.append(None)
 
         elif len(data) == 3:  # 2D PLOTTING
@@ -145,7 +112,7 @@ def plot_by_id(run_id: int,
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
-            set_axis_labels(ax, data, colorbar)
+            _set_axis_labels(ax, data, colorbar)
             new_colorbars.append(colorbar)
 
         else:
@@ -159,6 +126,28 @@ def plot_by_id(run_id: int,
         raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
     return axes, new_colorbars
+
+
+def _make_label_for_data_axis(data, axis_index):
+    if data[axis_index]['label'] == '':
+        lbl = data[axis_index]['name']
+    else:
+        lbl = data[axis_index]['label']
+
+    if data[axis_index]['unit'] == '':
+        unit = ''
+    else:
+        unit = data[axis_index]['unit']
+
+    return f'{lbl} ({unit})'
+
+
+def _set_axis_labels(ax, data, cax=None):
+    ax.set_xlabel(_make_label_for_data_axis(data, 0))
+    ax.set_ylabel(_make_label_for_data_axis(data, 1))
+
+    if cax is not None and len(data) > 2:
+        cax.set_label(_make_label_for_data_axis(data, 2))
 
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
