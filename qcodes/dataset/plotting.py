@@ -5,7 +5,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 import qcodes as qc
-from qcodes import load_by_id
+from qcodes.dataset.data_set import load_by_id
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (datatype_from_setpoints_1d,
