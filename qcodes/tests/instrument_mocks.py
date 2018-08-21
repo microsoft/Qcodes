@@ -140,6 +140,9 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_multi_parameter',
                            parameter_class=MultiSetPointParam)
 
+        self.add_parameter(name='dummy_scalar_multi_parameter',
+                           parameter_class=MultiScalarParam)
+
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
@@ -214,6 +217,29 @@ class MultiSetPointParam(MultiParameter):
 
     def get_raw(self):
         items = (np.zeros(5), np.ones(5))
+        self._save_val(items)
+        return items
+
+
+class MultiScalarParam(MultiParameter):
+    """
+    Multiparameter whos elements are scalars i.e. similar to
+    Parameter with no setpoints etc.
+    """
+    def __init__(self, instrument=None, name='multiscalarparameter'):
+        shapes = ((), ())
+        names = ('thisparam', 'thatparam')
+        labels = ('thisparam label', 'thatparam label')
+        units = ('thisparam unit', 'thatparam unit')
+        setpoints = ((), ())
+        super().__init__(name, names, shapes,
+                         instrument=instrument,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints)
+
+    def get_raw(self):
+        items = (0, 1)
         self._save_val(items)
         return items
 
