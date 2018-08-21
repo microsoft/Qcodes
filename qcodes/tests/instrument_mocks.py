@@ -1,9 +1,16 @@
+
+from functools import partial
+import logging
+
 import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import MultiParameter, Parameter, ArrayParameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+
+log = logging.getLogger(__name__)
+
 
 class MockParabola(Instrument):
     '''
@@ -110,6 +117,7 @@ class DummyInstrument(Instrument):
                                vals=Numbers(-800, 400),
                                get_cmd=None, set_cmd=None)
 
+
 class DummyChannel(InstrumentChannel):
     """
     A single dummy channel implementation
@@ -135,6 +143,10 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
+        self.add_function(name='log_my_name',
+                          call_cmd=partial(log.debug, f'{name}'))
+
+
 class DummyChannelInstrument(Instrument):
     """
     Dummy instrument with channels
@@ -149,6 +161,7 @@ class DummyChannelInstrument(Instrument):
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)
+
 
 class MultiGetter(MultiParameter):
     """
