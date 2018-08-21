@@ -377,17 +377,15 @@ def test_database_upgrade(empty_temp_db):
     set_user_version(connection, 1)
 
 
-def test_perform_actual_upgrade_0_to_1(dataset):
+def test_perform_actual_upgrade_0_to_1(empty_temp_db):
     # first manually perform downgrade 1 -> 0
-    connection = connect(qc.config["core"]["db_location"],
-                         qc.config["core"]["db_debug"])
-    set_user_version(connection, 0)
-    atomic_transaction(connection, 'drop table uuids')
+    connection = connect(':memory:', debug=False,
+                         version=0)
+
+    assert get_user_version(connection) == 0
 
     perform_db_upgrade_0_to_1(connection)
     assert get_user_version(connection) == 1
-    cur = atomic_transaction(connection, "SELECT name FROM sqlite_master WHERE type='table' AND name='uuids'")
-    assert len(cur.fetchall()) ==  1
 
 
 def test_numpy_ints(dataset):
