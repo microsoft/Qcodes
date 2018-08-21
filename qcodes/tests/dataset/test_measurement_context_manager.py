@@ -54,11 +54,13 @@ def DMM():
     yield dmm
     dmm.close()
 
+
 @pytest.fixture
 def channel_array_instrument():
     channelarrayinstrument = DummyChannelInstrument('dummy_channel_inst')
     yield channelarrayinstrument
     channelarrayinstrument.close()
+
 
 @pytest.fixture
 def SpectrumAnalyzer():
@@ -1172,6 +1174,39 @@ def test_datasaver_multidimarrayparameter_as_numeric(experiment,
             if i == 3:
                 expected_data = inserted_data.ravel()
             assert_allclose(datadict['data'], expected_data)
+
+
+def test_datasaver_multi_parameters_scalar(experiment,
+                                           channel_array_instrument):
+    """
+    Test that we can register multiparameters that are scalar.
+    """
+    meas = Measurement()
+    param = channel_array_instrument.A.dummy_scalar_multi_parameter
+    meas.register_parameter(param)
+    len(meas.parameters) == len(param.shapes)
+    assert tuple(meas.parameters.keys()) == tuple(param.names)
+
+
+def test_datasaver_multi_parameters_array(experiment,
+                                          channel_array_instrument):
+    """
+    Test that we can register multiparameters that are array like.
+    """
+    meas = Measurement()
+    param = channel_array_instrument.A.dummy_multi_parameter
+    meas.register_parameter(param)
+    assert len(meas.parameters) == 3  # two params + 1D identical setpoints
+    param_names = ('dummy_channel_inst_ChanA_this_setpoint',
+                   'this', 'that')
+    assert tuple(meas.parameters.keys()) == param_names
+    assert meas.parameters[
+               'this'].depends_on == 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[
+               'that'].depends_on == 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[
+               'dummy_channel_inst_ChanA_this_setpoint'].depends_on == ''
+
 
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
