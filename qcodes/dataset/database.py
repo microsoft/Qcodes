@@ -18,7 +18,8 @@ def get_DB_debug() -> bool:
 def initialise_database() -> None:
     """
     Initialise a database in the location specified by the config object
-    If the database already exists, nothing happens
+    If the database already exists, nothing happens. The database is
+    created with or upgraded to the newest version
 
     Args:
         config: An instance of the config object
