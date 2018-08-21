@@ -515,17 +515,6 @@ class Measurement:
                                                 setpoints,
                                                 basis, paramtype)
 
-        # We currently treat ALL parameters as 'numeric' and fail to add them
-        # to the dataset if they can not be unraveled to fit that description
-        # (except strings, we just let those through)
-        # this is indeed a limitation, but a sane one. We might loosen that
-        # requirement later and start saving binary blobs with the datasaver,
-        # but for now binary blob saving is referred to using the DataSet
-        # API directly
-
-
-
-
     def _register_individual_parameter(self, name, label, unit, setpoints,
                                        basis, paramtype):
         if setpoints is not None:
@@ -634,7 +623,6 @@ class Measurement:
             parameters.append(parameterdata)
 
         return parameters, my_setpoints
-
 
     def register_custom_parameter(
             self, name: str,
