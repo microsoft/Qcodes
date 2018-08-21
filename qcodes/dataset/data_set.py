@@ -493,7 +493,7 @@ class DataSet(Sized):
         for param in results.keys():
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             modify_values(self.conn, self.table_name, index,
                           list(results.keys()),
                           list(results.values())
@@ -531,7 +531,7 @@ class DataSet(Sized):
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
 
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             modify_many_values(self.conn,
                                self.table_name,
                                start_index,
@@ -560,7 +560,7 @@ class DataSet(Sized):
                     len(self),
                     len(values)
                 ))
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             add_parameter(self.conn, self.table_name, spec)
             # now add values!
             results = [{spec.name: value} for value in values]
@@ -657,7 +657,7 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             self._remove_trigger(uuid)
             sub = self.subscribers[uuid]
             sub.schedule_stop()
@@ -673,7 +673,7 @@ class DataSet(Sized):
         """
         sql = "select * from sqlite_master where type = 'trigger';"
         triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             for trigger in triggers:
                 self._remove_trigger(trigger['name'])
             for sub in self.subscribers.values():
