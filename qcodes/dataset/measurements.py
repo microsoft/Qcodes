@@ -11,7 +11,8 @@ import numpy as np
 
 import qcodes as qc
 from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, Parameter
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
+    Parameter, MultiParameter
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -464,8 +465,9 @@ class Measurement:
 
         Args:
             parameter: The parameter to add
-            setpoints: The setpoints for this parameter. If this parameter
-                is a setpoint, it should be left blank
+            setpoints: The Parameter representing the setpoints for this
+                parameter. If this parameter is a setpoint,
+                it should be left blank
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
@@ -485,38 +487,33 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
-            my_setpoints = list(setpoints) if setpoints else []
-            for i in range(len(parameter.shape)):
-                spname_parts = []
-                if parameter.instrument is not None:
-                    inst_name = parameter.instrument.name
-                    if inst_name is not None:
-                        spname_parts.append(inst_name)
-                if parameter.setpoint_names is not None:
-                    spname_parts.append(parameter.setpoint_names[i])
-                if len(spname_parts) > 0:
-                    spname = '_'.join(spname_parts)
-                else:
-                    spname = f'{name}_setpoint'
-                if parameter.setpoint_labels:
-                    splabel = parameter.setpoint_labels[i]
-                else:
-                    splabel = ''
-                if parameter.setpoint_units:
-                    spunit = parameter.setpoint_units[i]
-                else:
-                    spunit = ''
-
-                sp = ParamSpec(name=spname, paramtype=paramtype,
-                               label=splabel, unit=spunit)
-
-                self.parameters[spname] = sp
-
-                my_setpoints += [spname]
+            parameter = cast(ArrayParameter, parameter)
+            my_setpoints = self._register_arrayparameter_setpoints(parameter,
+                                                                   paramtype,
+                                                                   setpoints)
+            self._register_individual_parameter(name,
+                                                parameter.label,
+                                                parameter.unit,
+                                                my_setpoints,
+                                                basis, paramtype)
+        elif isinstance(parameter, MultiParameter):
+            parameters, my_setpoints = self._find_mp_components(parameter,
+                                                                setpoints,
+                                                                paramtype)
+            for param in parameters:
+                self._register_individual_parameter(param['name'],
+                                                    param['label'],
+                                                    param['unit'],
+                                                    param['setpoints'],
+                                                    basis,
+                                                    paramtype)
         else:
-            my_setpoints = setpoints
+            self._register_individual_parameter(name,
+                                                parameter.label,
+                                                parameter.unit,
+                                                setpoints,
+                                                basis, paramtype)
 
         # We currently treat ALL parameters as 'numeric' and fail to add them
         # to the dataset if they can not be unraveled to fit that description
@@ -525,37 +522,119 @@ class Measurement:
         # requirement later and start saving binary blobs with the datasaver,
         # but for now binary blob saving is referred to using the DataSet
         # API directly
-        parameter = cast(Union[Parameter, ArrayParameter], parameter)
 
-        label = parameter.label
-        unit = parameter.unit
 
-        if my_setpoints is not None:
-            sp_strings = [str(sp) for sp in my_setpoints]
+
+
+    def _register_individual_parameter(self, name, label, unit, setpoints,
+                                       basis, paramtype):
+        if setpoints is not None:
+            sp_strings = [str(sp) for sp in setpoints]
         else:
             sp_strings = []
         if basis is not None:
             bs_strings = [str(bs) for bs in basis]
         else:
             bs_strings = []
-
         # validate all dependencies
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)
-
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
                               label=label,
                               unit=unit,
                               inferred_from=inf_from,
                               depends_on=depends_on)
-
         # ensure the correct order
         if name in self.parameters.keys():
             self.parameters.pop(name)
-
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
+
+    def _register_arrayparameter_setpoints(self,
+                                           parameter: Union[str, ArrayParameter],
+                                           paramtype: str,
+                                           setpoints: Sequence[_BaseParameter]) -> List[str]:
+        name = str(parameter)
+        my_setpoints = list(setpoints) if setpoints else []
+        for i in range(len(parameter.shape)):
+            spname_parts = []
+            if parameter.instrument is not None:
+                inst_name = parameter.instrument.name
+                if inst_name is not None:
+                    spname_parts.append(inst_name)
+            if parameter.setpoint_names is not None:
+                spname_parts.append(parameter.setpoint_names[i])
+            if len(spname_parts) > 0:
+                spname = '_'.join(spname_parts)
+            else:
+                spname = f'{name}_setpoint'
+            if parameter.setpoint_labels:
+                splabel = parameter.setpoint_labels[i]
+            else:
+                splabel = ''
+            if parameter.setpoint_units:
+                spunit = parameter.setpoint_units[i]
+            else:
+                spunit = ''
+
+            sp = ParamSpec(name=spname, paramtype=paramtype,
+                           label=splabel, unit=spunit)
+
+            self.parameters[spname] = sp
+
+            my_setpoints += [spname]
+        return my_setpoints
+
+    def _find_mp_components(self, multiparameter, setpoints, paramtype):
+        my_setpoints = setpoints
+        parameters = []
+        for i in range(len(multiparameter.shapes)):
+            shape = multiparameter.shapes[i]
+            if shape is ():
+                my_setpoints = setpoints
+            else:
+                my_setpoints = list(setpoints) if setpoints else []
+                for j in range(len(shape)):
+                    spname_parts = []
+                    if multiparameter.instrument is not None:
+                        inst_name = multiparameter.instrument.name
+                        if inst_name is not None:
+                            spname_parts.append(inst_name)
+                    if multiparameter.setpoint_names is not None and \
+                            multiparameter.setpoint_names[i] is not None:
+                        spname_parts.append(multiparameter.setpoint_names[i][j])
+                    if len(spname_parts) > 0:
+                        spname = '_'.join(spname_parts)
+                    else:
+                        spname = f'{name}_setpoint'
+                    if multiparameter.setpoint_labels is not None and \
+                            multiparameter.setpoint_labels[i] is not None:
+                        splabel = multiparameter.setpoint_labels[i][j]
+                    else:
+                        splabel = ''
+                    if multiparameter.setpoint_units is not None and \
+                            multiparameter.setpoint_units[i] is not None:
+                        spunit = multiparameter.setpoint_units[i][j]
+                    else:
+                        spunit = ''
+
+                    sp = ParamSpec(name=spname, paramtype=paramtype,
+                                   label=splabel, unit=spunit)
+
+                    self.parameters[spname] = sp
+
+                    my_setpoints += [spname]
+
+            parameterdata = {}
+            parameterdata['name'] = multiparameter.names[i]
+            parameterdata['unit'] = multiparameter.units[i]
+            parameterdata['label'] = multiparameter.labels[i]
+            parameterdata['setpoints'] = my_setpoints
+            parameters.append(parameterdata)
+
+        return parameters, my_setpoints
+
 
     def register_custom_parameter(
             self, name: str,
@@ -580,7 +659,12 @@ class Measurement:
                 are the setpoints of this parameter
             paramtype: type of the parameter, i.e. the SQL storage class
         """
-
+        self._register_individual_parameter(name,
+                                            label,
+                                            unit,
+                                            setpoints,
+                                            basis,
+                                            paramtype)
         # validate dependencies
         if setpoints:
             sp_strings = [str(sp) for sp in setpoints]
