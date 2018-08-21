@@ -416,7 +416,7 @@ class Infiniium(VisaInstrument):
             and values are np.ndarrays, corresponding to the voltages
             of the four channels and the common time axis
         """
-        if channels == None:
+        if channels is None:
             channels = [1, 2, 3, 4]
         # check that channels are valid
         try:
