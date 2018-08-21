@@ -2,14 +2,15 @@ from contextlib import contextmanager
 import logging
 import sqlite3
 import time
+import io
+from typing import Any, List, Optional, Tuple, Union, Dict, cast
+import itertools
 
 from numbers import Number
 from numpy import ndarray
 import numpy as np
-import io
-from typing import Any, List, Optional, Tuple, Union, Dict, cast
 from distutils.version import LooseVersion
-import itertools
+import wrapt
 
 import qcodes as qc
 import unicodedata
@@ -92,6 +93,22 @@ CREATE TABLE IF NOT EXISTS dependencies (
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 # utility function to allow sqlite/numpy type
+
+
+class ConnectionPlus(wrapt.ObjectProxy):
+    """
+    A class to extend the sqlite3.Connection object with a single extra
+    attribute. Since sqlite3.Connection has no __dict__, we can not directly
+    add the attribute to a normal instance.
+
+    The extra attribute is a bool describing whether the connection is
+    currently in the middle of an atomic block of transactions, thus allowing
+    us to nest atomic context managers
+    """
+    atomic_in_progress: bool = True
+
+
+SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
 def _adapt_array(arr: ndarray) -> Any: # this should really be sqlite3.Binary but there seems to be a bug in mypy 0.590
@@ -264,7 +281,7 @@ def perform_db_upgrade_0_to_1(conn: sqlite3.Connection) -> bool:
     n_run_tables = len(cur.fetchall())
 
     if n_run_tables == 1:
-        with atomic(conn):
+        with atomic(conn) as conn:
             sql = "ALTER TABLE runs ADD COLUMN guid TEXT"
             transaction(conn, sql)
             # now assign GUIDs to existing runs
@@ -343,25 +360,8 @@ def atomic_transaction(conn: sqlite3.Connection,
         sqlite cursor
 
     """
-
-    if conn.in_transaction:
-        raise RuntimeError('SQLite connection has uncommited transactions. '
-                           'Please commit those before starting an atomic '
-                           'transaction.')
-
-    try:
-        old_level = conn.isolation_level
-        conn.isolation_level = None
-        conn.cursor().execute('BEGIN')
+    with atomic(conn) as conn:
         c = transaction(conn, sql, *args)
-    except Exception as e:
-        logging.exception("Could not execute transaction, rolling back")
-        conn.rollback()
-        raise e
-    else:
-        conn.commit()
-    finally:
-        conn.isolation_level = old_level
     return c
 
 
@@ -378,28 +378,39 @@ def atomic(conn: sqlite3.Connection):
     Args:
         - conn: connection to guard
     """
-    if conn.in_transaction:
+
+    if not(hasattr(conn, 'atomic_in_progress')):
+        conn = ConnectionPlus(conn)
+        conn.atomic_in_progress = False
+
+    is_outmost = not(conn.atomic_in_progress)
+    conn.atomic_in_progress = True
+
+    if conn.in_transaction and is_outmost:
         raise RuntimeError('SQLite connection has uncommited transactions. '
                            'Please commit those before starting an atomic '
                            'transaction.')
 
     try:
-        old_level = conn.isolation_level
-        conn.isolation_level = None
-        conn.cursor().execute('BEGIN')
-        yield
+        if is_outmost:
+            old_level = conn.isolation_level
+            conn.isolation_level = None
+            conn.cursor().execute('BEGIN')
+        yield conn
     except Exception as e:
         conn.rollback()
         log.exception("Rolling back due to unhandled exception")
         raise RuntimeError("Rolling back due to unhandled exception") from e
     else:
-        conn.commit()
+        if is_outmost:
+            conn.commit()
     finally:
-        conn.isolation_level = old_level
+        if is_outmost:
+            conn.isolation_level = old_level
 
 
 def init_db(conn: sqlite3.Connection)->None:
-    with atomic(conn):
+    with atomic(conn) as conn:
         transaction(conn, _experiment_table_schema)
         transaction(conn, _runs_table_schema)
         transaction(conn, _layout_table_schema)
@@ -424,7 +435,7 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
     if name in [col[0] for col in columns]:
         return
 
-    with atomic(conn):
+    with atomic(conn) as conn:
         if paramtype:
             transaction(conn,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}" '
@@ -562,7 +573,7 @@ def insert_many_values(conn: sqlite3.Connection,
     start = 0
     stop = 0
 
-    with atomic(conn):
+    with atomic(conn) as conn:
         for ii, chunk in enumerate(chunks):
             _values_x_params = ",".join([_values] * chunk)
 
@@ -919,7 +930,7 @@ def new_experiment(conn: sqlite3.Connection,
         (?,?,?,?,?)
     """
     curr = atomic_transaction(conn, query, name, sample_name,
-                             time.time(), format_string, 0)
+                              time.time(), format_string, 0)
     return curr.lastrowid
 
 
@@ -1038,7 +1049,7 @@ def get_runs(conn: sqlite3.Connection,
     Returns:
         list of rows
     """
-    with atomic(conn):
+    with atomic(conn) as conn:
         if exp_id:
             sql = """
             SELECT * FROM runs
@@ -1093,7 +1104,7 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
     run_counter += 1
     formatted_name = format_string.format(name, exp_id, run_counter)
     table = "runs"
-    with atomic(conn):
+    with atomic(conn) as conn:
 
         if parameters:
             query = f"""
@@ -1252,7 +1263,7 @@ def add_parameter(conn: sqlite3.Connection,
         - formatted_name: name of the table
         - parameter: the paraemters to add
     """
-    with atomic(conn):
+    with atomic(conn) as conn:
         p_names = []
         for p in parameter:
             insert_column(conn, formatted_name, p.name, p.type)
@@ -1262,7 +1273,7 @@ def add_parameter(conn: sqlite3.Connection,
         SELECT parameters FROM runs
         WHERE result_table_name=?
         """
-        with atomic(conn):
+        with atomic(conn) as conn:
             c = transaction(conn, sql, formatted_name)
         old_parameters = one(c, 'parameters')
         if old_parameters:
@@ -1270,7 +1281,7 @@ def add_parameter(conn: sqlite3.Connection,
         else:
             new_parameters = ",".join(p_names)
         sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-        with atomic(conn):
+        with atomic(conn) as conn:
             transaction(conn, sql, new_parameters, formatted_name)
 
         # Update the layouts table
@@ -1300,7 +1311,7 @@ def _add_parameters_to_layout_and_deps(conn: sqlite3.Connection,
     VALUES {placeholder}
     """
 
-    with atomic(conn):
+    with atomic(conn) as conn:
         c = transaction(conn, sql, *layout_args)
 
         for p in parameter:
@@ -1352,7 +1363,7 @@ def _create_run_table(conn: sqlite3.Connection,
     """
     _validate_table_name(formatted_name)
 
-    with atomic(conn):
+    with atomic(conn) as conn:
 
         if parameters and values:
             _parameters = ",".join([p.sql_repr() for p in parameters])
