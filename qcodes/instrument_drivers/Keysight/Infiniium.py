@@ -403,7 +403,7 @@ class Infiniium(VisaInstrument):
         self.trace_ready = False
         self.write(cmd.format(val))
 
-    def get_current_traces(self, channels: List = [1, 2, 3, 4]) -> Dict:
+    def get_current_traces(self, channels: List = None) -> Dict:
         """get the current traces of 'channels' on the oscillsocope.
         args:
             channels: default [1, 2, 3, 4]
@@ -416,6 +416,8 @@ class Infiniium(VisaInstrument):
             and values are np.ndarrays, corresponding to the voltages
             of the four channels and the common time axis
         """
+        if channels == None:
+            channels = [1, 2, 3, 4]
         # check that channels are valid
         try:
             assert all([ch in [1, 2, 3, 4] for ch in channels])
