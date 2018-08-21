@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
+from qcodes.dataset.data_set import load_by_id
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (datatype_from_setpoints_1d,
@@ -35,26 +36,40 @@ def plot_by_id(run_id: int,
        * 2D plots on filled out rectangular grids
        * 2D scatterplots (fallback)
 
-    The function can optionally be supplied with a matplotlib axes
-    or a list of axes that will be used for plotting. The user should ensure
-    that the number of axes matches the number of datasets to plot. To plot
-    several (1D) dataset in the same axes supply it several times. Colorbar
-    axes are created dynamically and cannot be supplied.
+    The function can optionally be supplied with a matplotlib axes or a list
+    of axes that will be used for plotting. The user should ensure that the
+    number of axes matches the number of datasets to plot. To plot several (1D)
+    dataset in the same axes supply it several times. Colorbar axes are
+    created dynamically and cannot be supplied.
+
+    The plot has a title that comprises run id, experiment name, and sample
+    name.
 
     Args:
-        run_id: ID of the dataset to plot
-        axes: Optional Matplotlib axes to plot on. If non provided new axes will be created
-        colorbars: Optional Matplotlib Colorbars to use for 2D plots. If non provided new ones will be createds
+        run_id:
+            ID of the run to plot
+        axes:
+            Optional Matplotlib axes to plot on. If non provided new axes
+            will be created
+        colorbars:
+            Optional Matplotlib Colorbars to use for 2D plots. If non
+            provided new ones will be created
         rescale_axes: if True, tick labels and units for axes of parameters
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
 
     Returns:
-        a list of axes and a list of colorbars of the same length.
-        The colorbar axes may be None if no colorbar is created (e.g. for
+        a list of axes and a list of colorbars of the same length. The
+        colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
+    # Retrieve info about the run for the title
+    dataset = load_by_id(run_id)
+    experiment_name = dataset.exp_name
+    sample_name = dataset.sample_name
+    title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
+
     alldata = get_data_by_id(run_id)
     nplots = len(alldata)
 
@@ -103,6 +118,8 @@ def plot_by_id(run_id: int,
 
             new_colorbars.append(None)
 
+            ax.set_title(title)
+
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
 
@@ -132,6 +149,8 @@ def plot_by_id(run_id: int,
                 _rescale_ticks_and_units(ax, data, colorbar)
 
             new_colorbars.append(colorbar)
+
+            ax.set_title(title)
 
         else:
             log.warning('Multi-dimensional data encountered. '
