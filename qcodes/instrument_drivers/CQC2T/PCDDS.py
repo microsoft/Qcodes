@@ -192,8 +192,7 @@ class PCDDSChannel(InstrumentChannel):
                                   phase=instr['phase'],
                                   frequency=instr['freq'],
                                   amplitude=instr['amp'],
-                                  # TODO: Fix offset value
-                                  offset=123,
+                                  offset=instr['offset'],
                                   next_pulse=instr['next_pulse'])
         elif instr['instr'] == 'chirp':
             self.write_chirp_pulse(pulse=instr['pulse_idx'],
@@ -201,8 +200,7 @@ class PCDDSChannel(InstrumentChannel):
                                    frequency=instr['freq'],
                                    frequency_accumulation=instr['accum'],
                                    amplitude=instr['amp'],
-                                   # TODO: Fix offset value
-                                   offset=123,
+                                   offset=instr['offset'],
                                    next_pulse=instr['next_pulse'])
         else:
             raise ValueError(f'Unknown instruction type: {instr["instr"]}')
@@ -229,9 +227,8 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. It '
                             'should be an int')
-        if np.abs(offset) + np.abs(amplitude) > self.v_max:
-            # Add warning message here
-            pass
+        assert np.abs(offset) + np.abs(amplitude) < self.v_max, \
+            'The combined output will be larger than the maximum output voltage'
 
         # Convert all the pulse parameters to the correct register values
         phase_val = self.phase2val(phase)
@@ -289,9 +286,8 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. '
                             'It should be an int')
-        if np.abs(offset) + np.abs(amplitude) > self.v_max:
-            # Add warning message here
-            pass
+        assert np.abs(offset) + np.abs(amplitude) < self.v_max, \
+            'The combined output will be larger than the maximum output voltage'
 
         phase_val = self.phase2val(phase)
         freq_val = self.freq2val(frequency)
