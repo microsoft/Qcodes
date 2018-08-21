@@ -272,9 +272,15 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     return ax, colorbar
 
 
-_SI_UNITS = {'m', 's', 'A', 'K', 'mol', 'rad', 'Hz', 'N', 'Pa', 'J',
-             'W', 'C', 'V', 'F', 'ohm', 'Ohm',
-             '\N{GREEK CAPITAL LETTER OMEGA}', 'S', 'Wb', 'T', 'H'}
+_UNITS_FOR_RESCALING = {
+    # SI units (without some irrelevant ones like candela)
+    # 'kg' is not included because it is 'kilo' and rarely used
+    'm', 's', 'A', 'K', 'mol', 'rad', 'Hz', 'N', 'Pa', 'J',
+    'W', 'C', 'V', 'F', 'ohm', 'Ohm', 'Ω',
+    '\N{GREEK CAPITAL LETTER OMEGA}', 'S', 'Wb', 'T', 'H',
+    # non-SI units as well, for convenience
+    'eV', 'g'
+}
 
 _ENGINEERING_PREFIXES = OrderedDict({
     -24: "y",
@@ -333,7 +339,7 @@ def _make_rescaled_ticks_and_units(data_dict):
 
     unit = data_dict['unit']
 
-    if unit in _SI_UNITS:
+    if unit in _UNITS_FOR_RESCALING:
         maxval = np.nanmax(np.abs(data_dict['data']))
 
         for threshold, scale in _THRESHOLDS.items():
@@ -361,8 +367,8 @@ def _make_rescaled_ticks_and_units(data_dict):
 def _rescale_ticks_and_units(ax, data, cax=None):
     """
     Rescale ticks and units for axes that are in standard SI units (i.e. V,
-    s, J) to milli (m), kilo (k), etc. Refer to the `_SI_UNITS` for the list
-    of units that are rescaled.
+    s, J) to milli (m), kilo (k), etc. Refer to the `_UNITS_FOR_RESCALING`
+    for the list of units that are rescaled.
 
     Note that combined or non-standard SI units do not get rescaled.
     """

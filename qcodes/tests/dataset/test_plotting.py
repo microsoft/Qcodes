@@ -4,13 +4,13 @@ from hypothesis.strategies import text, sampled_from, floats, lists, data, \
     one_of, just
 
 from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
-    _ENGINEERING_PREFIXES, _SI_UNITS
+    _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 
 @given(param_name=text(min_size=1, max_size=10),
        param_label=text(min_size=0, max_size=15),
        scale=sampled_from(sorted(list(_ENGINEERING_PREFIXES.keys()))),
-       unit=sampled_from(sorted(list(_SI_UNITS))),
+       unit=sampled_from(sorted(list(_UNITS_FOR_RESCALING))),
        data_strategy=data()
        )
 @example(param_name='huge_param',
