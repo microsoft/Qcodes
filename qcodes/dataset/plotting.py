@@ -334,7 +334,7 @@ def _make_rescaled_ticks_and_units(data_dict):
     unit = data_dict['unit']
 
     if unit in _SI_UNITS:
-        maxval = np.nanmax(data_dict['data'])
+        maxval = np.nanmax(np.abs(data_dict['data']))
 
         for threshold, scale in _THRESHOLDS.items():
             if maxval < threshold:
