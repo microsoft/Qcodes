@@ -2,7 +2,6 @@ from contextlib import contextmanager
 import logging
 import sqlite3
 import time
-import bson
 
 from numbers import Number
 from numpy import ndarray
