@@ -1264,6 +1264,17 @@ class MultiParameter(_BaseParameter):
             raise AttributeError('MultiParameter must have a get, set or both')
 
     @property
+    def short_names(self):
+        """
+        short_names is indentical to names i.e. the names of the paramter parts
+        but does not add the intrument name.
+
+        It exists for consistency with instruments and other parameters.
+        """
+
+        return self.names
+
+    @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
         try:
