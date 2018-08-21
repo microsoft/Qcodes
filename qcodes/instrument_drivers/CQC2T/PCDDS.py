@@ -155,7 +155,8 @@ class PCDDSChannel(InstrumentChannel):
             pulse: The location where the zeros are to be written
         """
         self.write_pulse(pulse=pulse, phase=0, frequency=0,
-                         frequency_accumulation=0, amplitude=0, next_pulse=0)
+                         frequency_accumulation=0, amplitude=0, offset=0,
+                         next_pulse=0)
 
     def clear_memory(self):
         """
