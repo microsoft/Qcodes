@@ -404,7 +404,8 @@ class Infiniium(VisaInstrument):
         self.write(cmd.format(val))
 
     def get_current_traces(self, channels: List = None) -> Dict:
-        """get the current traces of 'channels' on the oscillsocope.
+        """
+        get the current traces of 'channels' on the oscillsocope.
         args:
             channels: default [1, 2, 3, 4]
                       list of integers representing the channels.
