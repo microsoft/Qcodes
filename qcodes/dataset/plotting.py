@@ -146,17 +146,47 @@ def plot_by_id(run_id: int,
     return axes, new_colorbars
 
 
+def _get_label_of_data(data):
+    """
+
+    Args:
+        data:
+            a dictionary of the following structure
+            {
+                'data': <1D numpy array of points>,
+                'name': <name of the parameter>,
+                'label': <label of the parameter or ''>,
+                'unit': <unit of the parameter or ''>
+            }
+
+    Returns:
+
+    """
+    return data['label'] if data['label'] != '' else data['name']
+
+
+def _get_unit_of_data(data):
+    """
+
+    Args:
+        data:
+            a dictionary of the following structure
+            {
+                'data': <1D numpy array of points>,
+                'name': <name of the parameter>,
+                'label': <label of the parameter or ''>,
+                'unit': <unit of the parameter or ''>
+            }
+
+    Returns:
+
+    """
+    return data['unit'] if data['unit'] != '' else ''
+
+
 def _make_label_for_data_axis(data, axis_index):
-    if data[axis_index]['label'] == '':
-        label = data[axis_index]['name']
-    else:
-        label = data[axis_index]['label']
-
-    if data[axis_index]['unit'] == '':
-        unit = ''
-    else:
-        unit = data[axis_index]['unit']
-
+    label = _get_label_of_data(data[axis_index])
+    unit = _get_unit_of_data(data[axis_index])
     return _make_axis_label(label, unit)
 
 
