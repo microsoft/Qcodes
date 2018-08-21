@@ -653,30 +653,6 @@ class Measurement:
                                             setpoints,
                                             basis,
                                             paramtype)
-        # validate dependencies
-        if setpoints:
-            sp_strings = [str(sp) for sp in setpoints]
-        else:
-            sp_strings = []
-        if basis:
-            bs_strings = [str(bs) for bs in basis]
-        else:
-            bs_strings = []
-
-        # validate all dependencies
-        depends_on, inf_from = self._registration_validation(name, sp_strings,
-                                                             bs_strings)
-
-        parspec = ParamSpec(name=name, paramtype=paramtype,
-                            label=label, unit=unit,
-                            inferred_from=inf_from,
-                            depends_on=depends_on)
-
-        # ensure the correct order
-        if name in self.parameters.keys():
-            self.parameters.pop(name)
-
-        self.parameters[name] = parspec
 
     def unregister_parameter(self,
                              parameter: Union[_BaseParameter, str]) -> None:
