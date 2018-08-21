@@ -146,52 +146,22 @@ def plot_by_id(run_id: int,
     return axes, new_colorbars
 
 
-def _get_label_of_data(data):
-    """
-
-    Args:
-        data:
-            a dictionary of the following structure
-            {
-                'data': <1D numpy array of points>,
-                'name': <name of the parameter>,
-                'label': <label of the parameter or ''>,
-                'unit': <unit of the parameter or ''>
-            }
-
-    Returns:
-
-    """
-    return data['label'] if data['label'] != '' else data['name']
+def _get_label_of_data(data_dict):
+    return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
 
 
-def _get_unit_of_data(data):
-    """
+def _get_unit_of_data(data_dict):
+    return data_dict['unit'] if data_dict['unit'] != '' else ''
 
-    Args:
-        data:
-            a dictionary of the following structure
-            {
-                'data': <1D numpy array of points>,
-                'name': <name of the parameter>,
-                'label': <label of the parameter or ''>,
-                'unit': <unit of the parameter or ''>
-            }
 
-    Returns:
-
-    """
-    return data['unit'] if data['unit'] != '' else ''
+def _make_axis_label(label, unit):
+    return f'{label} ({unit})'
 
 
 def _make_label_for_data_axis(data, axis_index):
     label = _get_label_of_data(data[axis_index])
     unit = _get_unit_of_data(data[axis_index])
     return _make_axis_label(label, unit)
-
-
-def _make_axis_label(label, unit):
-    return f'{label} ({unit})'
 
 
 def _set_data_axes_labels(ax, data, cax=None):
@@ -319,7 +289,13 @@ def _make_rescaled_ticks_and_units(data_dict):
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
 
-    ...
+    For example, if values of data are all "nano" in units of volts "V",
+    then the plot might be more readable if the tick formatter would show
+    values like "1" instead of "0.000000001" while the units in the axis label
+    are changed from "V" to "nV" ('n' is for 'nano').
+
+    The units for which this procedure is performed can be found in
+    `_UNITS_FOR_RESCALING`.
 
     Args:
         data_dict: a dictionary of the following structure
@@ -331,8 +307,9 @@ def _make_rescaled_ticks_and_units(data_dict):
             }
 
     Returns:
-        a tuple with the ticks formatter and the new label; in case it is not
-        possible to scale, the returned values are None's
+        a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
+        the new label; in case it is not possible to rescale, the returned
+        values are None's
     """
     ticks_formatter = None
     new_label = None
