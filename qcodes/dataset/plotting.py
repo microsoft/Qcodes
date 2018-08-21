@@ -348,7 +348,7 @@ def _make_rescaled_ticks_and_units(data_dict):
             prefix = _ENGINEERING_PREFIXES[largest_scale]
 
         new_unit = prefix + unit
-        label = data_dict['label']
+        label = _get_label_of_data(data_dict)
         new_label = _make_axis_label(label, new_unit)
 
         scale_factor = 10**(-selected_scale)
