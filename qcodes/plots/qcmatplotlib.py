@@ -76,11 +76,12 @@ class MatPlot(BasePlot):
 
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
-            if isinstance(arg, Sequence):
-                if len(arg) and not isinstance(arg[0], numbers.Number):
-                    # Arg consists of multiple elements, add all to same subplot
-                    for subarg in arg:
-                        self[k].add(subarg, colorbar=colorbar, **kwargs)
+            if not len(arg):
+                continue  # Empty list/array
+            if isinstance(arg, Sequence) and not isinstance(arg[0], numbers.Number):
+                # Arg consists of multiple elements, add all to same subplot
+                for subarg in arg:
+                    self[k].add(subarg, colorbar=colorbar, **kwargs)
             else:
                 # Arg is single element, add to subplot
                 self[k].add(arg, colorbar=colorbar, **kwargs)
