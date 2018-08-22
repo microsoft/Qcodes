@@ -259,7 +259,7 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
             action(conn)
 
 
-def perform_db_upgrade_0_to_1(conn: SomeConnection) -> bool:
+def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 0 to version 1
 
@@ -374,6 +374,8 @@ def atomic(conn: SomeConnection):
     if not(hasattr(conn, 'atomic_in_progress')):
         conn = ConnectionPlus(conn)
         conn.atomic_in_progress = False
+    else:
+        conn = cast(ConnectionPlus, conn)
 
     is_outmost = not(conn.atomic_in_progress)
     conn.atomic_in_progress = True

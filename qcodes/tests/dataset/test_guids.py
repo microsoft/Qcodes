@@ -5,9 +5,10 @@ import hypothesis.strategies as hst
 import numpy as np
 
 from qcodes.dataset.guids import generate_guid, parse_guid
-from qcodes.config import Config
+from qcodes.config import Config, DotDict
 
-original_config = Config().current_config.copy()
+ocfg: DotDict = Config().current_config
+original_config = ocfg.copy()
 
 @settings(max_examples=50)
 @given(loc=hst.integers(0, 255), stat=hst.integers(0, 65535),
