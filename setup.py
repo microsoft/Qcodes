@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
+
 def get_version(verbose=1):
     """ Extract version information from source code """
 
@@ -23,6 +24,7 @@ def get_version(verbose=1):
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 extras = {
     'MatPlot': ('matplotlib', '2.0.2'),
@@ -65,7 +67,8 @@ setup(name='qcodes',
           'websockets>=3.2',
           'jsonschema',
           'pymongo',
-          'pyzmq'
+          'pyzmq',
+          'wrapt'
       ],
 
       test_suite='qcodes.tests',
