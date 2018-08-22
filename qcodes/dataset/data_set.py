@@ -38,7 +38,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
-from qcodes.config import Config
+
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
