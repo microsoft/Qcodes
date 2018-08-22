@@ -241,7 +241,7 @@ html-api:
 	cp _auto/qcodes.instrument_drivers.* api/generated/
 	jupyter-nbconvert --to rst 'examples/*.ipynb' --output-dir=_notebooks
 	jupyter-nbconvert --to rst 'examples/DataSet/Real_instruments/*.ipynb' --output-dir=_notebooks/DataSet/Real_instruments
-	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --execute 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
+	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --execute 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
 	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir=_notebooks/driver_examples
 	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
 	make html

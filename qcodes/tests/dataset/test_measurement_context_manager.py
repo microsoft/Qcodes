@@ -7,10 +7,12 @@ import json
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
 
 from qcodes.tests.common import retry_until_does_not_throw
 
 import qcodes as qc
+from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, DummyChannelInstrument
@@ -88,6 +90,37 @@ def SpectrumAnalyzer():
             # not the best SA on the market; it just returns noise...
             return np.random.randn(self.npts)
 
+    class MultiDimSpectrum(ArrayParameter):
+
+        def __init__(self, name, instrument):
+            self.start = 0
+            self.stop = 2e6
+            self.npts = (100, 50, 20)
+            sp1 = np.linspace(self.start, self.stop,
+                              self.npts[0])
+            sp2 = np.linspace(self.start, self.stop,
+                              self.npts[1])
+            sp3 = np.linspace(self.start, self.stop,
+                              self.npts[2])
+            setpoints = (sp1,
+                         np.tile(sp2, (len(sp1), 1)),
+                         np.tile(sp3, (len(sp1), len(sp2), 1)))
+
+            super().__init__(name=name,
+                             instrument=instrument,
+                             setpoints=setpoints,
+                             shape=(100, 50, 20),
+                             label='Flower Power Spectrum in 3D',
+                             unit='V/sqrt(Hz)',
+                             setpoint_names=('Frequency0', 'Frequency1',
+                                             'Frequency2'),
+                             setpoint_units=('Hz', 'Other Hz', "Third Hz"))
+
+
+
+        def get_raw(self):
+            return np.random.randn(*self.npts)
+
     class ListSpectrum(Spectrum):
 
         def get_raw(self):
@@ -104,7 +137,7 @@ def SpectrumAnalyzer():
     SA.add_parameter('spectrum', parameter_class=Spectrum)
     SA.add_parameter('listspectrum', parameter_class=ListSpectrum)
     SA.add_parameter('tuplespectrum', parameter_class=TupleSpectrum)
-
+    SA.add_parameter('multidimspectrum', parameter_class=MultiDimSpectrum)
     yield SA
 
     SA.close()
@@ -796,8 +829,9 @@ def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
-def test_datasaver_array_parameters_channel(experiment, channel_array_instrument,
-                                    DAC, N):
+def test_datasaver_array_parameters_channel(experiment,
+                                            channel_array_instrument,
+                                            DAC, N):
 
     meas = Measurement()
 
@@ -828,6 +862,316 @@ def test_datasaver_array_parameters_channel(experiment, channel_array_instrument
                                  (array_param, array_param.get()))
     assert datasaver.points_written == N * M
 
+    expected_params = ('dummy_dac_ch1',
+                       'dummy_channel_inst_ChanA_this_setpoint',
+                       'dummy_channel_inst_ChanA_dummy_array_parameter')
+    ds = load_by_id(datasaver.run_id)
+    for param in expected_params:
+        data = ds.get_data(param)
+        assert len(data) == N * M
+        assert len(data[0]) == 1
+    datadicts = get_data_by_id(datasaver.run_id)
+    # one dependent parameter
+    assert len(datadicts) == 1
+    datadicts = datadicts[0]
+    assert len(datadicts) == len(meas.parameters)
+    for datadict in datadicts:
+        assert datadict['data'].shape == (N*M,)
+
+
+@settings(max_examples=5, deadline=None, use_coverage=False)
+@given(N=hst.integers(min_value=5, max_value=500))
+def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
+                                    DAC, N):
+    """
+    Test that storing array parameters inside a loop with the sqlite
+    Array type works as expected
+    """
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_array_parameter
+
+    meas.register_parameter(array_param, paramtype='array')
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'array'
+    assert meas.parameters[dependency_name].type == 'array'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1, paramtype='numeric')
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype='array')
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+    dac_datapoints = np.linspace(0, 0.01, N)
+    with meas.run() as datasaver:
+        for set_v in dac_datapoints:
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N
+    ds = load_by_id(datasaver.run_id)
+
+    data_num = ds.get_data('dummy_dac_ch1')
+    assert len(data_num) == N
+
+
+    setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
+    data_arrays = ds.get_data('dummy_channel_inst_ChanA_dummy_array_parameter')
+    assert len(setpoint_arrays) == N
+    assert len(data_arrays) == N
+
+    for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
+        assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
+        assert_array_equal(data_arrays[0], np.array([2., 2., 2., 2., 2.]))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    # one dependent parameter
+    assert len(datadicts) == 1
+    datadicts = datadicts[0]
+    assert len(datadicts) == len(meas.parameters)
+    for datadict in datadicts:
+        if datadict['name'] == 'dummy_dac_ch1':
+            expected_data = np.repeat(dac_datapoints, M)
+        if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
+            expected_data = np.tile(np.linspace(5, 9, 5), N)
+        if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
+            expected_data = np.empty(N*M)
+            expected_data[:] = 2.
+        assert_allclose(datadict['data'], expected_data)
+
+
+        assert datadict['data'].shape == (N*M,)
+
+
+def test_datasaver_multidim_array(experiment):
+    """
+    Test that inserting multidim parameters as arrays works as expected
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+
+    data_mapping = {name: i for i, name in zip(range(4), ['x1','x2','y1','y2'])}
+
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    meas.register_parameter(x1, paramtype='array')
+    meas.register_parameter(x2, paramtype='array')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
+    data = np.random.rand(4, size1, size2)
+    with meas.run() as datasaver:
+        datasaver.add_result((str(x1), data[0, :, :]),
+                             (str(x2), data[1, :, :]),
+                             (str(y1), data[2, :, :]),
+                             (str(y2), data[3, :, :]))
+    assert datasaver.points_written == 1
+    dataset = load_by_id(datasaver.run_id)
+    for myid, expected in zip(('x1', 'x2', 'y1', 'y2'), data):
+        mydata = dataset.get_data(myid)
+        assert len(mydata) == 1
+        assert len(mydata[0]) == 1
+        assert mydata[0][0].shape == (size1, size2)
+        assert_array_equal(mydata[0][0], expected)
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 2
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 3
+        for datadict in datadict_list:
+            dataindex = data_mapping[datadict['name']]
+            expected_data = data[dataindex, :, :].ravel()
+            assert_allclose(datadict['data'], expected_data)
+
+            assert datadict['data'].shape == (size1 * size2,)
+
+
+def test_datasaver_multidim_numeric(experiment):
+    """
+    Test that inserting multidim parameters as numeric works as expected
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    data_mapping = {name: i for i, name in zip(range(4), ['x1','x2','y1','y2'])}
+
+    meas.register_parameter(x1, paramtype='numeric')
+    meas.register_parameter(x2, paramtype='numeric')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='numeric')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='numeric')
+    data = np.random.rand(4, size1, size2)
+    with meas.run() as datasaver:
+        datasaver.add_result((str(x1), data[0, :, :]),
+                             (str(x2), data[1, :, :]),
+                             (str(y1), data[2, :, :]),
+                             (str(y2), data[3, :, :]))
+    assert datasaver.points_written == size1 * size2
+    dataset = load_by_id(datasaver.run_id)
+    for myid, expected in zip(('x1', 'x2', 'y1', 'y2'), data):
+        mydata = dataset.get_data(myid)
+        assert len(mydata) == size1*size2
+        assert len(mydata[0]) == 1
+        assert isinstance(mydata[0][0], float)
+        assert_allclose(np.array(mydata).ravel(), expected.ravel())
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 2
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 3
+        for datadict in datadict_list:
+            dataindex = data_mapping[datadict['name']]
+            expected_data = data[dataindex, :, :].ravel()
+            assert_allclose(datadict['data'], expected_data)
+
+            assert datadict['data'].shape == (size1 * size2,)
+
+
+def test_datasaver_multidimarrayparameter_as_array(experiment,
+                                                   SpectrumAnalyzer):
+    """
+    Test that inserting multidim Arrrayparameters as array works as expected
+    """
+    array_param = SpectrumAnalyzer.multidimspectrum
+    meas = Measurement()
+    meas.register_parameter(array_param, paramtype='array')
+    assert len(meas.parameters) == 4
+    inserted_data = array_param.get()
+    with meas.run() as datasaver:
+        datasaver.add_result((array_param, inserted_data))
+
+    assert datasaver.points_written == 1
+    ds = load_by_id(datasaver.run_id)
+    expected_shape = (100, 50, 20)
+    for i in range(3):
+        data = ds.get_data(f'dummy_SA_Frequency{i}')[0][0]
+        aux_shape = list(expected_shape)
+        aux_shape.pop(i)
+
+        assert data.shape == expected_shape
+        for j in range(aux_shape[0]):
+            for k in range(aux_shape[1]):
+                # todo There should be a simpler way of doing this
+                if i == 0:
+                    mydata = data[:, j, k]
+                if i == 1:
+                    mydata = data[j, :, k]
+                if i == 2:
+                    mydata = data[j, k, :]
+                assert_array_equal(mydata,
+                                   np.linspace(array_param.start,
+                                               array_param.stop,
+                                               array_param.npts[i]))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 1
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 4
+        for i, datadict in enumerate(datadict_list):
+
+            datadict['data'].shape = (np.prod(expected_shape), )
+            if i == 0:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[0])
+                expected_data = np.repeat(temp_data,
+                                          expected_shape[1]*expected_shape[2])
+            if i == 1:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
+                                        expected_shape[0])
+            if i == 2:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(temp_data,
+                                        expected_shape[0]*expected_shape[1])
+            if i == 3:
+                expected_data = inserted_data.ravel()
+            assert_allclose(datadict['data'], expected_data)
+
+
+def test_datasaver_multidimarrayparameter_as_numeric(experiment,
+                                                     SpectrumAnalyzer):
+    """
+    Test that storing a multidim Array parameter as numeric unravels the
+    parameter as expected.
+    """
+
+    array_param = SpectrumAnalyzer.multidimspectrum
+    meas = Measurement()
+    meas.register_parameter(array_param, paramtype='numeric')
+    expected_shape = array_param.shape
+    dims = len(array_param.shape)
+    assert len(meas.parameters) == dims+1
+
+    points_expected = np.prod(array_param.npts)
+    inserted_data = array_param.get()
+    with meas.run() as datasaver:
+        datasaver.add_result((array_param, inserted_data))
+
+    assert datasaver.points_written == points_expected
+    ds = load_by_id(datasaver.run_id)
+    # check setpoints
+
+    expected_setpoints_vectors = (np.linspace(array_param.start,
+                                      array_param.stop,
+                                      array_param.npts[i]) for i in range(dims))
+    expected_setpoints_matrix = np.meshgrid(*expected_setpoints_vectors,
+                                            indexing='ij')
+    expected_setpoints = tuple(setpoint_array.ravel() for setpoint_array in expected_setpoints_matrix)
+
+    for i in range(dims):
+        data = ds.get_data(f'dummy_SA_Frequency{i}')
+        assert len(data) == points_expected
+        assert_allclose(np.array(data).squeeze(),
+                        expected_setpoints[i])
+    data = np.array(ds.get_data('dummy_SA_multidimspectrum')).squeeze()
+    assert_allclose(data, inserted_data.ravel())
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 1
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 4
+        for i, datadict in enumerate(datadict_list):
+
+            datadict['data'].shape = (np.prod(expected_shape), )
+            if i == 0:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[0])
+                expected_data = np.repeat(temp_data,
+                                          expected_shape[1]*expected_shape[2])
+            if i == 1:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
+                                        expected_shape[0])
+            if i == 2:
+                temp_data = np.linspace(array_param.start,
+                                        array_param.stop,
+                                        array_param.npts[i])
+                expected_data = np.tile(temp_data,
+                                        expected_shape[0]*expected_shape[1])
+            if i == 3:
+                expected_data = inserted_data.ravel()
+            assert_allclose(datadict['data'], expected_data)
 
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'

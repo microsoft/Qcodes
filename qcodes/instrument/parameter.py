@@ -88,7 +88,7 @@ class _SetParamContext:
 
     Example usage:
     >>> v = dac.voltage()
-    >>> with dac.voltage(-1):
+    >>> with dac.voltage.set_to(-1):
         ...     # Do stuff with the DAC output set to -1 V.
         ...
     >>> assert abs(dac.voltage() - v) <= tolerance
