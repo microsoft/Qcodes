@@ -20,6 +20,7 @@ def generate_guid(timeint: Union[int, None]=None,
 
     Args:
         timeint: An integer of miliseconds since unix epoch time
+        sampleint: A code for the sample
     """
     cfg = Config()
 
@@ -58,7 +59,7 @@ def parse_guid(guid: str) -> Dict[str, int]:
 
     Returns:
         A dict with keys 'location', 'work_station', 'sample', and 'time'
-          and integer values
+          as integer values
     """
     guid = guid.replace('-', '')
     components = {}
