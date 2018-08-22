@@ -1,5 +1,4 @@
 import itertools
-import time
 import tempfile
 import os
 
@@ -15,7 +14,7 @@ from qcodes import load_by_id, load_by_counter
 import qcodes.dataset.data_set
 
 from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
-                                        get_user_version, set_user_version,
+                                        get_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1)
 
@@ -23,7 +22,6 @@ from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import initialise_database, \
     initialise_or_create_database_at
 
-import qcodes.dataset.experiment_container
 
 
 n_experiments = 0

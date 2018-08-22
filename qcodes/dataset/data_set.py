@@ -16,8 +16,6 @@ import uuid
 from queue import Queue, Empty
 import warnings
 
-import numpy as np
-
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
