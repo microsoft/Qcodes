@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -8,7 +9,7 @@ from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.config import Config, DotDict
 
 ocfg: DotDict = Config().current_config
-original_config = ocfg.copy()
+original_config = deepcopy(ocfg)
 
 @settings(max_examples=50)
 @given(loc=hst.integers(0, 255), stat=hst.integers(0, 65535),
@@ -20,7 +21,7 @@ def test_generate_guid(loc, stat, smpl):
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
-        cfg.save_config(cfg.current_config_path)
+        cfg.save_config(cfg.default_file_name)
 
         guid = generate_guid()
         gen_time = int(np.round(time.time()*1000))
@@ -37,4 +38,4 @@ def test_generate_guid(loc, stat, smpl):
         # important to leave this vital info untouched!
         cfg = Config()
         cfg.current_config = original_config
-        cfg.save_config(cfg.current_config_path)
+        cfg.save_config(cfg.default_file_name)
