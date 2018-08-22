@@ -28,7 +28,10 @@ class InstrumentChannel(InstrumentBase):
           channel. Usually populated via ``add_function``
     """
 
-    def __init__(self, parent: Instrument, name: str, **kwargs) -> None:
+    def __init__(self,
+                 parent: Union[Instrument, 'InstrumentChannel'],
+                 name: str,
+                 **kwargs) -> None:
         # Initialize base classes of Instrument. We will overwrite what we
         # want to do in the Instrument initializer
         super().__init__(name=name, **kwargs)
