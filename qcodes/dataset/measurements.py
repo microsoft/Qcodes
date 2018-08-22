@@ -144,45 +144,13 @@ class DataSaver:
                                  'str, tuple, list, and np.ndarray is '
                                  'allowed.')
 
-            # TODO (WilliamHPNielsen): The following code block is ugly and
-            # brittle and should be enough to convince us to abandon the
-            # design of ArrayParameters (possibly) containing (some of) their
-            # setpoints
             setpoint_axes = []
             setpoint_meta = []
             if isinstance(parameter, ArrayParameter):
-                if parameter.setpoints is None:
-                    raise RuntimeError("Got an array parameter without "
-                                       "setpoints. Cannot handle this")
-
-                else:
-                    for i, sps in enumerate(parameter.setpoints):
-                        inst_name = getattr(parameter._instrument, 'name', '')
-                        sp_name_parts = []
-                        if inst_name is not None:
-                            sp_name_parts.append(inst_name)
-                        if parameter.setpoint_names is not None:
-                            sp_name_parts.append(parameter.setpoint_names[i])
-                        spname = '_'.join(sp_name_parts)
-                        if f'{paramstr}_setpoint' in self.parameters.keys() \
-                                or spname in self.parameters.keys():
-                            sps = np.array(sps)
-                            while sps.ndim > 1:
-                                sps = sps[0]
-                            setpoint_meta.append({'paramstr': paramstr,
-                                                  'spname': spname})
-                            setpoint_axes.append(sps)
-                        else:
-                            raise RuntimeError('No setpoints registered for '
-                                               f'ArrayParameter {paramstr}!')
-                    output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
-                    for grid, meta in zip(output_grids, setpoint_meta):
-                        if not inserting_as_arrays:
-                            grid = grid.ravel()
-                        if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
-                            res.append((f'{meta["paramstr"]}_setpoint', grid))
-                        elif meta['spname'] in self.parameters.keys():
-                            res.append((meta['spname'], grid))
+                self._unbundle_array_parameter(parameter,
+                                               res, setpoint_axes,
+                                               setpoint_meta,
+                                               inserting_as_arrays)
 
         # Now check for missing setpoints
         for partial_result in res:
@@ -234,6 +202,48 @@ class DataSaver:
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = monotonic()
+
+    def _unbundle_array_parameter(self,
+                                  parameter: Union[_BaseParameter, str],
+                                  res, setpoint_axes,
+                                  setpoint_meta,
+                                  inserting_as_arrays: bool):
+        # TODO (WilliamHPNielsen): The following code block is ugly and
+        # brittle and should be enough to convince us to abandon the
+        # design of ArrayParameters (possibly) containing (some of) their
+        # setpoints
+        paramstr = str(parameter)
+        sp_names = parameter.setpoint_full_names
+        if parameter.setpoints is None:
+            raise RuntimeError("Got an array parameter without "
+                               "setpoints. Cannot handle this")
+
+        for i, sps in enumerate(parameter.setpoints):
+            spname = sp_names[i]
+            if f'{paramstr}_setpoint' not in self.parameters.keys() \
+                    and spname not in self.parameters.keys():
+                raise RuntimeError('No setpoints registered for '
+                                   f'ArrayParameter {paramstr}!')
+            sps = np.array(sps)
+            while sps.ndim > 1:
+                # The outermost setpoint axis or an nD param is nD
+                # but the innermost is 1D. In all cases we just need
+                # the axis along one dim, the innermost one.
+                sps = sps[0]
+
+            setpoint_meta.append({'paramstr': paramstr,
+                                  'spname': spname})
+            setpoint_axes.append(sps)
+
+
+        output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
+        for grid, meta in zip(output_grids, setpoint_meta):
+            if not inserting_as_arrays:
+                grid = grid.ravel()
+            if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
+                res.append((f'{meta["paramstr"]}_setpoint', grid))
+            elif meta['spname'] in self.parameters.keys():
+                res.append((meta['spname'], grid))
 
     def flush_data_to_database(self):
         """
@@ -612,7 +622,6 @@ class Measurement:
                                    label=splabel, unit=spunit)
 
                     self.parameters[spname] = sp
-
                     my_setpoints += [spname]
 
             parameterdata = {}
