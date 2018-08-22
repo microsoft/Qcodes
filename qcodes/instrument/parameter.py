@@ -1085,6 +1085,20 @@ class ArrayParameter(_BaseParameter):
         if not hasattr(self, 'get') and not hasattr(self, 'set'):
             raise AttributeError('ArrayParameter must have a get, set or both')
 
+    @property
+    def setpoint_full_names(self):
+        """
+        Full names of setpoints including instrument names if available
+        """
+        try:
+            inst_name = self._instrument.full_name
+            if inst_name:
+                return tuple(inst_name + '_' + spname for spname in
+                             self.setpoint_names)
+        except AttributeError:
+            pass
+        return self.setpoint_names
+
 
 def _is_nested_sequence_or_none(obj, types, shapes):
     """Validator for MultiParameter setpoints/names/labels"""
