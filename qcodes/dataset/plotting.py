@@ -1,7 +1,7 @@
 import logging
 from collections import OrderedDict
 from functools import partial
-from typing import Optional, List, Sequence, Union, Tuple
+from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -165,25 +165,29 @@ def plot_by_id(run_id: int,
     return axes, new_colorbars
 
 
-def _get_label_of_data(data_dict):
+def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
 
 
-def _get_unit_of_data(data_dict):
+def _get_unit_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['unit'] if data_dict['unit'] != '' else ''
 
 
-def _make_axis_label(label, unit):
+def _make_axis_label(label: str, unit: str) -> str:
     return f'{label} ({unit})'
 
 
-def _make_label_for_data_axis(data, axis_index):
+def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
+                              ) -> str:
     label = _get_label_of_data(data[axis_index])
     unit = _get_unit_of_data(data[axis_index])
     return _make_axis_label(label, unit)
 
 
-def _set_data_axes_labels(ax, data, cax=None):
+def _set_data_axes_labels(ax: matplotlib.axes.Axes,
+                          data: List[Dict[str, Any]],
+                          cax: Optional[matplotlib.colorbar.Colorbar]=None
+                          ) -> None:
     ax.set_xlabel(_make_label_for_data_axis(data, 0))
     ax.set_ylabel(_make_label_for_data_axis(data, 1))
 
@@ -261,7 +265,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     return ax, colorbar
 
 
-_UNITS_FOR_RESCALING = {
+_UNITS_FOR_RESCALING: Set[str] = {
     # SI units (without some irrelevant ones like candela)
     # 'kg' is not included because it is 'kilo' and rarely used
     'm', 's', 'A', 'K', 'mol', 'rad', 'Hz', 'N', 'Pa', 'J',
@@ -271,7 +275,7 @@ _UNITS_FOR_RESCALING = {
     'eV', 'g'
 }
 
-_ENGINEERING_PREFIXES = OrderedDict({
+_ENGINEERING_PREFIXES: Dict[int, str] = OrderedDict({
     -24: "y",
     -21: "z",
     -18: "a",
@@ -291,11 +295,11 @@ _ENGINEERING_PREFIXES = OrderedDict({
      24: "Y"
 })
 
-_THRESHOLDS = OrderedDict(
+_THRESHOLDS: Dict[float, int] = OrderedDict(
     {10**(scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()})
 
 
-def _scale_formatter(tick_value, pos, factor):
+def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
     """
     Function for matplotlib.ticker.FuncFormatter that scales the tick values
     according to the given `scale` value.
@@ -303,7 +307,10 @@ def _scale_formatter(tick_value, pos, factor):
     return "{0:g}".format(tick_value*factor)
 
 
-def _make_rescaled_ticks_and_units(data_dict):
+def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
+        -> Tuple[
+            Union[matplotlib.ticker.FuncFormatter, None],
+            Union[str, None]]:
     """
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
@@ -360,7 +367,9 @@ def _make_rescaled_ticks_and_units(data_dict):
     return ticks_formatter, new_label
 
 
-def _rescale_ticks_and_units(ax, data, cax=None):
+def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
+                             data: List[Dict[str, Any]],
+                             cax: matplotlib.colorbar.Colorbar=None):
     """
     Rescale ticks and units for axes that are in standard SI units (i.e. V,
     s, J) to milli (m), kilo (k), etc. Refer to the `_UNITS_FOR_RESCALING`
