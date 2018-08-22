@@ -1,11 +1,11 @@
 name: qcodes
-channels: 
+channels:
  - defaults
  - conda-forge
 dependencies:
  - h5py
  - matplotlib=2.0.2
- - pyqtgraph 
+ - pyqtgraph
  - python=3.6
  - jsonschema
  - pyvisa=1.8.0
@@ -20,3 +20,4 @@ dependencies:
  - spyder
  - pymongo
  - pyzmq
+ - wrapt
