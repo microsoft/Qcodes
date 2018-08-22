@@ -11,10 +11,11 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, _unicode_categories
+
 import qcodes.dataset.data_set
 
-from qcodes.dataset.sqlite_base import (get_user_version, set_user_version,
+from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
+                                        get_user_version, set_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1)
 
@@ -364,28 +365,24 @@ def test_dataset_with_no_experiment_raises(empty_temp_db):
                             ParamSpec("y", "numeric")])
 
 
-def test_database_upgrade(empty_temp_db):
-    connection = connect(qc.config["core"]["db_location"],
-                 qc.config["core"]["db_debug"])
-    userversion = get_user_version(connection)
-    if userversion != 1:
-        raise RuntimeError("trying to upgrade from version 0"
-                           " but your database is version"
-                           " {}".format(userversion))
-    sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
-    atomic_transaction(connection, sql)
-    set_user_version(connection, 1)
-
-
-def test_perform_actual_upgrade_0_to_1(empty_temp_db):
-    # first manually perform downgrade 1 -> 0
+def test_perform_actual_upgrade_0_to_1():
+    # we cannot use the empty_temp_db, since that has already called connect
+    # and is therefore latest version already
     connection = connect(':memory:', debug=False,
                          version=0)
 
     assert get_user_version(connection) == 0
 
+    guid_table_query = "SELECT guid FROM runs"
+
+    with pytest.raises(RuntimeError):
+        atomic_transaction(connection, guid_table_query)
+
     perform_db_upgrade_0_to_1(connection)
     assert get_user_version(connection) == 1
+
+    c = atomic_transaction(connection, guid_table_query)
+    assert len(c.fetchall()) == 0
 
 
 def test_numpy_ints(dataset):
