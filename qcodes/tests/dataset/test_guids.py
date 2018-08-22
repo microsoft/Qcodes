@@ -32,8 +32,6 @@ def test_generate_guid(loc, stat, smpl):
         assert comps['work_station'] == stat
         assert comps['sample'] == smpl
         assert comps['time'] - gen_time < 2
-    except Exception as e:
-        raise e
     finally:
         # important to leave this vital info untouched!
         cfg = Config()
