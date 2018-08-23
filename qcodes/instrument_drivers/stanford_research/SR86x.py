@@ -1028,7 +1028,7 @@ class SR86x(VisaInstrument):
         Args:
             *parameter_names
                 2 or 3 names of parameters for which the values are
-                requested; valid names can be found in `_PARAMETER_NAMES`
+                requested; valid names can be found in `PARAMETER_NAMES`
                 attribute of the driver class
 
         Returns:
