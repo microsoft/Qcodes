@@ -589,7 +589,7 @@ class SR86xDataChannel(InstrumentChannel):
             reference
     """
     def __init__(self, parent: 'SR86x', name: str, cmd_id: str,
-                 cmd_id_name: str=None, color: str=None):
+                 cmd_id_name: str=None, color: str=None) -> None:
         super().__init__(parent, name)
 
         self._cmd_id = cmd_id
