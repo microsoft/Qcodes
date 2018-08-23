@@ -185,6 +185,8 @@ class PNATrace(InstrumentChannel):
         else:
             root_instr.root_instrument.sweep_mode('SING')
 
+        root_instr.write("TRIG:SOUR IMM")
+
         # Once the sweep mode is in hold, we know we're done
         while root_instr.sweep_mode() != 'HOLD':
             time.sleep(0.1)
