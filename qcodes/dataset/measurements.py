@@ -108,14 +108,24 @@ class DataSaver:
         # Also, we pre-check that array dimensions are compatible before
         # proceeding.
         input_size = 1
-        params = []
+        found_parameters = []
         inserting_as_arrays = False
         inserting_unrolled_array = False
+
+        for partial_result in res_tuple:
+            parameter = partial_result[0]
+            paramstr = str(parameter)
+            found_parameters.append(paramstr)
+            if isinstance(parameter, ArrayParameter):
+                self._unbundle_array_parameter(parameter,
+                                               res,
+                                               found_parameters)
+
         for partial_result in res:
             parameter = partial_result[0]
-            paramstr = str(partial_result[0])
+            paramstr = str(parameter)
             value = partial_result[1]
-            params.append(paramstr)
+            found_parameters.append(paramstr)
             if paramstr not in self._known_parameters:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
@@ -144,22 +154,18 @@ class DataSaver:
                                  'str, tuple, list, and np.ndarray is '
                                  'allowed.')
 
-            if isinstance(parameter, ArrayParameter):
-                self._unbundle_array_parameter(parameter,
-                                               res,
-                                               inserting_as_arrays)
-
         # Now check for missing setpoints
         for partial_result in res:
             param = str(partial_result[0])
             if param in self._known_dependencies.keys():
                 stuffweneed = set(self._known_dependencies[param])
-                stuffwehave = set(params)
+                stuffwehave = set(found_parameters)
                 if not stuffweneed.issubset(stuffwehave):
                     raise ValueError('Can not add this result; missing '
                                      f'setpoint values for {param}:'
                                      f' {stuffweneed}.'
-                                     f' Values only given for {params}.')
+                                     f' Values only given for'
+                                     f' {found_parameters}.')
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
                                "in array from and as numeric. This is not "
@@ -206,7 +212,7 @@ class DataSaver:
     def _unbundle_array_parameter(self,
                                   parameter: Union[_BaseParameter, str],
                                   res,
-                                  inserting_as_arrays: bool):
+                                  found_parameters):
         # TODO (WilliamHPNielsen): The following code block is ugly and
         # brittle and should be enough to convince us to abandon the
         # design of ArrayParameters (possibly) containing (some of) their
@@ -234,13 +240,12 @@ class DataSaver:
 
             setpoint_meta.append({'paramstr': paramstr,
                                   'spname': spname})
+            found_parameters.append(spname)
             setpoint_axes.append(sps)
 
 
         output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
         for grid, meta in zip(output_grids, setpoint_meta):
-            if not inserting_as_arrays:
-                grid = grid.ravel()
             if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
                 res.append((f'{meta["paramstr"]}_setpoint', grid))
             elif meta['spname'] in self.parameters.keys():
