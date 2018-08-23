@@ -1188,6 +1188,14 @@ def test_datasaver_multi_parameters_scalar(experiment,
     assert tuple(meas.parameters.keys()) == tuple(param.names)
 
 
+    with meas.run() as datasaver:
+        datasaver.add_result((param, param()))
+
+    assert datasaver.points_written == 1
+    ds = load_by_id(datasaver.run_id)
+    assert ds.get_data('thisparam') == [[0]]
+    assert ds.get_data('thatparam') == [[1]]
+
 def test_datasaver_multi_parameters_array(experiment,
                                           channel_array_instrument):
     """

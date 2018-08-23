@@ -100,7 +100,8 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        res = list(res_tuple)  # ArrayParameters cause us to mutate the results
+        res = []  # ArrayParameters and MultiParameters cause us to mutate
+                  # the results.
 
         # we iterate through the input twice in order to allow users to call
         # add_result with the arguments in any particular order, i.e. NOT
@@ -112,17 +113,22 @@ class DataSaver:
         inserting_as_arrays = False
         inserting_unrolled_array = False
 
-
         for partial_result in res_tuple:
             parameter = partial_result[0]
-            paramstr = str(parameter)
-            found_parameters.append(paramstr)
-            # unpack setpoints from array parameters and add them
-            # to the res list
-            if isinstance(parameter, ArrayParameter):
-                self._unbundle_array_parameter(parameter,
-                                               res,
-                                               found_parameters)
+            if isinstance(parameter, MultiParameter):
+                self._unbundle_multiparameter_parameter(partial_result,
+                                                        res,
+                                                        found_parameters)
+            else:
+                res.append(partial_result)
+                paramstr = str(parameter)
+                found_parameters.append(paramstr)
+                # unpack setpoints from array parameters and add them
+                # to the res list
+                if isinstance(parameter, ArrayParameter):
+                    self._unbundle_array_parameter(parameter,
+                                                   res,
+                                                   found_parameters)
 
         for partial_result in res:
             parameter = partial_result[0]
@@ -212,7 +218,7 @@ class DataSaver:
                 self._results.append(res_dict)
 
     def _unbundle_array_parameter(self,
-                                  parameter: Union[_BaseParameter, str],
+                                  parameter: ArrayParameter,
                                   res,
                                   found_parameters):
         # TODO (WilliamHPNielsen): The following code block is ugly and
@@ -252,6 +258,19 @@ class DataSaver:
                 res.append((f'{meta["paramstr"]}_setpoint', grid))
             elif meta['spname'] in self.parameters.keys():
                 res.append((meta['spname'], grid))
+
+    def _unbundle_multiparameter_parameter(self,
+                                           partial_result,
+                                           res,
+                                           found_parameters):
+        parameter = partial_result[0]
+        data = partial_result[1]
+        for i in range(len(parameter.shapes)):
+            shape = parameter.shapes[i]
+            res.append((parameter.names[i], data[i]))
+            if shape != ():
+                raise NotImplementedError()
+
 
     def flush_data_to_database(self):
         """
