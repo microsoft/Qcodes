@@ -97,19 +97,3 @@ def test_numpy_types(experiment):
     data_saver.flush_data_to_database()
     data = test_set.get_data("p")
     assert data == [[2] for _ in range(len(dtypes))]
-
-
-def test_string(experiment):
-    """
-    Test that we can save text in the data set
-    """
-    p = ParamSpec("p", "text")
-
-    test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
-    data_saver = DataSaver(
-        dataset=test_set, write_period=0, parameters={"p": p})
-
-    data_saver.add_result(("p", "some text"))
-    data_saver.flush_data_to_database()
-    assert test_set.get_data("p") == [["some text"]]
