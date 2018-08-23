@@ -97,8 +97,10 @@ def test_string_without_specifying_paramtype(experiment):
 
     test_set = load_by_id(datasaver.run_id)
 
-    with pytest.raises(ValueError,
-                       match="could not convert string to float: b'some text'"):
-        assert test_set.get_data("p") == [["some text"]]
-
-    test_set.conn.close()
+    try:
+        with pytest.raises(ValueError,
+                           match="could not convert string to float: b'some "
+                                 "text'"):
+            assert test_set.get_data("p") == [["some text"]]
+    finally:
+        test_set.conn.close()
