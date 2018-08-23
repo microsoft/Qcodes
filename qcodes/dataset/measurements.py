@@ -517,13 +517,6 @@ class Measurement:
         else:
             my_setpoints = setpoints
 
-        # We currently treat ALL parameters as 'numeric' and fail to add them
-        # to the dataset if they can not be unraveled to fit that description
-        # (except strings, we just let those through)
-        # this is indeed a limitation, but a sane one. We might loosen that
-        # requirement later and start saving binary blobs with the datasaver,
-        # but for now binary blob saving is referred to using the DataSet
-        # API directly
         parameter = cast(Union[Parameter, ArrayParameter], parameter)
 
         label = parameter.label
