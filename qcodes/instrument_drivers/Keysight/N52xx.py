@@ -1,9 +1,13 @@
 import numpy as np
-from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter, ChannelList
-from qcodes.utils.validators import Numbers, Enum, Bool
+import logging
 from typing import Sequence, Union, Any, Tuple
 import time
 import re
+
+from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter, ChannelList
+from qcodes.utils.validators import Numbers, Enum, Bool
+
+logger = logging.getLogger()
 
 class PNASweep(ArrayParameter):
     def __init__(self,
@@ -73,6 +77,7 @@ class FormattedSweep(PNASweep):
 
         return data
 
+
 class PNAPort(InstrumentChannel):
     """
     Allow operations on individual PNA ports.
@@ -107,6 +112,7 @@ class PNAPort(InstrumentChannel):
         """
         self.source_power.vals = Numbers(min_value=min_power,max_value=max_power)
 
+
 class PNATrace(InstrumentChannel):
     """
     Allow operations on individual PNA traces.
@@ -116,6 +122,7 @@ class PNATrace(InstrumentChannel):
                  parent: 'PNABase',
                  name: str,
                  trace: int) -> None:
+
         super().__init__(parent, name)
         self.trace = trace
 
@@ -173,6 +180,16 @@ class PNATrace(InstrumentChannel):
                            parameter_class=FormattedSweep)
 
     def run_sweep(self) -> str:
+        """
+        Args:
+            timeout (float): The measurement needs to complete within this time or a time out is generated.
+            This can be useful if we have accidentally set the wrong trigger source (e.g. manual) and no triggers are
+            coming. If an infinite time out is desired, set this value to None. The default value is 10 seconds.
+
+        Returns:
+            prev_mod (str): This method modifies the sweep mode to either group or single. The original mode is returned
+            so that, if desired, this can be reset after this method has been called.
+        """
         root_instr = self.root_instrument
         # Store previous mode
         prev_mode = root_instr.sweep_mode()
@@ -185,13 +202,25 @@ class PNATrace(InstrumentChannel):
         else:
             root_instr.root_instrument.sweep_mode('SING')
 
-        root_instr.write("TRIG:SOUR IMM")
+        try:
+            # Once the sweep mode is in hold, we know we're done
+            # Note that if no triggers are received, we can get stuck in an infinite loop
+            while root_instr.sweep_mode() != 'HOLD':
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            # If the user aborts because (s)he is stuck in the infinite loop mentioned above, provide a hint of what
+            # can be wrong.
+            msg = "User abort detected. "
+            source = self.root_instrument.trigger_source()
 
-        # Once the sweep mode is in hold, we know we're done
-        while root_instr.sweep_mode() != 'HOLD':
-            time.sleep(0.1)
+            if source == "MAN":
+                msg += "The trigger source is manual. Are you sure this is correct? Please set the correct source " \
+                       "with the 'trigger_source' parameter"
+            elif source == "EXT":
+                msg += "The trigger source is external. Is the trigger source functional?"
 
-        # Return previous mode, incase we want to restore this
+            logger.warning(msg)
+
         return prev_mode
 
     def write(self, cmd: str) -> None:
@@ -231,6 +260,7 @@ class PNATrace(InstrumentChannel):
         if not re.match("S[1-4][1-4]", val):
             raise ValueError("Invalid S parameter spec")
         self.write(f"CALC:PAR:MOD:EXT {val}")
+
 
 class PNABase(VisaInstrument):
     """
@@ -346,6 +376,15 @@ class PNABase(VisaInstrument):
                            get_parser=int,
                            set_cmd="CALC:PAR:MNUM {}",
                            vals=Numbers(min_value=1, max_value=24))
+
+        self.add_parameter(
+            "trigger_source",
+            get_cmd="TRIG:SOUR?",
+            set_cmd="TRIG:SOUR {}",
+            vals=Enum("EXT", "IMM", "INT", "MAN"),
+            set_parser=lambda value: "IMM" if value is "INT" else value
+        )
+
         # Note: Traces will be accessed through the traces property which updates
         # the channellist to include only active trace numbers
         self._traces = ChannelList(self, "PNATraces", PNATrace)
@@ -418,6 +457,7 @@ class PNABase(VisaInstrument):
         self.power.vals = Numbers(min_value=min_power,max_value=max_power)
         for port in self.ports:
             port._set_power_limits(min_power, max_power)
+
 
 class PNAxBase(PNABase):
     def __init__(self,
