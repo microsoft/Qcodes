@@ -112,10 +112,13 @@ class DataSaver:
         inserting_as_arrays = False
         inserting_unrolled_array = False
 
+
         for partial_result in res_tuple:
             parameter = partial_result[0]
             paramstr = str(parameter)
             found_parameters.append(paramstr)
+            # unpack setpoints from array parameters and add them
+            # to the res list
             if isinstance(parameter, ArrayParameter):
                 self._unbundle_array_parameter(parameter,
                                                res,
@@ -154,18 +157,17 @@ class DataSaver:
                                  'str, tuple, list, and np.ndarray is '
                                  'allowed.')
 
-        # Now check for missing setpoints
-        for partial_result in res:
-            param = str(partial_result[0])
-            if param in self._known_dependencies.keys():
-                stuffweneed = set(self._known_dependencies[param])
+            # Now check for missing setpoints
+            if paramstr in self._known_dependencies.keys():
+                stuffweneed = set(self._known_dependencies[paramstr])
                 stuffwehave = set(found_parameters)
                 if not stuffweneed.issubset(stuffwehave):
                     raise ValueError('Can not add this result; missing '
-                                     f'setpoint values for {param}:'
+                                     f'setpoint values for {paramstr}:'
                                      f' {stuffweneed}.'
                                      f' Values only given for'
                                      f' {found_parameters}.')
+
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
                                "in array from and as numeric. This is not "
