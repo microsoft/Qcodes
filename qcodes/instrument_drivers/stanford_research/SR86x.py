@@ -1018,7 +1018,7 @@ class SR86x(VisaInstrument):
         else:
             return self._CURR_TO_N[s]
 
-    def get_values(self, *parameter_names: str) -> Tuple[float]:
+    def get_values(self, *parameter_names: str) -> Tuple[float, ...]:
         """
         Get values of 2 or 3 parameters that are measured by the lock-in
         amplifier. These values are guaranteed to come from the same
