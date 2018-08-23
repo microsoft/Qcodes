@@ -29,7 +29,7 @@ def empty_temp_db():
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
+        qc.config["core"]["db_debug"] = False
         initialise_database()
         yield
 
@@ -1217,7 +1217,15 @@ def test_datasaver_multi_parameters_array(experiment,
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param()))
-
+    assert datasaver.points_written == 5
+    ds = load_by_id(datasaver.run_id)
+    assert ds.get_data('dummy_channel_inst_ChanA_this_setpoint') == [[5],
+                                                                     [6],
+                                                                     [7],
+                                                                     [8],
+                                                                     [9]]
+    assert ds.get_data('this') == [[0], [0], [0], [0], [0]]
+    assert ds.get_data('that') == [[1], [1], [1], [1], [1]]
 
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
