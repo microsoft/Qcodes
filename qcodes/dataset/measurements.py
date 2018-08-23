@@ -196,7 +196,7 @@ class DataSaver:
                                      f' Values only given for {params}.')
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
-                               "in array from and as numeric. This is not "
+                               "in array form and as numeric. This is not "
                                "possible.")
         elif inserting_as_arrays:
             input_size = 1
