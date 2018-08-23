@@ -379,7 +379,6 @@ class Measurement:
             station: The QCoDeS station to snapshot. If not given, the
                 default one is used.
         """
-        self.exp = exp
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
