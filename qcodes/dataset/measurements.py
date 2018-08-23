@@ -144,12 +144,9 @@ class DataSaver:
                                  'str, tuple, list, and np.ndarray is '
                                  'allowed.')
 
-            setpoint_axes = []
-            setpoint_meta = []
             if isinstance(parameter, ArrayParameter):
                 self._unbundle_array_parameter(parameter,
-                                               res, setpoint_axes,
-                                               setpoint_meta,
+                                               res,
                                                inserting_as_arrays)
 
         # Now check for missing setpoints
@@ -170,6 +167,13 @@ class DataSaver:
         elif inserting_as_arrays:
             input_size = 1
 
+        self._append_results(res, input_size)
+
+        if monotonic() - self._last_save_time > self.write_period:
+            self.flush_data_to_database()
+            self._last_save_time = monotonic()
+
+    def _append_results(self, res, input_size):
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
@@ -181,8 +185,8 @@ class DataSaver:
                     value = partial_result[1]
                     # For compatibility with the old Loop, setpoints are
                     # tuples of numbers (usually tuple(np.linspace(...))
-                    if hasattr(value, '__len__') and not(isinstance(value,
-                                                                    str)):
+                    if hasattr(value, '__len__') and not (isinstance(value,
+                                                                     str)):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
                             # this is significantly faster than atleast_1d
@@ -199,19 +203,16 @@ class DataSaver:
             if len(res_dict) > 0:
                 self._results.append(res_dict)
 
-        if monotonic() - self._last_save_time > self.write_period:
-            self.flush_data_to_database()
-            self._last_save_time = monotonic()
-
     def _unbundle_array_parameter(self,
                                   parameter: Union[_BaseParameter, str],
-                                  res, setpoint_axes,
-                                  setpoint_meta,
+                                  res,
                                   inserting_as_arrays: bool):
         # TODO (WilliamHPNielsen): The following code block is ugly and
         # brittle and should be enough to convince us to abandon the
         # design of ArrayParameters (possibly) containing (some of) their
         # setpoints
+        setpoint_axes = []
+        setpoint_meta = []
         paramstr = str(parameter)
         sp_names = parameter.setpoint_full_names
         if parameter.setpoints is None:
@@ -525,8 +526,23 @@ class Measurement:
                                                 setpoints,
                                                 basis, paramtype)
 
-    def _register_individual_parameter(self, name, label, unit, setpoints,
-                                       basis, paramtype):
+    def _register_individual_parameter(self, name: str,
+                                       label: str,
+                                       unit: str,
+                                       setpoints,
+                                       basis, paramtype) -> None:
+        """
+
+        Args:
+            name:
+            label:
+            unit:
+            setpoints:
+            basis:
+            paramtype:
+
+        """
+
         if setpoints is not None:
             sp_strings = [str(sp) for sp in setpoints]
         else:
@@ -554,6 +570,16 @@ class Measurement:
                                            parameter: Union[str, ArrayParameter],
                                            paramtype: str,
                                            setpoints: Sequence[_BaseParameter]) -> List[str]:
+        """
+
+        Args:
+            parameter:
+            paramtype:
+            setpoints:
+
+        Returns:
+
+        """
         name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
         for i in range(len(parameter.shape)):
@@ -586,6 +612,16 @@ class Measurement:
         return my_setpoints
 
     def _find_mp_components(self, multiparameter, setpoints, paramtype):
+        """
+
+        Args:
+            multiparameter:
+            setpoints:
+            paramtype:
+
+        Returns:
+
+        """
         my_setpoints = setpoints
         parameters = []
         for i in range(len(multiparameter.shapes)):
