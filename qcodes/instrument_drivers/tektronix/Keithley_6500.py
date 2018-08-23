@@ -4,7 +4,7 @@ from qcodes import VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
 
 
-def parse_output_string(string_value):
+def _parse_output_string(string_value):
     """ Parses and cleans string output of the multimeter. Removes the surrounding
         whitespace, newline characters and quotes from the parsed data. Some results
         are converted for readablitity (e.g. mov changes to moving).
@@ -39,7 +39,7 @@ def parse_output_bool(numeric_value):
 
 class Keithley_6500(VisaInstrument):
 
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(self, name, address, reset_device=False, **kwargs):
         """ Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
             commands have been adapted for the Keithley 6500. This driver does not contain
             all commands available, but only the ones most commonly used.
@@ -49,7 +49,7 @@ class Keithley_6500(VisaInstrument):
         Args:
             name (str): The name used internally by QCoDeS in the DataSet.
             address (str): The VISA device address.
-            reset (bool): Reset the device on startup if true.
+            reset_device (bool): Reset the device on startup if true.
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -91,7 +91,7 @@ class Keithley_6500(VisaInstrument):
 
         self.add_parameter('averaging_type',
                            get_cmd=partial(self._get_mode_param,
-                                           'AVER:TCON', parse_output_string),
+                                           'AVER:TCON', _parse_output_string),
                            set_cmd=partial(self._set_mode_param, 'AVER:TCON'),
                            vals=Enum('moving', 'repeat'))
 
@@ -140,15 +140,18 @@ class Keithley_6500(VisaInstrument):
 
         self.add_parameter('amplitude',
                            get_cmd=self._read_next_value,
-                           unit='arb.unit')
+                           set_cmd=False,
+                           unit='a.u.')
 
-        self.add_function('reset', call_cmd='*RST')
-
-        if reset:
+        if reset_device:
             self.reset()
         self.write('FORM:DATA ASCII')
         self.connect_message()
 
+    def reset(self):
+        """ Reset the device """
+        self.write('*RST')
+        
     def _read_next_value(self):
         return float(self.ask('READ?'))
 
@@ -162,20 +165,20 @@ class Keithley_6500(VisaInstrument):
         Returns:
             Any: the parsed ask command. The parser determines the return data-type.
         """
-        mode = parse_output_string(self._mode_map[self.mode()])
+        mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = '{}:{}?'.format(mode, parameter)
         return parser(self.ask(cmd))
 
     def _set_mode_param(self, parameter, value):
-        """ Reads the current mode of the multimeter and sets the given parameter.
+        """ Gets the current mode of the multimeter and sets the given parameter.
 
         Args:
             parameter (str): The set parameter after getting the current mode.
-            parser (function): A function that parses the input buffer read.
+            value (obj): Value to set
         """
         if isinstance(value, bool):
             value = int(value)
 
-        mode = parse_output_string(self._mode_map[self.mode()])
+        mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = '{}:{} {}'.format(mode, parameter, value)
         self.write(cmd)
