@@ -228,7 +228,7 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. It '
                             'should be an int')
-        assert np.abs(offset) + np.abs(amplitude) < self.v_max, \
+        assert np.abs(offset) + np.abs(amplitude) <= self.v_max + 1e-10, \
             'The combined output will be larger than the maximum output voltage'
 
         # Convert all the pulse parameters to the correct register values
@@ -287,7 +287,7 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. '
                             'It should be an int')
-        assert np.abs(offset) + np.abs(amplitude) < self.v_max, \
+        assert np.abs(offset) + np.abs(amplitude) <= self.v_max + 1e-10, \
             'The combined output will be larger than the maximum output voltage'
 
         phase_val = self.phase2val(phase)
@@ -329,11 +329,11 @@ class PCDDSChannel(InstrumentChannel):
         pulse_data = phase
         pulse_data += (frequency << self.n_phase_bits)
         pulse_data += (frequency_accumulation << 2 * self.n_phase_bits)
-        pulse_data += (amplitude << 2 * self.n_phase_bits + self.n_accum_bits)
-        pulse_data += (offset << 2 * self.n_phase_bits + self.n_accum_bits
-                       + self.n_amp_bits)
-        pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits
-                       + 2*self.n_amp_bits)
+        pulse_data += (amplitude << (2 * self.n_phase_bits + self.n_accum_bits))
+        pulse_data += (offset << (2 * self.n_phase_bits + self.n_accum_bits
+                       + self.n_amp_bits))
+        pulse_data += (next_pulse << (2 * self.n_phase_bits + self.n_accum_bits
+                       + 2*self.n_amp_bits))
         pulse_data = self.split_value(pulse_data)
         self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
         # self.fpga.set_fpga_pc_port(self.fpga_port, pulse_data, self.id, 0, 1)
@@ -449,11 +449,16 @@ class PCDDSChannel(InstrumentChannel):
 
         Returns: The register value for the desired amplitude
         """
-        if amp < 0 or amp > self.v_max:
+        if amp < 0 - 1e-10 or amp > self.v_max + 1e-10:
             raise ValueError(f'Amplitude of {amp} is outside of allowed values '
                              f'[0, {self.v_max}V')
-        return int(np.round((2**self.n_amp_bits-1) * amp/self.v_max))
+        value = int(np.round((2**self.n_amp_bits-1) * amp/self.v_max))
+        # Limit offset
+        value = min(value, 2 ** self.n_amp_bits - 1)
+        value = max(value, 0)
+        return value
 
+    # Limit offset
     def offset2val(self, offset: float) -> int:
         """
         Function to calculate the correct offset register value for a given
@@ -464,10 +469,16 @@ class PCDDSChannel(InstrumentChannel):
         Returns: The register value for the desired offset
 
         """
-        assert offset > -self.v_max and offset < self.v_max, \
+        assert -self.v_max -1e-10 <= offset <= self.v_max + 1e-10, \
             f'Offset value is not within allowed bounds of [-{self.v_max}, ' \
             f'{self.v_max}]'
-        return int(np.round(offset/self.v_max * 2**self.n_amp_bits))
+
+        value = int(np.round(offset/self.v_max * 2**(self.n_amp_bits-1)))
+        value = min(value, 2 ** (self.n_amp_bits - 1) - 1)
+        value = max(value, -2 ** (self.n_amp_bits - 1))
+        value += 1 << 17
+        value &= 0xFFFF
+        return value
 
 
 class PCDDS(Instrument):
