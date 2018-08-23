@@ -1215,6 +1215,9 @@ def test_datasaver_multi_parameters_array(experiment,
     assert meas.parameters[
                'dummy_channel_inst_ChanA_this_setpoint'].depends_on == ''
 
+    with meas.run() as datasaver:
+        datasaver.add_result((param, param()))
+
 
 def test_load_legacy_files_2D(experiment):
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'

@@ -234,9 +234,12 @@ class DataSaver:
                                "setpoints. Cannot handle this")
 
         for i, sps in enumerate(parameter.setpoints):
-            spname = sp_names[i]
-            if f'{paramstr}_setpoint' not in self.parameters.keys() \
-                    and spname not in self.parameters.keys():
+            if sp_names is not None:
+                spname = sp_names[i]
+            else:
+                spname = f'{parameter.full_name}_setpoint_{i}'
+
+            if spname not in self.parameters.keys():
                 raise RuntimeError('No setpoints registered for '
                                    f'ArrayParameter {paramstr}!')
             sps = np.array(sps)
@@ -246,18 +249,14 @@ class DataSaver:
                 # the axis along one dim, the innermost one.
                 sps = sps[0]
 
-            setpoint_meta.append({'paramstr': paramstr,
-                                  'spname': spname})
+            setpoint_meta.append(spname)
             found_parameters.append(spname)
             setpoint_axes.append(sps)
 
 
         output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
         for grid, meta in zip(output_grids, setpoint_meta):
-            if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
-                res.append((f'{meta["paramstr"]}_setpoint', grid))
-            elif meta['spname'] in self.parameters.keys():
-                res.append((meta['spname'], grid))
+            res.append((meta, grid))
 
     def _unbundle_multiparameter_parameter(self,
                                            partial_result,
@@ -269,7 +268,45 @@ class DataSaver:
             shape = parameter.shapes[i]
             res.append((parameter.names[i], data[i]))
             if shape != ():
-                raise NotImplementedError()
+                # array parameter like part of the multiparameter
+                setpoint_axes = []
+                setpoint_meta = []
+                paramstr = parameter.names[i]
+                fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
+
+                if parameter.setpoint_full_names[i] is not None:
+                    sp_names = parameter.setpoint_full_names[i]
+                else:
+                    sp_names = None
+
+                if parameter.setpoints[i] is None:
+                    raise RuntimeError("Got an array parameter without "
+                                       "setpoints. Cannot handle this")
+
+                for j, sps in enumerate(parameter.setpoints[i]):
+
+                    if sp_names is not None:
+                        spname = sp_names[j]
+                    else:
+                        spname = f'{fallback_sp_name}_{j}'
+
+                    if spname not in self.parameters.keys():
+                        raise RuntimeError('No setpoints registered for '
+                                           f'ArrayParameter {paramstr}!')
+                    sps = np.array(sps)
+                    while sps.ndim > 1:
+                        # The outermost setpoint axis or an nD param is nD
+                        # but the innermost is 1D. In all cases we just need
+                        # the axis along one dim, the innermost one.
+                        sps = sps[0]
+
+                    setpoint_meta.append(spname)
+                    found_parameters.append(spname)
+                    setpoint_axes.append(sps)
+
+                output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
+                for grid, meta in zip(output_grids, setpoint_meta):
+                    res.append((meta, grid))
 
 
     def flush_data_to_database(self):
@@ -609,17 +646,11 @@ class Measurement:
         name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
         for i in range(len(parameter.shape)):
-            spname_parts = []
-            if parameter.instrument is not None:
-                inst_name = parameter.instrument.name
-                if inst_name is not None:
-                    spname_parts.append(inst_name)
-            if parameter.setpoint_names is not None:
-                spname_parts.append(parameter.setpoint_names[i])
-            if len(spname_parts) > 0:
-                spname = '_'.join(spname_parts)
+            if parameter.setpoint_full_names is not None and \
+                    parameter.setpoint_full_names[i] is not None:
+                spname = parameter.setpoint_full_names[i]
             else:
-                spname = f'{name}_setpoint'
+                spname = f'{name}_setpoint_{i}'
             if parameter.setpoint_labels:
                 splabel = parameter.setpoint_labels[i]
             else:
@@ -652,23 +683,17 @@ class Measurement:
         parameters = []
         for i in range(len(multiparameter.shapes)):
             shape = multiparameter.shapes[i]
+            name = multiparameter.full_names[i]
             if shape is ():
                 my_setpoints = setpoints
             else:
                 my_setpoints = list(setpoints) if setpoints else []
                 for j in range(len(shape)):
-                    spname_parts = []
-                    if multiparameter.instrument is not None:
-                        inst_name = multiparameter.instrument.name
-                        if inst_name is not None:
-                            spname_parts.append(inst_name)
-                    if multiparameter.setpoint_names is not None and \
-                            multiparameter.setpoint_names[i] is not None:
-                        spname_parts.append(multiparameter.setpoint_names[i][j])
-                    if len(spname_parts) > 0:
-                        spname = '_'.join(spname_parts)
+                    if multiparameter.setpoint_full_names is not None and \
+                            multiparameter.setpoint_full_names[i] is not None:
+                        spname = multiparameter.setpoint_full_names[i][j]
                     else:
-                        spname = f'{name}_setpoint'
+                        spname = f'{name}_setpoint_{j}'
                     if multiparameter.setpoint_labels is not None and \
                             multiparameter.setpoint_labels[i] is not None:
                         splabel = multiparameter.setpoint_labels[i][j]
