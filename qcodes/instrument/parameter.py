@@ -1300,6 +1300,25 @@ class MultiParameter(_BaseParameter):
 
         return self.names
 
+    @property
+    def setpoint_full_names(self):
+        """
+        Full names of setpoints including instrument names if available
+        """
+        if self.setpoint_names is None:
+            return None
+        try:
+            inst_name = self._instrument.full_name
+            if inst_name:
+                full_sp_names = []
+                for sp_group in self.setpoint_names:
+                    full_sp_names.append(tuple(inst_name + '_' + spname
+                                              for spname in sp_group))
+                return tuple(full_sp_names)
+        except AttributeError:
+            pass
+        return self.setpoint_names
+
 
 class GetLatest(DelegateAttributes):
     """
