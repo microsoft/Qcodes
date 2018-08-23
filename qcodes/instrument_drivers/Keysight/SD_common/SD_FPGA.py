@@ -30,9 +30,16 @@ class SD_FPGA(SD_Module):
         """ Stops the currently loaded FPGA firmware. """
         raise NotImplementedError('stop() must be defined per your FPGA design.')
 
-    def reset(self):
-        """ Resets the currently loaded FPGA firmware. """
-        raise NotImplementedError('reset() must be defined per your FPGA design.')
+    def reset(self, reset_mode):
+        """
+        Resets the currently loaded FPGA firmware.
+
+        Args:
+            reset_mode (int): The way that the reset pin should behave
+        """
+        error_code = self.SD_module.FPGAreset(reset_mode)
+        if error_code != 0:
+            raise Exception('Error resetting the FPGA, Error Code: {0}'.format(error_code))
 
     def get_fpga_pc_port(self, port, data_size, address, address_mode, access_mode,
                          verbose=False):
@@ -50,7 +57,6 @@ class SD_FPGA(SD_Module):
                                              access_mode)
         value_name = 'data at PCport {}'.format(port)
         return result_parser(data, value_name, verbose)
-
 
     def set_fpga_pc_port(self, port, data, address, address_mode, access_mode,
                          verbose=False):

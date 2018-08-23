@@ -31,7 +31,7 @@ if plotlib in {'matplotlib', 'all'}:
 from qcodes.station import Station
 from qcodes.loops import Loop, active_loop, active_data_set, stop
 from qcodes.measure import Measure
-from qcodes.actions import Task, Wait, BreakIf
+from qcodes.actions import Task, Wait, BreakIf, ContinueIf, SkipIf
 haswebsockets = True
 try:
     import websockets

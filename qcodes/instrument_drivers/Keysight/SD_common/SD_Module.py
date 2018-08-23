@@ -1,9 +1,11 @@
 import warnings
+from typing import Callable, List, Union
+import numpy as np
+from functools import partial, wraps
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, Parameter
+from qcodes.instrument.channel import InstrumentChannel
 import qcodes.utils.validators as validators
-from numpy import ndarray
-from functools import partial
 
 import logging
 logger = logging.getLogger(__name__)
@@ -16,8 +18,31 @@ except ImportError:
                       '(http://www.keysight.com/main/software.jspx?ckey=2784055)')
 
 
-def result_parser(value, name='result', verbose=False):
+def error_check(value, method_name=None):
+    """Check if returned value after a set is an error code or not.
+
+    Args:
+        value: value to test.
+        method_name: Name of called SD method, used for error message
+
+    Raises:
+        AssertionError if returned value is an error code.
     """
+    assert isinstance(value, (str, bool, np.ndarray)) or (int(value) >= 0), \
+        f'Error in call to SD_Module.{method_name}, error code {value}'
+
+
+def with_error_check(fun):
+    @wraps(fun)
+    def error_check_wrapper(*args, **kwargs):
+        value = fun(*args, **kwargs)
+        error_check(value, f'Error calling {fun.__name__} with args {kwargs}. '
+                           f'Return value = {value}')
+        return value
+    return error_check_wrapper
+
+def result_parser(value, name='result', verbose=False):
+    """ Deprecated by error_check
     This method is used for parsing the result in the get-methods.
     For values that are non-negative, the value is simply returned.
     Negative values indicate an error, so an error is raised
@@ -34,8 +59,8 @@ def result_parser(value, name='result', verbose=False):
         value: parsed value, which is the same as value if non-negative
         or not a number
     """
-    if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
-        if isinstance(value, ndarray):
+    if isinstance(value, np.ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
+        if isinstance(value, np.ndarray):
             logger.debug(f'{name}: {len(value)} pts')
         else:
             logger.debug(f'{name}: {value}')
@@ -45,6 +70,103 @@ def result_parser(value, name='result', verbose=False):
         return value
     else:
         raise Exception(f'Error in call to SD_Module error code {value}')
+
+
+class SignadyneParameter(Parameter):
+    """Signadyne parameter designed to send keysightSD1 commands.
+
+    This parameter can function as a standard parameter, but can also be
+    associated with a specific keysightSD1 function.
+
+    Args:
+        name: Parameter name
+        parent: Signadyne Instrument or instrument channel
+            In case of a channel, it should have an id between 1 and n_channels.
+        get_cmd: Standard optional Parameter get function
+        get_function: keysightSD1 function to be called when getting the
+            parameter value. If set, get_cmd must be None.
+        set_cmd: Standard optional Parameter set function
+        set_function: keysightSD1 function to be called when setting the
+            parameter value. If set, set_cmd must be None.
+        set_args: Optional ancillary parameter names that are passed to
+            set_function. Used for some keysightSD1 functions need to pass
+            multiple parameters simultaneously. If set, the name of this
+            parameter must also be included in the appropriate index.
+        initial_value: initial value for the parameter. This does not actually
+            perform a set, so it does not call any keysightSD1 function.
+        **kwargs: Additional kwargs passed to Parameter
+    """
+    def __init__(self,
+                 name: str,
+                 parent: Union[Instrument, InstrumentChannel] = None,
+                 get_cmd: Callable = None,
+                 get_function: Callable = None,
+                 set_cmd: Callable = False,
+                 set_function: Callable = None,
+                 set_args: List[str] = None,
+                 initial_value=None,
+                 **kwargs):
+        self.parent = parent
+
+        self.get_cmd = get_cmd
+        self.get_function = get_function
+
+        self.set_cmd = set_cmd
+        self.set_function = set_function
+        self.set_args = set_args
+
+        super().__init__(name=name, **kwargs)
+
+        if initial_value is not None:
+            # We set the initial value here to ensure that it does not call
+            # the set_raw method the first time
+            if self.val_mapping is not None:
+                initial_value = self.val_mapping[initial_value]
+            self._save_val(initial_value)
+
+    def set_raw(self, val):
+        if self.set_cmd is not False:
+            if self.set_cmd is not None:
+                return self.set_cmd(val)
+            else:
+                return
+        elif self.set_function is not None:
+            if self.set_args is None:
+                set_vals = [val]
+            else:
+                # Convert set args, which are parameter names, to their
+                # corresponding parameter values
+                set_vals = []
+                for set_arg in self.set_args:
+                    if set_arg == self.name:
+                        set_vals.append(val)
+                    else:
+                        # Get the current value of the parameter
+                        set_vals.append(getattr(self.parent, set_arg).raw_value)
+
+            # Evaluate the set function with the necessary set parameter values
+            if isinstance(self.parent, InstrumentChannel):
+                # Also pass the channel id
+                return_val = self.set_function(self.parent.id, *set_vals)
+            else:
+                return_val = self.set_function(*set_vals)
+            # Check if the returned value is an error
+            method_name = self.set_function.__func__.__name__
+            error_check(return_val, method_name=method_name)
+        else:
+            # Do nothing, value is saved
+            pass
+
+    def get_raw(self):
+        if self.get_cmd is not None:
+            return self.get_cmd()
+        elif self.get_function is not None:
+            if isinstance(self.parent, InstrumentChannel):
+                return self.get_function(self.parent.id)
+            else:
+                return self.get_function()
+        else:
+            return self.get_latest(raw=True)
 
 
 class SD_Module(Instrument):

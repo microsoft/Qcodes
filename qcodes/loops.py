@@ -61,7 +61,7 @@ from qcodes.utils.metadata import Metadatable
 from qcodes.plots.qcmatplotlib import MatPlot
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
-                      BreakIf, _QcodesBreak)
+                      BreakIf, ContinueIf, SkipIf, _QcodesBreak)
 
 
 log = logging.getLogger(__name__)
@@ -105,6 +105,7 @@ class Loop(Metadatable):
     data), ``Wait`` times, or other ``ActiveLoop``\s or ``Loop``\s to nest inside
     this one.
     """
+
     def __init__(self, sweep_values, delay=0, station=None,
                  progress_interval=None):
         super().__init__()
@@ -239,7 +240,7 @@ class Loop(Metadatable):
         if an action is not recognized
         """
         for action in actions:
-            if isinstance(action, (Task, Wait, BreakIf, ActiveLoop)):
+            if isinstance(action, (Task, Wait, BreakIf, ContinueIf, SkipIf, ActiveLoop)):
                 continue
             if hasattr(action, 'get') and (hasattr(action, 'name') or
                                            hasattr(action, 'names')):
@@ -247,7 +248,7 @@ class Loop(Metadatable):
             raise TypeError('Unrecognized action:', action,
                             'Allowed actions are: objects (parameters) with '
                             'a `get` method and `name` or `names` attribute, '
-                            'and `Task`, `Wait`, `BreakIf`, and `ActiveLoop` '
+                            'and `Task`, `Wait`, `BreakIf`, `SkipIf`, and `ActiveLoop` '
                             'objects. `Loop` objects are OK too, except in '
                             'Station default measurements.')
 
@@ -356,8 +357,14 @@ class ActiveLoop(Metadatable):
 
     # Currently active loop, is set when calling loop.run(set_active=True)
     # is reset to None when active measurement is finished
-    active_loop = None
+    active_loop = None  # Currently active outer loop
+    action_indices = ()  # Full indices of actions within loops
+    loop_indices = ()  # Current sweep index in loop
+    active_action = None  # Currently active action (e.g. parameter)
     _is_stopped = False
+    # Perform any actions during looping (will be reset after measurement is done)
+    interleave_actions = []
+    interleave_action_results = [] # Stored interleaving results
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -379,6 +386,9 @@ class ActiveLoop(Metadatable):
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
 
+        # Record summed durations of callables
+        self.timings = []
+
     def __getitem__(self, item):
         """
         Retrieves action with index `item`
@@ -389,6 +399,20 @@ class ActiveLoop(Metadatable):
             loop.actions[item]
         """
         return self.actions[item]
+
+    @property
+    def loop_shape(self) -> dict:
+        loop_shape = {}
+        sweep_vals = len(self.sweep_values)
+
+        for k, action in enumerate(self.actions):
+            if isinstance(action, ActiveLoop):
+                for action_subindex, loop_subshape in action.loop_shape.items():
+                    action_index = (k,) + action_subindex
+                    loop_shape[action_index] = (sweep_vals, ) + loop_subshape
+            else:
+                loop_shape[(k, )] = (sweep_vals, )
+        return loop_shape
 
     def then(self, *actions, overwrite=False):
         """
@@ -818,6 +842,9 @@ class ActiveLoop(Metadatable):
             self.data_set = None
             if set_active:
                 ActiveLoop.active_loop = None
+            ActiveLoop.action_indices = ()
+            ActiveLoop.loop_indices = ()
+            ActiveLoop.active_action = None
 
         return ds
 
@@ -880,9 +907,12 @@ class ActiveLoop(Metadatable):
 
         # at the beginning of the loop, the time to wait after setting
         # the loop parameter may be increased if an outer loop requested longer
+        ActiveLoop.action_indices = action_indices
+
         delay = max(self.delay, first_delay)
 
         callables = self._compile_actions(self.actions, action_indices)
+        self.timings = [[callable, 0] for callable in callables]
         n_callables = 0
         for item in callables:
             if hasattr(item, 'param_ids'):
@@ -896,6 +926,7 @@ class ActiveLoop(Metadatable):
         self.last_task_failed = False
 
         for i, value in enumerate(self.sweep_values):
+
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
                     self.sweep_values.name, i, imax, time.time() - t0),
@@ -904,6 +935,7 @@ class ActiveLoop(Metadatable):
             set_val = self.sweep_values.set(value)
 
             new_indices = loop_indices + (i,)
+            ActiveLoop.loop_indices = new_indices
             new_values = current_values + (value,)
             data_to_store = {}
 
@@ -932,19 +964,50 @@ class ActiveLoop(Metadatable):
                 # only wait the delay time if an inner loop will not inherit it
                 self._wait(delay)
 
+            f = None
             try:
-                for f in callables:
+                current_action_idx = 0
+                for k, f in enumerate(callables):
+                    t0 = time.time()
                     # below is useful but too verbose even at debug
                     # log.debug('Going through callables at this sweep step.'
                     #           ' Calling {}'.format(f))
+                    if not isinstance(f, _Measure):
+                        # Register current action as active one, a _Measure
+                        # does this internally for each of its actions
+                        ActiveLoop.action_indices = action_indices + (current_action_idx,)
+                        ActiveLoop.active_action = f
+
+                    if ActiveLoop.interleave_actions:
+                        try:
+                            ActiveLoop.interleave_action_results = [
+                                action() for action in ActiveLoop.interleave_actions]
+                            print('Finished all interleaved actions')
+                        except Exception as e:
+                            traceback.print_tb(e.__traceback__)
+                        finally:
+                            ActiveLoop.interleave_actions = []
+
                     f(first_delay=delay,
+                      action_indices=action_indices,
+                      current_action_idx=current_action_idx,
                       loop_indices=new_indices,
                       current_values=new_values)
+
+                    self.timings[k][1] += time.time() - t0
+
+                    if not isinstance(f, _Measure):
+                        # Increment current action idx so that loop_position is
+                        # maintained (done internally for _Measure)
+                        current_action_idx += 1
+                    else:
+                        current_action_idx += len(f.param_ids)
 
                     # after the first action, no delay is inherited
                     delay = 0
             except _QcodesBreak:
-                break
+                if not isinstance(f, (ContinueIf, SkipIf)):
+                    break
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay

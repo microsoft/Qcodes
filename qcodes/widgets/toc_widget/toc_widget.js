@@ -158,6 +158,17 @@ define('toc', [
     }
   }
 
+  function show_initialization_cells() {
+    log('Showing all initialization cells');
+    for (let cell of Jupyter.notebook.get_cells()) {
+      if (cell.metadata.init_cell === true) {
+        cell.element.slideDown(0)
+      } else {
+        cell.element.slideUp(0)
+      }
+    }
+  }
+
   /** Show all cells between two cells, inclusive begin and end **/
   function show_cells_between(cell_begin, cell_end) {
     var cell_begin_index = Jupyter.notebook.find_cell_index(cell_begin);
@@ -245,6 +256,19 @@ define('toc', [
                 show_all_cells();
               }
             })
+        ).append(
+          $("<span/>")
+            .html("&nbsp;&nbsp")
+        ).append(
+          $("<a/>")
+            .attr("href", "#")
+            .addClass("initialize-btn")
+            .text("I")
+            .attr('title', 'Show initialization cells')
+            .click( function(){
+                show_initialization_cells();
+              }
+            )
         )
       ).append(
         $("<div/>").attr("id", "toc").addClass('toc')

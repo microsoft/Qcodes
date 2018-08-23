@@ -64,7 +64,7 @@ class MatPlot(BasePlot):
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  colorbar=True, sharex=False, sharey=False, gridspec_kw=None,
-                 **kwargs):
+                 actions = [], **kwargs):
         super().__init__(interval)
 
         if subplots is None:
@@ -76,11 +76,12 @@ class MatPlot(BasePlot):
 
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
-            if isinstance(arg, Sequence):
-                if len(arg) and not isinstance(arg[0], numbers.Number):
-                    # Arg consists of multiple elements, add all to same subplot
-                    for subarg in arg:
-                        self[k].add(subarg, colorbar=colorbar, **kwargs)
+            if not len(arg):
+                continue  # Empty list/array
+            if isinstance(arg, Sequence) and not isinstance(arg[0], numbers.Number):
+                # Arg consists of multiple elements, add all to same subplot
+                for subarg in arg:
+                    self[k].add(subarg, colorbar=colorbar, **kwargs)
             else:
                 # Arg is single element, add to subplot
                 self[k].add(arg, colorbar=colorbar, **kwargs)
@@ -96,11 +97,10 @@ class MatPlot(BasePlot):
                                          interval=interval, max_threads=5)
             self.fig.canvas.mpl_connect('close_event', self.halt)
 
-        # ctrl+c copies current x, y coords
-        def handle_key_press(event):
-            if event.key == 'ctrl+c':
-                pyperclip.copy(f'({event.xdata}, {event.ydata})')
-        self.fig.canvas.mpl_connect('key_press_event', handle_key_press)
+        # Attach any actions
+        self.actions = []
+        for action in actions:
+            self.actions.append(self.connect(action))
 
     def __getitem__(self, key):
         """
@@ -284,12 +284,13 @@ class MatPlot(BasePlot):
             config = trace['config']
             plot_object = trace['plot_object']
             if 'z' in config:
+                ax = self[config.get('subplot', 1) - 1]
+
                 # pcolormesh doesn't seem to allow editing x and y data, only z
                 # so instead, we'll remove and re-add the data.
                 if plot_object:
                     plot_object.remove()
 
-                ax = self[config.get('subplot', 1) - 1]
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
@@ -414,16 +415,22 @@ class MatPlot(BasePlot):
                 arr_pad[np.isnan(arr_pad)] = np.nanmax(arr_pad)
                 args.append(arr_pad)
             args.append(args_masked[-1])
+
+            # Set x and y limits
+            xlim = [np.nanmin(args[0]), np.nanmax(args[0])]
+            ylim = [np.nanmin(args[1]), np.nanmax(args[1])]
+            if ax.collections:  # ensure existing 2D plots are not cropped
+                xlim = [min(xlim[0], ax.get_xlim()[0]),
+                        max(xlim[1], ax.get_xlim()[1])]
+                ylim = [min(ylim[0], ax.get_ylim()[0]),
+                        max(ylim[1], ax.get_ylim()[1])]
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
         else:
             # Only the masked value of z is used as a mask
             args = args_masked[-1:]
 
         pc = ax.pcolormesh(*args, **kwargs)
-
-        # Set x and y limits if arrays are provided
-        if x is not None and y is not None:
-            ax.set_xlim(np.nanmin(args[0]), np.nanmax(args[0]))
-            ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
 
         # Specify preferred number of ticks with labels
         if nticks and ax.get_xscale() != 'log' and ax.get_yscale != 'log':
@@ -555,3 +562,10 @@ class MatPlot(BasePlot):
                             subplot.qcodes_colorbar.formatter = tx
                             subplot.qcodes_colorbar.set_label(new_label)
                             subplot.qcodes_colorbar.update_ticks()
+
+    # Allow actions to be attached
+    available_actions = {}
+    def connect(self, action_name):
+        action = self.available_actions[action_name]()
+        action.connect(self)
+        return action

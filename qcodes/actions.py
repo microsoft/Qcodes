@@ -1,9 +1,12 @@
 """Actions, mainly to be executed in measurement Loops."""
 import time
+import logging
 
 from qcodes.utils.deferred_operations import is_function
 from qcodes.utils.threading import thread_map
 
+
+logger = logging.getLogger(__name__)
 
 _NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
 
@@ -41,20 +44,21 @@ class Task:
         func (callable): Function to executed
         N (int): if set, Task is only executed every N calls.
             Task is always executed in first call.
-        condition (callable): If set, Task is only executed if condition 
+        condition (callable): If set, Task is only executed if condition
             evaluates to True
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
 
     """
 
-    def __init__(self, func, *args, N=None, condition=None, **kwargs):
+    def __init__(self, func, *args, N=None, condition=None, repetitions=1, **kwargs):
         self.func = func
         self.args = args
         self.kwargs = kwargs
 
         self.N = N
         self.idx = 0
+        self.repetitions = repetitions
 
         self.condition = condition
 
@@ -74,7 +78,8 @@ class Task:
         eval_kwargs = {k: (v() if callable(v) else v) for k, v in
                        self.kwargs.items()}
 
-        self.func(*eval_args, **eval_kwargs)
+        for repetition in range(self.repetitions):
+            self.func(*eval_args, **eval_kwargs)
 
     def snapshot(self, update=False):
         """
@@ -143,12 +148,12 @@ class _Measure:
 
         # for performance, pre-calculate which params return data for
         # multiple arrays, and the name mappings
-        self.getters = []
+        self.parameters = []
         self.param_ids = []
         self.composite = []
         paramcheck = []  # list to check if parameters are unique
         for param, action_indices in params_indices:
-            self.getters.append(param.get)
+            self.parameters.append(param)
 
             if param._instrument:
                 paramcheck.append((param, param._instrument))
@@ -176,12 +181,20 @@ class _Measure:
                                                'asked for'
                                                ' {}.'.format(duplicates))
 
-    def __call__(self, loop_indices, **ignore_kwargs):
+    def __call__(self, action_indices, current_action_idx, loop_indices, **ignore_kwargs):
+        from qcodes.loops import ActiveLoop
+
         out_dict = {}
         if self.use_threads:
-            out = thread_map(self.getters)
+            out = thread_map(self.parameters)
         else:
-            out = [g() for g in self.getters]
+            out = []
+            for k, parameter in enumerate(self.parameters):
+                # Registering action as active one in case it needs to be
+                # accessed during the action itself
+                ActiveLoop.action_indices = action_indices + (current_action_idx + k,)
+                ActiveLoop.active_action = parameter
+                out.append(parameter.get())
 
         for param_out, param_id, composite in zip(out, self.param_ids,
                                                   self.composite):
@@ -190,7 +203,6 @@ class _Measure:
                     out_dict[part_id] = val
             else:
                 out_dict[param_id] = param_out
-
         self.store(loop_indices, out_dict)
 
 
@@ -206,7 +218,8 @@ class _Nest:
         self.inner_loop = inner_loop
         self.action_indices = action_indices
 
-    def __call__(self, **kwargs):
+    def __call__(self, action_indices, **kwargs):
+        # We ignore the passed action indices
         self.inner_loop._run_loop(action_indices=self.action_indices, **kwargs)
 
 
@@ -235,6 +248,7 @@ class BreakIf:
 
     def __call__(self, **ignore_kwargs):
         if self.condition():
+            logger.info(f'Breakif Condition not met: {self.condition}')
             raise _QcodesBreak
 
     def snapshot(self, update=False):
@@ -249,6 +263,24 @@ class BreakIf:
 
         """
         return {'type': 'BreakIf', 'condition': repr(self.condition)}
+
+
+class SkipIf(BreakIf):
+    """Perform continue, i.e. proceed to next loop, if condition is met.
+
+    Behaviour is similar to BreakIf
+    """
+    pass
+
+
+class ContinueIf(SkipIf):
+    """Perform continue, i.e. proceed to next loop, if condition is met.
+
+    Behaviour is similar to BreakIf
+    """
+    def __call__(self, **ignore_kwargs):
+        logger.warning('Should use SkipIf instead')
+        super().__call__(**ignore_kwargs)
 
 
 class _QcodesBreak(Exception):
