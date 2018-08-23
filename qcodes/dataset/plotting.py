@@ -363,6 +363,9 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
         scale_factor = 10**(-selected_scale)
         ticks_formatter = FuncFormatter(
             partial(_scale_formatter, factor=scale_factor))
+    else:
+        ticks_formatter = FuncFormatter(
+            partial(_scale_formatter, factor=1))
 
     return ticks_formatter, new_label
 
