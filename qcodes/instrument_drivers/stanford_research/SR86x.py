@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import Sequence, Dict, Callable
+from typing import Sequence, Dict, Callable, Tuple
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -598,6 +598,26 @@ class SR86x(VisaInstrument):
     }
     _N_TO_INPUT_SIGNAL = {v: k for k, v in _INPUT_SIGNAL_TO_N.items()}
 
+    _PARAMETER_NAMES = {
+                'X': '0',   # X output, 'X'
+                'Y': '1',   # Y output, 'Y'
+                'R': '2',   # R output, 'R'
+                'P': '3',   # theta output, 'THeta'
+          'aux_in1': '4',   # Aux In 1, 'IN1'
+          'aux_in2': '5',   # Aux In 2, 'IN2'
+          'aux_in3': '6',   # Aux In 3, 'IN3'
+          'aux_in4': '7',   # Aux In 4, 'IN4'
+           'Xnoise': '8',   # X noise, 'XNOise'
+           'Ynoise': '9',   # Y noise, 'YNOise'
+         'aux_out1': '10',  # Aux Out 1, 'OUT1'
+         'aux_out2': '11',  # Aux Out 2, 'OUT2'
+            'phase': '12',  # Reference Phase, 'PHAse'
+        'amplitude': '13',  # Sine Out Amplitude, 'SAMp'
+       'sine_outdc': '14',  # DC Level, 'LEVel'
+        'frequency': '15',  # Int. Ref. Frequency, 'FInt'
+    'frequency_ext': '16',  # Ext. Ref. Frequency, 'FExt'
+    }
+
     def __init__(self, name, address, max_frequency, reset=False, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._max_frequency = max_frequency
@@ -918,3 +938,35 @@ class SR86x(VisaInstrument):
             return self._VOLT_TO_N[s]
         else:
             return self._CURR_TO_N[s]
+
+    def get_values(self, *parameter_names: str) -> Tuple[float]:
+        """
+        Get values of 2 or 3 parameters that are measured by the lock-in
+        amplifier. These values are guaranteed to come from the same
+        measurement cycle as opposed to getting values of parameters one by
+        one (for example, by calling `sr.X()`, and then `sr.Y()`.
+
+        Args:
+            *parameter_names
+                2 or 3 names of parameters for which the values are
+                requested; valid names can be found in `_PARAMETER_NAMES`
+                attribute of the driver class
+
+        Returns:
+            a tuple of 2 or 3 floating point values
+
+        """
+        if not 2 <= len(parameter_names) <= 3:
+            raise KeyError(
+                'It is possible to request values of only 2 or 3 parameters '
+                'at a time.')
+
+        for name in parameter_names:
+            if name not in self._PARAMETER_NAMES:
+                raise KeyError(f'{name} is not a valid parameter name. Refer '
+                               f'to `_PARAMETER_NAMES` for a list of valid '
+                               f'parameter names')
+
+        p_ids = [self._PARAMETER_NAMES[name] for name in parameter_names]
+        output = self.ask(f'SNAP? {",".join(p_ids)}')
+        return tuple(float(val) for val in output.split(','))
