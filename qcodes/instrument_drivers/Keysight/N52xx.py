@@ -181,11 +181,6 @@ class PNATrace(InstrumentChannel):
 
     def run_sweep(self) -> str:
         """
-        Args:
-            timeout (float): The measurement needs to complete within this time or a time out is generated.
-            This can be useful if we have accidentally set the wrong trigger source (e.g. manual) and no triggers are
-            coming. If an infinite time out is desired, set this value to None. The default value is 10 seconds.
-
         Returns:
             prev_mod (str): This method modifies the sweep mode to either group or single. The original mode is returned
             so that, if desired, this can be reset after this method has been called.
