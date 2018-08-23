@@ -612,20 +612,6 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    if evaluate:
-                        set_function(parsed_scaled_mapped_value, **kwargs)
-
-                    # # Send a signal if anything is connected, unless
-                    if self.signal is not None:
-                        for receiver in self.signal.receivers.values():
-                            potential_emitter = getattr(receiver(), '__self__', None)
-                            if isinstance(potential_emitter, SignalEmitter):
-                                if not signal_chain:
-                                    potential_emitter._signal_chain = [self]
-                                else:
-                                    potential_emitter._signal_chain = signal_chain + [self]
-                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
-
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value
 
