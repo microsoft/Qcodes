@@ -111,7 +111,6 @@ def plot_by_id(run_id: int,
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
-            ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
             _set_data_axes_labels(ax, data)
 
             if rescale_axes:
@@ -144,7 +143,6 @@ def plot_by_id(run_id: int,
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
 
-            ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
 
             _set_data_axes_labels(ax, data, colorbar)
             if rescale_axes:
@@ -344,9 +342,8 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
     unit = data_dict['unit']
 
+    maxval = np.nanmax(np.abs(data_dict['data']))
     if unit in _UNITS_FOR_RESCALING:
-        maxval = np.nanmax(np.abs(data_dict['data']))
-
         for threshold, scale in _THRESHOLDS.items():
             if maxval < threshold:
                 selected_scale = scale
@@ -357,14 +354,17 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             largest_scale = max(list(_ENGINEERING_PREFIXES.keys()))
             selected_scale = largest_scale
             prefix = _ENGINEERING_PREFIXES[largest_scale]
+    else:
+         selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+         prefix = f'$10^{{{selected_scale}}}$ '
 
-        new_unit = prefix + unit
-        label = _get_label_of_data(data_dict)
-        new_label = _make_axis_label(label, new_unit)
+    new_unit = prefix + unit
+    label = _get_label_of_data(data_dict)
+    new_label = _make_axis_label(label, new_unit)
 
-        scale_factor = 10**(-selected_scale)
-        ticks_formatter = FuncFormatter(
-            partial(_scale_formatter, factor=scale_factor))
+    scale_factor = 10**(-selected_scale)
+    ticks_formatter = FuncFormatter(
+        partial(_scale_formatter, factor=scale_factor))
 
     return ticks_formatter, new_label
 
