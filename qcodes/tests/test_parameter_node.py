@@ -60,6 +60,15 @@ class TestParameterNode(TestCase):
         parameter_node.nested.param = 42
         self.assertEqual(parameter_node.nested.param, 42)
 
+    def test_nested_parameter_node_snapshot_with_parent(self):
+        parameter_node = ParameterNode(use_as_attributes=True)
+        nested_parameter_node = ParameterNode(use_as_attributes=True)
+        parameter_node.nested = nested_parameter_node
+
+        nested_parameter_node.parent = parameter_node
+        nested_parameter_node.snapshot()
+
+
     def test_parameter_node_nested_explicit_name(self):
         parameter_node = ParameterNode(use_as_attributes=True)
         nested_explicit_parameter_node = ParameterNode(name='explicit_name',
