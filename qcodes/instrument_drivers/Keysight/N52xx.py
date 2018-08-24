@@ -216,6 +216,7 @@ class PNATrace(InstrumentChannel):
 
             logger.warning(msg)
 
+        # some comment
         return prev_mode
 
     def write(self, cmd: str) -> None:
