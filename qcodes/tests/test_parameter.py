@@ -80,7 +80,7 @@ class TestParameter(TestCase):
         name = 'repetitions'
         p = GettableParam(name, vals=vals.Numbers())
         self.assertEqual(p.name, name)
-        self.assertEqual(p.label, name)
+        self.assertEqual(p.label, name.capitalize())
         self.assertEqual(p.unit, '')
         self.assertEqual(str(p), name)
 
@@ -98,7 +98,7 @@ class TestParameter(TestCase):
         self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
-            'label': name,
+            'label': name.capitalize(),
             'unit': '',
             'value': 42,
             'vals': repr(vals.Numbers())
@@ -435,8 +435,7 @@ class TestArrayParameter(TestCase):
         self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
-            'label': name,
-            'unit': ''
+            'label': name
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)

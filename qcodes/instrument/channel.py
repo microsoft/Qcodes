@@ -1,5 +1,5 @@
 """ Base class for the channel of an instrument """
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Sequence
 
 from .base import Instrument
 from .parameter_node import ParameterNode
@@ -32,12 +32,10 @@ class InstrumentChannel(ParameterNode):
     def __init__(self, parent: Instrument, name: str, **kwargs):
         # Initialize base classes of Instrument. We will overwrite what we
         # want to do in the Instrument initializer
-        super().__init__(name=name, **kwargs)
+        super().__init__(name=name, parent=parent, **kwargs)
 
         self.short_name = self.name = str(name)
         self._meta_attrs = ['name']
-
-        self._parent = parent
 
     def __repr__(self):
         """Custom repr to give parent information"""
@@ -45,6 +43,11 @@ class InstrumentChannel(ParameterNode):
                                            self.name,
                                            type(self._parent).__name__,
                                            self._parent.name)
+
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str]=['_parent']):
+        super().snapshot_base(update=update,
+                              params_to_skip_update=params_to_skip_update)
 
     # Pass any commands to read or write from the instrument up to the parent
     def write(self, cmd):
@@ -59,6 +62,14 @@ class InstrumentChannel(ParameterNode):
     def ask_raw(self, cmd):
         return self._parent.ask_raw(cmd)
 
+    # Deprecated _parent
+    @property
+    def _parent(self):
+        return self.parent
+
+    @_parent.setter
+    def _parent(self, parent):
+        self.parent = parent
 
 class MultiChannelInstrumentParameter(MultiParameter):
     """
@@ -100,14 +111,6 @@ class MultiChannelInstrumentParameter(MultiParameter):
         for chan in self._channels:
             getattr(chan, self._param_name).set(value)
 
-    @property
-    def full_names(self):
-        """Overwrite full_names because the instrument name is already included
-        in the name. This happens because the instrument name is included in
-        the channel name merged into the parameter name above.
-        """
-
-        return self.names
 
 class ChannelList(Metadatable):
     """
