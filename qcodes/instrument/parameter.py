@@ -442,7 +442,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     else:
                         try:
                             value = self.inverse_val_mapping[int(value)]
-                        except (ValueError, KeyError):
+                        except (ValueError, KeyError, TypeError):
                             raise KeyError("'{}' not in val_mapping".format(value))
                 self._save_val(value)
                 return value
