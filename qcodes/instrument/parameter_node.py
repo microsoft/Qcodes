@@ -48,11 +48,12 @@ class ParameterNodeMetaClass(type):
 def __deepcopy__(self, memodict={}):
     """Deepcopy method for ParameterNode.
 
-    It is
+    The ParameterNode needs a custom __deepcopy__ since decorated parameters
+    would need to be redecorated, and the optional `parent` ParameterNode should
+    not be copied.
+
+    This method is attached to the ParameterNode during instantiation
     """
-    # We remove parameters because it may cause circular referencing, i.e. the
-    # parameter references the ParameterNode via its decorated method, while
-    # the ParameterNode references the parameter via its `parameters` attribute
     restore_attrs = {'__deepcopy__': self.__deepcopy__,
                      'parent': self.parent}
     try:
