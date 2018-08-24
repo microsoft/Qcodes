@@ -65,6 +65,7 @@ def __deepcopy__(self, memodict={}):
         # Move deepcopy method to the instance scope, since it will temporarily
         # delete its own method during copying (see ParameterNode.__deepcopy__)
         self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+        self_copy.parent = None  # No parent by default
 
         for parameter_name, parameter in self_copy.parameters.items():
             if parameter_name in self._parameter_decorators:
@@ -190,6 +191,10 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         if attr == 'parent':
             super().__setattr__(attr, val)
         elif isinstance(val, _BaseParameter):
+            # Delete attr if it already exists so we can delegate param attribute
+            if attr in self.__dict__:
+                delattr(self, attr)
+
             self.parameters[attr] = val
             if val.parent is None:  # Attach self as parent if not already set
                 val.parent = self
@@ -209,6 +214,15 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     val.label = label[0].capitalize() + label[1:]
             val.log_changes = self.log_changes
         elif isinstance(val, ParameterNode):
+            # Check if attribute is an @property
+            if isinstance(getattr(type(self), attr, None), property):
+                super().__setattr__(attr, val)
+                return
+
+            # Delete attr if it already exists so we can delegate node attribute
+            if attr in self.__dict__:
+                delattr(self, attr)
+
             self.parameter_nodes[attr] = val
             if val.parent is None:  # Attach self as parent if not already set
                 val.parent = self
@@ -229,6 +243,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         self_copy = _reconstruct(self, None, *rv)
 
         self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+        self_copy.parent = None  # By default no parent for copied nodes
 
         self_copy.parameters = {}
         for parameter_name, parameter in self.parameters.items():
@@ -410,7 +425,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     snap['parameters'][name] = param.snapshot(
                         update=update, simplify=self.simplify_snapshot)
                 except:
-                    logging.warning("Snapshot: Could not update parameter:", name)
+                    logger.debug(f"Snapshot: Could not update parameter: {name}")
                     snap['parameters'][name] = param.snapshot(
                         update=False, simplify=self.simplify_snapshot)
             for attr in set(self._meta_attrs):
@@ -431,8 +446,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             False if the number of parameters doesn't match
             True if all parameter values match
         """
-        # if self is other:
-        #     return True
+        if self is other:
+            return True
 
         if other.__class__ != self.__class__:
             return False
@@ -615,6 +630,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         if parent is None:
             parent = self
 
-        param = parameter_class(name=name, **kwargs)
-        param.parent = parent
+        param = parameter_class(name=name, parent=parent, **kwargs)
         self.parameters[name] = param
+
+    def get(self, parameter):
+        return self.parameters[parameter].get()
