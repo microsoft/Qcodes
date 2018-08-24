@@ -26,17 +26,18 @@ class N52xxTrace(InstrumentChannel):
         "imaginary": "IMAG"
     }
 
-    def __init__(self, parent: 'N52xxBase', channel: int, trace: int) -> None:
+    def __init__(self, parent: 'N52xxBase', channel: int, trace_name: str,
+                 trace_type: str) -> None:
 
-        super().__init__(parent, name=f"channel{channel},trace{trace}")
+        super().__init__(parent, trace_name)
 
         self._channel = channel
-        self._trace = trace
+        self._define_trace(trace_name, trace_type)
 
         self.add_parameter(
             'format',
-            get_cmd='CALC:FORM?',
-            set_cmd='CALC:FORM {}',
+            get_cmd=f'CALC{self._channel}:FORM?',
+            set_cmd=f'CALC{self._channel}:FORM {{}}',
             vals=Enum(*list(self.data_formats.values()))
         )
 
@@ -47,7 +48,28 @@ class N52xxTrace(InstrumentChannel):
             )
 
     def select(self) -> None:
-        self.write(f"CALC:PAR:MNUM {self._trace}")
+        self.write(f"CALC{self._channel}:PAR:SEL {self._name}")
+
+    def delete(self) -> None:
+        self.write(f'CALC{self._channel}:PAR:DEL {self._name}')
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def write(self, cmd: str) -> None:
+        """
+        #Select correct trace before querying
+        """
+        self.select()
+        super().write(cmd)
+
+    def ask(self, cmd: str) -> str:
+        """
+        Select correct trace before querying
+        """
+        self.select()
+        return super().ask(cmd)
 
     def _get_raw_data(self, format_str: str) -> np.ndarray:
         """
@@ -64,13 +86,19 @@ class N52xxTrace(InstrumentChannel):
         """
         visa_handle = self.parent.visa_handle
 
-        self.select()
         self._instrument.write(f'CALC{self._channel}:FORM {format_str}')
         data = np.array(visa_handle.query_binary_values(
-            f'CALC{self._channel}:DATA? FDATA',datatype='f', is_big_endian=True
+            f'CALC{self._channel}:DATA? FDATA', datatype='f', is_big_endian=True
         ))
 
         return data
+
+    def _define_trace(self, name, tr_type) -> None:
+        if re.search("S(.)(.)$", tr_type) is None:
+            raise ValueError("The trace type needs to be in the form Sxy where "
+                             "'x' and 'y' are integers")
+
+        self.write(f'CALC{self._channel}:PAR:EXT {name}, {tr_type}')
 
 
 class N52xxBase(VisaInstrument):
@@ -206,3 +234,11 @@ class N52xxBase(VisaInstrument):
         self.add_submodule("traces", self._traces)
 
         self.connect_message()
+
+    def add_trace(self, name: str, tr_type: str, channel=1) -> 'N52xxTrace':
+        trace = N52xxTrace(self, channel, name, tr_type)
+        self._traces.append(trace)
+        return trace
+
+    def delete_all_traces(self):
+        self.write("CALC:PAR:DEL:ALL")
