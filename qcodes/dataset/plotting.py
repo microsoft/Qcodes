@@ -356,7 +356,7 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             prefix = _ENGINEERING_PREFIXES[largest_scale]
     else:
          selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
-         prefix = f'$10^{{{selected_scale}}}$ '
+         prefix = f'$10^{{{selected_scale:.0f}}}$ '
 
     new_unit = prefix + unit
     label = _get_label_of_data(data_dict)
