@@ -98,7 +98,7 @@ class TestParameter(TestCase):
         self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
-            'label': name,
+            'label': name.capitalize(),
             'unit': '',
             'value': 42,
             'vals': repr(vals.Numbers())

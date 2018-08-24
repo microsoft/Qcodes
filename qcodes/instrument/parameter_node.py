@@ -53,7 +53,8 @@ def __deepcopy__(self, memodict={}):
     # We remove parameters because it may cause circular referencing, i.e. the
     # parameter references the ParameterNode via its decorated method, while
     # the ParameterNode references the parameter via its `parameters` attribute
-    restore_attrs = {'__deepcopy__': self.__deepcopy__}
+    restore_attrs = {'__deepcopy__': self.__deepcopy__,
+                     'parent': self.parent}
     try:
         for attr in restore_attrs:
             delattr(self, attr)
@@ -147,14 +148,19 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
         self._meta_attrs = ['name']
 
-    def __repr__(self):
-        repr_str = 'ParameterNode '
+    def __str__(self):
+        s = ''
         if hasattr(self, 'name'):
+            if self.parent:
+                s += f'{self.parent}_'
             if isinstance(self.name, _BaseParameter):
-                repr_str += f'{self.name()} '
+                s += f'{self.name()}'
             else:
-                repr_str += f'{self.name} '
-        repr_str += 'containing '
+                s += f'{self.name}'
+        return s
+
+    def __repr__(self):
+        repr_str = 'ParameterNode {self} containing '
         if self.parameter_nodes:
             repr_str += f'{len(self.parameter_nodes)} nodes, '
         repr_str += f'{len(self.parameters)} parameters'
@@ -603,5 +609,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         if parent is None:
             parent = self
 
-        param = parameter_class(name=name, parent=parent, **kwargs)
+        param = parameter_class(name=name, **kwargs)
+        param.parent = parent
         self.parameters[name] = param
