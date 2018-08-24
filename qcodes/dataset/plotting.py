@@ -111,6 +111,7 @@ def plot_by_id(run_id: int,
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
+            ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
             _set_data_axes_labels(ax, data)
 
             if rescale_axes:
@@ -143,8 +144,9 @@ def plot_by_id(run_id: int,
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
 
-            _set_data_axes_labels(ax, data, colorbar)
+            ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
 
+            _set_data_axes_labels(ax, data, colorbar)
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
 
@@ -363,9 +365,6 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
         scale_factor = 10**(-selected_scale)
         ticks_formatter = FuncFormatter(
             partial(_scale_formatter, factor=scale_factor))
-    else:
-        ticks_formatter = FuncFormatter(
-            partial(_scale_formatter, factor=1))
 
     return ticks_formatter, new_label
 
