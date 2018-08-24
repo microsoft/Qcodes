@@ -257,6 +257,38 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node2.p, 125)
         self.assertEqual(node3.p, 126)
 
+    def test_copy_copied_parameter_node(self):
+        node = ParameterNode(use_as_attributes=True)
+        node.p = Parameter(set_cmd=None)
+        node.p = 123
+        self.assertEqual(node['p'].parent, node)
+
+        node2 = copy(node)
+        node3 = copy(node2)
+        self.assertEqual(node2['p'].parent, None)
+        self.assertEqual(node3['p'].parent, None)
+
+        self.assertIsNot(node['p'], node2['p'])
+        self.assertIsNot(node2['p'], node3['p'])
+        self.assertEqual(node.p, 123)
+        self.assertEqual(node2.p, 123)
+        self.assertEqual(node3.p, 123)
+
+        node.p = 124
+        self.assertEqual(node.p, 124)
+        self.assertEqual(node2.p, 123)
+        self.assertEqual(node3.p, 123)
+
+        node2.p = 125
+        self.assertEqual(node.p, 124)
+        self.assertEqual(node2.p, 125)
+        self.assertEqual(node3.p, 123)
+
+        node3.p = 126
+        self.assertEqual(node.p, 124)
+        self.assertEqual(node2.p, 125)
+        self.assertEqual(node3.p, 126)
+
     def test_copy_parameter_node_add_parameter(self):
         node = ParameterNode(use_as_attributes=True)
         node.add_parameter('p', set_cmd=None)

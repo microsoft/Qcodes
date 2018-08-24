@@ -61,6 +61,10 @@ def __deepcopy__(self, memodict={}):
 
         self_copy = deepcopy(self)
 
+        # Move deepcopy method to the instance scope, since it will temporarily
+        # delete its own method during copying (see ParameterNode.__deepcopy__)
+        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+
         for parameter_name, parameter in self_copy.parameters.items():
             if parameter_name in self._parameter_decorators:
                 parameter_decorators = self._parameter_decorators[parameter_name]
@@ -123,7 +127,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         # Move deepcopy method to the instance scope, since it will temporarily
         # delete its own method during copying (see ParameterNode.__deepcopy__)
         self.__deepcopy__ = partial(__deepcopy__, self)
-        self.__copy__ = self.__deepcopy__
 
         self.use_as_attributes = use_as_attributes
         self.log_changes = log_changes
@@ -223,6 +226,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         """
         rv = self.__reduce_ex__(4)
         self_copy = _reconstruct(self, None, *rv)
+
+        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
 
         self_copy.parameters = {}
         for parameter_name, parameter in self.parameters.items():
