@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence, Any, Dict, Callable, List
+from typing import Sequence, Any, Dict, Callable, List, Union
 import numpy as np
 from functools import partial, wraps
 from copy import copy, deepcopy, _reconstruct
@@ -117,6 +117,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                  use_as_attributes: bool = False,
                  log_changes: bool = True,
                  simplify_snapshot: bool = False,
+                 parent: Union['ParameterNode', bool] = None,
                  **kwargs):
         # Move deepcopy method to the instance scope, since it will temporarily
         # delete its own method during copying (see ParameterNode.__deepcopy__)
@@ -129,6 +130,13 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
         if name is not None:
             self.name = name
+
+        # Parent ParameterNode. Can also be None or False.
+        # If set to None, it will be set the next time this node is attached as
+        # an attribute of another Node.
+        # If False, setting this Node to an attribute of another Node will not
+        # set this attribute
+        self.parent = parent
 
         self.parameters = DotDict()
         self.parameter_nodes = DotDict()
@@ -169,7 +177,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             return super().__getattr__(attr)
 
     def __setattr__(self, attr, val):
-        if isinstance(val, _BaseParameter):
+        if attr == 'parent':
+            super().__setattr__(attr, val)
+        elif isinstance(val, _BaseParameter):
             self.parameters[attr] = val
             if val.parent is None:  # Attach self as parent if not already set
                 val.parent = self
@@ -190,6 +200,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             val.log_changes = self.log_changes
         elif isinstance(val, ParameterNode):
             self.parameter_nodes[attr] = val
+            if val.parent is None:  # Attach self as parent if not already set
+                val.parent = self
             if not hasattr(val, 'name'):
                 # Update nested ParameterNode name
                 val.name = attr
@@ -407,7 +419,10 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             False if the number of parameters doesn't match
             True if all parameter values match
         """
-        if not other.__class__ == self.__class__:
+        # if self is other:
+        #     return True
+
+        if other.__class__ != self.__class__:
             return False
         elif len(self.parameters) != len(other.parameters):
             return False
@@ -418,15 +433,14 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             if parameter_name in exclude_parameters:
                 continue
             elif not parameter_name in other.parameters \
-                    or parameter() != other.parameters[parameter_name]():
+                    or parameter.get_latest() != other.parameters[parameter_name].get_latest():
                 return False
 
         for parameter_node_name, parameter_node in self.parameter_nodes.items():
             if parameter_node_name in exclude_parameter_nodes:
                 continue
             elif not parameter_node_name in other.parameter_nodes \
-                    or not parameter_node.matches_parameter_node(
-                other.parameter_nodes[parameter_node_name]):
+                    or not parameter_node == other.parameter_nodes[parameter_node_name]:
                 return False
         return True
 
