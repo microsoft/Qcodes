@@ -1050,7 +1050,6 @@ class TestCopyParameter(TestCase):
         self.assertEqual(p_copy(), [2])
 
 
-
 class TestParameterSignal(TestCase):
     def save_args_kwargs(self, *args, **kwargs):
         self.args_kwargs_dict['args'] = args

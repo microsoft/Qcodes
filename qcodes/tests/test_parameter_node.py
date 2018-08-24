@@ -555,6 +555,26 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node.p, (2, 43))
         self.assertEqual(parameter_copy(), (2, 44))
 
+    def test_copy_nested_node(self):
+        node = ParameterNode('node')
+        nested_node = ParameterNode('nested_node')
+
+        node.nested_node = nested_node
+        self.assertEqual(node.nested_node.parent, node)
+
+        copied_nested_node = copy(nested_node)
+        self.assertEqual(copied_nested_node.parent, None)
+
+    def test_deepcopy_nested_node(self):
+        node = ParameterNode('node')
+        nested_node = ParameterNode('nested_node')
+
+        node.nested_node = nested_node
+        self.assertEqual(node.nested_node.parent, node)
+
+        copied_nested_node = deepcopy(nested_node)
+        self.assertEqual(copied_nested_node.parent, None)
+
 
 class ParameterAndNode(Parameter, ParameterNode):
     def __init__(self, **kwargs):
@@ -589,7 +609,7 @@ class TestCombinedParameterAndParameterNode(TestCase):
         self.assertSetEqual(overlapping_attrs,
                             {'__init__', '_meta_attrs', '__doc__', '__module__',
                              'metadata', '__deepcopy__', 'name', '__getitem__',
-                             'log_changes', 'sweep', 'parent'})
+                             'log_changes', 'sweep', 'parent', 'get'})
 
     def test_create_multiple_inheritance_initialization(self):
         class ParameterAndNode(Parameter, ParameterNode):
