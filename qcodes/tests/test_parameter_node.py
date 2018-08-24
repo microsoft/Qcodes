@@ -54,11 +54,23 @@ class TestParameterNode(TestCase):
         nested_parameter_node = ParameterNode(use_as_attributes=True)
         parameter_node.nested = nested_parameter_node
         self.assertEqual(parameter_node.nested.name, 'nested')
+        self.assertEqual(parameter_node.nested.parent, parameter_node)
+        self.assertNotIn('parent', parameter_node.parameter_nodes)
 
         # Add parameter
         parameter_node.nested.param = Parameter(set_cmd=None)
         parameter_node.nested.param = 42
         self.assertEqual(parameter_node.nested.param, 42)
+
+    def test_nested_parameter_node_no_parent(self):
+        parameter_node = ParameterNode(use_as_attributes=True)
+        nested_parameter_node = ParameterNode(use_as_attributes=True)
+        nested_parameter_node.parent = False # Should not have parent
+        parameter_node.nested = nested_parameter_node
+
+        self.assertEqual(parameter_node.nested.name, 'nested')
+        self.assertEqual(parameter_node.nested.parent, False)
+        self.assertNotIn('parent', parameter_node.parameter_nodes)
 
     def test_nested_parameter_node_snapshot_with_parent(self):
         parameter_node = ParameterNode(use_as_attributes=True)
@@ -67,7 +79,6 @@ class TestParameterNode(TestCase):
 
         nested_parameter_node.parent = parameter_node
         nested_parameter_node.snapshot()
-
 
     def test_parameter_node_nested_explicit_name(self):
         parameter_node = ParameterNode(use_as_attributes=True)
@@ -176,6 +187,14 @@ class TestParameterNode(TestCase):
         self.assertEqual(str(p), 'param1')
         node.name = 'node1'
         self.assertEqual(str(p), 'node1_param1')
+
+    def test_parameter_no_parent(self):
+        p = Parameter(set_cmd=None)
+        p.parent = False
+
+        node = ParameterNode()
+        node.p = p
+        self.assertIs(p.parent, False)
 
 
 class TestCopyParameterNode(TestCase):
@@ -538,7 +557,7 @@ class TestCombinedParameterAndParameterNode(TestCase):
         self.assertSetEqual(overlapping_attrs,
                             {'__init__', '_meta_attrs', '__doc__', '__module__',
                              'metadata', '__deepcopy__', 'name', '__getitem__',
-                             'log_changes', 'sweep'})
+                             'log_changes', 'sweep', 'parent'})
 
     def test_create_multiple_inheritance_initialization(self):
         class ParameterAndNode(Parameter, ParameterNode):
