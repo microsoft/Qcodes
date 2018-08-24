@@ -27,6 +27,7 @@ install:
 
 # Test scripts
 test_script:
+  - python qcodes\tests\setup_config.py
   - cd qcodes
   - cd tests
   - pytest
