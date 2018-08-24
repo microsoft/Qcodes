@@ -43,7 +43,7 @@ class N52xxTrace(InstrumentChannel):
         for format_name, format_string in self.data_formats.items():
             setattr(
                 self, format_name, partial(self._get_raw_data,
-                                           format_string=format_string)
+                                           format_str=format_string)
             )
 
     def select(self) -> None:
@@ -81,7 +81,7 @@ class N52xxTrace(InstrumentChannel):
         """
         visa_handle = self.parent.visa_handle
 
-        self._instrument.write(f'CALC{self._channel}:FORM {format_str}')
+        self.write(f'CALC{self._channel}:FORM {format_str}')
         data = np.array(visa_handle.query_binary_values(
             f'CALC{self._channel}:DATA? FDATA', datatype='f', is_big_endian=True
         ))
