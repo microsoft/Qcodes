@@ -354,7 +354,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
-        if hasattr(self.parent, 'name'):
+        if getattr(self.parent, 'name', ''):
             return f'{self.parent.name}_{self.name}'
         else:
             return self.name
@@ -1467,7 +1467,7 @@ class MultiParameter(_BaseParameter):
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
-        if hasattr(self.parent, 'name'):
+        if getattr(self.parent, 'name', ''):
             return [f'{self.parent.name}_{name}' for name in self.names]
         else:
             return self.names
