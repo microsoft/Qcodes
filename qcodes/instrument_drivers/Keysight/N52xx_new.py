@@ -30,7 +30,6 @@ class N52xxTrace(InstrumentChannel):
                  trace_type: str) -> None:
 
         super().__init__(parent, trace_name)
-
         self._channel = channel
         self._define_trace(trace_name, trace_type)
 
@@ -48,14 +47,10 @@ class N52xxTrace(InstrumentChannel):
             )
 
     def select(self) -> None:
-        self.write(f"CALC{self._channel}:PAR:SEL {self._name}")
+        self.write(f"CALC{self._channel}:PAR:SEL {self.name}")
 
     def delete(self) -> None:
-        self.write(f'CALC{self._channel}:PAR:DEL {self._name}')
-
-    @property
-    def name(self) -> str:
-        return self._name
+        self.write(f'CALC{self._channel}:PAR:DEL {self.name}')
 
     def write(self, cmd: str) -> None:
         """
@@ -95,10 +90,12 @@ class N52xxTrace(InstrumentChannel):
 
     def _define_trace(self, name, tr_type) -> None:
         if re.search("S(.)(.)$", tr_type) is None:
-            raise ValueError("The trace type needs to be in the form Sxy where "
-                             "'x' and 'y' are integers")
+            raise ValueError(
+                "The trace type needs to be in the form Sxy where "
+                "'x' and 'y' are integers")
 
-        self.write(f'CALC{self._channel}:PAR:EXT {name}, {tr_type}')
+        # PS. Do not do self.write as self.select will not work yet
+        self.parent.write(f'CALC{self._channel}:PAR:EXT {name}, {tr_type}')
 
 
 class N52xxBase(VisaInstrument):
