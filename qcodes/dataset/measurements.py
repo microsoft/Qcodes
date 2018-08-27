@@ -25,6 +25,7 @@ res_type = Tuple[Union[_BaseParameter, str],
 setpoints_type = Sequence[Union[str, _BaseParameter]]
 numeric_types = Union[float, int]
 
+
 class ParameterTypeError(Exception):
     pass
 
@@ -52,15 +53,18 @@ class DataSaver:
                  parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
         if DataSaver.default_callback is not None and 'run_tables_subscription_callback' in DataSaver.default_callback:
-            callback = DataSaver.default_callback['run_tables_subscription_callback']
-            min_wait = DataSaver.default_callback['run_tables_subscription_min_wait']
-            min_count = DataSaver.default_callback['run_tables_subscription_min_count']
+            callback = DataSaver.default_callback[
+                'run_tables_subscription_callback']
+            min_wait = DataSaver.default_callback[
+                'run_tables_subscription_min_wait']
+            min_count = DataSaver.default_callback[
+                'run_tables_subscription_min_count']
             snapshot = dataset.get_metadata('snapshot')
             self._dataset.subscribe(callback, min_wait=min_wait,
                                     min_count=min_count,
                                     state={},
                                     callback_kwargs={'run_id':
-                                                     self._dataset.run_id,
+                                                         self._dataset.run_id,
                                                      'snapshot': snapshot})
 
         self.write_period = float(write_period)
@@ -72,10 +76,11 @@ class DataSaver:
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
                 self._known_dependencies.update({str(param):
-                                                parspec.depends_on.split(', ')})
+                    parspec.depends_on.split(
+                        ', ')})
 
     def add_result(self,
-                   *res_tuple: res_type)-> None:
+                   *res_tuple: res_type) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -128,9 +133,9 @@ class DataSaver:
                 # unpack parameters and potential setpoints from MultiParameter
                 # unlike regular Parameters and ArrayParameters we Dont want to
                 # add the parameter it self
-                self._unbundle_multiparameter_parameter(partial_result,
-                                                        res,
-                                                        found_parameters)
+                self._unbundle_multiparameter(partial_result,
+                                              res,
+                                              found_parameters)
             else:
                 res.append(partial_result)
                 paramstr = str(parameter)
@@ -138,9 +143,9 @@ class DataSaver:
                 # unpack setpoints from array parameters and add them
                 # to the res list
                 if isinstance(parameter, ArrayParameter):
-                    self._unbundle_array_parameter(parameter,
-                                                   res,
-                                                   found_parameters)
+                    self._unbundle_arrayparameter(parameter,
+                                                  res,
+                                                  found_parameters)
 
         for partial_result in res:
             parameter = partial_result[0]
@@ -201,6 +206,14 @@ class DataSaver:
 
     def _append_results(self, res: Sequence[res_type],
                         input_size: int) -> None:
+        """
+        A private method to add the date to actual queue of data to be written.
+
+        Args:
+            res: A sequence of the data to be added
+            input_size: The length of the data to be added. 1 if its
+             to be inserted as arrays.
+        """
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
@@ -230,10 +243,19 @@ class DataSaver:
             if len(res_dict) > 0:
                 self._results.append(res_dict)
 
-    def _unbundle_array_parameter(self,
-                                  parameter: ArrayParameter,
-                                  res: List[res_type],
-                                  found_parameters: List[str]) -> None:
+    def _unbundle_arrayparameter(self,
+                                 parameter: ArrayParameter,
+                                 res: List[res_type],
+                                 found_parameters: List[str]) -> None:
+        """
+        Extract the setpoints from an Array parameter and add them to results
+         as a regular parameter tuple.
+
+        Args:
+            parameter: The ArrayParameter to extract from
+            res: The result list to add to
+            found_parameters: The list of all parameters that we know of by now
+        """
         # TODO (WilliamHPNielsen): The following code block is ugly and
         # brittle and should be enough to convince us to abandon the
         # design of ArrayParameters (possibly) containing (some of) their
@@ -266,15 +288,23 @@ class DataSaver:
             found_parameters.append(spname)
             setpoint_axes.append(sps)
 
-
         output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
         for grid, meta in zip(output_grids, setpoint_meta):
             res.append((meta, grid))
 
-    def _unbundle_multiparameter_parameter(self,
-                                           partial_result: res_type,
-                                           res: List[res_type],
-                                           found_parameters: List[str]) -> None:
+    def _unbundle_multiparameter(self,
+                                 partial_result: res_type,
+                                 res: List[res_type],
+                                 found_parameters: List[str]) -> None:
+        """
+        Extract the subarrays and setpoints from an MultiParameter and
+         add them to res as a regular parameter tuple.
+
+        Args:
+            partial_result: The Parameter,data tuple to extract from
+            res: The result list to add to
+            found_parameters: The list of all parameters that we know of by now
+        """
         parameter = partial_result[0]
         if not isinstance(parameter, MultiParameter):
             raise RuntimeError("Invalid parameter supplied")
@@ -284,6 +314,7 @@ class DataSaver:
             res.append((parameter.names[i], data[i]))
             if shape != ():
                 # array parameter like part of the multiparameter
+                # TODO consider merging this with the code above
                 setpoint_axes = []
                 setpoint_meta = []
                 paramstr = parameter.names[i]
@@ -323,7 +354,6 @@ class DataSaver:
                 for grid, meta in zip(output_grids, setpoint_meta):
                     res.append((meta, grid))
 
-
     def flush_data_to_database(self) -> None:
         """
         Write the in-memory results to the database.
@@ -362,15 +392,16 @@ class Runner:
     to the database. Additionally, it may perform experiment bootstrapping
     and clean-up after the measurement.
     """
+
     def __init__(
             self, enteractions: List, exitactions: List,
-            experiment: Experiment=None, station: Station=None,
-            write_period: numeric_types=None,
-            parameters: Dict[str, ParamSpec]=None,
-            name: str='',
+            experiment: Experiment = None, station: Station = None,
+            write_period: numeric_types = None,
+            parameters: Dict[str, ParamSpec] = None,
+            name: str = '',
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]]=None) -> None:
+                                              MutableMapping]]] = None) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -459,8 +490,9 @@ class Measurement:
         name (str): The name of this measurement/run. Is used by the dataset
             to give a name to the results_table.
     """
-    def __init__(self, exp: Optional[Experiment]=None,
-                 station: Optional[qc.Station]=None) -> None:
+
+    def __init__(self, exp: Optional[Experiment] = None,
+                 station: Optional[qc.Station] = None) -> None:
         """
         Init
 
@@ -495,8 +527,8 @@ class Measurement:
         self._write_period = wp
 
     def _registration_validation(
-            self, name: str, setpoints: Sequence[str]=None,
-            basis: Sequence[str]=None) -> Tuple[List[str], List[str]]:
+            self, name: str, setpoints: Sequence[str] = None,
+            basis: Sequence[str] = None) -> Tuple[List[str], List[str]]:
         """
         Helper function to do all the validation in terms of dependencies
         when adding parameters, e.g. that no setpoints have setpoints etc.
@@ -544,9 +576,9 @@ class Measurement:
 
     def register_parameter(
             self, parameter: _BaseParameter,
-            setpoints: setpoints_type=None,
-            basis: setpoints_type=None,
-            paramtype: str='numeric') -> None:
+            setpoints: setpoints_type = None,
+            basis: setpoints_type = None,
+            paramtype: str = 'numeric') -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -578,26 +610,16 @@ class Measurement:
         # a more robust Parameter2String function?
         name = str(parameter)
         if isinstance(parameter, ArrayParameter):
-            my_setpoints = self._register_arrayparameter_setpoints(parameter,
-                                                                   paramtype,
-                                                                   setpoints)
-            self._register_individual_parameter(name,
-                                                parameter.label,
-                                                parameter.unit,
-                                                my_setpoints,
-                                                basis, paramtype)
+            self._register_arrayparameter(parameter,
+                                          setpoints,
+                                          basis,
+                                          paramtype)
         elif isinstance(parameter, MultiParameter):
-            parameters, setpoint_lists = self._find_mp_components(parameter,
-                                                             setpoints,
-                                                             paramtype)
-
-            for param, setpoints in zip(parameters, setpoint_lists):
-                self._register_individual_parameter(param['name'],
-                                                    param['label'],
-                                                    param['unit'],
-                                                    setpoints,
-                                                    basis,
-                                                    paramtype)
+            self._register_multiparameter(parameter,
+                                          setpoints,
+                                          basis,
+                                          paramtype,
+                                          )
         elif isinstance(parameter, Parameter):
             self._register_individual_parameter(name,
                                                 parameter.label,
@@ -615,15 +637,7 @@ class Measurement:
                                        basis: setpoints_type,
                                        paramtype: str) -> None:
         """
-
-        Args:
-            name:
-            label:
-            unit:
-            setpoints:
-            basis:
-            paramtype:
-
+        Generate ParamSpecs and register them for an individual parameter
         """
 
         if setpoints is not None:
@@ -649,20 +663,14 @@ class Measurement:
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
 
-    def _register_arrayparameter_setpoints(self,
-                                           parameter: ArrayParameter,
-                                           paramtype: str,
-                                           setpoints: setpoints_type) -> \
-            setpoints_type:
+    def _register_arrayparameter(self,
+                                 parameter: ArrayParameter,
+                                 setpoints: setpoints_type,
+                                 basis: setpoints_type,
+                                 paramtype: str, ) -> None:
         """
-
-        Args:
-            parameter:
-            paramtype:
-            setpoints:
-
-        Returns:
-
+        Register an Array paramter and the setpoints belonging to the
+        ArrayParameter
         """
         name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
@@ -687,21 +695,22 @@ class Measurement:
             self.parameters[spname] = sp
 
             my_setpoints += [spname]
-        return my_setpoints
 
-    def _find_mp_components(self, multiparameter:
-                            MultiParameter, setpoints: setpoints_type,
-                            paramtype: str) -> \
-            Tuple[List[Dict[str, str]], List[setpoints_type]]:
+        self._register_individual_parameter(name,
+                                            parameter.label,
+                                            parameter.unit,
+                                            my_setpoints,
+                                            basis,
+                                            paramtype)
+
+    def _register_multiparameter(self,
+                                 multiparameter: MultiParameter,
+                                 setpoints: setpoints_type,
+                                 basis: setpoints_type,
+                                 paramtype: str) -> None:
         """
-
-        Args:
-            multiparameter:
-            setpoints:
-            paramtype:
-
-        Returns:
-
+        Find the individual multiparameter components and their setpoints
+        and register these
         """
         parameters = []
         setpoints_lists = []
@@ -742,14 +751,20 @@ class Measurement:
             parameters.append(parameterdata)
             setpoints_lists.append(my_setpoints)
 
-        return parameters, setpoints_lists
+        for param, setpoints in zip(parameters, setpoints_lists):
+            self._register_individual_parameter(param['name'],
+                                                param['label'],
+                                                param['unit'],
+                                                setpoints,
+                                                basis,
+                                                paramtype)
 
     def register_custom_parameter(
             self, name: str,
-            label: str=None, unit: str=None,
-            basis: setpoints_type=None,
-            setpoints: setpoints_type=None,
-            paramtype: str='numeric') -> None:
+            label: str = None, unit: str = None,
+            basis: setpoints_type = None,
+            setpoints: setpoints_type = None,
+            paramtype: str = 'numeric') -> None:
         """
         Register a custom parameter with this measurement
 
