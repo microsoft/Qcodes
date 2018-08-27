@@ -99,5 +99,27 @@ def test_string_with_wrong_paramtype(experiment):
         with pytest.raises(ValueError, match=msg):
             datasaver.add_result((p, "some text"))
 
-# TODO: add test for wrong type in DataSaver
+
+def test_string_with_wrong_paramtype_via_datasaver(experiment):
+    """
+    Test that it is not possible to add a string value for a non-text
+    parameter via DataSaver object
+    """
+    p = ParamSpec("p", "numeric")
+
+    test_set = qc.new_data_set("test-dataset")
+    test_set.add_parameter(p)
+
+    data_saver = DataSaver(
+        dataset=test_set, write_period=0, parameters={"p": p})
+
+    try:
+        msg = "It is not possible to save a string value for parameter 'p' " \
+              "because its type class is 'numeric', not 'text'."
+        with pytest.raises(ValueError, match=msg):
+            data_saver.add_result(("p", "some text"))
+    finally:
+        data_saver.dataset.conn.close()
+
+
 # TODO: add test for wrong type in DataSet
