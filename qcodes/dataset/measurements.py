@@ -261,23 +261,32 @@ class DataSaver:
         # brittle and should be enough to convince us to abandon the
         # design of ArrayParameters (possibly) containing (some of) their
         # setpoints
-        setpoint_axes = []
-        setpoint_meta = []
+
         paramstr = str(parameter)
         sp_names = parameter.setpoint_full_names
-        if parameter.setpoints is None:
-            raise RuntimeError("Got an array parameter without "
-                               "setpoints. Cannot handle this")
+        fallback_sp_name = f"{parameter.full_name}_setpoint"
+        self._unbundle_setpoints_from_param(parameter, sp_names,
+                                            fallback_sp_name,
+                                            parameter.setpoints,
+                                            found_parameters, res)
 
-        for i, sps in enumerate(parameter.setpoints):
+    def _unbundle_setpoints_from_param(self, parameter,
+                                       sp_names, fallback_sp_name,
+                                       setpoints, found_parameters, res):
+        setpoint_axes = []
+        setpoint_meta = []
+        if setpoints is None:
+            raise RuntimeError(f"Got an {type(parameter)} without "
+                               "setpoints. Cannot handle this")
+        for i, sps in enumerate(setpoints):
             if sp_names is not None:
                 spname = sp_names[i]
             else:
-                spname = f'{parameter.full_name}_setpoint_{i}'
+                spname = f'{fallback_sp_name}_{i}'
 
             if spname not in self.parameters.keys():
                 raise RuntimeError('No setpoints registered for '
-                                   f'ArrayParameter {paramstr}!')
+                                   f'{type(parameter)} {parameter.full_name}!')
             sps = np.array(sps)
             while sps.ndim > 1:
                 # The outermost setpoint axis or an nD param is nD
@@ -288,7 +297,6 @@ class DataSaver:
             setpoint_meta.append(spname)
             found_parameters.append(spname)
             setpoint_axes.append(sps)
-
         output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
         for grid, meta in zip(output_grids, setpoint_meta):
             res.append((meta, grid))
@@ -326,34 +334,10 @@ class DataSaver:
                 else:
                     sp_names = None
 
-                if parameter.setpoints[i] is None:
-                    raise RuntimeError("Got an array parameter without "
-                                       "setpoints. Cannot handle this")
-
-                for j, sps in enumerate(parameter.setpoints[i]):
-
-                    if sp_names is not None:
-                        spname = sp_names[j]
-                    else:
-                        spname = f'{fallback_sp_name}_{j}'
-
-                    if spname not in self.parameters.keys():
-                        raise RuntimeError('No setpoints registered for '
-                                           f'ArrayParameter {paramstr}!')
-                    sps = np.array(sps)
-                    while sps.ndim > 1:
-                        # The outermost setpoint axis or an nD param is nD
-                        # but the innermost is 1D. In all cases we just need
-                        # the axis along one dim, the innermost one.
-                        sps = sps[0]
-
-                    setpoint_meta.append(spname)
-                    found_parameters.append(spname)
-                    setpoint_axes.append(sps)
-
-                output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
-                for grid, meta in zip(output_grids, setpoint_meta):
-                    res.append((meta, grid))
+                self._unbundle_setpoints_from_param(parameter, sp_names,
+                                                    fallback_sp_name,
+                                                    parameter.setpoints[i],
+                                                    found_parameters, res)
 
     def flush_data_to_database(self) -> None:
         """
