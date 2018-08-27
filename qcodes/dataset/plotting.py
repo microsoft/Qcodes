@@ -18,7 +18,8 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
-AxesTupleList = Tuple[List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]]
+AxesTupleList = Tuple[List[matplotlib.axes.Axes],
+                      List[Optional[matplotlib.colorbar.Colorbar]]]
 
 
 def plot_by_id(run_id: int,
@@ -143,7 +144,6 @@ def plot_by_id(run_id: int,
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
 
-
             _set_data_axes_labels(ax, data, colorbar)
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
@@ -172,7 +172,7 @@ def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
 def _make_axis_label(label: str, unit: str) -> str:
     label = f'{label}'
     if unit != '' and unit is not None:
-       label += f' ({unit})'
+        label += f' ({unit})'
     return label
 
 
@@ -308,8 +308,8 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
 
 def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
         -> Tuple[
-            Union[matplotlib.ticker.FuncFormatter, None],
-            Union[str, None]]:
+               Union[matplotlib.ticker.FuncFormatter, None],
+               Union[str, None]]:
     """
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
@@ -319,8 +319,8 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     values like "1" instead of "0.000000001" while the units in the axis label
     are changed from "V" to "nV" ('n' is for 'nano').
 
-    The units for which unit prefixes ared added can be found in
-    `_UNITS_FOR_RESCALING`. For all other units an exponential sacling factor
+    The units for which unit prefixes are added can be found in
+    `_UNITS_FOR_RESCALING`. For all other units an exponential scaling factor
     is added to the label i.e. `(10^3 x e^2/hbar)`.
 
     Args:
@@ -354,11 +354,11 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             selected_scale = largest_scale
             prefix = _ENGINEERING_PREFIXES[largest_scale]
     else:
-         selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
-         if selected_scale != 0:
-             prefix = f'$10^{{{selected_scale:.0f}}}$ '
-         else:
-             prefix = ''
+        selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        if selected_scale != 0:
+            prefix = f'$10^{{{selected_scale:.0f}}}$ '
+        else:
+            prefix = ''
 
     new_unit = prefix + unit
     label = _get_label_of_data(data_dict)
