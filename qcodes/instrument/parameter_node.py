@@ -155,7 +155,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     def __str__(self):
         s = ''
-        if hasattr(self, 'name'):
+        if getattr(self, 'name', None):
             if self.parent:
                 s += f'{self.parent}_'
             if isinstance(self.name, _BaseParameter):
