@@ -169,18 +169,17 @@ def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
 
 
-def _get_unit_of_data(data_dict: Dict[str, Any]) -> str:
-    return data_dict['unit'] if data_dict['unit'] != '' else ''
-
-
 def _make_axis_label(label: str, unit: str) -> str:
-    return f'{label} ({unit})'
+    label = f'{label}'
+    if unit != '' and unit is not None:
+       label += f' ({unit})'
+    return label
 
 
 def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
                               ) -> str:
     label = _get_label_of_data(data[axis_index])
-    unit = _get_unit_of_data(data[axis_index])
+    unit = data[axis_index]['unit']
     return _make_axis_label(label, unit)
 
 
@@ -356,7 +355,10 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             prefix = _ENGINEERING_PREFIXES[largest_scale]
     else:
          selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
-         prefix = f'$10^{{{selected_scale:.0f}}}$ '
+         if selected_scale != 0:
+             prefix = f'$10^{{{selected_scale:.0f}}}$ '
+         else:
+             prefix = ''
 
     new_unit = prefix + unit
     label = _get_label_of_data(data_dict)

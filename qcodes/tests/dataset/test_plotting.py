@@ -63,11 +63,19 @@ def test_rescaled_ticks_and_units(scale, unit,
     if unit in _UNITS_FOR_RESCALING:
         expected_prefix = _ENGINEERING_PREFIXES[scale]
     else:
-        expected_prefix = f'$10^{{{scale:.0f}}}$ '
+         if scale != 0:
+             expected_prefix = f'$10^{{{scale:.0f}}}$ '
+         else:
+             expected_prefix = ''
     if param_label == '':
-        assert f"{param_name} ({expected_prefix}{unit})" == label
+        base_label = param_name
     else:
-        assert f"{param_label} ({expected_prefix}{unit})" == label
+        base_label = param_label
+    postfix = expected_prefix + unit
+    if postfix != '':
+        assert f"{base_label} ({postfix})" == label
+    else:
+        assert f"{base_label}" == label
 
     assert '5' == ticks_formatter(5 / (10 ** (-scale)))
     assert '1' == ticks_formatter(1 / (10 ** (-scale)))
