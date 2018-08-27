@@ -1,10 +1,14 @@
 import logging
-from typing import Optional, List, Sequence, Union, Tuple
+from collections import OrderedDict
+from functools import partial
+from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
+from qcodes.dataset.data_set import load_by_id
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (datatype_from_setpoints_1d,
@@ -21,7 +25,9 @@ def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
                               Sequence[matplotlib.axes.Axes]]]=None,
                colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                   Sequence[matplotlib.colorbar.Colorbar]]]=None) -> AxesTupleList:
+                                   Sequence[
+                                       matplotlib.colorbar.Colorbar]]]=None,
+               rescale_axes: bool=True) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -30,59 +36,43 @@ def plot_by_id(run_id: int,
        * 2D plots on filled out rectangular grids
        * 2D scatterplots (fallback)
 
-    The function can optionally be supplied with a matplotlib axes
-    or a list of axes that will be used for plotting. The user should ensure
-    that the number of axes matches the number of datasets to plot. To plot
-    several (1D) dataset in the same axes supply it several times. Colorbar
-    axes are created dynamically and cannot be supplied.
+    The function can optionally be supplied with a matplotlib axes or a list
+    of axes that will be used for plotting. The user should ensure that the
+    number of axes matches the number of datasets to plot. To plot several (1D)
+    dataset in the same axes supply it several times. Colorbar axes are
+    created dynamically and cannot be supplied.
+
+    The plot has a title that comprises run id, experiment name, and sample
+    name.
 
     Args:
-        run_id: ID of the dataset to plot
-        axes: Optional Matplotlib axes to plot on. If non provided new axes will be created
-        colorbars: Optional Matplotlib Colorbars to use for 2D plots. If non provided new ones will be createds
+        run_id:
+            ID of the run to plot
+        axes:
+            Optional Matplotlib axes to plot on. If non provided new axes
+            will be created
+        colorbars:
+            Optional Matplotlib Colorbars to use for 2D plots. If non
+            provided new ones will be created
+        rescale_axes: if True, tick labels and units for axes of parameters
+            with standard SI units will be rescaled so that, for example,
+            '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
+            axis ('n' is 'nano')
 
     Returns:
-        a list of axes and a list of colorbars of the same length.
-        The colorbar axes may be None if no colorbar is created (e.g. for
+        a list of axes and a list of colorbars of the same length. The
+        colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
-
-    def set_axis_labels(ax, data, cax=None):
-        if data[0]['label'] == '':
-            lbl = data[0]['name']
-        else:
-            lbl = data[0]['label']
-        if data[0]['unit'] == '':
-            unit = ''
-        else:
-            unit = data[0]['unit']
-            unit = f"({unit})"
-        ax.set_xlabel(f'{lbl} {unit}')
-
-        if data[1]['label'] == '':
-            lbl = data[1]['name']
-        else:
-            lbl = data[1]['label']
-        if data[1]['unit'] == '':
-            unit = ''
-        else:
-            unit = data[1]['unit']
-            unit = f'({unit})'
-        ax.set_ylabel(f'{lbl} {unit}')
-        if cax is not None and len(data) > 2:
-            if data[2]['label'] == '':
-                lbl = data[2]['name']
-            else:
-                lbl = data[2]['label']
-            if data[2]['unit'] == '':
-                unit = ''
-            else:
-                unit = data[2]['unit']
-                unit = f'({unit})'
-            cax.set_label(f'{lbl} {unit}')
+    # Retrieve info about the run for the title
+    dataset = load_by_id(run_id)
+    experiment_name = dataset.exp_name
+    sample_name = dataset.sample_name
+    title = f"Run #{run_id}, Experiment {experiment_name} ({sample_name})"
 
     alldata = get_data_by_id(run_id)
     nplots = len(alldata)
+
     if isinstance(axes, matplotlib.axes.Axes):
         axes = [axes]
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
@@ -101,6 +91,7 @@ def plot_by_id(run_id: int,
     if colorbars is None:
         colorbars = len(axes)*[None]
     new_colorbars: List[matplotlib.colorbar.Colorbar] = []
+
     for data, ax, colorbar in zip(alldata, axes, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
@@ -120,8 +111,14 @@ def plot_by_id(run_id: int,
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
-            set_axis_labels(ax, data)
+            _set_data_axes_labels(ax, data)
+
+            if rescale_axes:
+                _rescale_ticks_and_units(ax, data, colorbar)
+
             new_colorbars.append(None)
+
+            ax.set_title(title)
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug('Plotting by id, doing a 2D plot')
@@ -145,8 +142,15 @@ def plot_by_id(run_id: int,
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
-            set_axis_labels(ax, data, colorbar)
+
+            _set_data_axes_labels(ax, data, colorbar)
+
+            if rescale_axes:
+                _rescale_ticks_and_units(ax, data, colorbar)
+
             new_colorbars.append(colorbar)
+
+            ax.set_title(title)
 
         else:
             log.warning('Multi-dimensional data encountered. '
@@ -159,6 +163,36 @@ def plot_by_id(run_id: int,
         raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
     return axes, new_colorbars
+
+
+def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
+    return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
+
+
+def _get_unit_of_data(data_dict: Dict[str, Any]) -> str:
+    return data_dict['unit'] if data_dict['unit'] != '' else ''
+
+
+def _make_axis_label(label: str, unit: str) -> str:
+    return f'{label} ({unit})'
+
+
+def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
+                              ) -> str:
+    label = _get_label_of_data(data[axis_index])
+    unit = _get_unit_of_data(data[axis_index])
+    return _make_axis_label(label, unit)
+
+
+def _set_data_axes_labels(ax: matplotlib.axes.Axes,
+                          data: List[Dict[str, Any]],
+                          cax: Optional[matplotlib.colorbar.Colorbar]=None
+                          ) -> None:
+    ax.set_xlabel(_make_label_for_data_axis(data, 0))
+    ax.set_ylabel(_make_label_for_data_axis(data, 1))
+
+    if cax is not None and len(data) > 2:
+        cax.set_label(_make_label_for_data_axis(data, 2))
 
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
@@ -229,3 +263,136 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     else:
         colorbar = ax.figure.colorbar(colormesh, ax=ax)
     return ax, colorbar
+
+
+_UNITS_FOR_RESCALING: Set[str] = {
+    # SI units (without some irrelevant ones like candela)
+    # 'kg' is not included because it is 'kilo' and rarely used
+    'm', 's', 'A', 'K', 'mol', 'rad', 'Hz', 'N', 'Pa', 'J',
+    'W', 'C', 'V', 'F', 'ohm', 'Ohm', 'Ω',
+    '\N{GREEK CAPITAL LETTER OMEGA}', 'S', 'Wb', 'T', 'H',
+    # non-SI units as well, for convenience
+    'eV', 'g'
+}
+
+_ENGINEERING_PREFIXES: Dict[int, str] = OrderedDict({
+    -24: "y",
+    -21: "z",
+    -18: "a",
+    -15: "f",
+    -12: "p",
+     -9: "n",
+     -6: "\N{GREEK SMALL LETTER MU}",
+     -3: "m",
+      0: "",
+      3: "k",
+      6: "M",
+      9: "G",
+     12: "T",
+     15: "P",
+     18: "E",
+     21: "Z",
+     24: "Y"
+})
+
+_THRESHOLDS: Dict[float, int] = OrderedDict(
+    {10**(scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()})
+
+
+def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
+    """
+    Function for matplotlib.ticker.FuncFormatter that scales the tick values
+    according to the given `scale` value.
+    """
+    return "{0:g}".format(tick_value*factor)
+
+
+def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
+        -> Tuple[
+            Union[matplotlib.ticker.FuncFormatter, None],
+            Union[str, None]]:
+    """
+    Create a ticks formatter and a new label for the data that is to be used
+    on the axes where the data is plotted.
+
+    For example, if values of data are all "nano" in units of volts "V",
+    then the plot might be more readable if the tick formatter would show
+    values like "1" instead of "0.000000001" while the units in the axis label
+    are changed from "V" to "nV" ('n' is for 'nano').
+
+    The units for which this procedure is performed can be found in
+    `_UNITS_FOR_RESCALING`.
+
+    Args:
+        data_dict: a dictionary of the following structure
+            {
+                'data': <1D numpy array of points>,
+                'name': <name of the parameter>,
+                'label': <label of the parameter or ''>,
+                'unit': <unit of the parameter or ''>
+            }
+
+    Returns:
+        a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
+        the new label; in case it is not possible to rescale, the returned
+        values are None's
+    """
+    ticks_formatter = None
+    new_label = None
+
+    unit = data_dict['unit']
+
+    if unit in _UNITS_FOR_RESCALING:
+        maxval = np.nanmax(np.abs(data_dict['data']))
+
+        for threshold, scale in _THRESHOLDS.items():
+            if maxval < threshold:
+                selected_scale = scale
+                prefix = _ENGINEERING_PREFIXES[scale]
+                break
+        else:
+            # here, maxval is larger than the largest threshold
+            largest_scale = max(list(_ENGINEERING_PREFIXES.keys()))
+            selected_scale = largest_scale
+            prefix = _ENGINEERING_PREFIXES[largest_scale]
+
+        new_unit = prefix + unit
+        label = _get_label_of_data(data_dict)
+        new_label = _make_axis_label(label, new_unit)
+
+        scale_factor = 10**(-selected_scale)
+        ticks_formatter = FuncFormatter(
+            partial(_scale_formatter, factor=scale_factor))
+
+    return ticks_formatter, new_label
+
+
+def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
+                             data: List[Dict[str, Any]],
+                             cax: matplotlib.colorbar.Colorbar=None):
+    """
+    Rescale ticks and units for axes that are in standard SI units (i.e. V,
+    s, J) to milli (m), kilo (k), etc. Refer to the `_UNITS_FOR_RESCALING`
+    for the list of units that are rescaled.
+
+    Note that combined or non-standard SI units do not get rescaled.
+    """
+    # for x axis
+    x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
+    if x_ticks_formatter is not None and new_x_label is not None:
+        ax.xaxis.set_major_formatter(x_ticks_formatter)
+        ax.set_xlabel(new_x_label)
+
+    # for y axis
+    y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
+    if y_ticks_formatter is not None and new_y_label is not None:
+        ax.yaxis.set_major_formatter(y_ticks_formatter)
+        ax.set_ylabel(new_y_label)
+
+    # for z aka colorbar axis
+    if cax is not None and len(data) > 2:
+        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
+        if z_ticks_formatter is not None and new_z_label is not None:
+            cax.set_label(new_z_label)
+            cax.formatter = z_ticks_formatter
+            cax.update_ticks()
