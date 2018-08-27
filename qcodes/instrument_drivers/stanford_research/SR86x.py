@@ -1037,7 +1037,7 @@ class SR86x(VisaInstrument):
         """
         if not 2 <= len(parameter_names) <= 3:
             raise KeyError(
-                'It is possible to request values of only 2 or 3 parameters '
+                'It is only possible to request values of 2 or 3 parameters '
                 'at a time.')
 
         for name in parameter_names:
