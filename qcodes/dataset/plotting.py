@@ -320,8 +320,9 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     values like "1" instead of "0.000000001" while the units in the axis label
     are changed from "V" to "nV" ('n' is for 'nano').
 
-    The units for which this procedure is performed can be found in
-    `_UNITS_FOR_RESCALING`.
+    The units for which unit prefixes ared added can be found in
+    `_UNITS_FOR_RESCALING`. For all other units an exponential sacling factor
+    is added to the label i.e. `(10^3 x e^2/hbar)`.
 
     Args:
         data_dict: a dictionary of the following structure
@@ -334,8 +335,7 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
     Returns:
         a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
-        the new label; in case it is not possible to rescale, the returned
-        values are None's
+        the new label.
     """
     ticks_formatter = None
     new_label = None
@@ -373,11 +373,8 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              data: List[Dict[str, Any]],
                              cax: matplotlib.colorbar.Colorbar=None):
     """
-    Rescale ticks and units for axes that are in standard SI units (i.e. V,
-    s, J) to milli (m), kilo (k), etc. Refer to the `_UNITS_FOR_RESCALING`
-    for the list of units that are rescaled.
-
-    Note that combined or non-standard SI units do not get rescaled.
+    Rescale ticks and units for the provided axes as described in
+    :meth:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
     x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
