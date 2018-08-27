@@ -75,9 +75,8 @@ class DataSaver:
         self._known_dependencies: Dict[str, List[str]] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
-                self._known_dependencies.update({str(param):
-                    parspec.depends_on.split(
-                        ', ')})
+                self._known_dependencies.update(
+                    {str(param): parspec.depends_on.split(', ')})
 
     def add_result(self,
                    *res_tuple: res_type) -> None:
@@ -104,8 +103,10 @@ class DataSaver:
         are not unraveled but stored directly for improved performance.
 
         Args:
-            res: a dictionary with keys that are parameter names and items
-                that are the corresponding values at this measurement point.
+            res_tuple: a tuple with the first element being the parameter name
+                and the second element is the corresponding value(s) at this
+                measurement point. The function takes as many tuples as there
+                are results.
 
         Raises:
             ValueError: if a parameter name not registered in the parent
@@ -572,7 +573,7 @@ class Measurement:
                 else:
                     inf_from.append(inff)
 
-        return (depends_on, inf_from)
+        return depends_on, inf_from
 
     def register_parameter(
             self, parameter: _BaseParameter,
@@ -858,14 +859,11 @@ class Measurement:
         Add a subscriber to the dataset of the measurement.
 
         Args:
-            name: The name of the subscriber.
             func: A function taking three positional arguments: a list of
                 tuples of parameter values, an integer, a mutable variable
                 (list or dict) to hold state/writes updates to.
             state: The variable to hold the state.
         """
-        # TODO: Should we protect users from registering two subscribers
-        # with the same state?
         self.subscribers.append((func, state))
 
     def run(self) -> Runner:
