@@ -713,7 +713,6 @@ class Measurement:
         Find the individual multiparameter components and their setpoints
         and register these
         """
-        parameters = []
         setpoints_lists = []
         for i in range(len(multiparameter.shapes)):
             shape = multiparameter.shapes[i]
@@ -745,17 +744,12 @@ class Measurement:
                     self.parameters[spname] = sp
                     my_setpoints += [spname]
 
-            parameterdata = {}
-            parameterdata['name'] = multiparameter.names[i]
-            parameterdata['unit'] = multiparameter.units[i]
-            parameterdata['label'] = multiparameter.labels[i]
-            parameters.append(parameterdata)
             setpoints_lists.append(my_setpoints)
 
-        for param, setpoints in zip(parameters, setpoints_lists):
-            self._register_individual_parameter(param['name'],
-                                                param['label'],
-                                                param['unit'],
+        for i, setpoints in enumerate(setpoints_lists):
+            self._register_individual_parameter(multiparameter.names[i],
+                                                multiparameter.labels[i],
+                                                multiparameter.units[i],
                                                 setpoints,
                                                 basis,
                                                 paramtype)
