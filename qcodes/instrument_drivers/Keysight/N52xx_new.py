@@ -1,7 +1,7 @@
 from functools import partial
 import numpy as np
 import logging
-from typing import Sequence, Union, Any, Tuple
+from typing import Sequence, Union, Any, Tuple, Iterable
 import time
 import re
 
@@ -26,12 +26,15 @@ class N52xxTrace(InstrumentChannel):
         "imaginary": "IMAG"
     }
 
-    def __init__(self, parent: 'N52xxBase', channel: int, trace_name: str,
-                 trace_type: str) -> None:
+    def __init__(self, parent: 'N52xxBase', channel: int, name: str,
+                 trace_type: str, upload_to_instrument: bool = True) -> None:
 
-        super().__init__(parent, trace_name)
+        super().__init__(parent, name)
         self._channel = channel
-        self._define_trace(trace_name, trace_type)
+        self._trace_type = trace_type
+
+        if upload_to_instrument:
+            self._upload_to_instrument()
 
         self.add_parameter(
             'format',
@@ -47,24 +50,21 @@ class N52xxTrace(InstrumentChannel):
             )
 
     def select(self) -> None:
-        self.write(f"CALC{self._channel}:PAR:SEL {self.name}")
-
-    def delete(self) -> None:
-        self.write(f'CALC{self._channel}:PAR:DEL {self.name}')
+        # Writing self.write here will cause an infinite recursion
+        self.parent.write(f"CALC{self._channel}:PAR:SEL {self.short_name}")
 
     def write(self, cmd: str) -> None:
-        """
-        #Select correct trace before querying
-        """
         self.select()
         super().write(cmd)
 
     def ask(self, cmd: str) -> str:
-        """
-        Select correct trace before querying
-        """
         self.select()
         return super().ask(cmd)
+
+    def delete(self) -> None:
+        self.parent.write(f'CALC{self._channel}:PAR:DEL {self.short_name}')
+        channel = self.parent.channel[self._channel - 1]
+        channel.delete_trace_from_list(self.short_name)
 
     def _get_raw_data(self, format_str: str) -> np.ndarray:
         """
@@ -81,21 +81,79 @@ class N52xxTrace(InstrumentChannel):
         """
         visa_handle = self.parent.visa_handle
 
-        self.write(f'CALC{self._channel}:FORM {format_str}')
+        self.format(format_str)
         data = np.array(visa_handle.query_binary_values(
             f'CALC{self._channel}:DATA? FDATA', datatype='f', is_big_endian=True
         ))
 
         return data
 
-    def _define_trace(self, name, tr_type) -> None:
+    def _upload_to_instrument(self) -> None:
+        # PS. Do not do self.write as self.select will not work yet
+        self.parent.write(
+            f'CALC{self._channel}:PAR:EXT {self.short_name}, {self._trace_type}'
+        )
+
+    def __repr__(self):
+        return f"{self.short_name}, {self._trace_type}"
+
+
+class N52xxChannel(InstrumentChannel):
+    def __init__(self, parent: 'N52xxBase', channel: int):
+        super().__init__(parent, f"channel{channel}")
+
+        self.channel = channel
+
+        # Load the traces from the instrument
+        self.trace = {
+            name: N52xxTrace(
+                parent, self.channel, name, trace_type,
+                upload_to_instrument=False)
+            for name, trace_type in self._find_traces()
+        }
+
+    def add_trace(self, name: str, tr_type: str) -> 'N52xxTrace':
+
         if re.search("S(.)(.)$", tr_type) is None:
             raise ValueError(
                 "The trace type needs to be in the form Sxy where "
                 "'x' and 'y' are integers")
 
-        # PS. Do not do self.write as self.select will not work yet
-        self.parent.write(f'CALC{self._channel}:PAR:EXT {name}, {tr_type}')
+        trace = N52xxTrace(self.parent, self.channel, name, tr_type)
+        self.trace[name] = trace
+        return trace
+
+    def delete_trace(self, name: str) ->None:
+        """
+        Deletes the trace on the instrument
+        """
+        self.trace[name].delete()
+
+    def delete_trace_from_list(self, name: str) ->None:
+        """
+        Deletes the trace from the dictionary of traces. Although there is no
+        leading underscore in the method name, do not call this method directly.
+        Using `delete_trace` will call the delete method on the trace object
+        which in turn will:
+        1) Delete the trace from the instrument
+        2) Call this method.
+        """
+        del self.trace[name]
+
+    def delete_all_traces(self) ->None:
+        trace_names = self.trace.keys()
+        for name in trace_names:
+            self.trace[name].delete()
+
+    def _find_traces(self) -> Iterable:
+        result = self.ask(f"CALC{self.channel}:PAR:CAT:EXT?")
+        if result == "NO CATALOG":
+            return []
+
+        trace_data = result.strip("\"").split(",")
+
+        for name, trace_type in zip(trace_data[::2], trace_data[1::2]):
+            yield name, trace_type
 
 
 class N52xxBase(VisaInstrument):
@@ -108,6 +166,7 @@ class N52xxBase(VisaInstrument):
     max_freq: float = None
     min_power: float = None
     max_power: float = None
+    number_of_channels: int = None
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
 
@@ -227,15 +286,18 @@ class N52xxBase(VisaInstrument):
             set_parser=lambda value: "IMM" if value is "INT" else value
         )
 
-        self._traces = ChannelList(self, "traces", N52xxTrace)
-        self.add_submodule("traces", self._traces)
+        self._channels = ChannelList(self, "channel", N52xxChannel)
+        self.add_submodule("channel", self._channels)
+        for count in range(self.number_of_channels):
+            channel = N52xxChannel(self, channel=count+1)
+            self.channel.append(channel)
 
         self.connect_message()
 
-    def add_trace(self, name: str, tr_type: str, channel=1) -> 'N52xxTrace':
-        trace = N52xxTrace(self, channel, name, tr_type)
-        self._traces.append(trace)
-        return trace
-
     def delete_all_traces(self):
-        self.write("CALC:PAR:DEL:ALL")
+        # Do not do this by writing "CALC:PAR:DEL:ALL" to the instrument, as
+        # a reference to the trace objects will still be contained in the
+        # internal dictionary of the channel object
+        for channel in self.channels:
+            channel.delete_all_traces()
+
