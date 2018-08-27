@@ -1,5 +1,6 @@
 from unittest import TestCase
 from copy import copy, deepcopy
+import pickle
 
 from qcodes.instrument.parameter_node import ParameterNode, parameter
 from qcodes.instrument.parameter import Parameter
@@ -724,3 +725,44 @@ class TestParameterNodeLogging(TestCase):
         node.subnode.param = Parameter()
         self.assertDictEqual(node.snapshot()['parameter_nodes']['subnode'],
                              node.subnode.snapshot())
+
+
+class TestParameterNodePickling(TestCase):
+    def test_pickled_empty_node(self):
+        node = ParameterNode(name='node')
+        pickle_dump = pickle.dumps(node)
+
+        node_pickled = pickle.loads(pickle_dump)
+        self.assertEqual(node_pickled.name, 'node')
+
+    def test_pickled_node_with_parameter(self):
+        node = ParameterNode(name='node')
+        node.p = Parameter(initial_value=123)
+        pickle_dump = pickle.dumps(node)
+
+        node_pickled = pickle.loads(pickle_dump)
+        self.assertEqual(node_pickled.name, 'node')
+        self.assertEqual(node_pickled['p'].name, 'p')
+        self.assertEqual(node_pickled['p'].get_latest(), 123)
+        self.assertEqual(node_pickled['p'].get(), 123)
+
+
+    def test_pickled_node_with_decorated_parameter(self):
+        node = DecoratedNode(name='node')
+        pickle_dump = pickle.dumps(node)
+
+        node_pickled = pickle.loads(pickle_dump)
+        self.assertEqual(node_pickled.name, 'node')
+        self.assertEqual(node_pickled['p'].name, 'p')
+        self.assertEqual(node_pickled['p'].get(), None)
+
+
+class DecoratedNode(ParameterNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.p = Parameter()
+
+    @parameter
+    def p_get(self):
+        return 42
