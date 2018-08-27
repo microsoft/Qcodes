@@ -511,7 +511,7 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
-        self._write_period: Optional[numeric_types] = None
+        self._write_period: Optional[float] = None
         self.name = ''
 
     @property
@@ -525,7 +525,7 @@ class Measurement:
         wp_float = float(cast(float, wp))
         if wp_float < 1e-3:
             raise ValueError('The write period must be at least 1 ms.')
-        self._write_period = wp
+        self._write_period = wp_float
 
     def _registration_validation(
             self, name: str, setpoints: Sequence[str] = None,

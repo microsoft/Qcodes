@@ -340,10 +340,10 @@ def test_setting_write_period(empty_temp_db, wp):
             meas.write_period = wp
     else:
         meas.write_period = wp
-        assert meas._write_period == wp
+        assert meas._write_period == float(wp)
 
         with meas.run() as datasaver:
-            assert datasaver.write_period == wp
+            assert datasaver.write_period == float(wp)
 
 
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
