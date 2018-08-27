@@ -118,7 +118,7 @@ def __deepcopy__(self, memodict={}):
         is faster and creates a shallow copy.
     """
     restore_attrs = {}
-    for attr in ['__deepcopy__', 'signal', 'get', 'set', 'parent']:
+    for attr in ['__deepcopy__', '__getstate__','signal', 'get', 'set', 'parent']:
         if attr in self.__dict__:
             restore_attrs[attr] = getattr(self, attr)
 
@@ -133,7 +133,8 @@ def __deepcopy__(self, memodict={}):
             delattr(self, attr)
 
         self_copy = deepcopy(self)
-        self_copy.__deepcopy__ = restore_attrs['__deepcopy__']
+        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+        self_copy.__getstate__ = partial(__getstate__, self_copy)
 
         self_copy.parent = None
 
@@ -162,6 +163,27 @@ def __deepcopy__(self, memodict={}):
     finally:
         for attr_name, attr in {**restore_attrs, **node_decorator_methods}.items():
             setattr(self, attr_name, attr)
+
+
+def __getstate__(self):
+    """Prepare parameter for pickling.
+
+    Any get/set related methods are removed if they are in Parameter.__dict,
+    i.e. they are not defined in the class but set for the object.
+    The reason is that these cannot be pickled.
+    This method is added to parameters during instantiation to ensure it's only
+    called during pickling and not during copy (see __copy__ code).
+
+    This is probably not the best way to handle this situation, but a better
+    solution was not found."""
+    # Remove methods that may have been set dynamically (e.g. wrapped)
+    d = copy(self.__dict__)
+    for attr in ['get', 'get_raw', 'get_parser',
+                 'set', 'set_raw', 'set_parser']:
+        d.pop(attr, None)
+    if not isinstance(d.get('vals'), Validator):
+        d.pop('vals', None)
+    return d
 
 
 class _BaseParameter(Metadatable, SignalEmitter):
@@ -273,6 +295,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
                  config_link: str = None):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
+        self.__getstate__ = partial(__getstate__, self)
 
         Metadatable.__init__(self, metadata)
         SignalEmitter.__init__(self, initialize_signal=False)
@@ -394,8 +417,21 @@ class _BaseParameter(Metadatable, SignalEmitter):
         # Perform underlying default behaviour of copy(obj)
         # We need to call the underlying functions because we need to perform
         # additional actions afterwards
-        rv = self.__reduce_ex__(4)
-        self_copy = _reconstruct(self, None, *rv)
+
+        # Temporarily remove __getstate__ so it is not called during copy
+        restore_attrs = {'__getstate__': self.__dict__.pop('__getstate__', None)}
+        try:
+            # Call the underlying functions for copying to avoid recursion error
+            rv = self.__reduce_ex__(4)
+            self_copy = _reconstruct(self, None, *rv)
+        finally:
+            # Restore __getstate__
+            if restore_attrs['__getstate__'] is not None:
+                self.__getstate__ = restore_attrs['__getstate__']
+
+        # Update copy/pickle-related methods
+        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+        self_copy.__getstate__ = partial(__getstate__, self_copy)
 
         # Detach and reattach all node decorator methods, now containing
         # reference to the new parameter, but still old parameter node
@@ -447,6 +483,17 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self_copy._latest = deepcopy(self._latest)
 
         return self_copy
+
+    def __setstate__(self, state):
+        """Prepare parameter for unpickling"""
+        self.__dict__.update(state)
+
+        max_val_age = getattr(state['get_latest'], 'max_val_age', None)
+        self.__dict__['get_latest'] = GetLatest(self, max_val_age)
+
+        # Set default get to get the latest value
+        if not hasattr(self, 'get'):
+            self.__dict__['get'] = self.__dict__['get_latest']
 
     @property
     def log(self):
