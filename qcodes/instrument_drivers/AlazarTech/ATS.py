@@ -679,10 +679,6 @@ class AlazarTech_ATS(Instrument):
 
         # -----set final configurations-----
 
-        # Abort any previous measurement
-        # With AlazarAbortAsyncRead in a finally clause below
-        # this should be fully redundant and is rather slow
-        self._call_dll('AlazarAbortAsyncRead', self._handle)
         buffers_per_acquisition = self._get_raw_or_bytes(self.buffers_per_acquisition)
         samples_per_record = self._get_raw_or_bytes(self.samples_per_record)
         records_per_buffer = self._get_raw_or_bytes(self.records_per_buffer)
