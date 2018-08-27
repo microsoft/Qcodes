@@ -122,4 +122,18 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
         data_saver.dataset.conn.close()
 
 
-# TODO: add test for wrong type in DataSet
+def test_string_via_dataset(experiment):
+    """
+    Test that it is possible to save a string value of a non-'text' parameter
+    via DataSet API.
+    """
+    p = ParamSpec("p", "text")
+
+    test_set = qc.new_data_set("test-dataset")
+    test_set.add_parameter(p)
+
+    test_set.add_result({"p": "some text"})
+
+    test_set.mark_complete()
+
+    assert test_set.get_data("p") == [["some text"]]
