@@ -141,11 +141,14 @@ class N52xxChannel(InstrumentChannel):
         del self.trace[name]
 
     def delete_all_traces(self) ->None:
-        trace_names = self.trace.keys()
+        trace_names = list(self.trace.keys())
         for name in trace_names:
             self.trace[name].delete()
 
     def _find_traces(self) -> Iterable:
+        """
+        Find traces on the instrument
+        """
         result = self.ask(f"CALC{self.channel}:PAR:CAT:EXT?")
         if result == "NO CATALOG":
             return []
@@ -294,15 +297,21 @@ class N52xxBase(VisaInstrument):
 
         self.connect_message()
 
-    def delete_all_traces(self):
+    def delete_all_traces(self) ->None:
         # Do not do this by writing "CALC:PAR:DEL:ALL" to the instrument, as
         # a reference to the trace objects will still be contained in the
         # internal dictionary of the channel object
         for channel in self.channel:
             channel.delete_all_traces()
 
-    def run_sweep(self) ->None:
-        self.sweep_mode('SING')
+    def run_sweep(self, averages: int =1) ->None:
+
+        if averages == 1:
+            self.sweep_mode('SING')
+        else:
+            self.write('SENS:AVER:CLE')
+            self.write(f'SENS:SWE:GRO:COUN {averages}')
+            self.sweep_mode('GRO')
 
         try:
             # Once the sweep mode is in hold, we know we're done
