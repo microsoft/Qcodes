@@ -8,6 +8,7 @@ import weakref
 import gc
 from copy import copy, deepcopy
 import logging
+import pickle
 
 import numpy as np
 from hypothesis import given
@@ -1358,3 +1359,46 @@ class TestParameterSnapshotting(TestCase):
                                     'label': 'Param 1',
                                     'unit': 'V',
                                     'value': None})
+
+
+class TestParameterPickling(TestCase):
+    def test_pickle_empty_parameter(self):
+        p = Parameter(name='param1')
+        pickle_dump = pickle.dumps(p)
+        p_pickled = pickle._loads(pickle_dump)
+        self.assertEqual(p_pickled.name, 'param1')
+
+    def test_pickle_empty_parameter_with_set(self):
+        p = Parameter(name='param1', set_cmd=lambda x: 'bla')
+        pickle_dump = pickle.dumps(p)
+        p_pickled = pickle._loads(pickle_dump)
+        self.assertEqual(p.name, 'param1')
+        self.assertEqual(p_pickled.name, 'param1')
+
+    def test_pickle_empty_parameter_with_get(self):
+        p = Parameter(name='param1', get_cmd=lambda: 123)
+        p.get()  # Set value to 123
+        pickle_dump = pickle.dumps(p)
+
+        p_pickled = pickle._loads(pickle_dump)
+        self.assertEqual(p_pickled.name, 'param1')
+        self.assertEqual(p_pickled.get_latest(), 123)
+        self.assertEqual(p_pickled(), 123)
+
+    def test_pickle_get_latest(self):
+        p = Parameter('p1', set_cmd=None)
+        p(42)
+
+        pickle_dump = pickle.dumps(p)
+        p_pickled = pickle.loads(pickle_dump)
+
+        self.assertEqual(p.get_latest(), 42)
+        self.assertEqual(p_pickled.get_latest(), 42)
+
+        p(41)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_pickled.get_latest(), 42)
+
+        p_pickled._latest['value'] = 43
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_pickled.get_latest(), 43)
