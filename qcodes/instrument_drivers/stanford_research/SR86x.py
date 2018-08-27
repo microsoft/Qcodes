@@ -1043,7 +1043,7 @@ class SR86x(VisaInstrument):
         for name in parameter_names:
             if name not in self.PARAMETER_NAMES:
                 raise KeyError(f'{name} is not a valid parameter name. Refer '
-                               f'to `_PARAMETER_NAMES` for a list of valid '
+                               f'to `PARAMETER_NAMES` for a list of valid '
                                f'parameter names')
 
         p_ids = [self.PARAMETER_NAMES[name] for name in parameter_names]
