@@ -80,27 +80,24 @@ def test_string(experiment):
     assert test_set.get_data("p") == [["some text"]]
 
 
-def test_string_without_specifying_paramtype(experiment):
+def test_string_with_wrong_paramtype(experiment):
     """
-    Test that an exception occurs when loading the string data if when
-    registering a string parameter the paramtype was not explicitly set to
-    'text'
+    Test that an exception occurs when saving string data if when registering a
+    string parameter the paramtype was not set to 'text'
     """
     p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
                      set_cmd=None, initial_value='some text')
 
     meas = Measurement(experiment)
-    meas.register_parameter(p)  # intentionally forgot `paramtype='text'`
+    # intentionally forget `paramtype='text'`, so that the default 'numeric'
+    # is used, and an exception is raised later
+    meas.register_parameter(p)
 
     with meas.run() as datasaver:
-        datasaver.add_result((p, "some text"))
+        msg = "It is not possible to save a string value for parameter 'p' " \
+              "because its type class is 'numeric', not 'text'."
+        with pytest.raises(ValueError, match=msg):
+            datasaver.add_result((p, "some text"))
 
-    test_set = load_by_id(datasaver.run_id)
-
-    try:
-        with pytest.raises(ValueError,
-                           match="could not convert string to float: b'some "
-                                 "text'"):
-            assert test_set.get_data("p") == [["some text"]]
-    finally:
-        test_set.conn.close()
+# TODO: add test for wrong type in DataSaver
+# TODO: add test for wrong type in DataSet
