@@ -125,7 +125,7 @@ class N52xxChannel(InstrumentChannel):
 
     def delete_trace(self, name: str) ->None:
         """
-        Deletes the trace on the instrument
+        Deletes the trace on the instrument, then calls `delete_trace_from_list`
         """
         self.trace[name].delete()
 
@@ -258,7 +258,7 @@ class N52xxBase(VisaInstrument):
             get_cmd='SENS:SWE:TIME?',
             get_parser=float,
             unit='s',
-            vals=Numbers(0,1e6)
+            vals=Numbers(0, 1e6)
         )
 
         self.add_parameter(
@@ -298,6 +298,30 @@ class N52xxBase(VisaInstrument):
         # Do not do this by writing "CALC:PAR:DEL:ALL" to the instrument, as
         # a reference to the trace objects will still be contained in the
         # internal dictionary of the channel object
-        for channel in self.channels:
+        for channel in self.channel:
             channel.delete_all_traces()
 
+    def run_sweep(self) ->None:
+        self.sweep_mode('SING')
+
+        try:
+            # Once the sweep mode is in hold, we know we're done
+            # Note that if no triggers are received, we can get stuck in an
+            # infinite loop
+            while self.sweep_mode() != 'HOLD':
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            # If the user aborts because (s)he is stuck in the infinite loop
+            # mentioned above, provide a hint of what can be wrong.
+            msg = "User abort detected. "
+            source = self.root_instrument.trigger_source()
+
+            if source == "MAN":
+                msg += "The trigger source is manual. Are you sure this is " \
+                       "correct? Please set the correct source with the " \
+                       "'trigger_source' parameter"
+            elif source == "EXT":
+                msg += "The trigger source is external. Is the trigger " \
+                       "source functional?"
+
+            logger.warning(msg)
