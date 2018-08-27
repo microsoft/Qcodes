@@ -119,7 +119,7 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            param_spec = self.parameters[str(partial_result[0])]
+            param_spec = self.parameters[paramstr]
             if param_spec.type == 'array':
                 inserting_as_arrays = True
             if any(isinstance(value, typ) for typ in array_like_types):
