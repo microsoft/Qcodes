@@ -262,7 +262,6 @@ class DataSaver:
         # design of ArrayParameters (possibly) containing (some of) their
         # setpoints
 
-        paramstr = str(parameter)
         sp_names = parameter.setpoint_full_names
         fallback_sp_name = f"{parameter.full_name}_setpoint"
         self._unbundle_setpoints_from_param(parameter, sp_names,
@@ -324,9 +323,6 @@ class DataSaver:
             if shape != ():
                 # array parameter like part of the multiparameter
                 # TODO consider merging this with the code above
-                setpoint_axes = []
-                setpoint_meta = []
-                paramstr = parameter.names[i]
                 fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
 
                 if parameter.setpoint_full_names[i] is not None:
