@@ -149,17 +149,11 @@ def path_to_config_file_on_disk():
             "register_magic": True,
             "db_location": "~/experiments.db",
             "db_debug": True  # Different than default
-        },
-        "gui": {
-            "notebook": True,
-            "plotlib": "all",
-            "pyqtmaxplots": 100,
-            "defaultcolormap": "hot"
-        },
+        },  # we omit a required section (gui)
         "user": {
             "scriptfolder": ".",
             "mainfolder": "."
-        }  # we omit a section (stationconfigurator)
+        }  # we omit a non-required section (stationconfigurator)
     }
 
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -272,7 +266,8 @@ def test_update_from_path(path_to_config_file_on_disk):
 
     # check that the settings NOT specified in our config file on path
     # are still saved as configurations
-    assert cfg['core']['station_configurator']['default_folder'] == '.'
+    assert cfg['gui']['notebook'] is True
+    assert cfg['station_configurator']['default_folder'] == '.'
 
     expected_path = os.path.join(path_to_config_file_on_disk, 'qcodesrc.json')
     assert cfg.current_config_path == expected_path
