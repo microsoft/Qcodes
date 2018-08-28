@@ -1,3 +1,4 @@
+import sys
 from contextlib import contextmanager
 import logging
 import sqlite3
@@ -109,11 +110,48 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def _convert_numeric(value: bytes) -> Union[float, int]:
-    numeric = float(value)
-    if np.isnan(numeric) or numeric != int(numeric):
+this_session_default_encoding = sys.getdefaultencoding()
+
+
+def _convert_numeric(value: bytes) -> Union[float, int, str]:
+    """
+    This is a converter for sqlite3 'numeric' type class.
+
+    This converter is capable of deducting whether a number is a float or an
+    int.
+
+    Note sqlite3 allows to save data to columns even if their type is not
+    compatible with the table type class (for example, it is possible to save
+    integers into 'text' columns). Due to this fact, and for the reasons of
+    flexibility, the numeric converter is also made capable of handling
+    strings. An obvious exception to this is 'nan' (case insensitive) which
+    gets converted to `np.nan`.
+    """
+    try:
+        # First, try to convert bytes to float
+        numeric = float(value)
+    except ValueError as e:
+        # If an exception has been raised, we first need to find out
+        # if the reason was the conversion to float, and, if so, we are sure
+        # that we need to return a string
+        if "could not convert string to float" in str(e):
+            return str(value, encoding=this_session_default_encoding)
+        else:
+            # otherwise, the exception is forwarded up the stack
+            raise e
+
+    # If that worked, e.g. did not raise an exception, then we check if the
+    # outcome is 'nan'
+    if np.isnan(numeric):
         return numeric
-    return int(numeric)
+
+    # If it is not 'nan', then we need to see if the value is really an
+    # integer or with floating point digits
+    numeric_int = int(numeric)
+    if numeric != numeric_int:
+        return numeric
+    else:
+        return numeric_int
 
 
 def _adapt_float(fl: float) -> Union[float, str]:

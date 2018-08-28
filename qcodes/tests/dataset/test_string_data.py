@@ -123,10 +123,11 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
         data_saver.dataset.conn.close()
 
 
-def test_string_with_wrong_paramtype_via_dataset(experiment):
+def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     """
     Test that it is possible to save a string value of a non-'text' parameter
-    via DataSet API.
+    via DataSet API, and, importantly, to retrieve it thanks to the
+    flexibility of `_convert_numeric` converter function.
     """
     p = ParamSpec("p", "numeric")
 
@@ -138,9 +139,7 @@ def test_string_with_wrong_paramtype_via_dataset(experiment):
     test_set.mark_complete()
 
     try:
-        msg = "could not convert string to float: b'some text'"
-        with pytest.raises(ValueError, match=msg):
-            _ = test_set.get_data("p")
+        assert [['some text']] == test_set.get_data("p")
     finally:
         test_set.conn.close()
 
