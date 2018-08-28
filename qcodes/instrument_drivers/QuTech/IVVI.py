@@ -110,7 +110,7 @@ class IVVI(VisaInstrument):
                                       'value. Change to a lower value for '
                                       'a shorter minimum time to wait.'))
 
-        self.add_parameter('dac voltages',
+        self.add_parameter('dac_voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
