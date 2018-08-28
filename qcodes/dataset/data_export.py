@@ -81,7 +81,7 @@ def get_data_by_id(run_id: int) -> List:
         my_output = []
 
         max_size = 0
-        for i, dependency in enumerate(dependencies):
+        for dependency in dependencies:
             axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn,
                                                                  dependency[0])
 
