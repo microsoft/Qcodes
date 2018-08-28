@@ -1402,3 +1402,22 @@ class TestParameterPickling(TestCase):
         p_pickled._latest['value'] = 43
         self.assertEqual(p.get_latest(), 41)
         self.assertEqual(p_pickled.get_latest(), 43)
+
+    def test_pickle_connected_parameter(self):
+        values = []
+        def fun(value):
+            values.append(value)
+
+        p = Parameter(set_cmd=None)
+        p.connect(fun, update=False)
+
+        p(42)
+        self.assertListEqual(values, [42])
+
+        pickle_dump = pickle.dumps(p)
+        pickled_parameter = pickle.loads(pickle_dump)
+
+        self.assertListEqual(values, [42])
+        p(41)
+        self.assertListEqual(values, [42, 41])
+        self.assertEqual(pickled_parameter(), 42)
