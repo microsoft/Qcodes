@@ -678,7 +678,7 @@ def get_setpoints(conn: sqlite3.Connection,
     setpoint_names = cast(List[str], setpoint_names)
 
     # get the actual setpoint data
-    output = []
+    output: DICT = {}
     for sp_name in setpoint_names:
         sql = f"""
         SELECT {sp_name}
@@ -687,7 +687,7 @@ def get_setpoints(conn: sqlite3.Connection,
         """
         c = atomic_transaction(conn, sql)
         sps = many_many(c, sp_name)
-        output.append(sps)
+        output[param_name].append(sps)
 
     return output
 
