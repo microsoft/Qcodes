@@ -162,16 +162,23 @@ def test_get_data_by_id_order(dataset):
     indepA = ParamSpec('indep1', "numeric")
     indepB = ParamSpec('indep2', "numeric")
     depAB = ParamSpec('depAB', "numeric", depends_on=[indepA, indepB])
-    # depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
-    dataset.add_parameters([indepA, indepB, depAB])
+    depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
+    dataset.add_parameters([indepA, indepB, depAB, depBA])
 
     dataset.add_result({'depAB': 12,
                         'indep2': 2,
                         'indep1': 1})
 
+    dataset.add_result({'depBA': 21,
+                        'indep2': 2,
+                        'indep1': 1})
     dataset.mark_complete()
 
     data = get_data_by_id(dataset.run_id)
     data_dict = {el['name']: el['data'] for el in data[0]}
+    assert data_dict['indep1'] == 1
+    assert data_dict['indep2'] == 2
+
+    data_dict = {el['name']: el['data'] for el in data[1]}
     assert data_dict['indep1'] == 1
     assert data_dict['indep2'] == 2
