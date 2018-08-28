@@ -6,8 +6,10 @@ from math import floor
 import pytest
 
 import qcodes as qc
-from qcodes.dataset.data_set import new_data_set, load_by_id, load_by_counter
+from qcodes.dataset.data_set import (new_data_set, load_by_id, load_by_counter,
+                                     ParamSpec)
 from qcodes.dataset.database import initialise_database
+from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.experiment_container import new_experiment
 
 
@@ -27,6 +29,11 @@ def experiment(empty_temp_db):
     yield e
     e.conn.close()
 
+@pytest.fixture(scope='function')
+def dataset(experiment):
+    dataset = new_data_set("test-dataset")
+    yield dataset
+    dataset.conn.close()
 
 def test_load_by_id(experiment):
     ds = new_data_set("test-dataset")
@@ -145,3 +152,26 @@ def test_completed_timestamp_with_default_format(empty_temp_db):
     assert t_before_complete_secs \
            <= actual_completed_timestamp_raw \
            <= t_after_complete_secs + 1
+
+def test_get_data_by_id_order(dataset):
+    """
+    Test if the values of the setpoints/dependent parameters is dependent on
+    the order of the `depends_on` value. This sounds far fetch but was
+    actually the case before #1250.
+    """
+    indepA = ParamSpec('indep1', "numeric")
+    indepB = ParamSpec('indep2', "numeric")
+    depAB = ParamSpec('depAB', "numeric", depends_on=[indepA, indepB])
+    # depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
+    dataset.add_parameters([indepA, indepB, depAB])
+
+    dataset.add_result({'depAB': 12,
+                        'indep2': 2,
+                        'indep1': 1})
+
+    dataset.mark_complete()
+
+    data = get_data_by_id(dataset.run_id)
+    data_dict = {el['name']: el['data'] for el in data[0]}
+    assert data_dict['indep1'] == 1
+    assert data_dict['indep2'] == 2
