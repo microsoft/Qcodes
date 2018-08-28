@@ -1,6 +1,7 @@
-import pytest
 import os
 import tempfile
+
+import pytest
 import numpy as np
 
 import qcodes as qc
@@ -137,3 +138,27 @@ def test_string_via_dataset(experiment):
     test_set.mark_complete()
 
     assert test_set.get_data("p") == [["some text"]]
+
+
+def test_list_of_strings(experiment):
+    """
+    Test saving list of strings via DataSaver
+    """
+    p_values = ["X_Y", "X_X", "X_I", "I_I"]
+    list_of_strings = list(np.random.choice(p_values, (10,)))
+
+    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
+                     set_cmd=None, initial_value='X_Y')
+
+    meas = Measurement(experiment)
+    meas.register_parameter(p, paramtype='text')
+
+    with meas.run() as datasaver:
+        datasaver.add_result((p, list_of_strings))
+
+    test_set = load_by_id(datasaver.run_id)
+
+    try:
+        assert [[item] for item in list_of_strings] == test_set.get_data("p")
+    finally:
+        test_set.conn.close()
