@@ -476,6 +476,7 @@ class PCDDSChannel(InstrumentChannel):
         value = int(np.round(offset/self.v_max * 2**(self.n_amp_bits-1)))
         value = min(value, 2 ** (self.n_amp_bits - 1) - 1)
         value = max(value, -2 ** (self.n_amp_bits - 1))
+        # Tricking python into not thinking it's a negative number
         value += 1 << 17
         value &= 0xFFFF
         return value
