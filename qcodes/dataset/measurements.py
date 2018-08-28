@@ -136,12 +136,17 @@ class DataSaver:
                 else:
                     input_size = array_size
             elif is_number(value):
-                pass
-            elif isinstance(value, str) and param_spec.type != 'text':
-                raise ValueError(f"It is not possible to save a string value "
-                                 f"for parameter {paramstr!r} because its "
-                                 f"type class is {param_spec.type!r}, "
-                                 f"not 'text'.")
+                if param_spec.type == 'text':
+                    raise ValueError(f"It is not possible to save a numeric "
+                                     f"value for parameter {paramstr!r} "
+                                     f"because its type class is "
+                                     f"'text', not 'numeric' or 'array'.")
+            elif isinstance(value, str):
+                if param_spec.type != 'text':
+                    raise ValueError(f"It is not possible to save a string "
+                                     f"value for parameter {paramstr!r} "
+                                     f"because its type class is "
+                                     f"{param_spec.type!r}, not 'text'.")
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
