@@ -178,7 +178,7 @@ def __getstate__(self):
     solution was not found."""
     # Remove methods that may have been set dynamically (e.g. wrapped)
     d = copy(self.__dict__)
-    d['signal'] = None
+    d['signal'] = Signal()
 
     for attr in ['get', 'get_raw', 'get_parser',
                  'set', 'set_raw', 'set_parser']:
