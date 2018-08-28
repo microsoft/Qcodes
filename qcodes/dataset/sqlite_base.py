@@ -687,7 +687,7 @@ def get_setpoints(conn: sqlite3.Connection,
         """
         c = atomic_transaction(conn, sql)
         sps = many_many(c, sp_name)
-        output[param_name].append(sps)
+        output[sp_name] = sps
 
     return output
 

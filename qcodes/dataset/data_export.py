@@ -85,7 +85,7 @@ def get_data_by_id(run_id: int) -> List:
             axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn,
                                                                  dependency[0])
 
-            mydata = flatten_1D_data_for_plot(raw_setpoint_data[dependency])
+            mydata = flatten_1D_data_for_plot(raw_setpoint_data[axis['name']])
             axis['data'] = mydata
 
             size = mydata.size
