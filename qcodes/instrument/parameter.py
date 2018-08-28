@@ -661,7 +661,6 @@ class _BaseParameter(Metadatable):
                 'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
 
-    # Deprecated
     @property
     def full_name(self):
         return "_".join(self.name_parts)
@@ -721,7 +720,15 @@ class _BaseParameter(Metadatable):
     @property
     def name_parts(self) -> List[str]:
         if self.instrument is not None:
-            name_parts = self.instrument.name_parts
+
+            name_parts = getattr(self.instrument, 'name_parts', [])
+            if name_parts == []:
+                # add fallback for the case where someone has bound
+                # the parameter to something that is not an instrument
+                # but perhaps it has a name anyway?
+                name = getattr(self.instrument, 'name', None)
+                if name is not None:
+                    name_parts = [name]
         else:
             name_parts = []
 
@@ -1090,14 +1097,15 @@ class ArrayParameter(_BaseParameter):
         """
         Full names of setpoints including instrument names if available
         """
-        try:
-            inst_name = self._instrument.full_name
-            if inst_name:
-                return tuple(inst_name + '_' + spname for spname in
-                             self.setpoint_names)
-        except AttributeError:
-            pass
-        return self.setpoint_names
+        if self.setpoint_names is None:
+            return None
+        # omit the last part of name_parts which is the parameter name
+        # and not part of the setpoint names
+        inst_name = "_".join(self.name_parts[:-1])
+        if inst_name != '':
+            return [inst_name + '_' + spname for spname in self.setpoint_names]
+        else:
+            return self.setpoint_names
 
 
 def _is_nested_sequence_or_none(obj, types, shapes):
@@ -1291,14 +1299,11 @@ class MultiParameter(_BaseParameter):
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return [inst_name + '_' + name for name in self.names]
-        except AttributeError:
-            pass
-
-        return self.names
+        inst_name = "_".join(self.name_parts[:-1])
+        if inst_name != '':
+            return [inst_name + '_' + name for name in self.names]
+        else:
+            return self.names
 
     @property
     def setpoint_full_names(self):
@@ -1307,17 +1312,17 @@ class MultiParameter(_BaseParameter):
         """
         if self.setpoint_names is None:
             return None
-        try:
-            inst_name = self._instrument.full_name
-            if inst_name:
-                full_sp_names = []
-                for sp_group in self.setpoint_names:
-                    full_sp_names.append(tuple(inst_name + '_' + spname
-                                              for spname in sp_group))
-                return tuple(full_sp_names)
-        except AttributeError:
-            pass
-        return self.setpoint_names
+        # omit the last part of name_parts which is the parameter name
+        # and not part of the setpoint names
+        inst_name = "_".join(self.name_parts[:-1])
+        if inst_name != '':
+            full_sp_names = []
+            for sp_group in self.setpoint_names:
+                full_sp_names.append(tuple(inst_name + '_' + spname
+                                           for spname in sp_group))
+            return tuple(full_sp_names)
+        else:
+            return self.setpoint_names
 
 
 class GetLatest(DelegateAttributes):
