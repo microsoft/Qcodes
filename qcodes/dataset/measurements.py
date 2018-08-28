@@ -214,12 +214,12 @@ class DataSaver:
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
-                param_spec = self.parameters[str(partial_result[0])]
+                param = str(partial_result[0])
+                value = partial_result[1]
+                param_spec = self.parameters[param]
                 if param_spec.type == 'array' and index == 0:
-                    res_dict[str(partial_result[0])] = partial_result[1]
+                    res_dict[param] = value
                 elif param_spec.type != 'array':
-                    param = str(partial_result[0])
-                    value = partial_result[1]
                     # For compatibility with the old Loop, setpoints are
                     # tuples of numbers (usually tuple(np.linspace(...))
                     if hasattr(value, '__len__') and not(isinstance(value,
