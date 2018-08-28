@@ -1290,6 +1290,32 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.source_parameter(), 14)
         self.assertEqual(self.target_parameter(), 38)
 
+    def test_copied_parameter_signal(self):
+        values = []
+        def fun(value):
+            values.append(value)
+
+        p = Parameter(set_cmd=None)
+        p_copy = copy(p)
+
+        self.assertIsNotNone(p_copy.signal)
+        p_copy.connect(fun, update=False)
+        p_copy(42)
+        self.assertListEqual(values, [42])
+
+    def test_deepcopied_parameter_signal(self):
+        values = []
+        def fun(value):
+            values.append(value)
+
+        p = Parameter(set_cmd=None)
+        p_copy = deepcopy(p)
+
+        self.assertIsNotNone(p_copy.signal)
+        p_copy.connect(fun, update=False)
+        p_copy(42)
+        self.assertListEqual(values, [42])
+
 
 class ListHandler(logging.Handler):  # Inherit from logging.Handler
     def __init__(self, log_list):

@@ -137,6 +137,7 @@ def __deepcopy__(self, memodict={}):
         self_copy.__getstate__ = partial(__getstate__, self_copy)
 
         self_copy.parent = None
+        self_copy.signal = Signal()
 
         # Detach and reattach all node decorator methods, now containing
         # reference to the new parameter, but still old parameter node
@@ -179,6 +180,7 @@ def __getstate__(self):
     # Remove methods that may have been set dynamically (e.g. wrapped)
     d = copy(self.__dict__)
     d['signal'] = Signal()
+    d['parent'] = None
 
     for attr in ['get', 'get_raw', 'get_parser',
                  'set', 'set_raw', 'set_parser']:
@@ -475,7 +477,7 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
         self_copy.get_latest = GetLatest(self_copy,
                                          max_val_age=self.get_latest.max_val_age)
-        self_copy.signal = None
+        self_copy.signal = Signal()
         self_copy._signal_chain = []
         self_copy.parent = None
 

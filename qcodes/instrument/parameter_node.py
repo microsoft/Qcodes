@@ -3,6 +3,7 @@ from typing import Sequence, Any, Dict, Callable, List, Union
 import numpy as np
 from functools import partial, wraps
 from copy import copy, deepcopy, _reconstruct
+from blinker import Signal
 
 from qcodes.utils.helpers import DelegateAttributes, full_class
 from qcodes.utils.metadata import Metadatable
@@ -284,6 +285,12 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     def __eq__(self, other):
         return self.matches_parameter_node(other)
+
+    def __getstate__(self):
+        d = copy(self.__dict__)
+        d['signal'] = Signal()
+        d['parent'] = None
+        return d
 
     def _attach_parameter_decorators(self,
                                      parameter: _BaseParameter,
