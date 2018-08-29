@@ -277,8 +277,8 @@ class DataSaver:
         setpoint_axes = []
         setpoint_meta = []
         if setpoints is None:
-            raise RuntimeError(f"Got an {type(parameter)} without "
-                               "setpoints. Cannot handle this")
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
         for i, sps in enumerate(setpoints):
             if sp_names is not None:
                 spname = sp_names[i]
