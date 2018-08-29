@@ -30,7 +30,7 @@ def empty_temp_db():
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = False
+        qc.config["core"]["db_debug"] = True
         initialise_database()
         yield
 
