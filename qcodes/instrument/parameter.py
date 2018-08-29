@@ -720,7 +720,6 @@ class _BaseParameter(Metadatable):
     @property
     def name_parts(self) -> List[str]:
         if self.instrument is not None:
-
             name_parts = getattr(self.instrument, 'name_parts', [])
             if name_parts == []:
                 # add fallback for the case where someone has bound
@@ -1103,7 +1102,13 @@ class ArrayParameter(_BaseParameter):
         # and not part of the setpoint names
         inst_name = "_".join(self.name_parts[:-1])
         if inst_name != '':
-            return [inst_name + '_' + spname for spname in self.setpoint_names]
+            spnames = []
+            for spname in self.setpoint_names:
+                if spname is not None:
+                    spnames.append(inst_name + '_' + spname)
+                else:
+                    spnames.append(None)
+            return tuple(spnames)
         else:
             return self.setpoint_names
 
@@ -1318,8 +1323,14 @@ class MultiParameter(_BaseParameter):
         if inst_name != '':
             full_sp_names = []
             for sp_group in self.setpoint_names:
-                full_sp_names.append(tuple(inst_name + '_' + spname
-                                           for spname in sp_group))
+                full_sp_names_subgroupd = []
+                for spname in sp_group:
+                    if spname is not None:
+                        full_sp_names_subgroupd.append(inst_name + '_' + spname)
+                    else:
+                        full_sp_names_subgroupd.append(None)
+                full_sp_names.append(tuple(full_sp_names_subgroupd))
+
             return tuple(full_sp_names)
         else:
             return self.setpoint_names
