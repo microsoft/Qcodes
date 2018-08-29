@@ -8,3 +8,4 @@ git+https://github.com/QCoDeS/pyvisa-sim.git
 git+https://github.com/QCoDeS/broadbean.git
 lxml
 codecov
+asv

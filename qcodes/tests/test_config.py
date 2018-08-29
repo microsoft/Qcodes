@@ -1,9 +1,14 @@
 import copy
 import jsonschema
+import os
+import json
 
 from functools import partial
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
+import pytest
+import tempfile
+
 from qcodes.config import Config
 
 VALID_JSON = "{}"
@@ -133,6 +138,33 @@ def side_effect(map, name):
     return map[name]
 
 
+@pytest.fixture(scope="function")
+def path_to_config_file_on_disk():
+
+    contents = {
+        "core": {
+            "loglevel": "WARNING",
+            "file_loglevel": "INFO",
+            "default_fmt": "data/{date}/#{counter}_{name}_{time}",
+            "register_magic": True,
+            "db_location": "~/experiments.db",
+            "db_debug": True  # Different than default
+        },  # we omit a required section (gui)
+        "user": {
+            "scriptfolder": ".",
+            "mainfolder": "."
+        }  # we omit a non-required section (stationconfigurator)
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        with open(os.path.join(tmpdirname, 'qcodesrc.json'), 'w') as f:
+            f.write(json.dumps(contents))
+        with open(os.path.join(tmpdirname, 'qcodesrc_schema.json'), 'w') as f:
+            f.write(json.dumps(SCHEMA))
+
+        yield tmpdirname
+
+
 class TestConfig(TestCase):
     def setUp(self):
         self.conf = Config()
@@ -220,3 +252,22 @@ class TestConfig(TestCase):
         self.conf.add("foo", "bar", "string", "foo", "bar")
         self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
         self.assertEqual(self.conf.current_schema, UPDATED_SCHEMA)
+
+
+def test_update_from_path(path_to_config_file_on_disk):
+    cfg = Config()
+
+    # check that the default is still the default
+    cfg.update_config()
+    assert cfg["core"]["db_debug"] is False
+
+    cfg.update_config(path=path_to_config_file_on_disk)
+    assert cfg['core']['db_debug'] is True
+
+    # check that the settings NOT specified in our config file on path
+    # are still saved as configurations
+    assert cfg['gui']['notebook'] is True
+    assert cfg['station_configurator']['default_folder'] == '.'
+
+    expected_path = os.path.join(path_to_config_file_on_disk, 'qcodesrc.json')
+    assert cfg.current_config_path == expected_path

@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence, Optional)
+                    MutableMapping, MutableSequence, Optional, Any)
 from inspect import signature
 from numbers import Number
 
@@ -19,11 +19,21 @@ from qcodes.dataset.data_set import DataSet
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
-non_array_like_types = (int, float, str)
 
 
 class ParameterTypeError(Exception):
     pass
+
+
+def is_number(thing: Any) -> bool:
+    """
+    Test if an object can be converted to a number
+    """
+    try:
+        float(thing)
+        return True
+    except (ValueError, TypeError):
+        return False
 
 
 class DataSaver:
@@ -56,7 +66,7 @@ class DataSaver:
 
     def add_result(self,
                    *res_tuple: Tuple[Union[_BaseParameter, str],
-                                     Union[str, int, float, np.ndarray]])-> None:
+                                     Union[str, int, float, np.dtype, np.ndarray]])-> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -75,6 +85,9 @@ class DataSaver:
         go. Any number of scalars and any number of arrays OF THE SAME LENGTH
         can be passed to add_result. The scalars are duplicated to match the
         arrays.
+
+        However, if the parameter is registered as array type the numpy arrays
+        are not unraveled but stored directly for improved performance.
 
         Args:
             res: a dictionary with keys that are parameter names and items
@@ -95,6 +108,8 @@ class DataSaver:
         # proceeding.
         input_size = 1
         params = []
+        inserting_as_arrays = False
+        inserting_unrolled_array = False
         for partial_result in res:
             parameter = partial_result[0]
             paramstr = str(partial_result[0])
@@ -104,17 +119,23 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
+            param_spec = self.parameters[str(partial_result[0])]
+            if param_spec.type == 'array':
+                inserting_as_arrays = True
             if any(isinstance(value, typ) for typ in array_like_types):
+
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
-                array_size = len(value)
+                array_size = len(value.ravel())
+                if param_spec.type != 'array' and array_size > 1:
+                    inserting_unrolled_array = True
                 if input_size > 1 and input_size != array_size:
                     raise ValueError('Incompatible array dimensions. Trying to'
                                      f' add arrays of dimension {input_size} '
                                      f'and {array_size}')
                 else:
                     input_size = array_size
-            elif any(isinstance(value, t) for t in non_array_like_types):
+            elif is_number(value) or isinstance(value, str):
                 pass
             else:
                 raise ValueError('Wrong value type received. '
@@ -126,27 +147,41 @@ class DataSaver:
             # brittle and should be enough to convince us to abandon the
             # design of ArrayParameters (possibly) containing (some of) their
             # setpoints
+            setpoint_axes = []
+            setpoint_meta = []
             if isinstance(parameter, ArrayParameter):
-                if parameter.setpoints is not None:
-                    sps = parameter.setpoints[0]
-                else:
+                if parameter.setpoints is None:
                     raise RuntimeError("Got an array parameter without "
                                        "setpoints. Cannot handle this")
-                inst_name = getattr(parameter._instrument, 'name', '')
-                sp_name_parts = []
-                if inst_name is not None:
-                    sp_name_parts.append(inst_name)
-                if parameter.setpoint_names is not None:
-                    sp_name_parts.append(parameter.setpoint_names[0])
-                spname = '_'.join(sp_name_parts)
 
-                if f'{paramstr}_setpoint' in self.parameters.keys():
-                    res.append((f'{paramstr}_setpoint', sps))
-                elif spname in self.parameters.keys():
-                        res.append((spname, sps))
                 else:
-                    raise RuntimeError('No setpoints registered for '
-                                       f'ArrayParameter {paramstr}!')
+                    for i, sps in enumerate(parameter.setpoints):
+                        inst_name = getattr(parameter._instrument, 'name', '')
+                        sp_name_parts = []
+                        if inst_name is not None:
+                            sp_name_parts.append(inst_name)
+                        if parameter.setpoint_names is not None:
+                            sp_name_parts.append(parameter.setpoint_names[i])
+                        spname = '_'.join(sp_name_parts)
+                        if f'{paramstr}_setpoint' in self.parameters.keys() \
+                                or spname in self.parameters.keys():
+                            sps = np.array(sps)
+                            while sps.ndim > 1:
+                                sps = sps[0]
+                            setpoint_meta.append({'paramstr': paramstr,
+                                                  'spname': spname})
+                            setpoint_axes.append(sps)
+                        else:
+                            raise RuntimeError('No setpoints registered for '
+                                               f'ArrayParameter {paramstr}!')
+                    output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
+                    for grid, meta in zip(output_grids, setpoint_meta):
+                        if not inserting_as_arrays:
+                            grid = grid.ravel()
+                        if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
+                            res.append((f'{meta["paramstr"]}_setpoint', grid))
+                        elif meta['spname'] in self.parameters.keys():
+                            res.append((meta['spname'], grid))
 
         # Now check for missing setpoints
         for partial_result in res:
@@ -159,23 +194,41 @@ class DataSaver:
                                      f'setpoint values for {param}:'
                                      f' {stuffweneed}.'
                                      f' Values only given for {params}.')
+        if inserting_unrolled_array and inserting_as_arrays:
+            raise RuntimeError("Trying to insert multiple data values both "
+                               "in array from and as numeric. This is not "
+                               "possible.")
+        elif inserting_as_arrays:
+            input_size = 1
 
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
-                param = str(partial_result[0])
-                value = partial_result[1]
-                # For compatibility with the old Loop, setpoints are
-                # tuples of numbers (usually tuple(np.linspace(...))
-                if hasattr(value, '__len__') and not(isinstance(value, str)):
-                    value = cast(Union[Sequence,np.ndarray], value)
-                    if isinstance(value, np.ndarray):
-                        value = np.atleast_1d(value)
-                    res_dict.update({param: value[index]})
-                else:
-                    res_dict.update({param: value})
-
-            self._results.append(res_dict)
+                param_spec = self.parameters[str(partial_result[0])]
+                if param_spec.type == 'array' and index == 0:
+                    res_dict[str(partial_result[0])] = partial_result[1]
+                elif param_spec.type != 'array':
+                    param = str(partial_result[0])
+                    value = partial_result[1]
+                    # For compatibility with the old Loop, setpoints are
+                    # tuples of numbers (usually tuple(np.linspace(...))
+                    if hasattr(value, '__len__') and not(isinstance(value,
+                                                                    str)):
+                        value = cast(Union[Sequence, np.ndarray], value)
+                        if isinstance(value, np.ndarray):
+                            # this is significantly faster than atleast_1d
+                            # espcially for non 0D arrays
+                            # because we already know that this is a numpy
+                            # array and just one numpy array. atleast_1d
+                            # performs additional checks.
+                            if value.ndim == 0:
+                                value = value.reshape(1)
+                            value = value.ravel()
+                        res_dict[param] = value[index]
+                    else:
+                        res_dict[param] = value
+            if len(res_dict) > 0:
+                self._results.append(res_dict)
 
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
@@ -225,11 +278,19 @@ class Runner:
             write_period: float=None,
             parameters: Dict[str, ParamSpec]=None,
             name: str='',
-            subscribers: List=[]) -> None:
+            subscribers: Sequence[Tuple[Callable,
+                                        Union[MutableSequence,
+                                              MutableMapping]]]=None) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
-        self.subscribers = subscribers
+        self.subscribers: Sequence[Tuple[Callable,
+                                         Union[MutableSequence,
+                                               MutableMapping]]]
+        if subscribers is None:
+            self.subscribers = []
+        else:
+            self.subscribers = subscribers
         self.experiment = experiment
         self.station = station
         self.parameters = parameters
@@ -292,11 +353,11 @@ class Runner:
         for func, args in self.exitactions:
             func(*args)
 
-        self.ds.unsubscribe_all()
-
         # and finally mark the dataset as closed, thus
         # finishing the measurement
         self.ds.mark_complete()
+
+        self.ds.unsubscribe_all()
 
 
 class Measurement:
@@ -393,7 +454,8 @@ class Measurement:
     def register_parameter(
             self, parameter: _BaseParameter,
             setpoints: Sequence[_BaseParameter]=None,
-            basis: Sequence[_BaseParameter]=None) -> None:
+            basis: Sequence[_BaseParameter]=None,
+            paramtype: str='numeric') -> None:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -407,8 +469,13 @@ class Measurement:
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
+            paramtype: type of the parameter, i.e. the SQL storage class
         """
         # input validation
+        if paramtype not in ParamSpec.allowed_types:
+            raise RuntimeError("Trying to register a parameter with type "
+                               f"{paramtype}. However, only "
+                               f"{ParamSpec.allowed_types} are supported.")
         if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
@@ -420,33 +487,34 @@ class Measurement:
         name = str(parameter)
         my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
-            parameter = cast(ArrayParameter, parameter)
-            spname_parts = []
-            if parameter.root_instrument is not None:
-                inst_name = parameter.root_instrument.name
-                if inst_name is not None:
-                    spname_parts.append(inst_name)
-            if parameter.setpoint_names is not None:
-                spname_parts.append(parameter.setpoint_names[0])
-            if len(spname_parts) > 0:
-                spname = '_'.join(spname_parts)
-            else:
-                spname = f'{name}_setpoint'
-            if parameter.setpoint_labels:
-                splabel = parameter.setpoint_labels[0]
-            else:
-                splabel = ''
-            if parameter.setpoint_units:
-                spunit = parameter.setpoint_units[0]
-            else:
-                spunit = ''
-
-            sp = ParamSpec(name=spname, paramtype='numeric',
-                           label=splabel, unit=spunit)
-
-            self.parameters[spname] = sp
             my_setpoints = list(setpoints) if setpoints else []
-            my_setpoints += [spname]
+            for i in range(len(parameter.shape)):
+                spname_parts = []
+                if parameter.instrument is not None:
+                    inst_name = parameter.instrument.name
+                    if inst_name is not None:
+                        spname_parts.append(inst_name)
+                if parameter.setpoint_names is not None:
+                    spname_parts.append(parameter.setpoint_names[i])
+                if len(spname_parts) > 0:
+                    spname = '_'.join(spname_parts)
+                else:
+                    spname = f'{name}_setpoint'
+                if parameter.setpoint_labels:
+                    splabel = parameter.setpoint_labels[i]
+                else:
+                    splabel = ''
+                if parameter.setpoint_units:
+                    spunit = parameter.setpoint_units[i]
+                else:
+                    spunit = ''
+
+                sp = ParamSpec(name=spname, paramtype=paramtype,
+                               label=splabel, unit=spunit)
+
+                self.parameters[spname] = sp
+
+                my_setpoints += [spname]
         else:
             my_setpoints = setpoints
 
@@ -458,7 +526,7 @@ class Measurement:
         # but for now binary blob saving is referred to using the DataSet
         # API directly
         parameter = cast(Union[Parameter, ArrayParameter], parameter)
-        paramtype = 'numeric'
+
         label = parameter.label
         unit = parameter.unit
 
@@ -493,7 +561,8 @@ class Measurement:
             self, name: str,
             label: str=None, unit: str=None,
             basis: Sequence[Union[str, _BaseParameter]]=None,
-            setpoints: Sequence[Union[str, _BaseParameter]]=None) -> None:
+            setpoints: Sequence[Union[str, _BaseParameter]]=None,
+            paramtype: str='numeric') -> None:
         """
         Register a custom parameter with this measurement
 
@@ -509,6 +578,7 @@ class Measurement:
             setpoints: A list of either QCoDeS Parameters or the names of
                 of parameters already registered in the measurement that
                 are the setpoints of this parameter
+            paramtype: type of the parameter, i.e. the SQL storage class
         """
 
         # validate dependencies
@@ -525,7 +595,7 @@ class Measurement:
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)
 
-        parspec = ParamSpec(name=name, paramtype='numeric',
+        parspec = ParamSpec(name=name, paramtype=paramtype,
                             label=label, unit=unit,
                             inferred_from=inf_from,
                             depends_on=depends_on)

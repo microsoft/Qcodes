@@ -8,6 +8,7 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast
 from distutils.version import LooseVersion
+import itertools
 
 import qcodes as qc
 import unicodedata
@@ -445,24 +446,25 @@ def insert_many_values(conn: sqlite3.Connection,
     start = 0
     stop = 0
 
-    for ii, chunk in enumerate(chunks):
-        _values_x_params = ",".join([_values] * chunk)
+    with atomic(conn):
+        for ii, chunk in enumerate(chunks):
+            _values_x_params = ",".join([_values] * chunk)
 
-        query = f"""INSERT INTO "{formatted_name}"
-                    ({_columns})
-                    VALUES
-                    {_values_x_params}
-                 """
-        stop += chunk
-        # we need to make values a flat list from a list of list
-        flattened_values = [item for sublist in values[start:stop]
-                            for item in sublist]
+            query = f"""INSERT INTO "{formatted_name}"
+                        ({_columns})
+                        VALUES
+                        {_values_x_params}
+                     """
+            stop += chunk
+            # we need to make values a flat list from a list of list
+            flattened_values = list(
+                itertools.chain.from_iterable(values[start:stop]))
 
-        c = atomic_transaction(conn, query, *flattened_values)
+            c = transaction(conn, query, *flattened_values)
 
-        if ii == 0:
-            return_value = c.lastrowid
-        start += chunk
+            if ii == 0:
+                return_value = c.lastrowid
+            start += chunk
 
     return return_value
 
@@ -805,7 +807,9 @@ def new_experiment(conn: sqlite3.Connection,
     return curr.lastrowid
 
 
-def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
+# TODO(WilliamHPNielsen): we should remove the redundant
+# is_completed
+def mark_run_complete(conn: sqlite3.Connection, run_id: int):
     """ Mark run complete
 
     Args:
@@ -821,7 +825,7 @@ def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), complete, run_id)
+    atomic_transaction(conn, query, time.time(), True, run_id)
 
 
 def completed(conn: sqlite3.Connection, run_id)->bool:
@@ -833,6 +837,25 @@ def completed(conn: sqlite3.Connection, run_id)->bool:
     """
     return bool(select_one_where(conn, "runs", "is_completed",
                                  "run_id", run_id))
+
+
+def get_completed_timestamp_from_run_id(
+        conn: sqlite3.Connection, run_id: int) -> float:
+    """
+    Retrieve the timestamp when the given measurement run was completed
+
+    If the measurement run has not been marked as completed, then the returned
+    value is None.
+
+    Args:
+        conn: database connection
+        run_id: id of the run
+
+    Returns:
+        timestamp in seconds since the Epoch, or None
+    """
+    return select_one_where(conn, "runs", "completed_timestamp",
+                            "run_id", run_id)
 
 
 def finish_experiment(conn: sqlite3.Connection, exp_id: int):
@@ -1350,3 +1373,19 @@ def get_user_version(conn: sqlite3.Connection) -> int:
 def set_user_version(conn: sqlite3.Connection, version: int) -> None:
 
     atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
+
+
+def get_experiment_name_from_experiment_id(
+        conn: sqlite3.Connection, exp_id: int) -> str:
+    return select_one_where(
+        conn, "experiments", "name", "exp_id", exp_id)
+
+
+def get_sample_name_from_experiment_id(
+        conn: sqlite3.Connection, exp_id: int) -> str:
+    return select_one_where(
+        conn, "experiments", "sample_name", "exp_id", exp_id)
+
+
+def get_run_timestamp_from_run_id(conn: sqlite3.Connection, run_id: int) -> int:
+    return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)

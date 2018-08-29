@@ -54,12 +54,15 @@ This file defines four classes of parameters:
 
 from datetime import datetime, timedelta
 from copy import copy
+from operator import xor
 import time
 import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, Iterable
+import enum
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
+    Dict, Any, Sized, Iterable, cast, Type
 from functools import partial, wraps
 import numpy
 
@@ -77,6 +80,29 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 Number = Union[float, int]
+
+
+class _SetParamContext:
+    """
+    This class is returned by the set method of parameters
+
+    Example usage:
+    >>> v = dac.voltage()
+    >>> with dac.voltage.set_to(-1):
+        ...     # Do stuff with the DAC output set to -1 V.
+        ...
+    >>> assert abs(dac.voltage() - v) <= tolerance
+    """
+    def __init__(self, parameter):
+        self._parameter = parameter
+        self._original_value = self._parameter._latest["value"]
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, typ, value, traceback):
+        self._parameter.set(self._original_value)
+
 
 class _BaseParameter(Metadatable):
     """
@@ -177,6 +203,7 @@ class _BaseParameter(Metadatable):
                  delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
+        self.short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -391,6 +418,9 @@ class _BaseParameter(Metadatable):
                 steps = self.get_ramp_values(value, step=self.step)
 
                 for step_index, val_step in enumerate(steps):
+                    # even if the final value is valid we may be generating
+                    # steps that are not so validate them too
+                    self.validate(val_step)
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
                         raw_value = self.val_mapping[val_step]
@@ -436,10 +466,7 @@ class _BaseParameter(Metadatable):
                     set_function(raw_value, **kwargs)
                     self.raw_value = raw_value
                     self._save_val(val_step,
-                                   validate=(self.val_mapping is None and
-                                             self.set_parser is None and
-                                             not(step_index == len(steps)-1 or
-                                                 len(steps) == 1)))
+                                   validate=False)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -449,6 +476,7 @@ class _BaseParameter(Metadatable):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
@@ -636,12 +664,7 @@ class _BaseParameter(Metadatable):
     # Deprecated
     @property
     def full_name(self):
-#        This can fully be replaced by str(parameter) in the future we
-#        may want to deprecate this but the current dataset makes heavy use
-#        of it in more complicated ways so keep it for now.
-#        warnings.warn('Attribute `full_name` is deprecated, please use '
-#                      'str(parameter)')
-        return str(self)
+        return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
@@ -658,11 +681,53 @@ class _BaseParameter(Metadatable):
             raise TypeError('vals must be a Validator')
 
     @property
+    def instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the first instrument that this parameter is bound to.
+        E.g if this is bound to a channel it will return the channel
+        and not the instrument that the channel is bound too. Use
+        :meth:`root_instrument` to get the real instrument.
+        """
+        return self._instrument
+
+    @property
     def root_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Return the fundamental instrument that this parameter belongs too.
+        E.g if the parameter is bound to a channel this will return the
+        fundamental instrument that that channel belongs to. Use
+        :meth:`instrument` to get the channel.
+        """
         if self._instrument is not None:
             return self._instrument.root_instrument
         else:
             return None
+
+    def set_to(self, value):
+        """
+        Use a context manager to temporarily set the value of a parameter to
+        a value. Example:
+
+        >>> from qcodes import Parameter
+        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+        >>> with p.set_to(3):
+        ...    print(f"p value in with block {p.get()}")
+        >>> print(f"p value outside with block {p.get()}")
+        """
+        context_manager = _SetParamContext(self)
+        self.set(value)
+        return context_manager
+
+    @property
+    def name_parts(self) -> List[str]:
+        if self.instrument is not None:
+            name_parts = self.instrument.name_parts
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
+
 
 class Parameter(_BaseParameter):
     """
@@ -971,7 +1036,7 @@ class ArrayParameter(_BaseParameter):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
 
-        nt = type(None)
+        nt: Type[None] = type(None)
 
         if not is_sequence_of(shape, int):
             raise ValueError('shapes must be a tuple of ints, not ' +
@@ -1151,7 +1216,7 @@ class MultiParameter(_BaseParameter):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
-        nt = type(None)
+        nt: Type[None] = type(None)
 
         if (not is_sequence_of(shapes, int, depth=2) or
                 len(shapes) != len(names)):
@@ -1483,3 +1548,193 @@ class ManualParameter(Parameter):
         super().__init__(name=name, instrument=instrument,
                          get_cmd=None, set_cmd=None,
                          initial_value=initial_value, **kwargs)
+
+
+class ScaledParameter(Parameter):
+    """
+    Parameter Scaler
+
+    To be used when you use a physical voltage divider or an amplifier to set
+    or get a quantity.
+
+    Initialize the parameter by passing the parameter to be measured/set
+    and the value of the division OR the gain.
+
+    The scaling value can be either a scalar value or a Qcodes Parameter.
+
+    The parameter scaler acts a your original parameter, but will set the right
+    value, and store the gain/division in the metadata.
+
+    Examples:
+        Resistive voltage divider
+        >>> vd = ScaledParameter(dac.chan0, division = 10)
+
+        Voltage multiplier
+        >>> vb = ScaledParameter(dac.chan0, gain = 30, name = 'Vb')
+
+        Transimpedance amplifier
+        >>> Id = ScaledParameter(multimeter.amplitude, division = 1e6, name = 'Id', unit = 'A')
+
+    Args:
+        output: Physical Parameter that need conversion
+        division: the division value
+        gain: the gain value
+        label: label of this parameter, by default uses 'output' label
+            but attaches _amplified or _attenuated depending if gain
+            or division has been specified
+        name: name of this parameter, by default uses 'output' name
+            but attaches _amplified or _attenuated depending if gain
+            or division has been specified
+        unit: resulting unit. It uses the one of 'output' by default
+    """
+
+    class Role(enum.Enum):
+        GAIN = enum.auto()
+        DIVISION = enum.auto()
+
+
+    def __init__(self,
+                 output: Parameter,
+                 division: Union[int, float, Parameter] = None,
+                 gain: Union[int, float, Parameter] = None,
+                 name: str=None,
+                 label: str=None,
+                 unit: str=None) -> None:
+        # Set the name
+        if name:
+            self.name = name
+        else:
+            self.name = "{}_scaled".format(output.name)
+
+        # Set label
+        if label:
+            self.label = label
+        elif name:
+            self.label = name
+        else:
+            self.label = "{}_scaled".format(output.label)
+
+        # Set the unit
+        if unit:
+            self.unit = unit
+        else:
+            self.unit = output.unit
+
+        super().__init__(
+            name=self.name,
+            label=self.label,
+            unit=self.unit
+            )
+
+        self._wrapped_parameter = output
+        self._wrapped_instrument = getattr(output, "_instrument", None)
+
+        # Set the role, either as divider or amplifier
+        # Raise an error if nothing is specified
+        is_divider = division is not None
+        is_amplifier = gain is not None
+
+        if not xor(is_divider, is_amplifier):
+            raise ValueError('Provide only division OR gain')
+
+        if is_divider:
+            self.role = ScaledParameter.Role.DIVISION
+            self._multiplier = division
+        elif is_amplifier:
+            self.role = ScaledParameter.Role.GAIN
+            self._multiplier = gain
+
+        # extend metadata
+        self._meta_attrs.extend(["division"])
+        self._meta_attrs.extend(["gain"])
+        self._meta_attrs.extend(["role"])
+        self.metadata['wrapped_parameter'] = self._wrapped_parameter.name
+        if self._wrapped_instrument:
+            self.metadata['wrapped_instrument'] = getattr(self._wrapped_instrument, "name", None)
+
+    # Internal handling of the multiplier
+    # can be either a Parameter or a scalar
+    @property
+    def _multiplier(self):
+        return self._multiplier_parameter
+
+    @_multiplier.setter
+    def _multiplier(self, multiplier: Union[int, float, Parameter]):
+        if isinstance(multiplier, Parameter):
+            self._multiplier_parameter = multiplier
+            self.metadata['variable_multiplier'] = self._multiplier_parameter.name
+        else:
+            self._multiplier_parameter = ManualParameter(
+                'multiplier', initial_value=multiplier)
+            self.metadata['variable_multiplier'] = False
+
+    # Division of the scaler
+    @property
+    def division(self):
+        if self.role == ScaledParameter.Role.DIVISION:
+            return self._multiplier()
+        elif self.role == ScaledParameter.Role.GAIN:
+            return 1 / self._multiplier()
+
+    @division.setter
+    def division(self, division: Union[int, float, Parameter]):
+        self.role = ScaledParameter.Role.DIVISION
+        self._multiplier = division
+
+    # Gain of the scaler
+    @property
+    def gain(self):
+        if self.role == ScaledParameter.Role.GAIN:
+            return self._multiplier()
+        elif self.role == ScaledParameter.Role.DIVISION:
+            return 1 / self._multiplier()
+
+    @gain.setter
+    def gain(self, gain: Union[int, float, Parameter]):
+        self.role = ScaledParameter.Role.GAIN
+        self._multiplier = gain
+
+    # Getter and setter for the real value
+    def get_raw(self) -> Union[int, float]:
+        """
+        Returns:
+            number: value at which was set at the sample
+        """
+        if self.role == ScaledParameter.Role.GAIN:
+            value = self._wrapped_parameter() * self._multiplier()
+        elif self.role == ScaledParameter.Role.DIVISION:
+            value = self._wrapped_parameter() / self._multiplier()
+
+        self._save_val(value)
+        return value
+
+    @property
+    def wrapped_parameter(self) -> Parameter:
+        """
+        Returns:
+            the attached unscaled parameter
+        """
+        return self._wrapped_parameter
+
+    def get_wrapped_parameter_value(self) -> Union[int, float]:
+        """
+        Returns:
+            number: value at which the attached parameter is (i.e. does
+            not account for the scaling)
+        """
+        return self._wrapped_parameter.get()
+
+    def set_raw(self, value: Union[int, float]) -> None:
+        """
+        Set the value on the wrapped parameter, accounting for the scaling
+        """
+        if self.role == ScaledParameter.Role.GAIN:
+            instrument_value = value / self._multiplier()
+        elif self.role == ScaledParameter.Role.DIVISION:
+            instrument_value = value * self._multiplier()
+
+        # don't leak unknow type
+        instrument_value = cast(Union[int, float], instrument_value)
+
+        self._save_val(value)
+        self._wrapped_parameter.set(instrument_value)

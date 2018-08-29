@@ -1,6 +1,7 @@
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
+import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
@@ -9,7 +10,8 @@ from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
 import qcodes.dataset.data_set
 from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
 from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database
+from qcodes.dataset.database import initialise_database, \
+    initialise_or_create_database_at
 
 import qcodes.dataset.experiment_container
 import pytest
@@ -45,7 +47,7 @@ def dataset(experiment):
     dataset.conn.close()
 
 
-def test_tabels_exists(empty_temp_db):
+def test_tables_exist(empty_temp_db):
     print(qc.config["core"]["db_location"])
     conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
     cursor = conn.execute("select sql from sqlite_master where type = 'table'")
@@ -53,6 +55,43 @@ def test_tabels_exists(empty_temp_db):
     for row, expected_table in zip(cursor, expected_tables):
         assert expected_table in row['sql']
     conn.close()
+
+
+def test_initialise_database_at_for_nonexisting_db():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        db_location = os.path.join(tmpdirname, 'temp.db')
+        assert not os.path.exists(db_location)
+
+        initialise_or_create_database_at(db_location)
+
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+
+        test_tables_exist(None)
+
+
+def test_initialise_database_at_for_existing_db():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # Define DB location
+        db_location = os.path.join(tmpdirname, 'temp.db')
+        assert not os.path.exists(db_location)
+
+        # Create DB file
+        qc.config["core"]["db_location"] = db_location
+        initialise_database()
+
+        # Check if it has been created correctly
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+        test_tables_exist(None)
+
+        # Call function under test
+        initialise_or_create_database_at(db_location)
+
+        # Check if the DB is still correct
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+        test_tables_exist(None)
 
 
 @given(experiment_name=hst.text(min_size=1),
@@ -372,3 +411,49 @@ def test_numpy_nan(dataset):
     dataset.add_results(data_dict)
     retrieved = dataset.get_data("m")
     assert np.isnan(retrieved[1])
+
+
+def test_missing_keys(dataset):
+    """
+    Test that we can now have partial results with keys missing. This is for
+    example handy when having an interleaved 1D and 2D sweep.
+    """
+
+    x = ParamSpec("x", paramtype='numeric')
+    y = ParamSpec("y", paramtype='numeric')
+    a = ParamSpec("a", paramtype='numeric', depends_on=[x])
+    b = ParamSpec("b", paramtype='numeric', depends_on=[x, y])
+
+    dataset.add_parameter(x)
+    dataset.add_parameter(y)
+    dataset.add_parameter(a)
+    dataset.add_parameter(b)
+
+    def fa(xv):
+        return xv + 1
+
+    def fb(xv, yv):
+        return xv + 2 - yv * 3
+
+    results = []
+    xvals = [1, 2, 3]
+    yvals = [2, 3, 4]
+
+    for xv in xvals:
+        results.append({"x": xv, "a": fa(xv)})
+        for yv in yvals:
+            results.append({"x": xv, "y": yv, "b": fb(xv, yv)})
+
+    dataset.add_results(results)
+
+    assert dataset.get_values("x") == [[r["x"]] for r in results]
+    assert dataset.get_values("y") == [[r["y"]] for r in results if "y" in r]
+    assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
+    assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
+
+    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+
+    tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
+    expected_setpoints = [[[v] for v in vals] for vals in tmp]
+
+    assert dataset.get_setpoints("b") == expected_setpoints

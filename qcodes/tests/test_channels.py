@@ -1,16 +1,40 @@
+import logging
+
 from unittest import TestCase
 import unittest
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+import pytest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
-
-from hypothesis import given, settings
-import hypothesis.strategies as hst
+from qcodes.instrument.channel import ChannelList
 from qcodes.loops import Loop
 
-import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
+
+@pytest.fixture(scope='function')
+def dci():
+
+    dci = DummyChannelInstrument(name='dci')
+    yield dci
+    dci.close()
+
+
+def test_channels_call_function(dci, caplog):
+    """
+    Test that dci.channels.some_function() calls
+    some_function on each of the channels
+    """
+    with caplog.at_level(logging.DEBUG,
+                         logger='qcodes.tests.instrument_mocks'):
+        caplog.clear()
+        dci.channels.log_my_name()
+        mssgs = [rec.message for rec in caplog.records]
+        names = [ch.name.replace('dci_', '') for ch in dci.channels]
+        assert mssgs == names
 
 
 class TestChannels(TestCase):
@@ -106,6 +130,50 @@ class TestChannels(TestCase):
             self.instrument.channels.insert(2, channel)
         self.assertEqual(len(self.instrument.channels), n_channels + 1)
 
+    def test_clear_channels(self):
+        channels = self.instrument.channels
+        channels.clear()
+        self.assertEqual(len(channels), 0)
+
+    def test_clear_locked_channels(self):
+        channels = self.instrument.channels
+        original_length = len(channels)
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.clear()
+        self.assertEqual(len(channels), original_length)
+
+    def test_remove_channel(self):
+        channels = self.instrument.channels
+        chanA = self.instrument.A
+        original_length = len(channels.temperature())
+        channels.remove(chanA)
+        with self.assertRaises(AttributeError):
+            getattr(channels, chanA.short_name)
+        self.assertEqual(len(channels), original_length-1)
+        self.assertEqual(len(channels.temperature()), original_length-1)
+
+    def test_remove_locked_channel(self):
+        channels = self.instrument.channels
+        chanA = self.instrument.A
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.remove(chanA)
+
+    def test_remove_tupled_channel(self):
+        channel_tuple = tuple(
+            DummyChannel(self.instrument, f'Chan{C}', C)
+            for C in ('A', 'B', 'C', 'D', 'E', 'F')
+        )
+        channels = ChannelList(self.instrument,
+                               "TempSensorsTuple",
+                               DummyChannel,
+                               channel_tuple,
+                               snapshotable=False)
+        chanA = channels.ChanA
+        with self.assertRaises(AttributeError):
+            channels.remove(chanA)
+
     @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
     def test_combine_channels(self, setpoints):
         self.assertEqual(len(self.instrument.channels), 6)
@@ -124,7 +192,83 @@ class TestChannels(TestCase):
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
         self.assertEquals(self.instrument.channels.temperature(), expected)
 
+    @given(start=hst.integers(-8,7), stop=hst.integers(-8,7), step=hst.integers(1,7))
+    def test_access_channels_by_slice(self, start, stop, step):
+        names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+        channels = tuple(DummyChannel(self.instrument,
+                                      'Chan'+name, name) for name in names)
+        chlist = ChannelList(self.instrument, 'channels',
+                             DummyChannel, channels)
+        if stop < start:
+            step = -step
+        myslice = slice(start, stop, step)
+        mychans = chlist[myslice]
+        expected_channels = names[myslice]
+        for chan, exp_chan in zip(mychans, expected_channels):
+            assert chan.name == f'testchanneldummy_Chan{exp_chan}'
 
+
+    @given(myindexs=hst.lists(elements=hst.integers(-8,7), min_size=1))
+    def test_access_channels_by_tuple(self, myindexs):
+        names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+        mytuple = tuple(myindexs)
+        channels = tuple(DummyChannel(self.instrument,
+                                      'Chan'+name, name) for name in names)
+        chlist = ChannelList(self.instrument, 'channels',
+                             DummyChannel, channels)
+
+        mychans = chlist[mytuple]
+        for chan, chanindex in zip(mychans, mytuple):
+            assert chan.name == f'testchanneldummy_Chan{names[chanindex]}'
+
+
+    def test_names(self):
+        ex_inst_name = 'testchanneldummy'
+        for channel in self.instrument.channels:
+            sub_channel = DummyChannel(channel, 'subchannel', 'subchannel')
+            channel.add_submodule('somesubchannel', sub_channel)
+        assert self.instrument.name == ex_inst_name
+        assert self.instrument.full_name == ex_inst_name
+        assert self.instrument.short_name == ex_inst_name
+        assert self.instrument.name_parts == [ex_inst_name]
+
+        # Parameters directly on instrument
+        assert self.instrument.IDN.name == 'IDN'
+        assert self.instrument.IDN.full_name == f"{ex_inst_name}_IDN"
+        for chan, name in zip(self.instrument.channels,
+                              ['A', 'B', 'C', 'D', 'E', 'F']):
+            ex_chan_name = f"Chan{name}"
+            ex_chan_full_name = f"{ex_inst_name}_{ex_chan_name}"
+
+            assert chan.short_name == ex_chan_name
+            assert chan.name == ex_chan_full_name
+            assert chan.full_name == ex_chan_full_name
+            assert chan.name_parts == [ex_inst_name, ex_chan_name]
+
+            ex_param_name = 'temperature'
+            assert chan.temperature.name == ex_param_name
+            assert chan.temperature.full_name == f'{ex_chan_full_name}_{ex_param_name}'
+            assert chan.temperature.short_name == ex_param_name
+            assert chan.temperature.name_parts == [ex_inst_name, ex_chan_name,
+                                                   ex_param_name]
+
+            ex_subchan_name = f"subchannel"
+            ex_subchan_full_name = f"{ex_chan_full_name}_{ex_subchan_name}"
+
+            assert chan.somesubchannel.short_name == ex_subchan_name
+            assert chan.somesubchannel.name == ex_subchan_full_name
+            assert chan.somesubchannel.full_name == ex_subchan_full_name
+            assert chan.somesubchannel.name_parts == [ex_inst_name,
+                                                      ex_chan_name,
+                                                      ex_subchan_name]
+
+            assert chan.somesubchannel.temperature.name == ex_param_name
+            assert chan.somesubchannel.temperature.full_name == f'{ex_subchan_full_name}_{ex_param_name}'
+            assert chan.somesubchannel.temperature.short_name == ex_param_name
+            assert chan.somesubchannel.temperature.name_parts == [ex_inst_name,
+                                                                  ex_chan_name,
+                                                                  ex_subchan_name,
+                                                                  ex_param_name]
 class TestChannelsLoop(TestCase):
 
     def setUp(self):
@@ -180,7 +324,7 @@ class TestChannelsLoop(TestCase):
 
     @given(loop_channels=hst.lists(hst.integers(0, 3), min_size=2, max_size=2, unique=True),
            measure_channel=hst.integers(0, 3))
-    @settings(max_examples=10, deadline=400)
+    @settings(max_examples=10, deadline=800)
     def test_nested_loop_over_channels(self, loop_channels, measure_channel):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
         loop = Loop(self.instrument.channels[loop_channels[0]].temperature.sweep(0, 10, 0.5))
