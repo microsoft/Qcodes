@@ -625,7 +625,7 @@ def get_values(conn: sqlite3.Connection,
 
 def get_setpoints(conn: sqlite3.Connection,
                   table_name: str,
-                  param_name: str) -> List[List[List[Any]]]:
+                  param_name: str) -> Dict[str, List[List[Any]]]:
     """
     Get the setpoints for a given dependent parameter
 
