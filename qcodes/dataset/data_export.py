@@ -78,7 +78,7 @@ def get_data_by_id(run_id: int) -> List:
 
         raw_setpoint_data = data.get_setpoints(data_axis['name'])
 
-        my_output = []
+        output_axes = []
 
         max_size = 0
         for dependency in dependencies:
@@ -92,10 +92,9 @@ def get_data_by_id(run_id: int) -> List:
             if size > max_size:
                 max_size = size
 
-            my_output.append(axis)
+            output_axes.append(axis)
 
-        for i, dependency in enumerate(dependencies):
-            axis = my_output[i]
+        for axis in output_axes:
             size = axis['data'].size  # type: ignore
             if size < max_size:
                 if max_size % size != 0:
@@ -104,9 +103,9 @@ def get_data_by_id(run_id: int) -> List:
                                        f"of {max_size}")
                 axis['data'] = np.repeat(axis['data'], max_size//size)
 
-        my_output.append(data_axis)
+        output_axes.append(data_axis)
 
-        output.append(my_output)
+        output.append(output_axes)
     return output
 
 
