@@ -174,7 +174,9 @@ class DataSaver:
                 else:
                     input_size = array_size
             elif is_number(value) or isinstance(value, str):
-                pass
+                if inserting_as_arrays:
+                    raise ValueError("Trying to insert into an ArrayType with"
+                                     " a scalar value")
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
@@ -208,7 +210,7 @@ class DataSaver:
     def _append_results(self, res: Sequence[res_type],
                         input_size: int) -> None:
         """
-        A private method to add the date to actual queue of data to be written.
+        A private method to add the data to actual queue of data to be written.
 
         Args:
             res: A sequence of the data to be added
