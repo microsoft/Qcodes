@@ -304,6 +304,33 @@ def test_unregister_parameter(DAC, DMM):
     meas.unregister_parameter(DAC.ch2)
 
 
+def test_adding_scalars_as_array_raises(experiment, DAC):
+    """
+    Test that adding scalars to an array type parameter raises
+    """
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1, paramtype='array')
+    meas.register_parameter(DAC.ch2, paramtype='array')
+
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError):
+            datasaver.add_result((DAC.ch1, DAC.ch1()),
+                                 (DAC.ch2, DAC.ch2()))
+
+
+def test_mixing_array_and_numeric_raises(experiment, DAC):
+    """
+    Test that mixing array and numeric types raises
+    """
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1, paramtype='numeric')
+    meas.register_parameter(DAC.ch2, paramtype='array')
+
+    with meas.run() as datasaver:
+        with pytest.raises(RuntimeError):
+            datasaver.add_result((DAC.ch1, np.array([DAC.ch1(), DAC.ch1()])),
+                                 (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
+
 def test_measurement_name(experiment, DAC, DMM):
     fmt = experiment.format_string
     exp_id = experiment.exp_id
@@ -1178,7 +1205,7 @@ def test_datasaver_multi_parameters_scalar(experiment,
     meas = Measurement()
     param = channel_array_instrument.A.dummy_scalar_multi_parameter
     meas.register_parameter(param)
-    len(meas.parameters) == len(param.shapes)
+    assert len(meas.parameters) == len(param.shapes)
     assert tuple(meas.parameters.keys()) == tuple(param.names)
 
     with meas.run() as datasaver:
