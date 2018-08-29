@@ -132,9 +132,11 @@ class DataSaver:
             parameter = partial_result[0]
             if isinstance(parameter, MultiParameter):
                 # unpack parameters and potential setpoints from MultiParameter
-                # unlike regular Parameters and ArrayParameters we Dont want to
-                # add the parameter it self
-                self._unbundle_multiparameter(partial_result,
+                # unlike regular Parameters and ArrayParameters we don't want
+                # to add the parameter it self only its components.
+                data = partial_result[1]
+                self._unbundle_multiparameter(parameter,
+                                              data,
                                               res,
                                               found_parameters)
             else:
@@ -251,7 +253,7 @@ class DataSaver:
                                  res: List[res_type],
                                  found_parameters: List[str]) -> None:
         """
-        Extract the setpoints from an Array parameter and add them to results
+        Extract the setpoints from an ArrayParameter and add them to results
          as a regular parameter tuple.
 
         Args:
@@ -269,11 +271,33 @@ class DataSaver:
         self._unbundle_setpoints_from_param(parameter, sp_names,
                                             fallback_sp_name,
                                             parameter.setpoints,
-                                            found_parameters, res)
+                                            res, found_parameters)
 
-    def _unbundle_setpoints_from_param(self, parameter,
-                                       sp_names, fallback_sp_name,
-                                       setpoints, found_parameters, res):
+
+    def _unbundle_setpoints_from_param(self, parameter: _BaseParameter,
+                                       sp_names: Sequence[str],
+                                       fallback_sp_name: str,
+                                       setpoints: Sequence,
+                                       res: List[res_type],
+                                       found_parameters: List[str]):
+        """
+        Private function to unbundle setpoints from an ArrayParameter or
+         a subset of a MultiParameter.
+
+        Args:
+            parameter:
+            sp_names: Names of the setpoint axes
+            fallback_sp_name:  Fallback name for setpoints in case sp_names
+              is None. The axis num is appended to this name to ensure all
+              setpoint axes names are unique.
+            setpoints: The actual setpoints i.e. `parameter.setpoints` for an
+              ArrayParameter and `parameter.setpoints[i]` for a MultiParameter
+            found_parameters: The list of all parameters that we know of by now
+              This is modified in place with new parameters found here.
+            res: The result list the unpacked setpoints are added too.
+              Note that this will be modified in place.
+        """
+
         setpoint_axes = []
         setpoint_meta = []
         if setpoints is None:
@@ -303,22 +327,23 @@ class DataSaver:
             res.append((meta, grid))
 
     def _unbundle_multiparameter(self,
-                                 partial_result: res_type,
+                                 parameter: MultiParameter,
+                                 data: Union[tuple, list, np.ndarray],
                                  res: List[res_type],
                                  found_parameters: List[str]) -> None:
+
         """
         Extract the subarrays and setpoints from an MultiParameter and
          add them to res as a regular parameter tuple.
 
         Args:
-            partial_result: The Parameter,data tuple to extract from
-            res: The result list to add to
+            parameter: The MultiParameter to extract from
+            data: The acquired data for this parameter
+            res: The result list that the unpacked data and setpoints
+             is added too. Note that this will be modified in place.
             found_parameters: The list of all parameters that we know of by now
+             This is modified in place with new parameters found here.
         """
-        parameter = partial_result[0]
-        if not isinstance(parameter, MultiParameter):
-            raise RuntimeError("Invalid parameter supplied")
-        data = cast(Union[tuple, list, np.ndarray], partial_result[1])
         for i in range(len(parameter.shapes)):
             shape = parameter.shapes[i]
             res.append((parameter.names[i], data[i]))
@@ -335,7 +360,7 @@ class DataSaver:
                 self._unbundle_setpoints_from_param(parameter, sp_names,
                                                     fallback_sp_name,
                                                     parameter.setpoints[i],
-                                                    found_parameters, res)
+                                                    res, found_parameters)
 
     def flush_data_to_database(self) -> None:
         """
@@ -504,7 +529,7 @@ class Measurement:
     def write_period(self, wp: numeric_types) -> None:
         if not isinstance(wp, Number):
             raise ValueError('The write period must be a number (of seconds).')
-        wp_float = float(cast(float, wp))
+        wp_float = float(wp)
         if wp_float < 1e-3:
             raise ValueError('The write period must be at least 1 ms.')
         self._write_period = wp_float
