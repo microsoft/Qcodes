@@ -257,9 +257,10 @@ class DataSaver:
          as a regular parameter tuple.
 
         Args:
-            parameter: The ArrayParameter to extract from
-            res: The result list to add to
+            parameter: The ArrayParameter to extract setpoints from.
+            res: The result list to add to. Note that this is modified inplace
             found_parameters: The list of all parameters that we know of by now
+              Note that this is modified in place.
         """
         # TODO (WilliamHPNielsen): The following code block is ugly and
         # brittle and should be enough to convince us to abandon the
@@ -292,10 +293,10 @@ class DataSaver:
               setpoint axes names are unique.
             setpoints: The actual setpoints i.e. `parameter.setpoints` for an
               ArrayParameter and `parameter.setpoints[i]` for a MultiParameter
-            found_parameters: The list of all parameters that we know of by now
-              This is modified in place with new parameters found here.
             res: The result list the unpacked setpoints are added too.
               Note that this will be modified in place.
+            found_parameters: The list of all parameters that we know of by now
+              This is modified in place with new parameters found here.
         """
 
         setpoint_axes = []
@@ -340,9 +341,9 @@ class DataSaver:
             parameter: The MultiParameter to extract from
             data: The acquired data for this parameter
             res: The result list that the unpacked data and setpoints
-             is added too. Note that this will be modified in place.
+              is added too. Note that this will be modified in place.
             found_parameters: The list of all parameters that we know of by now
-             This is modified in place with new parameters found here.
+              This is modified in place with new parameters found here.
         """
         for i in range(len(parameter.shapes)):
             shape = parameter.shapes[i]
