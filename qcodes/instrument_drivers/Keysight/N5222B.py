@@ -1,4 +1,3 @@
-#from .N52xx_new import N52xxBase
 from qcodes.instrument_drivers.Keysight.N52xx_new import N52xxBase
 
 
