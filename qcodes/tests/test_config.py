@@ -141,9 +141,20 @@ def side_effect(map, name):
 @pytest.fixture(scope="function")
 def path_to_config_file_on_disk():
 
-    contents = {"a": 13, "b": 22, "h": 22,
-                "user": {"foo":  "2"},
-                "c": 4, "bar": False, "z": 5}
+    contents = {
+        "core": {
+            "loglevel": "WARNING",
+            "file_loglevel": "INFO",
+            "default_fmt": "data/{date}/#{counter}_{name}_{time}",
+            "register_magic": True,
+            "db_location": "~/experiments.db",
+            "db_debug": True  # Different than default
+        },  # we omit a required section (gui)
+        "user": {
+            "scriptfolder": ".",
+            "mainfolder": "."
+        }  # we omit a non-required section (stationconfigurator)
+    }
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         with open(os.path.join(tmpdirname, 'qcodesrc.json'), 'w') as f:
@@ -248,10 +259,15 @@ def test_update_from_path(path_to_config_file_on_disk):
 
     # check that the default is still the default
     cfg.update_config()
-    assert cfg["core"]["db_debug"] == False
+    assert cfg["core"]["db_debug"] is False
 
     cfg.update_config(path=path_to_config_file_on_disk)
-    assert cfg['a'] == 13
-    assert cfg['user']['foo'] == '2'
+    assert cfg['core']['db_debug'] is True
+
+    # check that the settings NOT specified in our config file on path
+    # are still saved as configurations
+    assert cfg['gui']['notebook'] is True
+    assert cfg['station_configurator']['default_folder'] == '.'
+
     expected_path = os.path.join(path_to_config_file_on_disk, 'qcodesrc.json')
     assert cfg.current_config_path == expected_path
