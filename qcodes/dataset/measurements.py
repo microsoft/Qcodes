@@ -114,8 +114,6 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        # ArrayParameters and MultiParameters cause us to mutate
-        # the results.
         res: List[res_type] = []
 
         # we iterate through the input twice. First we find any array and
