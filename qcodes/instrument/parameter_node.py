@@ -166,7 +166,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         return s
 
     def __repr__(self):
-        repr_str = 'ParameterNode {self} containing '
+        repr_str = f'ParameterNode {self} containing '
         if self.parameter_nodes:
             repr_str += f'{len(self.parameter_nodes)} nodes, '
         repr_str += f'{len(self.parameters)} parameters'
@@ -412,6 +412,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                     snap[parameter_name] = parameter_snapshot['value']
                 else:
                     snap[parameter_name] = parameter_snapshot
+            for parameter_node_name, parameter_node in self.parameter_nodes.items():
+                snap[parameter_node_name] = parameter_node.snapshot()
         else:
             snap = {
                 "functions": {name: func.snapshot(update=update)
