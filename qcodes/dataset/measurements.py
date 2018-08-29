@@ -521,7 +521,7 @@ class Measurement:
         self.name = ''
 
     @property
-    def write_period(self) -> numeric_types:
+    def write_period(self) -> float:
         return self._write_period
 
     @write_period.setter
