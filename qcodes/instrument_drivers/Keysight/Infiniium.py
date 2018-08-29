@@ -586,7 +586,7 @@ class Infiniium(VisaInstrument):
             self.write(':WAVeform:STReaming OFF')
 
             data = self.visa_handle.query_binary_values(
-             'WAV:DATA?', datatype='h', is_big_endian=False)
+                'WAV:DATA?', datatype='h', is_big_endian=False)
             all_data['ch%d' % i] = np.array(data)
 
         x_incr = float(self.ask(":WAVeform:XINCrement?"))
