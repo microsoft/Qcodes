@@ -324,7 +324,7 @@ class DataSaver:
             res.append((parameter.names[i], data[i]))
             if shape != ():
                 # array parameter like part of the multiparameter
-                # TODO consider merging this with the code above
+                # need to find setpoints too
                 fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
 
                 if parameter.setpoint_full_names[i] is not None:
