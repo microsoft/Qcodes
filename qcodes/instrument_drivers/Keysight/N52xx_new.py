@@ -1,12 +1,16 @@
+"""
+Base qcodes driver for Agilent/Keysight series PNAs
+http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
+"""
 from functools import partial
 import numpy as np
 import logging
-from typing import Any, Callable
+from typing import Any
 import time
 import re
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Enum, Bool
+from qcodes.utils.validators import Numbers, Enum
 
 logger = logging.getLogger()
 
@@ -85,7 +89,11 @@ class N52xxTrace(InstrumentChannel):
         return data
 
     def upload_to_instrument(self) -> None:
-        # PS. Do not do self.write as self.select will not work yet
+        """
+        Upload the trace to the instrument
+        """
+        # Do not do self.write; self.select will not work yet as the instrument
+        # has not been uploaded yet
         self.parent.write(
             f'CALC{self._channel}:PAR:EXT {self.short_name}, {self._trace_type}'
         )
@@ -95,12 +103,15 @@ class N52xxTrace(InstrumentChannel):
 
 
 class N52xxChannel(InstrumentChannel):
+    """
+    Allows operations on specific channels.
+    """
     def __init__(self, parent: 'N52xxBase', channel: int):
         super().__init__(parent, f"channel{channel}")
 
         self.channel = channel
 
-        self.add_parameter(  # per channel
+        self.add_parameter(
             'power',
             label='Power',
             get_cmd=f'SOUR{self.channel}:POW?',
@@ -113,7 +124,7 @@ class N52xxChannel(InstrumentChannel):
             )
         )
 
-        self.add_parameter(  # Per channel
+        self.add_parameter(
             'if_bandwidth',
             label='IF Bandwidth',
             get_cmd=f'SENS{self.channel}:BAND?',
@@ -123,7 +134,7 @@ class N52xxChannel(InstrumentChannel):
             vals=Numbers(min_value=1, max_value=15e6)
         )
 
-        self.add_parameter(  # Per channel
+        self.add_parameter(
             'averages_enabled',
             label='Averages Enabled',
             get_cmd=f"SENS{self.channel}:AVER?",
@@ -131,7 +142,7 @@ class N52xxChannel(InstrumentChannel):
             val_mapping={True: '1', False: '0'}
         )
 
-        self.add_parameter(  # Per channel
+        self.add_parameter(
             'averages',
             label='Averages',
             get_cmd=f'SENS{self.channel}:AVER:COUN?',
@@ -259,19 +270,23 @@ class N52xxChannel(InstrumentChannel):
         Deletes the trace on the instrument
 
         Args:
-            name (str): Name of the trace to add
+            name (str): Either the name of the trace to delete or "all"
         """
-        self.trace[name].delete()
-
-    def delete_all_traces(self) ->None:
-        """
-        Delete all traces on this channel
-        """
-        for trace in self.trace.values():
-            trace.delete()
+        if name == "all":
+            for trace in self.trace.values():
+                trace.delete()
+        else:
+            self.trace[name].delete()
 
     def run_sweep(self, averages: int =1, blocking: bool=True) ->None:
+        """
+        Run a sweep
 
+        Args:
+            averages (int): The number of averages
+            blocking (bool): If True, this method will block until the sweep
+                                has finished
+        """
         if averages == 1:
             self.sweep_mode('SING')
         else:
@@ -283,6 +298,9 @@ class N52xxChannel(InstrumentChannel):
             self.block_while_not_hold()
 
     def block_while_not_hold(self) ->None:
+        """
+        Block until a sweep has finished
+        """
         try:
             # Once the sweep mode is in hold, we know we're done
             # Note that if no triggers are received, we can get stuck in an
@@ -317,6 +335,7 @@ class N52xxBase(VisaInstrument):
     min_power: float = None
     max_power: float = None
     number_of_channels: int = None
+    default_channel = 0
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
 
@@ -336,42 +355,29 @@ class N52xxBase(VisaInstrument):
             channel = N52xxChannel(self, channel=count+1)
             self.channel.append(channel)
 
-        for param in ["power", "start", "stop", "points"]:
-            self.add_parameter(
-                param,
-                set_cmd=self._call_all_channels(name=param),
-                get_cmd=self._call_all_channels(name=param)
-            )
+        channel_parameters = self.channel[self.default_channel].parameters
+        self.parameters.update(channel_parameters)
 
         self.connect_message()
 
-    def _call_all_channels(self, name) ->Callable:
-        """
-        Perform a function call on all channels at the same time.
-        Note: the ChannelList ostensibly supports this already, but this
-        support is incomplete and/or broken:
-            1) Class methods are not passed through to the individual channels.
-               You have to create QCoDeS functions
-            2) MultiParameter are returned which a) will be deprecated and b)
-               does not support `set`
-        """
-        def caller(name: str) -> Callable:
-            def inner(*args, **kwargs) ->dict:
-                result = {}
-                for channel_number, channel in enumerate(self.channel):
-                    if len(channel.trace) == 0:
-                        continue
-                    channel_result = getattr(channel, name)(*args, **kwargs)
-                    result[channel_number] = channel_result
-
-                return result
-            return inner
-
-        return caller(name)
-
     def delete_all_traces(self) ->None:
+        """
+        Delete all traces from the instrument. Note that this is different then
+
+        >>> pna = N52xxBase("pna", 'GPIB0::16::INSTR')
+        >>> pna.delete_trace("all")
+
+        As this will only delete from the first channel
+        """
         self.write("CALC:PAR:DEL:ALL")
 
-    def run_sweep(self, averages: int =1):
-        self._call_all_channels("run_sweep")(averages=averages, blocking=False)
-        self._call_all_channels("block_while_not_hold")()
+    def __getattr__(self, item):
+        """
+        We will almost always use channel 1. For convenience map channel 1
+        attributes/parameters/methods on the base instrument
+        """
+        if item in ["trace", "add_trace", "delete_trace", "run_sweep",
+                    "block_while_not_hold"]:
+            return getattr(self.channel[self.default_channel], item)
+
+        return super().__getattr__(item)
