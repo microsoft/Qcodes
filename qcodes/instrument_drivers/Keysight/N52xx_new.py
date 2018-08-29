@@ -219,7 +219,7 @@ class N52xxChannel(InstrumentChannel):
     @property
     def trace(self) ->dict:
         """
-        Load the traces from the instrument
+        Interface to access traces on the instrument
 
         Returns:
             dict: keys are trace names, values are instance of `N52xxTrace`
@@ -326,8 +326,7 @@ class N52xxChannel(InstrumentChannel):
 
 class N52xxBase(VisaInstrument):
     """
-    Base qcodes driver for Agilent/Keysight series PNAs
-    http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
+    TODO: Proper docstring
     """
 
     min_freq: float = None
