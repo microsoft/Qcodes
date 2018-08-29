@@ -604,21 +604,21 @@ class Measurement:
                                           paramtype,
                                           )
         elif isinstance(parameter, Parameter):
-            self._register_individual_parameter(name,
-                                                parameter.label,
-                                                parameter.unit,
-                                                setpoints,
-                                                basis, paramtype)
+            self._register_parameter(name,
+                                     parameter.label,
+                                     parameter.unit,
+                                     setpoints,
+                                     basis, paramtype)
         else:
             raise RuntimeError("Does not know how to register a parameter"
                                f"of type {type(parameter)}")
 
-    def _register_individual_parameter(self, name: str,
-                                       label: str,
-                                       unit: str,
-                                       setpoints: setpoints_type,
-                                       basis: setpoints_type,
-                                       paramtype: str) -> None:
+    def _register_parameter(self, name: str,
+                            label: str,
+                            unit: str,
+                            setpoints: setpoints_type,
+                            basis: setpoints_type,
+                            paramtype: str) -> None:
         """
         Generate ParamSpecs and register them for an individual parameter
         """
@@ -679,12 +679,12 @@ class Measurement:
 
             my_setpoints += [spname]
 
-        self._register_individual_parameter(name,
-                                            parameter.label,
-                                            parameter.unit,
-                                            my_setpoints,
-                                            basis,
-                                            paramtype)
+        self._register_parameter(name,
+                                 parameter.label,
+                                 parameter.unit,
+                                 my_setpoints,
+                                 basis,
+                                 paramtype)
 
     def _register_multiparameter(self,
                                  multiparameter: MultiParameter,
@@ -729,12 +729,12 @@ class Measurement:
             setpoints_lists.append(my_setpoints)
 
         for i, setpoints in enumerate(setpoints_lists):
-            self._register_individual_parameter(multiparameter.names[i],
-                                                multiparameter.labels[i],
-                                                multiparameter.units[i],
-                                                setpoints,
-                                                basis,
-                                                paramtype)
+            self._register_parameter(multiparameter.names[i],
+                                     multiparameter.labels[i],
+                                     multiparameter.units[i],
+                                     setpoints,
+                                     basis,
+                                     paramtype)
 
     def register_custom_parameter(
             self, name: str,
@@ -759,12 +759,12 @@ class Measurement:
                 are the setpoints of this parameter
             paramtype: type of the parameter, i.e. the SQL storage class
         """
-        self._register_individual_parameter(name,
-                                            label,
-                                            unit,
-                                            setpoints,
-                                            basis,
-                                            paramtype)
+        self._register_parameter(name,
+                                 label,
+                                 unit,
+                                 setpoints,
+                                 basis,
+                                 paramtype)
 
     def unregister_parameter(self,
                              parameter: setpoints_type) -> None:
