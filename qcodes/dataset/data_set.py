@@ -441,7 +441,6 @@ class DataSet(Sized):
                               list(results.keys()),
                               list(results.values())
                               )
-        self.conn.commit()
         return index
 
     def add_results(self, results: List[Dict[str, VALUE]]) -> int:
