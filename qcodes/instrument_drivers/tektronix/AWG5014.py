@@ -1256,6 +1256,20 @@ class Tektronix_AWG5014(VisaInstrument):
                 file and will be reset to factory default when the file is
                 loaded. Default: True.
             """
+        limit = 250
+        try:
+            for wf_elems in waveforms:
+                for wf_elem in wf_elems:
+                    wf_len = len(wf_elems)
+                    if wf_len < limit:
+                        raise Exception
+        except:
+            warnings.warn("Length of waveform element under {}. "
+                          "Instrument will use the software sequencer "
+                          "instead of the hardware sequencer. "
+                          "This imposes some limitations on the "
+                          "sequencing.".format(limit))
+
         packed_wfs = {}
         waveform_names = []
         if not isinstance(waveforms[0], list):
@@ -1591,6 +1605,13 @@ class Tektronix_AWG5014(VisaInstrument):
         log.debug('Sending waveform {} to instrument'.format(wfmname))
         # Check for errors
         dim = len(w)
+        limit = 250
+        if dim < limit:
+            warnings.warn("Length of waveform element under {}. "
+                          "Instrument will use the software sequencer "
+                          "instead of the hardware sequencer. "
+                          "This imposes some limitations on the "
+                          "sequencing.".format(limit))
 
         # Input validation
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
