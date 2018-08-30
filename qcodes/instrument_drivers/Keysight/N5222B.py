@@ -10,3 +10,7 @@ class N5222B(N52xxBase):
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
+
+
+if __name__ == "__main__":
+    N5222B("test", 'GPIB0::16::INSTR')

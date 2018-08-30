@@ -181,7 +181,7 @@ class N52xxChannel(InstrumentChannel):
 
         self.add_parameter(
             'points',
-            label='Points',
+            label='Frequency Points',
             get_cmd=f'SENS{self.channel}:SWE:POIN?',
             get_parser=int,
             set_cmd=f'SENS{self.channel}:SWE:POIN {{}}',
@@ -323,6 +323,53 @@ class N52xxChannel(InstrumentChannel):
 
             logger.warning(msg)
 
+    def get_snp_data(self, ports: list=None) ->np.ndarray:
+        """
+        Extract S-parameter data in snp format. The 'n' in 'snp' stands for an
+        integer. For instance, s4p stands for scatter parameters
+        of a four port device (Scattering 4 Port = s4p).
+
+        For each frequency in the measurement sweep the snp data consists of a
+        complex n-by-n matrix. The data is returned in the format:
+
+        <frequency>, <S11_real>, <S11_imag>, <S21_real>, <S21_imag>, ...
+
+        For each frequency, the length of the data array is
+        therefore 2 * n**2 + 1
+
+        For more information about the snp format, please visit:
+        http://literature.cdn.keysight.com/litweb/pdf/ads2004a/cktsim/ck04a8.html
+
+        Note: we could do the same by reading data from individual traces.
+        However this method uses a single instrument query to retrieve all the
+        data
+
+        Args:
+            ports (list): The ports from which we want data (e.g. [1, 2, 3, 4])
+
+        Returns:
+            data (ndarray): Array of length
+
+                (2 * n**2 + 1) * n_freq
+
+            where:
+             * n is the number of ports requested
+             * n_freq is the number of frequency points in the sweep
+
+        Example:
+            Please view:
+            qcodes/docs/examples/driver_examples/Qcodes_example_with_Keysight_PNA_N5222B.ipynb
+        """
+        if ports is None:
+            ports_string = "1,2,3,4"
+        else:
+            ports_string = ",".join([str(p) for p in ports])
+
+        # We want our SNP data in Real-Imaginary format
+        self.write('MMEM:STOR:TRAC:FORM:SNP RI')
+        write_string = f'CALC{self.channel}:DATA:SNP:PORT? "{ports_string}"'
+        return np.array(self.visa_handle.query_binary_values(write_string))
+
 
 class N52xxBase(VisaInstrument):
     """
@@ -375,8 +422,10 @@ class N52xxBase(VisaInstrument):
         We will almost always use channel 1. For convenience map channel 1
         attributes/parameters/methods on the base instrument
         """
-        if item in ["trace", "add_trace", "delete_trace", "run_sweep",
-                    "block_while_not_hold"]:
-            return getattr(self.channel[self.default_channel], item)
-
-        return super().__getattr__(item)
+        try:
+            return super().__getattr__(item)
+        except AttributeError:
+            if item in ["_channels", "default_channel"]:
+                # We have produced an unwanted recursion
+                raise
+            return getattr(self._channels[self.default_channel], item)
