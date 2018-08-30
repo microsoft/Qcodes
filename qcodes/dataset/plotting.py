@@ -102,7 +102,10 @@ def plot_by_id(run_id: int,
             xpoints = data[0]['data'][order]
             ypoints = data[1]['data'][order]
 
-            plottype = datatype_from_setpoints_1d(xpoints)
+            if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
+                plottype = 'point'
+            else:
+                plottype = datatype_from_setpoints_1d(xpoints)
 
             if plottype == 'line':
                 ax.plot(xpoints, ypoints)
@@ -133,8 +136,13 @@ def plot_by_id(run_id: int,
                            'unknown': plot_2d_scatterplot}
 
             log.debug('Determining plottype')
-            plottype = datatype_from_setpoints_2d([data[0]['data'],
-                                                   data[1]['data']])
+            if isinstance(data[0]['data'][0], str) \
+                    or isinstance(data[0]['data'][1][0], str) \
+                    or isinstance(data[0]['data'][2][0], str):
+                plottype = 'point'
+            else:
+                plottype = datatype_from_setpoints_2d([data[0]['data'],
+                                                       data[1]['data']])
             log.debug(f'Plottype is: "f{plottype}".')
             log.debug('Now doing the actual plot')
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
