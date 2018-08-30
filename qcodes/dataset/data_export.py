@@ -224,6 +224,10 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
     Figure out what type of visualisation is proper for the
     provided setpoints.
 
+    The type is:
+        * 'point' (scatter plot) when all setpoints are identical
+        * 'line' otherwise
+
     Args:
         setpoints: The x-axis values
 
@@ -231,7 +235,6 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         A string which is 'point' if all the setpoints are identical,
             else it returns 'line'
     """
-
     if np.allclose(setpoints, setpoints[0]):
         return 'point'
     else:
