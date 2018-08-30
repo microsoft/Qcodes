@@ -1260,7 +1260,7 @@ class Tektronix_AWG5014(VisaInstrument):
         try:
             for wf_elems in waveforms:
                 for wf_elem in wf_elems:
-                    wf_len = len(wf_elems)
+                    wf_len = len(wf_elem)
                     if wf_len < limit:
                         raise Exception
         except:
