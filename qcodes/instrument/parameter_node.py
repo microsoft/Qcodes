@@ -529,7 +529,15 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 Defaults to 80 to be consistent with default terminal width.
         """
         floating_types = (float, np.integer, np.floating)
-        snapshot = self.snapshot(update=update)
+
+        try:
+            # Temporarily set simplify_snapshot to False for snapshotting
+            simplify_snapshot = self.simplify_snapshot
+            self.simplify_snapshot = False
+
+            snapshot = self.snapshot(update=update)
+        finally:
+            self.simplify_snapshot = simplify_snapshot
 
         par_lengths = [len(p) for p in snapshot['parameters']]
 
@@ -537,29 +545,30 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         # function
         par_field_len = min(max(par_lengths)+1, 50)
 
-        if hasattr(self, 'name'):
-            print(str(self.name) + ':')
+        if str(self):
+            print(f'{self} :')
         print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
         print('-'*max_chars)
-        for par in sorted(snapshot['parameters']):
-            name = snapshot['parameters'][par]['name']
+        for param_name, param_snapshot in sorted(snapshot['parameters'].items()):
+            name = param_snapshot['name']
             msg = '{0:<{1}}:'.format(name, par_field_len)
 
             # in case of e.g. ArrayParameters, that usually have
             # snapshot_value == False, the parameter may not have
             # a value in the snapshot
-            val = snapshot['parameters'][par].get('value', 'Not available')
+            val = param_snapshot.get('value', 'Not available')
+            if isinstance(val, floating_types):
+                msg += f'\t{val:.5g} '
+            else:
+                msg += f'\t{val} '
 
-            unit = snapshot['parameters'][par].get('unit', None)
+            unit = param_snapshot.get('unit', None)
             if unit is None:
                 # this may be a multi parameter
-                unit = snapshot['parameters'][par].get('units', None)
-            if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)
-            else:
-                msg += '\t{} '.format(val)
-            if unit is not '':  # corresponds to no unit
-                msg += '({})'.format(unit)
+                unit = param_snapshot.get('units', None)
+            if unit:
+                msg += f'({unit})'
+
             # Truncate the message if it is longer than max length
             if len(msg) > max_chars and not max_chars == -1:
                 msg = msg[0:max_chars-3] + '...'
@@ -572,6 +581,10 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                         channel.print_readable_snapshot()
             else:
                 submodule.print_readable_snapshot(update, max_chars)
+
+        for parameter_node in self.parameter_nodes.values():
+            print('')
+            parameter_node.print_snapshot()
 
     def call(self, func_name: str, *args, **kwargs):
         """ Shortcut for calling a function from its name.
