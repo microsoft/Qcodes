@@ -11,8 +11,8 @@ import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
-from .data_export import (datatype_from_setpoints_1d,
-                          datatype_from_setpoints_2d, reshape_2D_data)
+from .data_export import (plottype_for_2d_data,
+                          plottype_for_3d_data, reshape_2D_data)
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
@@ -102,10 +102,7 @@ def plot_by_id(run_id: int,
             xpoints = data[0]['data'][order]
             ypoints = data[1]['data'][order]
 
-            if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
-                plottype = 'point'
-            else:
-                plottype = datatype_from_setpoints_1d(xpoints)
+            plottype = plottype_for_2d_data(xpoints, ypoints)
 
             if plottype == 'line':
                 ax.plot(xpoints, ypoints)
@@ -135,19 +132,14 @@ def plot_by_id(run_id: int,
                            'point': plot_2d_scatterplot,
                            'unknown': plot_2d_scatterplot}
 
-            log.debug('Determining plottype')
-            if isinstance(data[0]['data'][0], str) \
-                    or isinstance(data[1]['data'][0], str) \
-                    or isinstance(data[2]['data'][0], str):
-                plottype = 'point'
-            else:
-                plottype = datatype_from_setpoints_2d([data[0]['data'],
-                                                       data[1]['data']])
-            log.debug(f'Plottype is: "f{plottype}".')
-            log.debug('Now doing the actual plot')
+            plottype = plottype_for_3d_data(data[0]['data'],
+                                            data[1]['data'],
+                                            data[2]['data'])
+
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
+
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
 

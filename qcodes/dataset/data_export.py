@@ -219,6 +219,28 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
+def plottype_for_2d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+    """
+    Determine plot type for 2D data by inspecting it
+
+    Possible plot types are:
+    * 'point' - scatter plot
+    * 'line' - line plot
+
+    Args:
+        xpoints: The x-axis values
+        ypoints: The y-axis values
+
+    Returns:
+        Determined plot type as a string
+    """
+    if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
+        plottype = 'point'
+    else:
+        plottype = datatype_from_setpoints_1d(xpoints)
+    return plottype
+
+
 def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
     """
     Figure out what type of visualisation is proper for the
@@ -239,6 +261,37 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         return 'point'
     else:
         return 'line'
+
+
+def plottype_for_3d_data(xpoints: np.ndarray,
+                         ypoints: np.ndarray,
+                         zpoints: np.ndarray
+                         ) -> str:
+    """
+    Determine plot type for 3D data by inspecting it
+
+    Plot types are:
+    * 'grid' - colormap plot for data that is on a grid
+    * 'equidistant' - colormap plot for data that is on equidistant grid
+    * 'scatter' - scatter plot
+    * 'unknown' - returned in case the data did not match any criteria of the
+    other plot types
+
+    Args:
+        xpoints: The x-axis values
+        ypoints: The y-axis values
+        zpoints: The z-axis (colorbar) values
+
+    Returns:
+        Determined plot type as a string
+    """
+    if isinstance(xpoints[0], str) \
+            or isinstance(ypoints[0], str) \
+            or isinstance(zpoints[0], str):
+        plottype = 'grid'  # ''point'
+    else:
+        plottype = datatype_from_setpoints_2d(xpoints, ypoints)
+    return plottype
 
 
 def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
