@@ -254,8 +254,7 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         setpoints: The x-axis values
 
     Returns:
-        A string which is 'point' if all the setpoints are identical,
-            else it returns 'line'
+        A string representing the plot type as described above
     """
     if np.allclose(setpoints, setpoints[0]):
         return 'point'
