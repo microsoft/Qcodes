@@ -137,8 +137,8 @@ def plot_by_id(run_id: int,
 
             log.debug('Determining plottype')
             if isinstance(data[0]['data'][0], str) \
-                    or isinstance(data[0]['data'][1][0], str) \
-                    or isinstance(data[0]['data'][2][0], str):
+                    or isinstance(data[1]['data'][0], str) \
+                    or isinstance(data[2]['data'][0], str):
                 plottype = 'point'
             else:
                 plottype = datatype_from_setpoints_2d([data[0]['data'],
