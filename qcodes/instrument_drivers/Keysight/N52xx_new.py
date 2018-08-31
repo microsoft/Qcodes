@@ -15,6 +15,7 @@ from qcodes.utils.validators import Numbers, Enum
 logger = logging.getLogger()
 
 
+
 class N52xxTrace(InstrumentChannel):
     """
     Allow operations on individual PNA traces.
@@ -263,6 +264,7 @@ class N52xxChannel(InstrumentChannel):
 
         trace = N52xxTrace(self.parent, self.channel, name, tr_type)
         trace.upload_to_instrument()
+        trace.select()
         return trace
 
     def delete_trace(self, name: str) ->None:
@@ -368,7 +370,13 @@ class N52xxChannel(InstrumentChannel):
         # We want our SNP data in Real-Imaginary format
         self.write('MMEM:STOR:TRAC:FORM:SNP RI')
         write_string = f'CALC{self.channel}:DATA:SNP:PORT? "{ports_string}"'
-        return np.array(self.visa_handle.query_binary_values(write_string))
+        data = np.array(
+            self.parent.visa_handle.query_binary_values(
+                write_string,  datatype='f', is_big_endian=True
+            )
+        )
+        self.parent.synchronize()
+        return data
 
 
 class N52xxBase(VisaInstrument):
@@ -416,6 +424,17 @@ class N52xxBase(VisaInstrument):
         As this will only delete from the first channel
         """
         self.write("CALC:PAR:DEL:ALL")
+
+    def synchronize(self):
+        self.ask("*OPC?")
+
+    def reset_instrument(self):
+        self.write("*RST")
+        self.write("*CLS")
+        # sane settings
+        self.write('FORM REAL,32')
+        self.write('FORM:BORD NORM')
+        self.trigger_source("IMM")
 
     def __getattr__(self, item):
         """
