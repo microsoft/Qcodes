@@ -293,17 +293,26 @@ def plottype_for_3d_data(xpoints: np.ndarray,
     return plottype
 
 
-def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
+def datatype_from_setpoints_2d(x_setpoints: np.ndarray,
+                               y_setpoints: np.ndarray
+                               ) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
     to display the data.
 
+    Plot types are:
+    * 'grid' - colormap plot for data that is on a grid
+    * 'equidistant' - colormap plot for data that is on equidistant grid
+    * 'scatter' - scatter plot
+    * 'unknown' - returned in case the data did not match any criteria of the
+    other plot types
+
     Args:
-        setpoints: The raw response of the DataSet's get_setpoints
+        x_setpoints: The x-axis values
+        y_setpoints: The y-axis values
 
     Returns:
-        A string with the name of a plot routine, e.g. 'grid' or 'equidistant'
-        or 'unknown'
+        A string with the name of the determined plot type
     """
     # We first check for being on a "simple" grid, which means that the data
     # FILLS a (possibly non-equidistant) grid with at most a single rectangular
@@ -314,8 +323,8 @@ def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
     #
     # Finally we just scatter (I think?)
 
-    xpoints = flatten_1D_data_for_plot(setpoints[0])
-    ypoints = flatten_1D_data_for_plot(setpoints[1])
+    xpoints = flatten_1D_data_for_plot(x_setpoints)
+    ypoints = flatten_1D_data_for_plot(y_setpoints)
 
     # First check whether all setpoints are identical along
     # any dimension
@@ -350,6 +359,7 @@ def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
 
     return 'unknown'
 
+
 def reshape_2D_data(x: np.ndarray, y: np.ndarray,
                     z: np.ndarray) -> Tuple[np.ndarray, np.ndarray,
                                             np.ndarray]:
@@ -381,8 +391,8 @@ def get_shaped_data_by_runid(run_id: int) -> List:
     for independet in mydata:
         data_length_long_enough = len(independet) == 3 and len(independet[0]['data']) > 0 and len(independet[1]['data']) > 0
         if data_length_long_enough:
-            datatype = datatype_from_setpoints_2d([independet[0]['data'],
-                                                   independet[1]['data']])
+            datatype = datatype_from_setpoints_2d(independet[0]['data'],
+                                                  independet[1]['data'])
             if datatype in ('grid', 'equidistant'):
                 independet[0]['data'], independet[1]['data'], independet[2]['data'] = reshape_2D_data(independet[0]['data'],
                                                                                                       independet[1]['data'],
