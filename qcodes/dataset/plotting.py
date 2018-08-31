@@ -32,7 +32,7 @@ def plot_by_id(run_id: int,
     Construct all plots for a given run
 
     Implemented so far:
-       * 1D plots
+       * 1D line and scatter plots
        * 2D plots on filled out rectangular grids
        * 2D scatterplots (fallback)
 
@@ -40,7 +40,8 @@ def plot_by_id(run_id: int,
     of axes that will be used for plotting. The user should ensure that the
     number of axes matches the number of datasets to plot. To plot several (1D)
     dataset in the same axes supply it several times. Colorbar axes are
-    created dynamically and cannot be supplied.
+    created dynamically. If colorbar axes are supplied, they will be reused,
+    yet new colorbar axes will be returned.
 
     The plot has a title that comprises run id, experiment name, and sample
     name.
@@ -49,11 +50,11 @@ def plot_by_id(run_id: int,
         run_id:
             ID of the run to plot
         axes:
-            Optional Matplotlib axes to plot on. If non provided new axes
+            Optional Matplotlib axes to plot on. If not provided, new axes
             will be created
         colorbars:
-            Optional Matplotlib Colorbars to use for 2D plots. If non
-            provided new ones will be created
+            Optional Matplotlib Colorbars to use for 2D plots. If not
+            provided, new ones will be created
         rescale_axes: if True, tick labels and units for axes of parameters
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
