@@ -332,9 +332,11 @@ class N52xxChannel(InstrumentChannel):
         of a four port device (Scattering 4 Port = s4p).
 
         For each frequency in the measurement sweep the snp data consists of a
-        complex n-by-n matrix. The data is returned in the format:
-
-        <frequency>, <S11_real>, <S11_imag>, <S21_real>, <S21_imag>, ...
+        complex n-by-n matrix. This command returns SNP data without header
+        information, and in columns, not in rows as .SnP files. This means that
+        the data returned from this command sends all frequency data, then all
+        Sx1 magnitude or real data, then all Sx1 phase or imaginary data, and
+        so forth.
 
         For each frequency, the length of the data array is
         therefore 2 * n**2 + 1
