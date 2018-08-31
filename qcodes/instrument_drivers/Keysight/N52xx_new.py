@@ -10,10 +10,9 @@ import time
 import re
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Enum
+from qcodes.utils.validators import Numbers, Enum, MultiType
 
 logger = logging.getLogger()
-
 
 
 class N52xxTrace(InstrumentChannel):
@@ -122,7 +121,8 @@ class N52xxChannel(InstrumentChannel):
             vals=Numbers(
                 min_value=self.parent.min_power,
                 max_value=self.parent.max_power
-            )
+            ),
+            set_parser=float
         )
 
         self.add_parameter(
@@ -205,8 +205,22 @@ class N52xxChannel(InstrumentChannel):
             label='Time',
             get_cmd=f'SENS{self.channel}:SWE:TIME?',
             get_parser=float,
+            # Make sure we are in stepped sweep
+            set_cmd=f'SENS{self.channel}:SWE:TIME {{:.6e}}',
             unit='s',
             vals=Numbers(0, 1e6)
+        )
+
+        self.add_parameter(
+            'dwell_time',
+            label='Time',
+            get_cmd=f'SENS{self.channel}:SWE:DWEL?',
+            get_parser=float,
+            # Make sure we are in stepped sweep
+            set_cmd=f'SENS{self.channel}:SWE:GEN STEP;'
+                    f'SENS{self.channel}:SWE:DWEL {{:.6e}}',
+            unit='s',
+            vals=MultiType(Numbers(0, 1e6), Enum("min", "max"))
         )
 
         self.add_parameter(
@@ -215,6 +229,14 @@ class N52xxChannel(InstrumentChannel):
             get_cmd=f'SENS{self.channel}:SWE:MODE?',
             set_cmd=f'SENS{self.channel}:SWE:MODE {{}}',
             vals=Enum("HOLD", "CONT", "GRO", "SING")
+        )
+
+        self.add_parameter(
+            "sensor_correction",
+            get_cmd=f"SENS{self.channel}:CORR?",
+            set_cmd=f"SEND{self.channel}:CORR {{}}",
+            vals=Enum(0, 1, "0", "1", True, False),
+            set_parser=int
         )
 
     @property
@@ -403,6 +425,12 @@ class N52xxBase(VisaInstrument):
             set_cmd="TRIG:SOUR {}",
             vals=Enum("EXT", "IMM", "INT", "MAN"),
             set_parser=lambda value: "IMM" if value is "INT" else value
+        )
+
+        self.add_parameter(
+            "display_arrangement",
+            set_cmd="DISP:ARR {}",
+            vals=Enum("TILE", "CASC", "OVER", "STAC", "SPL", "QUAD")
         )
 
         self._channels = ChannelList(self, "channel", N52xxChannel)
