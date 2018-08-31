@@ -314,14 +314,6 @@ def datatype_from_setpoints_2d(x_setpoints: np.ndarray,
     Returns:
         A string with the name of the determined plot type
     """
-    # We first check for being on a "simple" grid, which means that the data
-    # FILLS a (possibly non-equidistant) grid with at most a single rectangular
-    # hole in it
-    #
-    # Next we check whether the data can be put on an equidistant grid,
-    # but loosen the requirement that anything is filled
-    #
-    # Finally we just scatter (I think?)
 
     xpoints = flatten_1D_data_for_plot(x_setpoints)
     ypoints = flatten_1D_data_for_plot(y_setpoints)
