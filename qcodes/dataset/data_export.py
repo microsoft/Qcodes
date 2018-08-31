@@ -373,18 +373,38 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray,
 
 
 def get_shaped_data_by_runid(run_id: int) -> List:
+    """
+    Get data for a given run ID, but shaped according to its nature
 
+    The data might get flattened, and additionally reshaped if it falls on a
+    grid (equidistant or not).
+
+    Args:
+        run_id: The ID of the run for which to get data
+
+    Returns:
+        List of lists of dictionaries, the same as for `get_data_by_id`
+    """
     mydata = get_data_by_id(run_id)
 
     for independet in mydata:
-        data_length_long_enough = len(independet) == 3 and len(independet[0]['data']) > 0 and len(independet[1]['data']) > 0
+        data_length_long_enough = len(independet) == 3 \
+                                  and len(independet[0]['data']) > 0 \
+                                  and len(independet[1]['data']) > 0
+
         if data_length_long_enough:
-            independet[0]['data'] = flatten_1D_data_for_plot(independet[0]['data'])
-            independet[1]['data'] = flatten_1D_data_for_plot(independet[1]['data'])
+            independet[0]['data'] = flatten_1D_data_for_plot(
+                independet[0]['data'])
+            independet[1]['data'] = flatten_1D_data_for_plot(
+                independet[1]['data'])
+
             datatype = datatype_from_setpoints_2d(independet[0]['data'],
                                                   independet[1]['data'])
             if datatype in ('grid', 'equidistant'):
-                independet[0]['data'], independet[1]['data'], independet[2]['data'] = reshape_2D_data(independet[0]['data'],
-                                                                                                      independet[1]['data'],
-                                                                                                      independet[2]['data'])
+                independet[0]['data'], \
+                independet[1]['data'], \
+                independet[2]['data'] = reshape_2D_data(independet[0]['data'],
+                                                        independet[1]['data'],
+                                                        independet[2]['data'])
+
     return mydata
