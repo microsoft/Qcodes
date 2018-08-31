@@ -293,8 +293,8 @@ def plottype_for_3d_data(xpoints: np.ndarray,
     return plottype
 
 
-def datatype_from_setpoints_2d(x_setpoints: np.ndarray,
-                               y_setpoints: np.ndarray
+def datatype_from_setpoints_2d(xpoints: np.ndarray,
+                               ypoints: np.ndarray
                                ) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
@@ -308,16 +308,12 @@ def datatype_from_setpoints_2d(x_setpoints: np.ndarray,
     other plot types
 
     Args:
-        x_setpoints: The x-axis values
-        y_setpoints: The y-axis values
+        xpoints: The x-axis values
+        ypoints: The y-axis values
 
     Returns:
         A string with the name of the determined plot type
     """
-
-    xpoints = flatten_1D_data_for_plot(x_setpoints)
-    ypoints = flatten_1D_data_for_plot(y_setpoints)
-
     # First check whether all setpoints are identical along
     # any dimension
     x_all_the_same = np.allclose(xpoints, xpoints[0])
@@ -383,6 +379,8 @@ def get_shaped_data_by_runid(run_id: int) -> List:
     for independet in mydata:
         data_length_long_enough = len(independet) == 3 and len(independet[0]['data']) > 0 and len(independet[1]['data']) > 0
         if data_length_long_enough:
+            independet[0]['data'] = flatten_1D_data_for_plot(independet[0]['data'])
+            independet[1]['data'] = flatten_1D_data_for_plot(independet[1]['data'])
             datatype = datatype_from_setpoints_2d(independet[0]['data'],
                                                   independet[1]['data'])
             if datatype in ('grid', 'equidistant'):

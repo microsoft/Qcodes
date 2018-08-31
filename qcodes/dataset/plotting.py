@@ -133,13 +133,11 @@ def plot_by_id(run_id: int,
                            'point': plot_2d_scatterplot,
                            'unknown': plot_2d_scatterplot}
 
-            plottype = plottype_for_3d_data(data[0]['data'],
-                                            data[1]['data'],
-                                            data[2]['data'])
-
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
+
+            plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
 
             plot_func = how_to_plot[plottype]
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
