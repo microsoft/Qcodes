@@ -85,14 +85,14 @@ class Model_325_Channel(InstrumentChannel):
         else:
             terms = []
             comp = np.sort(components)[::-1]
-            comp = comp[comp <= number]
+            comp = np.extract(np.logical_and(comp <= number, comp != 0), comp)
 
             while len(comp):
                 c = comp[0]
                 number -= c
                 terms.append(c)
 
-                comp = comp[comp <= number]
+                comp = np.extract(comp <= number, comp)
 
         return terms
 
@@ -135,9 +135,6 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             'powerup_enable',
-            label='Power-up enable on/off',
-            docstring='Specifies whether the output remains on '
-                      'or shuts off after power cycle.',
             val_mapping={True: 1, False: 0},
             parameter_class=GroupParameter
         )
@@ -153,7 +150,7 @@ class Output_325(InstrumentChannel):
         )
 
         Group(
-            [self.loop_input, self.unit, self.powerup_enable,
+            [self.input_channel, self.unit, self.powerup_enable,
              self.output_metric],
             set_cmd=f"CSET {self._channel}, {{input_channel}}, {{unit}}, "
                     f"{{powerup_enable}}, {{output_metric}}",
@@ -162,7 +159,6 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             'P',
-            docstring='The value for control loop Proportional (gain)',
             vals=Numbers(0, 1000),
             get_parser=float,
             parameter_class=GroupParameter
@@ -170,7 +166,6 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             'I',
-            docstring='The value for control loop Integral (reset)',
             vals=Numbers(0, 1000),
             get_parser=float,
             parameter_class=GroupParameter
@@ -178,7 +173,6 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             'D',
-            docstring='The value for control loop Derivative (rate)',
             vals=Numbers(0, 1000),
             get_parser=float,
             parameter_class=GroupParameter
