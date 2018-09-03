@@ -25,7 +25,7 @@ def readme():
         return f.read()
 
 extras = {
-    'MatPlot': ('matplotlib', '2.0.2'),
+    'MatPlot': ('matplotlib', '2.2.3'),
     'QtPlot': ('pyqtgraph', '0.10.0'),
     'coverage tests': ('coverage', '4.0'),
     'Slack': ('slacker', '0.9.42')
@@ -37,7 +37,7 @@ setup(name='qcodes',
       use_2to3=False,
 
       maintainer='Jens H Nielsen',
-      maintainer_email='j.h.nielsen@nbi.ku.dk',
+      maintainer_email='Jens.Nielsen@microsoft.com',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',

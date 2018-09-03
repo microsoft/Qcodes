@@ -1,4 +1,4 @@
-from typing import List, Any, Sequence, Tuple
+from typing import List, Any, Sequence, Tuple, Dict, Union
 import logging
 
 import numpy as np
@@ -8,6 +8,7 @@ from qcodes.dataset.sqlite_base import (get_dependencies, get_dependents,
 from qcodes.dataset.data_set import load_by_id
 
 log = logging.getLogger(__name__)
+
 
 def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
     """
@@ -26,31 +27,85 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
 
     return dataarray
 
+
 def get_data_by_id(run_id: int) -> List:
     """
     Load data from database and reshapes into 1D arrays with minimal
-    name, unit and label metadata.
+    name, unit and label metadata (see `get_layout` function).
+
+    Args:
+        run_id: run ID from the database
+
+    Returns:
+        a list of lists of dictionaries like this:
+
+        [
+          # each element in this list refers
+          # to one dependent (aka measured) parameter
+            [
+              # each element in this list refers
+              # to one independent (aka setpoint) parameter
+              # that the dependent parameter depends on;
+              # a dictionary with the data and metadata of the dependent
+              # parameter is in the *last* element in this list
+                ...
+                {
+                    'data': <1D numpy array of points>,
+                    'name': <name of the parameter>,
+                    'label': <label of the parameter or ''>,
+                    'unit': <unit of the parameter or ''>
+                },
+                ...
+            ],
+            ...
+        ]
     """
 
     data = load_by_id(run_id)
+
     conn = data.conn
     deps = get_dependents(conn, run_id)
+
     output = []
     for dep in deps:
 
         dependencies = get_dependencies(conn, dep)
-        data_axis = get_layout(conn, dep)
+
+        data_axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn, dep)
+
         rawdata = data.get_values(data_axis['name'])
         data_axis['data'] = flatten_1D_data_for_plot(rawdata)
+
         raw_setpoint_data = data.get_setpoints(data_axis['name'])
+
         my_output = []
 
+        max_size = 0
         for i, dependency in enumerate(dependencies):
-            axis = get_layout(conn, dependency[0])
-            axis['data'] = flatten_1D_data_for_plot(raw_setpoint_data[i])
+            axis: Dict[str, Union[str, np.ndarray]] = get_layout(conn,
+                                                                 dependency[0])
+
+            mydata = flatten_1D_data_for_plot(raw_setpoint_data[i])
+            axis['data'] = mydata
+
+            size = mydata.size
+            if size > max_size:
+                max_size = size
+
             my_output.append(axis)
 
+        for i, dependency in enumerate(dependencies):
+            axis = my_output[i]
+            size = axis['data'].size  # type: ignore
+            if size < max_size:
+                if max_size % size != 0:
+                    raise RuntimeError("Inconsistent shapes of data. Got "
+                                       f"{size} which is not a whole fraction"
+                                       f"of {max_size}")
+                axis['data'] = np.repeat(axis['data'], max_size//size)
+
         my_output.append(data_axis)
+
         output.append(my_output)
     return output
 
