@@ -1738,3 +1738,28 @@ class ScaledParameter(Parameter):
 
         self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
+
+
+class DelegateParameter(Parameter):
+    """
+    The `DelegateParameter` wraps a given `source`-parameter. Setting/getting
+    it results in a set/get of the source parameter with the provided
+    arguments.
+
+    The reason for using a `DelegateParameter` instead of the source parameter
+    is to provide all the functionality of the Parameter base class without
+    overwriting properties of the source: for example to set a different
+    Scaling factor and unit on the `DelegateParameter` without changing those
+    in the source parameter
+    """
+
+    def __init__(self, name: str, source: Parameter, *args, **kwargs):
+        self.source = source
+        super().__init__(name=name, *args, **kwargs)
+
+    def get_raw(self, *args, **kwargs):
+        return self.source.get(*args, **kwargs)
+
+    def set_raw(self, *args, **kwargs):
+        self.source(*args, **kwargs)
+
