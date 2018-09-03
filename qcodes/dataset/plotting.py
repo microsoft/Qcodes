@@ -62,7 +62,7 @@ def plot_by_id(run_id: int,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
         smart_colorscale: if True, the colorscale of heatmap plots will be
-            automatically adjusted to compensate for outliers.
+            automatically adjusted to disregard outliers.
 
     returns:
         a list of axes and a list of colorbars of the same length. The
