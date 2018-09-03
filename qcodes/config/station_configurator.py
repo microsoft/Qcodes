@@ -18,9 +18,10 @@ try:
     from ruamel.yaml import YAML
 except ImportError:
     use_pyyaml = True
-    warnings.warn("ruamel yaml not found station configurator is falling back to pyyaml. "
-                           "It's highly recommended to install ruamel.yaml. This fixes issues with "
-                           "scientific notation and duplicate instruments in the YAML file")
+    warnings.warn(
+        "ruamel yaml not found station configurator is falling back to pyyaml. "
+        "It's highly recommended to install ruamel.yaml. This fixes issues with "
+        "scientific notation and duplicate instruments in the YAML file")
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class StationConfigurator:
         if use_pyyaml:
             import yaml
         else:
-            yaml=YAML()
+            yaml = YAML()
         if filename is None:
             filename = default_file
         try:
@@ -101,6 +102,7 @@ class StationConfigurator:
         self.station.components['StationConfigurator'] = ConfigComponent(self.config)
 
     def load_instrument(self, identifier: str,
+                        revive_instance: bool=False,
                         **kwargs) -> Instrument:
         """
         Creates an instrument driver as described by the loaded config file.
@@ -108,9 +110,14 @@ class StationConfigurator:
         Args:
             identifier: the identfying string that is looked up in the yaml
                 configuration file, which identifies the instrument to be added
+            revive_instance: If true, try to return an instrument with the
+                specified name instead of closing it and creating a new one.
             **kwargs: additional keyword arguments that get passed on to the
                 __init__-method of the instrument to be added.
         """
+        # try to revive the instrument
+        if revive_instance and Instrument.exist(identifier):
+            return Instrument.find_instrument(identifier)
 
         # load file
         self.load_file(self.filename)
@@ -130,8 +137,11 @@ class StationConfigurator:
             # save close instrument and remove from monitor list
             with suppress(KeyError):
                 instr = Instrument.find_instrument(identifier)
-                # remove parameters related to this instrument from the monitor list
-                self.monitor_parameters = {k:v for k,v in self.monitor_parameters.items() if v.root_instrument is not instr}
+                # remove parameters related to this instrument from the
+                # monitor list
+                self.monitor_parameters = {
+                    k:v for k,v in self.monitor_parameters.items()
+                    if v.root_instrument is not instr}
                 instr.close()
                 # remove instrument from station snapshot
                 self.station.components.pop(instr.name)
