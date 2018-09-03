@@ -678,7 +678,7 @@ def get_setpoints(conn: sqlite3.Connection,
     setpoint_names = cast(List[str], setpoint_names)
 
     # get the actual setpoint data
-    output: Dict = {}
+    output: Dict[str, List[List[Any]]] = {}
     for sp_name in setpoint_names:
         sql = f"""
         SELECT {sp_name}
