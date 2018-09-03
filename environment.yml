@@ -19,3 +19,4 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - ruamel.yaml
