@@ -30,7 +30,7 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Union[bool,None]=None) -> AxesTupleList:
+               smart_colorscale: Optional[bool]=None) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -70,7 +70,8 @@ def plot_by_id(run_id: int,
         1D plots)
     """
     # defaults
-    smart_colorscale = smart_colorscale or config.gui.smart_colorscale
+    if smart_colorscale is None:
+        smart_colorscale = config.gui.smart_colorscale
 
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
