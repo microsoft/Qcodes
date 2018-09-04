@@ -10,6 +10,7 @@ from matplotlib.ticker import FuncFormatter
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
 from qcodes.utils.plotting import auto_range_iqr
+from qcodes import config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (datatype_from_setpoints_1d,
@@ -29,7 +30,7 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: bool=False) -> AxesTupleList:
+               smart_colorscale: Optional[bool]=None) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -68,6 +69,10 @@ def plot_by_id(run_id: int,
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
+    # defaults
+    if smart_colorscale is None:
+        smart_colorscale = config.gui.smart_colorscale
+
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
     experiment_name = dataset.exp_name
