@@ -21,12 +21,15 @@ def test_generate_guid(loc, stat, smpl):
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
-        cfg.save_config(cfg.default_file_name)
+        cfg.save_to_home()
 
         guid = generate_guid()
         gen_time = int(np.round(time.time()*1000))
 
         comps = parse_guid(guid)
+
+        if smpl == 0:
+            smpl = int('a'*8, base=16)
 
         assert comps['location'] == loc
         assert comps['work_station'] == stat
@@ -36,4 +39,4 @@ def test_generate_guid(loc, stat, smpl):
         # important to leave this vital info untouched!
         cfg = Config()
         cfg.current_config = original_config
-        cfg.save_config(cfg.default_file_name)
+        cfg.save_to_home()
