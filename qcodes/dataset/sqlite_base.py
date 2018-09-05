@@ -1123,13 +1123,14 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
         else:
             query = f"""
             INSERT INTO {table}
-                (name,exp_id,result_table_name,result_counter,run_timestamp,is_completed)
+                (name,exp_id,guid,result_table_name,result_counter,run_timestamp,is_completed)
             VALUES
-                (?,?,?,?,?,?)
+                (?,?,?,?,?,?,?)
             """
             curr = transaction(conn, query,
                                name,
                                exp_id,
+                               guid,
                                formatted_name,
                                run_counter,
                                time.time(),
