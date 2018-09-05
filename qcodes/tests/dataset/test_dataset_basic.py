@@ -94,6 +94,7 @@ def test_initialise_database_at_for_existing_db():
         test_tables_exist(None)
 
 
+@settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),

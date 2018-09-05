@@ -348,6 +348,7 @@ def test_measurement_name(experiment, DAC, DMM):
         expected_name = fmt.format(name, exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
 
+
 @settings(deadline=None)
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
@@ -367,6 +368,7 @@ def test_setting_write_period(empty_temp_db, wp):
 
         with meas.run() as datasaver:
             assert datasaver.write_period == float(wp)
+
 
 @settings(deadline=None)
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
