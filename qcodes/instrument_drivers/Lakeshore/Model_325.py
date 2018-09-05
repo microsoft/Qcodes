@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
@@ -27,7 +28,7 @@ class Model_325_Channel(InstrumentChannel):
             'temperature',
             get_cmd='KRDG? {}'.format(self._channel),
             get_parser=float,
-            label='Temerature',
+            label='Temperature',
             unit='K'
         )
 
@@ -213,6 +214,8 @@ class Output_325(InstrumentChannel):
             "output",
             get_cmd="HTR?"
         )
+
+
 
 
 class Model_325(VisaInstrument):
