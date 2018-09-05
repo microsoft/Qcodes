@@ -979,6 +979,17 @@ def get_completed_timestamp_from_run_id(
                             "run_id", run_id)
 
 
+def get_guid_from_run_id(conn: SomeConnection, run_id: int) -> str:
+    """
+    Get the guid of the given run
+
+    Args:
+        conn: database connection
+        run_id: id of the run
+    """
+    return select_one_where(conn, "runs", "guid", "run_id", run_id)
+
+
 def finish_experiment(conn: SomeConnection, exp_id: int):
     """ Finish experiment
 

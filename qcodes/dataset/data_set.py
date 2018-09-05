@@ -34,6 +34,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_metadata, one,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
+                                        get_guid_from_run_id,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
@@ -231,6 +232,10 @@ class DataSet(Sized):
     def table_name(self):
         return select_one_where(self.conn, "runs",
                                 "result_table_name", "run_id", self.run_id)
+
+    @property
+    def guid(self):
+        return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
     def number_of_results(self):

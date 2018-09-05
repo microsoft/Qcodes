@@ -19,9 +19,9 @@ from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
                                         perform_db_upgrade_0_to_1)
 
 from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database, \
-    initialise_or_create_database_at
-
+from qcodes.dataset.database import (initialise_database,
+                                     initialise_or_create_database_at)
+from qcodes.dataset.guids import parse_guid
 
 
 n_experiments = 0
@@ -367,6 +367,12 @@ def test_dataset_with_no_experiment_raises(empty_temp_db):
         new_data_set("test-dataset",
                      specs=[ParamSpec("x", "numeric"),
                             ParamSpec("y", "numeric")])
+
+
+def test_guid(dataset):
+    guid = dataset.guid
+    assert len(guid) == 36
+    parse_guid(guid)
 
 
 def test_perform_actual_upgrade_0_to_1():
