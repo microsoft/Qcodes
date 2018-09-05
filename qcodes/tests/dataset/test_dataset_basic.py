@@ -94,6 +94,7 @@ def test_initialise_database_at_for_existing_db():
         test_tables_exist(None)
 
 
+@settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
@@ -315,7 +316,7 @@ def test_modify_result(experiment):
         dataset.modify_result(0, {'x': 2})
 
 
-@settings(max_examples=25)
+@settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
 def test_add_parameter_values(experiment, N, M):
@@ -451,9 +452,11 @@ def test_missing_keys(dataset):
     assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
     assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
 
-    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+    assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
     tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
     expected_setpoints = [[[v] for v in vals] for vals in tmp]
 
-    assert dataset.get_setpoints("b") == expected_setpoints
+    assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
+    assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
+
