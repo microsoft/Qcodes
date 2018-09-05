@@ -5,14 +5,67 @@ http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/
 from functools import partial
 import numpy as np
 import logging
-from typing import Any
+from typing import Any, Sequence
 import time
 import re
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes import (
+    VisaInstrument, InstrumentChannel, ChannelList, ArrayParameter
+)
+
 from qcodes.utils.validators import Numbers, Enum, MultiType, Union
 
 logger = logging.getLogger()
+
+
+class TraceParameter(ArrayParameter):
+    def __init__(
+        self,
+        name: str,
+        instrument: 'N52xxBase',
+        channel: 'N52xxChannel',
+        trace: 'N52xxTrace',
+        sweep_format: str,
+        label: str,
+        unit: str,
+    ) -> None:
+
+        self._sweep_format = sweep_format
+        self._channel = channel
+        self._trace = trace
+
+        super().__init__(
+            name,
+            instrument=instrument,
+            label=label,
+            unit=unit,
+            setpoint_names=('frequency',),
+            setpoint_labels=('Frequency',),
+            setpoint_units=('Hz',),
+            shape=(0,),
+            setpoints=((0,),),
+        )
+
+    @property
+    def shape(self) -> tuple:
+        return self._channel.points(),
+
+    @shape.setter
+    def shape(self, val: Sequence[int]) -> None:
+        pass
+
+    @property
+    def setpoints(self) -> tuple:
+        start = self._channel.start()
+        stop = self._channel.stop()
+        return np.linspace(start, stop, self.shape[0]),
+
+    @setpoints.setter
+    def setpoints(self, val: Sequence[int]) -> None:
+        pass
+
+    def get_raw(self) -> Sequence[float]:
+        return self._trace._get_raw_data(self._sweep_format)
 
 
 class N52xxTrace(InstrumentChannel):
@@ -21,17 +74,19 @@ class N52xxTrace(InstrumentChannel):
     """
 
     data_formats = {
-        "log_magnitude": "MLOG",
-        "linear_magnitude": "MLIN",
-        "phase": "PHAS",
-        "unwrapped_phase": "UPH",
-        "group_delay": "GDEL",
-        "real": "REAL",
-        "imaginary": "IMAG"
+        "log_magnitude": {"sweep_format": "MLOG", "unit": "dBm"},
+        "linear_magnitude": {"sweep_format": "MLIN", "unit": "-"},
+        "phase": {"sweep_format": "PHAS", "unit": "deg"},
+        "unwrapped_phase": {"sweep_format": "UPH", "unit": "deg"},
+        "group_delay": {"sweep_format": "GDEL", "unit": "s"},
+        "real": {"sweep_format": "REAL", "unit": "-"},
+        "imaginary": {"sweep_format": "IMAG", "unit": "-"}
     }
 
-    def __init__(self, parent: 'N52xxBase', channel: int, name: str,
+    def __init__(self, parent: 'N52xxBase', channel: 'N52xxChannel', name: str,
                  trace_type: str) -> None:
+
+        self.validate_trace_type(trace_type)
 
         super().__init__(parent, name)
         self._channel = channel
@@ -41,16 +96,39 @@ class N52xxTrace(InstrumentChannel):
             'format',
             get_cmd=f'CALC{self._channel}:FORM?',
             set_cmd=f'CALC{self._channel}:FORM {{}}',
-            vals=Enum(*list(self.data_formats.values()))
+            vals=Enum(*[d["sweep_format"] for d in self.data_formats.values()])
         )
 
-        for format_name, format_string in self.data_formats.items():
-            setattr(
-                self, format_name, partial(self._get_raw_data,
-                                           format_str=format_string)
+        for format_name, format_args in self.data_formats.items():
+            self.add_parameter(
+                format_name,
+                parameter_class=TraceParameter,
+                channel=self._channel,
+                trace=self,
+                label=format_name,
+                **format_args
             )
 
+    @staticmethod
+    def validate_trace_type(trace_type: str) ->None:
+        if re.fullmatch(r"S\d\d", trace_type) is None:
+            raise ValueError(
+                "The trace type needs to be in the form Sxy where "
+                "'x' and 'y' are integers"
+            )
+
+    @property
+    def present_on_instrument(self) ->bool:
+        if self.short_name not in self._channel.trace:
+            return False
+        return True
+
     def select(self) -> None:
+        if not self.present_on_instrument:
+            raise RuntimeError(
+                "Trace is not present on the instrument (anymore). It was "
+                "either deleted or never uploaded in the first place"
+            )
         # Writing self.write here will cause an infinite recursion
         self.parent.write(f"CALC{self._channel}:PAR:SEL {self.short_name}")
 
@@ -99,19 +177,15 @@ class N52xxTrace(InstrumentChannel):
             f'{self._trace_type}'
         )
 
-    def __repr__(self):
-        return f"{self.short_name}, {self._trace_type}"
-
 
 class N52xxChannel(InstrumentChannel):
     """
     Allows operations on specific channels.
     """
-    def __init__(self, parent: 'N52xxBase', channel: int, description: str):
+    def __init__(self, parent: 'N52xxBase', channel: int):
         super().__init__(parent, f"channel{channel}")
 
         self.channel = channel
-        self.description = description
 
         self.add_parameter(
             'power',
@@ -237,8 +311,7 @@ class N52xxChannel(InstrumentChannel):
             "sensor_correction",
             get_cmd=f"SENS{self.channel}:CORR?",
             set_cmd=f"SEND{self.channel}:CORR {{}}",
-            vals=Enum(0, 1, "0", "1", True, False),
-            set_parser=int
+            val_mapping={True: '1', False: '0'}
         )
 
     @property
@@ -259,7 +332,8 @@ class N52xxChannel(InstrumentChannel):
 
         return {
             name: N52xxTrace(
-                self.parent, self.channel, name, trace_type)
+                self.parent, self, name, trace_type
+            )
             for name, trace_type in zip(trace_names, trace_types)
         }
 
@@ -277,16 +351,11 @@ class N52xxChannel(InstrumentChannel):
         Returns:
             trace (N52xxTrace)
         """
-        if re.search("S(.)(.)$", tr_type) is None:
-            raise ValueError(
-                "The trace type needs to be in the form Sxy where "
-                "'x' and 'y' are integers")
-
         traces = self.trace
         if name in traces:
             return traces[name]
 
-        trace = N52xxTrace(self.parent, self.channel, name, tr_type)
+        trace = N52xxTrace(self.parent, self, name, tr_type)
         trace.upload_to_instrument()
         trace.select()
         return trace
@@ -304,6 +373,18 @@ class N52xxChannel(InstrumentChannel):
         else:
             self.trace[name].delete()
 
+    def select(self) ->None:
+        """
+        A channel must be selected (active) to modify its settings. A channel
+        is selected by selecting a trace on that channel
+        """
+        traces = list(self.trace.values())
+        if len(traces) == 0:
+            raise UserWarning("Cannot select channel as no traces have been "
+                              "defined ")
+        else:
+            traces[0].select()
+
     def run_sweep(self, averages: int =1, blocking: bool=True) ->None:
         """
         Run a sweep
@@ -313,9 +394,15 @@ class N52xxChannel(InstrumentChannel):
             blocking (bool): If True, this method will block until the sweep
                                 has finished
         """
+        self.select()
+
         if averages == 1:
+            self.averages_enabled(False)
             self.sweep_mode('SING')
         else:
+            self.averages_enabled(True)
+            self.averages(averages)
+
             self.write(f'SENS{self.channel}:AVER:CLE')
             self.write(f'SENS{self.channel}:SWE:GRO:COUN {averages}')
             self.sweep_mode('GRO')
@@ -362,15 +449,8 @@ class N52xxChannel(InstrumentChannel):
         Sx1 magnitude or real data, then all Sx1 phase or imaginary data, and
         so forth.
 
-        For each frequency, the length of the data array is
-        therefore 2 * n**2 + 1
-
         For more information about the snp format, please visit:
         http://literature.cdn.keysight.com/litweb/pdf/ads2004a/cktsim/ck04a8.html
-
-        Note: we could do the same by reading data from individual traces.
-        However this method uses a single instrument query to retrieve all the
-        data
 
         Args:
             ports (list): The ports from which we want data (e.g. [1, 2, 3, 4])
@@ -405,7 +485,7 @@ class N52xxChannel(InstrumentChannel):
         return data
 
     def __repr__(self):
-        return f"Channel class: {self.description}"
+        return str(self.channel)
 
 
 class N52xxPort(InstrumentChannel):
@@ -469,10 +549,6 @@ class N52xxBase(VisaInstrument):
             vals=Enum("TILE", "CASC", "OVER", "STAC", "SPL", "QUAD")
         )
 
-        self._channels = ChannelList(self, "channel", N52xxChannel)
-        self.add_submodule("channel", self._channels)
-        self.add_channel("default")
-
         # Ports
         ports = ChannelList(self, "port", N52xxPort)
         for port_num in range(1, self.port_count + 1):
@@ -487,36 +563,34 @@ class N52xxBase(VisaInstrument):
         ports.lock()
         self.add_submodule("port", ports)
 
+        self._channels = []
         self.connect_message()
 
-    def add_channel(self, description):
-        if description in [c.description for c in self._channels]:
-            raise ValueError(
-                f"Channel description {description} already exists")
-
+    def add_channel(self) ->N52xxChannel:
+        """
+        Channels contain traces. The analyzer can have up to 200 independent
+        channels. Channel settings determine how the trace data is measured .
+        All traces that are assigned to a channel share the same channel
+        settings.
+        """
         channel_count = len(self._channels)
 
         channel = N52xxChannel(
-            self, channel=channel_count + 1, description=description)
+            self, channel=channel_count + 1)
+        self._channels.append(channel)
 
-        self.channel.append(channel)
-        self.active_channel = channel
+        return channel
 
-    def activate_channel(self, description):
-        channel = {c.description: c for c in self._channels}[description]
-        self.active_channel = channel
-
-    def list_channels(self):
-        print("\n".join(self._channels))
+    @property
+    def channel(self) ->list:
+        """
+        Public interface for access to channels
+        """
+        return self._channels
 
     def delete_all_traces(self) ->None:
         """
-        Delete all traces from the instrument. Note that this is different then
-
-        >>> pna = N52xxBase("pna", 'GPIB0::16::INSTR')
-        >>> pna.delete_trace("all")
-
-        As this will only delete from the first channel
+        Delete all traces from the instrument.
         """
         self.write("CALC:PAR:DEL:ALL")
 
@@ -530,22 +604,3 @@ class N52xxBase(VisaInstrument):
         self.write('FORM REAL,32')
         self.write('FORM:BORD NORM')
         self.trigger_source("IMM")
-
-    def __getattr__(self, item):
-        """
-        Map the attributes of the channel class on the base instrument
-        """
-        try:
-            return super().__getattr__(item)
-        except AttributeError:
-            if item == "active_channel":
-                # We have produced an unwanted recursion
-                raise
-
-            att = getattr(self.active_channel, item, None)
-
-            if att is None:
-                raise AttributeError(
-                    f"No attribute {item} on instrument or channel class")
-
-            return att
