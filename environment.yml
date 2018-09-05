@@ -4,7 +4,7 @@ channels:
  - conda-forge
 dependencies:
  - h5py
- - matplotlib=2.0.2
+ - matplotlib=2.2.3
  - pyqtgraph
  - python=3.6
  - jsonschema
@@ -18,6 +18,5 @@ dependencies:
  - pytest
  - pytest-runner
  - spyder
- - pymongo
  - pyzmq
  - wrapt
