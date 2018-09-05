@@ -95,7 +95,8 @@ class N52xxTrace(InstrumentChannel):
         # Do not do self.write; self.select will not work yet as the instrument
         # has not been uploaded yet
         self.parent.write(
-            f'CALC{self._channel}:PAR:EXT {self.short_name}, {self._trace_type}'
+            f'CALC{self._channel}:PAR:EXT {self.short_name}, '
+            f'{self._trace_type}'
         )
 
     def __repr__(self):
