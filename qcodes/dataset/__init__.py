@@ -1,5 +1,3 @@
-import json
-
 from qcodes.config import Config
 
 cfg = Config()
