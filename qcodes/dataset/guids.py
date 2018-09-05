@@ -39,6 +39,9 @@ def generate_guid(timeint: Union[int, None]=None,
     if sampleint is None:
         sampleint = guid_comp['sample']
 
+    if sampleint == 0:
+        sampleint = int('a'*8, base=16)
+
     loc_str = f'{location:02x}'
     stat_str = f'{station:06x}'
     smpl_str = f'{sampleint:08x}'
