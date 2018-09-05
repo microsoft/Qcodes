@@ -10,7 +10,7 @@ import time
 import re
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Enum, MultiType
+from qcodes.utils.validators import Numbers, Enum, MultiType, Union
 
 logger = logging.getLogger()
 
@@ -106,10 +106,11 @@ class N52xxChannel(InstrumentChannel):
     """
     Allows operations on specific channels.
     """
-    def __init__(self, parent: 'N52xxBase', channel: int):
+    def __init__(self, parent: 'N52xxBase', channel: int, description: str):
         super().__init__(parent, f"channel{channel}")
 
         self.channel = channel
+        self.description = description
 
         self.add_parameter(
             'power',
@@ -402,6 +403,40 @@ class N52xxChannel(InstrumentChannel):
         self.parent.synchronize()
         return data
 
+    def __repr__(self):
+        return f"Channel class: {self.description}"
+
+
+class N52xxPort(InstrumentChannel):
+    """
+    Allow operations on individual PNA ports.
+    """
+
+    def __init__(
+            self,
+            parent: 'N52xxBase',
+            name: str,
+            port: int,
+            min_power: Union[int, float],
+            max_power: Union[int, float]
+    ) -> None:
+
+        super().__init__(parent, name)
+
+        self.port = int(port)
+        if self.port not in range(1, 5):
+            raise ValueError("Port must be between 1 and 4.")
+
+        self.add_parameter(
+            "source_power",
+            label="power",
+            unit="dBm",
+            get_cmd=f"SOUR:POW{self.port}?",
+            set_cmd=f"SOUR:POW{self.port} {{}}",
+            get_parser=float,
+            vals=Numbers(min_value=min_power,max_value=max_power)
+        )
+
 
 class N52xxBase(VisaInstrument):
     """
@@ -412,12 +447,12 @@ class N52xxBase(VisaInstrument):
     max_freq: float = None
     min_power: float = None
     max_power: float = None
-    number_of_channels: int = None
-    default_channel = 0
+    port_count: int = None
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
 
         super().__init__(name, address, terminator='\n', **kwargs)
+        self.active_channel: N52xxChannel = None
 
         self.add_parameter(
             "trigger_source",
@@ -435,14 +470,43 @@ class N52xxBase(VisaInstrument):
 
         self._channels = ChannelList(self, "channel", N52xxChannel)
         self.add_submodule("channel", self._channels)
-        for count in range(self.number_of_channels):
-            channel = N52xxChannel(self, channel=count+1)
-            self.channel.append(channel)
+        self.add_channel("default")
 
-        channel_parameters = self.channel[self.default_channel].parameters
-        self.parameters.update(channel_parameters)
+        # Ports
+        ports = ChannelList(self, "port", N52xxPort)
+        for port_num in range(1, self.port_count + 1):
+            port = N52xxPort(
+                self, f"port{port_num}", port_num, self.min_power,
+                self.max_power
+            )
+
+            ports.append(port)
+            self.add_submodule(f"port{port_num}", port)
+
+        ports.lock()
+        self.add_submodule("port", ports)
 
         self.connect_message()
+
+    def add_channel(self, description):
+        if description in [c.description for c in self._channels]:
+            raise ValueError(
+                f"Channel description {description} already exists")
+
+        channel_count = len(self._channels)
+
+        channel = N52xxChannel(
+            self, channel=channel_count + 1, description=description)
+
+        self.channel.append(channel)
+        self.active_channel = channel
+
+    def activate_channel(self, description):
+        channel = {c.description: c for c in self._channels}[description]
+        self.active_channel = channel
+
+    def list_channels(self):
+        print("\n".join(self._channels))
 
     def delete_all_traces(self) ->None:
         """
@@ -468,13 +532,19 @@ class N52xxBase(VisaInstrument):
 
     def __getattr__(self, item):
         """
-        We will almost always use channel 1. For convenience map channel 1
-        attributes/parameters/methods on the base instrument
+        Map the attributes of the channel class on the base instrument
         """
         try:
             return super().__getattr__(item)
         except AttributeError:
-            if item in ["_channels", "default_channel"]:
+            if item == "active_channel":
                 # We have produced an unwanted recursion
                 raise
-            return getattr(self._channels[self.default_channel], item)
+
+            att = getattr(self.active_channel, item, None)
+
+            if att is None:
+                raise AttributeError(
+                    f"No attribute {item} on instrument or channel class")
+
+            return att
