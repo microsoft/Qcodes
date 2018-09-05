@@ -81,7 +81,13 @@
                     "description": "Default colormap to use for Heatmaps with both Matplotlib and PyQtGraph",
                     "type": "string",
                     "default": "hot"
+                },
+                "smart_colorscale":{
+                    "description": "Use a smart colorscale, that scales such that outliers of the data will not be included in the min/max range.",
+                    "type": "boolean",
+                    "default": false
                 }
+
             },
             "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
         },
