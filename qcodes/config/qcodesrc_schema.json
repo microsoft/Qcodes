@@ -133,21 +133,21 @@
             "properties": {
                 "location": {
                     "type": "integer",
-                    "default": 170,
+                    "default": 0,
                     "description": "Geographical location code"
                 },
                 "work_station": {
                     "type": "integer",
-                    "default": 11184810,
+                    "default": 0,
                     "description": "Work station identification code"
                 },
                 "sample": {
                     "type": "integer",
-                    "default": 2863311530,
+                    "default": 0,
                     "description": "Sample identification code"
             }
         },
-        "description": "Identifiers for researchers inside the MS collaboration, used to generate GUIDs for runs. Users outside the collaboration can set these values to anything they please."
+        "description": "Identifiers for creating a GUID per run in the dataset database."
         }
     },
     "required":[ "gui", "core", "GUID_components"]
