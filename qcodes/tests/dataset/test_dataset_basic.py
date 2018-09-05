@@ -451,9 +451,11 @@ def test_missing_keys(dataset):
     assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
     assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
 
-    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+    assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
     tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
     expected_setpoints = [[[v] for v in vals] for vals in tmp]
 
-    assert dataset.get_setpoints("b") == expected_setpoints
+    assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
+    assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
+

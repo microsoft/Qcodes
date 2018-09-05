@@ -9,6 +9,8 @@ from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
+from qcodes.utils.plotting import auto_range_iqr
+from qcodes import config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (datatype_from_setpoints_1d,
@@ -28,7 +30,8 @@ def plot_by_id(run_id: int,
                colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
-               rescale_axes: bool=True) -> AxesTupleList:
+               rescale_axes: bool=True,
+               smart_colorscale: Optional[bool]=None) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -59,12 +62,18 @@ def plot_by_id(run_id: int,
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
+        smart_colorscale: if True, the colorscale of heatmap plots will be
+            automatically adjusted to disregard outliers.
 
-    Returns:
+    returns:
         a list of axes and a list of colorbars of the same length. The
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
+    # defaults
+    if smart_colorscale is None:
+        smart_colorscale = config.gui.smart_colorscale
+
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
     experiment_name = dataset.exp_name
@@ -147,6 +156,8 @@ def plot_by_id(run_id: int,
             _set_data_axes_labels(ax, data, colorbar)
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
+            if smart_colorscale:
+                colorbar.mappable.set_clim(*auto_range_iqr(zpoints))
 
             new_colorbars.append(colorbar)
 
