@@ -20,7 +20,8 @@ log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
-AxesTupleList = Tuple[List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]]
+AxesTupleList = Tuple[List[matplotlib.axes.Axes],
+                      List[Optional[matplotlib.colorbar.Colorbar]]]
 
 
 def plot_by_id(run_id: int,
@@ -153,7 +154,6 @@ def plot_by_id(run_id: int,
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
 
             _set_data_axes_labels(ax, data, colorbar)
-
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
             if smart_colorscale:
@@ -180,18 +180,17 @@ def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
 
 
-def _get_unit_of_data(data_dict: Dict[str, Any]) -> str:
-    return data_dict['unit'] if data_dict['unit'] != '' else ''
-
-
 def _make_axis_label(label: str, unit: str) -> str:
-    return f'{label} ({unit})'
+    label = f'{label}'
+    if unit != '' and unit is not None:
+        label += f' ({unit})'
+    return label
 
 
 def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
                               ) -> str:
     label = _get_label_of_data(data[axis_index])
-    unit = _get_unit_of_data(data[axis_index])
+    unit = data[axis_index]['unit']
     return _make_axis_label(label, unit)
 
 
@@ -320,8 +319,8 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
 
 def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
         -> Tuple[
-            Union[matplotlib.ticker.FuncFormatter, None],
-            Union[str, None]]:
+               Union[matplotlib.ticker.FuncFormatter, None],
+               Union[str, None]]:
     """
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
@@ -331,8 +330,9 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     values like "1" instead of "0.000000001" while the units in the axis label
     are changed from "V" to "nV" ('n' is for 'nano').
 
-    The units for which this procedure is performed can be found in
-    `_UNITS_FOR_RESCALING`.
+    The units for which unit prefixes are added can be found in
+    `_UNITS_FOR_RESCALING`. For all other units an exponential scaling factor
+    is added to the label i.e. `(10^3 x e^2/hbar)`.
 
     Args:
         data_dict: a dictionary of the following structure
@@ -345,17 +345,15 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
     Returns:
         a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
-        the new label; in case it is not possible to rescale, the returned
-        values are None's
+        the new label.
     """
     ticks_formatter = None
     new_label = None
 
     unit = data_dict['unit']
 
+    maxval = np.nanmax(np.abs(data_dict['data']))
     if unit in _UNITS_FOR_RESCALING:
-        maxval = np.nanmax(np.abs(data_dict['data']))
-
         for threshold, scale in _THRESHOLDS.items():
             if maxval < threshold:
                 selected_scale = scale
@@ -366,14 +364,20 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             largest_scale = max(list(_ENGINEERING_PREFIXES.keys()))
             selected_scale = largest_scale
             prefix = _ENGINEERING_PREFIXES[largest_scale]
+    else:
+        selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        if selected_scale != 0:
+            prefix = f'$10^{{{selected_scale:.0f}}}$ '
+        else:
+            prefix = ''
 
-        new_unit = prefix + unit
-        label = _get_label_of_data(data_dict)
-        new_label = _make_axis_label(label, new_unit)
+    new_unit = prefix + unit
+    label = _get_label_of_data(data_dict)
+    new_label = _make_axis_label(label, new_unit)
 
-        scale_factor = 10**(-selected_scale)
-        ticks_formatter = FuncFormatter(
-            partial(_scale_formatter, factor=scale_factor))
+    scale_factor = 10**(-selected_scale)
+    ticks_formatter = FuncFormatter(
+        partial(_scale_formatter, factor=scale_factor))
 
     return ticks_formatter, new_label
 
@@ -382,11 +386,8 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              data: List[Dict[str, Any]],
                              cax: matplotlib.colorbar.Colorbar=None):
     """
-    Rescale ticks and units for axes that are in standard SI units (i.e. V,
-    s, J) to milli (m), kilo (k), etc. Refer to the `_UNITS_FOR_RESCALING`
-    for the list of units that are rescaled.
-
-    Note that combined or non-standard SI units do not get rescaled.
+    Rescale ticks and units for the provided axes as described in
+    :meth:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
     x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
