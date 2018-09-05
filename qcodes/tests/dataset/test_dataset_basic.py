@@ -315,7 +315,7 @@ def test_modify_result(experiment):
         dataset.modify_result(0, {'x': 2})
 
 
-@settings(max_examples=25)
+@settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
 def test_add_parameter_values(experiment, N, M):
