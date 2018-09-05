@@ -54,13 +54,18 @@ def dataset(experiment):
 
 
 def test_tables_exist(empty_temp_db):
-    print(qc.config["core"]["db_location"])
-    conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-    cursor = conn.execute("select sql from sqlite_master where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies', 'uuids']
-    for row, expected_table in zip(cursor, expected_tables):
-        assert expected_table in row['sql']
-    conn.close()
+    for version in [-1, 0, 1]:
+        conn = connect(qc.config["core"]["db_location"],
+                       qc.config["core"]["db_debug"],
+                       version=version)
+        cursor = conn.execute("select sql from sqlite_master"
+                              " where type = 'table'")
+        expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+        rows = [row for row in cursor]
+        assert len(rows) == len(expected_tables)
+        for row, expected_table in zip(rows, expected_tables):
+            assert expected_table in row['sql']
+        conn.close()
 
 
 def test_initialise_database_at_for_nonexisting_db():
