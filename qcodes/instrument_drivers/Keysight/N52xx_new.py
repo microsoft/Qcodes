@@ -2,10 +2,9 @@
 Base qcodes driver for Agilent/Keysight series PNAs
 http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
 """
-from functools import partial
 import numpy as np
 import logging
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 import time
 import re
 
@@ -84,7 +83,7 @@ class N52xxTrace(InstrumentChannel):
     }
 
     def __init__(self, parent: 'N52xxBase', channel: 'N52xxChannel', name: str,
-                 trace_type: str) -> None:
+                 trace_type: str, present_on_instrument: bool=False) -> None:
 
         self.validate_trace_type(trace_type)
 
@@ -109,6 +108,8 @@ class N52xxTrace(InstrumentChannel):
                 **format_args
             )
 
+        self._present_on_instrument = present_on_instrument
+
     @staticmethod
     def validate_trace_type(trace_type: str) ->None:
         if re.fullmatch(r"S\d\d", trace_type) is None:
@@ -119,12 +120,10 @@ class N52xxTrace(InstrumentChannel):
 
     @property
     def present_on_instrument(self) ->bool:
-        if self.short_name not in self._channel.trace:
-            return False
-        return True
+        return self._present_on_instrument
 
     def select(self) -> None:
-        if not self.present_on_instrument:
+        if not self._present_on_instrument:
             raise RuntimeError(
                 "Trace is not present on the instrument (anymore). It was "
                 "either deleted or never uploaded in the first place"
@@ -139,9 +138,6 @@ class N52xxTrace(InstrumentChannel):
     def ask(self, cmd: str) -> str:
         self.select()
         return super().ask(cmd)
-
-    def delete(self) -> None:
-        self.parent.write(f'CALC{self._channel}:PAR:DEL {self.short_name}')
 
     def _get_raw_data(self, format_str: str) -> np.ndarray:
         """
@@ -168,7 +164,7 @@ class N52xxTrace(InstrumentChannel):
 
     def upload_to_instrument(self) -> None:
         """
-        Upload the trace to the instrument
+        upload to instrument
         """
         # Do not do self.write; self.select will not work yet as the instrument
         # has not been uploaded yet
@@ -176,6 +172,14 @@ class N52xxTrace(InstrumentChannel):
             f'CALC{self._channel}:PAR:EXT {self.short_name}, '
             f'{self._trace_type}'
         )
+        self._present_on_instrument = True
+
+    def delete(self) -> None:
+        """
+        delete from instrument
+        """
+        self.parent.write(f'CALC{self._channel}:PAR:DEL {self.short_name}')
+        self._present_on_instrument = False
 
 
 class N52xxChannel(InstrumentChannel):
@@ -185,14 +189,14 @@ class N52xxChannel(InstrumentChannel):
     def __init__(self, parent: 'N52xxBase', channel: int):
         super().__init__(parent, f"channel{channel}")
 
-        self.channel = channel
+        self._channel = channel
 
         self.add_parameter(
             'power',
             label='Power',
-            get_cmd=f'SOUR{self.channel}:POW?',
+            get_cmd=f'SOUR{self._channel}:POW?',
             get_parser=float,
-            set_cmd=f'SOUR{self.channel}:POW {{:.2f}}',
+            set_cmd=f'SOUR{self._channel}:POW {{:.2f}}',
             unit='dBm',
             vals=Numbers(
                 min_value=self.parent.min_power,
@@ -204,9 +208,9 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'if_bandwidth',
             label='IF Bandwidth',
-            get_cmd=f'SENS{self.channel}:BAND?',
+            get_cmd=f'SENS{self._channel}:BAND?',
             get_parser=float,
-            set_cmd=f'SENS{self.channel}:BAND {{:.2f}}',
+            set_cmd=f'SENS{self._channel}:BAND {{:.2f}}',
             unit='Hz',
             vals=Numbers(min_value=1, max_value=15e6)
         )
@@ -214,17 +218,17 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'averages_enabled',
             label='Averages Enabled',
-            get_cmd=f"SENS{self.channel}:AVER?",
-            set_cmd=f"SENS{self.channel}:AVER {{}}",
+            get_cmd=f"SENS{self._channel}:AVER?",
+            set_cmd=f"SENS{self._channel}:AVER {{}}",
             val_mapping={True: '1', False: '0'}
         )
 
         self.add_parameter(
             'averages',
             label='Averages',
-            get_cmd=f'SENS{self.channel}:AVER:COUN?',
+            get_cmd=f'SENS{self._channel}:AVER:COUN?',
             get_parser=int,
-            set_cmd=f'SENS{self.channel}:AVER:COUN {{:d}}',
+            set_cmd=f'SENS{self._channel}:AVER:COUN {{:d}}',
             unit='',
             vals=Numbers(min_value=1, max_value=65536)
         )
@@ -233,9 +237,9 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'start',
             label='Start Frequency',
-            get_cmd=f'SENS{self.channel}:FREQ:STAR?',
+            get_cmd=f'SENS{self._channel}:FREQ:STAR?',
             get_parser=float,
-            set_cmd=f'SENS{self.channel}:FREQ:STAR {{}}',
+            set_cmd=f'SENS{self._channel}:FREQ:STAR {{}}',
             unit='',
             vals=Numbers(
                 min_value=self.parent.min_freq,
@@ -246,9 +250,9 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'stop',
             label='Stop Frequency',
-            get_cmd=f'SENS{self.channel}:FREQ:STOP?',
+            get_cmd=f'SENS{self._channel}:FREQ:STOP?',
             get_parser=float,
-            set_cmd=f'SENS{self.channel}:FREQ:STOP {{}}',
+            set_cmd=f'SENS{self._channel}:FREQ:STOP {{}}',
             unit='',
             vals=Numbers(
                 min_value=self.parent.min_freq,
@@ -259,9 +263,9 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'points',
             label='Frequency Points',
-            get_cmd=f'SENS{self.channel}:SWE:POIN?',
+            get_cmd=f'SENS{self._channel}:SWE:POIN?',
             get_parser=int,
-            set_cmd=f'SENS{self.channel}:SWE:POIN {{}}',
+            set_cmd=f'SENS{self._channel}:SWE:POIN {{}}',
             unit='',
             vals=Numbers(min_value=1, max_value=100001)
         )
@@ -269,9 +273,9 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'electrical_delay',
             label='Electrical Delay',
-            get_cmd=f'CALC{self.channel}:CORR:EDEL:TIME?',
+            get_cmd=f'CALC{self._channel}:CORR:EDEL:TIME?',
             get_parser=float,
-            set_cmd=f'CALC{self.channel}:CORR:EDEL:TIME {{:.6e}}',
+            set_cmd=f'CALC{self._channel}:CORR:EDEL:TIME {{:.6e}}',
             unit='s',
             vals=Numbers(min_value=0, max_value=100000)
         )
@@ -279,10 +283,10 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'sweep_time',
             label='Time',
-            get_cmd=f'SENS{self.channel}:SWE:TIME?',
+            get_cmd=f'SENS{self._channel}:SWE:TIME?',
             get_parser=float,
             # Make sure we are in stepped sweep
-            set_cmd=f'SENS{self.channel}:SWE:TIME {{:.6e}}',
+            set_cmd=f'SENS{self._channel}:SWE:TIME {{:.6e}}',
             unit='s',
             vals=Numbers(0, 1e6)
         )
@@ -290,11 +294,11 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'dwell_time',
             label='Time',
-            get_cmd=f'SENS{self.channel}:SWE:DWEL?',
+            get_cmd=f'SENS{self._channel}:SWE:DWEL?',
             get_parser=float,
             # Make sure we are in stepped sweep
-            set_cmd=f'SENS{self.channel}:SWE:GEN STEP;'
-                    f'SENS{self.channel}:SWE:DWEL {{:.6e}}',
+            set_cmd=f'SENS{self._channel}:SWE:GEN STEP;'
+                    f'SENS{self._channel}:SWE:DWEL {{:.6e}}',
             unit='s',
             vals=MultiType(Numbers(0, 1e6), Enum("min", "max"))
         )
@@ -302,27 +306,28 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             'sweep_mode',
             label='Mode',
-            get_cmd=f'SENS{self.channel}:SWE:MODE?',
-            set_cmd=f'SENS{self.channel}:SWE:MODE {{}}',
+            get_cmd=f'SENS{self._channel}:SWE:MODE?',
+            set_cmd=f'SENS{self._channel}:SWE:MODE {{}}',
             vals=Enum("HOLD", "CONT", "GRO", "SING")
         )
 
         self.add_parameter(
             "sensor_correction",
-            get_cmd=f"SENS{self.channel}:CORR?",
-            set_cmd=f"SEND{self.channel}:CORR {{}}",
+            get_cmd=f"SENS{self._channel}:CORR?",
+            set_cmd=f"SEND{self._channel}:CORR {{}}",
             val_mapping={True: '1', False: '0'}
         )
 
-    @property
-    def trace(self) ->dict:
+        self._traces = self._load_traces_from_instrument()
+
+    def _load_traces_from_instrument(self) ->dict:
         """
         Interface to access traces on the instrument
 
         Returns:
             dict: keys are trace names, values are instance of `N52xxTrace`
         """
-        result = self.ask(f"CALC{self.channel}:PAR:CAT:EXT?")
+        result = self.ask(f"CALC{self._channel}:PAR:CAT:EXT?")
         if result == "NO CATALOG":
             return {}
 
@@ -330,14 +335,26 @@ class N52xxChannel(InstrumentChannel):
         trace_names = trace_info[::2]
         trace_types = trace_info[1::2]
 
+        parent = cast(N52xxBase, self.parent)
+
         return {
             name: N52xxTrace(
-                self.parent, self, name, trace_type
+                parent, self, name, trace_type, present_on_instrument=True
             )
             for name, trace_type in zip(trace_names, trace_types)
         }
 
-    def add_trace(self, name: str, tr_type: str) -> 'N52xxTrace':
+    @property
+    def trace(self) ->dict:
+        """
+        List all traces on the instrument
+        """
+        return {
+            name: trace for name, trace in self._traces.items()
+            if trace.present_on_instrument
+        }
+
+    def add_trace(self, tr_type: str, name: str=None) -> 'N52xxTrace':
         """
         Add a trace the instrument. Note that if a trace with the name given
         already exists on the instrument, this trace is simply returned without
@@ -351,12 +368,19 @@ class N52xxChannel(InstrumentChannel):
         Returns:
             trace (N52xxTrace)
         """
-        traces = self.trace
-        if name in traces:
-            return traces[name]
+        if name is None:
+            name = f"CH{self._channel}_{tr_type}"
 
-        trace = N52xxTrace(self.parent, self, name, tr_type)
-        trace.upload_to_instrument()
+        trace = self._traces.get(name, None)
+        parent = cast(N52xxBase, self.parent)
+
+        if trace is None:
+            trace = N52xxTrace(parent, self, name, tr_type)
+            self._traces[name] = trace
+
+        if not trace.present_on_instrument:
+            trace.upload_to_instrument()
+
         trace.select()
         return trace
 
@@ -403,8 +427,8 @@ class N52xxChannel(InstrumentChannel):
             self.averages_enabled(True)
             self.averages(averages)
 
-            self.write(f'SENS{self.channel}:AVER:CLE')
-            self.write(f'SENS{self.channel}:SWE:GRO:COUN {averages}')
+            self.write(f'SENS{self._channel}:AVER:CLE')
+            self.write(f'SENS{self._channel}:SWE:GRO:COUN {averages}')
             self.sweep_mode('GRO')
 
         if blocking:
@@ -475,7 +499,7 @@ class N52xxChannel(InstrumentChannel):
 
         # We want our SNP data in Real-Imaginary format
         self.write('MMEM:STOR:TRAC:FORM:SNP RI')
-        write_string = f'CALC{self.channel}:DATA:SNP:PORT? "{ports_string}"'
+        write_string = f'CALC{self._channel}:DATA:SNP:PORT? "{ports_string}"'
         data = np.array(
             self.parent.visa_handle.query_binary_values(
                 write_string,  datatype='f', is_big_endian=True
@@ -485,7 +509,7 @@ class N52xxChannel(InstrumentChannel):
         return data
 
     def __repr__(self):
-        return str(self.channel)
+        return str(self._channel)
 
 
 class N52xxPort(InstrumentChannel):
@@ -515,7 +539,7 @@ class N52xxPort(InstrumentChannel):
             get_cmd=f"SOUR:POW{self.port}?",
             set_cmd=f"SOUR:POW{self.port} {{}}",
             get_parser=float,
-            vals=Numbers(min_value=min_power,max_value=max_power)
+            vals=Numbers(min_value=min_power, max_value=max_power)
         )
 
 
