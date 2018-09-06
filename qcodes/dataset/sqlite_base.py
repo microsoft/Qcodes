@@ -111,7 +111,9 @@ class ConnectionPlus(wrapt.ObjectProxy):
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
-def _adapt_array(arr: ndarray) -> Any: # this should really be sqlite3.Binary but there seems to be a bug in mypy 0.590
+# this should really return sqlite3.Binary,
+#  but there seems to be a bug in mypy 0.590
+def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -210,7 +212,9 @@ def connect(name: str, debug: bool = False,
 
     """
     # register numpy->binary(TEXT) adapter
-    sqlite3.register_adapter(np.ndarray, _adapt_array)
+    # the typing here is ignored due to what we think is a flaw in typeshed
+    # see https://github.com/python/typeshed/issues/2429
+    sqlite3.register_adapter(np.ndarray, _adapt_array)  # type: ignore
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
