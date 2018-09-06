@@ -1,9 +1,12 @@
 import numpy as np
 from typing import Sequence
 import re
+import logging
 
 from qcodes import InstrumentChannel, ArrayParameter, Instrument
 from qcodes.utils.validators import Enum
+
+logger = logging.getLogger()
 
 
 class TraceParameter(ArrayParameter):
@@ -89,6 +92,12 @@ class N52xxTrace(InstrumentChannel):
             vals=Enum(*[d["sweep_format"] for d in self.data_formats.values()])
         )
 
+        self.add_parameter(
+            "measurement_type",
+            get_cmd=lambda: self._trace_type,
+            set_cmd=self._change_trace_type
+        )
+
         for format_name, format_args in self.data_formats.items():
             self.add_parameter(
                 format_name,
@@ -100,6 +109,20 @@ class N52xxTrace(InstrumentChannel):
             )
 
         self._present_on_instrument = present_on_instrument
+
+    def _change_trace_type(self, new_type) ->None:
+        """
+        Change the measurement type of this trace
+        """
+        self.validate_trace_type(new_type)
+        self.select()
+        self.parent.write(f"CALC{self._channel}:PAR:MOD:EXT '{new_type}'")
+
+        self._trace_type = new_type
+
+        name = f"CH{self._channel}_{new_type}"
+        self.name = "{}_{}".format(self.parent.name, str(name))
+        self.short_name = str(name)
 
     @staticmethod
     def validate_trace_type(trace_type: str) ->None:
@@ -119,12 +142,16 @@ class N52xxTrace(InstrumentChannel):
                 "Trace is not present on the instrument (anymore). It was "
                 "either deleted or never uploaded in the first place"
             )
-        # Writing self.write here will cause an infinite recursion
+        # Warning: writing self.write here will cause an infinite recursion
         self.parent.write(f"CALC{self._channel}:PAR:SEL {self.short_name}")
 
     def write(self, cmd: str) -> None:
         self.select()
         super().write(cmd)
+
+        err = self.ask('SYST:ERR?')
+        if not err.startswith("+0"):
+            logger.warning(f"Command {cmd} resulted in error: {err}")
 
     def ask(self, cmd: str) -> str:
         self.select()
