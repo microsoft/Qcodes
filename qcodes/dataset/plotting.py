@@ -26,11 +26,14 @@ AxesTupleList = Tuple[List[matplotlib.axes.Axes],
 
 # list of kwargs for plotting function, so that kwargs can be passed to
 # :meth:`plot_by_id` and will be distributed to the respective plotting func.
+# subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
+# First find the kwargs that belong to subplots and than add those that are
+# redirected to the `figure`-call.
+SUBPLOTS_OWN_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
+SUBPLOTS_OWN_KWARGS.remove('fig_kw')
 FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
 FIGURE_KWARGS.remove('kwargs')
-SUBPLOTS_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
-SUBPLOTS_KWARGS.remove('fig_kw')
-SUBPLOTS_KWARGS = FIGURE_KWARGS.union(SUBPLOTS_KWARGS)
+SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
