@@ -349,6 +349,7 @@ def test_measurement_name(experiment, DAC, DMM):
         assert datasaver.dataset.table_name == expected_name
 
 
+@settings(deadline=None)
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 def test_setting_write_period(empty_temp_db, wp):
@@ -369,6 +370,7 @@ def test_setting_write_period(empty_temp_db, wp):
             assert datasaver.write_period == float(wp)
 
 
+@settings(deadline=None)
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
 def test_enter_and_exit_actions(experiment, DAC, words):
     # we use a list to check that the functions executed
