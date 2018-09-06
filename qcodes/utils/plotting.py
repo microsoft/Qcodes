@@ -11,10 +11,10 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
-Number = Union(float, int)
+Number = Union[float, int]
 
 def auto_range_iqr(data_array: np.ndarray,
-                   max_cutoff_percentile: Union[Tuple[Number], Number]=50
+                   max_cutoff_percentile: Union[Tuple[Number, Number], Number]=50
 ) -> Tuple[float, float]:
     """
     Get the min and max range of the provided array that excludes outliers
