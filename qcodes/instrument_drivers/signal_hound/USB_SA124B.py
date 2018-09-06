@@ -458,11 +458,7 @@ class SignalHound_USB_SA124B(Instrument):
         """
         if not self._parameters_synced:
             self._sync_parameters()
-        try:
-            sweep_len, start_freq, stepsize = self.QuerySweep()
-        except:
-            self.prepare_for_measurement()
-            sweep_len, start_freq, stepsize = self.QuerySweep()
+        sweep_len, start_freq, stepsize = self.QuerySweep()
 
         minarr = (ct.c_float * sweep_len)()
         maxarr = (ct.c_float * sweep_len)()
@@ -505,7 +501,8 @@ class SignalHound_USB_SA124B(Instrument):
         Averages over SH.sweep Navg times
 
         """
-        data = np.zeros(self.npts())
+        sweep_len, start_freq, stepsize = self.QuerySweep()
+        data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
             data += self._get_sweep_data()
@@ -521,7 +518,7 @@ class SignalHound_USB_SA124B(Instrument):
         original_rbw = self.rbw()
         needs_reset = False
         if not (original_span == 0.25e6 and original_rbw == 1e3):
-            needs_reset
+            needs_reset = True
             self.span(0.25e6)
             self.rbw(1e3)
         if not self._parameters_synced:
