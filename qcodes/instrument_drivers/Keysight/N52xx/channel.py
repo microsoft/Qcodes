@@ -1,192 +1,22 @@
-"""
-Base qcodes driver for Agilent/Keysight series PNAs
-http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
-"""
 import numpy as np
 import logging
-from typing import Any, Sequence, cast
+from typing import cast
 import time
-import re
 
-from qcodes import (
-    VisaInstrument, InstrumentChannel, ChannelList, ArrayParameter
-)
+from qcodes import InstrumentChannel, Instrument
+from qcodes.utils.validators import Numbers, Enum, MultiType
 
-from qcodes.utils.validators import Numbers, Enum, MultiType, Union
+from qcodes.instrument_drivers.Keysight.N52xx.trace import N52xxTrace
+
 
 logger = logging.getLogger()
-
-
-class TraceParameter(ArrayParameter):
-    def __init__(
-        self,
-        name: str,
-        instrument: 'N52xxBase',
-        channel: 'N52xxChannel',
-        trace: 'N52xxTrace',
-        sweep_format: str,
-        label: str,
-        unit: str,
-    ) -> None:
-
-        self._sweep_format = sweep_format
-        self._channel = channel
-        self._trace = trace
-
-        super().__init__(
-            name,
-            instrument=instrument,
-            label=label,
-            unit=unit,
-            setpoint_names=('frequency',),
-            setpoint_labels=('Frequency',),
-            setpoint_units=('Hz',),
-            shape=(0,),
-            setpoints=((0,),),
-        )
-
-    @property
-    def shape(self) -> tuple:
-        return self._channel.points(),
-
-    @shape.setter
-    def shape(self, val: Sequence[int]) -> None:
-        pass
-
-    @property
-    def setpoints(self) -> tuple:
-        start = self._channel.start()
-        stop = self._channel.stop()
-        return np.linspace(start, stop, self.shape[0]),
-
-    @setpoints.setter
-    def setpoints(self, val: Sequence[int]) -> None:
-        pass
-
-    def get_raw(self) -> Sequence[float]:
-        return self._trace._get_raw_data(self._sweep_format)
-
-
-class N52xxTrace(InstrumentChannel):
-    """
-    Allow operations on individual PNA traces.
-    """
-
-    data_formats = {
-        "log_magnitude": {"sweep_format": "MLOG", "unit": "dBm"},
-        "linear_magnitude": {"sweep_format": "MLIN", "unit": "-"},
-        "phase": {"sweep_format": "PHAS", "unit": "deg"},
-        "unwrapped_phase": {"sweep_format": "UPH", "unit": "deg"},
-        "group_delay": {"sweep_format": "GDEL", "unit": "s"},
-        "real": {"sweep_format": "REAL", "unit": "-"},
-        "imaginary": {"sweep_format": "IMAG", "unit": "-"}
-    }
-
-    def __init__(self, parent: 'N52xxBase', channel: 'N52xxChannel', name: str,
-                 trace_type: str, present_on_instrument: bool=False) -> None:
-
-        self.validate_trace_type(trace_type)
-
-        super().__init__(parent, name)
-        self._channel = channel
-        self._trace_type = trace_type
-
-        self.add_parameter(
-            'format',
-            get_cmd=f'CALC{self._channel}:FORM?',
-            set_cmd=f'CALC{self._channel}:FORM {{}}',
-            vals=Enum(*[d["sweep_format"] for d in self.data_formats.values()])
-        )
-
-        for format_name, format_args in self.data_formats.items():
-            self.add_parameter(
-                format_name,
-                parameter_class=TraceParameter,
-                channel=self._channel,
-                trace=self,
-                label=format_name,
-                **format_args
-            )
-
-        self._present_on_instrument = present_on_instrument
-
-    @staticmethod
-    def validate_trace_type(trace_type: str) ->None:
-        if re.fullmatch(r"S\d\d", trace_type) is None:
-            raise ValueError(
-                "The trace type needs to be in the form Sxy where "
-                "'x' and 'y' are integers"
-            )
-
-    @property
-    def present_on_instrument(self) ->bool:
-        return self._present_on_instrument
-
-    def select(self) -> None:
-        if not self._present_on_instrument:
-            raise RuntimeError(
-                "Trace is not present on the instrument (anymore). It was "
-                "either deleted or never uploaded in the first place"
-            )
-        # Writing self.write here will cause an infinite recursion
-        self.parent.write(f"CALC{self._channel}:PAR:SEL {self.short_name}")
-
-    def write(self, cmd: str) -> None:
-        self.select()
-        super().write(cmd)
-
-    def ask(self, cmd: str) -> str:
-        self.select()
-        return super().ask(cmd)
-
-    def _get_raw_data(self, format_str: str) -> np.ndarray:
-        """
-        Args:
-            format_str (str): Our data is complex values (that is, has a
-            magnitude and phase). Possible value are
-                * "MLOG" (log_magnitude)
-                * "MLIN" (linear magnitude)
-                * "PHAS" (phase)
-                * "UPH" (unwrapped phase)
-                * "GDEL" (group delay)
-                * "REAL"
-                * "IMAG"
-        """
-        visa_handle = self.parent.visa_handle
-
-        self.format(format_str)
-        self.select()
-        data = np.array(visa_handle.query_binary_values(
-            f'CALC{self._channel}:DATA? FDATA', datatype='f', is_big_endian=True
-        ))
-
-        return data
-
-    def upload_to_instrument(self) -> None:
-        """
-        upload to instrument
-        """
-        # Do not do self.write; self.select will not work yet as the instrument
-        # has not been uploaded yet
-        self.parent.write(
-            f'CALC{self._channel}:PAR:EXT {self.short_name}, '
-            f'{self._trace_type}'
-        )
-        self._present_on_instrument = True
-
-    def delete(self) -> None:
-        """
-        delete from instrument
-        """
-        self.parent.write(f'CALC{self._channel}:PAR:DEL {self.short_name}')
-        self._present_on_instrument = False
 
 
 class N52xxChannel(InstrumentChannel):
     """
     Allows operations on specific channels.
     """
-    def __init__(self, parent: 'N52xxBase', channel: int):
+    def __init__(self, parent: 'Instrument', channel: int):
         super().__init__(parent, f"channel{channel}")
 
         self._channel = channel
@@ -335,7 +165,7 @@ class N52xxChannel(InstrumentChannel):
         trace_names = trace_info[::2]
         trace_types = trace_info[1::2]
 
-        parent = cast(N52xxBase, self.parent)
+        parent = cast(Instrument, self.parent)
 
         return {
             name: N52xxTrace(
@@ -372,7 +202,7 @@ class N52xxChannel(InstrumentChannel):
             name = f"CH{self._channel}_{tr_type}"
 
         trace = self._traces.get(name, None)
-        parent = cast(N52xxBase, self.parent)
+        parent = cast(Instrument, self.parent)
 
         if trace is None:
             trace = N52xxTrace(parent, self, name, tr_type)
@@ -510,121 +340,3 @@ class N52xxChannel(InstrumentChannel):
 
     def __repr__(self):
         return str(self._channel)
-
-
-class N52xxPort(InstrumentChannel):
-    """
-    Allow operations on individual PNA ports.
-    """
-
-    def __init__(
-            self,
-            parent: 'N52xxBase',
-            name: str,
-            port: int,
-            min_power: Union[int, float],
-            max_power: Union[int, float]
-    ) -> None:
-
-        super().__init__(parent, name)
-
-        self.port = int(port)
-        if self.port not in range(1, 5):
-            raise ValueError("Port must be between 1 and 4.")
-
-        self.add_parameter(
-            "source_power",
-            label="power",
-            unit="dBm",
-            get_cmd=f"SOUR:POW{self.port}?",
-            set_cmd=f"SOUR:POW{self.port} {{}}",
-            get_parser=float,
-            vals=Numbers(min_value=min_power, max_value=max_power)
-        )
-
-
-class N52xxBase(VisaInstrument):
-    """
-    TODO: Proper docstring
-    """
-
-    min_freq: float = None
-    max_freq: float = None
-    min_power: float = None
-    max_power: float = None
-    port_count: int = None
-
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-
-        super().__init__(name, address, terminator='\n', **kwargs)
-        self.active_channel: N52xxChannel = None
-
-        self.add_parameter(
-            "trigger_source",
-            get_cmd="TRIG:SOUR?",
-            set_cmd="TRIG:SOUR {}",
-            vals=Enum("EXT", "IMM", "INT", "MAN"),
-            set_parser=lambda value: "IMM" if value is "INT" else value
-        )
-
-        self.add_parameter(
-            "display_arrangement",
-            set_cmd="DISP:ARR {}",
-            vals=Enum("TILE", "CASC", "OVER", "STAC", "SPL", "QUAD")
-        )
-
-        # Ports
-        ports = ChannelList(self, "port", N52xxPort)
-        for port_num in range(1, self.port_count + 1):
-            port = N52xxPort(
-                self, f"port{port_num}", port_num, self.min_power,
-                self.max_power
-            )
-
-            ports.append(port)
-            self.add_submodule(f"port{port_num}", port)
-
-        ports.lock()
-        self.add_submodule("port", ports)
-
-        self._channels = []
-        self.connect_message()
-
-    def add_channel(self) ->N52xxChannel:
-        """
-        Channels contain traces. The analyzer can have up to 200 independent
-        channels. Channel settings determine how the trace data is measured .
-        All traces that are assigned to a channel share the same channel
-        settings.
-        """
-        channel_count = len(self._channels)
-
-        channel = N52xxChannel(
-            self, channel=channel_count + 1)
-        self._channels.append(channel)
-
-        return channel
-
-    @property
-    def channel(self) ->list:
-        """
-        Public interface for access to channels
-        """
-        return self._channels
-
-    def delete_all_traces(self) ->None:
-        """
-        Delete all traces from the instrument.
-        """
-        self.write("CALC:PAR:DEL:ALL")
-
-    def synchronize(self):
-        self.ask("*OPC?")
-
-    def reset_instrument(self):
-        self.write("*RST")
-        self.write("*CLS")
-        # sane settings
-        self.write('FORM REAL,32')
-        self.write('FORM:BORD NORM')
-        self.trigger_source("IMM")
