@@ -250,14 +250,16 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
 
     Args:
         version: Which version to upgrade to. We count from 0. -1 means
-          'latest version'
+          'newest version'
     """
 
-    upgrade_actions = {1: (perform_db_upgrade_0_to_1,),
-                       -1: (perform_db_upgrade_0_to_1,)}
+    upgrade_actions = {0: (lambda x: None,),
+                       1: (perform_db_upgrade_0_to_1,)}
+    newest_version = max(upgrade_actions.keys())
+    version = newest_version if version == -1 else version
 
     current_version = get_user_version(conn)
-    if current_version < 1 and (version > 0 or version == -1):
+    if current_version < newest_version:
         log.info("Commencing database upgrade")
         for action in upgrade_actions[version]:
             action(conn)
