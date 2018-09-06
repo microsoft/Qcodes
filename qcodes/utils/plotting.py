@@ -32,7 +32,7 @@ def auto_range_iqr(data_array: np.ndarray,
     returns:
         vmin, vmax: region limits [vmin, vmax]
     """
-    if is_instance(max_cutoff_percentile, tuple):
+    if isinstance(max_cutoff_percentile, tuple):
         t = max_cutoff_percentile[0]
         b = max_cutoff_percentile[1]
     else:
