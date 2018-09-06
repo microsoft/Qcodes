@@ -11,7 +11,8 @@
         "notebook": true,
         "plotlib": "all",
         "pyqtmaxplots": 100,
-        "defaultcolormap": "hot"
+        "defaultcolormap": "hot",
+        "smart_colorscale": false
     },
     "user": {
         "scriptfolder": ".",
