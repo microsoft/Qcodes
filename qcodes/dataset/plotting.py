@@ -22,6 +22,7 @@ DB = qc.config["core"]["db_location"]
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
+Number = Union[float, int]
 
 
 def plot_by_id(run_id: int,
@@ -31,7 +32,9 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Optional[bool]=None) -> AxesTupleList:
+               smart_colorscale: Optional[bool]=None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number], Number]]=None
+) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -72,7 +75,10 @@ def plot_by_id(run_id: int,
     """
     # defaults
     if smart_colorscale is None:
-        smart_colorscale = config.gui.smart_colorscale
+        smart_colorscale = config.gui.smart_colorscale.enabled
+    if cutoff_percentile is None:
+        cutoff_percentile = tuple(
+            config.gui.smart_colorscale.cutoff_percentile)
 
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
@@ -157,7 +163,8 @@ def plot_by_id(run_id: int,
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
             if smart_colorscale:
-                colorbar.mappable.set_clim(*auto_range_iqr(zpoints))
+                colorbar.mappable.set_clim(*auto_range_iqr(
+                    zpoints, cutoff_percentile=cutoff_percentile))
 
             new_colorbars.append(colorbar)
 

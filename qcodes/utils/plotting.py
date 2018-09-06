@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 Number = Union[float, int]
 
 def auto_range_iqr(data_array: np.ndarray,
-                   max_cutoff_percentile: Union[Tuple[Number, Number], Number]=50
+                   cutoff_percentile: Union[Tuple[Number, Number], Number]=50
 ) -> Tuple[float, float]:
     """
     Get the min and max range of the provided array that excludes outliers
@@ -26,18 +26,18 @@ def auto_range_iqr(data_array: np.ndarray,
     Args:
         data_array: numpy array of arbitrary dimension containing the
             statistical data
-        max_cutoff_percentile: percentile of data that may maximally be clipped
+        cutoff_percentile: percentile of data that may maximally be clipped
             on both sides of the distribution.
             If given a tuple (a,b) the percentile limits will be a and 100-b.
     returns:
         vmin, vmax: region limits [vmin, vmax]
     """
-    if isinstance(max_cutoff_percentile, tuple):
-        t = max_cutoff_percentile[0]
-        b = max_cutoff_percentile[1]
+    if isinstance(cutoff_percentile, tuple):
+        t = cutoff_percentile[0]
+        b = cutoff_percentile[1]
     else:
-        t = max_cutoff_percentile
-        b = max_cutoff_percentile
+        t = cutoff_percentile
+        b = cutoff_percentile
     z = data_array.flatten()
     zmax = z.max()
     zmin = z.min()
@@ -55,7 +55,7 @@ def auto_range_iqr(data_array: np.ndarray,
     else:
         vmin = max(q1 - 1.5*IQR, zmin)
         vmax = min(q3 + 1.5*IQR, zmax)
-        # do not clipp more than max_cutoff_percentile:
+        # do not clipp more than cutoff_percentile:
         vmin = min(vmin, pmin)
         vmax = max(vmax, pmax)
     return vmin, vmax

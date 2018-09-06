@@ -83,9 +83,24 @@
                     "default": "hot"
                 },
                 "smart_colorscale":{
-                    "description": "Use a smart colorscale, that scales such that outliers of the data will not be included in the min/max range.",
-                    "type": "boolean",
-                    "default": false
+                    "type" : "object",
+                    "description": "Control of a smart color scale, that scales such that potential outliers of the data will not be included in the min/max range.",
+                    "properties" : {
+                        "enabled":{
+                            "description": "Enable automatic smart color scaling",
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "cutoff_percentile":{
+                            "description": "Upper and lower percentage of datapoints that may maximally be discarded by the smart color scale. For example for [1,1] the smart color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.",
+                            "type": "array",
+                            "items": {
+                                "type": "number",
+                                "type": "number"
+                            },
+                            "default": [0.5, 0.5]
+                        }
+                    }
                 }
 
             },
