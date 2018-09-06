@@ -2,11 +2,28 @@ from time import sleep, time
 import numpy as np
 import ctypes as ct
 import logging
-from functools import partial
-
-from qcodes import Instrument, validators as vals
+from qcodes import Instrument, ArrayParameter, Parameter, validators as vals
 
 log = logging.getLogger(__name__)
+
+
+class TraceParameter(Parameter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value):
+        self._instrument._parameters_synced = False
+        self._save_val(value, validate=False)
+
+
+class SweepTraceParameter(Parameter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value):
+        self._instrument._parameters_synced = False
+        self._instrument._trace_updated=False
+        self._save_val(value, validate=False)
 
 
 class FrequencySweep(ArrayParameter):
@@ -28,24 +45,27 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
-    def __init__(self, name, instrument, center, span, npts):
-        super().__init__(name, shape=(npts,),
+    def __init__(self, name, instrument, sweep_len, start_freq, stepsize):
+        super().__init__(name, shape=(sweep_len,),
                          instrument=instrument,
                          unit='dB',
-                         label='{} magnitude'.format(
+                         label='{} Magnitude'.format(
                              instrument.short_name),
                          setpoint_units=('Hz',),
-                         setpoint_labels=('{} frequency'.format(instrument.short_name),),
+                         setpoint_labels=('{} Frequency'.format(instrument.short_name),),
                          setpoint_names=('{}_frequency'.format(instrument.short_name),))
-        self.set_sweep(start, stop, npts)
+        self.set_sweep(sweep_len, start_freq, stepsize)
 
     def set_sweep(self, sweep_len, start_freq, stepsize):
         end_freq = start_freq + stepsize*(sweep_len-1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))
         self.setpoints = (freq_points,)
         self.shape = (sweep_len,)
+        self.instrument._trace_updated = True
 
-    def get_raw(self):
+    def get_raw(self): 
+        if not self.instrument._trace_updated:
+            raise RuntimeError('trace not updated, run configure to update')
         data = self._instrument._get_averaged_sweep_data()
         return data
 
@@ -93,7 +113,8 @@ class SignalHound_USB_SA124B(Instrument):
     def __init__(self, name, dll_path=None, **kwargs):
         t0 = time()
         super().__init__(name, **kwargs)
-
+        self._parameters_synced = False
+        self._trace_updated = False
         log.info('Initializing instrument SignalHound USB 124A')
         self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = constants
@@ -102,129 +123,99 @@ class SignalHound_USB_SA124B(Instrument):
                            label='Frequency ',
                            unit='Hz',
                            initial_value=5e9,
-                           get_cmd=None,
-                           set_cmd=self._set_frequency,
-                           vals=vals.Numbers())
+                           vals=vals.Numbers(),
+                           parameter_class=SweepTraceParameter)
         self.add_parameter('span',
                            label='Span ',
                            unit='Hz',
                            initial_value=.25e6,
+                           vals=vals.Numbers(),
+                           parameter_class=SweepTraceParameter)
+        self.add_parameter('npts',
+                           label='Number of Points',
                            get_cmd=None,
-                           set_cmd=self._set_span,
-                           vals=vals.Numbers())
+                           set_cmd=False)
         self.add_parameter('avg',
                            label='Averages',
-                           initial_val=1,
+                           initial_value=1,
                            get_cmd=None,
                            set_cmd=None,
                            vals=vals.Ints())
         self.add_parameter('power',
                            label='Power ',
                            unit='dBm',
-                           initial_value=0,
                            get_cmd=self._get_power_at_freq,
                            set_cmd=False)
         self.add_parameter('ref_lvl',
                            label='Reference power ',
                            unit='dBm',
                            initial_value=0,
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'ref_lvl'),
-                           vals=vals.Numbers(max_value=20))
+                           vals=vals.Numbers(max_value=20),
+                           parameter_class=TraceParameter)
         self.add_parameter('external_reference',
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'external_reference'),
                            initial_value=False,
-                           vals=vals.Bool())
+                           vals=vals.Bool(),
+                           parameter_class=TraceParameter)
         self.add_parameter('device_type',
                            set_cmd=False,
                            get_cmd=self._get_device_type)
         self.add_parameter('device_mode',
-                           initial_value='sweeping',
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'device_mode'),
-                           vals=vals.Enum('sweeping', 'IQ'))
+                           get_cmd=lambda: 'sweeping',
+                           set_cmd=False)
         self.add_parameter('acquisition_mode',
-                           get_cmd=None,
-                           set_cmd=False,
-                           initial_value='average',
-                           vals=vals.Enum('average'))
+                           get_cmd=lambda: 'average',
+                           set_cmd=False)
         self.add_parameter('scale',
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'scale'),
                            initial_value='log-scale',
                            vals=vals.Enum('log-scale', 'lin-scale',
-                                          'log-full-scale', 'lin-full-scale'))
+                                          'log-full-scale', 'lin-full-scale'),
+                          parameter_class=TraceParameter)
         self.add_parameter('running',
                            get_cmd=None,
                            set_cmd=None,
                            initial_value=False,
                            vals=vals.Bool())
-        self.add_parameter('decimation',
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'decimation'),
-                           initial_value=1,
-                           vals=vals.Ints(1, 8))
-        self.add_parameter('bandwidth',
-                           label='Bandwidth',
-                           unit='Hz',
-                           initial_value=0,
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'bandwidth'),
-                           vals=vals.Numbers())
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            unit='Hz',
                            initial_value=1e3,
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'rbw'),
-                           vals=vals.Numbers())
+                           vals=vals.Numbers(),
+                           parameter_class=TraceParameter)
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
         #  VBW can be arbitrary. For best performance use RBW as the VBW.
+        # what does this even do though? nataliejpg
         self.add_parameter('vbw',
                            label='Video Bandwidth',
                            unit='Hz',
                            initial_value=1e3,
-                           get_cmd=None,
-                           set_cmd=partial(self._set_and_update_config, 'vbw'),
-                           vals=vals.Numbers())
-        self.add_parameter(name='trace',
-                           span=self.start(),
-                           center=self.frequency(),
-                           npts=self.npts(),
-                           parameter_class=FrequencySweep)
+                           vals=vals.Numbers(),
+                           parameter_class=TraceParameter)
 
         self.openDevice()
-        self.initialisation()
         self.device_type()
-
+        
+        self._prepare_measurment()
+        sweep_len, start_freq, stepsize = self.QuerySweep()
+        self.add_parameter(name='trace',
+                           sweep_len=sweep_len,
+                           start_freq=start_freq,
+                           stepsize=stepsize,
+                           parameter_class=FrequencySweep)
+        self.npts._save_val(sweep_len)
         t1 = time()
         # poor-man's connect_message. We could overwrite get_idn
         # instead and use connect_message.
         print('Initialized SignalHound in %.2fs' % (t1-t0))
 
-    def _update_trace(self)
+    def _update_trace(self):
         sweep_info = self.QuerySweep()
+        self.npts._save_val(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
-    def _set_span(self, val):
-        self.configure(span=val)
-        self._update_trace()
-
-    def _set_frequency(self, val):
-        self.configure(center=val)
-        self._update_trace()
-
-    def _set_and_update_config(self, param_name, param_val):
-        self.configure(param_name=param_val)
-
-    def configure(self, center=None, span=None, device_mode=None,
-                  acquisition_mode=None, scale=None, external_reference=None,
-                  ref_lvl=None, vbw=None, rbw=None, decimation=None,
-                  bandwidth=None, rejection=True):
+    def _sync_parameters(self, rejection=True):
         """
-        Configure consists of five parts
+        Sync parameters consists of five parts
             1. Center span configuration (freqs and span)
             2. Acquisition configuration
                 lin-scale/log-scale
@@ -234,27 +225,13 @@ class SignalHound_USB_SA124B(Instrument):
             5. Configuration of the tracking generator (not implemented)
                 used in VNA mode
 
-        Configure sets the configuration of the instrument using the parameters
+        Sync parameters sets the configuration of the instrument using the parameters
         specified in the Qcodes instrument.
-
-        Note that to ensure loading call self.initialisation()
-        These two functions are combined in prepare_for_measurement()
         """
-        frequency = center or self.frequency()
-        span = span or self.span()
-        device_mode = device_mode or self.device_mode()
-        acquisition_mode = acquisition_mode or self.acquisition_mode()
-        ref_lvl = ref_lvl or self.ref_lvl()
-        rbw = rbw or self.rbw()
-        vbw = vbw or self.vbw()
-        scale = scale or self.scale()
-        decimation = decimation or self.decimation()
-        bandwidth = bandwidth or self.bandwidth()
-        external_reference = external_reference or self.external_reference()
 
         # 1. CenterSpan Configuration
-        center = ct.c_double(frequency)
-        span = ct.c_double(span)
+        center = ct.c_double(self.frequency())
+        span = ct.c_double(self.span())
         log.info('Setting device CenterSpan configuration.')
 
         err = self.dll.saConfigCenterSpan(self.deviceHandle, center, span)
@@ -271,8 +248,8 @@ class SignalHound_USB_SA124B(Instrument):
             'log-full-scale': ct.c_uint(self.hf.sa_LOG_FULL_SCALE),
             'lin-full-scale': ct.c_uint(self.hf.sa_LIN_FULL_SCALE)
         }
-        detector = detectorVals[acquisition_mode]
-        scale = scaleVals[scale]
+        detector = detectorVals[self.acquisition_mode()]
+        scale = scaleVals[self.scale()]
 
         err = self.dll.saConfigAcquisition(self.deviceHandle, detector, scale)
         self.check_for_error(err)
@@ -280,29 +257,30 @@ class SignalHound_USB_SA124B(Instrument):
         # 3. Reference Level configuration
         log.info('Setting device reference level configuration.')
         err = self.dll.saConfigLevel(
-            self.deviceHandle, ct.c_double(ref_lvl))
+            self.deviceHandle, ct.c_double(self.ref_lvl()))
         self.check_for_error(err)
 
         # 4. External Reference configuration
-        if external_reference:
+        if self.external_reference():
             log.info('Setting reference frequency from external source.')
             err = self.dll.saEnableExternalReference(self.deviceHandle)
             self.check_for_error(err)
-
-        if device_mode == 'sweeping':    
-            reject_var = ct.c_bool(rejection)
-            log.info('Setting device Sweeping configuration.')
-            err = self.dll.saConfigSweepCoupling(
-                self.deviceHandle, ct.c_double(rbw),
-                ct.c_double(vbw), reject_var)
-            self.check_for_error(err)
-        elif device_mode == 'IQ':
-            raise NotImplementedError
-            err = self.dll.saConfigIQ(
-                self.deviceHandle, ct.c_int(decimation),
-                ct.c_double(bandwidth))
-            self.check_for_error(err)
+  
+        reject_var = ct.c_bool(rejection)
+        log.info('Setting device Sweeping configuration.')
+        err = self.dll.saConfigSweepCoupling(
+            self.deviceHandle, ct.c_double(self.rbw()),
+            ct.c_double(self.vbw()), reject_var)
+        self.check_for_error(err)
+        self._parameters_synced = True
         return
+
+
+    def configure(self, rejection=True):
+        self._prepare_measurment()
+        self._update_trace()
+        return
+        
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -404,7 +382,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     ########################################################################
 
-    def initialisation(self, flag=0):
+    def _initialise(self, flag=0):
         modeOpts = {
             'sweeping': self.hf.sa_SWEEPING,
             'real_time': self.hf.sa_REAL_TIME, # not implemented
@@ -478,13 +456,13 @@ class SignalHound_USB_SA124B(Instrument):
         returns:
             datamin numpy array
         """
+        if not self._parameters_synced:
+            self._sync_parameters()
         try:
             sweep_len, start_freq, stepsize = self.QuerySweep()
         except:
             self.prepare_for_measurement()
             sweep_len, start_freq, stepsize = self.QuerySweep()
-
-        end_freq = start_freq + stepsize*(sweep_len-1)
 
         minarr = (ct.c_float * sweep_len)()
         maxarr = (ct.c_float * sweep_len)()
@@ -538,24 +516,23 @@ class SignalHound_USB_SA124B(Instrument):
         Returns the maximum power in a window of 250kHz
         around the specified  frequency.
         The integration window is specified by the VideoBandWidth (set by vbw)
-        
-        NB THIS IS A LIE, would be great if this function existed but what this actually
-            did was to take a sweep and take
-            the maximum power in the sweep NOT in a 250kHz window
         """
-        original_mode = self.device_mode()
-        self.device_mode('IQ')
-        poweratfreq = 0
+        original_span = self.span()
+        original_rbw = self.rbw()
+        needs_reset = False
+        if not (original_span == 0.25e6 and original_rbw == 1e3):
+            needs_reset
+            self.span(0.25e6)
+            self.rbw(1e3)
+        if not self._parameters_synced:
+            self._prepare_measurment()
         data = self._get_averaged_sweep_data()
         max_power = np.max(data)
-        self.device_mode(original_mode)
+        if needs_reset:
+            self.span(original_span)
+            self.rbw(original_rbw)
+            self._prepare_measurment()
         return max_power
-
-    def prepare_for_measurement(self):
-        # TODO: is this really necessary?
-        self.configure()
-        self.initialisation()
-        return
 
     def safe_reload(self):
         self.closeDevice()
@@ -569,6 +546,9 @@ class SignalHound_USB_SA124B(Instrument):
             else:
                 raise IOError(err_msg)
 
+    def _prepare_measurment(self):
+        self._sync_parameters()
+        self._initialise()
 
 class constants:
     SA_MAX_DEVICES = 8
