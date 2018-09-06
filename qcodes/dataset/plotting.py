@@ -105,7 +105,7 @@ def plot_by_id(run_id: int,
             fig, ax = plt.subplots(1, 1, **subplots_kwargs)
             axes.append(ax)
     else:
-        if len(subplots_kwargs) == 0:
+        if len(subplots_kwargs) != 0:
             raise RuntimeError(f"Error: You cannot provide arguments for the "
                                f"axes/figure creation if you supply your own "
                                f"axes. "
