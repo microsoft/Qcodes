@@ -5,6 +5,7 @@ import importlib
 import logging
 import warnings
 import os
+from types import MethodType
 from copy import deepcopy
 import qcodes
 from qcodes.instrument.base import Instrument
@@ -51,23 +52,14 @@ class StationConfigurator:
             station = Station.default or Station()
         self.station = station
         self.filename = filename
+        # a list of method names that got added by :meth:`load_file`
+        self._added_methods: List[str] = []
 
         self.load_file(self.filename)
-        for instrument_name in self._instrument_config.keys():
-            # TODO: check if name is valid (does not start with digit, contain
-            # dot, other signs etc.)
-            method_name = f'load_{instrument_name}'
-            if method_name.isidentifier():
-                setattr(self, method_name,
-                        partial(self.load_instrument,
-                                identifier=instrument_name))
-            else:
-                log.warning(f'Invalid identifier: ' +
-                            f'for the instrument {instrument_name} no ' +
-                            f'lazy loading method {method_name} could be ' +
-                            'created in the StationConfigurator')
 
     def load_file(self, filename: Optional[str] = None):
+
+        # 1. load config from file
         if use_pyyaml:
             import yaml
         else:
@@ -90,6 +82,7 @@ class StationConfigurator:
 
         self._instrument_config = self.config['instruments']
 
+        # 2. add config to snapshot componenents
         class ConfigComponent:
             def __init__(self, data):
                 self.data = data
@@ -97,9 +90,33 @@ class StationConfigurator:
             def snapshot(self, update=True):
                 return self.data
 
-        # this overwrites any previous station
-        # configurator but does not call the snapshot
+        # this overwrites any previous configuration
+        # but does invoke snapshoting
         self.station.components['StationConfigurator'] = ConfigComponent(self.config)
+
+
+        # 3. create shortcut methods to instantiate instruments via
+        # `load_<instrument_name>()` so that autocompletion can be used
+        # first remove methods that have been added by a previous `load_file`
+        # call
+        for method_name in self._added_methods:
+            delattr(self, method_name)
+
+        # add shortcut methods
+        for instrument_name in self._instrument_config.keys():
+            # TODO: check if name is valid (does not start with digit, contain
+            # dot, other signs etc.)
+            method_name = f'load_{instrument_name}'
+            if method_name.isidentifier():
+                setattr(self, method_name, MethodType(
+                    partial(self.load_instrument, identifier=instrument_name),
+                    self))
+                self._added_methods.append(method_name)
+            else:
+                log.warning(f'Invalid identifier: ' +
+                            f'for the instrument {instrument_name} no ' +
+                            f'lazy loading method {method_name} could be ' +
+                            'created in the StationConfigurator')
 
     def load_instrument(self, identifier: str,
                         revive_instance: bool=False,
