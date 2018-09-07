@@ -45,7 +45,7 @@ class StationConfigurator:
 
     def __init__(self, filename: Optional[str] = None,
                  station: Optional[Station] = None) -> None:
-        self.monitor_parameters = {}
+        self.monitor_parameters = []
 
         if station is None:
             station = Station.default or Station()
@@ -155,12 +155,13 @@ class StationConfigurator:
                 instr = Instrument.find_instrument(identifier)
                 # remove parameters related to this instrument from the
                 # monitor list
-                self.monitor_parameters = {
-                    k:v for k,v in self.monitor_parameters.items()
-                    if v.root_instrument is not instr}
-                instr.close()
+                self.monitor_parameters = [v for v in self.monitor_parameters
+                                           if v.root_instrument is not instr]
                 # remove instrument from station snapshot
                 self.station.components.pop(instr.name)
+                # del will remove weakref and close the instrument
+                instr.close()
+                del instr
 
         # instantiate instrument
         module = importlib.import_module(instr_cfg['driver'])
@@ -199,7 +200,7 @@ class StationConfigurator:
                     lower, upper = [float(x) for x in val.split(',')]
                     parameter.vals = validators.Numbers(lower, upper)
                 elif attr == 'monitor' and val is True:
-                    self.monitor_parameters[id(parameter)] = parameter
+                    self.monitor_parameters.append(parameter)
                 elif attr == 'alias':
                     setattr(instr, val, parameter)
                 elif attr == 'initial_value':
@@ -243,6 +244,6 @@ class StationConfigurator:
         self.station.add_component(instr)
 
         # restart Monitor
-        Monitor(*self.monitor_parameters.values())
+        Monitor(*self.monitor_parameters)
 
         return instr
