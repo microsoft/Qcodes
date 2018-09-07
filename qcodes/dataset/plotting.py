@@ -1,7 +1,8 @@
 import logging
 from collections import OrderedDict
 from functools import partial
-from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
+from typing import (Optional, List, Sequence, Union, Tuple, Dict,
+                    Any, Set, cast)
 import inspect
 import numpy as np
 import matplotlib
@@ -88,8 +89,8 @@ def plot_by_id(run_id: int,
     if smart_colorscale is None:
         smart_colorscale = config.gui.smart_colorscale.enabled
     if cutoff_percentile is None:
-        cutoff_percentile = tuple(
-            config.gui.smart_colorscale.cutoff_percentile)
+        cutoff_percentile = cast(Tuple[Number, Number],
+                                 tuple(config.gui.smart_colorscale.cutoff_percentile))
 
     subplots_kwargs = {k:kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
