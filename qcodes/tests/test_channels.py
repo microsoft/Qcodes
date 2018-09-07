@@ -190,7 +190,7 @@ class TestChannels(TestCase):
             chan.temperature(setpoints[i])
 
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
-        self.assertEquals(self.instrument.channels.temperature(), expected)
+        self.assertEqual(self.instrument.channels.temperature(), expected)
 
     @given(start=hst.integers(-8,7), stop=hst.integers(-8,7), step=hst.integers(1,7))
     def test_access_channels_by_slice(self, start, stop, step):
