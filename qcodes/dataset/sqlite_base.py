@@ -485,6 +485,26 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
 
+
+def column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
+    """
+    A look-before-you-leap function to look up if a table has a certain column.
+
+    Intended for the 'runs' table where columns might be dynamically added
+    via `add_meta_data`/`insert_meta_data` functions.
+
+    Args:
+        conn: The connection
+        table: the table name
+        column: the column name
+    """
+    cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
+    for row in cur.fetchall():
+        if row['name'] == column:
+            return True
+    return False
+
+
 def insert_column(conn: SomeConnection, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
