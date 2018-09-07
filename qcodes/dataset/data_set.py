@@ -21,6 +21,7 @@ from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
                                         connect, create_run, completed,
+                                        column_in_table,
                                         get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
@@ -236,6 +237,14 @@ class DataSet(Sized):
     @property
     def guid(self):
         return get_guid_from_run_id(self.conn, self.run_id)
+
+    @property
+    def snapshot(self):
+        if column_in_table(self.conn, "runs", "snapshot"):
+            return select_one_where(self.conn, "runs", "snapshot",
+                                    "run_id", self.run_id)
+        else:
+            return None
 
     @property
     def number_of_results(self):
