@@ -268,7 +268,7 @@ class Loop(Metadatable):
 
         This is more naturally done to an ActiveLoop (ie after .each())
         and can also be done there, but it's allowed at this stage too so that
-        you can define final actions and share them among several *Loop*\s that
+        you can define final actions and share them among several ``Loops`` that
         have different loop actions, or attach final actions to a Loop run
 
         TODO:
