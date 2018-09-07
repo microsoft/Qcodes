@@ -290,6 +290,23 @@ def init_db(conn: sqlite3.Connection)->None:
         transaction(conn, _dependencies_table_schema)
 
 
+def column_in_table(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    """
+    A look-before-you-leap function to look up if a table has a certain column.
+    Intented for the runs table where columns are dynamically added.
+
+    Args:
+        conn: The connection
+        table: the table name
+        column: the column name
+    """
+    cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
+    for row in cur.fetchall():
+        if row['name'] == column:
+            return True
+    return False
+
+
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
