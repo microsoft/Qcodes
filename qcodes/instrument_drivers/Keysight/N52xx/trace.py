@@ -117,12 +117,7 @@ class N52xxTrace(InstrumentChannel):
         self.validate_trace_type(new_type)
         self.select()
         self.parent.write(f"CALC{self._channel}:PAR:MOD:EXT '{new_type}'")
-
         self._trace_type = new_type
-
-        name = f"CH{self._channel}_{new_type}"
-        self.name = "{}_{}".format(self.parent.name, str(name))
-        self.short_name = str(name)
 
     @staticmethod
     def validate_trace_type(trace_type: str) ->None:
@@ -136,6 +131,10 @@ class N52xxTrace(InstrumentChannel):
     def present_on_instrument(self) ->bool:
         return self._present_on_instrument
 
+    @property
+    def name_on_instrument(self) ->str:
+        return self.short_name
+
     def select(self) -> None:
         if not self._present_on_instrument:
             raise RuntimeError(
@@ -148,10 +147,6 @@ class N52xxTrace(InstrumentChannel):
     def write(self, cmd: str) -> None:
         self.select()
         super().write(cmd)
-
-        err = self.ask('SYST:ERR?')
-        if not err.startswith("+0"):
-            logger.warning(f"Command {cmd} resulted in error: {err}")
 
     def ask(self, cmd: str) -> str:
         self.select()
@@ -184,12 +179,13 @@ class N52xxTrace(InstrumentChannel):
         """
         upload to instrument
         """
-        # Do not do self.write; self.select will not work yet as the instrument
-        # has not been uploaded yet
+        # Do not do self.write; self.select will not work yet as the
+        # instrument has not been uploaded yet
         self.parent.write(
             f'CALC{self._channel}:PAR:EXT {self.short_name}, '
             f'{self._trace_type}'
         )
+
         self._present_on_instrument = True
 
     def delete(self) -> None:
@@ -198,3 +194,6 @@ class N52xxTrace(InstrumentChannel):
         """
         self.parent.write(f'CALC{self._channel}:PAR:DEL {self.short_name}')
         self._present_on_instrument = False
+
+    def __repr__(self):
+        return f"<Trace Type: {self._trace_type}>"

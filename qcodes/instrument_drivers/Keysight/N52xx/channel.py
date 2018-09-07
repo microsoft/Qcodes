@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import cast
+from typing import cast, Union
 import time
 
 from qcodes import InstrumentChannel, Instrument
@@ -16,10 +16,15 @@ class N52xxChannel(InstrumentChannel):
     """
     Allows operations on specific channels.
     """
-    def __init__(self, parent: 'Instrument', channel: int):
+    def __init__(
+            self, parent: 'Instrument', channel: int,
+            measurement_type: str="S-parameter"
+    ) ->None:
+
         super().__init__(parent, f"channel{channel}")
 
         self._channel = channel
+        self._measurement_type = measurement_type
 
         self.add_parameter(
             'power',
@@ -150,7 +155,7 @@ class N52xxChannel(InstrumentChannel):
 
         self._traces = self._load_traces_from_instrument()
 
-    def _load_traces_from_instrument(self) ->dict:
+    def _load_traces_from_instrument(self) ->list:
         """
         Interface to access traces on the instrument
 
@@ -159,7 +164,7 @@ class N52xxChannel(InstrumentChannel):
         """
         result = self.ask(f"CALC{self._channel}:PAR:CAT:EXT?")
         if result == "NO CATALOG":
-            return {}
+            return []
 
         trace_info = result.strip("\"").split(",")
         trace_names = trace_info[::2]
@@ -167,77 +172,87 @@ class N52xxChannel(InstrumentChannel):
 
         parent = cast(Instrument, self.parent)
 
-        return {
-            name: N52xxTrace(
-                parent, self, name, trace_type, present_on_instrument=True
-            )
+        # TODO: The try of trace returned should depend on
+        # TODO: self._measurement_type
+        return [N52xxTrace(
+            parent, self, name, trace_type, present_on_instrument=True)
             for name, trace_type in zip(trace_names, trace_types)
-        }
+        ]
 
     @property
-    def trace(self) ->dict:
+    def trace(self) ->list:
         """
         List all traces on the instrument
         """
-        return {
-            name: trace for name, trace in self._traces.items()
-            if trace.present_on_instrument
-        }
+        return [trace for trace in self._traces if trace.present_on_instrument]
 
-    def add_trace(self, tr_type: str, name: str=None) -> 'N52xxTrace':
+    def add_trace(self, tr_type: str) -> 'N52xxTrace':
         """
-        Add a trace the instrument. Note that if a trace with the name given
-        already exists on the instrument, this trace is simply returned without
-        uploading a second trace with the same name.
+        Add a trace the instrument.
 
         Args:
-            name (str): Name of the trace to add
             tr_type (str): Currently only S-parameter types are supported, which
                 have the format `Sxy` where x and y are integers.
 
         Returns:
             trace (N52xxTrace)
         """
-        if name is None:
-            name = f"CH{self._channel}_{tr_type}"
+        name = f"CH{self._channel}_{tr_type}"
 
-        trace = self._traces.get(name, None)
+        trace = {tr.short_name: tr for tr in self.trace}.get(name, None)
+        if trace is not None:
+            return trace
+
         parent = cast(Instrument, self.parent)
-
-        if trace is None:
-            trace = N52xxTrace(parent, self, name, tr_type)
-            self._traces[name] = trace
-
-        if not trace.present_on_instrument:
-            trace.upload_to_instrument()
-
+        # TODO: The try of trace returned should depend on
+        # TODO: self._measurement_type
+        trace = N52xxTrace(parent, self, name, tr_type)
+        self._traces.append(trace)
+        trace.upload_to_instrument()
         trace.select()
         return trace
 
-    def delete_trace(self, name: str) ->None:
+    def delete_trace(self, index: Union[int, str]) ->None:
         """
         Deletes the trace on the instrument
 
         Args:
-            name (str): Either the name of the trace to delete or "all"
+            index (str or int): Either the name of the trace to delete or "all"
         """
-        if name == "all":
-            for trace in self.trace.values():
+        if index == "all":
+            for trace in self.trace:
                 trace.delete()
         else:
-            self.trace[name].delete()
+            self.trace[index].delete()
+
+    def upload_channel_to_instrument(self):
+
+        if self._measurement_type == "S-parameter":
+            type_string = "S11"
+        else:
+            raise ValueError("currently, only S-parameter measurements are "
+                             "supported")
+
+        existing_meas = self.parent.list_existing_measurement_numbers()
+        new_meas = 1
+        while new_meas in existing_meas:
+            new_meas += 1
+
+        # Defining a new measurement on an, as yet, non-existing channel
+        # will create that channel
+        self.parent.write(
+            f"CALC{self._channel}:MEAS{new_meas}:DEF '{type_string}'")
 
     def select(self) ->None:
         """
         A channel must be selected (active) to modify its settings. A channel
         is selected by selecting a trace on that channel
         """
-        traces = list(self.trace.values())
-        if len(traces) == 0:
+        if len(self.trace) == 0:
             raise UserWarning("Cannot select channel as no traces have been "
                               "defined ")
         else:
-            traces[0].select()
+            self.trace[0].select()
 
     def run_sweep(self, averages: int =1, blocking: bool=True) ->None:
         """

@@ -55,7 +55,10 @@ class N52xxWindow(InstrumentChannel):
         self._window = window
         self._trace_count = 0
 
-        self.create()
+    def load_traces_from_instrument(self) ->None:
+        nums = self.ask(f"DISP:WIND{self._window}:CAT?").strip("\"")
+        if nums != 'EMPTY':
+            self._trace_count = len(nums.split(","))
 
     def create(self):
         self.parent.write(f"DISP:WINDow{self._window} ON")
@@ -83,7 +86,7 @@ class N52xxWindow(InstrumentChannel):
         """
         Add all traces in the channel to the window
         """
-        for trace in channel.trace.values():
+        for trace in channel.trace:
             self.add_trace(trace)
 
 
@@ -131,9 +134,39 @@ class N52xxBase(VisaInstrument):
         ports.lock()
         self.add_submodule("port", ports)
 
-        self._channels = []
-        self._windows = []
+        self._channels = self._load_channels_from_instrument()
+        self._windows = self._load_windows_from_instrument()
+
         self.connect_message()
+
+    def list_existing_instrument_objects(self, cmd: str) -> list:
+        nums = self.ask(cmd).strip("\"").split(",")
+        return [int(i) for i in nums if i != ""]
+
+    def list_existing_measurement_numbers(self) -> list:
+        return self.list_existing_instrument_objects("SYST:MEAS:CAT?")
+
+    def list_existing_channel_numbers(self) -> list:
+        return self.list_existing_instrument_objects("SYST:CHAN:CAT?")
+
+    def list_existing_window_numbers(self) -> list:
+        return self.list_existing_instrument_objects("SYST:WIND:CAT?")
+
+    def _load_windows_from_instrument(self) ->list:
+        windows = []
+        for window_number in self.list_existing_window_numbers():
+            window = N52xxWindow(self, window_number)
+            window.load_traces_from_instrument()
+            windows.append(window)
+        return windows
+
+    def _load_channels_from_instrument(self) ->list:
+        channels = []
+        for channel_number in self.list_existing_channel_numbers():
+            channel = N52xxChannel(self, channel=channel_number)
+            channels.append(channel)
+
+        return channels
 
     def add_channel(self) ->N52xxChannel:
         """
@@ -146,8 +179,12 @@ class N52xxBase(VisaInstrument):
         if channel_count >= 200:
             raise RuntimeError("Cannot add more than 200 channels")
 
-        channel = N52xxChannel(
-            self, channel=channel_count + 1)
+        new_channel_num = 1
+        while new_channel_num in self.list_existing_channel_numbers():
+            new_channel_num += 1
+
+        channel = N52xxChannel(self, channel=new_channel_num)
+        channel.upload_channel_to_instrument()
         self._channels.append(channel)
         return channel
 
@@ -163,7 +200,12 @@ class N52xxBase(VisaInstrument):
         if window_count >= 24:
             raise RuntimeError("Cannot add more than 24 windows")
 
-        window = N52xxWindow(self, window_count + 1)
+        new_window_num = 1
+        while new_window_num in self.list_existing_window_numbers():
+            new_window_num += 1
+
+        window = N52xxWindow(self, new_window_num)
+        window.create()
         self._windows.append(window)
         return window
 
@@ -173,6 +215,10 @@ class N52xxBase(VisaInstrument):
         Public interface for access to channels
         """
         return self._channels
+
+    @property
+    def window(self) -> list:
+        return self._windows
 
     def delete_all_traces(self) ->None:
         """
@@ -190,3 +236,24 @@ class N52xxBase(VisaInstrument):
         self.write('FORM REAL,32')
         self.write('FORM:BORD NORM')
         self.trigger_source("IMM")
+
+    def _get_sys_err(self) ->str:
+        err = super().ask_raw('SYST:ERR?')
+        if not err.startswith("+0"):
+            return err
+        return ""
+
+    def write_raw(self, cmd):
+        super().write_raw(cmd)
+
+        err = self._get_sys_err()
+        if err != "":
+            logger.warning(f"Command {cmd} produced error {err}")
+
+    def ask_raw(self, cmd):
+        ret = super().ask_raw(cmd)
+        err = self._get_sys_err()
+        if err != "":
+            logger.warning(f"Command {cmd} produced error {err}")
+
+        return ret
