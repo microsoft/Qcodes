@@ -449,7 +449,7 @@ class AWG70000A(VisaInstrument):
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
-        self.seqxFileFolder = "\\Users\\OEM\Documents"
+        self.seqxFileFolder = "\\Users\\OEM\\Documents"
 
         self.current_directory(self.wfmxFileFolder)
 
