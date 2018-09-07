@@ -19,9 +19,11 @@ class DataSetHandler(handlers.BaseHandler):
         jdict['snapshot'] = dataset.snapshot
         #
         data = {}
-        for parameter in dataset.parameters.split(','):
-            pdata = flatten_1D_data_for_plot(dataset.get_data(parameter))
-            data[parameter] = jsonpickle.encode(pdata)
+
+        if dataset.parameters is not None:
+            for parameter in dataset.parameters.split(','):
+                pdata = flatten_1D_data_for_plot(dataset.get_data(parameter))
+                data[parameter] = jsonpickle.encode(pdata)
 
         jdict['DATA'] = data
 
