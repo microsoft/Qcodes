@@ -5,7 +5,6 @@ import importlib
 import logging
 import warnings
 import os
-from types import MethodType
 from copy import deepcopy
 import qcodes
 from qcodes.instrument.base import Instrument
@@ -99,8 +98,8 @@ class StationConfigurator:
         # `load_<instrument_name>()` so that autocompletion can be used
         # first remove methods that have been added by a previous `load_file`
         # call
-        for method_name in self._added_methods:
-            delattr(self, method_name)
+        while len(self._added_methods):
+            delattr(self, self._added_methods.pop())
 
         # add shortcut methods
         for instrument_name in self._instrument_config.keys():
@@ -108,9 +107,9 @@ class StationConfigurator:
             # dot, other signs etc.)
             method_name = f'load_{instrument_name}'
             if method_name.isidentifier():
-                setattr(self, method_name, MethodType(
-                    partial(self.load_instrument, identifier=instrument_name),
-                    self))
+                setattr(self, method_name, partial(
+                    self.load_instrument, identifier=instrument_name))
+
                 self._added_methods.append(method_name)
             else:
                 log.warning(f'Invalid identifier: ' +
