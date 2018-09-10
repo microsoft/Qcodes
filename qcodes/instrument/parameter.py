@@ -855,7 +855,8 @@ class Parameter(_BaseParameter):
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
-        if not hasattr(self, 'get') and get_cmd is not False:
+        if (not (hasattr(self, 'get') or hasattr(self, 'get_raw'))
+            and get_cmd is not False):
             if get_cmd is None:
                 if max_val_age is not None:
                     raise SyntaxError('Must have get method or specify get_cmd '
@@ -866,7 +867,8 @@ class Parameter(_BaseParameter):
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
-        if not hasattr(self, 'set') and set_cmd is not False:
+        if (not (hasattr(self, 'set') or hasattr(self, 'set_raw'))
+            and set_cmd is not False):
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)# type: Callable
             else:
