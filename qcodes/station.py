@@ -230,15 +230,18 @@ class Station(Metadatable, DelegateAttributes):
             with open(filename, 'r') as f:
                 self._config = yaml.load(f)
         except FileNotFoundError as e:
-            if not os.path.isabs(filename) and DEFAULT_CONFIG_FOLDER is not None:
-                try:
+            try:
+                if not os.path.isabs(filename) and DEFAULT_CONFIG_FOLDER is not None:
                     with open(os.path.join(DEFAULT_CONFIG_FOLDER, filename),
                               'r') as f:
                         self._config = yaml.load(f)
-                except FileNotFoundError:
+                else:
                     raise e
-            else:
-                raise e
+            except FileNotFoundError:
+                log.warning('Could not load default config for Station: ' + 
+                            e.msg)
+                return
+                    
 
         self._instrument_config = self._config['instruments']
 
@@ -298,6 +301,8 @@ class Station(Metadatable, DelegateAttributes):
             return Instrument.find_instrument(identifier)
 
         # load file
+        # try to reload file on every call. This makes script execution a
+        # little slower but makes the overall workflow more convenient.
         self.load_config_file(self.config_file)
 
         # load from config
