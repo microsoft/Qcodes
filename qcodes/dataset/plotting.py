@@ -210,18 +210,31 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
-    mappable = ax.scatter(x=x, y=y, c=z)
+    z_is_string_valued = isinstance(z[0], str)
+
+    if z_is_string_valued:
+        z_int = list(range(len(z)))
+        mappable = ax.scatter(x=x, y=y, c=z_int)
+    else:
+        mappable = ax.scatter(x=x, y=y, c=z)
+
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
     else:
         colorbar = ax.figure.colorbar(mappable, ax=ax)
+
+    if z_is_string_valued:
+        colorbar.ax.set_yticklabels(z)
+
     return ax, colorbar
 
 
-def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
+def plot_on_a_plain_grid(x: np.ndarray,
+                         y: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
+                         colorbar: matplotlib.colorbar.Colorbar=None
+                         ) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular

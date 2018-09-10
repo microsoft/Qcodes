@@ -287,7 +287,7 @@ def plottype_for_3d_data(xpoints: np.ndarray,
     if isinstance(xpoints[0], str) \
             or isinstance(ypoints[0], str) \
             or isinstance(zpoints[0], str):
-        plottype = 'grid'  # ''point'
+        plottype = 'point'
     else:
         plottype = datatype_from_setpoints_2d(xpoints, ypoints)
     return plottype
