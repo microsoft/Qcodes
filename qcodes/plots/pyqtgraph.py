@@ -29,8 +29,8 @@ class QtPlot(BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
-    For information on how x/y/z \*args are handled see add() in the base
-    plotting class.
+    For information on how ``x/y/z *args`` are handled see ``add()`` in the
+     base plotting class.
 
     Args:
         *args: shortcut to provide the x/y/z data. See BasePlot.add
