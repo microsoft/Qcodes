@@ -1819,9 +1819,11 @@ class DelegateParameter(Parameter):
         self.source = source
         super().__init__(name=name, *args, **kwargs)
 
+    # pylint: disable=method-hidden
     def get_raw(self, *args, **kwargs):
         return self.source.get(*args, **kwargs)
 
+    # pylint: disable=method-hidden
     def set_raw(self, *args, **kwargs):
         self.source(*args, **kwargs)
 
