@@ -12,7 +12,7 @@ import numpy as np
 import qcodes as qc
 from qcodes import Station
 from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter
+    Parameter, MultiParameter, ArrayParameter2
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -156,6 +156,10 @@ class DataSaver:
                     self._unbundle_arrayparameter(parameter,
                                                   res,
                                                   found_parameters)
+                if isinstance(parameter, ArrayParameter2):
+                    self._unbundle_arrayparameter2(parameter,
+                                                   res,
+                                                   found_parameters)
 
         for partial_result in res:
             parameter = partial_result[0]
@@ -287,6 +291,24 @@ class DataSaver:
                                             fallback_sp_name,
                                             parameter.setpoints,
                                             res, found_parameters)
+
+    def _unbundle_arrayparameter2(self, parameter: ArrayParameter2,
+                                  res: List[res_type],
+                                  found_parameters: List[str]) -> None:
+        setpoint_names = []
+        setpoint_data = []
+        for setpointparam in parameter.setpoints:
+            these_setpoints = setpointparam.get()
+            setpoint_names.append(setpointparam.full_name)
+            setpoint_data.append(these_setpoints)
+            found_parameters.append(setpointparam.full_name)
+            if setpointparam.full_name not in self.parameters.keys():
+                raise RuntimeError(f'{setpointparam.full_name} '
+                                   f'which is a setpoint parameter for'
+                                   f'{parameter.full_name} is not registered!')
+        output_grids = np.meshgrid(*setpoint_data, indexing='ij')
+        for name, grid in zip(setpoint_names, output_grids):
+            res.append((name, grid))
 
     def _unbundle_setpoints_from_param(self, parameter: _BaseParameter,
                                        sp_names: Sequence[str],
@@ -631,6 +653,11 @@ class Measurement:
                                           setpoints,
                                           basis,
                                           paramtype)
+        if isinstance(parameter, ArrayParameter2):
+            self._register_arrayparameter2(parameter,
+                                           setpoints,
+                                           basis,
+                                           paramtype)
         elif isinstance(parameter, MultiParameter):
             self._register_multiparameter(parameter,
                                           setpoints,
@@ -711,6 +738,36 @@ class Measurement:
                 spunit = parameter.setpoint_units[i]
             else:
                 spunit = ''
+
+            sp = ParamSpec(name=spname, paramtype=paramtype,
+                           label=splabel, unit=spunit)
+
+            self.parameters[spname] = sp
+
+            my_setpoints += [spname]
+
+        self._register_parameter(name,
+                                 parameter.label,
+                                 parameter.unit,
+                                 my_setpoints,
+                                 basis,
+                                 paramtype)
+
+    def _register_arrayparameter2(self,
+                                 parameter: ArrayParameter2,
+                                 setpoints: setpoints_type,
+                                 basis: setpoints_type,
+                                 paramtype: str) -> None:
+        """
+        Register an ArrayParameter2 and the setpoints belonging to the
+        ArrayParameter2
+        """
+        name = str(parameter)
+        my_setpoints = list(setpoints) if setpoints else []
+        for i, setpoints in enumerate(parameter.setpoints):
+            spname = setpoints.full_name
+            splabel = setpoints.label
+            spunit = setpoints.unit
 
             sp = ParamSpec(name=spname, paramtype=paramtype,
                            label=splabel, unit=spunit)
