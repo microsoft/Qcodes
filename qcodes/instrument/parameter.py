@@ -1818,6 +1818,24 @@ class DelegateParameter(Parameter):
 
     def __init__(self, name: str, source: Parameter, *args, **kwargs):
         self.source = source
+
+        if 'unit' not in kwargs:
+            kwargs.update({'unit': self._source_parameter.unit})
+        if 'label' not in kwargs:
+            kwargs.update({'label': self._source_parameter.label})
+        if 'snapshot_value' not in kwargs:
+            kwargs.update(
+                {'snapshot_value': self._source_parameter._snapshot_value})
+
+        if 'set_cmd' in kwargs:
+            raise KeyError('It is not allowed to set "set_cmd" of a '
+                           'DelegateParameter because the one of the source '
+                           'parameter is supposed to be used.')
+        if 'get_cmd' in kwargs:
+            raise KeyError('It is not allowed to set "get_cmd" of a '
+                           'DelegateParameter because the one of the source '
+                           'parameter is supposed to be used.')
+
         super().__init__(name=name, *args, **kwargs)
 
     # Disable the warnings until MultiParameter and ArrayParameter have been
@@ -1831,3 +1849,14 @@ class DelegateParameter(Parameter):
     def set_raw(self, *args, **kwargs):
         self.source(*args, **kwargs)
 
+    def snapshot_base(self,
+                      update: bool = False,
+                      params_to_skip_update: Sequence[str] = None):
+        snapshot = super().snapshot_base(
+            update=update,
+            params_to_skip_update=params_to_skip_update
+        )
+        snapshot.update(
+            {'source_parameter': self._source_parameter.snapshot(update=update)}
+        )
+        return snapshot
