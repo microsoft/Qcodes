@@ -76,7 +76,10 @@ def plot_by_id(run_id: int,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
         smart_colorscale: if True, the colorscale of heatmap plots will be
-            automatically adjusted to disregard outliers.
+            automatically adjusted to disregard outliers. If False,
+            the adjustment will not be performed. If None, the value from
+            QCoDeS config->"gui"->"smart_colorscale" will determine if the
+            adjustment is going to be performed.
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
@@ -86,7 +89,7 @@ def plot_by_id(run_id: int,
     # handle arguments and defaults
     if smart_colorscale is None:
         smart_colorscale = config.gui.smart_colorscale
-    subplots_kwargs = {k:kwargs.pop(k)
+    subplots_kwargs = {k: kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
