@@ -429,18 +429,37 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
     :meth:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
-    x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
-    ax.xaxis.set_major_formatter(x_ticks_formatter)
-    ax.set_xlabel(new_x_label)
+    if not _is_string_valued_array(data[0]['data']):
+        x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
+        ax.xaxis.set_major_formatter(x_ticks_formatter)
+        ax.set_xlabel(new_x_label)
 
     # for y axis
-    y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
-    ax.yaxis.set_major_formatter(y_ticks_formatter)
-    ax.set_ylabel(new_y_label)
+    if not _is_string_valued_array(data[1]['data']):
+        y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
+        ax.yaxis.set_major_formatter(y_ticks_formatter)
+        ax.set_ylabel(new_y_label)
 
     # for z aka colorbar axis
     if cax is not None and len(data) > 2:
-        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
-        cax.set_label(new_z_label)
-        cax.formatter = z_ticks_formatter
-        cax.update_ticks()
+        if not _is_string_valued_array(data[2]['data']):
+            z_ticks_formatter, new_z_label = \
+                _make_rescaled_ticks_and_units(data[2])
+            cax.set_label(new_z_label)
+            cax.formatter = z_ticks_formatter
+            cax.update_ticks()
+
+
+def _is_string_valued_array(values: np.ndarray) -> bool:
+    """
+    Check if the given 1D numpy array contains categorical data, or, in other
+    words, if it is string-valued.
+
+    Args:
+        values:
+            a 1D numpy array of values
+
+    Returns:
+        True, if the array contains string; False otherwise
+    """
+    return isinstance(values[0], str)
