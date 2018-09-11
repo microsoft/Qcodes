@@ -356,9 +356,7 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
 
 
 def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
-        -> Tuple[
-               Union[matplotlib.ticker.FuncFormatter, None],
-               Union[str, None]]:
+        -> Tuple[matplotlib.ticker.FuncFormatter, str]:
     """
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
@@ -385,9 +383,6 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
         a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
         the new label.
     """
-    ticks_formatter = None
-    new_label = None
-
     unit = data_dict['unit']
 
     maxval = np.nanmax(np.abs(data_dict['data']))
@@ -432,20 +427,17 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
     """
     # for x axis
     x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
-    if x_ticks_formatter is not None and new_x_label is not None:
-        ax.xaxis.set_major_formatter(x_ticks_formatter)
-        ax.set_xlabel(new_x_label)
+    ax.xaxis.set_major_formatter(x_ticks_formatter)
+    ax.set_xlabel(new_x_label)
 
     # for y axis
     y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
-    if y_ticks_formatter is not None and new_y_label is not None:
-        ax.yaxis.set_major_formatter(y_ticks_formatter)
-        ax.set_ylabel(new_y_label)
+    ax.yaxis.set_major_formatter(y_ticks_formatter)
+    ax.set_ylabel(new_y_label)
 
     # for z aka colorbar axis
     if cax is not None and len(data) > 2:
         z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
-        if z_ticks_formatter is not None and new_z_label is not None:
-            cax.set_label(new_z_label)
-            cax.formatter = z_ticks_formatter
-            cax.update_ticks()
+        cax.set_label(new_z_label)
+        cax.formatter = z_ticks_formatter
+        cax.update_ticks()
