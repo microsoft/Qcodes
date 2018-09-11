@@ -1819,22 +1819,15 @@ class DelegateParameter(Parameter):
     def __init__(self, name: str, source: Parameter, *args, **kwargs):
         self.source = source
 
-        if 'unit' not in kwargs:
-            kwargs.update({'unit': self._source_parameter.unit})
-        if 'label' not in kwargs:
-            kwargs.update({'label': self._source_parameter.label})
-        if 'snapshot_value' not in kwargs:
-            kwargs.update(
-                {'snapshot_value': self._source_parameter._snapshot_value})
+        for ka, param in zip(('unit', 'label', 'snapshot_value'),
+                             ('unit', 'label', '_snapshot_value')):
+            kwargs[ka] = kwargs.get(ka, getattr(self._source_parameter, param))
 
-        if 'set_cmd' in kwargs:
-            raise KeyError('It is not allowed to set "set_cmd" of a '
-                           'DelegateParameter because the one of the source '
-                           'parameter is supposed to be used.')
-        if 'get_cmd' in kwargs:
-            raise KeyError('It is not allowed to set "get_cmd" of a '
-                           'DelegateParameter because the one of the source '
-                           'parameter is supposed to be used.')
+        for cmd in ('set_cmd', 'get_cmd'):
+            if cmd in kwargs:
+                raise KeyError(f'It is not allowed to set "{cmd}" of a '
+                               f'DelegateParameter because the one of the '
+                               f'source parameter is supposed to be used.')
 
         super().__init__(name=name, *args, **kwargs)
 
