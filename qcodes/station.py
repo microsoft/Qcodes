@@ -327,7 +327,7 @@ class Station(Metadatable, DelegateAttributes):
                 self._monitor_parameters = [v for v in self._monitor_parameters
                                            if v.root_instrument is not instr]
                 # remove instrument from station snapshot
-                self.station.components.pop(instr.name)
+                self.components.pop(instr.name)
                 # del will remove weakref and close the instrument
                 instr.close()
                 del instr
