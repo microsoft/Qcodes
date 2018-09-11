@@ -4,10 +4,12 @@ import os
 import json
 
 from functools import partial
+from contextlib import contextmanager
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
 import pytest
 import tempfile
+import qcodes.config
 
 from qcodes.config import Config
 
@@ -133,6 +135,45 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   Config.schema_default_file_name: SCHEMA,
                   }
 
+@contextmanager
+def default_config():
+    """
+    Context manager to temporarily establish default config settings.
+    This is achieved by overwritting the config paths of the user-,
+    environment-, and current directory-config files with the path of the
+    config file in the qcodes repository.
+    Additionally the current config object `qcodes.config` gets copied and
+    reestablished.
+    """
+    default = qcodes.Config.default_file_name
+    default_schema = qcodes.Config.schema_default_file_name
+    home_file_name = qcodes.Config.home_file_name
+    schema_home_file_name = qcodes.Config.schema_home_file_name
+    env_file_name = qcodes.Config.env_file_name
+    schema_env_file_name = qcodes.Config.schema_env_file_name
+    cwd_file_name = qcodes.Config.cwd_file_name
+    schema_cwd_file_name = qcodes.Config.schema_cwd_file_name
+
+    qcodes.Config.home_file_name = default
+    qcodes.Config.schema_home_file_name = default_schema
+    qcodes.Config.env_file_name = default
+    qcodes.Config.schema_env_file_name = default_schema
+    qcodes.Config.cwd_file_name = default
+    qcodes.Config.schema_cwd_file_name = default_schema
+
+    default_config_obj = qcodes.config
+    qcodes.config = qcodes.Config()
+
+    yield
+
+    qcodes.Config.home_file_name = home_file_name
+    qcodes.Config.schema_home_file_name = schema_home_file_name
+    qcodes.Config.env_file_name = env_file_name
+    qcodes.Config.schema_env_file_name = schema_env_file_name
+    qcodes.Config.cwd_file_name = cwd_file_name
+    qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+
+    qcodes.config = default_config_obj
 
 def side_effect(map, name):
     return map[name]
@@ -255,19 +296,20 @@ class TestConfig(TestCase):
 
 
 def test_update_from_path(path_to_config_file_on_disk):
-    cfg = Config()
+    with default_config():
+        cfg = Config()
 
-    # check that the default is still the default
-    cfg.update_config()
-    assert cfg["core"]["db_debug"] is False
+        # check that the default is still the default
+        assert cfg["core"]["db_debug"] is False
 
-    cfg.update_config(path=path_to_config_file_on_disk)
-    assert cfg['core']['db_debug'] is True
+        cfg.update_config(path=path_to_config_file_on_disk)
+        assert cfg['core']['db_debug'] is True
 
-    # check that the settings NOT specified in our config file on path
-    # are still saved as configurations
-    assert cfg['gui']['notebook'] is True
-    assert cfg['station_configurator']['default_folder'] == '.'
+        # check that the settings NOT specified in our config file on path
+        # are still saved as configurations
+        assert cfg['gui']['notebook'] is True
+        assert cfg['station_configurator']['default_folder'] == '.'
 
-    expected_path = os.path.join(path_to_config_file_on_disk, 'qcodesrc.json')
-    assert cfg.current_config_path == expected_path
+        expected_path = os.path.join(path_to_config_file_on_disk,
+                                     'qcodesrc.json')
+        assert cfg.current_config_path == expected_path
