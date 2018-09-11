@@ -2,6 +2,7 @@ import logging
 from collections import OrderedDict
 from functools import partial
 from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
+import inspect
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -23,6 +24,16 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 
+# list of kwargs for plotting function, so that kwargs can be passed to
+# :meth:`plot_by_id` and will be distributed to the respective plotting func.
+# subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
+# First find the kwargs that belong to subplots and than add those that are
+# redirected to the `figure`-call.
+SUBPLOTS_OWN_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
+SUBPLOTS_OWN_KWARGS.remove('fig_kw')
+FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
+FIGURE_KWARGS.remove('kwargs')
+SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
@@ -31,7 +42,8 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Optional[bool]=None) -> AxesTupleList:
+               smart_colorscale: Optional[bool]=None,
+               **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given run
 
@@ -70,9 +82,11 @@ def plot_by_id(run_id: int,
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
-    # defaults
+    # handle arguments and defaults
     if smart_colorscale is None:
         smart_colorscale = config.gui.smart_colorscale
+    subplots_kwargs = {k:kwargs.pop(k)
+                       for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
@@ -91,9 +105,14 @@ def plot_by_id(run_id: int,
     if axes is None:
         axes = []
         for i in range(nplots):
-            fig, ax = plt.subplots(1, 1)
+            fig, ax = plt.subplots(1, 1, **subplots_kwargs)
             axes.append(ax)
     else:
+        if len(subplots_kwargs) != 0:
+            raise RuntimeError(f"Error: You cannot provide arguments for the "
+                               f"axes/figure creation if you supply your own "
+                               f"axes. "
+                               f"Provided arguments: {subplots_kwargs}")
         if len(axes) != nplots:
             raise RuntimeError(f"Trying to make {nplots} plots, but"
                                f"received {len(axes)} axes objects.")
@@ -115,9 +134,9 @@ def plot_by_id(run_id: int,
             plottype = datatype_from_setpoints_1d(xpoints)
 
             if plottype == 'line':
-                ax.plot(xpoints, ypoints)
+                ax.plot(xpoints, ypoints, **kwargs)
             elif plottype == 'point':
-                ax.scatter(xpoints, ypoints)
+                ax.scatter(xpoints, ypoints, **kwargs)
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
@@ -151,7 +170,8 @@ def plot_by_id(run_id: int,
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
             plot_func = how_to_plot[plottype]
-            ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
+            ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
+                                     **kwargs)
 
             _set_data_axes_labels(ax, data, colorbar)
             if rescale_axes:
@@ -207,7 +227,8 @@ def _set_data_axes_labels(ax: matplotlib.axes.Axes,
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         ax: matplotlib.axes.Axes,
-                        colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
+                        colorbar: matplotlib.colorbar.Colorbar=None,
+                        **kwargs) -> AxesTuple:
     """
     Make a 2D scatterplot of the data
 
@@ -221,7 +242,7 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
-    mappable = ax.scatter(x=x, y=y, c=z)
+    mappable = ax.scatter(x=x, y=y, c=z, **kwargs)
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
     else:
@@ -232,7 +253,8 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
 def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
+                         colorbar: matplotlib.colorbar.Colorbar=None,
+                         **kwargs) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -267,7 +289,9 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
 
-    colormesh = ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
+    colormesh = ax.pcolormesh(x_edges, y_edges,
+                              np.ma.masked_invalid(z_to_plot),
+                              **kwargs)
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
     else:
@@ -365,7 +389,10 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             selected_scale = largest_scale
             prefix = _ENGINEERING_PREFIXES[largest_scale]
     else:
-        selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        if maxval > 0:
+            selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        else:
+            selected_scale = 0
         if selected_scale != 0:
             prefix = f'$10^{{{selected_scale:.0f}}}$ '
         else:
@@ -408,3 +435,4 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
             cax.set_label(new_z_label)
             cax.formatter = z_ticks_formatter
             cax.update_ticks()
+
