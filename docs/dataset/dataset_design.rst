@@ -1,5 +1,7 @@
 .. highlight:: python
 
+.. _datasetdesign:
+
 ==============
 Dataset Design
 ==============
