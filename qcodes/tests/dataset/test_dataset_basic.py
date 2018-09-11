@@ -1,6 +1,8 @@
 import itertools
 import tempfile
 import os
+from contextlib import contextmanager
+from copy import deepcopy
 
 import pytest
 import numpy as np
@@ -16,7 +18,8 @@ import qcodes.dataset.data_set
 from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
                                         get_user_version,
                                         atomic_transaction,
-                                        perform_db_upgrade_0_to_1)
+                                        perform_db_upgrade_0_to_1,
+                                        update_GUIDs)
 
 from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import (initialise_database,
@@ -51,6 +54,20 @@ def dataset(experiment):
     dataset = new_data_set("test-dataset")
     yield dataset
     dataset.conn.close()
+
+
+@contextmanager
+def location_and_station_set_to(location: int, work_station: int):
+    cfg = qc.Config()
+    old_cfg = deepcopy(cfg.current_config)
+    cfg['GUID_components']['location'] = location
+    cfg['GUID_components']['work_station'] = work_station
+    cfg.save_to_home()
+
+    yield
+
+    cfg.current_config = old_cfg
+    cfg.save_to_home()
 
 
 def test_tables_exist(empty_temp_db):
@@ -373,6 +390,42 @@ def test_guid(dataset):
     guid = dataset.guid
     assert len(guid) == 36
     parse_guid(guid)
+
+
+def test_update_existing_guids(empty_temp_db):
+    with location_and_station_set_to(0, 0):
+        new_experiment('test', sample_name='test_sample')
+
+        ds1 = new_data_set('ds_one')
+        xparam = ParamSpec('x', 'numeric')
+        ds1.add_parameter(xparam)
+        ds1.add_result({'x': 1})
+
+        ds2 = new_data_set('ds_two')
+        ds2.add_parameter(xparam)
+        ds2.add_result({'x': 1})
+
+        guid_comps_1 = parse_guid(ds1.guid)
+        assert guid_comps_1['location'] == 0
+        assert guid_comps_1['work_station'] == 0
+
+        guid_comps_2 = parse_guid(ds2.guid)
+        assert guid_comps_2['location'] == 0
+        assert guid_comps_2['work_station'] == 0
+
+    new_loc = 23
+    new_ws = 52
+
+    with location_and_station_set_to(new_loc, new_ws):
+        update_GUIDs(ds1.conn)
+
+        guid_comps_1 = parse_guid(ds1.guid)
+        assert guid_comps_1['location'] == new_loc
+        assert guid_comps_1['work_station'] == new_ws
+
+        guid_comps_2 = parse_guid(ds2.guid)
+        assert guid_comps_2['location'] == new_loc
+        assert guid_comps_2['work_station'] == new_ws
 
 
 def test_perform_actual_upgrade_0_to_1():

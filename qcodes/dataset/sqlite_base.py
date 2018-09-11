@@ -15,7 +15,7 @@ import wrapt
 import qcodes as qc
 import unicodedata
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.guids import generate_guid, parse_guid
 
 log = logging.getLogger(__name__)
 
@@ -1534,3 +1534,85 @@ def get_sample_name_from_experiment_id(
 def get_run_timestamp_from_run_id(conn: SomeConnection,
                                   run_id: int) -> float:
     return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
+
+
+def update_GUIDs(conn: SomeConnection) -> None:
+    """
+    Update all GUIDs in this database where either the location code or the
+    work_station code is zero to use the location and work_station code from
+    the qcodesrc.json file in home. Runs where it is not true that both codes
+    are zero are skipped.
+    """
+
+    log.info('Commencing update of all GUIDs in database')
+
+    cfg = qc.Config()
+
+    try:
+        location = cfg['GUID_components']['location']
+    except KeyError:
+        log.warning('No location information found in the config. '
+                    'Can not proceed.')
+        return
+    try:
+        work_station = cfg['GUID_components']['work_station']
+    except KeyError:
+        log.warning('No work_station information found in the config. '
+                    'Can not proceed.')
+        return
+
+    if location == 0:
+        log.warning('The location is still set to the default (0). Can not '
+                    'proceed. Please configure the location before updating '
+                    'the GUIDs.')
+    if work_station == 0:
+        log.warning('The work_station is still set to the default (0). Can not'
+                    ' proceed. Please configure the location before updating '
+                    'the GUIDs.')
+
+    query = f"select MAX(run_id) from runs"
+    c = atomic_transaction(conn, query)
+    no_of_runs = c.fetchall()[0][0]
+
+    # now, there are four actions we can take
+
+    def _both_nonzero(run_id, *args):
+        log.info(f'Run number {run_id} already has a valid GUID, skipping.')
+
+    def _location_only_zero(run_id, *args):
+        log.warning(f'Run number {run_id} is has a zero (default) location '
+                    'code, but a non-zero work station code. Please manually '
+                    'resolve this, skipping the run now.')
+
+    def _workstation_only_zero(run_id, *args):
+        log.warning(f'Run number {run_id} is has a zero (default) work station'
+                    ' code, but a non-zero location code. Please manually '
+                    'resolve this, skipping the run now.')
+
+    def _both_zero(run_id, conn, guid_comps):
+        guid_str = generate_guid(timeint=guid_comps['time'],
+                                 sampleint=guid_comps['sample'])
+        with atomic(conn) as conn:
+            sql = f"""
+                   UPDATE runs
+                   SET guid = ?
+                   where run_id == {run_id}
+                   """
+            cur = conn.cursor()
+            cur.execute(sql, (guid_str,))
+
+        log.info(f'Succesfully updated run number {run_id}.')
+
+    actions = {(True, True): _both_zero,
+               (False, True): _workstation_only_zero,
+               (True, False): _location_only_zero,
+               (False, False): _both_nonzero}
+
+    for run_id in range(1, no_of_runs+1):
+        guid_str = get_guid_from_run_id(conn, run_id)
+        guid_comps = parse_guid(guid_str)
+        loc = guid_comps['location']
+        ws = guid_comps['work_station']
+
+        log.info(f'Updating run number {run_id}...')
+        actions[(loc == 0, ws == 0)](run_id, conn, guid_comps)
