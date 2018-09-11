@@ -663,7 +663,7 @@ def get_values(conn: sqlite3.Connection,
 
 def get_setpoints(conn: sqlite3.Connection,
                   table_name: str,
-                  param_name: str) -> List[List[List[Any]]]:
+                  param_name: str) -> Dict[str, List[List[Any]]]:
     """
     Get the setpoints for a given dependent parameter
 
@@ -716,7 +716,7 @@ def get_setpoints(conn: sqlite3.Connection,
     setpoint_names = cast(List[str], setpoint_names)
 
     # get the actual setpoint data
-    output = []
+    output: Dict[str, List[List[Any]]] = {}
     for sp_name in setpoint_names:
         sql = f"""
         SELECT {sp_name}
@@ -725,7 +725,7 @@ def get_setpoints(conn: sqlite3.Connection,
         """
         c = atomic_transaction(conn, sql)
         sps = many_many(c, sp_name)
-        output.append(sps)
+        output[sp_name] = sps
 
     return output
 

@@ -621,7 +621,7 @@ class DataSet(Sized):
 
         return values
 
-    def get_setpoints(self, param_name: str) -> List[List[Any]]:
+    def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
         """
         Get the setpoints for the specified parameter
 
