@@ -240,7 +240,7 @@ class Station(Metadatable, DelegateAttributes):
                 else:
                     raise e
             except FileNotFoundError:
-                log.warning('Could not load default config for Station: ' + 
+                log.warning('Could not load default config for Station: ' +
                             e.msg)
                 return
                     
