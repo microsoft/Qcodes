@@ -137,6 +137,14 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
 
 @contextmanager
 def default_config():
+    """
+    Context manager to temporarily establish default config settings.
+    This is achieved by overwritting the config paths of the user-,
+    environment-, and current directory-config files with the path of the
+    config file in the qcodes repository.
+    Additionally the current config object `qcodes.config` gets copied and
+    reestablished.
+    """
     default = qcodes.Config.default_file_name
     default_schema = qcodes.Config.schema_default_file_name
     home_file_name = qcodes.Config.home_file_name
