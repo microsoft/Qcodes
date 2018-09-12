@@ -210,8 +210,29 @@ class Output_325(InstrumentChannel):
         )
 
         self.add_parameter(
-            "output",
-            get_cmd="HTR?"
+            "ramp_state",
+            vals=Enum(0, 1),
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "ramp_rate",
+            vals=Numbers(0, 100/60),
+            unit="K/s",
+            parameter_class=GroupParameter,
+            get_parser=lambda v: v / 60,  # We get values in K/min,
+            set_parser=lambda v: v * 60   # Convert to K/min
+        )
+
+        Group(
+            [self.ramp_rate, self.ramp_rate],
+            set_cmd=f"RAMP {self._channel}, {{ramp_state}}, {{ramp_rate}}",
+            get_cmd=f"RAMP? {self._channel}"
+        )
+
+        self.add_parameter(
+            "is_ramping",
+            get_cmd=f"RAMPST? {self._channel}"
         )
 
 
