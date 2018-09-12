@@ -21,6 +21,8 @@ The database holds a number of ``Experiments`` that each holds a number of ``Dat
 Experiment
 ==========
 
+The intended use of the ``Experiment`` is to group ``DataSets`` that belong together. For example, an experiment may contain all the measurements necessary to characterise a particular sample (Is it superconducting? What is the critical current?). Once the goodness of the sample has been established, a new experiment containing all the "real" measurements can then commence. The grouping runs this way is offered as a convenience and is as such not essential for any functionality in QCoDeS.
+
 Each ``Experiment`` has the following attributes:
 
  * An experiment-ID
@@ -37,7 +39,6 @@ The **start time** is automatically added upon creation, and the **end time** is
 
 For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../_notebooks/DataSet/example-creation>`.
 
-The intended use of the ``Experiment`` is to group ``DataSets`` that belong together. For example, an experiment may contain all the measurements necessary to characterise a particular sample (Is it superconducting? What is the critical current?). Once the goodness of the sample has been established, a new experiment containing all the "real" measurements can then commence. The grouping runs this way is offered as a convenience and is as such not essential for any functionality in QCoDeS.
 
 .. _sec:intro_dataset:
 
