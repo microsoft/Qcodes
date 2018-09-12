@@ -1,11 +1,11 @@
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any
 
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes import Instrument
 
 
-class GroupParameter(_BaseParameter):
+class GroupParameter(Parameter):
     """
     Group parameter is a `Parameter` which value can be set or gotten only
     together with other group parameters. This happens when an instrument

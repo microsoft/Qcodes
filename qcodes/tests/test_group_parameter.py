@@ -14,13 +14,19 @@ class Dummy(Instrument):
         self.add_parameter(
             "a",
             get_parser=int,
-            parameter_class=GroupParameter
+            parameter_class=GroupParameter,
+            docstring="Some succinct description",
+            label="label",
+            unit="SI"
         )
 
         self.add_parameter(
             "b",
             get_parser=int,
-            parameter_class=GroupParameter
+            parameter_class=GroupParameter,
+            docstring="Some succinct description",
+            label="label",
+            unit="SI"
         )
 
         Group(
