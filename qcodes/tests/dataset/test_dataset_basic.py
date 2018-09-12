@@ -3,6 +3,7 @@ import tempfile
 import os
 from contextlib import contextmanager
 from copy import deepcopy
+import logging
 
 import pytest
 import numpy as np
@@ -392,7 +393,16 @@ def test_guid(dataset):
     parse_guid(guid)
 
 
-def test_update_existing_guids(empty_temp_db):
+def test_update_existing_guids(empty_temp_db, caplog):
+
+    old_loc = 101
+    old_ws = 1200
+
+    new_loc = 232
+    new_ws = 52123
+
+    # prepare five runs with different location and work station codes
+
     with location_and_station_set_to(0, 0):
         new_experiment('test', sample_name='test_sample')
 
@@ -403,7 +413,7 @@ def test_update_existing_guids(empty_temp_db):
 
         ds2 = new_data_set('ds_two')
         ds2.add_parameter(xparam)
-        ds2.add_result({'x': 1})
+        ds2.add_result({'x': 2})
 
         guid_comps_1 = parse_guid(ds1.guid)
         assert guid_comps_1['location'] == 0
@@ -413,11 +423,39 @@ def test_update_existing_guids(empty_temp_db):
         assert guid_comps_2['location'] == 0
         assert guid_comps_2['work_station'] == 0
 
-    new_loc = 23
-    new_ws = 52
+    with location_and_station_set_to(0, old_ws):
+        ds3 = new_data_set('ds_three')
+        xparam = ParamSpec('x', 'numeric')
+        ds3.add_parameter(xparam)
+        ds3.add_result({'x': 3})
+
+    with location_and_station_set_to(old_loc, 0):
+        ds4 = new_data_set('ds_four')
+        xparam = ParamSpec('x', 'numeric')
+        ds4.add_parameter(xparam)
+        ds4.add_result({'x': 4})
+
+    with location_and_station_set_to(old_loc, old_ws):
+        ds5 = new_data_set('ds_five')
+        xparam = ParamSpec('x', 'numeric')
+        ds5.add_parameter(xparam)
+        ds5.add_result({'x': 5})
 
     with location_and_station_set_to(new_loc, new_ws):
-        update_GUIDs(ds1.conn)
+
+        caplog.clear()
+        expected_levels = ['INFO',
+                           'INFO', 'INFO',
+                           'INFO', 'INFO',
+                           'INFO', 'WARNING',
+                           'INFO', 'WARNING',
+                           'INFO', 'INFO']
+
+        with caplog.at_level(logging.INFO):
+            update_GUIDs(ds1.conn)
+
+            for record, lvl in zip(caplog.records, expected_levels):
+                assert record.levelname == lvl
 
         guid_comps_1 = parse_guid(ds1.guid)
         assert guid_comps_1['location'] == new_loc
@@ -426,6 +464,18 @@ def test_update_existing_guids(empty_temp_db):
         guid_comps_2 = parse_guid(ds2.guid)
         assert guid_comps_2['location'] == new_loc
         assert guid_comps_2['work_station'] == new_ws
+
+        guid_comps_3 = parse_guid(ds3.guid)
+        assert guid_comps_3['location'] == 0
+        assert guid_comps_3['work_station'] == old_ws
+
+        guid_comps_4 = parse_guid(ds4.guid)
+        assert guid_comps_4['location'] == old_loc
+        assert guid_comps_4['work_station'] == 0
+
+        guid_comps_5 = parse_guid(ds5.guid)
+        assert guid_comps_5['location'] == old_loc
+        assert guid_comps_5['work_station'] == old_ws
 
 
 def test_perform_actual_upgrade_0_to_1():
