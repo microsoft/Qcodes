@@ -251,6 +251,9 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
           'newest version'
     """
 
+    # for each version key, there must be a tuple of the DB upgrades that
+    # are to be performed, i.e., 1 has (perform_db_upgrade_0_to_1,)
+    # 2 has (perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2) etc.
     upgrade_actions = {0: (lambda x: None,),
                        1: (perform_db_upgrade_0_to_1,)}
     newest_version = max(upgrade_actions.keys())
