@@ -111,8 +111,6 @@ class ConnectionPlus(wrapt.ObjectProxy):
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
-# this should really return sqlite3.Binary,
-#  but there seems to be a bug in mypy 0.590
 def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     """
     See this:
