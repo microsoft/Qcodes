@@ -1,4 +1,5 @@
 import re
+import pytest
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes import Instrument
@@ -64,3 +65,15 @@ def test_sanity():
     dummy.b(10)
     assert dummy.a() == 3
     assert dummy.b() == 10
+
+
+def test_raise_on_get_set_cmd():
+
+    for arg in ["set_cmd", "get_cmd"]:
+        kwarg = {arg: ""}
+
+        with pytest.raises(ValueError) as e:
+            GroupParameter(name="a", **kwarg)
+
+        assert str(e.value) == "A GroupParameter does not use 'set_cmd' or " \
+                               "'get_cmd' kwarg"

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import List, Union, Callable, Dict, Any
+from typing import List, Union, Callable, Dict, Any, Optional
 
 from qcodes.instrument.parameter import Parameter
 from qcodes import Instrument
@@ -27,9 +27,21 @@ class GroupParameter(Parameter):
         instrument
             instrument that this parameter belongs to; this instrument is
             used by the group to call its get and set commands
+
+        **kwargs:
+            All kwargs used by the Parameter class, except set_cmd and get_cmd
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
+    def __init__(
+            self, name: str,
+            instrument: Optional['Instrument'] = None,
+            **kwargs
+    ) -> None:
+
+        if "set_cmd" in kwargs or "get_cmd" in kwargs:
+            raise ValueError("A GroupParameter does not use 'set_cmd' or "
+                             "'get_cmd' kwarg")
+
         self.group: Union[Group, None] = None
         super().__init__(name, instrument=instrument, **kwargs)
 
