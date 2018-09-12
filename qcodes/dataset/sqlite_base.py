@@ -3,7 +3,7 @@ import logging
 import sqlite3
 import time
 import io
-from typing import Any, List, Optional, Tuple, Union, Dict, cast
+from typing import Any, List, Optional, Tuple, Union, Dict, cast, Callable
 import itertools
 
 from numbers import Number
@@ -1576,20 +1576,20 @@ def update_GUIDs(conn: SomeConnection) -> None:
 
     # now, there are four actions we can take
 
-    def _both_nonzero(run_id, *args):
+    def _both_nonzero(run_id: int, *args) -> None:
         log.info(f'Run number {run_id} already has a valid GUID, skipping.')
 
-    def _location_only_zero(run_id, *args):
+    def _location_only_zero(run_id: int, *args) -> None:
         log.warning(f'Run number {run_id} is has a zero (default) location '
                     'code, but a non-zero work station code. Please manually '
                     'resolve this, skipping the run now.')
 
-    def _workstation_only_zero(run_id, *args):
+    def _workstation_only_zero(run_id: int, *args) -> None:
         log.warning(f'Run number {run_id} is has a zero (default) work station'
                     ' code, but a non-zero location code. Please manually '
                     'resolve this, skipping the run now.')
 
-    def _both_zero(run_id, conn, guid_comps):
+    def _both_zero(run_id: int, conn, guid_comps) -> None:
         guid_str = generate_guid(timeint=guid_comps['time'],
                                  sampleint=guid_comps['sample'])
         with atomic(conn) as conn:
@@ -1603,6 +1603,7 @@ def update_GUIDs(conn: SomeConnection) -> None:
 
         log.info(f'Succesfully updated run number {run_id}.')
 
+    actions: Dict[Tuple[bool, bool], Callable]
     actions = {(True, True): _both_zero,
                (False, True): _workstation_only_zero,
                (True, False): _location_only_zero,
