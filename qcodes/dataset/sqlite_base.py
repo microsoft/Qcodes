@@ -1549,27 +1549,19 @@ def update_GUIDs(conn: SomeConnection) -> None:
 
     cfg = qc.Config()
 
-    try:
-        location = cfg['GUID_components']['location']
-    except KeyError:
-        log.warning('No location information found in the config. '
-                    'Can not proceed.')
-        return
-    try:
-        work_station = cfg['GUID_components']['work_station']
-    except KeyError:
-        log.warning('No work_station information found in the config. '
-                    'Can not proceed.')
-        return
+    location = cfg['GUID_components']['location']
+    work_station = cfg['GUID_components']['work_station']
 
     if location == 0:
         log.warning('The location is still set to the default (0). Can not '
                     'proceed. Please configure the location before updating '
                     'the GUIDs.')
+        return
     if work_station == 0:
         log.warning('The work_station is still set to the default (0). Can not'
                     ' proceed. Please configure the location before updating '
                     'the GUIDs.')
+        return
 
     query = f"select MAX(run_id) from runs"
     c = atomic_transaction(conn, query)
