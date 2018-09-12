@@ -1573,12 +1573,12 @@ def update_GUIDs(conn: SomeConnection) -> None:
         log.info(f'Run number {run_id} already has a valid GUID, skipping.')
 
     def _location_only_zero(run_id: int, *args) -> None:
-        log.warning(f'Run number {run_id} is has a zero (default) location '
+        log.warning(f'Run number {run_id} has a zero (default) location '
                     'code, but a non-zero work station code. Please manually '
                     'resolve this, skipping the run now.')
 
     def _workstation_only_zero(run_id: int, *args) -> None:
-        log.warning(f'Run number {run_id} is has a zero (default) work station'
+        log.warning(f'Run number {run_id} has a zero (default) work station'
                     ' code, but a non-zero location code. Please manually '
                     'resolve this, skipping the run now.')
 
