@@ -244,25 +244,22 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
     """
     This is intended to perform all upgrades as needed to bring the
     db from version 0 to the most current version (or the version specified).
-    All the perform_db_upgrade_X_to_Y functions most succeed or raise.
+    All the perform_db_upgrade_X_to_Y functions must raise if they cannot
+    upgrade and be a NOOP if the current version is higher than their target.
 
     Args:
         version: Which version to upgrade to. We count from 0. -1 means
           'newest version'
     """
 
-    # for each version key, there must be a tuple of the DB upgrades that
-    # are to be performed, i.e., 1 has (perform_db_upgrade_0_to_1,)
-    # 2 has (perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2) etc.
-    upgrade_actions = {0: (lambda x: None,),
-                       1: (perform_db_upgrade_0_to_1,)}
-    newest_version = max(upgrade_actions.keys())
+    upgrade_actions = [perform_db_upgrade_0_to_1]
+    newest_version = len(upgrade_actions)
     version = newest_version if version == -1 else version
 
     current_version = get_user_version(conn)
     if current_version < newest_version:
         log.info("Commencing database upgrade")
-        for action in upgrade_actions[version]:
+        for action in upgrade_actions[:version]:
             action(conn)
 
 
