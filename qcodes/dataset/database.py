@@ -38,7 +38,7 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
     Args:
         db_file_with_abs_path
             Database file name with absolute path, for example
-            "C:\mydata\majorana_experiments.db"
+            ``C:\\mydata\\majorana_experiments.db``
     """
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database()
