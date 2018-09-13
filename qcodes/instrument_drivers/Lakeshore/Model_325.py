@@ -5,9 +5,14 @@ from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
 
 
-class Model_325_Channel(InstrumentChannel):
+class Model_325_Sensor(InstrumentChannel):
     """
-    A single sensor channel of a temperature controller
+    A single sensor of a  Lakeshore 325.
+
+    Args:
+        parent (Model_325): The instrument this heater belongs to
+        name (str)
+        inp (str): Either "A" or "B"
     """
 
     sensor_status_codes = {
@@ -19,13 +24,17 @@ class Model_325_Channel(InstrumentChannel):
         128: "sensor units overrang"
     }
 
-    def __init__(self, parent: 'Model_325', name: str, channel: str) ->None:
+    def __init__(self, parent: 'Model_325', name: str, inp: str) ->None:
+
+        if inp not in ["A", "B"]:
+            raise ValueError("Please either specify input 'A' or 'B'")
+
         super().__init__(parent, name)
-        self._channel = channel
+        self._input = inp
 
         self.add_parameter(
             'temperature',
-            get_cmd='KRDG? {}'.format(self._channel),
+            get_cmd='KRDG? {}'.format(self._input),
             get_parser=float,
             label='Temerature',
             unit='K'
@@ -33,7 +42,7 @@ class Model_325_Channel(InstrumentChannel):
 
         self.add_parameter(
             'status',
-            get_cmd='RDGST? {}'.format(self._channel),
+            get_cmd='RDGST? {}'.format(self._input),
             get_parser=self.decode_sensor_status,
             label='Sensor_Status'
         )
@@ -43,9 +52,9 @@ class Model_325_Channel(InstrumentChannel):
             val_mapping={
                 "Silicon diode": 0,
                 "GaAlAs diode": 1,
-                "100 Ω platinum/250": 2,
-                "100 Ω platinum/500": 3,
-                "1000 Ω platinum": 4,
+                "100 Ohm platinum/250": 2,
+                "100 Ohm platinum/500": 3,
+                "1000 Ohm platinum": 4,
                 "NTC RTD": 5,
                 "Thermocouple 25mV": 6,
                 "Thermocouple 50 mV": 7,
@@ -63,8 +72,8 @@ class Model_325_Channel(InstrumentChannel):
 
         Group(
             [self.type, self.compensation],
-            set_cmd=f"INTYPE {self._channel}, {{type}}, {{compensation}}",
-            get_cmd=f"INTYPE? {self._channel}"
+            set_cmd=f"INTYPE {self._input}, {{type}}, {{compensation}}",
+            get_cmd=f"INTYPE? {self._input}"
         )
 
     def decode_sensor_status(self, sum_of_codes: int) ->str:
@@ -104,15 +113,27 @@ class Model_325_Channel(InstrumentChannel):
         return terms
 
 
-class Output_325(InstrumentChannel):
-    def __init__(self, parent: 'Model_325', name: str, channel: str) -> None:
+class Model_325_Heater(InstrumentChannel):
+    """
+    Heater control for the Lakeshore 325.
+
+    Args:
+        parent (Model_325): The instrument this heater belongs to
+        name (str)
+        loop (int): Either 1 or 2
+    """
+    def __init__(self, parent: 'Model_325', name: str, loop: int) -> None:
+
+        if loop not in [1, 2]:
+            raise ValueError("Please either specify loop 1 or 2")
+
         super().__init__(parent, name)
-        self._channel = channel
+        self._loop = loop
 
         self.add_parameter(
             "control_mode",
-            get_cmd=f"CMODE? {self._channel}",
-            set_cmd=f"CMODE {self._channel},{{}}",
+            get_cmd=f"CMODE? {self._loop}",
+            set_cmd=f"CMODE {self._loop},{{}}",
             val_mapping={
                 "Manual PID": "1",
                 "Zone": "2",
@@ -125,7 +146,7 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             "input_channel",
-            vals=Enum("A", "B", "a", "b"),
+            vals=Enum("A", "B"),
             parameter_class=GroupParameter
         )
 
@@ -159,9 +180,9 @@ class Output_325(InstrumentChannel):
         Group(
             [self.input_channel, self.unit, self.powerup_enable,
              self.output_metric],
-            set_cmd=f"CSET {self._channel}, {{input_channel}}, {{unit}}, "
+            set_cmd=f"CSET {self._loop}, {{input_channel}}, {{unit}}, "
                     f"{{powerup_enable}}, {{output_metric}}",
-            get_cmd=f"CSET? {self._channel}"
+            get_cmd=f"CSET? {self._loop}"
         )
 
         self.add_parameter(
@@ -187,11 +208,11 @@ class Output_325(InstrumentChannel):
 
         Group(
             [self.P, self.I, self.D],
-            set_cmd=f'PID {self._channel}, {{P}}, {{I}}, {{D}}',
-            get_cmd=f'PID? {self._channel}'
+            set_cmd=f'PID {self._loop}, {{P}}, {{I}}, {{D}}',
+            get_cmd=f'PID? {self._loop}'
         )
 
-        if self._channel == 0:
+        if self._loop == 1:
             valid_output_ranges = Enum(0, 1, 2)
         else:
             valid_output_ranges = Enum(0, 1)
@@ -199,8 +220,8 @@ class Output_325(InstrumentChannel):
         self.add_parameter(
             'output_range',
             vals=valid_output_ranges,
-            set_cmd=f'RANGE {self._channel}, {{}}',
-            get_cmd=f'RANGE? {self._channel}',
+            set_cmd=f'RANGE {self._loop}, {{}}',
+            get_cmd=f'RANGE? {self._loop}',
             val_mapping={
                 "Off": '0',
                 "Low (2.5W)": '1',
@@ -212,8 +233,8 @@ class Output_325(InstrumentChannel):
             'setpoint',
             vals=Numbers(0, 400),
             get_parser=float,
-            set_cmd=f'SETP {self._channel}, {{}}',
-            get_cmd=f'SETP? {self._channel}'
+            set_cmd=f'SETP {self._loop}, {{}}',
+            get_cmd=f'SETP? {self._loop}'
         )
 
         self.add_parameter(
@@ -233,47 +254,44 @@ class Output_325(InstrumentChannel):
 
         Group(
             [self.ramp_state, self.ramp_rate],
-            set_cmd=f"RAMP {self._channel}, {{ramp_state}}, {{ramp_rate}}",
-            get_cmd=f"RAMP? {self._channel}"
+            set_cmd=f"RAMP {self._loop}, {{ramp_state}}, {{ramp_rate}}",
+            get_cmd=f"RAMP? {self._loop}"
         )
 
         self.add_parameter(
             "is_ramping",
-            get_cmd=f"RAMPST? {self._channel}"
+            get_cmd=f"RAMPST? {self._loop}"
         )
 
 
 class Model_325(VisaInstrument):
     """
-    Lakeshore Model 331 Temperature Controller Driver
-    Controlled via sockets
+    Lakeshore Model 325 Temperature Controller Driver
     """
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
-        input_channels = ChannelList(self, "thermometer", Model_325_Channel,
-                                     snapshotable=False)
+        sensors = ChannelList(
+            self, "sensor", Model_325_Sensor, snapshotable=False)
 
-        for chan_name in ['a', 'b']:
-            channel = Model_325_Channel(self, 'sensor_{}'.format(chan_name),
-                                        chan_name)
-            input_channels.append(channel)
-            self.add_submodule('sensor_{}'.format(chan_name), channel)
+        for inp in ['A', 'B']:
+            sensor = Model_325_Sensor(self, 'sensor_{}'.format(inp), inp)
+            sensors.append(sensor)
+            self.add_submodule('sensor_{}'.format(inp), sensor)
 
-        input_channels.lock()
-        self.add_submodule("sensor", input_channels)
+        sensors.lock()
+        self.add_submodule("sensor", sensors)
 
-        output_channels = ChannelList(self, "heater", Output_325,
-                                      snapshotable=False)
+        heaters = ChannelList(
+            self, "heater", Model_325_Heater, snapshotable=False)
 
-        for chan_name in ["1", "2"]:
-            channel = Output_325(self, 'heater_{}'.format(chan_name),
-                                 chan_name)
-            output_channels.append(channel)
-            self.add_submodule('heater_{}'.format(chan_name), channel)
+        for loop in [1, 2]:
+            heater = Model_325_Heater(self, 'heater_{}'.format(loop), loop)
+            heaters.append(heater)
+            self.add_submodule('heater_{}'.format(loop), heater)
 
-        output_channels.lock()
-        self.add_submodule("heater", output_channels)
+        heaters.lock()
+        self.add_submodule("heater", heaters)
 
         self.connect_message()
