@@ -19,7 +19,7 @@ class Model_325_Channel(InstrumentChannel):
         128: "sensor units overrang"
     }
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: 'Model_325', name: str, channel: str) ->None:
         super().__init__(parent, name)
         self._channel = channel
 
@@ -67,13 +67,20 @@ class Model_325_Channel(InstrumentChannel):
             get_cmd=f"INTYPE? {self._channel}"
         )
 
-    def decode_sensor_status(self, sum_of_codes):
+    def decode_sensor_status(self, sum_of_codes: int) ->str:
+        """
+        The sensor status is one of the status codes, or a sum thereof. Multiple
+        status are possible as they are not necessarily mutually exclusive.
+
+        args:
+            sum_of_codes (int)
+        """
         components = list(self.sensor_status_codes.keys())
         codes = self._get_sum_terms(components, int(sum_of_codes))
         return ", ".join([self.sensor_status_codes[k] for k in codes])
 
     @staticmethod
-    def _get_sum_terms(components, number):
+    def _get_sum_terms(components: list, number: int):
         """
         Example:
         >>> components = [0, 1, 16, 32, 64, 128]
@@ -98,7 +105,7 @@ class Model_325_Channel(InstrumentChannel):
 
 
 class Output_325(InstrumentChannel):
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: 'Model_325', name: str, channel: str) -> None:
         super().__init__(parent, name)
         self._channel = channel
 
@@ -127,7 +134,7 @@ class Output_325(InstrumentChannel):
             vals=Enum("Kelvin", "Celsius", "Sensor Units"),
             val_mapping={
                 "Kelvin": "1",
-                "Celcius": "2",
+                "Celsius": "2",
                 "Sensor Units": "3"
             },
             parameter_class=GroupParameter
@@ -217,15 +224,15 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             "ramp_rate",
-            vals=Numbers(0, 100/60),
-            unit="K/s",
+            vals=Numbers(0, 100 / 60 * 1E3),
+            unit="mK/s",
             parameter_class=GroupParameter,
-            get_parser=lambda v: v / 60,  # We get values in K/min,
-            set_parser=lambda v: v * 60   # Convert to K/min
+            get_parser=lambda v: float(v) / 60 * 1E3,  # We get values in K/min,
+            set_parser=lambda v: v * 60 * 1E-3  # Convert to K/min
         )
 
         Group(
-            [self.ramp_rate, self.ramp_rate],
+            [self.ramp_state, self.ramp_rate],
             set_cmd=f"RAMP {self._channel}, {{ramp_state}}, {{ramp_rate}}",
             get_cmd=f"RAMP? {self._channel}"
         )
@@ -242,7 +249,7 @@ class Model_325(VisaInstrument):
     Controlled via sockets
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
         input_channels = ChannelList(self, "thermometer", Model_325_Channel,
