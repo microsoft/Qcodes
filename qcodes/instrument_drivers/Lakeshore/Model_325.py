@@ -1,8 +1,101 @@
 import numpy as np
+from typing import cast
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
+
+
+class Model_325_Curve(InstrumentChannel):
+
+    def __init__(self, parent: 'Model_325', index: int):
+
+        self._index = index
+        name = f"curve_{index}"
+        super().__init__(parent, name)
+
+        self.add_parameter(
+            "serial_number",
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "format",
+            vals=Enum(1, 2, 3, 4),
+            val_mapping={
+                "mV/K": 1,
+                "V/K": 2,
+                "Ohm/K": 3,
+                "log Ohm/K": 4
+            },
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "limit_value",
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "coefficient",
+            vals=Enum(1, 2),
+            val_mapping={
+                "negative": 1,
+                "positive": 2
+            },
+            parameter_class=GroupParameter
+        )
+
+        Group(
+            [
+                self.serial_number, self.format, self.limit_value,
+                self.coefficient
+            ],
+            set_cmd=f"CRVHDR {self._index}, {self.short_name} "
+                    f"{{serial_number}}, {{format}}, {{limit_value}}, "
+                    f"{{coefficient}}",
+            get_cmd=f"CRVHDR? {self.curve_number}"
+        )
+
+    def get_data(self) -> dict:
+        curve = [
+            float(a) for point_index in range(1, 200)
+            for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
+        ]
+
+        d = {"Temperature (K)": curve[1::2]}
+        sensor_unit = self.format().split("/")[0]
+        d[sensor_unit] = curve[::2]
+
+        return d
+
+    def set_data(self, curve: dict) ->None:
+
+        temperature_values = curve["Temperature (K)"]
+        sensor_unit = set(curve.keys()).difference({"Temperature (K)"})
+
+        if len(sensor_unit) != 1:
+            raise ValueError("Curve dictionary should have one key, other "
+                             "then 'Temperature (K)'")
+
+        sensor_unit = list(sensor_unit)[0]
+        valid_sensor_units = [
+            k.split("/")[0] for k in self.format.val_mapping.keys()]
+
+        if sensor_unit not in valid_sensor_units:
+            raise ValueError(f"Sensor unit {sensor_unit} invalid. This needs "
+                             f"to be one of {','.join(valid_sensor_units)}")
+
+        self.format(f"{sensor_unit}/K")
+        sensor_values = curve[sensor_unit]
+
+        for index, (temperature_value, sensor_value) in \
+                enumerate(zip(temperature_values, sensor_values)):
+
+            cmd_str = f"CRVHDR {self.curve_number}, {index}, {sensor_value}, " \
+                      f"{temperature_value}"
+
+            self.write(cmd_str)
 
 
 class Model_325_Sensor(InstrumentChannel):
@@ -76,6 +169,12 @@ class Model_325_Sensor(InstrumentChannel):
             get_cmd=f"INTYPE? {self._input}"
         )
 
+        self.add_parameter(
+            "curve_index",
+            set_cmd=f"INCRV {self._input} {{}}",
+            get_cmd=f"INCRV? {self._input}"
+        )
+
     def decode_sensor_status(self, sum_of_codes: int) ->str:
         """
         The sensor status is one of the status codes, or a sum thereof. Multiple
@@ -111,6 +210,11 @@ class Model_325_Sensor(InstrumentChannel):
                 comp = comp[comp <= number]
 
         return terms
+
+    #@property
+    def curve(self) ->Model_325_Curve:
+        parent = cast(Model_325, self.parent)
+        return Model_325_Curve(parent, self.curve_index())
 
 
 class Model_325_Heater(InstrumentChannel):
