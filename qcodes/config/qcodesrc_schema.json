@@ -127,7 +127,28 @@
                 }
             },
             "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
+        },
+        "GUID_components":{
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Geographical location code"
+                },
+                "work_station": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Work station identification code"
+                },
+                "sample": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Sample identification code"
+            }
+        },
+        "description": "Identifiers for creating a GUID per run in the dataset database."
         }
-       },
-    "required":[ "gui", "core"]
+    },
+    "required":[ "gui", "core", "GUID_components"]
 }

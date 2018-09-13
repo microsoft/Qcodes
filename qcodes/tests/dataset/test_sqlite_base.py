@@ -12,6 +12,7 @@ import unicodedata
 
 import qcodes as qc
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
+from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.database import initialise_database
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -47,7 +48,7 @@ def test_atomic_transaction_raises(experiment):
 
     bad_sql = '""'
 
-    with pytest.raises(OperationalError):
+    with pytest.raises(RuntimeError):
         mut.atomic_transaction(conn, bad_sql)
 
 
@@ -96,6 +97,7 @@ def test_get_dependents(experiment):
     (_, run_id, _) = mut.create_run(experiment.conn,
                                     experiment.exp_id,
                                     name='testrun',
+                                    guid=generate_guid(),
                                     parameters=[x, t, y])
 
     deps = mut.get_dependents(experiment.conn, run_id)
@@ -114,6 +116,7 @@ def test_get_dependents(experiment):
     (_, run_id, _) = mut.create_run(experiment.conn,
                                     experiment.exp_id,
                                     name='testrun',
+                                    guid=generate_guid(),
                                     parameters=[x, t, x_raw,
                                                 x_cooked, y, z])
 
