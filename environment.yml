@@ -22,6 +22,6 @@ dependencies:
  - lxml
  - scipy
  - ruamel_yaml
- - pyvisa=1.9
+ - pyvisa=1.8
  - pip:
     - websockets>=3.2
