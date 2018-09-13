@@ -106,7 +106,7 @@ def set_guid_work_station_code() -> None:
     cfg = Config()
     old_ws = cfg['GUID_components']['work_station']
     print('Updating GUID work station code. '
-          'Current work station code is: {old_ws}')
+          f'Current work station code is: {old_ws}')
     if old_ws != 0:
         print('That is a non-default work station code. Perhaps you should not'
               ' change it? Re-enter that code to leave it unchanged.')
