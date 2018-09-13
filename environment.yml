@@ -1,6 +1,7 @@
 name: qcodes
 channels: 
  - defaults
+ - conda-forge
 dependencies:
  - h5py
  - matplotlib=2.2.3
@@ -21,6 +22,6 @@ dependencies:
  - lxml
  - scipy
  - ruamel_yaml
+ - pyvisa=1.9
  - pip:
-    - pyvisa
     - websockets>=3.2
