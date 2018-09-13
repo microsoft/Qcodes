@@ -31,8 +31,6 @@ before_script: # configure a headless display to test plot generation
     - sleep 3 # give xvfb some time to start
 
 script:
-    # make the config file acceptable so that qcodes can be imported
-    - python qcodes/tests/setup_config.py
     - |
       cd qcodes
       py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
