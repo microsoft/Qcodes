@@ -10,7 +10,7 @@ dependencies:
  - QtPy
  - sip
  - pyqt=5.9.2
- - numpy=1.14.3
+ - numpy=1.15
  - jupyter=1.0.0
  - hypothesis
  - pytest
@@ -20,5 +20,7 @@ dependencies:
  - pyyaml
  - lxml
  - scipy
+ - ruamel_yaml
  - pip:
     - pyvisa
+    - websockets>=3.2
