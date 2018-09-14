@@ -67,6 +67,7 @@ class FrequencySweep(ArrayParameter):
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
         data = self._instrument._get_averaged_sweep_data()
+        sleep(0.2)
         return data
 
 
@@ -529,6 +530,7 @@ class SignalHound_USB_SA124B(Instrument):
             self.span(original_span)
             self.rbw(original_rbw)
             self._prepare_measurment()
+        sleep(0.2)
         return max_power
 
     def safe_reload(self):
