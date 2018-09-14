@@ -46,15 +46,20 @@ class Model_325_Curve(InstrumentChannel):
             parameter_class=GroupParameter
         )
 
+        self.add_parameter(
+            "curve_name",
+            parameter_class=GroupParameter
+        )
+
         Group(
             [
-                self.serial_number, self.format, self.limit_value,
-                self.coefficient
+                self.curve_name, self.serial_number, self.format,
+                self.limit_value, self.coefficient
             ],
-            set_cmd=f"CRVHDR {self._index}, {self.short_name} "
+            set_cmd=f"CRVHDR {self._index}, {{curve_name}} "
                     f"{{serial_number}}, {{format}}, {{limit_value}}, "
                     f"{{coefficient}}",
-            get_cmd=f"CRVHDR? {self.curve_number}"
+            get_cmd=f"CRVHDR? {self._index}"
         )
 
     def get_data(self) -> dict:
@@ -89,10 +94,10 @@ class Model_325_Curve(InstrumentChannel):
         self.format(f"{sensor_unit}/K")
         sensor_values = curve[sensor_unit]
 
-        for index, (temperature_value, sensor_value) in \
+        for value_index, (temperature_value, sensor_value) in \
                 enumerate(zip(temperature_values, sensor_values)):
 
-            cmd_str = f"CRVHDR {self.curve_number}, {index}, {sensor_value}, " \
+            cmd_str = f"CRVHDR {self._index}, {value_index}, {sensor_value}, " \
                       f"{temperature_value}"
 
             self.write(cmd_str)
@@ -172,7 +177,8 @@ class Model_325_Sensor(InstrumentChannel):
         self.add_parameter(
             "curve_index",
             set_cmd=f"INCRV {self._input} {{}}",
-            get_cmd=f"INCRV? {self._input}"
+            get_cmd=f"INCRV? {self._input}",
+            get_parser=int
         )
 
     def decode_sensor_status(self, sum_of_codes: int) ->str:
@@ -211,10 +217,10 @@ class Model_325_Sensor(InstrumentChannel):
 
         return terms
 
-    #@property
+    @property
     def curve(self) ->Model_325_Curve:
         parent = cast(Model_325, self.parent)
-        return Model_325_Curve(parent, self.curve_index())
+        return Model_325_Curve(parent,  self.curve_index())
 
 
 class Model_325_Heater(InstrumentChannel):
