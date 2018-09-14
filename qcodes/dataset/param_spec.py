@@ -60,29 +60,24 @@ class ParamSpec:
 
     def add_inferred_from(
             self,
-            inferred_from: Sequence[Union['ParamSpec', str]]
-    ) -> None:
+            inferred_from: Sequence[Union['ParamSpec', str]]) -> None:
         """
         Args:
             inferred_from: the parameters that this parameter is inferred_from
         """
         self._inferred_from.extend(
             p.name if isinstance(p, ParamSpec) else p
-            for p in inferred_from
-        )
+            for p in inferred_from)
 
-    def add_depends_on(
-            self,
-            depends_on: Sequence[Union['ParamSpec', str]]
-    ) -> None:
+    def add_depends_on(self,
+                       depends_on: Sequence[Union['ParamSpec', str]]) -> None:
         """
         Args:
             depends_on: the parameters that this parameter depends on
         """
         self._depends_on.extend(
             p.name if isinstance(p, ParamSpec) else p
-            for p in depends_on
-        )
+            for p in depends_on)
 
     def copy(self) -> 'ParamSpec':
         """
@@ -94,8 +89,7 @@ class ParamSpec:
             self.label,
             self.unit,
             self._inferred_from,
-            self._depends_on
-        )
+            self._depends_on)
 
     def sql_repr(self):
         return f"{self.name} {self.type}"
