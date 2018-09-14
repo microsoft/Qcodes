@@ -391,11 +391,12 @@ def test_warning_increased_max_ramp_rate():
     target_ramp_rate = max_ramp_rate + 0.01
 
     with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
-        AMI430_VISA("testing_increased_max_ramp_rate",
-                    address='GPIB::4::65535::INSTR', visalib=visalib,
-                    terminator='\n', port=1,
-                    current_ramp_limit=target_ramp_rate)
+        inst = AMI430_VISA("testing_increased_max_ramp_rate",
+                           address='GPIB::4::65535::INSTR', visalib=visalib,
+                           terminator='\n', port=1,
+                           current_ramp_limit=target_ramp_rate)
         assert len(excinfo) >= 1 # Check we at least one warning.
+        inst.close()
 
 
 def test_ramp_rate_exception(current_driver):
@@ -413,4 +414,27 @@ def test_ramp_rate_exception(current_driver):
         errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
 
         assert errmsg in excinfo.value.args[0]
+
+
+def test_blocking_ramp_parameter(current_driver, caplog):
+
+    assert current_driver.block_during_ramp() == True
+
+    log_name = 'qcodes.instrument_drivers.american_magnetics.AMI430'
+
+    with caplog.at_level(logging.DEBUG, logger=log_name):
+        current_driver.cartesian((0, 0, 0))
+        caplog.clear()
+        current_driver.cartesian((0, 0, 1))
+
+        messages = [record.message for record in caplog.records]
+        assert messages[-1] == 'Finished blocking ramp'
+        assert messages[-6] == 'Starting blocking ramp of z to 1'
+
+        caplog.clear()
+        current_driver.block_during_ramp(False)
+        current_driver.cartesian((0, 0, 0))
+        messages = [record.message for record in caplog.records]
+
+        assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
 

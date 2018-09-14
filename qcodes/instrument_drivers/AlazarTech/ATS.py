@@ -648,6 +648,7 @@ class AlazarTech_ATS(Instrument):
             Whatever is given by acquisition_controller.post_acquire method
         """
         # region set parameters from args
+        start_func = time.perf_counter()
         if self._parameters_synced == False:
             raise RuntimeError("You must sync parameters to Alazar card "
                                "before calling acquire by calling "
@@ -678,9 +679,6 @@ class AlazarTech_ATS(Instrument):
 
         # -----set final configurations-----
 
-        # Abort any previous measurement
-        self._call_dll('AlazarAbortAsyncRead', self._handle)
-
         buffers_per_acquisition = self._get_raw_or_bytes(self.buffers_per_acquisition)
         samples_per_record = self._get_raw_or_bytes(self.samples_per_record)
         records_per_buffer = self._get_raw_or_bytes(self.records_per_buffer)
@@ -691,7 +689,6 @@ class AlazarTech_ATS(Instrument):
             self._call_dll('AlazarSetRecordSize',
                            self._handle, pretriggersize,
                            post_trigger_size)
-
         # set acquisition parameters here for NPT, TS mode
         samples_per_buffer = 0
 
@@ -711,7 +708,6 @@ class AlazarTech_ATS(Instrument):
                            self._get_raw_or_bytes(self.transfer_offset), samples_per_record,
                            records_per_buffer, records_per_acquisition,
                            acquire_flags)
-
         elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
                 logger.warning('buffers_per_acquisition is not a divisor of '
@@ -804,10 +800,9 @@ class AlazarTech_ATS(Instrument):
 
             # -----start capture here-----
             acquisition_controller.pre_start_capture()
-            start = time.clock()  # Keep track of when acquisition started
+            start = time.perf_counter()  # Keep track of when acquisition started
             # call the startcapture method
             self._call_dll('AlazarStartCapture', self._handle)
-
             acquisition_controller.pre_acquire()
 
             # buffer handling from acquisition
@@ -816,7 +811,7 @@ class AlazarTech_ATS(Instrument):
             buffer_timeout = self._get_raw_or_bytes(self.buffer_timeout)
             self._set_updated_if_alazar_parameter(self.buffer_timeout)
 
-            done_setup = time.clock()
+            done_setup = time.perf_counter()
             while (buffers_completed < self.buffers_per_acquisition.get()):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
@@ -824,10 +819,7 @@ class AlazarTech_ATS(Instrument):
                 self._call_dll('AlazarWaitAsyncBufferComplete',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
 
-                # TODO(damazter) (C) last series of buffers must be handled
-                # exceptionally
-                # (and I want to test the difference) by changing buffer
-                # recycling for the last series of buffers
+                acquisition_controller.buffer_done_callback(buffers_completed)
 
                 # if buffers must be recycled, extract data and repost them
                 # otherwise continue to next buffer
@@ -839,19 +831,19 @@ class AlazarTech_ATS(Instrument):
                 bytes_transferred += buf.size_bytes
         finally:
             # stop measurement here
-            done_capture = time.clock()
+            done_capture = time.perf_counter()
             self._call_dll('AlazarAbortAsyncRead', self._handle)
-        time_done_abort = time.clock()
+        time_done_abort = time.perf_counter()
         # -----cleanup here-----
         # extract data if not yet done
         if not buffer_recycling:
             for i, buf in enumerate(self.buffer_list):
                 acquisition_controller.handle_buffer(buf.buffer, i)
-        time_done_handling = time.clock()
+        time_done_handling = time.perf_counter()
         # free up memory
         self.clear_buffers()
 
-        time_done_free_mem = time.clock()
+        time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
         for name, p in self.parameters.items():
@@ -865,8 +857,10 @@ class AlazarTech_ATS(Instrument):
 
 
         # Compute the total transfer time, and display performance information.
-        end_time = time.clock()
+        end_time = time.perf_counter()
+        tot_time = end_time - start_func
         transfer_time_sec = end_time - start
+        presetup_time = start - start_func
         setup_time = done_setup - start
         capture_time = done_capture - done_setup
         abort_time = time_done_abort - done_capture
@@ -887,11 +881,14 @@ class AlazarTech_ATS(Instrument):
                          (records_per_buffer * buffers_completed, records_per_sec))
             logger.debug("Transferred {:g} bytes ({:g} "
                          "bytes per sec)".format(bytes_transferred, bytes_per_sec))
+            logger.debug("Pre setup took {}".format(presetup_time))
             logger.debug("Pre capture setup took {}".format(setup_time))
             logger.debug("Capture took {}".format(capture_time))
             logger.debug("abort took {}".format(abort_time))
             logger.debug("handling took {}".format(handling_time))
             logger.debug("free mem took {}".format(free_mem_time))
+            logger.debug("tot acquire time is {}".format(tot_time))
+
         # return result
         return acquisition_controller.post_acquire()
 
@@ -1227,3 +1224,16 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
+
+    def buffer_done_callback(self, buffers_completed):
+        """
+        This method is called when a buffer is completed. It can be used
+        if you want to implement an event that happens for each buffer.
+        You will probably want to combine this with `AUX_IN_TRIGGER_ENABLE` to wait
+        before starting capture of the next buffer.
+
+        Args:
+            buffers_completed: how many buffers have been completed and copied
+            to local memory at the time of this callback.
+        """
+        pass
