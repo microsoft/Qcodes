@@ -98,4 +98,6 @@ class ParamSpec:
         return f"{self.name} {self.type}"
 
     def __repr__(self):
-        return f"{self.name} ({self.type})"
+        return (f"ParamSpec('{self.name}', '{self.type}', '{self.label}', "
+                f"'{self.unit}', inferred_from={self._inferred_from}, "
+                f"depends_on={self._depends_on})")
