@@ -1,5 +1,5 @@
 name: qcodes
-channels: 
+channels:
  - defaults
 dependencies:
  - h5py
@@ -17,6 +17,7 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - wrapt
  - pyyaml
  - lxml
  - scipy
