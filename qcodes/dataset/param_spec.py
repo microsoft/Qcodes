@@ -6,6 +6,9 @@ from typing import Union, Sequence, List
 # we only support the types in VALUES type, that is:
 # str, Number, List, ndarray, bool
 class ParamSpec:
+
+    version = 0  # used by the dependencies module when writing to file
+
     def __init__(self, name: str,
                  paramtype: str,
                  label: str = None,
