@@ -8,6 +8,8 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 
 class Model_325_Curve(InstrumentChannel):
 
+    valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
+
     def __init__(self, parent: 'Model_325', index: int):
 
         self._index = index
@@ -23,10 +25,7 @@ class Model_325_Curve(InstrumentChannel):
             "format",
             vals=Enum(1, 2, 3, 4),
             val_mapping={
-                "mV/K": 1,
-                "V/K": 2,
-                "Ohm/K": 3,
-                "log Ohm/K": 4
+                f"{unt}/K": i+1 for i, unt in enumerate(self.valid_sensor_units)
             },
             parameter_class=GroupParameter
         )
@@ -74,25 +73,53 @@ class Model_325_Curve(InstrumentChannel):
 
         return d
 
-    def set_data(self, curve: dict) ->None:
+    @classmethod
+    def validate_datadict(cls, data_dict: dict) -> str:
+        """
+        A data dict has two keys, one of which is `Temperature (K)'. The other
+        contains the units in which the curve is defined and must be one of:
+            * "mV",
+            * "V",
+            * "Ohm",
+            * "log Ohm"
 
-        temperature_values = curve["Temperature (K)"]
-        sensor_unit = set(curve.keys()).difference({"Temperature (K)"})
+        This method validates this and returns the sensor unit encountered in
+        the data dict
+        """
+
+        sensor_unit = set(data_dict.keys()).difference({"Temperature (K)"})
 
         if len(sensor_unit) != 1:
-            raise ValueError("Curve dictionary should have one key, other "
-                             "then 'Temperature (K)'")
+            raise ValueError(
+                "Curve dictionary should have one key, other then "
+                "'Temperature (K)'"
+            )
 
         sensor_unit = list(sensor_unit)[0]
-        valid_sensor_units = [
-            k.split("/")[0] for k in self.format.val_mapping.keys()]
 
-        if sensor_unit not in valid_sensor_units:
-            raise ValueError(f"Sensor unit {sensor_unit} invalid. This needs "
-                             f"to be one of {','.join(valid_sensor_units)}")
+        if sensor_unit not in cls.valid_sensor_units:
+            raise ValueError(
+                f"Sensor unit {sensor_unit} invalid. This needs to be one of "
+                f"{', '.join(cls.valid_sensor_units)}"
+            )
 
-        self.format(f"{sensor_unit}/K")
-        sensor_values = curve[sensor_unit]
+        return sensor_unit
+
+    def set_data(self, data_dict: dict, sensor_unit: str=None) ->None:
+        """
+        Set the curve data according to the values found the the dictionary.
+
+        Args:
+            data_dict (dict): See `validate_datadict` to see the format of this
+                                dictionary
+            sensor_unit (str): If None, the data dict is validated and the
+                                units are extracted.
+        """
+        if sensor_unit is None:
+            sensor_unit = self.validate_datadict(data_dict)
+
+        temperature_values = data_dict["Temperature (K)"]
+        sensor_values = data_dict[sensor_unit]
 
         for value_index, (temperature_value, sensor_value) in \
                 enumerate(zip(temperature_values, sensor_values)):
@@ -178,7 +205,8 @@ class Model_325_Sensor(InstrumentChannel):
             "curve_index",
             set_cmd=f"INCRV {self._input} {{}}",
             get_cmd=f"INCRV? {self._input}",
-            get_parser=int
+            get_parser=int,
+            vals=Numbers(min_value=1, max_value=35)
         )
 
     def decode_sensor_status(self, sum_of_codes: int) ->str:
@@ -404,4 +432,38 @@ class Model_325(VisaInstrument):
         heaters.lock()
         self.add_submodule("heater", heaters)
 
+        curves = ChannelList(
+            self, "curve", Model_325_Curve, snapshotable=False
+        )
+
+        for curve_index in range(1, 35):
+            curve = Model_325_Curve(self, curve_index)
+            curves.append(curve)
+
+        self.add_submodule("curve", curves)
+
         self.connect_message()
+
+    def upload_curve(
+            self, index: int, name: str, serial_number: str, data_dict: dict
+    ) -> None:
+        """
+        Upload a curve to the given index
+
+        Args:
+             index (int): The index to upload the curve to. We can only use
+                            indices reserved for user defined curves, 21-35
+             name (str)
+             serial_number (str)
+             data_dict (dict): A dictionary containing the curve data
+        """
+        if index not in range(21, 36):
+            raise ValueError("index value should be between 21 and 35")
+
+        sensor_unit = Model_325_Curve.validate_datadict(data_dict)
+
+        curve = self.curve[index]
+        curve.curve_name(name)
+        curve.serial_number(serial_number)
+        curve.format(f"{sensor_unit}/K")
+        curve.set_data(data_dict, sensor_unit=sensor_unit)
