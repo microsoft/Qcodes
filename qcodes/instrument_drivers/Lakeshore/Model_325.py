@@ -9,6 +9,7 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 class Model_325_Curve(InstrumentChannel):
 
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
+    temperature_key = "Temperature (K)"
 
     def __init__(self, parent: 'Model_325', index: int):
 
@@ -55,7 +56,7 @@ class Model_325_Curve(InstrumentChannel):
                 self.curve_name, self.serial_number, self.format,
                 self.limit_value, self.coefficient
             ],
-            set_cmd=f"CRVHDR {self._index}, {{curve_name}} "
+            set_cmd=f"CRVHDR {self._index}, {{curve_name}}, "
                     f"{{serial_number}}, {{format}}, {{limit_value}}, "
                     f"{{coefficient}}",
             get_cmd=f"CRVHDR? {self._index}"
@@ -67,7 +68,7 @@ class Model_325_Curve(InstrumentChannel):
             for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
         ]
 
-        d = {"Temperature (K)": curve[1::2]}
+        d = {self.temperature_key: curve[1::2]}
         sensor_unit = self.format().split("/")[0]
         d[sensor_unit] = curve[::2]
 
@@ -86,22 +87,31 @@ class Model_325_Curve(InstrumentChannel):
         This method validates this and returns the sensor unit encountered in
         the data dict
         """
+        if cls.temperature_key not in data_dict:
+            raise ValueError(f"At least {cls.temperature_key} needed in the "
+                             f"data dictionary")
 
-        sensor_unit = set(data_dict.keys()).difference({"Temperature (K)"})
+        sensor_unit = [i for i in data_dict.keys() if i != cls.temperature_key]
 
         if len(sensor_unit) != 1:
             raise ValueError(
-                "Curve dictionary should have one key, other then "
+                "Data dictionary should have one other key, other then "
                 "'Temperature (K)'"
             )
 
-        sensor_unit = list(sensor_unit)[0]
+        sensor_unit = sensor_unit[0]
 
         if sensor_unit not in cls.valid_sensor_units:
             raise ValueError(
                 f"Sensor unit {sensor_unit} invalid. This needs to be one of "
                 f"{', '.join(cls.valid_sensor_units)}"
             )
+
+        data_size = len(data_dict[cls.temperature_key])
+        if data_size != len(data_dict[sensor_unit]) or data_size > 200:
+            raise ValueError("The length of the temperature axis should be "
+                             "the same as the length of the sensor axis and "
+                             "should not exceed 200 in size")
 
         return sensor_unit
 
@@ -118,14 +128,14 @@ class Model_325_Curve(InstrumentChannel):
         if sensor_unit is None:
             sensor_unit = self.validate_datadict(data_dict)
 
-        temperature_values = data_dict["Temperature (K)"]
+        temperature_values = data_dict[self.temperature_key]
         sensor_values = data_dict[sensor_unit]
 
         for value_index, (temperature_value, sensor_value) in \
                 enumerate(zip(temperature_values, sensor_values)):
 
-            cmd_str = f"CRVHDR {self._index}, {value_index}, {sensor_value}, " \
-                      f"{temperature_value}"
+            cmd_str = f"CRVPT {self._index}, {value_index + 1}, " \
+                      f"{sensor_value:3.3}, {temperature_value:3.3}"
 
             self.write(cmd_str)
 
