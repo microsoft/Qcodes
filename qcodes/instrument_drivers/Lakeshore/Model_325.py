@@ -77,9 +77,9 @@ class Model_325_Curve(InstrumentChannel):
     @classmethod
     def validate_datadict(cls, data_dict: dict) -> str:
         """
-        A data dict has two keys, one of which is `Temperature (K)'. The other
+        A data dict has two keys, one of which is 'Temperature (K)'. The other
         contains the units in which the curve is defined and must be one of:
-        "mV", "V", "Ohm" or "log Ohm"
+        'mV', 'V', 'Ohm' or 'log Ohm'
 
         This method validates this and returns the sensor unit encountered in
         the data dict
