@@ -1,4 +1,5 @@
 from typing import Union, Sequence, List
+from copy import deepcopy
 
 
 # TODO: we should validate type somehow
@@ -86,13 +87,9 @@ class ParamSpec:
         """
         Make a copy of self
         """
-        return ParamSpec(
-            self.name,
-            self.type,
-            self.label,
-            self.unit,
-            self._inferred_from,
-            self._depends_on)
+        return ParamSpec(self.name, self.type, self.label, self.unit,
+                         deepcopy(self._inferred_from),
+                         deepcopy(self._depends_on))
 
     def sql_repr(self):
         return f"{self.name} {self.type}"
