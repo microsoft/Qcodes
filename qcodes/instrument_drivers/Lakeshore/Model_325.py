@@ -11,7 +11,7 @@ class Model_325_Curve(InstrumentChannel):
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
     temperature_key = "Temperature (K)"
 
-    def __init__(self, parent: 'Model_325', index: int):
+    def __init__(self, parent: 'Model_325', index: int) ->None:
 
         self._index = index
         name = f"curve_{index}"
@@ -91,15 +91,15 @@ class Model_325_Curve(InstrumentChannel):
             raise ValueError(f"At least {cls.temperature_key} needed in the "
                              f"data dictionary")
 
-        sensor_unit = [i for i in data_dict.keys() if i != cls.temperature_key]
+        sensor_units = [i for i in data_dict.keys() if i != cls.temperature_key]
 
-        if len(sensor_unit) != 1:
+        if len(sensor_units) != 1:
             raise ValueError(
                 "Data dictionary should have one other key, other then "
                 "'Temperature (K)'"
             )
 
-        sensor_unit = sensor_unit[0]
+        sensor_unit = sensor_units[0]
 
         if sensor_unit not in cls.valid_sensor_units:
             raise ValueError(
@@ -270,7 +270,7 @@ class Model_325_Heater(InstrumentChannel):
         name (str)
         loop (int): Either 1 or 2
     """
-    def __init__(self, parent: 'Model_325', name: str, loop: int) -> None:
+    def __init__(self, parent: 'Model_325', name: str, loop: int) ->None:
 
         if loop not in [1, 2]:
             raise ValueError("Please either specify loop 1 or 2")
