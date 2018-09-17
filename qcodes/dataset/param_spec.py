@@ -8,15 +8,16 @@ from copy import deepcopy
 # str, Number, List, ndarray, bool
 class ParamSpec:
 
-    version = 0  # used by the dependencies module when writing to file
+    version = 1  # used by the dependencies module when writing to file
     allowed_types = ['array', 'numeric', 'text']
 
     def __init__(self, name: str,
                  paramtype: str,
-                 label: str = None,
-                 unit: str = None,
-                 inferred_from: Sequence[Union['ParamSpec', str]] = None,
-                 depends_on: Sequence[Union['ParamSpec', str]] = None,
+                 label: str=None,
+                 unit: str=None,
+                 inferred_from: Sequence[Union['ParamSpec', str]]=None,
+                 depends_on: Sequence[Union['ParamSpec', str]]=None,
+                 guids: Sequence[str]=None,
                  **metadata) -> None:
         """
         Args:
@@ -25,6 +26,8 @@ class ParamSpec:
             label: label of the parameter
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
+            guids: A list of guid strings. The intended usage is only when
+              writing data to the database.
         """
         if not isinstance(paramtype, str):
             raise ValueError('Paramtype must be a string.')
@@ -50,6 +53,8 @@ class ParamSpec:
 
         self.add_inferred_from(inferred_from)
         self.add_depends_on(depends_on)
+
+        self.guids = guids if guids else []
 
         if metadata:
             self.metadata = metadata
@@ -110,6 +115,7 @@ class ParamSpec:
         output['unit'] = self.unit
         output['inferred_from'] = self._inferred_from
         output['depends_on'] = self._depends_on
+        output['guids'] = self.guids
         output['version'] = self.version
 
         return output
