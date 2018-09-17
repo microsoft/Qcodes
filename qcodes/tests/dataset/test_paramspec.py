@@ -11,12 +11,12 @@ from qcodes.dataset.param_spec import ParamSpec
 
 
 @pytest.fixture
-def version_0_serializations() -> List[str]:
+def version_0_serializations():
     sers = []
-    sers.append('name: dmm_v1\ntype: numeric\nlabel: Gate v1\nunit: V\n'
+    sers.append('name: dmm_v1\nparamtype: numeric\nlabel: Gate v1\nunit: V\n'
                 'inferred_from: []\n'
                 'depends_on:\n- dac_ch1\n- dac_ch2\nversion: 0\n')
-    sers.append('name: some_name\ntype: array\nlabel: My Array ParamSpec\n'
+    sers.append('name: some_name\nparamtype: array\nlabel: My Array ParamSpec\n'
                 'unit: Ars\ninferred_from:\n- p1\n- p2\ndepends_on: []\n'
                 'version: 0\n')
     return sers

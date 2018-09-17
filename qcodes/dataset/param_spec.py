@@ -8,7 +8,7 @@ from copy import deepcopy
 # str, Number, List, ndarray, bool
 class ParamSpec:
 
-    version = 1  # used by the dependencies module when writing to file
+    version = 1  # used when serializing
     allowed_types = ['array', 'numeric', 'text']
 
     def __init__(self, name: str,
@@ -143,7 +143,7 @@ class ParamSpec:
                 upgrade(ser)
 
         return ParamSpec(name=ser['name'],
-                         paramtype=ser['type'],
+                         paramtype=ser['paramtype'],
                          label=ser['label'],
                          unit=ser['unit'],
                          inferred_from=ser['inferred_from'],
