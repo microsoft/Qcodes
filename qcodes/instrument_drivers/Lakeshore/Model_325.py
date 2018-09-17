@@ -222,7 +222,7 @@ class Model_325_Sensor(InstrumentChannel):
         status are possible as they are not necessarily mutually exclusive.
 
         args:
-            sum_of_codes (int)
+            sum_of_codes (int) 
         """
         components = list(self.sensor_status_codes.keys())
         codes = self._get_sum_terms(components, int(sum_of_codes))
