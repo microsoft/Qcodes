@@ -55,10 +55,13 @@ def test_repr(name):
     for okt in okay_types:
         if name.isidentifier():
             ps = ParamSpec(name, okt)
-            assert ps.__repr__() == f"{name} ({okt})"
+            expected_repr = (f"ParamSpec('{name}', '{okt}', '', '', "
+                             "inferred_from=[], depends_on=[])")
+            assert ps.__repr__() == expected_repr
         else:
             with pytest.raises(ValueError):
                 ps = ParamSpec(name, okt)
+
 
 alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
 
