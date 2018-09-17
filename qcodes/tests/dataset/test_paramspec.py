@@ -107,18 +107,24 @@ def test_copy(name1, name2, name3):
     ps = ParamSpec(name3, "numeric", depends_on=[ps_indep])
     ps_copy = ps.copy()
 
+    att_names = ["name", "type", "label", "unit",
+                 "_inferred_from", "_depends_on"]
+
     attributes = {}
-    for att in ["name", "type", "label", "unit"]:
+    for att in att_names:
         val = getattr(ps, att)
         valc = getattr(ps_copy, att)
         assert val == valc
         attributes[att] = val
 
     # Modifying the copy should not change the original
-    for att in ["name", "type", "label", "unit"]:
-        setattr(ps_copy, att, attributes[att] + "_modified")
+    for att in att_names:
+        if not att.startswith('_'):
+            setattr(ps_copy, att, attributes[att] + "_modified")
+        else:
+            setattr(ps_copy, att, attributes[att] + ['bob'])
         assert getattr(ps, att) == attributes[att]
 
-    ps_copy.add_depends_on([ps_indep_2])
-    assert ps_copy.depends_on == f"{ps_indep.name}, {ps_indep_2.name}"
-    assert ps.depends_on == f"{ps_indep.name}"
+
+
+
