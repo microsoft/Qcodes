@@ -1,5 +1,5 @@
 name: qcodes
-channels: 
+channels:
  - defaults
  - conda-forge
 dependencies:
@@ -19,3 +19,4 @@ dependencies:
  - pytest-runner
  - spyder
  - pyzmq
+ - wrapt

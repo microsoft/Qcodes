@@ -1,14 +1,153 @@
 import numpy as np
-import time
+from typing import cast
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
 
 
-class Model_325_Channel(InstrumentChannel):
+class Model_325_Curve(InstrumentChannel):
+
+    valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
+    temperature_key = "Temperature (K)"
+
+    def __init__(self, parent: 'Model_325', index: int) ->None:
+
+        self._index = index
+        name = f"curve_{index}"
+        super().__init__(parent, name)
+
+        self.add_parameter(
+            "serial_number",
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "format",
+            vals=Enum(1, 2, 3, 4),
+            val_mapping={
+                f"{unt}/K": i+1 for i, unt in enumerate(self.valid_sensor_units)
+            },
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "limit_value",
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "coefficient",
+            vals=Enum(1, 2),
+            val_mapping={
+                "negative": 1,
+                "positive": 2
+            },
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "curve_name",
+            parameter_class=GroupParameter
+        )
+
+        Group(
+            [
+                self.curve_name, self.serial_number, self.format,
+                self.limit_value, self.coefficient
+            ],
+            set_cmd=f"CRVHDR {self._index}, {{curve_name}}, "
+                    f"{{serial_number}}, {{format}}, {{limit_value}}, "
+                    f"{{coefficient}}",
+            get_cmd=f"CRVHDR? {self._index}"
+        )
+
+    def get_data(self) -> dict:
+        curve = [
+            float(a) for point_index in range(1, 200)
+            for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
+        ]
+
+        d = {self.temperature_key: curve[1::2]}
+        sensor_unit = self.format().split("/")[0]
+        d[sensor_unit] = curve[::2]
+
+        return d
+
+    @classmethod
+    def validate_datadict(cls, data_dict: dict) -> str:
+        """
+        A data dict has two keys, one of which is `Temperature (K)'. The other
+        contains the units in which the curve is defined and must be one of:
+            * "mV",
+            * "V",
+            * "Ohm",
+            * "log Ohm"
+
+        This method validates this and returns the sensor unit encountered in
+        the data dict
+        """
+        if cls.temperature_key not in data_dict:
+            raise ValueError(f"At least {cls.temperature_key} needed in the "
+                             f"data dictionary")
+
+        sensor_units = [i for i in data_dict.keys() if i != cls.temperature_key]
+
+        if len(sensor_units) != 1:
+            raise ValueError(
+                "Data dictionary should have one other key, other then "
+                "'Temperature (K)'"
+            )
+
+        sensor_unit = sensor_units[0]
+
+        if sensor_unit not in cls.valid_sensor_units:
+            raise ValueError(
+                f"Sensor unit {sensor_unit} invalid. This needs to be one of "
+                f"{', '.join(cls.valid_sensor_units)}"
+            )
+
+        data_size = len(data_dict[cls.temperature_key])
+        if data_size != len(data_dict[sensor_unit]) or data_size > 200:
+            raise ValueError("The length of the temperature axis should be "
+                             "the same as the length of the sensor axis and "
+                             "should not exceed 200 in size")
+
+        return sensor_unit
+
+    def set_data(self, data_dict: dict, sensor_unit: str=None) ->None:
+        """
+        Set the curve data according to the values found the the dictionary.
+
+        Args:
+            data_dict (dict): See `validate_datadict` to see the format of this
+                                dictionary
+            sensor_unit (str): If None, the data dict is validated and the
+                                units are extracted.
+        """
+        if sensor_unit is None:
+            sensor_unit = self.validate_datadict(data_dict)
+
+        temperature_values = data_dict[self.temperature_key]
+        sensor_values = data_dict[sensor_unit]
+
+        for value_index, (temperature_value, sensor_value) in \
+                enumerate(zip(temperature_values, sensor_values)):
+
+            cmd_str = f"CRVPT {self._index}, {value_index + 1}, " \
+                      f"{sensor_value:3.3}, {temperature_value:3.3}"
+
+            self.write(cmd_str)
+
+
+class Model_325_Sensor(InstrumentChannel):
     """
-    A single sensor channel of a temperature controller
+    A single sensor of a  Lakeshore 325.
+
+    Args:
+        parent (Model_325): The instrument this heater belongs to
+        name (str)
+        inp (str): Either "A" or "B"
     """
 
     sensor_status_codes = {
@@ -20,21 +159,25 @@ class Model_325_Channel(InstrumentChannel):
         128: "sensor units overrang"
     }
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: 'Model_325', name: str, inp: str) ->None:
+
+        if inp not in ["A", "B"]:
+            raise ValueError("Please either specify input 'A' or 'B'")
+
         super().__init__(parent, name)
-        self._channel = channel
+        self._input = inp
 
         self.add_parameter(
             'temperature',
-            get_cmd='KRDG? {}'.format(self._channel),
+            get_cmd='KRDG? {}'.format(self._input),
             get_parser=float,
-            label='Temperature',
+            label='Temerature',
             unit='K'
         )
 
         self.add_parameter(
             'status',
-            get_cmd='RDGST? {}'.format(self._channel),
+            get_cmd='RDGST? {}'.format(self._input),
             get_parser=self.decode_sensor_status,
             label='Sensor_Status'
         )
@@ -44,9 +187,9 @@ class Model_325_Channel(InstrumentChannel):
             val_mapping={
                 "Silicon diode": 0,
                 "GaAlAs diode": 1,
-                "100 Ω platinum/250": 2,
-                "100 Ω platinum/500": 3,
-                "1000 Ω platinum": 4,
+                "100 Ohm platinum/250": 2,
+                "100 Ohm platinum/500": 3,
+                "1000 Ohm platinum": 4,
                 "NTC RTD": 5,
                 "Thermocouple 25mV": 6,
                 "Thermocouple 50 mV": 7,
@@ -64,17 +207,32 @@ class Model_325_Channel(InstrumentChannel):
 
         Group(
             [self.type, self.compensation],
-            set_cmd=f"INTYPE {self._channel}, {{type}}, {{compensation}}",
-            get_cmd=f"INTYPE? {self._channel}"
+            set_cmd=f"INTYPE {self._input}, {{type}}, {{compensation}}",
+            get_cmd=f"INTYPE? {self._input}"
         )
 
-    def decode_sensor_status(self, sum_of_codes):
+        self.add_parameter(
+            "curve_index",
+            set_cmd=f"INCRV {self._input} {{}}",
+            get_cmd=f"INCRV? {self._input}",
+            get_parser=int,
+            vals=Numbers(min_value=1, max_value=35)
+        )
+
+    def decode_sensor_status(self, sum_of_codes: int) ->str:
+        """
+        The sensor status is one of the status codes, or a sum thereof. Multiple
+        status are possible as they are not necessarily mutually exclusive.
+
+        args:
+            sum_of_codes (int)
+        """
         components = list(self.sensor_status_codes.keys())
         codes = self._get_sum_terms(components, int(sum_of_codes))
         return ", ".join([self.sensor_status_codes[k] for k in codes])
 
     @staticmethod
-    def _get_sum_terms(components, number):
+    def _get_sum_terms(components: list, number: int):
         """
         Example:
         >>> components = [0, 1, 16, 32, 64, 128]
@@ -86,27 +244,44 @@ class Model_325_Channel(InstrumentChannel):
         else:
             terms = []
             comp = np.sort(components)[::-1]
-            comp = np.extract(np.logical_and(comp <= number, comp != 0), comp)
+            comp = comp[comp <= number]
 
             while len(comp):
                 c = comp[0]
                 number -= c
                 terms.append(c)
 
-                comp = np.extract(comp <= number, comp)
+                comp = comp[comp <= number]
 
         return terms
 
+    @property
+    def curve(self) ->Model_325_Curve:
+        parent = cast(Model_325, self.parent)
+        return Model_325_Curve(parent,  self.curve_index())
 
-class Output_325(InstrumentChannel):
-    def __init__(self, parent, name, channel):
+
+class Model_325_Heater(InstrumentChannel):
+    """
+    Heater control for the Lakeshore 325.
+
+    Args:
+        parent (Model_325): The instrument this heater belongs to
+        name (str)
+        loop (int): Either 1 or 2
+    """
+    def __init__(self, parent: 'Model_325', name: str, loop: int) ->None:
+
+        if loop not in [1, 2]:
+            raise ValueError("Please either specify loop 1 or 2")
+
         super().__init__(parent, name)
-        self._channel = channel
+        self._loop = loop
 
         self.add_parameter(
             "control_mode",
-            get_cmd=f"CMODE? {self._channel}",
-            set_cmd=f"CMODE {self._channel},{{}}",
+            get_cmd=f"CMODE? {self._loop}",
+            set_cmd=f"CMODE {self._loop},{{}}",
             val_mapping={
                 "Manual PID": "1",
                 "Zone": "2",
@@ -119,7 +294,7 @@ class Output_325(InstrumentChannel):
 
         self.add_parameter(
             "input_channel",
-            vals=Enum("A", "B", "a", "b"),
+            vals=Enum("A", "B"),
             parameter_class=GroupParameter
         )
 
@@ -128,7 +303,7 @@ class Output_325(InstrumentChannel):
             vals=Enum("Kelvin", "Celsius", "Sensor Units"),
             val_mapping={
                 "Kelvin": "1",
-                "Celcius": "2",
+                "Celsius": "2",
                 "Sensor Units": "3"
             },
             parameter_class=GroupParameter
@@ -153,9 +328,9 @@ class Output_325(InstrumentChannel):
         Group(
             [self.input_channel, self.unit, self.powerup_enable,
              self.output_metric],
-            set_cmd=f"CSET {self._channel}, {{input_channel}}, {{unit}}, "
+            set_cmd=f"CSET {self._loop}, {{input_channel}}, {{unit}}, "
                     f"{{powerup_enable}}, {{output_metric}}",
-            get_cmd=f"CSET? {self._channel}"
+            get_cmd=f"CSET? {self._loop}"
         )
 
         self.add_parameter(
@@ -181,11 +356,11 @@ class Output_325(InstrumentChannel):
 
         Group(
             [self.P, self.I, self.D],
-            set_cmd=f'PID {self._channel}, {{P}}, {{I}}, {{D}}',
-            get_cmd=f'PID? {self._channel}'
+            set_cmd=f'PID {self._loop}, {{P}}, {{I}}, {{D}}',
+            get_cmd=f'PID? {self._loop}'
         )
 
-        if self._channel == 0:
+        if self._loop == 1:
             valid_output_ranges = Enum(0, 1, 2)
         else:
             valid_output_ranges = Enum(0, 1)
@@ -193,12 +368,12 @@ class Output_325(InstrumentChannel):
         self.add_parameter(
             'output_range',
             vals=valid_output_ranges,
-            set_cmd=f'RANGE {self._channel}, {{}}',
-            get_cmd=f'RANGE? {self._channel}',
+            set_cmd=f'RANGE {self._loop}, {{}}',
+            get_cmd=f'RANGE? {self._loop}',
             val_mapping={
-                0: "Off",
-                1: "Low (2.5W)",
-                2: "High (25W)"
+                "Off": '0',
+                "Low (2.5W)": '1',
+                "High (25W)": '2'
             }
         )
 
@@ -206,49 +381,99 @@ class Output_325(InstrumentChannel):
             'setpoint',
             vals=Numbers(0, 400),
             get_parser=float,
-            set_cmd=f'SETP {self._channel}, {{}}',
-            get_cmd=f'SETP? {self._channel}'
+            set_cmd=f'SETP {self._loop}, {{}}',
+            get_cmd=f'SETP? {self._loop}'
         )
 
         self.add_parameter(
-            "output",
-            get_cmd="HTR?"
+            "ramp_state",
+            vals=Enum(0, 1),
+            parameter_class=GroupParameter
         )
 
+        self.add_parameter(
+            "ramp_rate",
+            vals=Numbers(0, 100 / 60 * 1E3),
+            unit="mK/s",
+            parameter_class=GroupParameter,
+            get_parser=lambda v: float(v) / 60 * 1E3,  # We get values in K/min,
+            set_parser=lambda v: v * 60 * 1E-3  # Convert to K/min
+        )
 
+        Group(
+            [self.ramp_state, self.ramp_rate],
+            set_cmd=f"RAMP {self._loop}, {{ramp_state}}, {{ramp_rate}}",
+            get_cmd=f"RAMP? {self._loop}"
+        )
+
+        self.add_parameter(
+            "is_ramping",
+            get_cmd=f"RAMPST? {self._loop}"
+        )
 
 
 class Model_325(VisaInstrument):
     """
-    Lakeshore Model 331 Temperature Controller Driver
-    Controlled via sockets
+    Lakeshore Model 325 Temperature Controller Driver
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
-        input_channels = ChannelList(self, "thermometer", Model_325_Channel,
-                                     snapshotable=False)
+        sensors = ChannelList(
+            self, "sensor", Model_325_Sensor, snapshotable=False)
 
-        for chan_name in ['a', 'b']:
-            channel = Model_325_Channel(self, 'sensor_{}'.format(chan_name),
-                                        chan_name)
-            input_channels.append(channel)
-            self.add_submodule('sensor_{}'.format(chan_name), channel)
+        for inp in ['A', 'B']:
+            sensor = Model_325_Sensor(self, 'sensor_{}'.format(inp), inp)
+            sensors.append(sensor)
+            self.add_submodule('sensor_{}'.format(inp), sensor)
 
-        input_channels.lock()
-        self.add_submodule("sensor", input_channels)
+        sensors.lock()
+        self.add_submodule("sensor", sensors)
 
-        output_channels = ChannelList(self, "heater", Output_325,
-                                      snapshotable=False)
+        heaters = ChannelList(
+            self, "heater", Model_325_Heater, snapshotable=False)
 
-        for chan_name in ["1", "2"]:
-            channel = Output_325(self, 'heater_{}'.format(chan_name),
-                                 chan_name)
-            output_channels.append(channel)
-            self.add_submodule('heater_{}'.format(chan_name), channel)
+        for loop in [1, 2]:
+            heater = Model_325_Heater(self, 'heater_{}'.format(loop), loop)
+            heaters.append(heater)
+            self.add_submodule('heater_{}'.format(loop), heater)
 
-        output_channels.lock()
-        self.add_submodule("heater", output_channels)
+        heaters.lock()
+        self.add_submodule("heater", heaters)
+
+        curves = ChannelList(
+            self, "curve", Model_325_Curve, snapshotable=False
+        )
+
+        for curve_index in range(1, 35):
+            curve = Model_325_Curve(self, curve_index)
+            curves.append(curve)
+
+        self.add_submodule("curve", curves)
 
         self.connect_message()
+
+    def upload_curve(
+            self, index: int, name: str, serial_number: str, data_dict: dict
+    ) -> None:
+        """
+        Upload a curve to the given index
+
+        Args:
+             index (int): The index to upload the curve to. We can only use
+                            indices reserved for user defined curves, 21-35
+             name (str)
+             serial_number (str)
+             data_dict (dict): A dictionary containing the curve data
+        """
+        if index not in range(21, 36):
+            raise ValueError("index value should be between 21 and 35")
+
+        sensor_unit = Model_325_Curve.validate_datadict(data_dict)
+
+        curve = self.curve[index]
+        curve.curve_name(name)
+        curve.serial_number(serial_number)
+        curve.format(f"{sensor_unit}/K")
+        curve.set_data(data_dict, sensor_unit=sensor_unit)

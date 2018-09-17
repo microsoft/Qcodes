@@ -81,7 +81,13 @@
                     "description": "Default colormap to use for Heatmaps with both Matplotlib and PyQtGraph",
                     "type": "string",
                     "default": "hot"
+                },
+                "smart_colorscale":{
+                    "description": "Use a smart colorscale, that scales such that outliers of the data will not be included in the min/max range.",
+                    "type": "boolean",
+                    "default": false
                 }
+
             },
             "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
         },
@@ -121,7 +127,28 @@
                 }
             },
             "description": "Optional feature for qdev-wrappers package: Setting for the StationConfigurator."
+        },
+        "GUID_components":{
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Geographical location code"
+                },
+                "work_station": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Work station identification code"
+                },
+                "sample": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Sample identification code"
+            }
+        },
+        "description": "Identifiers for creating a GUID per run in the dataset database."
         }
-       },
-    "required":[ "gui", "core"]
+    },
+    "required":[ "gui", "core", "GUID_components"]
 }
