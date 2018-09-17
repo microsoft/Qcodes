@@ -43,11 +43,11 @@ def interdeps_to_yaml(idp: InterDependencies) -> str:
     Output the dependencies as a yaml string
     """
     yaml = YAML()
-    yaml.register_class(ParamSpec)
     stream = io.StringIO()
     # we use a heading, Parameters, since the yaml file might be extended
     # with more info in the future
-    yaml.dump({'Parameters': idp.paramspecs}, stream=stream)
+    yaml.dump({'Parameters': tuple(ps.serialize() for ps in idp.paramspecs)},
+              stream=stream)
     output = stream.getvalue()
     stream.close()
     return output
@@ -55,7 +55,11 @@ def interdeps_to_yaml(idp: InterDependencies) -> str:
 
 def yaml_to_interdeps(yaml_str: str) -> InterDependencies:
     yaml = YAML()
-    yaml.register_class(ParamSpec)
-    paramspecs = yaml.load(yaml_str)['Parameters']
-    return InterDependencies(*paramspecs)
+    par_dict_list = yaml.load(yaml_str)['Parameters']
 
+    ser_ps = tuple({a: b for (a, b) in par_dict.items()}
+                   for par_dict in par_dict_list)
+
+    paramspecs = tuple(ParamSpec.deserialize(sps) for sps in ser_ps)
+
+    return InterDependencies(*paramspecs)
