@@ -196,14 +196,11 @@ class ChannelList(Metadatable):
         else:
             self._locked = True
             self._channels = tuple(chan_list)
-            # At this stage mypy (0.610) is convinced that self._channels is
-            # None. Creating a local variable seems to resolve this
-            channels = cast(Tuple[InstrumentChannel, ...], self._channels)
-            if channels is None:
+            if self._channels is None:
                 raise RuntimeError("Empty channel list")
             self._channel_mapping = {channel.short_name: channel
-                                     for channel in channels}
-            if not all(isinstance(chan, chan_type) for chan in channels):
+                                     for channel in self._channels}
+            if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
