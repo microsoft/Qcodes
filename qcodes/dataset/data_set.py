@@ -16,7 +16,6 @@ import uuid
 from queue import Queue, Empty
 import warnings
 
-import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
@@ -35,9 +34,12 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_metadata, one,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
+                                        get_guid_from_run_id,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.guids import generate_guid
+
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
@@ -214,6 +216,7 @@ class DataSet(Sized):
         the creation of a new dataset.
         """
         _, run_id, __ = create_run(self.conn, exp_id, name,
+                                   generate_guid(),
                                    specs, values, metadata)
 
         # this is really the UUID (an ever increasing count in the db)
@@ -229,6 +232,10 @@ class DataSet(Sized):
     def table_name(self):
         return select_one_where(self.conn, "runs",
                                 "result_table_name", "run_id", self.run_id)
+
+    @property
+    def guid(self):
+        return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
     def number_of_results(self):
@@ -489,7 +496,7 @@ class DataSet(Sized):
         for param in results.keys():
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             modify_values(self.conn, self.table_name, index,
                           list(results.keys()),
                           list(results.values())
@@ -527,7 +534,7 @@ class DataSet(Sized):
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
 
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             modify_many_values(self.conn,
                                self.table_name,
                                start_index,
@@ -556,7 +563,7 @@ class DataSet(Sized):
                     len(self),
                     len(values)
                 ))
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             add_parameter(self.conn, self.table_name, spec)
             # now add values!
             results = [{spec.name: value} for value in values]
@@ -567,16 +574,21 @@ class DataSet(Sized):
                  start: Optional[int] = None,
                  end: Optional[int] = None) -> List[List[Any]]:
         """ Returns the values stored in the DataSet for the specified parameters.
-        The values are returned as a list of parallel NumPy arrays, one array
-        per parameter. The data type of each array is based on the data type
-        provided when the DataSet was created. The parameter list may contain
-        a mix of string parameter names, QCoDeS Parameter objects, and
+        The values are returned as a list of lists, SQL rows by SQL columns,
+        e.g. datapoints by parameters. The data type of each element is based on
+        the datatype provided when the DataSet was created. The parameter list may
+        contain a mix of string parameter names, QCoDeS Parameter objects, and
         ParamSpec objects. As long as they have a `name` field. If provided,
         the start and end parameters select a range of results by result count
         (index).
         If the range is empty -- that is, if the end is less than or
         equal to the start, or if start is after the current end of the
         DataSet – then a list of empty arrays is returned.
+
+        For a more type independent and easier to work with view of the data
+        you may want to consider using
+        :py:meth:`qcodes.dataset.data_export.get_data_by_id`
+
 
         Args:
             - *params: string parameter names, QCoDeS Parameter objects, and
@@ -585,8 +597,10 @@ class DataSet(Sized):
             - end:
 
         Returns:
-            - list of parallel NumPy arrays, one array per parameter
-        per parameter
+            - list of lists SQL rows of data by SQL columns. Each SQL row
+              is a datapoint and each SQL column is a parameter.  Each element
+              will be of the datatypes stored in the database
+              (numeric, array or string)
         """
         valid_param_names = []
         for maybeParam in params:
@@ -615,7 +629,7 @@ class DataSet(Sized):
 
         return values
 
-    def get_setpoints(self, param_name: str) -> List[List[Any]]:
+    def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
         """
         Get the setpoints for the specified parameter
 
@@ -653,7 +667,7 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             self._remove_trigger(uuid)
             sub = self.subscribers[uuid]
             sub.schedule_stop()
@@ -669,7 +683,7 @@ class DataSet(Sized):
         """
         sql = "select * from sqlite_master where type = 'trigger';"
         triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn):
+        with atomic(self.conn) as self.conn:
             for trigger in triggers:
                 self._remove_trigger(trigger['name'])
             for sub in self.subscribers.values():

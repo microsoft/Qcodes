@@ -8,6 +8,7 @@ from typing import Union, Sequence, List
 class ParamSpec:
 
     version = 0  # used by the dependencies module when writing to file
+    allowed_types = ['array', 'numeric', 'text']
 
     def __init__(self, name: str,
                  paramtype: str,
@@ -24,12 +25,11 @@ class ParamSpec:
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
         """
-        allowed_types = ['array', 'numeric', 'text']
         if not isinstance(paramtype, str):
             raise ValueError('Paramtype must be a string.')
-        if paramtype.lower() not in allowed_types:
-            raise ValueError("Illegal paramtype. Must be 'array', 'numeric'"
-                             ", or 'text'.")
+        if paramtype.lower() not in self.allowed_types:
+            raise ValueError("Illegal paramtype. Must be on of "
+                             f"{self.allowed_types}")
         if not name.isidentifier():
             raise ValueError(f'Invalid name: {name}. Only valid python '
                              'identifier names are allowed (no spaces or '
