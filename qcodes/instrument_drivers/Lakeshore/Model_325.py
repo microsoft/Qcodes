@@ -79,10 +79,7 @@ class Model_325_Curve(InstrumentChannel):
         """
         A data dict has two keys, one of which is `Temperature (K)'. The other
         contains the units in which the curve is defined and must be one of:
-            * "mV",
-            * "V",
-            * "Ohm",
-            * "log Ohm"
+        "mV", "V", "Ohm" or "log Ohm"
 
         This method validates this and returns the sensor unit encountered in
         the data dict
