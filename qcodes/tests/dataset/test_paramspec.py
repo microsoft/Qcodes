@@ -1,11 +1,25 @@
 import pytest
 from numbers import Number
+from typing import List
 
 from numpy import ndarray
 from hypothesis import given
 import hypothesis.strategies as hst
+from ruamel.yaml import YAML
 
 from qcodes.dataset.param_spec import ParamSpec
+
+
+@pytest.fixture
+def version_0_serializations() -> List[str]:
+    sers = []
+    sers.append('name: dmm_v1\ntype: numeric\nlabel: Gate v1\nunit: V\n'
+                'inferred_from: []\n'
+                'depends_on:\n- dac_ch1\n- dac_ch2\nversion: 0\n')
+    sers.append('name: some_name\ntype: array\nlabel: My Array ParamSpec\n'
+                'unit: Ars\ninferred_from:\n- p1\n- p2\ndepends_on: []\n'
+                'version: 0\n')
+    return sers
 
 
 @given(name=hst.text(min_size=1),
@@ -126,5 +140,26 @@ def test_copy(name1, name2, name3):
         assert getattr(ps, att) == attributes[att]
 
 
+def test_serialize():
+
+    p1 = ParamSpec('p1', 'numeric', 'paramspec one', 'no unit',
+                   depends_on=['some', 'thing'], inferred_from=['bab', 'bob'])
+
+    ser = p1.serialize()
+
+    assert ser['name'] == p1.name
+    assert ser['paramtype'] == p1.type
+    assert ser['label'] == p1.label
+    assert ser['unit'] == p1.unit
+    assert ser['depends_on'] == p1._depends_on
+    assert ser['inferred_from'] == p1._inferred_from
+    assert ser['version'] == p1.version
 
 
+def test_deserialize(version_0_serializations):
+
+    yaml = YAML()
+
+    for ser in version_0_serializations:
+        sdict = {a: b for (a, b) in yaml.load(ser).items()}
+        ParamSpec.deserialize(sdict)

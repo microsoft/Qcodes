@@ -1,4 +1,4 @@
-from typing import Union, Sequence, List
+from typing import Union, Sequence, List, Dict, Any
 from copy import deepcopy
 
 
@@ -98,3 +98,47 @@ class ParamSpec:
         return (f"ParamSpec('{self.name}', '{self.type}', '{self.label}', "
                 f"'{self.unit}', inferred_from={self._inferred_from}, "
                 f"depends_on={self._depends_on})")
+
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Write the ParamSpec as a dictionary
+        """
+        output: Dict[str, Any] = {}
+        output['name'] = self.name
+        output['paramtype'] = self.type
+        output['label'] = self.label
+        output['unit'] = self.unit
+        output['inferred_from'] = self._inferred_from
+        output['depends_on'] = self._depends_on
+        output['version'] = self.version
+
+        return output
+
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+        """
+        Create a ParamSpec instance of the current version
+        from a serialized ParamSpec of some version
+
+        The version changes must be implemented as a series of transformations
+        of the serialized dict.
+        """
+
+        def version_0_to_1(ser):
+            if ser['version'] > 0:
+                return
+            else:
+                ser['guids'] = []
+
+        upgrades = [version_0_to_1]
+
+        if cls.version > ser['version']:
+            for upgrade in upgrades[:cls.version]:
+                upgrade(ser)
+
+        return ParamSpec(name=ser['name'],
+                         paramtype=ser['type'],
+                         label=ser['label'],
+                         unit=ser['unit'],
+                         inferred_from=ser['inferred_from'],
+                         depends_on=ser['depends_on'])
