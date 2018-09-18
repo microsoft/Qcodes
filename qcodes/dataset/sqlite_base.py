@@ -311,6 +311,100 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     set_user_version(conn, 1)
 
 
+def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
+    """
+    Perform the upgrade from version 1 to version 2
+    """
+    log.info('Starting database upgrade version 0 -> 1')
+
+    start_version = get_user_version(conn)
+    if start_version != 1:
+        log.warn('Can not upgrade, current database version is '
+                 f'{start_version}, aborting.')
+        return
+
+    no_of_runs_query = "SELECT max(run_id) FROM runs"
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+
+    for run_id in range(1, no_of_runs+1):
+
+        paramspecs: Dict[int, ParamSpec] = {}
+
+        rst_query = f"SELECT result_table_name FROM runs WHERE run_id={run_id}"
+        c = atomic_transaction(conn, rst_query)
+        result_table_name = one(c, 'result_table_name')
+
+        layout_id_query = f"""
+                          SELECT layout_id
+                          FROM layouts
+                          WHERE run_id == {run_id}
+                          """
+        c = atomic_transaction(conn, layout_id_query)
+        layout_ids = tuple(l[0] for l in many_many(c, 'layout_id'))
+
+        idps_query = f"""
+                     SELECT independent
+                     FROM dependencies
+                     WHERE independent in {layout_ids}
+                     """
+        c = atomic_transaction(conn, idps_query)
+        independents = [l[0] for l in many_many(c, 'independent')]
+        dependents = set(layout_ids).difference(set(independents))
+
+        print(f'Run number: {run_id}')
+        print(f'Layout IDs: {layout_ids}')
+        print(f'Independents: {independents}')
+        print(f'Dependents: {dependents}')
+
+        layout_query_r = """
+                         SELECT parameter, label, unit, inferred_from
+                         FROM layouts
+                         WHERE layout_id == {}
+                         """
+
+        for layout_id in layout_ids:
+            layout_query = layout_query_r.format(layout_id)
+            c = atomic_transaction(conn, layout_query)
+            res = many(c, 'parameter', 'label', 'unit', 'inferred_from')
+            (name, label, unit, inferred_from) = res
+            # get the data type
+            sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
+            c = atomic_transaction(conn, sql)
+            for row in c.fetchall():
+                if row['name'] == name:
+                    paramtype = row['type']
+                    break
+
+            if layout_id in independents:
+
+                paramspecs[layout_id] = ParamSpec(name=name,
+                                                  paramtype=paramtype,
+                                                  label=label, unit=unit,
+                                                  inferred_from=inferred_from)
+
+            elif layout_id in dependents:
+
+                sp_query = f"""
+                           SELECT independent
+                           FROM dependencies
+                           WHERE dependent == {layout_id}
+                           ORDER BY axis_num ASC
+                           """
+                c = atomic_transaction(conn, sp_query)
+                setpoints = [l[0] for l in many_many(c, 'independent')]
+                depends_on = [paramspecs[idp].name for idp in setpoints]
+
+                paramspecs[layout_id] = ParamSpec(name=name,
+                                                  paramtype=paramtype,
+                                                  label=label, unit=unit,
+                                                  depends_on=depends_on,
+                                                  inferred_from=inferred_from)
+
+        print(f'Converted run number {run_id}')
+        print(f'Conversion result:\n {paramspecs}')
+        print('-'*25)
+
+
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
