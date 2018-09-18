@@ -117,8 +117,7 @@ def test_saving_numeric_values_as_text(experiment, numeric_type):
 
     try:
         msg = f"It is not possible to save a numeric value for parameter " \
-              f"'{p.name}' because its type class is 'text', not 'numeric' " \
-              f"or 'array'."
+              f"'{p.name}' because its type class is 'text', not 'numeric'."
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, numeric_type(2)))
     finally:
