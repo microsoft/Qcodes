@@ -80,6 +80,7 @@ target/
 *.py~
 tmp/
 .#*
+.mypy_cache/*
 
 docs/examples/data/*
 
