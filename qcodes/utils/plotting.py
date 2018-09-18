@@ -1,8 +1,8 @@
 """
 This file is supposed to hold all the plotting utility functions that are
-independent of the plotting backend or the dataset from which to be plotted.
-For the current dataset see qcodes.dataset.plotting
-For the legacy dataset see qcodes.plots
+independent of the dataset from which to be plotted.
+For the current dataset see `qcodes.dataset.plotting`
+For the legacy dataset see `qcodes.plots`
 """
 
 import logging
@@ -15,9 +15,14 @@ log = logging.getLogger(__name__)
 
 Number = Union[float, int]
 
+"""
+General functions
+"""
+
+
 def auto_range_iqr(data_array: np.ndarray,
                    cutoff_percentile: Union[Tuple[Number, Number], Number]=50
-) -> Tuple[float, float]:
+                   ) -> Tuple[float, float]:
     """
     Get the min and max range of the provided array that excludes outliers
     following the IQR rule.
@@ -62,6 +67,10 @@ def auto_range_iqr(data_array: np.ndarray,
         vmax = max(vmax, pmax)
     return vmin, vmax
 
+"""
+Matplotlib functions
+"""
+
 
 def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
                              new_lim: Tuple[Optional[float], Optional[float]],
@@ -101,16 +110,14 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
                                '`apply_color_scale_limits:\n\n`'
                                + apply_color_scale_limits.__doc__)
         else:
-            data_lim = sorted(data_lim)
-    # sort limits in case they were given in a wrong order
-    new_lim = list(sorted(new_lim))
+            data_lim = tuple(sorted(data_lim))
     # if `None` is provided in the new limits don't change this limit
-    for i in range(2):
-        new_lim[i] = new_lim[i] or colorbar.get_clim()[i]
-
+    vlim = [new or old for new, old in zip(new_lim, colorbar.get_clim())]
+    # sort limits in case they were given in a wrong order
+    vlim = sorted(vlim)
     # detect exceeding colorscale and apply new limits
-    exceeds_min, exceeds_max = (data_lim[0] < new_lim[0],
-                                data_lim[1] > new_lim[1])
+    exceeds_min, exceeds_max = (data_lim[0] < vlim[0],
+                                data_lim[1] > vlim[1])
     if exceeds_min and exceeds_max:
         extend = 'both'
     elif exceeds_min:
@@ -130,7 +137,8 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
     cmap = colorbar.mappable.get_cmap()
     cmap.set_over('magenta')
     cmap.set_under('cyan')
-    colorbar.mappable.set_clim(new_lim)
+    colorbar.mappable.set_clim(vlim)
+
 
 def apply_auto_color_scale(colorbar,
                            data_array: Optional[np.ndarray]=None,
@@ -138,7 +146,19 @@ def apply_auto_color_scale(colorbar,
                                Tuple[Number, Number], Number]]=50
                            ) -> None:
     """
+    Sets the color limits such that outliers are disregarded.
 
+    This method combines the automatic color scaling from
+    :meth:`auto_range_iqr` with the color bar setting from
+    :meth:`apply_color_scale_limits`.
+
+    Args:
+        colorbar: The matplotlib colorbar to which to apply
+        data_array: The data on which the statistical analysis is based. If
+            left out, the data associated with the `colorbar` is used
+        cutoff_percentile: percentile of data that may maximally be clipped
+            on both sides of the distribution.
+            If given a tuple (a,b) the percentile limits will be a and 100-b.
     """
     if data_array is None:
         if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
