@@ -6,8 +6,10 @@ For the legacy dataset see qcodes.plots
 """
 
 import logging
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 import numpy as np
+import matplotlib
+
 
 log = logging.getLogger(__name__)
 
@@ -59,3 +61,88 @@ def auto_range_iqr(data_array: np.ndarray,
         vmin = min(vmin, pmin)
         vmax = max(vmax, pmax)
     return vmin, vmax
+
+
+def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
+                             new_lim: Tuple[Optional[float], Optional[float]],
+                             data_lim: Optional[Tuple[float, float]]=None,
+                             data_array: Optional[np.ndarray]=None) -> None:
+    """
+    Applies limits to colorscale and updates extend.
+
+    This function applies the limits `new_lim` to the heatmap plot associated
+    with the provided `colorbar`, updates the colorbar limits, and also adds
+    the colorbar clipping indicators in form of small triangles on the top and
+    bottom of the colorbar, according to the where the limits are exceeded.
+
+    Args:
+        colorbar: The actual colorbar to be updated
+        new_lim: 2-tuple of the desired minimum and maximum value of the color
+            scale. If any is `None` it will be left unchanged.
+        data_lim: 2-tuple of the actual minimum and maximum value of the data.
+            If left out the minimum and maximum are deduced from the provided
+            data, or the data associated with the colorbar.
+        data_array: numpy array containing the data to be considered for
+            scaling. Must be left out if `data_lim` is provided. If neither is
+            provided the data associated with the colorbar is used.
+    """
+    # browse the input data and make sure that `data_lim` and `new_lim` are
+    # available
+    if data_lim is None:
+        if data_array is None:
+            if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
+                raise RuntimeError('Can only scale mesh data.')
+            data_array = colorbar.mappable.get_array()
+        data_lim = np.nanmin(data_array), np.nanmax(data_array)
+    else:
+        if data_array is not None:
+            raise RuntimeError('You cannot specify `data_lim` and `data_array` '
+                               'please read the docstring of '
+                               '`apply_color_scale_limits:\n\n`'
+                               + apply_color_scale_limits.__doc__)
+        else:
+            data_lim = sorted(data_lim)
+    # sort limits in case they were given in a wrong order
+    new_lim = list(sorted(new_lim))
+    # if `None` is provided in the new limits don't change this limit
+    for i in range(2):
+        new_lim[i] = new_lim[i] or colorbar.get_clim()[i]
+
+    # detect exceeding colorscale and apply new limits
+    exceeds_min, exceeds_max = (data_lim[0] < new_lim[0],
+                                data_lim[1] > new_lim[1])
+    if exceeds_min and exceeds_max:
+        extend = 'both'
+    elif exceeds_min:
+        extend = 'min'
+    elif exceeds_max:
+        extend = 'max'
+    else:
+        extend = 'neither'
+    colorbar.extend = extend
+    # the colorbar has no setter method and setting the colorbar extend does
+    # not take any effect. Calling a subsequent update will cause a runtime
+    # error because of the internal implementation of the rendering of the
+    # colorbar. To circumvent this we need to manually specify the property
+    # `_inside`, which is a slice that describes which of the colorbar levels
+    # lie inside of the box and it is thereby dependent on the extend.
+    colorbar._inside = colorbar._slice_dict[extend]
+    cmap = colorbar.mappable.get_cmap()
+    cmap.set_over('magenta')
+    cmap.set_under('cyan')
+    colorbar.mappable.set_clim(new_lim)
+
+def apply_auto_color_scale(colorbar,
+                           data_array: Optional[np.ndarray]=None,
+                           cutoff_percentile: Optional[Union[
+                               Tuple[Number, Number], Number]]=50
+                           ) -> None:
+    """
+
+    """
+    if data_array is None:
+        if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
+            raise RuntimeError('Can only scale mesh data.')
+        data_array = colorbar.mappable.get_array()
+    new_lim = auto_range_iqr(data_array, cutoff_percentile)
+    apply_color_scale_limits(colorbar, new_lim=new_lim, data_array=data_array)
