@@ -8,7 +8,7 @@ from copy import deepcopy
 # str, Number, List, ndarray, bool
 class ParamSpec:
 
-    version = 1  # used when serializing
+    version = 0  # used when serializing
     allowed_types = ['array', 'numeric', 'text']
 
     def __init__(self, name: str,
@@ -17,7 +17,6 @@ class ParamSpec:
                  unit: str=None,
                  inferred_from: Sequence[Union['ParamSpec', str]]=None,
                  depends_on: Sequence[Union['ParamSpec', str]]=None,
-                 guids: Sequence[str]=None,
                  **metadata) -> None:
         """
         Args:
@@ -26,8 +25,6 @@ class ParamSpec:
             label: label of the parameter
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
-            guids: A list of guid strings. The intended usage is only when
-              writing data to the database.
         """
         if not isinstance(paramtype, str):
             raise ValueError('Paramtype must be a string.')
@@ -53,8 +50,6 @@ class ParamSpec:
 
         self.add_inferred_from(inferred_from)
         self.add_depends_on(depends_on)
-
-        self.guids = guids if guids else []
 
         if metadata:
             self.metadata = metadata
@@ -115,7 +110,6 @@ class ParamSpec:
         output['unit'] = self.unit
         output['inferred_from'] = self._inferred_from
         output['depends_on'] = self._depends_on
-        output['guids'] = self.guids
         output['version'] = self.version
 
         return output
@@ -129,18 +123,6 @@ class ParamSpec:
         The version changes must be implemented as a series of transformations
         of the serialized dict.
         """
-
-        def version_0_to_1(ser):
-            if ser['version'] > 0:
-                return
-            else:
-                ser['guids'] = []
-
-        upgrades = [version_0_to_1]
-
-        if cls.version > ser['version']:
-            for upgrade in upgrades[:cls.version]:
-                upgrade(ser)
 
         return ParamSpec(name=ser['name'],
                          paramtype=ser['paramtype'],

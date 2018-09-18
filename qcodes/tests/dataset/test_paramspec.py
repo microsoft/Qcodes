@@ -153,7 +153,6 @@ def test_serialize():
     assert ser['unit'] == p1.unit
     assert ser['depends_on'] == p1._depends_on
     assert ser['inferred_from'] == p1._inferred_from
-    assert ser['guids'] == p1.guids
     assert ser['version'] == p1.version
 
 
@@ -163,5 +162,4 @@ def test_deserialize(version_0_serializations):
 
     for ser in version_0_serializations:
         sdict = {a: b for (a, b) in yaml.load(ser).items()}
-        ps = ParamSpec.deserialize(sdict)
-        assert ps.guids == []
+        ParamSpec.deserialize(sdict)
