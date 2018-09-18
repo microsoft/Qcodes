@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
-from qcodes.utils.plotting import auto_range_iqr
+from qcodes.utils.plotting import apply_auto_color_scale
 from qcodes import config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
@@ -184,8 +184,7 @@ def plot_by_id(run_id: int,
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
             if smart_colorscale:
-                colorbar.mappable.set_clim(*auto_range_iqr(
-                    zpoints, cutoff_percentile=cutoff_percentile))
+                apply_auto_color_scale(colorbar, zpoints, cutoff_percentile)
 
             new_colorbars.append(colorbar)
 
