@@ -11,8 +11,6 @@ from qcodes.dataset.database import initialise_or_create_database_at
 from qcodes.dataset.data_export import load_by_id
 
 
-# These fixture can't be imported from test_dataset_basic because
-# Codacy/PR Quality Review will think they are unused.
 @pytest.fixture(scope="function")
 def empty_temp_db():
     # create a temp database for testing
