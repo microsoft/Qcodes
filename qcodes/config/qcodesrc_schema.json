@@ -102,11 +102,11 @@
                         },
                         "color_over":{
                             "description": "Matplotlib color representing the datapoints clipped by the upper limit",
-                            "default": "black"
+                            "default": "white"
                         },
                         "color_under":{
                             "description": "Matplotlib color representing the datapoints clipped by the lower limit",
-                            "default": "white"
+                            "default": "grey"
                         }
                     }
                 }
