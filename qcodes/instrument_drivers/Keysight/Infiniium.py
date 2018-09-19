@@ -82,7 +82,7 @@ class RawTrace(ArrayParameter):
         # set up the instrument
         # ---------------------------------------------------------------------
 
-        # TODO: check numner of points
+        # TODO: check number of points
         # check if requested number of points is less than 500 million
 
         # get intrument state
@@ -117,7 +117,7 @@ class RawTrace(ArrayParameter):
         if len(data) != self.shape[0]:
             raise TraceSetPointsChanged('{} points have been aquired and {} \
             set points have been prepared in \
-            prepare_curvedata'.format(lend(data), self.shape[0]))
+            prepare_curvedata'.format(len(data), self.shape[0]))
         # check x data scaling
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
