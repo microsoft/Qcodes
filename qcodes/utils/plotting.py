@@ -21,7 +21,7 @@ General functions (independent of plotting frame work)
 """
 
 # turn off limiting percentiles by default
-DEFAULT_PERCENTILE = [50, 50]
+DEFAULT_PERCENTILE = (50, 50)
 
 
 def auto_range_iqr(data_array: np.ndarray,
@@ -80,13 +80,14 @@ Matplotlib functions
 DEFAULT_COLOR_OVER = 'Magenta'
 DEFAULT_COLOR_UNDER = 'Cyan'
 
+
 def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
                              new_lim: Tuple[Optional[float], Optional[float]],
                              data_lim: Optional[Tuple[float, float]]=None,
                              data_array: Optional[np.ndarray]=None,
                              color_over: Optional[Any]=DEFAULT_COLOR_OVER,
                              color_under: Optional[Any]=DEFAULT_COLOR_UNDER
-                            ) -> None:
+                             ) -> None:
     """
     Applies limits to colorscale and updates extend.
 
@@ -162,7 +163,7 @@ def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
                                Number, Number], Number]]=DEFAULT_PERCENTILE,
                            color_over: Optional[Any]=DEFAULT_COLOR_OVER,
                            color_under: Optional[Any]=DEFAULT_COLOR_UNDER
-                     ) -> None:
+                           ) -> None:
     """
     Sets the color limits such that outliers are disregarded.
 
@@ -190,7 +191,8 @@ def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
             raise RuntimeError('Can only scale mesh data.')
         data_array = colorbar.mappable.get_array()
     new_lim = auto_range_iqr(data_array, cutoff_percentile)
-    apply_color_scale_limits(colorbar, new_lim=new_lim, data_array=data_array)
+    apply_color_scale_limits(colorbar, new_lim=new_lim, data_array=data_array,
+                             color_over=color_over, color_under=color_under)
 
 
 def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
@@ -200,7 +202,7 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                                      Number, Number], Number]]=DEFAULT_PERCENTILE,
                                  color_over: Optional[Any]=None,
                                  color_under: Optional[Any]=None,
-                                ) -> None:
+                                 ) -> None:
     """
     Sets the color limits such that outliers are disregarded, depending on
     the configuration file `qcodesrc.json`.
@@ -226,7 +228,7 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                  'colorbar?')
         return
     if auto_color_scale is None:
-         auto_color_scale = config.gui.auto_color_scale.enabled
+        auto_color_scale = config.gui.auto_color_scale.enabled
     if not auto_color_scale:
         return
     if color_over is None:
@@ -242,5 +244,5 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                            color_over, color_under)
 
 # add docstring from `auto_color_scale`
-auto_color_scale_from_config.__doc__ += ('\n' +
-    apply_auto_color_scale.__doc__.split('Args:\n')[1])
+auto_color_scale_from_config.__doc__ += (
+    '\n' + apply_auto_color_scale.__doc__.split('Args:\n')[1])
