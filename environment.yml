@@ -10,7 +10,6 @@ dependencies:
  - pyvisa=1.9.1
  - h5py=2.8.0
  - pyqt=5.9
- - sip
  - QtPy
  - jsonschema
  - jupyter=1.0.0
