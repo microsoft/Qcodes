@@ -44,7 +44,7 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Optional[bool]=None,
+               auto_color_scale: Optional[bool]=None,
                cutoff_percentile: Optional[Union[Tuple[Number, Number], Number]]=None,
                **kwargs) -> AxesTupleList:
     """
@@ -77,21 +77,17 @@ def plot_by_id(run_id: int,
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
-        smart_colorscale: if True, the colorscale of heatmap plots will be
+        auto_color_scale: if True, the colorscale of heatmap plots will be
             automatically adjusted to disregard outliers.
 
     returns:
         a list of axes and a list of colorbars of the same length. The
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
+
+    Config dependencies: (qcodesrc.json)
     """
     # handle arguments and defaults
-    if smart_colorscale is None:
-        smart_colorscale = config.gui.smart_colorscale.enabled
-    if cutoff_percentile is None:
-        cutoff_percentile = cast(Tuple[Number, Number],
-                                 tuple(config.gui.smart_colorscale.cutoff_percentile))
-
     subplots_kwargs = {k:kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
@@ -183,8 +179,9 @@ def plot_by_id(run_id: int,
             _set_data_axes_labels(ax, data, colorbar)
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
-            if smart_colorscale:
-                apply_auto_color_scale(colorbar, zpoints, cutoff_percentile)
+
+            auto_color_scale_from_config(colorbar, auto_color_scale,
+                                         zpoints, cutoff_percentile)
 
             new_colorbars.append(colorbar)
 

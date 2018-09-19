@@ -82,23 +82,35 @@
                     "type": "string",
                     "default": "hot"
                 },
-                "smart_colorscale":{
+                "auto_color_scale":{
                     "type" : "object",
-                    "description": "Control of a smart color scale, that scales such that potential outliers of the data will not be included in the min/max range.",
+                    "description": "Control of a auto color scale, that scales such that potential outliers of the data will not be included in the min/max range.",
                     "properties" : {
                         "enabled":{
-                            "description": "Enable automatic smart color scaling",
+                            "description": "Enable automatic color scaling",
                             "type": "boolean",
                             "default": false
                         },
                         "cutoff_percentile":{
-                            "description": "Upper and lower percentage of datapoints that may maximally be discarded by the smart color scale. For example for [1,1] the smart color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.",
+                            "description": "Upper and lower percentage of datapoints that may maximally be discarded by the auto color scale. For example for [1,1] the auto color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.",
                             "type": "array",
                             "items": {
                                 "type": "number",
                                 "type": "number"
                             },
                             "default": [0.5, 0.5]
+                        },
+                        "color_over":{
+                            "description": " Matplotlib color representing the datapoints clipped by the
+            upper limit"
+                            "type": "any",
+                            "default": "black"
+                        },
+                        "color_under":{
+                            "description": " Matplotlib color representing the datapoints clipped by the
+            lower limit"
+                            "type": "any",
+                            "default": "white"
                         }
                     }
                 }

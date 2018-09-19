@@ -12,9 +12,11 @@
         "plotlib": "all",
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot",
-        "smart_colorscale":{
+        "auto_color_scale":{
             "enabled": false,
-            "cutoff_percentile": [0.5, 0.5]
+            "cutoff_percentile": [0.5, 0.5],
+            "color_over": "black",
+            "color_under": "white",
         }
     },
     "user": {
