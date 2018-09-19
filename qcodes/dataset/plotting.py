@@ -393,7 +393,10 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             selected_scale = largest_scale
             prefix = _ENGINEERING_PREFIXES[largest_scale]
     else:
-        selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        if maxval > 0:
+            selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        else:
+            selected_scale = 0
         if selected_scale != 0:
             prefix = f'$10^{{{selected_scale:.0f}}}$ '
         else:
