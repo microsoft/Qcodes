@@ -14,6 +14,7 @@ dependencies:
  - QtPy
  - jsonschema
  - jupyter=1.0.0
+ - ipykernel=4.8.2 # https://github.com/spyder-ide/spyder/issues/7842
  - hypothesis
  - pytest
  - pytest-runner
