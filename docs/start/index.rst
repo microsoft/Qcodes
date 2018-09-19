@@ -66,6 +66,14 @@ Finally install QCoDeS add the repository via
 
     pip install -e <path-to-repository>
 
+Other dependencies
+~~~~~~~~~~~~~~~~~~
+
+You probably also wants to install National Instruments VISA from
+`here <https://www.ni.com/visa/>`__. To download it
+you will need to create an account on the National Instruments homepage but
+the download is free of charge.
+
 Updating QCoDeS
 ~~~~~~~~~~~~~~~
 
@@ -81,6 +89,25 @@ If you have installed with git, pull the QCoDeS repository using your
 favourite method (git bash, git shell, github desktop, ...). There are
 new commits to the repository daily.
 
+Keeping your environment up to date
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Additional dependencies are periodically added to the QCoDeS environment and
+new versions of packages that QCoDeS depends on are released.
+
+To keep the QCoDeS environment upto date you can run
+
+.. code:: bash
+
+   conda env update
+
+from the root of your QCoDeS git repository. Alternatively you can grab a new
+version of the ``environment.yml`` file from above and run the same command from a
+directory containing that file. This will update all the QCoDeS dependencies to the
+latest recommended version. Note that if you install packages yourself into the same
+environment it is preferable to install them using ``conda``. There is a chance that
+mixing packages from ``conda`` and ``pip`` will produce a broken environment.
+Especially if the same package is installed using both ``pip`` and ``conda``.
 
 Using QCoDes
 ------------
