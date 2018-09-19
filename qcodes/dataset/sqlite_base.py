@@ -67,6 +67,8 @@ CREATE TABLE IF NOT EXISTS runs (
         experiments(exp_id)
 );
 """
+_IX_runs_exp_id = "CREATE INDEX IF NOT EXISTS IX_runs_exp_id ON runs (exp_id DESC)"
+_IX_runs_guid = "CREATE INDEX IF NOT EXISTS IX_runs_guid ON runs (guid DESC)"
 
 _layout_table_schema = """
 CREATE TABLE IF NOT EXISTS layouts (
@@ -237,6 +239,7 @@ def connect(name: str, debug: bool = False,
 
     init_db(conn)
     perform_db_upgrade(conn, version=version)
+    create_indices(conn)
     return conn
 
 
@@ -413,6 +416,11 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _runs_table_schema)
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
+
+def create_indices(conn: SomeConnection)->None:
+    with atomic(conn) as conn:
+        transaction(conn, _IX_runs_exp_id)
+        transaction(conn, _IX_runs_guid)
 
 
 def insert_column(conn: SomeConnection, table: str, name: str,
