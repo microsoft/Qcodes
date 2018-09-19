@@ -6,7 +6,7 @@ For the legacy dataset see `qcodes.plots`
 """
 
 import logging
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, Any
 import numpy as np
 import matplotlib
 
@@ -20,6 +20,7 @@ Number = Union[float, int]
 General functions (independent of plotting frame work)
 """
 
+# turn off limiting percentiles by default
 DEFAULT_PERCENTILE = [50, 50]
 
 
@@ -111,10 +112,11 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
     """
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
+    if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
+        raise RuntimeError('Can only scale mesh data, but received '
+                           f'"{type(colorbar.mappable)}" instead')
     if data_lim is None:
         if data_array is None:
-            if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
-                raise RuntimeError('Can only scale mesh data.')
             data_array = colorbar.mappable.get_array()
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
     else:
@@ -208,12 +210,21 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
             argument
         config.gui.auto_color_scale.cutoff_percentile: default for
             cutoff_percentile argument
+        config.gui.auto_color_scale.color_over: default for Matplotlib color
+            representing the datapoints clipped by the upper limit
+        config.gui.auto_color_scale.color_under: default for Matplotlib color
+            representing the datapoints clipped by the lower limit
 
     If optional arguments are passed the config values are overidden.
 
     Args:
          auto_color_scale: enable smart colorscale. If `False` nothing happens.
     """
+    if colorbar is None:
+        log.warn('"auto_color_scale_from_config" did not receive a colorbar '
+                 'for scaling. Are you trying to scale a plot without '
+                 'colorbar?')
+        return
     if  auto_color_scale is None:
          auto_color_scale = config.gui.auto_color_scale.enabled
     if not auto_color_scale:
