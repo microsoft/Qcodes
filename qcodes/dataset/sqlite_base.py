@@ -404,6 +404,8 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
         print(f'Conversion result:\n {paramspecs}')
         print('-'*25)
 
+        # Plan: make an InterDependencies object and dump it via
+        # a RunDescriber object under the "description" column
 
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
