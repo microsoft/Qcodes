@@ -62,7 +62,7 @@ setup(name='qcodes',
                                'tests/dataset/fixtures/2018-01-17/*/*']},
       install_requires=[
           'numpy>=1.10',
-          'pyvisa>=1.8',
+          'pyvisa>=1.9.1',
           'h5py>=2.6',
           'websockets>=3.2',
           'jsonschema',
