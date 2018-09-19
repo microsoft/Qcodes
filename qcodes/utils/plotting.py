@@ -6,10 +6,10 @@ For the legacy dataset see `qcodes.plots`
 """
 
 import logging
-from typing import Tuple, Union, Optional, Any
+from typing import Tuple, Union, Optional, Any, cast
 import numpy as np
 import matplotlib
-
+from qcodes import config
 
 log = logging.getLogger(__name__)
 
@@ -225,7 +225,7 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                  'for scaling. Are you trying to scale a plot without '
                  'colorbar?')
         return
-    if  auto_color_scale is None:
+    if auto_color_scale is None:
          auto_color_scale = config.gui.auto_color_scale.enabled
     if not auto_color_scale:
         return

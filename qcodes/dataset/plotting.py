@@ -11,7 +11,7 @@ from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
-from qcodes.utils.plotting import apply_auto_color_scale
+from qcodes.utils.plotting import auto_color_scale_from_config
 from qcodes import config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
