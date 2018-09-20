@@ -45,6 +45,16 @@ class InterDependencies:
         ser['paramspecs'] = tuple(ps.serialize() for ps in self.paramspecs)
         return ser
 
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
+        """
+        Create an InterDependencies object from a serialization of an
+        instance
+        """
+        paramspecs = [ParamSpec.deserialize(sps) for sps in ser['paramspecs']]
+        idp = cls(*paramspecs)
+        return idp
+
 
 def yaml_to_interdeps(yaml_str: str) -> InterDependencies:
     yaml = YAML()

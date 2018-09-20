@@ -4,6 +4,7 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
 
+
 @pytest.fixture
 def some_paramspecs():
     """
@@ -32,6 +33,18 @@ def some_paramspecs():
     groups[1] = first
 
     return groups
+
+
+def test_serialization_and_back(some_paramspecs):
+
+    idp = InterDependencies(*some_paramspecs[1].values())
+    desc = RunDescriber(interdeps=idp)
+
+    ser_desc = desc.serialize()
+
+    new_desc = RunDescriber.deserialize(ser_desc)
+
+    assert isinstance(new_desc, RunDescriber)
 
 
 def test_yaml_creation(some_paramspecs):

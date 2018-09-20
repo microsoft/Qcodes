@@ -19,6 +19,16 @@ class RunDescriber:
         ser['Parameters'] = self.interdeps.serialize()
         return ser
 
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> 'RunDescriber':
+        """
+        Make a RunDescriber object based on a serialized version of it
+        """
+        idp = InterDependencies.deserialize(ser['Parameters'])
+        rundesc = cls(interdeps=idp)
+
+        return rundesc
+
     def output_yaml(self):
         """
         Output the run description as a yaml string
