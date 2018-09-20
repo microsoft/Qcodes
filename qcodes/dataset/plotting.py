@@ -130,14 +130,17 @@ def plot_by_id(run_id: int,
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
 
-            # sort for plotting
-            order = data[0]['data'].argsort()
-            xpoints = data[0]['data'][order]
-            ypoints = data[1]['data'][order]
+            xpoints = data[0]['data']
+            ypoints = data[1]['data']
 
             plottype = plottype_for_2d_data(xpoints, ypoints)
 
             if plottype == 'line':
+                # sort for plotting
+                order = xpoints.argsort()
+                xpoints = xpoints[order]
+                ypoints = ypoints[order]
+
                 ax.plot(xpoints, ypoints, **kwargs)
             elif plottype == 'point':
                 ax.scatter(xpoints, ypoints, **kwargs)
