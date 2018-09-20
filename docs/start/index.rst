@@ -66,6 +66,9 @@ Finally install QCoDeS add the repository via
 
     pip install -e <path-to-repository>
 
+This will perform an `editable install` such that any changes of QCoDeS in your
+local git clone are automatically available without having to reinstall QCoDeS.
+
 Other dependencies
 ~~~~~~~~~~~~~~~~~~
 
@@ -99,16 +102,27 @@ To keep the QCoDeS environment up to date you can run
 
 .. code:: bash
 
+   conda update -n base conda -c defaults
    conda env update
 
 from the root of your QCoDeS git repository.
+
 Alternatively you can grab a new version of the ``environment.yml`` file as
-explained above and run the same command from a directory containing that file.
-This will update all the QCoDeS dependencies to the latest recommended version.
-See
+explained above and run the same commands from a directory containing that file.
+
+The first line ensures that the ``conda`` package manager it self is
+up to date and the second line will ensure that the latest versions of the
+packages used by QCoDeS are installed. See
 `here <https://conda.io/docs/commands/env/conda-env-update.html>`__ for more
 documentation on ``conda env update``.
 
+If you using QCoDeS from an editable install you should also reinstall QCoDeS using
+
+.. code:: bash
+
+    pip install -e <path-to-repository>
+
+After upgrading the environment to make sure that dependencies are tracked correctly.
 
 Note that if you install packages yourself into the same
 environment it is preferable to install them using ``conda``. There is a chance that
