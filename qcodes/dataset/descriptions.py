@@ -39,3 +39,10 @@ class RunDescriber:
         output = stream.getvalue()
         stream.close()
         return output
+
+    def __eq__(self, other):
+        if not isinstance(other, RunDescriber):
+            return False
+        if self.interdeps != other.interdeps:
+            return False
+        return True

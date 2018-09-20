@@ -99,6 +99,16 @@ class ParamSpec:
                 f"'{self.unit}', inferred_from={self._inferred_from}, "
                 f"depends_on={self._depends_on})")
 
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpec):
+            return False
+        attrs = ['name', 'type', 'label', 'unit', '_inferred_from',
+                 '_depends_on']
+        for attr in attrs:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
     def serialize(self) -> Dict[str, Any]:
         """
         Write the ParamSpec as a dictionary
