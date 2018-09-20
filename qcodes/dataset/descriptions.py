@@ -16,7 +16,7 @@ class RunDescriber:
         Serialize this object into a dictionary
         """
         ser = {}
-        ser['Parameters'] = tuple(ps.serialize() for ps in self.interdeps)
+        ser['Parameters'] = self.interdeps.serialize()
         return ser
 
     def output_yaml(self):

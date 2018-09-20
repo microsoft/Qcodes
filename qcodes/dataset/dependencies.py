@@ -1,4 +1,4 @@
-import io
+from typing import Dict, Any
 
 from ruamel.yaml import YAML
 
@@ -36,6 +36,14 @@ class InterDependencies:
         if not self.paramspecs == other.paramspecs:
             return False
         return True
+
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Return a serialized version of this object instance
+        """
+        ser = {}
+        ser['paramspecs'] = tuple(ps.serialize() for ps in self.paramspecs)
+        return ser
 
 
 def yaml_to_interdeps(yaml_str: str) -> InterDependencies:
