@@ -902,7 +902,7 @@ def test_datasaver_array_parameters_channel(experiment,
         assert datadict['data'].shape == (N * M,)
 
 
-@settings(max_examples=5, deadline=None, use_coverage=False)
+@settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
 def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
                                           DAC, N):
