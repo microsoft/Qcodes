@@ -19,13 +19,13 @@ from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
          param_label='Larger than the highest scale',
          scale=max(list(_ENGINEERING_PREFIXES.keys())),
          unit='V',
-         data_strategy=np.random.random((5,)) \
+         data_strategy=np.random.random((5,))
                        * 10 ** (3 + max(list(_ENGINEERING_PREFIXES.keys()))))
 @example(param_name='small_param',
          param_label='Lower than the lowest scale',
          scale=min(list(_ENGINEERING_PREFIXES.keys())),
          unit='V',
-         data_strategy=np.random.random((5,)) \
+         data_strategy=np.random.random((5,))
                        * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))))
 def test_rescaled_ticks_and_units(scale, unit,
                                   param_name, param_label, data_strategy):
