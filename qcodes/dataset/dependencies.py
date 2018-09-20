@@ -38,21 +38,6 @@ class InterDependencies:
         return True
 
 
-def interdeps_to_yaml(idp: InterDependencies) -> str:
-    """
-    Output the dependencies as a yaml string
-    """
-    yaml = YAML()
-    stream = io.StringIO()
-    # we use a heading, Parameters, since the yaml file might be extended
-    # with more info in the future
-    yaml.dump({'Parameters': tuple(ps.serialize() for ps in idp.paramspecs)},
-              stream=stream)
-    output = stream.getvalue()
-    stream.close()
-    return output
-
-
 def yaml_to_interdeps(yaml_str: str) -> InterDependencies:
     yaml = YAML()
     par_dict_list = yaml.load(yaml_str)['Parameters']
