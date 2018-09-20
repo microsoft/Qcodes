@@ -413,7 +413,7 @@ class MercuryiPS(VisaInstrument):
         """
 
         visalog.debug(f"Writing to instrument {self.name}: {cmd}")
-        resp = self.visa_handle.ask(cmd)
+        resp = self.visa_handle.query(cmd)
         visalog.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:
