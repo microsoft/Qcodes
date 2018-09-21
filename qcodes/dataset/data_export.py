@@ -218,49 +218,101 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
+def plottype_for_2d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+    """
+    Determine plot type for 2D data by inspecting it
+
+    Possible plot types are:
+    * 'point' - scatter plot
+    * 'line' - line plot
+
+    Args:
+        xpoints: The x-axis values
+        ypoints: The y-axis values
+
+    Returns:
+        Determined plot type as a string
+    """
+    if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
+        plottype = 'point'
+    else:
+        plottype = datatype_from_setpoints_1d(xpoints)
+    return plottype
+
+
 def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
     """
     Figure out what type of visualisation is proper for the
     provided setpoints.
 
+    The type is:
+        * 'point' (scatter plot) when all setpoints are identical
+        * 'line' otherwise
+
     Args:
         setpoints: The x-axis values
 
     Returns:
-        A string which is 'point' if all the setpoints are identical,
-            else it returns 'line'
+        A string representing the plot type as described above
     """
-
     if np.allclose(setpoints, setpoints[0]):
         return 'point'
     else:
         return 'line'
 
 
-def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
+def plottype_for_3d_data(xpoints: np.ndarray,
+                         ypoints: np.ndarray,
+                         zpoints: np.ndarray
+                         ) -> str:
+    """
+    Determine plot type for 3D data by inspecting it
+
+    Plot types are:
+    * 'grid' - colormap plot for data that is on a grid
+    * 'equidistant' - colormap plot for data that is on equidistant grid
+    * 'scatter' - scatter plot
+    * 'unknown' - returned in case the data did not match any criteria of the
+    other plot types
+
+    Args:
+        xpoints: The x-axis values
+        ypoints: The y-axis values
+        zpoints: The z-axis (colorbar) values
+
+    Returns:
+        Determined plot type as a string
+    """
+    if isinstance(xpoints[0], str) \
+            or isinstance(ypoints[0], str) \
+            or isinstance(zpoints[0], str):
+        plottype = 'point'
+    else:
+        plottype = datatype_from_setpoints_2d(xpoints, ypoints)
+    return plottype
+
+
+def datatype_from_setpoints_2d(xpoints: np.ndarray,
+                               ypoints: np.ndarray
+                               ) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
     to display the data.
 
+    Plot types are:
+    * 'grid' - colormap plot for data that is on a grid
+    * 'equidistant' - colormap plot for data that is on equidistant grid
+    * 'scatter' - scatter plot
+    * 'unknown' - returned in case the data did not match any criteria of the
+    other plot types
+
     Args:
-        setpoints: The raw response of the DataSet's get_setpoints
+        xpoints: The x-axis values
+        ypoints: The y-axis values
 
     Returns:
-        A string with the name of a plot routine, e.g. 'grid' or 'equidistant'
-        or 'unknown'
+        A string with the name of the determined plot type
     """
-    # We first check for being on a "simple" grid, which means that the data
-    # FILLS a (possibly non-equidistant) grid with at most a single rectangular
-    # hole in it
-    #
-    # Next we check whether the data can be put on an equidistant grid,
-    # but loosen the requirement that anything is filled
-    #
-    # Finally we just scatter (I think?)
-
-    xpoints = flatten_1D_data_for_plot(setpoints[0])
-    ypoints = flatten_1D_data_for_plot(setpoints[1])
-
     # First check whether all setpoints are identical along
     # any dimension
     x_all_the_same = np.allclose(xpoints, xpoints[0])
@@ -294,6 +346,7 @@ def datatype_from_setpoints_2d(setpoints: List[np.ndarray]) -> str:
 
     return 'unknown'
 
+
 def reshape_2D_data(x: np.ndarray, y: np.ndarray,
                     z: np.ndarray) -> Tuple[np.ndarray, np.ndarray,
                                             np.ndarray]:
@@ -319,16 +372,38 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray,
 
 
 def get_shaped_data_by_runid(run_id: int) -> List:
+    """
+    Get data for a given run ID, but shaped according to its nature
 
+    The data might get flattened, and additionally reshaped if it falls on a
+    grid (equidistant or not).
+
+    Args:
+        run_id: The ID of the run for which to get data
+
+    Returns:
+        List of lists of dictionaries, the same as for `get_data_by_id`
+    """
     mydata = get_data_by_id(run_id)
 
     for independet in mydata:
-        data_length_long_enough = len(independet) == 3 and len(independet[0]['data']) > 0 and len(independet[1]['data']) > 0
+        data_length_long_enough = len(independet) == 3 \
+                                  and len(independet[0]['data']) > 0 \
+                                  and len(independet[1]['data']) > 0
+
         if data_length_long_enough:
-            datatype = datatype_from_setpoints_2d([independet[0]['data'],
-                                                   independet[1]['data']])
+            independet[0]['data'] = flatten_1D_data_for_plot(
+                independet[0]['data'])
+            independet[1]['data'] = flatten_1D_data_for_plot(
+                independet[1]['data'])
+
+            datatype = datatype_from_setpoints_2d(independet[0]['data'],
+                                                  independet[1]['data'])
             if datatype in ('grid', 'equidistant'):
-                independet[0]['data'], independet[1]['data'], independet[2]['data'] = reshape_2D_data(independet[0]['data'],
-                                                                                                      independet[1]['data'],
-                                                                                                      independet[2]['data'])
+                independet[0]['data'], \
+                independet[1]['data'], \
+                independet[2]['data'] = reshape_2D_data(independet[0]['data'],
+                                                        independet[1]['data'],
+                                                        independet[2]['data'])
+
     return mydata
