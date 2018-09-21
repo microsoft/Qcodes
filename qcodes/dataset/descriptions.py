@@ -29,7 +29,7 @@ class RunDescriber:
 
         return rundesc
 
-    def output_yaml(self):
+    def to_yaml(self):
         """
         Output the run description as a yaml string
         """
@@ -39,6 +39,17 @@ class RunDescriber:
         output = stream.getvalue()
         stream.close()
         return output
+
+    @classmethod
+    def from_yaml(cls, yaml_str: str) -> 'RunDescriber':
+        """
+        Parse a yaml string (the return of `to_yaml`) into a RunDescriber
+        object
+        """
+        yaml = YAML()
+        # yaml.load returns an OrderedDict, but we need a dict
+        ser = dict(yaml.load(yaml_str))
+        return cls.deserialize(ser)
 
     def __eq__(self, other):
         if not isinstance(other, RunDescriber):

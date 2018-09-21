@@ -69,10 +69,18 @@ def test_serialization_and_back(some_paramspecs):
     assert desc == new_desc
 
 
-def test_yaml_creation(some_paramspecs):
+def test_yaml_creation_and_loading(some_paramspecs):
 
-    idp = InterDependencies(*some_paramspecs[1].values())
-    desc = RunDescriber(interdeps=idp)
+    for group in some_paramspecs.values():
+        paramspecs = group.values()
+        idp = InterDependencies(*paramspecs)
+        desc = RunDescriber(interdeps=idp)
 
-    yaml_str = desc.output_yaml()
-    assert isinstance(yaml_str, str)
+        yaml_str = desc.to_yaml()
+        assert isinstance(yaml_str, str)
+
+        new_desc = RunDescriber.from_yaml(yaml_str)
+        assert new_desc == desc
+
+
+
