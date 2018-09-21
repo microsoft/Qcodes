@@ -185,7 +185,7 @@ def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
             the lower limit
     """
     if data_array is None:
-        if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
+        if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError('Can only scale mesh data.')
         data_array = colorbar.mappable.get_array()
     new_lim = auto_range_iqr(data_array, cutoff_percentile)
