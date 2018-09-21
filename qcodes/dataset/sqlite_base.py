@@ -14,6 +14,8 @@ import wrapt
 
 import qcodes as qc
 import unicodedata
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
 
@@ -326,86 +328,99 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
 
-    for run_id in range(1, no_of_runs+1):
+    # Insert a new column, "run_description", and fill it out with information
+    # retrieved from the layouts and dependencies tables
+    # If one run fails, we want the whole upgrade to role back, hence the
+    # entire upgrade is one atomic transaction
 
-        paramspecs: Dict[int, ParamSpec] = {}
+    with atomic(conn) as conn:
+        sql = "ALTER TABLE runs ADD COLUMN run_description TEXT"
+        transaction(conn, sql)
 
-        rst_query = f"SELECT result_table_name FROM runs WHERE run_id={run_id}"
-        c = atomic_transaction(conn, rst_query)
-        result_table_name = one(c, 'result_table_name')
+        for run_id in range(1, no_of_runs+1):
 
-        layout_id_query = f"""
-                          SELECT layout_id
-                          FROM layouts
-                          WHERE run_id == {run_id}
-                          """
-        c = atomic_transaction(conn, layout_id_query)
-        layout_ids = tuple(l[0] for l in many_many(c, 'layout_id'))
+            paramspecs: Dict[int, ParamSpec] = {}
 
-        idps_query = f"""
-                     SELECT independent
-                     FROM dependencies
-                     WHERE independent in {layout_ids}
-                     """
-        c = atomic_transaction(conn, idps_query)
-        independents = [l[0] for l in many_many(c, 'independent')]
-        dependents = set(layout_ids).difference(set(independents))
+            rst_query = ("SELECT result_table_name FROM runs "
+                         f"WHERE run_id={run_id}")
+            c = transaction(conn, rst_query)
+            result_table_name = one(c, 'result_table_name')
 
-        print(f'Run number: {run_id}')
-        print(f'Layout IDs: {layout_ids}')
-        print(f'Independents: {independents}')
-        print(f'Dependents: {dependents}')
+            layout_id_query = f"""
+                            SELECT layout_id
+                            FROM layouts
+                            WHERE run_id == {run_id}
+                            """
+            c = transaction(conn, layout_id_query)
+            layout_ids = tuple(l[0] for l in many_many(c, 'layout_id'))
 
-        layout_query_r = """
-                         SELECT parameter, label, unit, inferred_from
-                         FROM layouts
-                         WHERE layout_id == {}
-                         """
+            idps_query = f"""
+                        SELECT independent
+                        FROM dependencies
+                        WHERE independent in {layout_ids}
+                        """
+            c = transaction(conn, idps_query)
+            independents = [l[0] for l in many_many(c, 'independent')]
+            dependents = set(layout_ids).difference(set(independents))
 
-        for layout_id in layout_ids:
-            layout_query = layout_query_r.format(layout_id)
-            c = atomic_transaction(conn, layout_query)
-            res = many(c, 'parameter', 'label', 'unit', 'inferred_from')
-            (name, label, unit, inferred_from) = res
-            # get the data type
-            sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
-            c = atomic_transaction(conn, sql)
-            for row in c.fetchall():
-                if row['name'] == name:
-                    paramtype = row['type']
-                    break
+            layout_query_r = """
+                            SELECT parameter, label, unit, inferred_from
+                            FROM layouts
+                            WHERE layout_id == {}
+                            """
 
-            if layout_id in independents:
+            for layout_id in layout_ids:
+                layout_query = layout_query_r.format(layout_id)
+                c = transaction(conn, layout_query)
+                res = many(c, 'parameter', 'label', 'unit', 'inferred_from')
+                (name, label, unit, inferred_from) = res
+                # get the data type
+                sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
+                c = transaction(conn, sql)
+                for row in c.fetchall():
+                    if row['name'] == name:
+                        paramtype = row['type']
+                        break
 
-                paramspecs[layout_id] = ParamSpec(name=name,
-                                                  paramtype=paramtype,
-                                                  label=label, unit=unit,
-                                                  inferred_from=inferred_from)
+                if layout_id in independents:
+                    paramspec = ParamSpec(name=name, paramtype=paramtype,
+                                          label=label, unit=unit,
+                                          inferred_from=inferred_from)
+                    paramspecs[layout_id] = paramspec
 
-            elif layout_id in dependents:
+                elif layout_id in dependents:
 
-                sp_query = f"""
-                           SELECT independent
-                           FROM dependencies
-                           WHERE dependent == {layout_id}
-                           ORDER BY axis_num ASC
-                           """
-                c = atomic_transaction(conn, sp_query)
-                setpoints = [l[0] for l in many_many(c, 'independent')]
-                depends_on = [paramspecs[idp].name for idp in setpoints]
+                    sp_query = f"""
+                            SELECT independent
+                            FROM dependencies
+                            WHERE dependent == {layout_id}
+                            ORDER BY axis_num ASC
+                            """
+                    c = transaction(conn, sp_query)
+                    setpoints = [l[0] for l in many_many(c, 'independent')]
+                    depends_on = [paramspecs[idp].name for idp in setpoints]
 
-                paramspecs[layout_id] = ParamSpec(name=name,
-                                                  paramtype=paramtype,
-                                                  label=label, unit=unit,
-                                                  depends_on=depends_on,
-                                                  inferred_from=inferred_from)
+                    paramspec = ParamSpec(name=name,
+                                          paramtype=paramtype,
+                                          label=label, unit=unit,
+                                          depends_on=depends_on,
+                                          inferred_from=inferred_from)
+                    paramspecs[layout_id] = paramspec
 
-        print(f'Converted run number {run_id}')
-        print(f'Conversion result:\n {paramspecs}')
-        print('-'*25)
+            interdeps = InterDependencies(*paramspecs.values())
+            desc = RunDescriber(interdeps=interdeps)
+            yaml_str = desc.to_yaml()
 
-        # Plan: make an InterDependencies object and dump it via
-        # a RunDescriber object under the "description" column
+            sql = f"""
+                   UPDATE runs
+                   SET run_description = ?
+                   where run_id == {run_id}
+                   """
+            cur = conn.cursor()
+            cur.execute(sql, yaml_str)
+
+            log.info(f"Upgrade in transition, run number {run_id}: OK")
+
 
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
