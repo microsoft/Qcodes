@@ -14,7 +14,7 @@
         "defaultcolormap": "hot",
         "auto_color_scale":{
             "enabled": false,
-            "cutoff_percentile": [50, 50],
+            "cutoff_percentile": [0.5, 0.5],
             "color_over": "white",
             "color_under": "grey"
         }
