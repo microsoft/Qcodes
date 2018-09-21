@@ -9,7 +9,7 @@ import logging
 from typing import Tuple, Union, Optional, Any, cast
 import numpy as np
 import matplotlib
-from qcodes import config
+import qcodes
 
 log = logging.getLogger(__name__)
 
@@ -228,18 +228,18 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                  'colorbar?')
         return
     if auto_color_scale is None:
-        auto_color_scale = config.gui.auto_color_scale.enabled
+        auto_color_scale = qcodes.config.gui.auto_color_scale.enabled
     if not auto_color_scale:
         return
     if color_over is None:
-        color_over = config.gui.auto_color_scale.color_over
+        color_over = qcodes.config.gui.auto_color_scale.color_over
     if color_under is None:
-        color_under = config.gui.auto_color_scale.color_under
+        color_under = qcodes.config.gui.auto_color_scale.color_under
     if cutoff_percentile is None:
         cutoff_percentile = cast(
             Tuple[Number, Number],
-            tuple(config.gui. auto_color_scale.cutoff_percentile))
-    
+            tuple(qcodes.config.gui.auto_color_scale.cutoff_percentile))
+
     apply_auto_color_scale(colorbar, data_array, cutoff_percentile,
                            color_over, color_under)
 
