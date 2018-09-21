@@ -73,9 +73,7 @@ def auto_range_iqr(data_array: np.ndarray,
     return vmin, vmax
 
 
-"""
-Matplotlib functions
-"""
+# Matplotlib functions
 
 DEFAULT_COLOR_OVER = 'Magenta'
 DEFAULT_COLOR_UNDER = 'Cyan'
@@ -113,7 +111,7 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
     """
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
-    if type(colorbar.mappable) is not matplotlib.collections.QuadMesh:
+    if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
         raise RuntimeError('Can only scale mesh data, but received '
                            f'"{type(colorbar.mappable)}" instead')
     if data_lim is None:
@@ -172,7 +170,7 @@ def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
     :meth:`apply_color_scale_limits`.
     If you want to adjust the color scale based on the configuration file
     `qcodesrc.json`, use :meth:`auto_color_scale_from_config`, which is used
-    In :meth:`plot_by_id` and `show_num` (in qdev-wrappers), 
+    In :meth:`plot_by_id` and `show_num` (in qdev-wrappers),
 
     Args:
         colorbar: The matplotlib colorbar to which to apply

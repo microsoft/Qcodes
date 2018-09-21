@@ -2,7 +2,7 @@ import logging
 from collections import OrderedDict
 from functools import partial
 from typing import (Optional, List, Sequence, Union, Tuple, Dict,
-                    Any, Set, cast)
+                    Any, Set)
 import inspect
 import numpy as np
 import matplotlib
