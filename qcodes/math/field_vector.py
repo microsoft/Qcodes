@@ -1,7 +1,9 @@
 """
-A convenient class to keep track of vectors representing physical fields. The idea is that a vector instance
-stores a representation in cartesian, spherical and cylindrical coordinates. Giving either (x, y, z) values or
-(rho, phi, z) values or (r, theta, phi) values at instantiation we will calculate the other representation immediately.
+A convenient class to keep track of vectors representing physical fields. The
+idea is that a vector instance stores a representation in cartesian, spherical
+and cylindrical coordinates. Giving either (x, y, z) values or (rho, phi, z)
+values or (r, theta, phi) values at instantiation we will calculate the other
+representation immediately.
 """
 
 import numpy as np
@@ -10,19 +12,27 @@ import numpy as np
 class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
 
-    def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None, rho=None):
+    def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
+                 rho=None):
         """
         Parameters:
-            x (float, optional): represents the norm of the projection of the vector along the x-axis
-            y (float, optional): represents the norm of the projection of the vector along the y-axis
-            z (float, optional): represents the norm of the projection of the vector along the z-axis
+            x (float, optional): represents the norm of the projection of the
+                                    vector along the x-axis
+            y (float, optional): represents the norm of the projection of the
+                                    vector along the y-axis
+            z (float, optional): represents the norm of the projection of the
+                                    vector along the z-axis
             r (float, optional): represents the norm of the vector
-            theta (float, optional): represents the angle of the vector with respect to the positive z-axis
-            rho (float, optional): represents the norm of the projection of the vector on to the xy-plane
-            phi (float, optional): represents the angle of rho with respect to the positive x-axis
+            theta (float, optional): represents the angle of the vector with
+                                        respect to the positive z-axis
+            rho (float, optional): represents the norm of the projection of the
+                                    vector on to the xy-plane
+            phi (float, optional): represents the angle of rho with respect to
+                                        the positive x-axis
 
-        Note: All inputs are optional, however the user needs to either give (x, y, z) values,
-        (r, theta, phi) values or (phi, rho, z) values for meaningful computation
+        Note: All inputs are optional, however the user needs to either give
+                (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
+                values for meaningful computation
         """
         self._x = x
         self._y = y
@@ -54,7 +64,10 @@ class FieldVector(object):
             setattr(self, "_" + attr_name, value)
         else:
             if not np.isclose(attr_value, value):
-                raise ValueError("Computed value of {} inconsistent with given value".format(attr_name))
+                raise ValueError(
+                    f"Computed value of {attr_name} inconsistent with given "
+                    f"value"
+                )
 
     def _set_attribute_values(self, attr_names, values):
 
@@ -111,26 +124,31 @@ class FieldVector(object):
 
     def _compute_unknowns(self):
         """
-        Compute all coordinates. To do this we need either the set (x, y, z) to contain no None values, or the set
-        (r, theta, phi), or the set (rho, phi, z). Given any of these sets, we can recompute the rest.
+        Compute all coordinates. To do this we need either the set (x, y, z)
+        to contain no None values, or the set (r, theta, phi), or the set
+        (rho, phi, z). Given any of these sets, we can recompute the rest.
 
-        This function will raise an error if there are contradictory inputs (e.g. x=3, y=4, z=0 and rho=6).
+        This function will raise an error if there are contradictory inputs
+        (e.g. x=3, y=4, z=0 and rho=6).
         """
 
         for f in [
             lambda: FieldVector._cartesian_to_other(self._x, self._y, self._z),
-            lambda: FieldVector._spherical_to_other(self._r, self._theta, self._phi),
-            lambda: FieldVector._cylindrical_to_other(self._phi, self._rho, self._z)
+            lambda: FieldVector._spherical_to_other(self._r, self._theta,
+                                                    self._phi),
+            lambda: FieldVector._cylindrical_to_other(self._phi, self._rho,
+                                                      self._z)
         ]:
             new_values = f()
-            if new_values is not None:  # this will return None if any of the function arguments is None.
+            if new_values is not None:  # this will return None if any of the
+                # function arguments is None.
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
     def copy(self, other):
         """Copy the properties of other vector to yourself"""
         for att in FieldVector.attributes:
-            value = getattr(other, "_"+ att)
+            value = getattr(other, "_" + att)
             setattr(self, "_" + att, value)
 
     def set_vector(self, **new_values):
@@ -141,11 +159,12 @@ class FieldVector(object):
             >>> f = FieldVector(x=0, y=2, z=6)
             >>> f.set_vector(x=9, y=3, z=1)
             >>> f.set_vector(r=1, theta=30.0, phi=10.0)
-            >>> f.set_vector(x=9, y=0)  # this should raise a value error: "Can only set vector with a complete value
-            # set"
-            >>> f.set_vector(x=9, y=0, r=3)  # although mathematically it is possible to compute the complete vector
-            # from the values given, this is too hard to implement with generality (and not worth it) so this to will
-            # raise the above mentioned ValueError
+            >>> f.set_vector(x=9, y=0)  # this should raise a value error:
+            # "Can only set vector with a complete value set"
+            >>> f.set_vector(x=9, y=0, r=3)  # although mathematically it is
+            # possible to compute the complete vector from the values given,
+            # this is too hard to implement with generality (and not worth it)
+            # so this to will raise the above mentioned ValueError
         """
         names = sorted(list(new_values.keys()))
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
@@ -157,28 +176,27 @@ class FieldVector(object):
 
     def set_component(self, **new_values):
         """
-        Set a single component of the vector to some new value. It is disallowed for the user to set vector components
-        manually as this can lead to inconsistencies (e.g. x and rho are not independent of each other, setting
-        one has to effect the other)
+        Set a single component of the vector to some new value. It is
+        disallowed for the user to set vector components manually as this can
+        lead to inconsistencies (e.g. x and rho are not independent of each
+        other, setting one has to effect the other)
 
         Examples:
             >>> f = FieldVector(x=2, y=3, z=4)
-            >>> f.set_component(r=10) # Since r is part of the set (r, theta, phi) representing spherical coordinates,
-            # setting r means that theta and phi are kept constant and only r is changed. After changing r, (x, y, z)
-            # values are recomputed, as is the rho coordinate. Internally we arrange this by setting x, y, z and rho to
-            # None and calling self._compute_unknowns()
+            >>> f.set_component(r=10) # Since r is part of the set
+            # (r, theta, phi) representing spherical coordinates, setting r
+            # means that theta and phi are kept constant and only r is changed.
+            # After changing r, (x, y, z) values are recomputed, as is the rho
+            # coordinate. Internally we arrange this by setting x, y, z and
+            # rho to None and calling self._compute_unknowns()
 
         Parameters:
-            new_values (dict): keys representing parameter names and values the values to be set
+            new_values (dict): keys representing parameter names and values the
+            values to be set
         """
 
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
-            # It is not easy to properly implement a way of setting multiple components at the same time as we need to
-            # check for inconsistencies. E.g. how do we handle the following situation:
-            # >>> f = FieldVector(x=1, y=2, z=3)
-            # >>> f.set_component(y=5, r=10)
-            # After setting r=10, y will no longer be equal to 5.
 
         items = list(new_values.items())
         component_name = items[0][0]
@@ -190,8 +208,7 @@ class FieldVector(object):
             value = items[0][1]
 
         setattr(self, "_" + component_name, value)
-        # Setting x (for example), we will keep y and z untouched, but set r, theta, phi and rho to None
-        # so these can be recomputed. This will keep things consistent.
+
         groups = [["x", "y", "z"], ["r", "theta", "phi"], ["phi", "rho", "z"]]
 
         for group in groups:
@@ -232,13 +249,6 @@ class FieldVector(object):
                 return False
 
         return True
-
-    # A method property allows us to confidently retrieve values but disallows modifying them
-    # We can do this:
-    # a = field_vector.x
-    # But this:
-    # field_vector.x = a
-    # Will raise an error.
 
     @property
     def x(self):

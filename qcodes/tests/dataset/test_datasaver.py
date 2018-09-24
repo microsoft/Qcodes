@@ -1,8 +1,12 @@
 import pytest
 import os
 import tempfile
+import numpy as np
+from hypothesis import given, strategies as hst
+
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
+from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import connect, init_db
 from qcodes.dataset.database import initialise_database
 
@@ -71,3 +75,50 @@ def test_default_callback(experiment):
         DataSaver.default_callback = None
         if test_set is not None:
             test_set.conn.close()
+
+
+def test_numpy_types(experiment):
+    """
+    Test that we can save numpy types in the data set
+    """
+
+    p = ParamSpec("p", "numeric")
+    test_set = qc.new_data_set("test-dataset")
+    test_set.add_parameter(p)
+
+    data_saver = DataSaver(
+        dataset=test_set, write_period=0, parameters={"p": p})
+
+    dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
+              np.float64]
+
+    for dtype in dtypes:
+        data_saver.add_result(("p", dtype(2)))
+
+    data_saver.flush_data_to_database()
+    data = test_set.get_data("p")
+    assert data == [[2] for _ in range(len(dtypes))]
+
+
+@given(numeric_type=hst.sampled_from([int, float, np.int8, np.int16, np.int32,
+                                      np.int64, np.float16, np.float32,
+                                      np.float64]))
+def test_saving_numeric_values_as_text(experiment, numeric_type):
+    """
+    Test the saving numeric values into 'text' parameter raises an exception
+    """
+    p = ParamSpec("p", "text")
+
+    test_set = qc.new_data_set("test-dataset")
+    test_set.add_parameter(p)
+
+    data_saver = DataSaver(
+        dataset=test_set, write_period=0, parameters={"p": p})
+
+    try:
+        msg = f"It is not possible to save a numeric value for parameter " \
+              f"'{p.name}' because its type class is 'text', not 'numeric'."
+        with pytest.raises(ValueError, match=msg):
+            data_saver.add_result((p.name, numeric_type(2)))
+    finally:
+        data_saver.dataset.conn.close()

@@ -330,10 +330,12 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
+        log.debug(f'Starting blocking ramp of {self.name} to {value}')
         while self.ramping_state() == 'ramping':
             self._sleep(0.3)
         self._sleep(2.0)
         state = self.ramping_state()
+        log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
         if state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -570,32 +572,32 @@ class AMI430_3D(Instrument):
         # Get and set parameters for the set points of the coordinates
         self.add_parameter(
             'cartesian',
-            get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
-            set_cmd=self._set_cartesian,
+            get_cmd=partial(self._get_setpoints, ('x', 'y', 'z')),
+            set_cmd=partial(self._set_setpoints, ('x', 'y', 'z')),
             unit='T',
             vals=Anything()
         )
 
         self.add_parameter(
             'x',
-            get_cmd=partial(self._get_setpoints, 'x'),
-            set_cmd=self._set_x,
+            get_cmd=partial(self._get_setpoints, ('x',)),
+            set_cmd=partial(self._set_setpoints, ('x',)),
             unit='T',
             vals=Numbers()
         )
 
         self.add_parameter(
             'y',
-            get_cmd=partial(self._get_setpoints, 'y'),
-            set_cmd=self._set_y,
+            get_cmd=partial(self._get_setpoints, ('y',)),
+            set_cmd=partial(self._set_setpoints, ('y',)),
             unit='T',
             vals=Numbers()
         )
 
         self.add_parameter(
             'z',
-            get_cmd=partial(self._get_setpoints, 'z'),
-            set_cmd=self._set_z,
+            get_cmd=partial(self._get_setpoints, ('z',)),
+            set_cmd=partial(self._set_setpoints, ('z',)),
             unit='T',
             vals=Numbers()
         )
@@ -603,36 +605,35 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'spherical',
             get_cmd=partial(
-                self._get_setpoints,
-                'r',
-                'theta',
-                'phi'
+                self._get_setpoints, ('r', 'theta', 'phi')
             ),
-            set_cmd=self._set_spherical,
+            set_cmd=partial(
+                self._set_setpoints, ('r', 'theta', 'phi')
+            ),
             unit='tuple?',
             vals=Anything()
         )
 
         self.add_parameter(
             'phi',
-            get_cmd=partial(self._get_setpoints, 'phi'),
-            set_cmd=self._set_phi,
+            get_cmd=partial(self._get_setpoints, ('phi',)),
+            set_cmd=partial(self._set_setpoints, ('phi',)),
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'theta',
-            get_cmd=partial(self._get_setpoints, 'theta'),
-            set_cmd=self._set_theta,
+            get_cmd=partial(self._get_setpoints, ('theta',)),
+            set_cmd=partial(self._set_setpoints, ('theta',)),
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'field',
-            get_cmd=partial(self._get_setpoints, 'r'),
-            set_cmd=self._set_r,
+            get_cmd=partial(self._get_setpoints, ('r',)),
+            set_cmd=partial(self._set_setpoints, ('r',)),
             unit='T',
             vals=Numbers()
         )
@@ -640,22 +641,29 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'cylindrical',
             get_cmd=partial(
-                self._get_setpoints,
-                'rho',
-                'phi',
-                'z'
+                self._get_setpoints, ('rho', 'phi', 'z')
             ),
-            set_cmd=self._set_cylindrical,
+            set_cmd=partial(
+                self._set_setpoints, ('rho', 'phi', 'z')
+            ),
             unit='tuple?',
             vals=Anything()
         )
 
         self.add_parameter(
             'rho',
-            get_cmd=partial(self._get_setpoints, 'rho'),
-            set_cmd=self._set_rho,
+            get_cmd=partial(self._get_setpoints, ('rho',)),
+            set_cmd=partial(self._set_setpoints, ('rho',)),
             unit='T',
             vals=Numbers()
+        )
+
+        self.add_parameter(
+            'block_during_ramp',
+            set_cmd=None,
+            initial_value=True,
+            unit='',
+            vals=Bool()
         )
 
     def _verify_safe_setpoint(self, setpoint_values):
@@ -668,7 +676,7 @@ class AMI430_3D(Instrument):
 
         return answer
 
-    def _set_fields(self, values):
+    def _adjust_child_instruments(self, values):
         """
         Set the fields of the x/y/z magnets. This function is called
         whenever the field is changed and performs several safety checks
@@ -712,7 +720,8 @@ class AMI430_3D(Instrument):
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
-                instrument.set_field(value, perform_safety_check=False)
+                instrument.set_field(value, perform_safety_check=False,
+                                     block=self.block_during_ramp.get())
 
     def _request_field_change(self, instrument, value):
         """
@@ -750,7 +759,7 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _get_setpoints(self, *names):
+    def _get_setpoints(self, names):
 
         measured_values = self._set_point.get_components(*names)
 
@@ -766,45 +775,20 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _set_cartesian(self, values):
-        x, y, z = values
-        self._set_point.set_vector(x=x, y=y, z=z)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+    def _set_setpoints(self, names, values):
 
-    def _set_x(self, x):
-        self._set_point.set_component(x=x)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        kwargs = dict(zip(names, np.atleast_1d(values)))
 
-    def _set_y(self, y):
-        self._set_point.set_component(y=y)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        set_point = FieldVector()
+        set_point.copy(self._set_point)
+        if len(kwargs) == 3:
+            set_point.set_vector(**kwargs)
+        else:
+            set_point.set_component(**kwargs)
 
-    def _set_z(self, z):
-        self._set_point.set_component(z=z)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        self._adjust_child_instruments(
+            set_point.get_components("x", "y", "z")
+        )
 
-    def _set_spherical(self, values):
-        r, theta, phi = values
-        self._set_point.set_vector(r=r, theta=theta, phi=phi)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
+        self._set_point = set_point
 
-    def _set_r(self, r):
-        self._set_point.set_component(r=r)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_theta(self, theta):
-        self._set_point.set_component(theta=theta)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_phi(self, phi):
-        self._set_point.set_component(phi=phi)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_cylindrical(self, values):
-        rho, phi, z = values
-        self._set_point.set_vector(rho=rho, phi=phi, z=z)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def _set_rho(self, rho):
-        self._set_point.set_component(rho=rho)
-        self._set_fields(self._set_point.get_components("x", "y", "z"))

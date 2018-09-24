@@ -3,7 +3,8 @@ import logging
 import time
 import warnings
 import weakref
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING, cast
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
+    TYPE_CHECKING, cast, Type
 
 import numpy as np
 if TYPE_CHECKING:
@@ -53,6 +54,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                                          'ChannelList']] = {}
         super().__init__(**kwargs)
 
+        # This is needed for snapshot method to work
+        self._meta_attrs = ['name']
+
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
         """
@@ -91,7 +95,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         for every real function of the instrument.
 
         This functionality is meant for simple cases, principally things that
-        map to simple commands like '\*RST' (reset) or those with just a few
+        map to simple commands like ``*RST`` (reset) or those with just a few
         arguments. It requires a fixed argument count, and positional args
         only. If your case is more complicated, you're probably better off
         simply making a new method in your ``Instrument`` subclass definition.
@@ -396,19 +400,17 @@ class Instrument(InstrumentBase):
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
 
-        self._meta_attrs = ['name']
-
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
-        Parse a standard VISA '\*IDN?' response into an ID dict.
+        Parse a standard VISA ``*IDN?`` response into an ID dict.
 
         Even though this is the VISA standard, it applies to various other
         types as well, such as IPInstruments, so it is included here in the
         Instrument base class.
 
-        Override this if your instrument does not support '\*IDN?' or
+        Override this if your instrument does not support ``*IDN?`` or
         returns a nonstandard IDN string. This string is supposed to be a
         comma-separated list of vendor, model, serial, and firmware, but
         semicolon and colon are also common separators so we accept them here
@@ -604,14 +606,41 @@ class Instrument(InstrumentBase):
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError('Instrument {} has been removed'.format(name))
-        inst = cast('Instrument', ins)
         if instrument_class is not None:
-            if not isinstance(inst, instrument_class):
+            if not isinstance(ins, instrument_class):
                 raise TypeError(
                     'Instrument {} is {} but {} was requested'.format(
-                        name, type(inst), instrument_class))
+                        name, type(ins), instrument_class))
 
-        return inst
+        return ins
+
+    @staticmethod
+    def exist(name: str, instrument_class: Optional[type]=None) -> bool:
+        """
+        Check if an instrument with a given names exists (i.e. is already
+        instantiated).
+
+        Args:
+            name: name of the instrument
+            instrument_class: The type of instrument you are looking for.
+        """
+        instrument_exists = True
+
+        try:
+            _ = Instrument.find_instrument(
+                name, instrument_class=instrument_class)
+
+        except KeyError as exception:
+            instrument_is_not_found = \
+                any(str_ in str(exception)
+                    for str_ in [name, 'has been removed'])
+
+            if instrument_is_not_found:
+                instrument_exists = False
+            else:
+                raise exception
+
+        return instrument_exists
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
@@ -696,3 +725,50 @@ class Instrument(InstrumentBase):
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
+
+
+def find_or_create_instrument(instrument_class: Type[Instrument],
+                              name: str,
+                              *args,
+                              recreate: bool=False,
+                              **kwargs
+                              ) -> Instrument:
+    """
+    Find an instrument with the given name of a given class, or create one if
+    it is not found. In case the instrument was found, and `recreate` is True,
+    the instrument will be re-instantiated.
+
+    Note that the class of the existing instrument has to be equal to the
+    instrument class of interest. For example, if an instrument with the same
+    name but of a different class exists, the function will raise an exception.
+
+    This function is very convenient because it allows not to bother about
+    which instruments are already instantiated and which are not.
+
+    If an instrument is found, a connection message is printed, as if the
+    instrument has just been instantiated.
+
+    Args:
+        instrument_class
+            Class of the instrument to find or create
+        name
+            Name of the instrument to find or create
+        recreate
+            When True, the instruments gets recreated if it is found
+
+    Returns:
+        The found or created instrument
+    """
+    if not Instrument.exist(name, instrument_class=instrument_class):
+        instrument = instrument_class(name, *args, **kwargs)
+    else:
+        instrument = Instrument.find_instrument(
+            name, instrument_class=instrument_class)
+
+        if recreate:
+            instrument.close()
+            instrument = instrument_class(name, *args, **kwargs)
+        else:
+            instrument.connect_message()  # prints the message
+
+    return instrument

@@ -1,17 +1,40 @@
+import logging
+
 from unittest import TestCase
 import unittest
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+import pytest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import ChannelList
-
-from hypothesis import given, settings
-import hypothesis.strategies as hst
 from qcodes.loops import Loop
 
-import numpy as np
-from numpy.testing import assert_array_equal, assert_allclose
+
+@pytest.fixture(scope='function')
+def dci():
+
+    dci = DummyChannelInstrument(name='dci')
+    yield dci
+    dci.close()
+
+
+def test_channels_call_function(dci, caplog):
+    """
+    Test that dci.channels.some_function() calls
+    some_function on each of the channels
+    """
+    with caplog.at_level(logging.DEBUG,
+                         logger='qcodes.tests.instrument_mocks'):
+        caplog.clear()
+        dci.channels.log_my_name()
+        mssgs = [rec.message for rec in caplog.records]
+        names = [ch.name.replace('dci_', '') for ch in dci.channels]
+        assert mssgs == names
 
 
 class TestChannels(TestCase):
@@ -107,6 +130,19 @@ class TestChannels(TestCase):
             self.instrument.channels.insert(2, channel)
         self.assertEqual(len(self.instrument.channels), n_channels + 1)
 
+    def test_clear_channels(self):
+        channels = self.instrument.channels
+        channels.clear()
+        self.assertEqual(len(channels), 0)
+
+    def test_clear_locked_channels(self):
+        channels = self.instrument.channels
+        original_length = len(channels)
+        channels.lock()
+        with self.assertRaises(AttributeError):
+            channels.clear()
+        self.assertEqual(len(channels), original_length)
+
     def test_remove_channel(self):
         channels = self.instrument.channels
         chanA = self.instrument.A
@@ -154,7 +190,7 @@ class TestChannels(TestCase):
             chan.temperature(setpoints[i])
 
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
-        self.assertEquals(self.instrument.channels.temperature(), expected)
+        self.assertEqual(self.instrument.channels.temperature(), expected)
 
     @given(start=hst.integers(-8,7), stop=hst.integers(-8,7), step=hst.integers(1,7))
     def test_access_channels_by_slice(self, start, stop, step):
@@ -270,7 +306,7 @@ class TestChannelsLoop(TestCase):
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
 
     @given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-    @settings(max_examples=10, deadline=300)
+    @settings(max_examples=10, deadline=None)
     def test_loop_measure_channels_by_name(self, values):
         p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         for i in range(4):

@@ -449,7 +449,7 @@ class AWG70000A(VisaInstrument):
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
-        self.seqxFileFolder = "\\Users\\OEM\Documents"
+        self.seqxFileFolder = "\\Users\\OEM\\Documents"
 
         self.current_directory(self.wfmxFileFolder)
 
@@ -1108,10 +1108,7 @@ class AWG70000A(VisaInstrument):
         # input sanitising to avoid spaces in filenames
         seqname = seqname.replace(' ', '_')
 
-        # np.shape(wfms) returns
-        # (no_of_chans, no_of_elms, no_of_arrays, no_of_points)
-        # where no_of_arrays is 3 if both markers are included
-        (chans, elms) = np.shape(wfms)[0: 2]
+        (chans, elms) = (len(wfms), len(wfms[0]))
         wfm_names = [[f'wfmch{ch}pos{el}' for ch in range(1, chans+1)]
                      for el in range(1, elms+1)]
 

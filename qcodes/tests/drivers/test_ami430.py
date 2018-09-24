@@ -1,5 +1,6 @@
 import io
 import numpy as np
+import re
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import floats
@@ -30,11 +31,11 @@ def current_driver():
     and z directions.
     """
 
-    mag_x = AMI430_VISA('x', address='GPIB::1::65535::INSTR', visalib=visalib,
+    mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
                         terminator='\n', port=1)
-    mag_y = AMI430_VISA('y', address='GPIB::2::65535::INSTR', visalib=visalib,
+    mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
                         terminator='\n', port=1)
-    mag_z = AMI430_VISA('z', address='GPIB::3::65535::INSTR', visalib=visalib,
+    mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
                         terminator='\n', port=1)
 
     driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
@@ -263,19 +264,18 @@ def test_measured(current_driver, set_target):
                                      cartesian_z])
 
 
-def get_time_dict(messages: List[str]) -> Dict[str, float]:
-    """
-    Helper function used in test_ramp_down_first
-    """
-    relevant_messages = [line for line in messages
-                         if 'CONF:FIELD:TARG' in line]
-    time_dict = {}
-    for rm in relevant_messages:
-        time = rm.split(' - ')[0]
-        name = rm[rm.find(':')-1: rm.find(':')]
-        time_dict.update({name: float(time)})
+def get_ramp_down_order(messages: List[str]) -> List[str]:
+    order = []
 
-    return time_dict
+    for msg in messages:
+        if "CONF:FIELD:TARG" not in msg:
+            continue
+
+        g = re.search("(.): CONF:FIELD:TARG", msg)
+        name = g.groups()[0]
+        order.append(name)
+
+    return order
 
 
 def test_ramp_down_first(current_driver):
@@ -307,12 +307,10 @@ def test_ramp_down_first(current_driver):
         current_driver.cartesian(set_point)
         # get the logging outputs from the instruments.
         messages = get_messages(iostream)
-        # extract the time stamps
-        times = get_time_dict(messages)
-
-        for ramp_up_name in np.delete(names, count):
-            # ramp down occurs before ramp up.
-            assert times[ramp_down_name] < times[ramp_up_name]
+        # get the order in which the ramps down occur
+        order = get_ramp_down_order(messages)
+        # the first one should be the one for which delta < 0
+        assert order[0] == names[count]
 
 
 def test_field_limit_exception(current_driver):
@@ -341,6 +339,9 @@ def test_field_limit_exception(current_driver):
                 current_driver.cartesian(set_point)
 
             assert "field would exceed limit" in excinfo.value.args[0]
+            assert not all([a == b for a, b in zip(
+                current_driver.cartesian(), set_point
+            )])
 
 
 def test_cylindrical_poles(current_driver):
@@ -390,11 +391,12 @@ def test_warning_increased_max_ramp_rate():
     target_ramp_rate = max_ramp_rate + 0.01
 
     with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
-        AMI430_VISA("testing_increased_max_ramp_rate",
-                    address='GPIB::4::65535::INSTR', visalib=visalib,
-                    terminator='\n', port=1,
-                    current_ramp_limit=target_ramp_rate)
+        inst = AMI430_VISA("testing_increased_max_ramp_rate",
+                           address='GPIB::4::INSTR', visalib=visalib,
+                           terminator='\n', port=1,
+                           current_ramp_limit=target_ramp_rate)
         assert len(excinfo) >= 1 # Check we at least one warning.
+        inst.close()
 
 
 def test_ramp_rate_exception(current_driver):
@@ -412,3 +414,27 @@ def test_ramp_rate_exception(current_driver):
         errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
 
         assert errmsg in excinfo.value.args[0]
+
+
+def test_blocking_ramp_parameter(current_driver, caplog):
+
+    assert current_driver.block_during_ramp() == True
+
+    log_name = 'qcodes.instrument_drivers.american_magnetics.AMI430'
+
+    with caplog.at_level(logging.DEBUG, logger=log_name):
+        current_driver.cartesian((0, 0, 0))
+        caplog.clear()
+        current_driver.cartesian((0, 0, 1))
+
+        messages = [record.message for record in caplog.records]
+        assert messages[-1] == 'Finished blocking ramp'
+        assert messages[-6] == 'Starting blocking ramp of z to 1'
+
+        caplog.clear()
+        current_driver.block_during_ramp(False)
+        current_driver.cartesian((0, 0, 0))
+        messages = [record.message for record in caplog.records]
+
+        assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
+

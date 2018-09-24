@@ -1,21 +1,32 @@
+import itertools
+import tempfile
+import os
+from contextlib import contextmanager
+from copy import deepcopy
+import logging
+
+import pytest
+import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
-import numpy as np
-import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
-import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
-from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database
 
-import qcodes.dataset.experiment_container
-import pytest
-import tempfile
-import os
+import qcodes.dataset.data_set
+
+from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
+                                        get_user_version,
+                                        atomic_transaction,
+                                        perform_db_upgrade_0_to_1,
+                                        update_GUIDs)
+
+from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.database import (initialise_database,
+                                     initialise_or_create_database_at)
+from qcodes.dataset.guids import parse_guid
+
 
 n_experiments = 0
 
@@ -46,16 +57,73 @@ def dataset(experiment):
     dataset.conn.close()
 
 
-def test_tabels_exists(empty_temp_db):
-    print(qc.config["core"]["db_location"])
-    conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-    cursor = conn.execute("select sql from sqlite_master where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
-    for row, expected_table in zip(cursor, expected_tables):
-        assert expected_table in row['sql']
-    conn.close()
+@contextmanager
+def location_and_station_set_to(location: int, work_station: int):
+    cfg = qc.Config()
+    old_cfg = deepcopy(cfg.current_config)
+    cfg['GUID_components']['location'] = location
+    cfg['GUID_components']['work_station'] = work_station
+    cfg.save_to_home()
+
+    yield
+
+    cfg.current_config = old_cfg
+    cfg.save_to_home()
 
 
+def test_tables_exist(empty_temp_db):
+    for version in [-1, 0, 1]:
+        conn = connect(qc.config["core"]["db_location"],
+                       qc.config["core"]["db_debug"],
+                       version=version)
+        cursor = conn.execute("select sql from sqlite_master"
+                              " where type = 'table'")
+        expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+        rows = [row for row in cursor]
+        assert len(rows) == len(expected_tables)
+        for row, expected_table in zip(rows, expected_tables):
+            assert expected_table in row['sql']
+        conn.close()
+
+
+def test_initialise_database_at_for_nonexisting_db():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        db_location = os.path.join(tmpdirname, 'temp.db')
+        assert not os.path.exists(db_location)
+
+        initialise_or_create_database_at(db_location)
+
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+
+        test_tables_exist(None)
+
+
+def test_initialise_database_at_for_existing_db():
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # Define DB location
+        db_location = os.path.join(tmpdirname, 'temp.db')
+        assert not os.path.exists(db_location)
+
+        # Create DB file
+        qc.config["core"]["db_location"] = db_location
+        initialise_database()
+
+        # Check if it has been created correctly
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+        test_tables_exist(None)
+
+        # Call function under test
+        initialise_or_create_database_at(db_location)
+
+        # Check if the DB is still correct
+        assert os.path.exists(db_location)
+        assert qc.config["core"]["db_location"] == db_location
+        test_tables_exist(None)
+
+
+@settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
@@ -277,7 +345,7 @@ def test_modify_result(experiment):
         dataset.modify_result(0, {'x': 2})
 
 
-@settings(max_examples=25)
+@settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
 def test_add_parameter_values(experiment, N, M):
@@ -319,18 +387,115 @@ def test_dataset_with_no_experiment_raises(empty_temp_db):
                             ParamSpec("y", "numeric")])
 
 
-def test_database_upgrade(empty_temp_db):
-    connection = connect(qc.config["core"]["db_location"],
-                 qc.config["core"]["db_debug"])
-    userversion = get_user_version(connection)
-    if userversion != 0:
-        raise RuntimeError("trying to upgrade from version 0"
-                           " but your database is version"
-                           " {}".format(userversion))
-    sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
+def test_guid(dataset):
+    guid = dataset.guid
+    assert len(guid) == 36
+    parse_guid(guid)
 
-    atomic_transaction(connection, sql)
-    set_user_version(connection, 1)
+
+def test_update_existing_guids(empty_temp_db, caplog):
+
+    old_loc = 101
+    old_ws = 1200
+
+    new_loc = 232
+    new_ws = 52123
+
+    # prepare five runs with different location and work station codes
+
+    with location_and_station_set_to(0, 0):
+        new_experiment('test', sample_name='test_sample')
+
+        ds1 = new_data_set('ds_one')
+        xparam = ParamSpec('x', 'numeric')
+        ds1.add_parameter(xparam)
+        ds1.add_result({'x': 1})
+
+        ds2 = new_data_set('ds_two')
+        ds2.add_parameter(xparam)
+        ds2.add_result({'x': 2})
+
+        guid_comps_1 = parse_guid(ds1.guid)
+        assert guid_comps_1['location'] == 0
+        assert guid_comps_1['work_station'] == 0
+
+        guid_comps_2 = parse_guid(ds2.guid)
+        assert guid_comps_2['location'] == 0
+        assert guid_comps_2['work_station'] == 0
+
+    with location_and_station_set_to(0, old_ws):
+        ds3 = new_data_set('ds_three')
+        xparam = ParamSpec('x', 'numeric')
+        ds3.add_parameter(xparam)
+        ds3.add_result({'x': 3})
+
+    with location_and_station_set_to(old_loc, 0):
+        ds4 = new_data_set('ds_four')
+        xparam = ParamSpec('x', 'numeric')
+        ds4.add_parameter(xparam)
+        ds4.add_result({'x': 4})
+
+    with location_and_station_set_to(old_loc, old_ws):
+        ds5 = new_data_set('ds_five')
+        xparam = ParamSpec('x', 'numeric')
+        ds5.add_parameter(xparam)
+        ds5.add_result({'x': 5})
+
+    with location_and_station_set_to(new_loc, new_ws):
+
+        caplog.clear()
+        expected_levels = ['INFO',
+                           'INFO', 'INFO',
+                           'INFO', 'INFO',
+                           'INFO', 'WARNING',
+                           'INFO', 'WARNING',
+                           'INFO', 'INFO']
+
+        with caplog.at_level(logging.INFO):
+            update_GUIDs(ds1.conn)
+
+            for record, lvl in zip(caplog.records, expected_levels):
+                assert record.levelname == lvl
+
+        guid_comps_1 = parse_guid(ds1.guid)
+        assert guid_comps_1['location'] == new_loc
+        assert guid_comps_1['work_station'] == new_ws
+
+        guid_comps_2 = parse_guid(ds2.guid)
+        assert guid_comps_2['location'] == new_loc
+        assert guid_comps_2['work_station'] == new_ws
+
+        guid_comps_3 = parse_guid(ds3.guid)
+        assert guid_comps_3['location'] == 0
+        assert guid_comps_3['work_station'] == old_ws
+
+        guid_comps_4 = parse_guid(ds4.guid)
+        assert guid_comps_4['location'] == old_loc
+        assert guid_comps_4['work_station'] == 0
+
+        guid_comps_5 = parse_guid(ds5.guid)
+        assert guid_comps_5['location'] == old_loc
+        assert guid_comps_5['work_station'] == old_ws
+
+
+def test_perform_actual_upgrade_0_to_1():
+    # we cannot use the empty_temp_db, since that has already called connect
+    # and is therefore latest version already
+    connection = connect(':memory:', debug=False,
+                         version=0)
+
+    assert get_user_version(connection) == 0
+
+    guid_table_query = "SELECT guid FROM runs"
+
+    with pytest.raises(RuntimeError):
+        atomic_transaction(connection, guid_table_query)
+
+    perform_db_upgrade_0_to_1(connection)
+    assert get_user_version(connection) == 1
+
+    c = atomic_transaction(connection, guid_table_query)
+    assert len(c.fetchall()) == 0
 
 
 def test_numpy_ints(dataset):
@@ -413,9 +578,11 @@ def test_missing_keys(dataset):
     assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
     assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
 
-    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+    assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
     tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
     expected_setpoints = [[[v] for v in vals] for vals in tmp]
 
-    assert dataset.get_setpoints("b") == expected_setpoints
+    assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
+    assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
+

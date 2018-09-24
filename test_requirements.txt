@@ -2,9 +2,9 @@ coverage!=4.5.0
 pytest-cov
 pytest
 codacy-coverage
-hypothesis==3.61.0 # type annotation failures with mypy for 3.62.0 and later
-mypy!=0.570 # due to https://github.com/python/mypy/issues/4674
+hypothesis!=3.69.11 # due to bug in log capture
+mypy>=0.630
 git+https://github.com/QCoDeS/pyvisa-sim.git
-git+https://github.com/QCoDeS/broadbean
 lxml
 codecov
+asv

@@ -11,7 +11,8 @@
         "notebook": true,
         "plotlib": "all",
         "pyqtmaxplots": 100,
-        "defaultcolormap": "hot"
+        "defaultcolormap": "hot",
+        "smart_colorscale": false
     },
     "user": {
         "scriptfolder": ".",
@@ -21,5 +22,10 @@
         "enable_forced_reconnect": false,
         "default_folder": ".",
         "default_file": "instrument_config.yml"
+    },
+    "GUID_components": {
+        "location": 0,
+        "work_station": 0,
+        "sample": 0
     }
 }
