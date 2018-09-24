@@ -157,7 +157,7 @@ class DataSaver:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            param_spec = self.parameters[str(partial_result[0])]
+            param_spec = self.parameters[paramstr]
             if param_spec.type == 'array':
                 inserting_as_arrays = True
             if any(isinstance(value, typ) for typ in array_like_types):
@@ -173,10 +173,21 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
-            elif is_number(value) or isinstance(value, str):
+            elif is_number(value):
                 if inserting_as_arrays:
-                    raise ValueError("Trying to insert into an ArrayType with"
-                                     " a scalar value")
+                    raise ValueError("Trying to insert into an ArrayType with "
+                                     "a scalar value")
+                if param_spec.type == 'text':
+                    raise ValueError(f"It is not possible to save a numeric "
+                                     f"value for parameter {paramstr!r} "
+                                     f"because its type class is "
+                                     f"'text', not 'numeric'.")
+            elif isinstance(value, str):
+                if param_spec.type != 'text':
+                    raise ValueError(f"It is not possible to save a string "
+                                     f"value for parameter {paramstr!r} "
+                                     f"because its type class is "
+                                     f"{param_spec.type!r}, not 'text'.")
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
@@ -220,16 +231,15 @@ class DataSaver:
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
-                param_spec = self.parameters[str(partial_result[0])]
+                param = str(partial_result[0])
+                value = partial_result[1]
+                param_spec = self.parameters[param]
                 if param_spec.type == 'array' and index == 0:
-                    res_dict[str(partial_result[0])] = partial_result[1]
+                    res_dict[param] = value
                 elif param_spec.type != 'array':
-                    param = str(partial_result[0])
-                    value = partial_result[1]
                     # For compatibility with the old Loop, setpoints are
                     # tuples of numbers (usually tuple(np.linspace(...))
-                    if hasattr(value, '__len__') and not (isinstance(value,
-                                                                     str)):
+                    if hasattr(value, '__len__') and not isinstance(value, str):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
                             # this is significantly faster than atleast_1d
@@ -509,7 +519,6 @@ class Measurement:
             station: The QCoDeS station to snapshot. If not given, the
                 default one is used.
         """
-        self.exp = exp
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
@@ -651,10 +660,12 @@ class Measurement:
             sp_strings = [str(sp) for sp in setpoints]
         else:
             sp_strings = []
+
         if basis is not None:
             bs_strings = [str(bs) for bs in basis]
         else:
             bs_strings = []
+
         # validate all dependencies
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)

@@ -10,20 +10,22 @@ from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
 @given(param_name=text(min_size=1, max_size=10),
        param_label=text(min_size=0, max_size=15),
        scale=sampled_from(sorted(list(_ENGINEERING_PREFIXES.keys()))),
-       unit=sampled_from(sorted(list(_UNITS_FOR_RESCALING))),
+       unit=sampled_from(sorted(list(
+           _UNITS_FOR_RESCALING.union(
+               ['', 'unit', 'kg', '%', 'permille', 'nW'])))),
        data_strategy=data()
        )
 @example(param_name='huge_param',
          param_label='Larger than the highest scale',
          scale=max(list(_ENGINEERING_PREFIXES.keys())),
          unit='V',
-         data_strategy=np.random.random((5,)) \
+         data_strategy=np.random.random((5,))
                        * 10 ** (3 + max(list(_ENGINEERING_PREFIXES.keys()))))
 @example(param_name='small_param',
          param_label='Lower than the lowest scale',
          scale=min(list(_ENGINEERING_PREFIXES.keys())),
          unit='V',
-         data_strategy=np.random.random((5,)) \
+         data_strategy=np.random.random((5,))
                        * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))))
 def test_rescaled_ticks_and_units(scale, unit,
                                   param_name, param_label, data_strategy):
@@ -59,35 +61,25 @@ def test_rescaled_ticks_and_units(scale, unit,
     }
 
     ticks_formatter, label = _make_rescaled_ticks_and_units(data_dict)
-
-    expected_prefix = _ENGINEERING_PREFIXES[scale]
-    if param_label == '':
-        assert f"{param_name} ({expected_prefix}{unit})" == label
+    if unit in _UNITS_FOR_RESCALING:
+        expected_prefix = _ENGINEERING_PREFIXES[scale]
     else:
-        assert f"{param_label} ({expected_prefix}{unit})" == label
+         if scale != 0:
+             expected_prefix = f'$10^{{{scale:.0f}}}$ '
+         else:
+             expected_prefix = ''
+    if param_label == '':
+        base_label = param_name
+    else:
+        base_label = param_label
+    postfix = expected_prefix + unit
+    if postfix != '':
+        assert f"{base_label} ({postfix})" == label
+    else:
+        assert f"{base_label}" == label
 
     assert '5' == ticks_formatter(5 / (10 ** (-scale)))
     assert '1' == ticks_formatter(1 / (10 ** (-scale)))
     # also test the fact that "{:g}" is used in ticks formatter function
     assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
-
-
-@given(param_name=text(min_size=1, max_size=10),
-       param_label=text(min_size=1, max_size=15),
-       unit=sampled_from(['', 'unit', 'kg', '%', 'permille', 'nW']),
-       data_array=lists(elements=floats(allow_nan=True), min_size=1)
-       )
-def test_rescaled_ticks_and_units_for_non_si_unit(
-        unit, param_name, param_label, data_array):
-    data_dict = {
-        'name': param_name,
-        'label': param_label,
-        'unit': unit,
-        'data': np.array(data_array)
-    }
-
-    ticks_formatter, label = _make_rescaled_ticks_and_units(data_dict)
-
-    assert ticks_formatter is None
-    assert label is None
 

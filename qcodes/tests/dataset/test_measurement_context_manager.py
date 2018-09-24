@@ -349,6 +349,7 @@ def test_measurement_name(experiment, DAC, DMM):
         assert datasaver.dataset.table_name == expected_name
 
 
+@settings(deadline=None)
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 def test_setting_write_period(empty_temp_db, wp):
@@ -369,6 +370,7 @@ def test_setting_write_period(empty_temp_db, wp):
             assert datasaver.write_period == float(wp)
 
 
+@settings(deadline=None)
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
 def test_enter_and_exit_actions(experiment, DAC, words):
     # we use a list to check that the functions executed
@@ -900,7 +902,7 @@ def test_datasaver_array_parameters_channel(experiment,
         assert datadict['data'].shape == (N * M,)
 
 
-@settings(max_examples=5, deadline=None, use_coverage=False)
+@settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
 def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
                                           DAC, N):

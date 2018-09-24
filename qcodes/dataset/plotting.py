@@ -2,6 +2,7 @@ import logging
 from collections import OrderedDict
 from functools import partial
 from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
+import inspect
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -13,15 +14,26 @@ from qcodes.utils.plotting import auto_range_iqr
 from qcodes import config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
-from .data_export import (datatype_from_setpoints_1d,
-                          datatype_from_setpoints_2d, reshape_2D_data)
+from .data_export import (plottype_for_2d_data,
+                          plottype_for_3d_data, reshape_2D_data)
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
-AxesTupleList = Tuple[List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]]
+AxesTupleList = Tuple[List[matplotlib.axes.Axes],
+                      List[Optional[matplotlib.colorbar.Colorbar]]]
 
+# list of kwargs for plotting function, so that kwargs can be passed to
+# :meth:`plot_by_id` and will be distributed to the respective plotting func.
+# subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
+# First find the kwargs that belong to subplots and than add those that are
+# redirected to the `figure`-call.
+SUBPLOTS_OWN_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
+SUBPLOTS_OWN_KWARGS.remove('fig_kw')
+FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
+FIGURE_KWARGS.remove('kwargs')
+SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
@@ -30,12 +42,13 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Optional[bool]=None) -> AxesTupleList:
+               smart_colorscale: Optional[bool]=None,
+               **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given run
 
     Implemented so far:
-       * 1D plots
+       * 1D line and scatter plots
        * 2D plots on filled out rectangular grids
        * 2D scatterplots (fallback)
 
@@ -43,7 +56,8 @@ def plot_by_id(run_id: int,
     of axes that will be used for plotting. The user should ensure that the
     number of axes matches the number of datasets to plot. To plot several (1D)
     dataset in the same axes supply it several times. Colorbar axes are
-    created dynamically and cannot be supplied.
+    created dynamically. If colorbar axes are supplied, they will be reused,
+    yet new colorbar axes will be returned.
 
     The plot has a title that comprises run id, experiment name, and sample
     name.
@@ -52,26 +66,31 @@ def plot_by_id(run_id: int,
         run_id:
             ID of the run to plot
         axes:
-            Optional Matplotlib axes to plot on. If non provided new axes
+            Optional Matplotlib axes to plot on. If not provided, new axes
             will be created
         colorbars:
-            Optional Matplotlib Colorbars to use for 2D plots. If non
-            provided new ones will be created
+            Optional Matplotlib Colorbars to use for 2D plots. If not
+            provided, new ones will be created
         rescale_axes: if True, tick labels and units for axes of parameters
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
         smart_colorscale: if True, the colorscale of heatmap plots will be
-            automatically adjusted to disregard outliers.
+            automatically adjusted to disregard outliers. If False,
+            the adjustment will not be performed. If None, the value from
+            QCoDeS config->"gui"->"smart_colorscale" will determine if the
+            adjustment is going to be performed.
 
-    returns:
+    Returns:
         a list of axes and a list of colorbars of the same length. The
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
     """
-    # defaults
+    # handle arguments and defaults
     if smart_colorscale is None:
         smart_colorscale = config.gui.smart_colorscale
+    subplots_kwargs = {k: kwargs.pop(k)
+                       for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
     dataset = load_by_id(run_id)
@@ -90,9 +109,14 @@ def plot_by_id(run_id: int,
     if axes is None:
         axes = []
         for i in range(nplots):
-            fig, ax = plt.subplots(1, 1)
+            fig, ax = plt.subplots(1, 1, **subplots_kwargs)
             axes.append(ax)
     else:
+        if len(subplots_kwargs) != 0:
+            raise RuntimeError(f"Error: You cannot provide arguments for the "
+                               f"axes/figure creation if you supply your own "
+                               f"axes. "
+                               f"Provided arguments: {subplots_kwargs}")
         if len(axes) != nplots:
             raise RuntimeError(f"Trying to make {nplots} plots, but"
                                f"received {len(axes)} axes objects.")
@@ -106,17 +130,20 @@ def plot_by_id(run_id: int,
         if len(data) == 2:  # 1D PLOTTING
             log.debug('Plotting by id, doing a 1D plot')
 
-            # sort for plotting
-            order = data[0]['data'].argsort()
-            xpoints = data[0]['data'][order]
-            ypoints = data[1]['data'][order]
+            xpoints = data[0]['data']
+            ypoints = data[1]['data']
 
-            plottype = datatype_from_setpoints_1d(xpoints)
+            plottype = plottype_for_2d_data(xpoints, ypoints)
 
             if plottype == 'line':
-                ax.plot(xpoints, ypoints)
+                # sort for plotting
+                order = xpoints.argsort()
+                xpoints = xpoints[order]
+                ypoints = ypoints[order]
+
+                ax.plot(xpoints, ypoints, **kwargs)
             elif plottype == 'point':
-                ax.scatter(xpoints, ypoints)
+                ax.scatter(xpoints, ypoints, **kwargs)
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
@@ -141,21 +168,21 @@ def plot_by_id(run_id: int,
                            'point': plot_2d_scatterplot,
                            'unknown': plot_2d_scatterplot}
 
-            log.debug('Determining plottype')
-            plottype = datatype_from_setpoints_2d([data[0]['data'],
-                                                   data[1]['data']])
-            log.debug(f'Plottype is: "f{plottype}".')
-            log.debug('Now doing the actual plot')
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
+
+            plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
+
             plot_func = how_to_plot[plottype]
-            ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar)
+            ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
+                                     **kwargs)
 
             _set_data_axes_labels(ax, data, colorbar)
 
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
+
             if smart_colorscale:
                 colorbar.mappable.set_clim(*auto_range_iqr(zpoints))
 
@@ -180,18 +207,17 @@ def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
     return data_dict['label'] if data_dict['label'] != '' else data_dict['name']
 
 
-def _get_unit_of_data(data_dict: Dict[str, Any]) -> str:
-    return data_dict['unit'] if data_dict['unit'] != '' else ''
-
-
 def _make_axis_label(label: str, unit: str) -> str:
-    return f'{label} ({unit})'
+    label = f'{label}'
+    if unit != '' and unit is not None:
+        label += f' ({unit})'
+    return label
 
 
 def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
                               ) -> str:
     label = _get_label_of_data(data[axis_index])
-    unit = _get_unit_of_data(data[axis_index])
+    unit = data[axis_index]['unit']
     return _make_axis_label(label, unit)
 
 
@@ -208,7 +234,8 @@ def _set_data_axes_labels(ax: matplotlib.axes.Axes,
 
 def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         ax: matplotlib.axes.Axes,
-                        colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
+                        colorbar: matplotlib.colorbar.Colorbar=None,
+                        **kwargs) -> AxesTuple:
     """
     Make a 2D scatterplot of the data
 
@@ -222,18 +249,32 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
-    mappable = ax.scatter(x=x, y=y, c=z)
+    z_is_string_valued = isinstance(z[0], str)
+
+    if z_is_string_valued:
+        z_int = list(range(len(z)))
+        mappable = ax.scatter(x=x, y=y, c=z_int, **kwargs)
+    else:
+        mappable = ax.scatter(x=x, y=y, c=z, **kwargs)
+
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
     else:
         colorbar = ax.figure.colorbar(mappable, ax=ax)
+
+    if z_is_string_valued:
+        colorbar.ax.set_yticklabels(z)
+
     return ax, colorbar
 
 
-def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
+def plot_on_a_plain_grid(x: np.ndarray,
+                         y: np.ndarray,
                          z: np.ndarray,
                          ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar=None) -> AxesTuple:
+                         colorbar: matplotlib.colorbar.Colorbar=None,
+                         **kwargs
+                         ) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -268,7 +309,9 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
 
-    colormesh = ax.pcolormesh(x_edges, y_edges, np.ma.masked_invalid(z_to_plot))
+    colormesh = ax.pcolormesh(x_edges, y_edges,
+                              np.ma.masked_invalid(z_to_plot),
+                              **kwargs)
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
     else:
@@ -319,9 +362,7 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
 
 
 def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
-        -> Tuple[
-            Union[matplotlib.ticker.FuncFormatter, None],
-            Union[str, None]]:
+        -> Tuple[matplotlib.ticker.FuncFormatter, str]:
     """
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
@@ -331,8 +372,9 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     values like "1" instead of "0.000000001" while the units in the axis label
     are changed from "V" to "nV" ('n' is for 'nano').
 
-    The units for which this procedure is performed can be found in
-    `_UNITS_FOR_RESCALING`.
+    The units for which unit prefixes are added can be found in
+    `_UNITS_FOR_RESCALING`. For all other units an exponential scaling factor
+    is added to the label i.e. `(10^3 x e^2/hbar)`.
 
     Args:
         data_dict: a dictionary of the following structure
@@ -345,17 +387,12 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
 
     Returns:
         a tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
-        the new label; in case it is not possible to rescale, the returned
-        values are None's
+        the new label.
     """
-    ticks_formatter = None
-    new_label = None
-
     unit = data_dict['unit']
 
+    maxval = np.nanmax(np.abs(data_dict['data']))
     if unit in _UNITS_FOR_RESCALING:
-        maxval = np.nanmax(np.abs(data_dict['data']))
-
         for threshold, scale in _THRESHOLDS.items():
             if maxval < threshold:
                 selected_scale = scale
@@ -366,14 +403,23 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
             largest_scale = max(list(_ENGINEERING_PREFIXES.keys()))
             selected_scale = largest_scale
             prefix = _ENGINEERING_PREFIXES[largest_scale]
+    else:
+        if maxval > 0:
+            selected_scale = 3*(np.floor(np.floor(np.log10(maxval))/3))
+        else:
+            selected_scale = 0
+        if selected_scale != 0:
+            prefix = f'$10^{{{selected_scale:.0f}}}$ '
+        else:
+            prefix = ''
 
-        new_unit = prefix + unit
-        label = _get_label_of_data(data_dict)
-        new_label = _make_axis_label(label, new_unit)
+    new_unit = prefix + unit
+    label = _get_label_of_data(data_dict)
+    new_label = _make_axis_label(label, new_unit)
 
-        scale_factor = 10**(-selected_scale)
-        ticks_formatter = FuncFormatter(
-            partial(_scale_formatter, factor=scale_factor))
+    scale_factor = 10**(-selected_scale)
+    ticks_formatter = FuncFormatter(
+        partial(_scale_formatter, factor=scale_factor))
 
     return ticks_formatter, new_label
 
@@ -382,28 +428,41 @@ def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
                              data: List[Dict[str, Any]],
                              cax: matplotlib.colorbar.Colorbar=None):
     """
-    Rescale ticks and units for axes that are in standard SI units (i.e. V,
-    s, J) to milli (m), kilo (k), etc. Refer to the `_UNITS_FOR_RESCALING`
-    for the list of units that are rescaled.
-
-    Note that combined or non-standard SI units do not get rescaled.
+    Rescale ticks and units for the provided axes as described in
+    :meth:`~_make_rescaled_ticks_and_units`
     """
     # for x axis
-    x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
-    if x_ticks_formatter is not None and new_x_label is not None:
+    if not _is_string_valued_array(data[0]['data']):
+        x_ticks_formatter, new_x_label = _make_rescaled_ticks_and_units(data[0])
         ax.xaxis.set_major_formatter(x_ticks_formatter)
         ax.set_xlabel(new_x_label)
 
     # for y axis
-    y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
-    if y_ticks_formatter is not None and new_y_label is not None:
+    if not _is_string_valued_array(data[1]['data']):
+        y_ticks_formatter, new_y_label = _make_rescaled_ticks_and_units(data[1])
         ax.yaxis.set_major_formatter(y_ticks_formatter)
         ax.set_ylabel(new_y_label)
 
     # for z aka colorbar axis
     if cax is not None and len(data) > 2:
-        z_ticks_formatter, new_z_label = _make_rescaled_ticks_and_units(data[2])
-        if z_ticks_formatter is not None and new_z_label is not None:
+        if not _is_string_valued_array(data[2]['data']):
+            z_ticks_formatter, new_z_label = \
+                _make_rescaled_ticks_and_units(data[2])
             cax.set_label(new_z_label)
             cax.formatter = z_ticks_formatter
             cax.update_ticks()
+
+
+def _is_string_valued_array(values: np.ndarray) -> bool:
+    """
+    Check if the given 1D numpy array contains categorical data, or, in other
+    words, if it is string-valued.
+
+    Args:
+        values:
+            a 1D numpy array of values
+
+    Returns:
+        True, if the array contains string; False otherwise
+    """
+    return isinstance(values[0], str)
