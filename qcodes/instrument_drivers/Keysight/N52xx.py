@@ -117,7 +117,7 @@ class PNATrace(InstrumentChannel):
                  name: str,
                  trace: int) -> None:
         super().__init__(parent, name)
-        self.trace = trace
+        self.trace_num = trace
 
         # Name of parameter (i.e. S11, S21 ...)
         self.add_parameter('trace',
@@ -196,14 +196,14 @@ class PNATrace(InstrumentChannel):
         """
         Select correct trace before querying
         """
-        self.root_instrument.active_trace(self.trace)
+        self.root_instrument.active_trace(self.trace_num)
         super().write(cmd)
 
     def ask(self, cmd: str) -> str:
         """
         Select correct trace before querying
         """
-        self.root_instrument.active_trace(self.trace)
+        self.root_instrument.active_trace(self.trace_num)
         return super().ask(cmd)
 
     @staticmethod
