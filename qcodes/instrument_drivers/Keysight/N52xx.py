@@ -228,7 +228,7 @@ class PNATrace(InstrumentChannel):
         """
         if not re.match("S[1-4][1-4]", val):
             raise ValueError("Invalid S parameter spec")
-        self.write(f"CALC:PAR:MOD:EXT {val}")
+        self.write(f"CALC:PAR:MOD:EXT \"{val}\"")
 
 class PNABase(VisaInstrument):
     """
