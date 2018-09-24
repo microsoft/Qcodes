@@ -51,10 +51,10 @@ def auto_range_iqr(data_array: np.ndarray,
         t = cutoff_percentile
         b = cutoff_percentile
     z = data_array.flatten()
-    zmax = z.max()
-    zmin = z.min()
+    zmax = np.nanmax(z)
+    zmin = np.nanmin(z)
     zrange = zmax-zmin
-    pmin, q3, q1, pmax = np.percentile(z, [b, 75, 25, 100-t])
+    pmin, q3, q1, pmax = np.nanpercentile(z, [b, 75, 25, 100-t])
     IQR = q3-q1
     # handle corner case of all data zero, such that IQR is zero
     # to counter numerical artifacts do not test IQR == 0, but IQR on its
