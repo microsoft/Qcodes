@@ -67,8 +67,6 @@ CREATE TABLE IF NOT EXISTS runs (
         experiments(exp_id)
 );
 """
-_IX_runs_exp_id = "CREATE INDEX IF NOT EXISTS IX_runs_exp_id ON runs (exp_id DESC)"
-_IX_runs_guid = "CREATE INDEX IF NOT EXISTS IX_runs_guid ON runs (guid DESC)"
 
 _layout_table_schema = """
 CREATE TABLE IF NOT EXISTS layouts (
@@ -239,7 +237,6 @@ def connect(name: str, debug: bool = False,
 
     init_db(conn)
     perform_db_upgrade(conn, version=version)
-    create_indices(conn)
     return conn
 
 
@@ -255,7 +252,7 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
           'newest version'
     """
 
-    upgrade_actions = [perform_db_upgrade_0_to_1]
+    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2]
     newest_version = len(upgrade_actions)
     version = newest_version if version == -1 else version
 
@@ -317,6 +314,36 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     log.info('Succesfully upgraded database version 0 -> 1.')
     set_user_version(conn, 1)
 
+def perform_db_upgrade_1_to_2(conn: SomeConnection) -> bool:
+    """
+    Perform the upgrade from version 1 to version 2
+
+    Returns:
+        A bool indicating whether everything went well. The next upgrade in
+          the upgrade chain should run conditioned in this bool
+    """
+    log.info('Starting database upgrade version 1 -> 2')
+
+    start_version = get_user_version(conn)
+    if start_version != 1:
+        log.warn('Can not upgrade, current database version is '
+                 f'{start_version}, aborting.')
+        return
+
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    cur = atomic_transaction(conn, sql)
+    n_run_tables = len(cur.fetchall())
+
+    if n_run_tables == 1:
+        _IX_runs_exp_id = "CREATE INDEX IF NOT EXISTS IX_runs_exp_id ON runs (exp_id DESC)"
+        _IX_runs_guid = "CREATE INDEX IF NOT EXISTS IX_runs_guid ON runs (guid DESC)"
+        with atomic(conn) as conn:
+            transaction(conn, _IX_runs_exp_id)
+            transaction(conn, _IX_runs_guid)
+    else:
+        raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+    set_user_version(conn, 2)
+    return True
 
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
@@ -416,12 +443,6 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _runs_table_schema)
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
-
-def create_indices(conn: SomeConnection)->None:
-    with atomic(conn) as conn:
-        transaction(conn, _IX_runs_exp_id)
-        transaction(conn, _IX_runs_guid)
-
 
 def insert_column(conn: SomeConnection, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:
