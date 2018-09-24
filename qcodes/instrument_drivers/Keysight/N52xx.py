@@ -336,6 +336,11 @@ class PNABase(VisaInstrument):
                            get_cmd='SENS:SWE:MODE?',
                            set_cmd='SENS:SWE:MODE {}',
                            vals=Enum("HOLD", "CONT", "GRO", "SING"))
+        # Trigger Source
+        self.add_parameter('trigger_source',
+                           get_cmd="TRIG:SOUR?",
+                           set_cmd="TRIG:SOUR {}",
+                           vals=Enum("EXT", "IMM", "MAN"))
 
         # Traces
         self.add_parameter('active_trace',
