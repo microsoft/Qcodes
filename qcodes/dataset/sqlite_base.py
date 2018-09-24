@@ -314,13 +314,12 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     log.info('Succesfully upgraded database version 0 -> 1.')
     set_user_version(conn, 1)
 
-def perform_db_upgrade_1_to_2(conn: SomeConnection) -> bool:
+def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 1 to version 2
 
     Returns:
-        A bool indicating whether everything went well. The next upgrade in
-          the upgrade chain should run conditioned in this bool
+        None
     """
     log.info('Starting database upgrade version 1 -> 2')
 
@@ -343,7 +342,6 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> bool:
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
     set_user_version(conn, 2)
-    return True
 
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
