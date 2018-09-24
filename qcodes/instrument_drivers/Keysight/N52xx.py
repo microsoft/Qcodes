@@ -177,7 +177,7 @@ class PNATrace(InstrumentChannel):
         # Store previous mode
         prev_mode = root_instr.sweep_mode()
         # Take instrument out of continuous mode, and send triggers equal to the number of averages
-        if root_instr.averages_enabled:
+        if root_instr.averages_enabled():
             avg = root_instr.averages()
             root_instr.write('SENS:AVER:CLE')
             root_instr.write('SENS:SWE:GRO:COUN {0}'.format(avg))
