@@ -156,7 +156,7 @@ class DataSaver:
                     self._unbundle_arrayparameter(parameter,
                                                   res,
                                                   found_parameters)
-                if isinstance(parameter, ArrayParameter2):
+                elif isinstance(parameter, ArrayParameter2):
                     self._unbundle_arrayparameter2(parameter,
                                                    res,
                                                    found_parameters)
@@ -653,7 +653,7 @@ class Measurement:
                                           setpoints,
                                           basis,
                                           paramtype)
-        if isinstance(parameter, ArrayParameter2):
+        elif isinstance(parameter, ArrayParameter2):
             self._register_arrayparameter2(parameter,
                                            setpoints,
                                            basis,
