@@ -1,14 +1,18 @@
 from time import time
 from functools import partial
+from typing import Union
+
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
+
+number = Union[float, int]
 
 
 class DACException(Exception):
     pass
 
 
-class DacReader(object):
+class DacReader:
     @staticmethod
     def _dac_parse(resp):
         """
@@ -17,7 +21,8 @@ class DacReader(object):
         """
         resp = resp.strip()
         if resp[-1] != "!":
-            raise DACException("Unexpected terminator on response: {}. Should end with \"!\"".format(resp))
+            raise DACException(f'Unexpected terminator on response: {resp}. '
+                               f'Should end with "!"')
         return resp.strip()[1:-1]
 
     def _dac_v_to_code(self, volt):
@@ -358,8 +363,6 @@ class DacSlot(InstrumentChannel, DacReader):
 class Decadac(VisaInstrument, DacReader):
     """
     The qcodes driver for the Decadac.
-    Each slot on the Deacadac is to be treated as a seperate
-    four-channel instrument.
 
     Tested with a Decadec firmware revion number 14081 (Decadac 139).
 
@@ -377,24 +380,25 @@ class Decadac(VisaInstrument, DacReader):
     DAC_CHANNEL_CLASS = DacChannel
     DAC_SLOT_CLASS = DacSlot
 
-    def __init__(self, name, address, min_val=-5, max_val=5, **kwargs):
+    def __init__(self, name: str, address: str,
+                 min_val: number=-5, max_val: number=5,
+                 **kwargs) -> None:
         """
 
-        Creates an instance of the Decadac instrument corresponding to one slot
-        on the physical instrument.
+        Creates an instance of the Decadac instruments
 
         Args:
-            name (str): What this instrument is called locally.
+            name: What this instrument is called locally.
 
-            port (str): The address of the DAC. For a serial port this is ASRLn::INSTR
-                where n is replaced with the address set in the VISA control panel.
-                Baud rate and other serial parameters must also be set in the VISA control
-                panel.
+            address: The address of the DAC. For a serial port this
+                is ASRLn::INSTR where n is replaced with the address set in the
+                VISA control panel. Baud rate and other serial parameters must
+                also be set in the VISA control panel.
 
-            min_val (number): The minimum value in volts that can be output by the DAC.
+            min_val: The minimum value in volts that can be output by the DAC.
                 This value should correspond to the DAC code 0.
 
-            max_val (number): The maximum value in volts that can be output by the DAC.
+            max_val: The maximum value in volts that can be output by the DAC.
                 This value should correspond to the DAC code 65536.
 
         """
