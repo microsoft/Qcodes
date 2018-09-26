@@ -85,7 +85,8 @@ class DacReader:
 
             count (int): The number of bytes to query.
 
-            versa_eeprom(bool): do we want to read from the versadac (slot) EEPROM
+            versa_eeprom(bool): do we want to read from the versadac
+            (slot) EEPROM
         """
         # Check if we actually have anything to query
         if count == 0:
@@ -109,10 +110,12 @@ class DacReader:
         val = 0
         for i in range(count):
             # Set DAC to point to address
-            ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))
+            ret = int(self._dac_parse(
+                self.ask_raw(f"A{addr};")))  # type: ignore
             if ret != addr:
                 raise DACException(f"Failed to set EEPROM address {addr}.")
-            val += int(self._dac_parse(self.ask_raw(query_command))) << (32*(count-i-1))
+            val += int(self._dac_parse(self.ask_raw(
+                query_command))) << (32*(count-i-1))  # type: ignore
             addr += 1
 
         return val
@@ -154,12 +157,13 @@ class DacReader:
 
         # Write the value to the DAC
         # Set DAC to point to address
-        ret = int(self._dac_parse(self.ask_raw("A{};".format(addr))))
+        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))  # type: ignore
         if ret != addr:
             raise DACException("Failed to set EEPROM address {}.".format(addr))
-        self.ask_raw("{}{};".format(write_command, val))
+        self.ask_raw("{}{};".format(write_command, val))  # type: ignore
         # Check the write was successful
-        if int(self._dac_parse(self.ask_raw(query_command))) != val:
+        if int(self._dac_parse(
+                self.ask_raw(query_command))) != val:  # type: ignore
             raise DACException(f"Failed to write value ({val}) to "
                                f"address {addr}.")
 
