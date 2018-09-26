@@ -114,8 +114,8 @@ class DacReader:
                 self.ask_raw(f"A{addr};")))  # type: ignore
             if ret != addr:
                 raise DACException(f"Failed to set EEPROM address {addr}.")
-            val += int(self._dac_parse(self.ask_raw(
-                query_command))) << (32*(count-i-1))  # type: ignore
+            val += int(self._dac_parse(self.ask_raw(  # type: ignore
+                query_command))) << (32*(count-i-1))
             addr += 1
 
         return val
