@@ -274,7 +274,7 @@ class SignalHound_USB_SA124B(Instrument):
         self.devOpen = True
         self.device_type()
 
-    def closeDevice(self):
+    def close(self):
         log.info('Closing Device with handle num: '
                  f'{self.deviceHandle.value}')
 
@@ -286,10 +286,12 @@ class SignalHound_USB_SA124B(Instrument):
 
         ret = self.dll.saCloseDevice(self.deviceHandle)
         if ret != saStatus.saNoError:
-            raise ValueError('Error closing device!')
+            raise ValueError('Error closing device: '
+                             f'{saStatus(ret).name}')
         log.info(f'Closed Device with handle num: {self.deviceHandle.value}')
         self.devOpen = False
         self.running(False)
+        super().close()
 
     def abort(self):
         log.info('Stopping acquisition')
@@ -306,10 +308,12 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise IOError('Unknown error setting abort! Error = %s' % err)
 
-    def preset(self):
+    def preset(self) -> None:
+        """
+        Like close but performs a hardware reset before closing the
+        connection
+        """
         log.warning('Performing hardware-reset of device!')
-        log.warning('Please ensure you close the device handle within '
-                    'two seconds of this call!')
 
         err = self.dll.saPreset(self.deviceHandle)
         if err == saStatus.saNoError:
@@ -317,7 +321,9 @@ class SignalHound_USB_SA124B(Instrument):
         elif err == saStatus.saDeviceNotOpenErr:
             raise IOError('Device not open!')
         else:
-            raise IOError(f'Unknown error calling preset! Error = {err}')
+            raise IOError(f'Unknown error calling preset! '
+                          f'Error = {saStatus(err).name}')
+        super().close()
 
     def _get_device_type(self):
         log.info('Querying device for model information')
