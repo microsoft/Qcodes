@@ -496,7 +496,7 @@ class SignalHound_USB_SA124B(Instrument):
             data += self._get_sweep_data()
         return data / Navg
 
-    def _get_power_at_freq(self, Navg=1):
+    def _get_power_at_freq(self):
         """
         Returns the maximum power in a window of 250kHz
         around the specified  frequency.
