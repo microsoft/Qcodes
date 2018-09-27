@@ -518,7 +518,7 @@ class SignalHound_USB_SA124B(Instrument):
         self._sync_parameters()
         self._initialise()
 
-    def get_idn(self) -> Dict[str, Optional[Union[str, int]]]:
+    def get_idn(self) -> Dict[str, Optional[str]]:
         output = {}
         output['vendor'] = 'Signal Hound'
         output['model'] = self._do_get_device_type()
@@ -528,7 +528,7 @@ class SignalHound_USB_SA124B(Instrument):
         if ret != saStatus.saNoError:
             raise RuntimeError(f"Could not get serial number. "
                                f"Error was: {saStatus(ret).name}")
-        output['serial'] = serialnumber.value
+        output['serial'] = str(serialnumber.value)
         fw_version = (ct.c_char*17)()
         # the manual says that this must be at least 16 char
         # but not clear if that includes a termination zero so
