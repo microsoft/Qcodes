@@ -168,6 +168,8 @@ class SignalHound_USB_SA124B(Instrument):
                            initial_value=True,
                            parameter_class=TraceParameter,
                            get_cmd=None,
+                           docstring="Apply software filter to remove "
+                                     "undersampling mirroring",
                            vals=vals.Bool())
 
         self.openDevice()
