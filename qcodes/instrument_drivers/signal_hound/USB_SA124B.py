@@ -78,7 +78,7 @@ class SignalHound_USB_SA124B(Instrument):
     """
     QCoDeS driver for the SignalHound USB SA124B
     """
-    dll_path = 'C:\Windows\System32\sa_api.dll'
+    dll_path = 'C:\\Program Files\\Signal Hound\\Spike\\sa_api.dll'
 
     def __init__(self, name, dll_path=None, **kwargs):
         t0 = time()
