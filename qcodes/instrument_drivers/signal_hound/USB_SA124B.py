@@ -139,7 +139,7 @@ class SignalHound_USB_SA124B(Instrument):
                            initial_value='log-scale',
                            vals=vals.Enum('log-scale', 'lin-scale',
                                           'log-full-scale', 'lin-full-scale'),
-                          parameter_class=TraceParameter)
+                           parameter_class=TraceParameter)
         self.add_parameter('running',
                            get_cmd=None,
                            set_cmd=None,
@@ -190,13 +190,13 @@ class SignalHound_USB_SA124B(Instrument):
             2. Acquisition configuration
                 lin-scale/log-scale
                 avg/max power
-            3. Configuring the external 10MHz refernce
+            3. Configuring the external 10MHz reference
             4. Configuration of the mode that is being used
             5. Configuration of the tracking generator (not implemented)
                 used in VNA mode
 
-        Sync parameters sets the configuration of the instrument using the parameters
-        specified in the Qcodes instrument.
+        Sync parameters sets the configuration of the instrument using the
+        parameters specified in the Qcodes instrument.
         """
 
         # 1. CenterSpan Configuration
