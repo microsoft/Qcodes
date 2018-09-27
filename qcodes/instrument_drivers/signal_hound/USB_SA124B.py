@@ -182,7 +182,7 @@ class SignalHound_USB_SA124B(Instrument):
         self.openDevice()
         self.device_type()
 
-        self._prepare_measurment()
+        self._prepare_measurement()
         sweep_len, start_freq, stepsize = self.QuerySweep()
         self.add_parameter(name='trace',
                            sweep_len=sweep_len,
@@ -262,9 +262,8 @@ class SignalHound_USB_SA124B(Instrument):
         self._parameters_synced = True
         return
 
-
-    def configure(self, rejection=True):
-        self._prepare_measurment()
+    def configure(self):
+        self._prepare_measurement()
         self._update_trace()
         return
 
@@ -511,13 +510,13 @@ class SignalHound_USB_SA124B(Instrument):
             self.span(0.25e6)
             self.rbw(1e3)
         if not self._parameters_synced:
-            self._prepare_measurment()
+            self._prepare_measurement()
         data = self._get_averaged_sweep_data()
         max_power = np.max(data)
         if needs_reset:
             self.span(original_span)
             self.rbw(original_rbw)
-            self._prepare_measurment()
+            self._prepare_measurement()
         sleep(0.2)
         return max_power
 
@@ -533,7 +532,7 @@ class SignalHound_USB_SA124B(Instrument):
             else:
                 raise IOError(err_msg)
 
-    def _prepare_measurment(self):
+    def _prepare_measurement(self):
         self._sync_parameters()
         self._initialise()
 
