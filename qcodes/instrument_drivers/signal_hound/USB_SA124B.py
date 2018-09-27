@@ -33,17 +33,17 @@ class FrequencySweep(ArrayParameter):
     """
     Hardware controlled parameter class for SignalHound_USB_SA124B.
 
-    Instrument returns an array of powers for different freuquenies
+    Instrument returns an array of powers for different frequencies
 
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
-        start: starting frequency of sweep
-        stop: ending frequency of sweep
-        npts: number of points in frequency sweep
+        sweep_len: Number of steps in sweep
+        start_freq: Starting frequency
+        stepsize: Size of a frequency step
 
     Methods:
-          set_sweep(start, stop, npts): sets the shapes and
+          set_sweep(sweep_len, start_freq, stepsize): sets the shapes and
               setpoint arrays of the parameter to correspond with the sweep
           get(): executes a sweep and returns magnitude and phase arrays
 
@@ -55,8 +55,10 @@ class FrequencySweep(ArrayParameter):
                          label='{} Magnitude'.format(
                              instrument.short_name),
                          setpoint_units=('Hz',),
-                         setpoint_labels=('{} Frequency'.format(instrument.short_name),),
-                         setpoint_names=('{}_frequency'.format(instrument.short_name),))
+                         setpoint_labels=(f'{instrument.short_name} '
+                                          f'Frequency',),
+                         setpoint_names=('{instrument.short_name}'
+                                         '_frequency',))
         self.set_sweep(sweep_len, start_freq, stepsize)
 
     def set_sweep(self, sweep_len, start_freq, stepsize):
