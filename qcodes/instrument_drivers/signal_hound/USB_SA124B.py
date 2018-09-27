@@ -3,6 +3,7 @@ import numpy as np
 import ctypes as ct
 import logging
 from enum import IntEnum
+from typing import Dict, Union, Optional
 
 from qcodes import Instrument, ArrayParameter, Parameter, validators as vals
 
@@ -516,6 +517,29 @@ class SignalHound_USB_SA124B(Instrument):
     def _prepare_measurment(self):
         self._sync_parameters()
         self._initialise()
+
+    def get_idn(self) -> Dict[str, Optional[Union[str, int]]]:
+        output = {}
+        output['vendor'] = 'Signal Hound'
+        output['model'] = self._do_get_device_type()
+        serialnumber = ct.c_int32()
+        ret = self.dll.saGetSerialNumber(self.deviceHandle,
+                                         ct.pointer(serialnumber))
+        if ret != saStatus.saNoError:
+            raise RuntimeError(f"Could not get serial number. "
+                               f"Error was: {saStatus(ret).name}")
+        output['serial'] = serialnumber.value
+        fw_version = (ct.c_char*17)()
+        # the manual says that this must be at least 16 char
+        # but not clear if that includes a termination zero so
+        # make it 17 just in case
+        ret = self.dll.saGetFirmwareString(self.deviceHandle, fw_version)
+        if ret != saStatus.saNoError:
+            raise RuntimeError(f"Could not get fw version. "
+                               f"Error was: {saStatus(ret).name}")
+        output['firmware'] = fw_version.value.decode('ascii')
+        return output
+
 
 class constants:
     SA_MAX_DEVICES = 8
