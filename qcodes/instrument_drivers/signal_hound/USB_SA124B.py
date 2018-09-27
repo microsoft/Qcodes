@@ -260,11 +260,6 @@ class SignalHound_USB_SA124B(Instrument):
         self._prepare_measurment()
         self._update_trace()
         return
-        
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        return 'USB'
 
     def openDevice(self):
         log.info('Opening Device')
