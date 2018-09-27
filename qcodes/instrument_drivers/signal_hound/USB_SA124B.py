@@ -63,7 +63,7 @@ class FrequencySweep(ArrayParameter):
         self.shape = (sweep_len,)
         self.instrument._trace_updated = True
 
-    def get_raw(self): 
+    def get_raw(self):
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
         data = self._instrument._get_averaged_sweep_data()
@@ -195,7 +195,7 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.openDevice()
         self.device_type()
-        
+
         self._prepare_measurment()
         sweep_len, start_freq, stepsize = self.QuerySweep()
         self.add_parameter(name='trace',
