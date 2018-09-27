@@ -81,11 +81,18 @@ class SignalHound_USB_SA124B(Instrument):
     dll_path = 'C:\\Program Files\\Signal Hound\\Spike\\sa_api.dll'
 
     def __init__(self, name, dll_path=None, **kwargs):
+        """
+        Args:
+            name: Name of the instrument.
+            dll_path: Path to ``as_api.dll`` Defaults to the default dll within
+                Spike
+            **kwargs:
+        """
         t0 = time()
         super().__init__(name, **kwargs)
         self._parameters_synced = False
         self._trace_updated = False
-        log.info('Initializing instrument SignalHound USB 124A')
+        log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = constants
 
@@ -153,7 +160,7 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Numbers(),
                            parameter_class=TraceParameter)
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
-        #  VBW can be arbitrary. For best performance use RBW as the VBW.
+        # VBW can be arbitrary. For best performance use RBW as the VBW.
         # what does this even do though? nataliejpg
         self.add_parameter('vbw',
                            label='Video Bandwidth',
@@ -311,7 +318,8 @@ class SignalHound_USB_SA124B(Instrument):
             raise IOError('Device was already idle! Did you call abort '
                           'without ever calling initiate()?')
         else:
-            raise IOError('Unknown error setting abort! Error = %s' % err)
+            raise IOError(f'Unknown error setting abort! '
+                          f'Error = {saStatus(err).name}')
 
     def preset(self) -> None:
         """
@@ -345,7 +353,7 @@ class SignalHound_USB_SA124B(Instrument):
             raise IOError('Null pointer error!')
         else:
             raise IOError('Unknown error setting getDeviceType! '
-                          'Error = %s' % err)
+                          f'Error = {saStatus(err).name}')
 
         if devType.value == self.hf.saDeviceTypeNone:
             dev = 'No device'
