@@ -162,6 +162,14 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Numbers(),
                            parameter_class=TraceParameter)
 
+        self.add_parameter('reject_image',
+                           label='Reject image',
+                           unit='',
+                           initial_value=True,
+                           parameter_class=TraceParameter,
+                           get_cmd=None,
+                           vals=vals.Bool())
+
         self.openDevice()
         self.device_type()
 
@@ -183,7 +191,7 @@ class SignalHound_USB_SA124B(Instrument):
         self.npts._save_val(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
-    def _sync_parameters(self, rejection=True):
+    def _sync_parameters(self):
         """
         Sync parameters consists of five parts
             1. Center span configuration (freqs and span)
@@ -236,7 +244,7 @@ class SignalHound_USB_SA124B(Instrument):
             err = self.dll.saEnableExternalReference(self.deviceHandle)
             self.check_for_error(err)
   
-        reject_var = ct.c_bool(rejection)
+        reject_var = ct.c_bool(self.reject_image())
         log.info('Setting device Sweeping configuration.')
         err = self.dll.saConfigSweepCoupling(
             self.deviceHandle, ct.c_double(self.rbw()),
