@@ -17,7 +17,7 @@ Number = Union[float, int]
 
 
 """
-General functions (independent of plotting frame work)
+General functions (independent of plotting framework)
 """
 
 # turn off limiting percentiles by default
@@ -67,7 +67,7 @@ def auto_range_iqr(data_array: np.ndarray,
     else:
         vmin = max(q1 - 1.5*IQR, zmin)
         vmax = min(q3 + 1.5*IQR, zmax)
-        # do not clipp more than cutoff_percentile:
+        # do not clip more than cutoff_percentile:
         vmin = min(vmin, pmin)
         vmax = max(vmax, pmax)
     return vmin, vmax
@@ -92,7 +92,7 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
     This function applies the limits `new_lim` to the heatmap plot associated
     with the provided `colorbar`, updates the colorbar limits, and also adds
     the colorbar clipping indicators in form of small triangles on the top and
-    bottom of the colorbar, according to the where the limits are exceeded.
+    bottom of the colorbar, according to where the limits are exceeded.
 
     Args:
         colorbar: The actual colorbar to be updated
