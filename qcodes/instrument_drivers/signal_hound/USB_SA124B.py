@@ -141,7 +141,7 @@ class SignalHound_USB_SA124B(Instrument):
         self._trace_updated = False
         log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
-        self.hf = constants
+        self.hf = Constants
 
         self.add_parameter('frequency',
                            label='Frequency ',
@@ -609,7 +609,7 @@ class SignalHound_USB_SA124B(Instrument):
         return output
 
 
-class constants:
+class Constants:
     SA_MAX_DEVICES = 8
 
     saDeviceTypeNone = 0
