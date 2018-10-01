@@ -298,14 +298,12 @@ class SignalHound_USB_SA124B(Instrument):
             ct.c_double(self.vbw()), reject_var)
         self.check_for_error(err)
         self._parameters_synced = True
-        return
 
-    def configure(self):
+    def configure(self) -> None:
         self._prepare_measurement()
         self._update_trace()
-        return
 
-    def openDevice(self):
+    def openDevice(self) -> None:
         log.info('Opening Device')
         self.deviceHandle = ct.c_int(0)
         deviceHandlePnt = ct.pointer(self.deviceHandle)
@@ -323,7 +321,7 @@ class SignalHound_USB_SA124B(Instrument):
         self.devOpen = True
         self.device_type()
 
-    def close(self):
+    def close(self) -> None:
         log.info('Closing Device with handle num: '
                  f'{self.deviceHandle.value}')
 
@@ -342,7 +340,10 @@ class SignalHound_USB_SA124B(Instrument):
         self.running(False)
         super().close()
 
-    def abort(self):
+    def abort(self) -> None:
+        """
+        Abort any running acquisition.
+        """
         log.info('Stopping acquisition')
 
         err = self.dll.saAbort(self.deviceHandle)
@@ -375,7 +376,10 @@ class SignalHound_USB_SA124B(Instrument):
                           f'Error = {saStatus(err).name}')
         super().close()
 
-    def _get_device_type(self):
+    def _get_device_type(self) -> str:
+        """
+        Returns the model string of the Spectrum Analyzer.
+        """
         log.info('Querying device for model information')
 
         devType = ct.c_uint(0)
@@ -408,7 +412,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     ########################################################################
 
-    def _initialise(self, flag=0):
+    def _initialise(self, flag: int=0) -> None:
         modeOpts = {
             'sweeping': self.hf.sa_SWEEPING,
             'real_time': self.hf.sa_REAL_TIME, # not implemented
@@ -447,9 +451,8 @@ class SignalHound_USB_SA124B(Instrument):
         elif err == saStatus.saBandwidthErr:
             raise IOError('RBW is larger than your span. (Sweep Mode)!')
         self.check_for_error(err)
-        return
 
-    def QuerySweep(self):
+    def QuerySweep(self) -> Tuple[int, float, float]:
         """
         Queries the sweep for information on the parameters it uses
         """
@@ -471,10 +474,10 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise IOError('Unknown error!')
 
-        info = [sweep_len.value, start_freq.value, stepsize.value]
+        info = (sweep_len.value, start_freq.value, stepsize.value)
         return info
 
-    def _get_sweep_data(self):
+    def _get_sweep_data(self) -> np.ndarray:
         """
         This function performs a sweep over the configured ranges.
         The result of the sweep is returned along with the sweep points
@@ -522,7 +525,7 @@ class SignalHound_USB_SA124B(Instrument):
 
         return datamin
 
-    def _get_averaged_sweep_data(self):
+    def _get_averaged_sweep_data(self) -> np.ndarray:
         """
         Averages over SH.sweep Navg times
 
@@ -534,7 +537,7 @@ class SignalHound_USB_SA124B(Instrument):
             data += self._get_sweep_data()
         return data / Navg
 
-    def _get_power_at_freq(self):
+    def _get_power_at_freq(self) -> float:
         """
         Returns the maximum power in a window of 250kHz
         around the specified  frequency.
@@ -558,11 +561,7 @@ class SignalHound_USB_SA124B(Instrument):
         sleep(0.2)
         return max_power
 
-    def safe_reload(self):
-        self.closeDevice()
-        self.reload()
-
-    def check_for_error(self, err):
+    def check_for_error(self, err) -> None:
         if err != saStatus.saNoError:
             err_msg = saStatus(err).name
             if err > 0:
@@ -570,7 +569,7 @@ class SignalHound_USB_SA124B(Instrument):
             else:
                 raise IOError(err_msg)
 
-    def _prepare_measurement(self):
+    def _prepare_measurement(self) -> None:
         self._sync_parameters()
         self._initialise()
 
