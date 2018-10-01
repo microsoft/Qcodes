@@ -1,9 +1,4 @@
 import itertools
-import tempfile
-import os
-from contextlib import contextmanager
-from copy import deepcopy
-import logging
 
 import pytest
 import numpy as np
@@ -14,13 +9,7 @@ import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 
-import qcodes.dataset.data_set
-
-from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
-                                        get_user_version,
-                                        atomic_transaction,
-                                        perform_db_upgrade_0_to_1,
-                                        update_GUIDs)
+from qcodes.dataset.sqlite_base import _unicode_categories
 
 from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import (initialise_database,
@@ -31,67 +20,7 @@ from qcodes.dataset.guids import parse_guid
 n_experiments = 0
 
 
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    global n_experiments
-    n_experiments = 0
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
-
-
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = new_data_set("test-dataset")
-    yield dataset
-    dataset.conn.close()
-
-
-def test_initialise_database_at_for_nonexisting_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
-
-        initialise_or_create_database_at(db_location)
-
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
-
-        test_tables_exist(None)
-
-
-def test_initialise_database_at_for_existing_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # Define DB location
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
-
-        # Create DB file
-        qc.config["core"]["db_location"] = db_location
-        initialise_database()
-
-        # Check if it has been created correctly
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
-        test_tables_exist(None)
-
-        # Call function under test
-        initialise_or_create_database_at(db_location)
-
-        # Check if the DB is still correct
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
-        test_tables_exist(None)
+n_experiments = 0
 
 
 @settings(deadline=None)
@@ -394,6 +323,7 @@ def test_numpy_floats(dataset):
     dataset.add_results(results)
     expected_result = [[tp(1.2)] for tp in numpy_floats]
     assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+
 
 
 def test_numpy_nan(dataset):
