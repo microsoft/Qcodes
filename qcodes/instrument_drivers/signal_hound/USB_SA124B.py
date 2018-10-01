@@ -167,11 +167,11 @@ class SignalHound_USB_SA124B(Instrument):
                            unit='dBm',
                            get_cmd=self._get_power_at_freq,
                            set_cmd=False,
-                           docstring=("The maximum power in a window of 250 kHz"
-                                      "around the specified  frequency with "
-                                      "Resolution bandwidth set to 1 kHz."
-                                      "The integration window is specified by "
-                                      "the VideoBandWidth (set by vbw)"))
+                           docstring="The maximum power in a window of 250 kHz"
+                                     "around the specified  frequency with "
+                                     "Resolution bandwidth set to 1 kHz."
+                                     "The integration window is specified by "
+                                     "the VideoBandWidth (set by vbw)")
         self.add_parameter('ref_lvl',
                            label='Reference power',
                            unit='dBm',
@@ -187,10 +187,17 @@ class SignalHound_USB_SA124B(Instrument):
                            get_cmd=self._get_device_type)
         self.add_parameter('device_mode',
                            get_cmd=lambda: 'sweeping',
-                           set_cmd=False)
+                           set_cmd=False,
+                           docstring='The driver currently only  '
+                                     'supports sweeping mode. '
+                                     'It is therefor not possible'
+                                     'to set this parameter to anything else')
         self.add_parameter('acquisition_mode',
                            get_cmd=lambda: 'average',
-                           set_cmd=False)
+                           set_cmd=False,
+                           docstring="The driver only supports averaging "
+                                     "mode it is therefor not possible to set"
+                                     "this parameter to anything else")
         self.add_parameter('scale',
                            initial_value='log-scale',
                            vals=vals.Enum('log-scale', 'lin-scale',
@@ -201,22 +208,31 @@ class SignalHound_USB_SA124B(Instrument):
                            set_cmd=None,
                            initial_value=False,
                            vals=vals.Bool())
-        # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            unit='Hz',
                            initial_value=1e3,
-                           vals=vals.Numbers(),
-                           parameter_class=TraceParameter)
-        # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
-        # VBW can be arbitrary. For best performance use RBW as the VBW.
-        # what does this even do though? nataliejpg
+                           vals=vals.Numbers(0.1, 250e3),
+                           parameter_class=TraceParameter,
+                           docstring='Resolution Bandwidth (RBW) is'
+                                     'the bandwidth of '
+                                     'spectral energy represented in each '
+                                     'frequency bin')
         self.add_parameter('vbw',
                            label='Video Bandwidth',
                            unit='Hz',
                            initial_value=1e3,
                            vals=vals.Numbers(),
-                           parameter_class=TraceParameter)
+                           parameter_class=TraceParameter,
+                           docstring='The video bandwidth (VBW) is applied '
+                                     'after the signal has been converted to'
+                                     'frequency domain as power, voltage, '
+                                     'or log units. It is implemented as a '
+                                     'simple rectangular window, averaging the'
+                                     'amplitude readings for each frequency bin'
+                                     'over several overlapping FFTs.'
+                                     'For best performance leave the video'
+                                     'bandwidth equal to RBW')
 
         self.add_parameter('reject_image',
                            label='Reject image',
