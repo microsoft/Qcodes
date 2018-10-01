@@ -144,13 +144,13 @@ class SignalHound_USB_SA124B(Instrument):
         self.hf = Constants
 
         self.add_parameter('frequency',
-                           label='Frequency ',
+                           label='Frequency',
                            unit='Hz',
                            initial_value=5e9,
                            vals=vals.Numbers(),
                            parameter_class=SweepTraceParameter)
         self.add_parameter('span',
-                           label='Span ',
+                           label='Span',
                            unit='Hz',
                            initial_value=.25e6,
                            vals=vals.Numbers(),
@@ -166,12 +166,12 @@ class SignalHound_USB_SA124B(Instrument):
                            set_cmd=None,
                            vals=vals.Ints())
         self.add_parameter('power',
-                           label='Power ',
+                           label='Power',
                            unit='dBm',
                            get_cmd=self._get_power_at_freq,
                            set_cmd=False)
         self.add_parameter('ref_lvl',
-                           label='Reference power ',
+                           label='Reference power',
                            unit='dBm',
                            initial_value=0,
                            vals=vals.Numbers(max_value=20),
