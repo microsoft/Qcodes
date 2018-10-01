@@ -120,9 +120,9 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
     else:
         if data_array is not None:
-            raise RuntimeError('You cannot specify `data_lim` and `data_array` '
-                               'please read the docstring of '
-                               '`apply_color_scale_limits:\n\n`'
+            raise RuntimeError('You may not specify `data_lim` and `data_array` '
+                               'at the same time. Please refer to the docstring of '
+                               '`apply_color_scale_limits for details:\n\n`'
                                + apply_color_scale_limits.__doc__)
         else:
             data_lim = cast(Tuple[float, float], tuple(sorted(data_lim)))
