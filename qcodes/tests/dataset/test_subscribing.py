@@ -1,43 +1,17 @@
 # Test some subscription scenarios
-import tempfile
-import os
 from typing import List, Tuple, Dict, Union
 from numbers import Number
 
 import pytest
 from numpy import ndarray
 
-import qcodes as qc
-import qcodes.dataset.sqlite_base as mut
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.database import initialise_database
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment,
+                                                      dataset)
 
 VALUE = Union[str, Number, List, ndarray, bool]
 
-
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = qc.new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
-
-
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = qc.new_data_set("test-dataset")
-    yield dataset
-    dataset.unsubscribe_all()
-    dataset.conn.close()
 
 
 @pytest.fixture(scope='function')

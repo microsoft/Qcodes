@@ -15,10 +15,8 @@ from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 from qcodes.dataset.guids import parse_guid
-
-
-n_experiments = 0
-
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment, dataset)
 
 n_experiments = 0
 
@@ -28,7 +26,8 @@ n_experiments = 0
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
                              min_size=1))
-def test_add_experiments(empty_temp_db, experiment_name,
+@pytest.mark.usefixtures("empty_temp_db")
+def test_add_experiments(experiment_name,
                          sample_name, dataset_name):
     global n_experiments
     n_experiments += 1
@@ -114,7 +113,8 @@ def test_add_paramspec_one_by_one(dataset):
     assert len(dataset.paramspecs.keys()) == 3
 
 
-def test_add_data_1d(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_1d():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -151,7 +151,8 @@ def test_add_data_1d(experiment):
         mydataset.add_result({'x': 5})
 
 
-def test_add_data_array(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_array():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -174,7 +175,8 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
-def test_adding_too_many_results(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_adding_too_many_results():
     """
     This test really tests the "chunking" functionality of the
     insert_many_values function of the sqlite_base module
@@ -201,7 +203,8 @@ def test_adding_too_many_results(experiment):
     dataset.add_results(results)
 
 
-def test_modify_result(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_modify_result():
     dataset = new_data_set("test_modify_result")
     xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
@@ -248,7 +251,8 @@ def test_modify_result(experiment):
 @settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
-def test_add_parameter_values(experiment, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
@@ -269,7 +273,8 @@ def test_add_parameter_values(experiment, N, M):
     mydataset.mark_complete()
 
 
-def test_load_by_counter(dataset):
+@pytest.mark.usefixtures("dataset")
+def test_load_by_counter():
     dataset = load_by_counter(1, 1)
     exps = experiments()
     assert len(exps) == 1
@@ -280,7 +285,8 @@ def test_load_by_counter(dataset):
     assert exp.last_counter == 1
 
 
-def test_dataset_with_no_experiment_raises(empty_temp_db):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_dataset_with_no_experiment_raises():
     with pytest.raises(ValueError):
         new_data_set("test-dataset",
                      specs=[ParamSpec("x", "numeric"),
