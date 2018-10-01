@@ -57,8 +57,8 @@ class FrequencySweep(ArrayParameter):
                          setpoint_units=('Hz',),
                          setpoint_labels=(f'{instrument.short_name} '
                                           f'Frequency',),
-                         setpoint_names=('{instrument.short_name}'
-                                         '_frequency',))
+                         setpoint_names=(f'{instrument.short_name}'
+                                         f'_frequency',))
         self.set_sweep(sweep_len, start_freq, stepsize)
 
     def set_sweep(self, sweep_len, start_freq, stepsize):
