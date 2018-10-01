@@ -174,6 +174,10 @@ def plot_by_id(run_id: int,
             plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
 
             plot_func = how_to_plot[plottype]
+
+            if colorbar is None and 'cmap' not in kwargs:
+                kwargs['cmap'] = qc.config.gui.defaultcolormap
+
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
                                      **kwargs)
 
