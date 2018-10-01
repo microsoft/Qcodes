@@ -79,6 +79,27 @@ DEFAULT_COLOR_OVER = 'Magenta'
 DEFAULT_COLOR_UNDER = 'Cyan'
 
 
+def _set_colorbar_extend(colorbar: matplotlib.pyplot.colorbar,
+                         extend: str):
+    """
+    Workaround for a missing setter for the extend property of a matplotlib
+    colorbar.
+
+    The colorbar object in matplotlib has no setter method and setting the
+    colorbar extend does not take any effect.
+    Calling a subsequent update will cause a runtime
+    error because of the internal implementation of the rendering of the
+    colorbar. To circumvent this we need to manually specify the property
+    `_inside`, which is a slice that describes which of the colorbar levels
+    lie inside of the box and it is thereby dependent on the extend.
+
+    Args:
+        colorbar: the colorbar for which to set the extend
+        extend: the desired extend ('neither', 'both', 'min' or 'max')
+    """
+    colorbar.extend = extend
+    colorbar._inside = colorbar._slice_dict[extend]
+
 def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
                              new_lim: Tuple[Optional[float], Optional[float]],
                              data_lim: Optional[Tuple[float, float]]=None,
@@ -141,14 +162,7 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
         extend = 'max'
     else:
         extend = 'neither'
-    colorbar.extend = extend
-    # the colorbar has no setter method and setting the colorbar extend does
-    # not take any effect. Calling a subsequent update will cause a runtime
-    # error because of the internal implementation of the rendering of the
-    # colorbar. To circumvent this we need to manually specify the property
-    # `_inside`, which is a slice that describes which of the colorbar levels
-    # lie inside of the box and it is thereby dependent on the extend.
-    colorbar._inside = colorbar._slice_dict[extend]
+    _set_colorbar_extend(colorbar, extend)
     cmap = colorbar.mappable.get_cmap()
     cmap.set_over(color_over)
     cmap.set_under(color_under)
