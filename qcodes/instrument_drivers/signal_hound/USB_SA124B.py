@@ -14,8 +14,12 @@ number = Union[int, float]
 
 class TraceParameter(Parameter):
     """
-    A manual parameter that keeps track of if it
-    has been synced to the instrument.
+    A parameter that used a flag on the instrument to keeps track of if it's
+    value has been synced to the instrument. It is intended that this
+    type of parameter is synced using an external method which resets the flag.
+
+    This is most likely used similar to a ``ManualParameter``
+    I.e. calling set/get will not communicate with the instrument.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,9 +34,8 @@ class TraceParameter(Parameter):
 
 class SweepTraceParameter(TraceParameter):
     """
-    A manual parameter that keeps track of if it
-    has been synced to the instrument and if the
-    setpoints of the array parameter needs updating.
+    An extension to TraceParameter that keeps track of the trace setpoints in
+    addition to the functionality of `TraceParameter`
     """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -91,7 +94,7 @@ class FrequencySweep(ArrayParameter):
 
         """
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
-            raise RuntimeError("'FrequencySweep' is only implemeted"
+            raise RuntimeError("'FrequencySweep' is only implemented"
                                "for 'SignalHound_USB_SA124B'")
         end_freq = start_freq + stepsize*(sweep_len-1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))
@@ -101,7 +104,7 @@ class FrequencySweep(ArrayParameter):
 
     def get_raw(self) -> np.ndarray:
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
-            raise RuntimeError("'FrequencySweep' is only implemeted"
+            raise RuntimeError("'FrequencySweep' is only implemented"
                                "for 'SignalHound_USB_SA124B'")
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
@@ -129,8 +132,8 @@ class SignalHound_USB_SA124B(Instrument):
         """
         Args:
             name: Name of the instrument.
-            dll_path: Path to ``as_api.dll`` Defaults to the default dll within
-                Spike
+            dll_path: Path to ``sa_api.dll`` Defaults to the default dll within
+                Spike installation
             **kwargs:
         """
         super().__init__(name, **kwargs)
@@ -549,7 +552,7 @@ class SignalHound_USB_SA124B(Instrument):
     def _get_power_at_freq(self) -> float:
         """
         Returns the maximum power in a window of 250kHz
-        around the specified  frequency.
+        around the specified  frequency with Resolution bandwidth set to 1 KHz.
         The integration window is specified by the VideoBandWidth (set by vbw)
         """
         original_span = self.span()
