@@ -64,7 +64,8 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
-    def __init__(self, name, instrument, sweep_len, start_freq, stepsize):
+    def __init__(self, name: str, instrument: 'SignalHound_USB_SA124B',
+                 sweep_len: int, start_freq: number, stepsize: number) -> None:
         super().__init__(name, shape=(sweep_len,),
                          instrument=instrument,
                          unit='dB',
@@ -77,14 +78,31 @@ class FrequencySweep(ArrayParameter):
                                          f'_frequency',))
         self.set_sweep(sweep_len, start_freq, stepsize)
 
-    def set_sweep(self, sweep_len, start_freq, stepsize):
+    def set_sweep(self, sweep_len: int, start_freq: number,
+                  stepsize: number) -> None:
+        """
+        Set the setpoints of the Array parameter representing a frequency
+        sweep.
+
+        Args:
+            sweep_len: Number of points in the sweep
+            start_freq: Starting frequency of the sweep
+            stepsize: Size of step between individual points
+
+        """
+        if not isinstance(self.instrument, SignalHound_USB_SA124B):
+            raise RuntimeError("'FrequencySweep' is only implemeted"
+                               "for 'SignalHound_USB_SA124B'")
         end_freq = start_freq + stepsize*(sweep_len-1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))
         self.setpoints = (freq_points,)
         self.shape = (sweep_len,)
         self.instrument._trace_updated = True
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
+        if not isinstance(self.instrument, SignalHound_USB_SA124B):
+            raise RuntimeError("'FrequencySweep' is only implemeted"
+                               "for 'SignalHound_USB_SA124B'")
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
         data = self._instrument._get_averaged_sweep_data()
@@ -210,12 +228,17 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.connect_message()
 
-    def _update_trace(self):
+    def _update_trace(self) -> None:
+        """
+        Private method to sync changes of the
+        frequency axis to the setpoints of the
+        trace parameter.
+        """
         sweep_info = self.QuerySweep()
         self.npts._save_val(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
-    def _sync_parameters(self):
+    def _sync_parameters(self) -> None:
         """
         Sync parameters consists of five parts
             1. Center span configuration (freqs and span)
