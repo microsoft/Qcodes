@@ -90,7 +90,6 @@ class SignalHound_USB_SA124B(Instrument):
                 Spike
             **kwargs:
         """
-        t0 = time()
         super().__init__(name, **kwargs)
         self._parameters_synced = False
         self._trace_updated = False
@@ -192,10 +191,8 @@ class SignalHound_USB_SA124B(Instrument):
                            stepsize=stepsize,
                            parameter_class=FrequencySweep)
         self.npts._save_val(sweep_len)
-        t1 = time()
-        # poor-man's connect_message. We could overwrite get_idn
-        # instead and use connect_message.
-        print('Initialized SignalHound in %.2fs' % (t1-t0))
+
+        self.connect_message()
 
     def _update_trace(self):
         sweep_info = self.QuerySweep()
@@ -541,7 +538,7 @@ class SignalHound_USB_SA124B(Instrument):
     def get_idn(self) -> Dict[str, Optional[str]]:
         output = {}
         output['vendor'] = 'Signal Hound'
-        output['model'] = self._do_get_device_type()
+        output['model'] = self._get_device_type()
         serialnumber = ct.c_int32()
         ret = self.dll.saGetSerialNumber(self.deviceHandle,
                                          ct.pointer(serialnumber))
