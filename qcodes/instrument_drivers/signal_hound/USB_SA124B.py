@@ -225,7 +225,7 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.openDevice()
 
-        self._prepare_measurement()
+        self.sync_parameters()
         sweep_len, start_freq, stepsize = self.QuerySweep()
         self.add_parameter(name='trace',
                            sweep_len=sweep_len,
@@ -246,8 +246,11 @@ class SignalHound_USB_SA124B(Instrument):
         self.npts._save_val(sweep_info[0])
         self.trace.set_sweep(*sweep_info)
 
-    def _sync_parameters(self) -> None:
+    def sync_parameters(self) -> None:
         """
+        Sync parameters sets the configuration of the instrument using the
+        parameters specified in the Qcodes instrument.
+
         Sync parameters consists of five parts
             1. Center span configuration (freqs and span)
             2. Acquisition configuration
@@ -255,11 +258,10 @@ class SignalHound_USB_SA124B(Instrument):
                 avg/max power
             3. Configuring the external 10MHz reference
             4. Configuration of the mode that is being used
-            5. Configuration of the tracking generator (not implemented)
-                used in VNA mode
+            5. Acquisition mode. At the moment only `sweeping` is implemented
 
-        Sync parameters sets the configuration of the instrument using the
-        parameters specified in the Qcodes instrument.
+        This does not currently implement Configuration of the tracking
+        generator used in VNA mode
         """
 
         # 1. CenterSpan Configuration
@@ -305,10 +307,46 @@ class SignalHound_USB_SA124B(Instrument):
             self.deviceHandle, ct.c_double(self.rbw()),
             ct.c_double(self.vbw()), reject_var)
         self.check_for_error(err, 'saConfigSweepCoupling')
+
+
+        modeOpts = {
+            'sweeping': self.hf.sa_SWEEPING,
+            'real_time': self.hf.sa_REAL_TIME,  # not implemented
+            'IQ': self.hf.sa_IQ,  # not implemented
+            'idle': self.hf.sa_IDLE
+        }
+        mode = modeOpts[self.device_mode()]
+        # the third argument to saInitiate is a flag that is
+        # currently not used
+        err = self.dll.saInitiate(self.deviceHandle, mode, 0)
+        if err == saStatus.saInvalidParameterErr:
+            extrainfo = """
+                 In real-time mode, this value may be returned if the span
+                 limits defined in the API header are broken. Also in
+                 real-time mode, this error will be returned if the
+                 resolution bandwidth is outside the limits defined in
+                 the API header.
+                 In time-gate analysis mode this error will be returned if
+                 span limits defined in the API header are broken. Also in
+                 time gate analysis, this error is returned if the
+                 bandwidth provided require more samples for processing
+                 than is allowed in the gate length. To fix this
+                 increase rbw/vbw.
+             """
+        elif err == saStatus.saBandwidthErr:
+            extrainfo = 'RBW is larger than your span. (Sweep Mode)!'
+        else:
+            extrainfo = None
+        self.check_for_error(err, 'saInitiate', extrainfo)
+
         self._parameters_synced = True
 
     def configure(self) -> None:
-        self._prepare_measurement()
+        """
+        Syncs parameters to the Instrument and updates the setpoint of the
+        trace.
+        """
+        self.sync_parameters()
         self._update_trace()
 
     def openDevice(self) -> None:
@@ -393,47 +431,20 @@ class SignalHound_USB_SA124B(Instrument):
             raise ValueError('Unknown device type!')
         return dev
 
-    ########################################################################
+    """
 
-    def _initialise(self) -> None:
-        modeOpts = {
-            'sweeping': self.hf.sa_SWEEPING,
-            'real_time': self.hf.sa_REAL_TIME,  # not implemented
-            'IQ': self.hf.sa_IQ,  # not implemented
-            'idle': self.hf.sa_IDLE
-        }
-        mode = modeOpts[self.device_mode()]
-        # the third argument to saInitiate is a flag that is
-        # currently not used
-        err = self.dll.saInitiate(self.deviceHandle, mode, 0)
-        if err == saStatus.saInvalidParameterErr:
-            extrainfo = """
-                In real-time mode, this value may be returned if the span
-                limits defined in the API header are broken. Also in
-                real-time mode, this error will be returned if the
-                resolution bandwidth is outside the limits defined in
-                the API header.
-                In time-gate analysis mode this error will be returned if
-                span limits defined in the API header are broken. Also in
-                time gate analysis, this error is returned if the
-                bandwidth provided require more samples for processing
-                than is allowed in the gate length. To fix this
-                increase rbw/vbw.
+
+            Returns
             """
-        elif err == saStatus.saBandwidthErr:
-            extrainfo = 'RBW is larger than your span. (Sweep Mode)!'
-        else:
-            extrainfo = None
-        self.check_for_error(err, 'saInitiate', extrainfo)
-
-        if err == saStatus.saNoError:
-            self.running(True)
-            log.info('Call to initiate succeeded.')
-
+    ########################################################################
 
     def QuerySweep(self) -> Tuple[int, float, float]:
         """
-        Queries the sweep for information on the parameters it uses
+        Queries the sweep for information on the parameters that defines the
+            x axis of the sweep
+
+        Returns:
+            number of points in sweep, start frequency and step size
         """
         sweep_len = ct.c_int(0)
         start_freq = ct.c_double(0)
@@ -444,8 +455,7 @@ class SignalHound_USB_SA124B(Instrument):
                                         ct.pointer(stepsize))
         self.check_for_error(err, 'saQuerySweepInfo')
 
-        info = (sweep_len.value, start_freq.value, stepsize.value)
-        return info
+        return sweep_len.value, start_freq.value, stepsize.value
 
     def _get_sweep_data(self) -> np.ndarray:
         """
@@ -456,7 +466,7 @@ class SignalHound_USB_SA124B(Instrument):
             datamin numpy array
         """
         if not self._parameters_synced:
-            self._sync_parameters()
+            self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
 
         minarr = (ct.c_float * sweep_len)()
@@ -469,7 +479,7 @@ class SignalHound_USB_SA124B(Instrument):
             log.warning('Error raised in QuerySweepInfo, '
                         'preparing for measurement')
             sleep(.1)
-            self.prepare_for_measurement()
+            self.sync_parameters()
             sleep(.1)
             minarr = (ct.c_float * sweep_len)()
             maxarr = (ct.c_float * sweep_len)()
@@ -506,13 +516,13 @@ class SignalHound_USB_SA124B(Instrument):
             self.span(0.25e6)
             self.rbw(1e3)
         if not self._parameters_synced:
-            self._prepare_measurement()
+            self.sync_parameters()
         data = self._get_averaged_sweep_data()
         max_power = np.max(data)
         if needs_reset:
             self.span(original_span)
             self.rbw(original_rbw)
-            self._prepare_measurement()
+            self.sync_parameters()
         sleep(0.2)
         return max_power
 
@@ -529,10 +539,6 @@ class SignalHound_USB_SA124B(Instrument):
                 raise IOError(err_msg)
         else:
             log.info(f"Call to {source} was successful {extrainfo}")
-
-    def _prepare_measurement(self) -> None:
-        self._sync_parameters()
-        self._initialise()
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         output = {}
