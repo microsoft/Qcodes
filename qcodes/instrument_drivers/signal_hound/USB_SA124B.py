@@ -290,7 +290,7 @@ class SignalHound_USB_SA124B(Instrument):
             log.info('Setting reference frequency from external source.')
             err = self.dll.saEnableExternalReference(self.deviceHandle)
             self.check_for_error(err)
-  
+
         reject_var = ct.c_bool(self.reject_image())
         log.info('Setting device Sweeping configuration.')
         err = self.dll.saConfigSweepCoupling(
@@ -487,7 +487,7 @@ class SignalHound_USB_SA124B(Instrument):
         """
         if not self._parameters_synced:
             self._sync_parameters()
-        sweep_len, start_freq, stepsize = self.QuerySweep()
+        sweep_len, _, _ = self.QuerySweep()
 
         minarr = (ct.c_float * sweep_len)()
         maxarr = (ct.c_float * sweep_len)()
@@ -561,7 +561,8 @@ class SignalHound_USB_SA124B(Instrument):
         sleep(0.2)
         return max_power
 
-    def check_for_error(self, err) -> None:
+    @staticmethod
+    def check_for_error(err: int) -> None:
         if err != saStatus.saNoError:
             err_msg = saStatus(err).name
             if err > 0:
