@@ -516,7 +516,7 @@ class SignalHound_USB_SA124B(Instrument):
             raise IOError('Invalid mode error!')
         elif err == saStatus.saCompressionWarning:
             raise IOError('Input voltage overload!')
-        elif err == saStatus.sCUSBCommErr:
+        elif err == saStatus.saUSBCommErr:
             raise IOError('Error occurred in the USB connection!')
         else:
             raise IOError('Unknown error!')
