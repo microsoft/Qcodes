@@ -166,7 +166,12 @@ class SignalHound_USB_SA124B(Instrument):
                            label='Power',
                            unit='dBm',
                            get_cmd=self._get_power_at_freq,
-                           set_cmd=False)
+                           set_cmd=False,
+                           docstring=("The maximum power in a window of 250 kHz"
+                                      "around the specified  frequency with "
+                                      "Resolution bandwidth set to 1 kHz."
+                                      "The integration window is specified by "
+                                      "the VideoBandWidth (set by vbw)"))
         self.add_parameter('ref_lvl',
                            label='Reference power',
                            unit='dBm',
