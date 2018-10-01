@@ -227,7 +227,6 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Bool())
 
         self.openDevice()
-        self.device_type()
 
         self._prepare_measurement()
         sweep_len, start_freq, stepsize = self.QuerySweep()
