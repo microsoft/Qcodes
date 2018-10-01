@@ -457,11 +457,6 @@ class SignalHound_USB_SA124B(Instrument):
             raise ValueError('Unknown device type!')
         return dev
 
-    """
-
-
-            Returns
-            """
     ########################################################################
 
     def QuerySweep(self) -> Tuple[int, float, float]:
