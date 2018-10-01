@@ -350,16 +350,21 @@ class SignalHound_USB_SA124B(Instrument):
         self._update_trace()
 
     def openDevice(self) -> None:
+        """
+        Opens connection to the instrument
+        """
         log.info('Opening Device')
         self.deviceHandle = ct.c_int(0)
         deviceHandlePnt = ct.pointer(self.deviceHandle)
         err = self.dll.saOpenDevice(deviceHandlePnt)
         self.check_for_error(err, 'saOpenDevice')
-
         self.devOpen = True
         self.device_type()
 
     def close(self) -> None:
+        """
+        Close connection to the instrument.
+        """
         log.info('Closing Device with handle num: '
                  f'{self.deviceHandle.value}')
 
@@ -397,7 +402,7 @@ class SignalHound_USB_SA124B(Instrument):
     def preset(self) -> None:
         """
         Like close but performs a hardware reset before closing the
-        connection
+        connection.
         """
         log.warning('Performing hardware-reset of device!')
 
@@ -446,6 +451,7 @@ class SignalHound_USB_SA124B(Instrument):
         Returns:
             number of points in sweep, start frequency and step size
         """
+
         sweep_len = ct.c_int(0)
         start_freq = ct.c_double(0)
         stepsize = ct.c_double(0)
@@ -504,8 +510,8 @@ class SignalHound_USB_SA124B(Instrument):
 
     def _get_power_at_freq(self) -> float:
         """
-        Returns the maximum power in a window of 250kHz
-        around the specified  frequency with Resolution bandwidth set to 1 KHz.
+        Returns the maximum power in a window of 250 kHz
+        around the specified  frequency with Resolution bandwidth set to 1 kHz.
         The integration window is specified by the VideoBandWidth (set by vbw)
         """
         original_span = self.span()
@@ -534,8 +540,8 @@ class SignalHound_USB_SA124B(Instrument):
                 log.warning(f'During call of {source} the following'
                             f'Warning: {err_str} was raised {extrainfo}')
             else:
-                err_msg = f'During call of {source} the following Error: ' \
-                          f'{err_str} was raised {extrainfo}'
+                err_msg = (f'During call of {source} the following Error: '
+                           f'{err_str} was raised {extrainfo}')
                 raise IOError(err_msg)
         else:
             log.info(f"Call to {source} was successful {extrainfo}")
