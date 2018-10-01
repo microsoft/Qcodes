@@ -20,7 +20,7 @@ class TraceParameter(Parameter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: Any):
+    def set_raw(self, value: Any):  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("TraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
@@ -37,7 +37,7 @@ class SweepTraceParameter(TraceParameter):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: Any) -> None:
+    def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("SweepTraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
