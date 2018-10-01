@@ -113,6 +113,15 @@ class FrequencySweep(ArrayParameter):
 class SignalHound_USB_SA124B(Instrument):
     """
     QCoDeS driver for the SignalHound USB SA124B
+
+    The driver needs Signal Hounds software
+    `Spike <https://signalhound.com/spike/>`_ installed to function.
+    In addition you may need to install Microsoft Visual Studio C++
+    Redistributable for the driver to function within QCoDeS.
+    At the time of writing the current version of Spike (3.2.3) uses
+    `Microsoft Visual Studio C++ Redistributable 2012
+    <https://www.microsoft.com/en-us/download/details.aspx?id=30679>`_
+
     """
     dll_path = 'C:\\Program Files\\Signal Hound\\Spike\\sa_api.dll'
 
