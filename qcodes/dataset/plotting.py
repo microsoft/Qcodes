@@ -79,6 +79,10 @@ def plot_by_id(run_id: int,
             axis ('n' is 'nano')
         auto_color_scale: if True, the colorscale of heatmap plots will be
             automatically adjusted to disregard outliers.
+        cutoff_percentile: percentile of data that may maximally be clipped
+            on both sides of the distribution.
+            If given a tuple (a,b) the percentile limits will be a and 100-b.
+            See also the plotting tuorial notebook.
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
