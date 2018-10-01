@@ -426,15 +426,17 @@ class SignalHound_USB_SA124B(Instrument):
 
     ########################################################################
 
-    def _initialise(self, flag: int=0) -> None:
+    def _initialise(self) -> None:
         modeOpts = {
             'sweeping': self.hf.sa_SWEEPING,
-            'real_time': self.hf.sa_REAL_TIME, # not implemented
+            'real_time': self.hf.sa_REAL_TIME,  # not implemented
             'IQ': self.hf.sa_IQ,  # not implemented
             'idle': self.hf.sa_IDLE
         }
         mode = modeOpts[self.device_mode()]
-        err = self.dll.saInitiate(self.deviceHandle, mode, flag)
+        # the third argument to saInitiate is a flag that is
+        # currently not used
+        err = self.dll.saInitiate(self.deviceHandle, mode, 0)
 
         ###################################
         # Below here only error handling
