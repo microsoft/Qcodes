@@ -337,10 +337,13 @@ class SignalHound_USB_SA124B(Instrument):
                  f'{self.deviceHandle.value}')
 
         try:
-            self.dll.saAbort(self.deviceHandle)
+            self.abort()
             log.info('Running acquistion aborted.')
         except Exception as e:
-            log.info(f'Could not abort acquisition: {e}')
+            # it's ok to catch any exception here
+            # as we are tearing down the instrument we might
+            # as well try to continue
+            log.warning(f'Could not abort acquisition: {e}')
 
         ret = self.dll.saCloseDevice(self.deviceHandle)
         if ret != saStatus.saNoError:
