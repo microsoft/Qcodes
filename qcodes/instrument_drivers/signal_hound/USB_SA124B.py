@@ -1,32 +1,48 @@
-from time import sleep, time
+from time import sleep
 import numpy as np
 import ctypes as ct
 import logging
 from enum import IntEnum
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, Any, Tuple
 
 from qcodes import Instrument, ArrayParameter, Parameter, validators as vals
 
 log = logging.getLogger(__name__)
 
+number = Union[int, float]
+
 
 class TraceParameter(Parameter):
+    """
+    A manual parameter that keeps track of if it
+    has been synced to the instrument.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value):
-        self._instrument._parameters_synced = False
+    def set_raw(self, value: Any):
+        if not isinstance(self.instrument, SignalHound_USB_SA124B):
+            raise RuntimeError("TraceParameter only works with "
+                               "'SignalHound_USB_SA124B'")
+        self.instrument._parameters_synced = False
         self._save_val(value, validate=False)
 
 
-class SweepTraceParameter(Parameter):
-    def __init__(self, *args, **kwargs):
+class SweepTraceParameter(TraceParameter):
+    """
+    A manual parameter that keeps track of if it
+    has been synced to the instrument and if the
+    setpoints of the array parameter needs updating.
+    """
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value):
-        self._instrument._parameters_synced = False
-        self._instrument._trace_updated=False
-        self._save_val(value, validate=False)
+    def set_raw(self, value: Any) -> None:
+        if not isinstance(self.instrument, SignalHound_USB_SA124B):
+            raise RuntimeError("SweepTraceParameter only works with "
+                               "'SignalHound_USB_SA124B'")
+        self.instrument._trace_updated = False
+        super().set_raw(value)
 
 
 class FrequencySweep(ArrayParameter):
