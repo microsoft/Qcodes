@@ -32,8 +32,10 @@ before_script: # configure a headless display to test plot generation
 
 script:
     - |
-      cd qcodes
-      py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+      cd qcodes/tests/dataset/legacy_DB_generation
+      python generate_version_0.py
+    - cd ../../..
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
     # run benchmarks to make sure they are correct
