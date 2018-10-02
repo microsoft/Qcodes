@@ -34,7 +34,7 @@ class TraceParameter(Parameter):
 
 class ExternalRefParameter(TraceParameter):
     """
-    Parameter that handels the fact that external reference can only be
+    Parameter that handles the fact that external reference can only be
     enabled but not disabled.
 
     From the manual:
@@ -57,7 +57,10 @@ class ScaleParameter(TraceParameter):
     Parameter that handels changing the unit when the scale is changed.
     """
 
-    def set_raw(self, value: bool) -> None: # pylint: disable=method-hidden
+    def set_raw(self, value: bool) -> None:  # pylint: disable=method-hidden
+        if not isinstance(self.instrument, SignalHound_USB_SA124B):
+            raise RuntimeError("ScaleParameter only works with "
+                               "'SignalHound_USB_SA124B'")
         if value in ('log-scale', 'log-full-scale'):
             unit = 'dBm'
         elif value in ('lin-scale', 'lin-full-scale'):
@@ -278,14 +281,13 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Numbers(),
                            parameter_class=TraceParameter,
                            docstring='The video bandwidth (VBW) is applied '
-                                     'after the signal has been converted to'
+                                     'after the signal has been converted to '
                                      'frequency domain as power, voltage, '
                                      'or log units. It is implemented as a '
-                                     'simple rectangular window, averaging the'
-                                     'amplitude readings for each frequency bin'
-                                     'over several overlapping FFTs.'
-                                     'For best performance leave the video'
-                                     'bandwidth equal to RBW')
+                                     'simple rectangular window, averaging the '
+                                     'amplitude readings for each frequency '
+                                     'bin over several overlapping FFTs. '
+                                     'For best performance use RBW as the VBW.')
 
         self.add_parameter('reject_image',
                            label='Reject image',
