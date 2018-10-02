@@ -553,14 +553,22 @@ class SignalHound_USB_SA124B(Instrument):
         if err != saStatus.saNoError:
             err_str = saStatus(err).name
             if err > 0:
-                log.warning(f'During call of {source} the following'
-                            f'Warning: {err_str} was raised {extrainfo}')
+                msg = (f'During call of {source} the following'
+                       f'Warning: {err_str} was raised')
+                if extrainfo is not None:
+                    msg = msg + f'\n Extra info: {extrainfo}'
+                log.warning(msg)
             else:
-                err_msg = (f'During call of {source} the following Error: '
-                           f'{err_str} was raised {extrainfo}')
-                raise IOError(err_msg)
+                msg = (f'During call of {source} the following Error: '
+                       f'{err_str} was raised')
+                if extrainfo is not None:
+                    msg = msg + f'\n Extra info: {extrainfo}'
+                raise IOError(msg)
         else:
-            log.info(f"Call to {source} was successful {extrainfo}")
+            msg = 'Call to {source} was successful'
+            if extrainfo is not None:
+                msg = msg + f'\n Extra info: {extrainfo}'
+            log.info(msg)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         output = {}
