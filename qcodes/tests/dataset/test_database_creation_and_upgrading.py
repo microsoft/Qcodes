@@ -22,7 +22,7 @@ from qcodes.dataset.sqlite_base import (connect,
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
-fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:1])
+fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
 
 
