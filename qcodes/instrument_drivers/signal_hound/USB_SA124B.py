@@ -581,7 +581,7 @@ class SignalHound_USB_SA124B(Instrument):
         Averages over SH.sweep Navg times
 
         """
-        sweep_len, start_freq, stepsize = self.QuerySweep()
+        sweep_len, _, _ = self.QuerySweep()
         data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
