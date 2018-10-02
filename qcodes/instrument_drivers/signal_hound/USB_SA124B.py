@@ -143,7 +143,7 @@ class FrequencySweep(ArrayParameter):
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
         data = self._instrument._get_averaged_sweep_data()
-        sleep(2*self.instrument._sleeptime)
+        sleep(2*self.instrument.sleep_time.get())
         return data
 
 
@@ -176,7 +176,6 @@ class SignalHound_USB_SA124B(Instrument):
         log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = Constants
-        self._sleeptime = 0.1
         self.output_unit = 'dBm'
         self.add_parameter('frequency',
                            label='Frequency',
@@ -297,7 +296,15 @@ class SignalHound_USB_SA124B(Instrument):
                            docstring="Apply software filter to remove "
                                      "undersampling mirroring",
                            vals=vals.Bool())
-
+        self.add_parameter('sleep_time',
+                           label='Sleep time',
+                           unit='s',
+                           initial_value=0.1,
+                           get_cmd=None,
+                           set_cmd=None,
+                           docstring="Time to sleep before and after "
+                                     "getting data from the instrument",
+                           vals=vals.Numbers(0))
         self.openDevice()
 
         self.sync_parameters()
@@ -547,16 +554,17 @@ class SignalHound_USB_SA124B(Instrument):
 
         minarr = (ct.c_float * sweep_len)()
         maxarr = (ct.c_float * sweep_len)()
-        sleep(self._sleeptime)  # Added extra sleep for updating issue
+        sleep_time = self.sleep_time.get()
+        sleep(sleep_time)  # Added extra sleep for updating issue
         err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        sleep(self._sleeptime)  # Added extra sleep
+        sleep(sleep_time)  # Added extra sleep
         if not err == saStatus.saNoError:
             # if an error occurs tries preparing the device and then asks again
             log.warning('Error raised in _get_sweep_data, '
                         'trying to get data')
-            sleep(self._sleeptime)
+            sleep(sleep_time)
             self.sync_parameters()
-            sleep(self._sleeptime)
+            sleep(sleep_time)
             minarr = (ct.c_float * sweep_len)()
             maxarr = (ct.c_float * sweep_len)()
             err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
@@ -599,7 +607,7 @@ class SignalHound_USB_SA124B(Instrument):
             self.span(original_span)
             self.rbw(original_rbw)
             self.sync_parameters()
-        sleep(2*self._sleeptime)
+        sleep(2*self.sleep_time.get())
         return max_power
 
     @staticmethod
