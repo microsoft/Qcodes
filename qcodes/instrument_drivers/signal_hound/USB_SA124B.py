@@ -32,6 +32,42 @@ class TraceParameter(Parameter):
         self._save_val(value, validate=False)
 
 
+class ExternalRefParameter(TraceParameter):
+    """
+    Parameter that handels the fact that external reference can only be
+    enabled but not disabled.
+
+    From the manual:
+
+    Once a device has successfully switched to an external reference it
+    must remain using it until the device is closed, and it is undefined
+    behavior to disconnect the reference input from the reference BNC port.
+    """
+
+    def set_raw(self, value: bool) -> None:  # pylint: disable=method-hidden
+        if self.get_latest() is True and value is False:
+            raise RuntimeError("Signal Hound does not support disabling "
+                               "external reference. To switch back to internal "
+                               "reference close the device and start again.")
+        super().set_raw(value)
+
+
+class ScaleParameter(TraceParameter):
+    """
+    Parameter that handels changing the unit when the scale is changed.
+    """
+
+    def set_raw(self, value: bool) -> None: # pylint: disable=method-hidden
+        if value in ('log-scale', 'log-full-scale'):
+            unit = 'dBm'
+        elif value in ('lin-scale', 'lin-full-scale'):
+            unit = 'mV'
+        else:
+            raise RuntimeError("Unsupported scale")
+        self.instrument.output_unit = unit
+        super().set_raw(value)
+
+
 class SweepTraceParameter(TraceParameter):
     """
     An extension to TraceParameter that keeps track of the trace setpoints in
@@ -71,7 +107,7 @@ class FrequencySweep(ArrayParameter):
                  sweep_len: int, start_freq: number, stepsize: number) -> None:
         super().__init__(name, shape=(sweep_len,),
                          instrument=instrument,
-                         unit='dB',
+                         unit=instrument.output_unit,
                          label='Magnitude',
                          setpoint_units=('Hz',),
                          setpoint_labels=(f'Frequency',),
@@ -93,6 +129,7 @@ class FrequencySweep(ArrayParameter):
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("'FrequencySweep' is only implemented"
                                "for 'SignalHound_USB_SA124B'")
+        self.unit = self.instrument.output_unit
         end_freq = start_freq + stepsize*(sweep_len-1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))
         self.setpoints = (freq_points,)
@@ -106,7 +143,7 @@ class FrequencySweep(ArrayParameter):
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
         data = self._instrument._get_averaged_sweep_data()
-        sleep(0.2)
+        sleep(2*self.instrument._sleeptime)
         return data
 
 
@@ -139,29 +176,43 @@ class SignalHound_USB_SA124B(Instrument):
         log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = Constants
-
+        self._sleeptime = 0.1
+        self.output_unit = 'dBm'
         self.add_parameter('frequency',
                            label='Frequency',
                            unit='Hz',
                            initial_value=5e9,
                            vals=vals.Numbers(),
-                           parameter_class=SweepTraceParameter)
+                           parameter_class=SweepTraceParameter,
+                           docstring='Center frequency for sweep.'
+                                     'This is the set center, the actual '
+                                     'center may be subject to round off '
+                                     'compared to this value')
         self.add_parameter('span',
                            label='Span',
                            unit='Hz',
                            initial_value=.25e6,
                            vals=vals.Numbers(),
-                           parameter_class=SweepTraceParameter)
+                           parameter_class=SweepTraceParameter,
+                           docstring='Width of frequency span'
+                                     'This is the set span, the actual '
+                                     'span may be subject to round off '
+                                     'compared to this value'
+                           )
         self.add_parameter('npts',
                            label='Number of Points',
                            get_cmd=None,
-                           set_cmd=False)
+                           set_cmd=False,
+                           docstring='Number of points in frequency sweep.')
         self.add_parameter('avg',
                            label='Averages',
                            initial_value=1,
                            get_cmd=None,
                            set_cmd=None,
-                           vals=vals.Ints())
+                           vals=vals.Ints(),
+                           docstring='Number of averages to perform. '
+                                     'Averages are performed in software by '
+                                     'acquiring multiple sweeps')
         self.add_parameter('power',
                            label='Power',
                            unit='dBm',
@@ -177,11 +228,19 @@ class SignalHound_USB_SA124B(Instrument):
                            unit='dBm',
                            initial_value=0,
                            vals=vals.Numbers(max_value=20),
-                           parameter_class=TraceParameter)
+                           parameter_class=TraceParameter,
+                           docstring="Setting reference level will "
+                                     "automatically select gain and attenuation"
+                                     "optimal for measuring at and below "
+                                     "this level")
         self.add_parameter('external_reference',
                            initial_value=False,
                            vals=vals.Bool(),
-                           parameter_class=TraceParameter)
+                           parameter_class=ExternalRefParameter,
+                           docstring='Use an external 10 MHz reference source. '
+                                     'Note that Signal Hound does not support '
+                                     'disabling external ref. To disable close '
+                                     'the connection and restart.')
         self.add_parameter('device_type',
                            set_cmd=False,
                            get_cmd=self._get_device_type)
@@ -202,12 +261,7 @@ class SignalHound_USB_SA124B(Instrument):
                            initial_value='log-scale',
                            vals=vals.Enum('log-scale', 'lin-scale',
                                           'log-full-scale', 'lin-full-scale'),
-                           parameter_class=TraceParameter)
-        self.add_parameter('running',
-                           get_cmd=None,
-                           set_cmd=None,
-                           initial_value=False,
-                           vals=vals.Bool())
+                           parameter_class=ScaleParameter)
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            unit='Hz',
@@ -253,6 +307,7 @@ class SignalHound_USB_SA124B(Instrument):
                            start_freq=start_freq,
                            stepsize=stepsize,
                            parameter_class=FrequencySweep)
+        # make npts reflect the actual number of points chosen by the device
         self.npts._save_val(sweep_len)
 
         self.connect_message()
@@ -318,9 +373,12 @@ class SignalHound_USB_SA124B(Instrument):
 
         # 4. External Reference configuration
         if self.external_reference():
+            external = self.hf.sa_REF_EXTERNAL_IN
             log.info('Setting reference frequency from external source.')
-            err = self.dll.saEnableExternalReference(self.deviceHandle)
-            self.check_for_error(err, 'saEnableExternalReference')
+            err = self.dll.saSetTimebase(self.deviceHandle,
+                                         external)
+            self.check_for_error(err, 'saSetTimebase')
+
 
         reject_var = ct.c_bool(self.reject_image())
         log.info('Setting device Sweeping configuration.')
@@ -379,7 +437,6 @@ class SignalHound_USB_SA124B(Instrument):
         deviceHandlePnt = ct.pointer(self.deviceHandle)
         err = self.dll.saOpenDevice(deviceHandlePnt)
         self.check_for_error(err, 'saOpenDevice')
-        self.devOpen = True
         self.device_type()
 
     def close(self) -> None:
@@ -401,8 +458,6 @@ class SignalHound_USB_SA124B(Instrument):
         err = self.dll.saCloseDevice(self.deviceHandle)
         self.check_for_error(err, 'saCloseDevice')
         log.info(f'Closed Device with handle num: {self.deviceHandle.value}')
-        self.devOpen = False
-        self.running(False)
         super().close()
 
     def abort(self) -> None:
@@ -418,7 +473,6 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             extrainfo = None
         self.check_for_error(err, 'saAbort', extrainfo)
-
 
     def preset(self) -> None:
         """
@@ -493,16 +547,16 @@ class SignalHound_USB_SA124B(Instrument):
 
         minarr = (ct.c_float * sweep_len)()
         maxarr = (ct.c_float * sweep_len)()
-        sleep(.1)  # Added extra sleep for updating issue
+        sleep(self._sleeptime)  # Added extra sleep for updating issue
         err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        sleep(.1)  # Added extra sleep
+        sleep(self._sleeptime)  # Added extra sleep
         if not err == saStatus.saNoError:
             # if an error occurs tries preparing the device and then asks again
-            log.warning('Error raised in QuerySweepInfo, '
-                        'preparing for measurement')
-            sleep(.1)
+            log.warning('Error raised in _get_sweep_data, '
+                        'trying to get data')
+            sleep(self._sleeptime)
             self.sync_parameters()
-            sleep(.1)
+            sleep(self._sleeptime)
             minarr = (ct.c_float * sweep_len)()
             maxarr = (ct.c_float * sweep_len)()
             err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
@@ -545,7 +599,7 @@ class SignalHound_USB_SA124B(Instrument):
             self.span(original_span)
             self.rbw(original_rbw)
             self.sync_parameters()
-        sleep(0.2)
+        sleep(2*self._sleeptime)
         return max_power
 
     @staticmethod
