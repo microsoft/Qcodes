@@ -19,6 +19,10 @@ from qcodes.dataset.sqlite_base import (connect,
                                         perform_db_upgrade_0_to_1)
 
 from qcodes.dataset.guids import parse_guid
+import qcodes.tests.dataset
+
+fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:1])
+fixturepath = os.path.join(fixturepath, 'fixtures')
 
 
 @contextmanager
@@ -87,7 +91,14 @@ def test_initialise_database_at_for_existing_db():
 def test_perform_actual_upgrade_0_to_1():
     # we cannot use the empty_temp_db, since that has already called connect
     # and is therefore latest version already
-    connection = connect(':memory:', debug=False,
+
+    v0fixpath = os.path.join(fixturepath, 'db_files', 'version0')
+
+    if not os.path.exists(v0fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    connection = connect(os.path.join(v0fixpath, 'empty.db'), debug=False,
                          version=0)
 
     assert get_user_version(connection) == 0
