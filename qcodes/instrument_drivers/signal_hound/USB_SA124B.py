@@ -590,6 +590,10 @@ class SignalHound_USB_SA124B(Instrument):
 
 
 class Constants:
+    """
+    These constants are defined in sa_api.h as part of the the Signal Hound
+    SDK
+    """
     SA_MAX_DEVICES = 8
 
     saDeviceTypeNone = 0
@@ -646,6 +650,10 @@ class Constants:
 
     TG_THRU_0DB = 0x1
     TG_THRU_20DB = 0x2
+
+    sa_REF_UNUSED = 0
+    sa_REF_INTERNAL_OUT = 1
+    sa_REF_EXTERNAL_IN = 2
 
 
 class saStatus(IntEnum):
