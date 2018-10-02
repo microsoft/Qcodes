@@ -11,7 +11,8 @@ from qcodes import new_experiment, new_data_set, ParamSpec
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment)
+                                                      experiment,
+                                                      temporarily_copied_DB)
 from qcodes.dataset.sqlite_base import (connect,
                                         update_GUIDs,
                                         get_user_version,
@@ -98,21 +99,22 @@ def test_perform_actual_upgrade_0_to_1():
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
 
-    connection = connect(os.path.join(v0fixpath, 'empty.db'), debug=False,
-                         version=0)
+    dbname_old = os.path.join(v0fixpath, 'empty.db')
 
-    assert get_user_version(connection) == 0
+    with temporarily_copied_DB(dbname_old, debug=False, version=0) as conn:
 
-    guid_table_query = "SELECT guid FROM runs"
+        assert get_user_version(conn) == 0
 
-    with pytest.raises(RuntimeError):
-        atomic_transaction(connection, guid_table_query)
+        guid_table_query = "SELECT guid FROM runs"
 
-    perform_db_upgrade_0_to_1(connection)
-    assert get_user_version(connection) == 1
+        with pytest.raises(RuntimeError):
+            atomic_transaction(conn, guid_table_query)
 
-    c = atomic_transaction(connection, guid_table_query)
-    assert len(c.fetchall()) == 0
+        perform_db_upgrade_0_to_1(conn)
+        assert get_user_version(conn) == 1
+
+        c = atomic_transaction(conn, guid_table_query)
+        assert len(c.fetchall()) == 0
 
 
 @pytest.mark.usefixtures("empty_temp_db")
