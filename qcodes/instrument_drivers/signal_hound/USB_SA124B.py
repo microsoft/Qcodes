@@ -67,7 +67,8 @@ class ScaleParameter(TraceParameter):
             unit = 'mV'
         else:
             raise RuntimeError("Unsupported scale")
-        self.instrument.output_unit = unit
+        self.instrument.trace.unit = unit
+        self.instrument.power.unit = unit
         super().set_raw(value)
 
 
@@ -110,7 +111,7 @@ class FrequencySweep(ArrayParameter):
                  sweep_len: int, start_freq: number, stepsize: number) -> None:
         super().__init__(name, shape=(sweep_len,),
                          instrument=instrument,
-                         unit=instrument.output_unit,
+                         unit='dBm',
                          label='Magnitude',
                          setpoint_units=('Hz',),
                          setpoint_labels=(f'Frequency',),
@@ -132,7 +133,6 @@ class FrequencySweep(ArrayParameter):
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("'FrequencySweep' is only implemented"
                                "for 'SignalHound_USB_SA124B'")
-        self.unit = self.instrument.output_unit
         end_freq = start_freq + stepsize*(sweep_len-1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))
         self.setpoints = (freq_points,)
@@ -179,7 +179,6 @@ class SignalHound_USB_SA124B(Instrument):
         log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = Constants
-        self.output_unit = 'dBm'
         self.add_parameter('frequency',
                            label='Frequency',
                            unit='Hz',
@@ -215,16 +214,6 @@ class SignalHound_USB_SA124B(Instrument):
                            docstring='Number of averages to perform. '
                                      'Averages are performed in software by '
                                      'acquiring multiple sweeps')
-        self.add_parameter('power',
-                           label='Power',
-                           unit='dBm',
-                           get_cmd=self._get_power_at_freq,
-                           set_cmd=False,
-                           docstring="The maximum power in a window of 250 kHz"
-                                     "around the specified  frequency with "
-                                     "Resolution bandwidth set to 1 kHz."
-                                     "The integration window is specified by "
-                                     "the VideoBandWidth (set by vbw)")
         self.add_parameter('ref_lvl',
                            label='Reference power',
                            unit='dBm',
@@ -259,11 +248,6 @@ class SignalHound_USB_SA124B(Instrument):
                            docstring="The driver only supports averaging "
                                      "mode it is therefor not possible to set"
                                      "this parameter to anything else")
-        self.add_parameter('scale',
-                           initial_value='log-scale',
-                           vals=vals.Enum('log-scale', 'lin-scale',
-                                          'log-full-scale', 'lin-full-scale'),
-                           parameter_class=ScaleParameter)
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            unit='Hz',
@@ -307,17 +291,34 @@ class SignalHound_USB_SA124B(Instrument):
                            docstring="Time to sleep before and after "
                                      "getting data from the instrument",
                            vals=vals.Numbers(0))
-        self.openDevice()
-
-        self.sync_parameters()
-        sweep_len, start_freq, stepsize = self.QuerySweep()
+        # We don't know the correct values of
+        # the sweep parameters yet so we supply
+        # some defaults. The correct will be set when we call configure below
         self.add_parameter(name='trace',
-                           sweep_len=sweep_len,
-                           start_freq=start_freq,
-                           stepsize=stepsize,
+                           sweep_len=1,
+                           start_freq=1,
+                           stepsize=1,
                            parameter_class=FrequencySweep)
-        # make npts reflect the actual number of points chosen by the device
-        self.npts._save_val(sweep_len)
+        self.add_parameter('power',
+                           label='Power',
+                           unit='dBm',
+                           get_cmd=self._get_power_at_freq,
+                           set_cmd=False,
+                           docstring="The maximum power in a window of 250 kHz"
+                                     "around the specified  frequency with "
+                                     "Resolution bandwidth set to 1 kHz."
+                                     "The integration window is specified by "
+                                     "the VideoBandWidth (set by vbw)")
+        # scale is defined after the trace and power parameter so that
+        # it can change the units of those in it's set method when the
+        # scale changes
+        self.add_parameter('scale',
+                           initial_value='log-scale',
+                           vals=vals.Enum('log-scale', 'lin-scale',
+                                          'log-full-scale', 'lin-full-scale'),
+                           parameter_class=ScaleParameter)
+        self.openDevice()
+        self.configure()
 
         self.connect_message()
 
@@ -325,7 +326,8 @@ class SignalHound_USB_SA124B(Instrument):
         """
         Private method to sync changes of the
         frequency axis to the setpoints of the
-        trace parameter.
+        trace parameter. This also set the units
+        of power and trace.
         """
         sweep_info = self.QuerySweep()
         self.npts._save_val(sweep_info[0])
@@ -602,13 +604,16 @@ class SignalHound_USB_SA124B(Instrument):
             self.span(0.25e6)
             self.rbw(1e3)
         if not self._parameters_synced:
-            self.sync_parameters()
+            # call configure to update both
+            # the paramters on the device and the
+            # setpoints and units
+            self.configure()
         data = self._get_averaged_sweep_data()
         max_power = np.max(data)
         if needs_reset:
             self.span(original_span)
             self.rbw(original_rbw)
-            self.sync_parameters()
+            self.configure()
         sleep(2*self.sleep_time.get())
         return max_power
 
