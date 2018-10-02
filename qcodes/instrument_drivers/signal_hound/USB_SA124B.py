@@ -21,10 +21,10 @@ class TraceParameter(Parameter):
     This is most likely used similar to a ``ManualParameter``
     I.e. calling set/get will not communicate with the instrument.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: Any):  # pylint: disable=method-hidden
+    def set_raw(self, value: Any) -> None: # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("TraceParameter only works with "
                                "'SignalHound_USB_SA124B'")
