@@ -86,7 +86,7 @@ def test_defaults(dataset_with_outliers):
         _, cb = plot_by_id(run_id)
         assert cb[0].extend == 'neither'
 
-        qcodes.config.gui.auto_color_scale.enabled = True
+        qcodes.config.plotting.auto_color_scale.enabled = True
 
         _, cb = plot_by_id(run_id)
         assert cb[0].extend == 'both'
