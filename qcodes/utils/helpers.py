@@ -580,8 +580,10 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
 
     old_value = getattr(object_, attribute_name)
     setattr(object_, attribute_name, new_value)
-    yield
-    setattr(object_, attribute_name, old_value)
+    try:
+        yield
+    finally:
+        setattr(object_, attribute_name, old_value)
 
 
 def partial_with_docstring(func, docstring, **kwargs):
