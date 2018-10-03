@@ -25,6 +25,15 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                         'SLOW_EXTERNAL_CLOCK': 4,
                                         'EXTERNAL_CLOCK_AC': 5,
                                         'EXTERNAL_CLOCK_10_MHz_REF': 7})
+        
+        self.add_parameter(name='external_sample_rate',
+                           get_cmd=None,
+                           parameter_class=TraceParameter,
+                           label='External Sample Rate',
+                           unit='S/s',
+                           vals=validators.Enum(1_000_000_000),
+                           initial_value=1_000_000_000)
+        
         self.add_parameter(name='sample_rate',
                            parameter_class=TraceParameter,
                            label='Sample Rate',
