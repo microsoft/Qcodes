@@ -65,10 +65,11 @@ def location_and_station_set_to(location: int, work_station: int):
     cfg['GUID_components']['work_station'] = work_station
     cfg.save_to_home()
 
-    yield
-
-    cfg.current_config = old_cfg
-    cfg.save_to_home()
+    try:
+        yield
+    finally:
+        cfg.current_config = old_cfg
+        cfg.save_to_home()
 
 
 def test_tables_exist(empty_temp_db):
