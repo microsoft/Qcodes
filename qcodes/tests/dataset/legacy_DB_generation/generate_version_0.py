@@ -40,7 +40,7 @@ if __name__ == '__main__':
         # to do our git magic, since the import will be from site-packages in
         # the environment folder, and not from the git-managed folder
         import qcodes
-        qcpath = os.sep.join(os.sep.split(qcodes.__file__)[:-2])
+        qcpath = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
         if qcpath != gitrepopath:
             raise ValueError('QCoDeS does not seem to be installed in editable'
                              ' mode, can not proceed. To use this script, '
