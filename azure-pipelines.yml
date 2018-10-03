@@ -27,13 +27,12 @@ jobs:
           pip install -e .
         displayName: "Installation"
       - script: |
+          mypy qcodes
+        displayName: "mypy"
+      - script: |
           cd qcodes\tests
           pytest
         displayName: "Pytest"
-      - script: |
-          cd ..\..
-          mypy qcodes
-        displayName: "mypy"
       - script: |
           cd docs
           make.bat htmlapi
