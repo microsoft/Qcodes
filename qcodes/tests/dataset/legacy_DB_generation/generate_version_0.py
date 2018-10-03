@@ -33,7 +33,19 @@ def generate_empty_DB_file(sqlite_base):
 if __name__ == '__main__':
 
     with utils.leave_untouched(repo):  # pylint: disable=E1101
+
         repo.git.checkout(utils.GIT_HASHES[0])  # pylint: disable=E1101
+
+        # If QCoDeS is not installed in editable mode, it makes no difference
+        # to do our git magic, since the import will be from site-packages in
+        # the environment folder, and not from the git-managed folder
+        import qcodes
+        qcpath = os.sep.join(os.sep.split(qcodes.__file__)[:-2])
+        if qcpath != gitrepopath:
+            raise ValueError('QCoDeS does not seem to be installed in editable'
+                             ' mode, can not proceed. To use this script, '
+                             'uninstall QCoDeS and reinstall it with pip '
+                             'install -e <path-to-qcodes-folder>')
 
         import qcodes.dataset.sqlite_base as sqlite_base
 

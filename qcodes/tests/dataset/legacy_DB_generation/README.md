@@ -4,6 +4,4 @@ When the database schema (the database user version number) changes, the API in 
 
 The scripts use `gitpython` to roll QCoDeS back to a relevant old commit and create database files with the ancient source code.
 
-The scripts should *not* be run as a part of the QCoDeS test suite, but prior to test execution in a different process. The scripts have some dependencies and will run in the normal QCoDeS environment.
-
-
+The scripts should *not* be run as a part of the QCoDeS test suite, but prior to test execution in a different process. The scripts have some dependencies and will run in the normal QCoDeS environment **PROVIDED** that QCoDeS was installed with the editable flag (i.e. `pip install -e <path-to-qcodes>`).
