@@ -164,16 +164,18 @@ def default_config():
     default_config_obj = qcodes.config
     qcodes.config = qcodes.Config()
 
-    yield
+    try:
+        yield
+    finally:
+        qcodes.Config.home_file_name = home_file_name
+        qcodes.Config.schema_home_file_name = schema_home_file_name
+        qcodes.Config.env_file_name = env_file_name
+        qcodes.Config.schema_env_file_name = schema_env_file_name
+        qcodes.Config.cwd_file_name = cwd_file_name
+        qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
 
-    qcodes.Config.home_file_name = home_file_name
-    qcodes.Config.schema_home_file_name = schema_home_file_name
-    qcodes.Config.env_file_name = env_file_name
-    qcodes.Config.schema_env_file_name = schema_env_file_name
-    qcodes.Config.cwd_file_name = cwd_file_name
-    qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+        qcodes.config = default_config_obj
 
-    qcodes.config = default_config_obj
 
 def side_effect(map, name):
     return map[name]
