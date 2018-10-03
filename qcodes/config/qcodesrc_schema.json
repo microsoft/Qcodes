@@ -117,7 +117,9 @@
                             "default": "grey"
                         }
                     }
-                },
+                }
+            }
+        },
         "user": {
             "type": "object",
             "properties": {
