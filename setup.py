@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
+
 def get_version(verbose=1):
     """ Extract version information from source code """
 
@@ -24,8 +25,9 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
+
 extras = {
-    'MatPlot': ('matplotlib', '2.0.2'),
+    'MatPlot': ('matplotlib', '2.2.3'),
     'QtPlot': ('pyqtgraph', '0.10.0'),
     'coverage tests': ('coverage', '4.0'),
     'Slack': ('slacker', '0.9.42')
@@ -37,7 +39,7 @@ setup(name='qcodes',
       use_2to3=False,
 
       maintainer='Jens H Nielsen',
-      maintainer_email='j.h.nielsen@nbi.ku.dk',
+      maintainer_email='Jens.Nielsen@microsoft.com',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
@@ -59,12 +61,13 @@ setup(name='qcodes',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*']},
       install_requires=[
-          'numpy>=1.10,<1.14',
-          'pyvisa>=1.8',
+          'numpy>=1.10',
+          'pyvisa>=1.9.1',
           'h5py>=2.6',
           'websockets>=3.2',
           'jsonschema',
-          'pyzmq'
+          'pyzmq',
+          'wrapt'
       ],
 
       test_suite='qcodes.tests',

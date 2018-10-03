@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import InstrumentChannel, ChannelList, Instrument
 from qcodes import ArrayParameter
 from qcodes.utils.validators import Enum, Numbers
 
@@ -82,7 +82,7 @@ class RawTrace(ArrayParameter):
         # set up the instrument
         # ---------------------------------------------------------------------
 
-        # TODO: check numner of points
+        # TODO: check number of points
         # check if requested number of points is less than 500 million
 
         # get intrument state
@@ -99,8 +99,6 @@ class RawTrace(ArrayParameter):
         # transfer the data
         # ---------------------------------------------------------------------
 
-        # switch the response header off for lower overhead
-        instr.write(':SYSTem:HEADer OFF')
         # select the channel from which to read
         instr._parent.data_source('CHAN{}'.format(self._channel))
         # specifiy the data format in which to read
@@ -111,11 +109,15 @@ class RawTrace(ArrayParameter):
 
         # request the actual transfer
         data = instr._parent.visa_handle.query_binary_values(
-            'WAV:DATA?', datatype='h', is_big_endian=False)
+            'WAV:DATA?', datatype='h', is_big_endian=False,
+            expect_termination=False)
+        # the Infiniium does not include an extra termination char on binary
+        # messages so we set expect_termination to False
+
         if len(data) != self.shape[0]:
             raise TraceSetPointsChanged('{} points have been aquired and {} \
             set points have been prepared in \
-            prepare_curvedata'.format(lend(data), self.shape[0]))
+            prepare_curvedata'.format(len(data), self.shape[0]))
         # check x data scaling
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
@@ -147,6 +149,148 @@ class RawTrace(ArrayParameter):
             instr.write(':RUN')
 
         return channel_data
+
+
+class MeasurementSubsystem(InstrumentChannel):
+    """
+    Submodule containing the measurement subsystem commands and associated
+    parameters
+    """
+    # note: this is not really a channel, but InstrumentChannel does everything
+    # a 'Submodule' class should do
+
+    def __init__(self, parent: Instrument, name: str, **kwargs) -> None:
+        super().__init__(parent, name, **kwargs)
+
+        self.add_parameter(name='source_1',
+                           label='Measurement primary source',
+                           set_cmd=partial(self._set_source, 1),
+                           get_cmd=partial(self._get_source, 1),
+                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)},
+                           snapshot_value=False)
+
+        self.add_parameter(name='source_2',
+                           label='Measurement secondary source',
+                           set_cmd=partial(self._set_source, 2),
+                           get_cmd=partial(self._get_source, 2),
+                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)},
+                           snapshot_value=False)
+
+        self.add_parameter(name='amplitude',
+                           label='Voltage amplitude',
+                           get_cmd=self._make_meas_cmd('VAMPlitude'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='average',
+                           label='Voltage average',
+                           get_cmd=self._make_meas_cmd('VAVerage'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='base',
+                           label='Statistical base',
+                           get_cmd=self._make_meas_cmd('VBASe'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='frequency',
+                           label='Signal frequency',
+                           get_cmd=self._make_meas_cmd('FREQuency'),
+                           get_parser=float,
+                           unit='Hz',
+                           docstring="""
+                                     measure the frequency of the first
+                                     complete cycle on the screen using
+                                     the mid-threshold levels of the waveform
+                                     """,
+                           snapshot_value=False)
+
+        self.add_parameter(name='lower',
+                           label='Voltage lower',
+                           get_cmd=self._make_meas_cmd('VLOWer'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='max',
+                           label='Voltage maximum',
+                           get_cmd=self._make_meas_cmd('VMAX'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='middle',
+                           label='Middle threshold voltage',
+                           get_cmd=self._make_meas_cmd('VMIDdle'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='min',
+                           label='Voltage minimum',
+                           get_cmd=self._make_meas_cmd('VMIN'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='overshoot',
+                           label='Voltage overshoot',
+                           get_cmd=self._make_meas_cmd('VOVershoot'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='vpp',
+                           label='Voltage peak-to-peak',
+                           get_cmd=self._make_meas_cmd('VPP'),
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='rms',
+                           label='Voltage RMS',
+                           get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, DC',
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+        self.add_parameter(name='rms_no_DC',
+                           label='Voltage RMS',
+                           get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, AC',
+                           get_parser=float,
+                           unit='V',
+                           snapshot_value=False)
+
+    @staticmethod
+    def _make_meas_cmd(cmd: str) -> str:
+        """
+        Helper function to avoid typos
+        """
+        return f':MEASure:{cmd}?'
+
+    def _set_source(self, rank: int, source: str) -> None:
+        """
+        Set the measurement source, either primary (rank==1) or secondary
+        (rank==2)
+        """
+        sources = self.ask(':MEASure:SOURCE?').split(',')
+        if rank == 1:
+            self.write(f':MEASure:SOURCE {source}, {sources[1]}')
+        else:
+            self.write(f':MEASure:SOURCE {sources[0]}, {source}')
+
+    def _get_source(self, rank: int) -> str:
+        """
+        Get the measurement source, either primary (rank==1) or secondary
+        (rank==2)
+        """
+        sources = self.ask(':MEASure:SOURCE?').split(',')
+
+        return sources[rank-1]
 
 
 class InfiniiumChannel(InstrumentChannel):
@@ -200,12 +344,12 @@ class InfiniiumChannel(InstrumentChannel):
             vals=Numbers(),
         )
 
-
         # Acquisition
         self.add_parameter(name='trace',
                            channel=channel,
                            parameter_class=RawTrace
                            )
+
 
 class Infiniium(VisaInstrument):
     """
@@ -229,6 +373,10 @@ class Infiniium(VisaInstrument):
 
         # Scope trace boolean
         self.trace_ready = False
+
+        # switch the response header off,
+        # else none of our parameters will work
+        self.write(':SYSTem:HEADer OFF')
 
         # functions
 
@@ -365,14 +513,13 @@ class Infiniium(VisaInstrument):
                                       'HRESolution', 'SEGMented',
                                       'SEGPdetect', 'SEGHres')
                             )
-        
+
         self.add_parameter('acquire_timespan',
                             get_cmd=(lambda: self.acquire_points.get_latest() \
                                             /self.acquire_sample_rate.get_latest()),
                             unit='s',
                             get_parser=float
                             )
-
 
         # time of the first point
         self.add_parameter('waveform_xorigin',
@@ -391,6 +538,9 @@ class Infiniium(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
+        # Submodules
+        meassubsys = MeasurementSubsystem(self, 'measure')
+        self.add_submodule('measure', meassubsys)
 
     def _cmd_and_invalidate(self, cmd: str) -> Callable:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)

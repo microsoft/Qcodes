@@ -1,11 +1,13 @@
 from typing import Union, Sequence, List
 
-
 # TODO: we should validate type somehow
 # we can't accept everything (or we can but crash at runtime?)
 # we only support the types in VALUES type, that is:
 # str, Number, List, ndarray, bool
 class ParamSpec:
+
+    allowed_types = ['array', 'numeric', 'text']
+
     def __init__(self, name: str,
                  paramtype: str,
                  label: str = None,
@@ -21,12 +23,11 @@ class ParamSpec:
             inferred_from: the parameters that this parameter is inferred_from
             depends_on: the parameters that this parameter depends on
         """
-        allowed_types = ['array', 'numeric', 'text']
         if not isinstance(paramtype, str):
             raise ValueError('Paramtype must be a string.')
-        if paramtype.lower() not in allowed_types:
-            raise ValueError("Illegal paramtype. Must be 'array', 'numeric'"
-                             ", or 'text'.")
+        if paramtype.lower() not in self.allowed_types:
+            raise ValueError("Illegal paramtype. Must be on of "
+                             f"{self.allowed_types}")
         if not name.isidentifier():
             raise ValueError(f'Invalid name: {name}. Only valid python '
                              'identifier names are allowed (no spaces or '

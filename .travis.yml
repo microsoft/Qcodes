@@ -23,7 +23,7 @@ install:
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
-    - pip install -e .
+    - pip install .
 
 before_script: # configure a headless display to test plot generation
     - "export DISPLAY=:99.0"
@@ -31,13 +31,18 @@ before_script: # configure a headless display to test plot generation
     - sleep 3 # give xvfb some time to start
 
 script:
-    - cd qcodes
-    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
-    # build docs with warnings as errors
     - |
-      cd ..
-      mypy qcodes --ignore-missing-imports --no-strict-optional
-
+      cd qcodes
+      py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    - cd ..
+    - mypy qcodes
+    # run benchmarks to make sure they are correct
+    - |
+      cd benchmarking
+      asv machine --machine travis
+      asv dev --machine travis
+    - cd ..
+    # build docs with warnings as errors
     - |
       cd docs
       make SPHINXOPTS="-W" html-api

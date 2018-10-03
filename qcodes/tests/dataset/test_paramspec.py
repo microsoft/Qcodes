@@ -10,9 +10,11 @@ from qcodes.dataset.param_spec import ParamSpec
 
 @given(name=hst.text(min_size=1),
        sp1=hst.text(min_size=1), sp2=hst.text(min_size=1),
-       inff1=hst.text(min_size=1), inff2=hst.text(min_size=1))
-def test_creation(name, sp1, sp2, inff1, inff2):
-
+       inff1=hst.text(min_size=1), inff2=hst.text(min_size=1),
+       paramtype=hst.lists(
+           elements=hst.sampled_from(['numeric', 'array', 'text']),
+           min_size=6, max_size=6))
+def test_creation(name, sp1, sp2, inff1, inff2, paramtype):
     invalid_types = ['np.array', 'ndarray', 'lala', '', Number,
                      ndarray, 0, None]
     for inv_type in invalid_types:
@@ -27,24 +29,24 @@ def test_creation(name, sp1, sp2, inff1, inff2):
 
     if not name.isidentifier():
         with pytest.raises(ValueError):
-            ps = ParamSpec(name, 'numeric', label=None, unit='V',
+            ps = ParamSpec(name, paramtype[0], label=None, unit='V',
                            inferred_from=(inff1, inff2),
                            depends_on=(sp1, sp2))
         name = 'name'
 
-    ps = ParamSpec(name, 'numeric', label=None, unit='V',
+    ps = ParamSpec(name, paramtype[1], label=None, unit='V',
                    inferred_from=(inff1, inff2),
                    depends_on=(sp1, sp2))
 
     assert ps.inferred_from == f'{inff1}, {inff2}'
     assert ps.depends_on == f'{sp1}, {sp2}'
 
-    ps1 = ParamSpec(sp1, 'numeric')
-    p1 = ParamSpec(name, 'numeric', depends_on=(ps1, sp2))
+    ps1 = ParamSpec(sp1, paramtype[2])
+    p1 = ParamSpec(name, paramtype[3], depends_on=(ps1, sp2))
     assert p1.depends_on == ps.depends_on
 
-    ps2 = ParamSpec(inff1, 'numeric')
-    p2 = ParamSpec(name, 'numeric', inferred_from=(ps2, inff2))
+    ps2 = ParamSpec(inff1, paramtype[4])
+    p2 = ParamSpec(name, paramtype[5], inferred_from=(ps2, inff2))
     assert p2.inferred_from == ps.inferred_from
 
 

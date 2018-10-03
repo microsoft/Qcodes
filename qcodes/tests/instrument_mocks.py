@@ -1,9 +1,16 @@
+
+from functools import partial
+import logging
+
 import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import MultiParameter, Parameter, ArrayParameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+
+log = logging.getLogger(__name__)
+
 
 class MockParabola(Instrument):
     '''
@@ -110,6 +117,7 @@ class DummyInstrument(Instrument):
                                vals=Numbers(-800, 400),
                                get_cmd=None, set_cmd=None)
 
+
 class DummyChannel(InstrumentChannel):
     """
     A single dummy channel implementation
@@ -132,8 +140,18 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_multi_parameter',
                            parameter_class=MultiSetPointParam)
 
+        self.add_parameter(name='dummy_scalar_multi_parameter',
+                           parameter_class=MultiScalarParam)
+
+        self.add_parameter(name='dummy_2d_multi_parameter',
+                           parameter_class=Multi2DSetPointParam)
+
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
+
+        self.add_function(name='log_my_name',
+                          call_cmd=partial(log.debug, f'{name}'))
+
 
 class DummyChannelInstrument(Instrument):
     """
@@ -149,6 +167,7 @@ class DummyChannelInstrument(Instrument):
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)
+
 
 class MultiGetter(MultiParameter):
     """
@@ -204,6 +223,67 @@ class MultiSetPointParam(MultiParameter):
         self._save_val(items)
         return items
 
+
+class Multi2DSetPointParam(MultiParameter):
+    """
+    Multiparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+
+    def __init__(self, instrument=None, name='testparameter'):
+        shapes = ((5, 3), (5, 3))
+        names = ('this', 'that')
+        labels = ('this label', 'that label')
+        units = ('this unit', 'that unit')
+        sp_base_1 = tuple(np.linspace(5, 9, 5))
+        sp_base_2 = tuple(np.linspace(9, 11, 3))
+        array_setpoints = setpoint_generator(sp_base_1, sp_base_2)
+        setpoints = (array_setpoints, array_setpoints)
+        setpoint_names = (('this_setpoint', 'that_setpoint'),
+                          ('this_setpoint', 'that_setpoint'))
+        setpoint_labels = (('this setpoint', 'that setpoint'),
+                           ('this setpoint', 'that setpoint'))
+        setpoint_units = (('this setpointunit',
+                           'that setpointunit'),
+                          ('this setpointunit',
+                           'that setpointunit'))
+        super().__init__(name, names, shapes,
+                         instrument=instrument,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get_raw(self):
+        items = (np.zeros((5, 3)), np.ones((5, 3)))
+        self._save_val(items)
+        return items
+
+
+class MultiScalarParam(MultiParameter):
+    """
+    Multiparameter whos elements are scalars i.e. similar to
+    Parameter with no setpoints etc.
+    """
+    def __init__(self, instrument=None, name='multiscalarparameter'):
+        shapes = ((), ())
+        names = ('thisparam', 'thatparam')
+        labels = ('thisparam label', 'thatparam label')
+        units = ('thisparam unit', 'thatparam unit')
+        setpoints = ((), ())
+        super().__init__(name, names, shapes,
+                         instrument=instrument,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints)
+
+    def get_raw(self):
+        items = (0, 1)
+        self._save_val(items)
+        return items
+
 class ArraySetPointParam(ArrayParameter):
     """
     Arrayparameter which only purpose it to test that units, setpoints
@@ -233,3 +313,26 @@ class ArraySetPointParam(ArrayParameter):
         item = np.ones(5) + 1
         self._save_val(item)
         return item
+
+
+def setpoint_generator(*sp_bases):
+    """
+    Helper function to generate setpoints in the format that ArrayParameter
+    (and MultiParameter) expects
+
+    Args:
+        *sp_bases:
+
+    Returns:
+
+    """
+    setpoints = []
+    for i, sp_base in enumerate(sp_bases):
+        if i == 0:
+            setpoints.append(sp_base)
+        else:
+            repeats = [len(sp) for sp in sp_bases[:i]]
+            repeats.append(1)
+            setpoints.append(np.tile(sp_base, repeats))
+
+    return tuple(setpoints)

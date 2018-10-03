@@ -1,9 +1,9 @@
 import numpy as np
 import logging
-from typing import Sequence, Dict, Callable
+from typing import Sequence, Dict, Callable, Tuple
 
 from qcodes import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers, Ints, Enum
 from qcodes.instrument.parameter import ArrayParameter
 
@@ -467,7 +467,10 @@ class SR86xBuffer(InstrumentChannel):
         values = self._parent.visa_handle.query_binary_values(
             f"CAPTUREGET? {offset_in_kb}, {size_in_kb}",
             datatype='f',
-            is_big_endian=False)
+            is_big_endian=False,
+            expect_termination=False)
+        # the sr86x does not include an extra termination char on binary
+        # messages so we set expect_termination to False
 
         return np.array(values)
 
@@ -559,6 +562,64 @@ class SR86xBuffer(InstrumentChannel):
         return self.get_capture_data(sample_count)
 
 
+class SR86xDataChannel(InstrumentChannel):
+    """
+    Implements a data channel of SR86x lock-in amplifier. Parameters that are
+    assigned to these channels get plotted on the display of the instrument.
+    Moreover, there are commands that allow to conveniently retrieve the values
+    of the parameters that are currently assigned to the data channels.
+
+    This class relies on the available parameter names that should be
+    mentioned in the lock-in amplifier class in `PARAMETER_NAMES` attribute.
+
+    Args:
+        parent
+            an instance of SR86x driver
+        name
+            data channel name that is to be used to refernce it from the parent
+        cmd_id
+            this ID is used in VISA commands to refer to this data channel,
+            usually is an integer number
+        channel_name
+            this name can also be used in VISA commands along with
+            channel_id; it is not used in this implementation, but is added
+            for reference
+        channel_color
+            every data channel is also referred to by the color with which it
+            is being plotted on the instrument's screen; added here only for
+            reference
+    """
+    def __init__(self, parent: 'SR86x', name: str, cmd_id: str,
+                 cmd_id_name: str=None, color: str=None) -> None:
+        super().__init__(parent, name)
+
+        self._cmd_id = cmd_id
+        self._cmd_id_name = cmd_id_name
+        self._color = color
+
+        self.add_parameter(f'assigned_parameter',
+                           label=f'Data channel {cmd_id} parameter',
+                           docstring=f'Allows to set and get the '
+                                     f'parameter that is assigned to data '
+                                     f'channel {cmd_id}',
+                           set_cmd=f'CDSP {cmd_id}, {{}}',
+                           get_cmd=f'CDSP? {cmd_id}',
+                           val_mapping=self.parent.PARAMETER_NAMES
+                           )
+
+    @property
+    def cmd_id(self):
+        return self._cmd_id
+
+    @property
+    def cmd_id_name(self):
+        return self._cmd_id_name
+
+    @property
+    def color(self):
+        return self._color
+
+
 class SR86x(VisaInstrument):
     """
     This is the code for Stanford_SR865 Lock-in Amplifier
@@ -595,6 +656,28 @@ class SR86x(VisaInstrument):
         'current': 1,
     }
     _N_TO_INPUT_SIGNAL = {v: k for k, v in _INPUT_SIGNAL_TO_N.items()}
+
+    PARAMETER_NAMES = {
+                'X': '0',   # X output, 'X'
+                'Y': '1',   # Y output, 'Y'
+                'R': '2',   # R output, 'R'
+                'P': '3',   # theta output, 'THeta'
+          'aux_in1': '4',   # Aux In 1, 'IN1'
+          'aux_in2': '5',   # Aux In 2, 'IN2'
+          'aux_in3': '6',   # Aux In 3, 'IN3'
+          'aux_in4': '7',   # Aux In 4, 'IN4'
+           'Xnoise': '8',   # X noise, 'XNOise'
+           'Ynoise': '9',   # Y noise, 'YNOise'
+         'aux_out1': '10',  # Aux Out 1, 'OUT1'
+         'aux_out2': '11',  # Aux Out 2, 'OUT2'
+            'phase': '12',  # Reference Phase, 'PHAse'
+        'amplitude': '13',  # Sine Out Amplitude, 'SAMp'
+       'sine_outdc': '14',  # DC Level, 'LEVel'
+        'frequency': '15',  # Int. Ref. Frequency, 'FInt'
+    'frequency_ext': '16',  # Ext. Ref. Frequency, 'FExt'
+    }
+
+    _N_DATA_CHANNELS = 4
 
     def __init__(self, name, address, max_frequency, reset=False, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -867,6 +950,25 @@ class SR86x(VisaInstrument):
                                set_cmd='AUXV {0}, {{}}'.format(i),
                                unit='V')
 
+        # Data channels:
+        # 'DAT1' (green), 'DAT2' (blue), 'DAT3' (yellow), 'DAT4' (orange)
+        data_channels = ChannelList(self, "data_channels", SR86xDataChannel,
+                                    snapshotable=False)
+        for num, color in zip(range(self._N_DATA_CHANNELS),
+                              ('green', 'blue', 'yellow', 'orange')):
+            cmd_id = f"{num}"
+            cmd_id_name = f"DAT{num + 1}"
+            ch_name = f"data_channel_{num + 1}"
+
+            data_channel = SR86xDataChannel(
+                self, ch_name, cmd_id, cmd_id_name, color)
+
+            data_channels.append(data_channel)
+            self.add_submodule(ch_name, data_channel)
+
+        data_channels.lock()
+        self.add_submodule("data_channels", data_channels)
+
         # Interface
         self.add_function('reset', call_cmd='*RST')
 
@@ -916,3 +1018,95 @@ class SR86x(VisaInstrument):
             return self._VOLT_TO_N[s]
         else:
             return self._CURR_TO_N[s]
+
+    def get_values(self, *parameter_names: str) -> Tuple[float, ...]:
+        """
+        Get values of 2 or 3 parameters that are measured by the lock-in
+        amplifier. These values are guaranteed to come from the same
+        measurement cycle as opposed to getting values of parameters one by
+        one (for example, by calling `sr.X()`, and then `sr.Y()`.
+
+        Args:
+            *parameter_names
+                2 or 3 names of parameters for which the values are
+                requested; valid names can be found in `PARAMETER_NAMES`
+                attribute of the driver class
+
+        Returns:
+            a tuple of 2 or 3 floating point values
+
+        """
+        if not 2 <= len(parameter_names) <= 3:
+            raise KeyError(
+                'It is only possible to request values of 2 or 3 parameters '
+                'at a time.')
+
+        for name in parameter_names:
+            if name not in self.PARAMETER_NAMES:
+                raise KeyError(f'{name} is not a valid parameter name. Refer '
+                               f'to `PARAMETER_NAMES` for a list of valid '
+                               f'parameter names')
+
+        p_ids = [self.PARAMETER_NAMES[name] for name in parameter_names]
+        output = self.ask(f'SNAP? {",".join(p_ids)}')
+        return tuple(float(val) for val in output.split(','))
+
+    def get_data_channels_values(self) -> Tuple[float, ...]:
+        """
+        Queries the current values of the data channels
+
+        Returns:
+            tuple of 4 values of the data channels
+        """
+        output = self.ask('SNAPD?')
+        return tuple(float(val) for val in output.split(','))
+
+    def get_data_channels_parameters(self, query_instrument: bool=True
+                                     ) -> Tuple[str, ...]:
+        """
+        Convenience method to query a list of parameters which the data
+        channels are currently assigned to.
+
+        Args:
+            query_instrument
+                If set to False, the internally cashed names of the parameters
+                will be returned; if True, then the names will be queried
+                through the instrument
+
+        Returns:
+            a tuple of 4 strings of parameter names
+        """
+        if query_instrument:
+            method_name = 'get'
+        else:
+            method_name = 'get_latest'
+
+        return tuple(
+            getattr(getattr(self.data_channels[i], 'assigned_parameter'),
+                    method_name)()
+            for i in range(self._N_DATA_CHANNELS)
+        )
+
+    def get_data_channels_dict(self, requery_names: bool=False
+                               ) -> Dict[str, float]:
+        """
+        Returns a dictionary where the keys are parameter names currently
+        assigned to the data channels, and values are the values of those
+        parameters.
+
+        Args:
+            requery_names
+                if False, the currently assigned parameter names will not be
+                queries from the instrument in order to save time on
+                communication, in this case the cached assigned parameter
+                names will be used for the keys of the dicitonary; if True,
+                the assigned parameter names will be queried from the
+                instrument
+
+        Returns:
+            a dictionary where keys are names of parameters assigned to the
+            data channels, and values are the values of those parameters
+        """
+        parameter_names = self.get_data_channels_parameters(requery_names)
+        parameter_values = self.get_data_channels_values()
+        return dict(zip(parameter_names, parameter_values))
