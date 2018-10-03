@@ -66,16 +66,29 @@ class E8267(VisaInstrument):
                            get_parser=float,
                            vals=Numbers(min_value=-200,
                                         max_value=200))
+
         self.add_parameter(name='output_rf',
                            get_cmd='OUTP?',
                            set_cmd='OUTP {}',
                            val_mapping={'OFF': 0,
                                         'ON': 1})
+        
         self.add_parameter(name='modulation_rf',
                            get_cmd='OUTP:MOD?',
                            set_cmd='OUTP:MOD {}',
                            val_mapping={'OFF': 0,
                                         'ON': 1})
+
+        self.add_parameter(name='pulse_modulation_state',
+                           get_cmd='SOUR:PULM:STAT?',
+                           set_cmd='SOUR:PULM:STAT {}',
+                           val_mapping={'ON' : 1, 'OFF' : 0})
+
+        self.add_parameter(name='pulse_modulation_source',
+                           get_cmd='PULM:SOUR?',
+                           set_cmd='PULM:SOUR {}',
+                           vals=vals.Enum('EXT', 'INT'))
+
 # reset values after each reconnect
         self.power(0)
         self.power_offset(0)
