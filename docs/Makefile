@@ -239,7 +239,7 @@ html-api:
 	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir='_notebooks/driver_examples'
 	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir='_notebooks/benchmarking'
 	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --execute 'examples/DataSet/*.ipynb' --output-dir='_notebooks/DataSet'
-	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --execute 'examples\plotting\*.ipynb' --output-dir='_notebooks\plotting'
+	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --execute 'examples/plotting/*.ipynb' --output-dir='_notebooks/plotting'
 	cp -R "examples/files" "_notebooks/files"
 	cp -R "examples/plotting/files" "_notebooks/plotting/files"
 	make html
