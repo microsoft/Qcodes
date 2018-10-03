@@ -163,18 +163,18 @@ def plot_by_id(run_id: int,
             # TODO: The "decision tree" for what gets plotted how and how
             # we check for that is still unfinished/not optimised
 
-            how_to_plot = {'grid': plot_on_a_plain_grid,
-                           'equidistant': plot_on_a_plain_grid,
-                           'point': plot_2d_scatterplot,
-                           'unknown': plot_2d_scatterplot}
-
             xpoints = flatten_1D_data_for_plot(data[0]['data'])
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
 
             plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
 
+            how_to_plot = {'grid': plot_on_a_plain_grid,
+                           'equidistant': plot_on_a_plain_grid,
+                           'point': plot_2d_scatterplot,
+                           'unknown': plot_2d_scatterplot}
             plot_func = how_to_plot[plottype]
+
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
                                      **kwargs)
 
