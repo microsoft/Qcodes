@@ -28,16 +28,20 @@ def empty_temp_db():
 @pytest.fixture(scope='function')
 def experiment(empty_temp_db):
     e = new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
+    try:
+        yield e
+    finally:
+        e.conn.close()
 
 
 @pytest.fixture(scope='function')
 def dataset(experiment):
     dataset = new_data_set("test-dataset")
-    yield dataset
-    dataset.unsubscribe_all()
-    dataset.conn.close()
+    try:
+        yield dataset
+    finally:
+        dataset.unsubscribe_all()
+        dataset.conn.close()
 
 
 @contextmanager
@@ -59,6 +63,8 @@ def temporarily_copied_DB(filepath: str, **kwargs):
 
         conn = connect(dbname_new, **kwargs)
 
-        yield conn
+        try:
+            yield conn
 
-        conn.close()
+        finally:
+            conn.close()
