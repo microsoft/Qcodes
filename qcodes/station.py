@@ -17,28 +17,30 @@ class Station(Metadatable, DelegateAttributes):
     """
     A representation of the entire physical setup.
 
-    Lists all the connected `Component`\s and the current default
+    Lists all the connected Components and the current default
     measurement (a list of actions). Contains a convenience method
     `.measure()` to measure these defaults right now, but this is separate
     from the code used by `Loop`.
 
     Args:
-        *components (list[Any]): components to add immediately to the Station.
-            can be added later via self.add_component
+        *components (list[Any]): components to add immediately to the
+             Station. Can be added later via self.add_component
 
-        monitor (None): Not implemented, the object that monitors the system continuously
+        monitor (None): Not implemented, the object that monitors the system
+            continuously
 
         default (bool): is this station the default, which gets
-            used in Loops and elsewhere that a Station can be specified, default  true
+            used in Loops and elsewhere that a Station can be specified,
+            default true
 
         update_snapshot (bool): immediately update the snapshot
             of each component as it is added to the Station, default true
 
     Attributes:
         default (Station): class attribute to store the default station
-        delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
-            (or will be) attributes of self, whose keys should be treated as
-            attributes of self
+        delegate_attr_dicts (list): a list of names (strings) of dictionaries
+            which are (or will be) attributes of self, whose keys should be
+            treated as attributes of self
     """
 
     default = None # type: 'Station'
@@ -128,7 +130,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def set_measurement(self, *actions):
         """
-        Save a set \*actions as the default measurement for this Station.
+        Save a set ``*actions``` as the default measurement for this Station.
 
         These actions will be executed by default by a Loop if this is the
         default Station, and any measurements among them can be done once

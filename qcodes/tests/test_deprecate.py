@@ -1,6 +1,8 @@
+import pytest
+
 from qcodes.utils.deprecate import deprecate
 
-
+@pytest.mark.filterwarnings('ignore:The function "add_one" is deprecated,')
 def test_similar_output():
 
     def _add_one(x):

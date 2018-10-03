@@ -190,7 +190,7 @@ class Numbers(Validator):
         else:
             raise TypeError('min_value must be a number')
 
-        valuesok = max_value > min_value  # type: ignore
+        valuesok = max_value > min_value
 
         if isinstance(max_value, self.validtypes) and valuesok:
             self._max_value = max_value
@@ -491,7 +491,7 @@ class Arrays(Validator):
         else:
             raise TypeError('min_value must be a number')
 
-        valuesok = max_value > min_value  # type: ignore
+        valuesok = max_value > min_value
 
         if isinstance(max_value, self.validtypes) and valuesok:
             self._max_value = max_value
@@ -650,7 +650,6 @@ class Dict(Validator):
                 raise SyntaxError('Dictionary keys {} are not in allowed keys '
                                   '{}'.format(forbidden_keys,
                                               self.allowed_keys))
-
 
     def __repr__(self):
         if self.allowed_keys is None:
