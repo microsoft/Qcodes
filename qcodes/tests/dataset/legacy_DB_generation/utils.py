@@ -25,8 +25,10 @@ def leave_untouched(repo):
         current_branch = repo.active_branch
     current_commit = repo.head.commit
 
-    yield
+    try:
+        yield
 
-    repo.git.reset('--hard', current_commit)
-    if not was_detached:
-        repo.git.checkout(current_branch)
+    finally:
+        repo.git.reset('--hard', current_commit)
+        if not was_detached:
+            repo.git.checkout(current_branch)
