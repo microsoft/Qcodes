@@ -41,7 +41,9 @@ if __name__ == '__main__':
         # the environment folder, and not from the git-managed folder
         import qcodes
         qcpath = os.sep.join(qcodes.__file__.split(os.sep)[:-2])
-        if qcpath != gitrepopath:
+
+        # Windows and paths... There can be random un-capitalizations
+        if qcpath.lower() != gitrepopath.lower():
             raise ValueError('QCoDeS does not seem to be installed in editable'
                              ' mode, can not proceed. To use this script, '
                              'uninstall QCoDeS and reinstall it with pip '
