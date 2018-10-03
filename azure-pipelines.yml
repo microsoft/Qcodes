@@ -15,9 +15,16 @@ jobs:
         inputs:
           versionSpec: '3.6'
           architecture: 'x64'
+      # Conda Environment
+      # Create and activate a Conda environment.
+      - task: CondaEnvironment@1
+        inputs:
+          createCustomEnvironment: true
+          environmentName: qcodes
+          packageSpecs: 'python=3'
+          updateConda: true
       - script: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          conda env update -n qcodes -f environment.yml
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
