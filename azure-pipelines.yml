@@ -5,9 +5,10 @@
 
 name: "QCoDeS CI"
 
-trigger: 
+trigger:
   branches:
-    include: master
+    include:
+      - master
 
 jobs:
   - job: "run_the_tests"
@@ -16,4 +17,4 @@ jobs:
 
     steps:
       - script: echo Hello, world!
-      
+
