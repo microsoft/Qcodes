@@ -59,7 +59,7 @@
         },
         "gui" : {
             "type" : "object",
-            "description": "controls gui of qcodes",
+            "description": "controls legacy gui of qcodes",
             "properties" : {
                 "notebook": {
                     "description": "Use notebook frontend",
@@ -76,11 +76,19 @@
                     "description": "Maximum number of PyQtPlots to automatically keep in memory",
                     "type": "integer",
                     "default": 100
-                },
-                "defaultcolormap":{
-                    "description": "Default colormap to use for Heatmaps with both Matplotlib and PyQtGraph",
+                }
+
+            },
+            "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
+        },
+        "plotting" : {
+            "type" : "object",
+            "description": "controls plotting functions i.e. `plot_by_id`",
+            "properties" : {
+                "default_color_map":{
+                    "description": "Default colormap to use for `plot_by_id`.",
                     "type": "string",
-                    "default": "hot"
+                    "default": "viridis"
                 },
                 "auto_color_scale":{
                     "type" : "object",
@@ -109,11 +117,7 @@
                             "default": "grey"
                         }
                     }
-                }
-
-            },
-            "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
-        },
+                },
         "user": {
             "type": "object",
             "properties": {

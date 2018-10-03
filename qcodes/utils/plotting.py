@@ -220,13 +220,13 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
     the configuration file `qcodesrc.json`.
 
     Config:
-        config.gui.auto_color_scale.enabled: default for  auto_color_scale
+        config.plotting.auto_color_scale.enabled: default for  auto_color_scale
             argument
-        config.gui.auto_color_scale.cutoff_percentile: default for
+        config.plotting.auto_color_scale.cutoff_percentile: default for
             cutoff_percentile argument
-        config.gui.auto_color_scale.color_over: default for Matplotlib color
+        config.plotting.auto_color_scale.color_over: default for Matplotlib color
             representing the datapoints clipped by the upper limit
-        config.gui.auto_color_scale.color_under: default for Matplotlib color
+        config.plotting.auto_color_scale.color_under: default for Matplotlib color
             representing the datapoints clipped by the lower limit
 
     If optional arguments are passed the config values are overidden.
@@ -240,17 +240,17 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                  'colorbar?')
         return
     if auto_color_scale is None:
-        auto_color_scale = qcodes.config.gui.auto_color_scale.enabled
+        auto_color_scale = qcodes.config.plotting.auto_color_scale.enabled
     if not auto_color_scale:
         return
     if color_over is None:
-        color_over = qcodes.config.gui.auto_color_scale.color_over
+        color_over = qcodes.config.plotting.auto_color_scale.color_over
     if color_under is None:
-        color_under = qcodes.config.gui.auto_color_scale.color_under
+        color_under = qcodes.config.plotting.auto_color_scale.color_under
     if cutoff_percentile is None:
         cutoff_percentile = cast(
             Tuple[Number, Number],
-            tuple(qcodes.config.gui.auto_color_scale.cutoff_percentile))
+            tuple(qcodes.config.plotting.auto_color_scale.cutoff_percentile))
 
     apply_auto_color_scale(colorbar, data_array, cutoff_percentile,
                            color_over, color_under)

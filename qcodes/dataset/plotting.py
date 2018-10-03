@@ -180,7 +180,7 @@ def plot_by_id(run_id: int,
             plot_func = how_to_plot[plottype]
 
             if colorbar is None and 'cmap' not in kwargs:
-                kwargs['cmap'] = qc.config.gui.defaultcolormap
+                kwargs['cmap'] = qc.config.plotting.default_color_map
 
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
                                      **kwargs)
