@@ -36,6 +36,7 @@ def experiment(empty_temp_db):
 def dataset(experiment):
     dataset = new_data_set("test-dataset")
     yield dataset
+    dataset.unsubscribe_all()
     dataset.conn.close()
 
 
