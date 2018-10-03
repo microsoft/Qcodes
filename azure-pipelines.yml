@@ -32,7 +32,7 @@ jobs:
         displayName: "Pytest"
       - script: |
           cd ..\..
-          mypy --ignore-missing-imports --no-strict-optional
+          mypy qcodes
         displayName: "mypy"
       - script: |
           cd docs
