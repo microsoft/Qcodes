@@ -1,0 +1,19 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+name: "QCoDeS CI"
+
+trigger: 
+  branches:
+    include: master
+
+jobs:
+  - job: "run_the_tests"
+    pool:
+      vmImage: "vs2017-win2016"
+
+    steps:
+      - script: echo Hello, world!
+      
