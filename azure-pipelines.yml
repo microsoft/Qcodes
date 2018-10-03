@@ -33,6 +33,7 @@ jobs:
       - script: |
           cd ..\..
           mypy --ignore-missing-imports --no-strict-optional
+        displayName: "mypy"
       - script: |
           cd docs
           make.bat htmlapi
