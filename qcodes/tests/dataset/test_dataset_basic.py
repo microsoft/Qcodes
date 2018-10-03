@@ -15,6 +15,7 @@ from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 from qcodes.dataset.guids import parse_guid
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 

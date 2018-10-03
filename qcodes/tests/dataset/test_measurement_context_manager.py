@@ -22,6 +22,7 @@ from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
 

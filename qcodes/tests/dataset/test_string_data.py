@@ -5,6 +5,7 @@ import qcodes as qc
 from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_export import load_by_id
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 

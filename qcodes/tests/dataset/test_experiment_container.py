@@ -6,6 +6,7 @@ from qcodes.dataset.experiment_container import load_experiment_by_name, \
     new_experiment, load_or_create_experiment, experiments
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.database import initialise_database
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db
 
 

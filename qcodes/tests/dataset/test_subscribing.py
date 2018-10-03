@@ -6,6 +6,7 @@ import pytest
 from numpy import ndarray
 
 from qcodes.dataset.param_spec import ParamSpec
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       dataset)

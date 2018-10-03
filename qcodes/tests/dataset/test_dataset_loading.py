@@ -7,6 +7,7 @@ from qcodes.dataset.data_set import (new_data_set, load_by_id, load_by_counter,
                                      ParamSpec)
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.experiment_container import new_experiment
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 

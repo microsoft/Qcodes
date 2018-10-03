@@ -10,6 +10,7 @@ import unicodedata
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.param_spec import ParamSpec
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
