@@ -32,11 +32,11 @@ class GroupParameter(Parameter):
             All kwargs used by the Parameter class, except set_cmd and get_cmd
     """
 
-    def __init__(
-            self, name: str,
-            instrument: Optional['Instrument'] = None,
-            **kwargs
-    ) -> None:
+    def __init__(self,
+                 name: str,
+                 instrument: Optional['Instrument'] = None,
+                 **kwargs
+                ) -> None:
 
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError("A GroupParameter does not use 'set_cmd' or "
