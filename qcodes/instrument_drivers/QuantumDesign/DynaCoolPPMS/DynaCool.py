@@ -46,10 +46,13 @@ class DynaCool(VisaInstrument):
                            get_parser=partial(DynaCool._pick_one, 1, float),
                            get_cmd='TEMP?')
 
+        # Note: from the Lyngby Materials Lab, we have been told that the
+        # manual is wrong about the minimal temperature. The manual says
+        # 1.8 K, but it is in fact 1.6 K
         self.add_parameter('temperature_setpoint',
                            label='Temperature setpoint',
                            unit='K',
-                           vals=vals.Numbers(1.8, 400),
+                           vals=vals.Numbers(1.6, 400),
                            set_cmd=partial(self._temp_setter,
                                            'temperature_setpoint'),
                            get_cmd=partial(self._temp_getter,
