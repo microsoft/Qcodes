@@ -18,7 +18,8 @@ from qcodes.dataset.sqlite_base import (connect,
                                         update_GUIDs,
                                         get_user_version,
                                         atomic_transaction,
-                                        perform_db_upgrade_0_to_1)
+                                        perform_db_upgrade_0_to_1,
+                                        perform_db_upgrade_1_to_2)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
@@ -118,6 +119,36 @@ def test_perform_actual_upgrade_0_to_1():
 
         c = atomic_transaction(conn, guid_table_query)
         assert len(c.fetchall()) == 0
+
+
+def test_perform_actual_upgrade_1_to_2():
+
+    v1fixpath = os.path.join(fixturepath, 'db_files', 'version1')
+
+    if not os.path.exists(v1fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    dbname_old = os.path.join(v1fixpath, 'empty.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=1) as conn:
+
+        assert get_user_version(conn) == 1
+
+        guid_table_query = "SELECT guid FROM runs"
+
+        c = atomic_transaction(conn, guid_table_query)
+        assert len(c.fetchall()) == 0
+
+        index_query = "PRAGMA index_list(runs)"
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 0
+
+        perform_db_upgrade_1_to_2(conn)
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 2
 
 
 @pytest.mark.usefixtures("empty_temp_db")
