@@ -21,6 +21,6 @@ First, please check if there is already a script producing .db-files of your des
    * If not, search through the `git log` of `master` to find the merge commit *just* before the merge commit that introduces the *next* version after "your version". Put that first commit into `GIT_HASHES` along with the version number of "your version".
  * Make a script called `generate_version_<your_version>.py`. Copy the general structure of `generate_version_0.py`. In particular, remember *not* to import qcodes *before* you have checked out the old commit. Make your generation functions take all the modules you need (e.g. `sqlite_base`, `data_set`, ...) as input arguments.
 
- ## Anything else?
+## Anything else?
 
- Remember to update the tests to use your newly generated fixtures. A test must **skip** (not fail) if the fixture is not present on disk. Also make sure that the CI runs your fixture-generating script.
+Remember to update the tests to use your newly generated fixtures. A test must **skip** (not fail) if the fixture is not present on disk. Also make sure that the CI runs your fixture-generating script.
