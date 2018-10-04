@@ -33,10 +33,14 @@ jobs:
           mypy qcodes
         displayName: "mypy"
       - script: |
-          cd qcodes\tests
-          pytest
+          cd qcodes
+          pytest qcodes --junitxml=test-results.xml --junitxml=junit/test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
         displayName: "Pytest"
       - script: |
           cd docs
           make.bat htmlapi
         displayName: "docsbuild"
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFiles: 'qcodes/test-*.xml'
+          testRunTitle: 'Publish test results for Python $(python.version)'
