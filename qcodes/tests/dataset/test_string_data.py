@@ -1,30 +1,12 @@
-import os
-import tempfile
-
 import pytest
 import numpy as np
 
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.database import initialise_or_create_database_at
 from qcodes.dataset.data_export import load_by_id
-
-
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_debug"] = False
-        initialise_or_create_database_at(os.path.join(tmpdirname, 'tmp.db'))
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = qc.new_experiment("string-values", sample_name="whatever")
-    yield e
-    e.conn.close()
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 
 def test_string_via_dataset(experiment):

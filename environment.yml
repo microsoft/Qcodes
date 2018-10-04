@@ -23,6 +23,7 @@ dependencies:
  - lxml
  - scipy
  - ruamel_yaml
+ - gitpython
  - pip:
     - websockets>=3.2
     - broadbean>=0.9.1
