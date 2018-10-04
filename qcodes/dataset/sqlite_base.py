@@ -304,10 +304,6 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
 def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 0 to version 1
-
-    Returns:
-        A bool indicating whether everything went well. The next upgrade in
-          the upgrade chain should run conditioned in this bool
     """
     log.info('Starting database upgrade version 0 -> 1')
 
@@ -352,12 +348,10 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     log.info('Succesfully upgraded database version 0 -> 1.')
     set_user_version(conn, 1)
 
+
 def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 1 to version 2
-
-    Returns:
-        None
     """
     log.info('Starting database upgrade version 1 -> 2')
 
