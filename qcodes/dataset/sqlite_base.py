@@ -366,13 +366,22 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     n_run_tables = len(cur.fetchall())
 
     if n_run_tables == 1:
-        _IX_runs_exp_id = "CREATE INDEX IF NOT EXISTS IX_runs_exp_id ON runs (exp_id DESC)"
-        _IX_runs_guid = "CREATE INDEX IF NOT EXISTS IX_runs_guid ON runs (guid DESC)"
+        _IX_runs_exp_id = """
+                          CREATE INDEX
+                          IF NOT EXISTS IX_runs_exp_id
+                          ON runs (exp_id DESC)
+                          """
+        _IX_runs_guid = """
+                        CREATE INDEX
+                        IF NOT EXISTS IX_runs_guid
+                        ON runs (guid DESC)
+                        """
         with atomic(conn) as conn:
             transaction(conn, _IX_runs_exp_id)
             transaction(conn, _IX_runs_guid)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+
     log.info('Succesfully upgraded database version 1 -> 2.')
     set_user_version(conn, 2)
 
