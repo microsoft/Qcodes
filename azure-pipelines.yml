@@ -44,5 +44,5 @@ jobs:
         inputs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\html'
+          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
 
