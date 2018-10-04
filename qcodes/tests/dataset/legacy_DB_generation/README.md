@@ -19,7 +19,7 @@ First, please check if there is already a script producing .db-files of your des
  * Identify the database version of which you would like to create one or more .db-files. Let's call that "your version".
  * Check the variable `GIT_HASHES` in `utils.py` to see if "your version" already has a recorded commit hash.
    * If not, search through the `git log` of `master` to find the merge commit *just* before the merge commit that introduces the *next* version after "your version". Put that first commit into `GIT_HASHES` along with the version number of "your version".
- * Make a script called `generate_version_<your_version>.py`. Copy the general structure of `generate_version_0.py`. In particular, remember not to import qcodes before *after* you have checked out the old commit. Make your generation functions take all the modules you need (e.g. `sqlite_base`, `data_set`, ...) as input arguments.
+ * Make a script called `generate_version_<your_version>.py`. Copy the general structure of `generate_version_0.py`. In particular, remember *not* to import qcodes *before* you have checked out the old commit. Make your generation functions take all the modules you need (e.g. `sqlite_base`, `data_set`, ...) as input arguments.
 
  ## Anything else?
 
