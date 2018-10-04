@@ -100,8 +100,8 @@ class DynaCool(VisaInstrument):
         self.add_parameter('field_setpoint',
                            label='Field setpoint',
                            unit='A/m',
-                           get_parser=lambda x: x/79.57747,  # Oe to A/m
-                           set_parser=lambda x: x*79.57747,  # A/m to Oe
+                           get_parser=lambda x: x*1e-4,  # Oe to T
+                           set_parser=lambda x: x*1e4,  # T to Oe
                            set_cmd=partial(self._field_setter,
                                            'field_setpoint'),
                            get_cmd=partial(self._field_getter,
@@ -111,8 +111,8 @@ class DynaCool(VisaInstrument):
         self.add_parameter('field_rate',
                            label='Field rate',
                            unit='A/m/s',
-                           get_parser=lambda x: x/79.57747,  # Oe to A/m
-                           set_parser=lambda x: x*79.57747,  # A/m to Oe
+                           get_parser=lambda x: x*1e-4,  # Oe to T
+                           set_parser=lambda x: x*1e4,  # T to Oe
                            set_cmd=partial(self._field_setter,
                                            'field_rate'),
                            get_cmd=partial(self._field_getter,
