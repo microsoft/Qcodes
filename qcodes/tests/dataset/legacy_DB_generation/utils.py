@@ -2,7 +2,8 @@
 from typing import Dict, List
 from contextlib import contextmanager
 
-GIT_HASHES: Dict[int, str] = {0: '78d42620fc245a975b5a615ed5e33061baac7846'}
+GIT_HASHES: Dict[int, str] = {0: '78d42620fc245a975b5a615ed5e33061baac7846',
+                              1: '056d59627e22fa3ca7aad4c265e9897c343f79cf'}
 
 DB_NAMES: Dict[int, List[str]] = {0: ['']}
 
