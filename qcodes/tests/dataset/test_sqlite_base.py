@@ -1,8 +1,5 @@
 # Since all other tests of data_set and measurements will inevitably also
 # test the sqlite_base module, we mainly test exceptions here
-
-import tempfile
-import os
 from sqlite3 import OperationalError
 
 import pytest
@@ -10,30 +7,14 @@ import hypothesis.strategies as hst
 from hypothesis import given
 import unicodedata
 
-import qcodes as qc
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.database import initialise_database
 from qcodes.dataset.param_spec import ParamSpec
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
-
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = qc.new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
 
 
 def test_one_raises(experiment):

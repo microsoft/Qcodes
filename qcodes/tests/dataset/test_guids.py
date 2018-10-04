@@ -21,11 +21,12 @@ def protected_config():
     ocfg: DotDict = Config().current_config
     original_config = deepcopy(ocfg)
 
-    yield
-
-    cfg = Config()
-    cfg.current_config = original_config
-    cfg.save_to_home()
+    try:
+        yield
+    finally:
+        cfg = Config()
+        cfg.current_config = original_config
+        cfg.save_to_home()
 
 
 @settings(max_examples=50)
