@@ -45,7 +45,7 @@ script:
       pip uninstall -y qcodes
       pip install .
     - cd qcodes
-    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc --durations=10
     - cd ..
     - mypy qcodes
     # run benchmarks to make sure they are correct
