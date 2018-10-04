@@ -24,8 +24,8 @@ DataSet
     ../_notebooks/DataSet/*
     ../_notebooks/DataSet/Real_instruments/*
 
-DataSet
--------
+Plotting
+--------
 
 .. toctree::
     :glob:
