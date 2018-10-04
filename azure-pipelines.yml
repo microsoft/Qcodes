@@ -43,6 +43,6 @@ jobs:
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: Cobertura
-          summaryFileLocation: 'qcodes/coverage.xml'
-          reportDirectory: 'qcodes/htmlcov'
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
+          reportDirectory: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
 
