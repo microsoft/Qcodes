@@ -38,11 +38,11 @@ jobs:
         displayName: "docsbuild"
       - task: PublishTestResults@1
         inputs:
-          testResultsFiles: 'qcodes/test-*.xml'
+          testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
+          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\html'
 
