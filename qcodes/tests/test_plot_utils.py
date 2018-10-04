@@ -11,8 +11,8 @@ from qcodes.dataset.param_spec import ParamSpec
 # by itself so we also need to import all the fixtures this one is dependent
 # on
 # pylint: disable=unused-import
-from qcodes.tests.dataset.test_dataset_basic import (
-    dataset, experiment, empty_temp_db)
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment, dataset)
 
 from qcodes.tests.test_config import default_config
 from qcodes.dataset.plotting import plot_by_id
