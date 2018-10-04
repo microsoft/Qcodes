@@ -131,7 +131,8 @@ class DynaCool(VisaInstrument):
 
         self.add_parameter('magnet_state',
                            label='Magnet state',
-                           val_mapping={'stable': 1,
+                           val_mapping={'unknown': 0,
+                                        'stable': 1,
                                         'switch warming': 2,
                                         'switch cool': 3,
                                         'holding': 4,
