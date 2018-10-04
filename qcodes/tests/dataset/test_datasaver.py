@@ -5,6 +5,7 @@ from hypothesis import given, strategies as hst
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
 from qcodes.dataset.param_spec import ParamSpec
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 CALLBACK_COUNT = 0

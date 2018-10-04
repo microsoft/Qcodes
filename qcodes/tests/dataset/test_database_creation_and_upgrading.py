@@ -10,6 +10,7 @@ import qcodes as qc
 from qcodes import new_experiment, new_data_set, ParamSpec
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
+# pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
