@@ -175,9 +175,16 @@ def plot_by_id(run_id: int,
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
 
-            plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
+            assume_grid = True
+            assume_scatter = False
 
-            plot_func = how_to_plot[plottype]
+            if assume_grid:
+                plot_func = plot_on_a_plain_grid
+            elif assume_scatter:
+                plot_func = plot_2d_scatterplot
+            else:
+                plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
+                plot_func = how_to_plot[plottype]
 
             if colorbar is None and 'cmap' not in kwargs:
                 kwargs['cmap'] = qc.config.plotting.default_color_map
@@ -315,9 +322,15 @@ def plot_on_a_plain_grid(x: np.ndarray,
     y_edges = np.concatenate((np.array([yrow[0] - dys[0]]),
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
+    if 'rasterized' in kwargs.keys():
+        rasterized = kwargs.pop('rasterized')
+    else:
+        rasterized = len(x_edges) * len(y_edges) > 5000
+
 
     colormesh = ax.pcolormesh(x_edges, y_edges,
                               np.ma.masked_invalid(z_to_plot),
+                              rasterized=rasterized,
                               **kwargs)
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
