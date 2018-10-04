@@ -40,7 +40,13 @@ jobs:
           cd docs
           make.bat htmlapi
         displayName: "docsbuild"
-      - task: PublishTestResults@2
+      - task: PublishTestResults
         inputs:
           testResultsFiles: 'qcodes/test-*.xml'
-          testRunTitle: 'Publish test results for Python $(python.version)'
+          testRunTitle: 'Publish test results'
+      - task: PublishCodeCoverageResults
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: 'qcodes/coverage.xml'
+          reportDirectory: 'qcodes/htmlcov'
+
