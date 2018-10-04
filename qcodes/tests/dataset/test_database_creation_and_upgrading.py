@@ -35,10 +35,12 @@ def location_and_station_set_to(location: int, work_station: int):
     cfg['GUID_components']['work_station'] = work_station
     cfg.save_to_home()
 
-    yield
+    try:
+        yield
 
-    cfg.current_config = old_cfg
-    cfg.save_to_home()
+    finally:
+        cfg.current_config = old_cfg
+        cfg.save_to_home()
 
 
 @pytest.mark.usefixtures("empty_temp_db")
