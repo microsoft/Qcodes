@@ -214,7 +214,7 @@ class N52xxBase(VisaInstrument):
         """
         Public interface for access to channels
         """
-        return self._channels
+        return [c for c in self._channels if c.present_on_instrument]
 
     @property
     def window(self) -> list:

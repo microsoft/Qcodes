@@ -83,12 +83,13 @@ class N52xxTrace(InstrumentChannel):
 
         super().__init__(parent, name)
         self._channel = channel
+        self._channel_number = channel.channel_number
         self._trace_type = trace_type
 
         self.add_parameter(
             'format',
-            get_cmd=f'CALC{self._channel}:FORM?',
-            set_cmd=f'CALC{self._channel}:FORM {{}}',
+            get_cmd=f'CALC{self._channel_number}:FORM?',
+            set_cmd=f'CALC{self._channel_number}:FORM {{}}',
             vals=Enum(*[d["sweep_format"] for d in self.data_formats.values()])
         )
 
@@ -116,7 +117,9 @@ class N52xxTrace(InstrumentChannel):
         """
         self.validate_trace_type(new_type)
         self.select()
-        self.parent.write(f"CALC{self._channel}:PAR:MOD:EXT '{new_type}'")
+        self.parent.write(
+            f"CALC{self._channel_number}:PAR:MOD:EXT '{new_type}'")
+
         self._trace_type = new_type
 
     @staticmethod
@@ -142,7 +145,8 @@ class N52xxTrace(InstrumentChannel):
                 "either deleted or never uploaded in the first place"
             )
         # Warning: writing self.write here will cause an infinite recursion
-        self.parent.write(f"CALC{self._channel}:PAR:SEL {self.short_name}")
+        self.parent.write(
+            f"CALC{self._channel_number}:PAR:SEL {self.short_name}")
 
     def write(self, cmd: str) -> None:
         self.select()
@@ -170,7 +174,8 @@ class N52xxTrace(InstrumentChannel):
         self.format(format_str)
         self.select()
         data = np.array(visa_handle.query_binary_values(
-            f'CALC{self._channel}:DATA? FDATA', datatype='f', is_big_endian=True
+            f'CALC{self._channel_number}:DATA? FDATA', datatype='f',
+            is_big_endian=True
         ))
 
         return data
@@ -182,7 +187,7 @@ class N52xxTrace(InstrumentChannel):
         # Do not do self.write; self.select will not work yet as the
         # instrument has not been uploaded yet
         self.parent.write(
-            f'CALC{self._channel}:PAR:EXT {self.short_name}, '
+            f'CALC{self._channel_number}:PAR:EXT {self.short_name}, '
             f'{self._trace_type}'
         )
 
@@ -192,7 +197,8 @@ class N52xxTrace(InstrumentChannel):
         """
         delete from instrument
         """
-        self.parent.write(f'CALC{self._channel}:PAR:DEL {self.short_name}')
+        self.parent.write(
+            f'CALC{self._channel_number}:PAR:DEL {self.short_name}')
         self._present_on_instrument = False
 
     def __repr__(self):

@@ -26,6 +26,9 @@ class N52xxChannel(InstrumentChannel):
         self._channel = channel
         self._measurement_type = measurement_type
 
+        present_channels = parent.list_existing_channel_numbers()
+        self._present_on_instrument = channel in present_channels
+
         self.add_parameter(
             'power',
             label='Power',
@@ -149,7 +152,7 @@ class N52xxChannel(InstrumentChannel):
         self.add_parameter(
             "sensor_correction",
             get_cmd=f"SENS{self._channel}:CORR?",
-            set_cmd=f"SEND{self._channel}:CORR {{}}",
+            set_cmd=f"SENS{self._channel}:CORR {{}}",
             val_mapping={True: '1', False: '0'}
         )
 
@@ -162,6 +165,9 @@ class N52xxChannel(InstrumentChannel):
         Returns:
             dict: keys are trace names, values are instance of `N52xxTrace`
         """
+        if not self._present_on_instrument:
+            return []
+
         result = self.ask(f"CALC{self._channel}:PAR:CAT:EXT?")
         if result == "NO CATALOG":
             return []
@@ -172,7 +178,7 @@ class N52xxChannel(InstrumentChannel):
 
         parent = cast(Instrument, self.parent)
 
-        # TODO: The try of trace returned should depend on
+        # TODO: The type of trace returned should depend on
         # TODO: self._measurement_type
         return [N52xxTrace(
             parent, self, name, trace_type, present_on_instrument=True)
@@ -185,6 +191,10 @@ class N52xxChannel(InstrumentChannel):
         List all traces on the instrument
         """
         return [trace for trace in self._traces if trace.present_on_instrument]
+
+    @property
+    def channel_number(self):
+        return self._channel
 
     def add_trace(self, tr_type: str) -> 'N52xxTrace':
         """
@@ -204,7 +214,7 @@ class N52xxChannel(InstrumentChannel):
             return trace
 
         parent = cast(Instrument, self.parent)
-        # TODO: The try of trace returned should depend on
+        # TODO: The type of trace returned should depend on
         # TODO: self._measurement_type
         trace = N52xxTrace(parent, self, name, tr_type)
         self._traces.append(trace)
@@ -225,6 +235,10 @@ class N52xxChannel(InstrumentChannel):
         else:
             self.trace[index].delete()
 
+    @property
+    def present_on_instrument(self):
+        return self._present_on_instrument
+
     def upload_channel_to_instrument(self):
 
         if self._measurement_type == "S-parameter":
@@ -243,6 +257,8 @@ class N52xxChannel(InstrumentChannel):
         self.parent.write(
             f"CALC{self._channel}:MEAS{new_meas}:DEF '{type_string}'")
 
+        self._present_on_instrument = True
+
     def select(self) ->None:
         """
         A channel must be selected (active) to modify its settings. A channel
@@ -253,6 +269,24 @@ class N52xxChannel(InstrumentChannel):
                               "defined ")
         else:
             self.trace[0].select()
+
+    def delete(self):
+        self.write(f"SYST:CHAN:DEL {self._channel}")
+        self._present_on_instrument = False
+
+    def _assert_instrument_presence(self):
+        if not self._present_on_instrument:
+            raise RuntimeError("The channel is not present (anymore) on the "
+                               "instrument. It was either deleted or never "
+                               "uploaded in the first place")
+
+    def write(self, cmd: str) -> None:
+        self._assert_instrument_presence()
+        super().write(cmd)
+
+    def ask(self, cmd: str) -> str:
+        self._assert_instrument_presence()
+        return super().ask(cmd)
 
     def run_sweep(self, averages: int =1, blocking: bool=True) ->None:
         """
@@ -354,4 +388,4 @@ class N52xxChannel(InstrumentChannel):
         return data
 
     def __repr__(self):
-        return str(self._channel)
+        return f"<Channel type {self.parent}: {str(self._channel)}>"
