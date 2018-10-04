@@ -11,10 +11,6 @@ jobs:
       vmImage: "vs2017-win2016"
 
     steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: '3.6'
-          architecture: 'x64'
       # Conda Environment
       # Create and activate a Conda environment.
       - task: CondaEnvironment@1
