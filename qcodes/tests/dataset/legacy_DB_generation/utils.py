@@ -2,6 +2,14 @@
 from typing import Dict, List
 from contextlib import contextmanager
 
+# A brief overview of what each version introduces:
+#
+# Version 0: the original table schema, runs, experiments, layouts,
+# dependencies, result-tables
+#
+# Version 1: a GUID column is added to the runs table
+
+
 GIT_HASHES: Dict[int, str] = {0: '78d42620fc245a975b5a615ed5e33061baac7846',
                               1: '056d59627e22fa3ca7aad4c265e9897c343f79cf'}
 
