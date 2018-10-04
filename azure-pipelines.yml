@@ -40,9 +40,3 @@ jobs:
         inputs:
           testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
-      - task: PublishCodeCoverageResults@1
-        inputs:
-          codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
-
