@@ -347,14 +347,12 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     return 'unknown'
 
 
-def reshape_2D_data(x: np.ndarray, y: np.ndarray,
-                    z: np.ndarray) -> Tuple[np.ndarray, np.ndarray,
-                                            np.ndarray]:
+def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
+                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     xrow = np.array(_rows_from_datapoints(x)[0])
     yrow = np.array(_rows_from_datapoints(y)[0])
     nx = len(xrow)
     ny = len(yrow)
-
 
     # potentially slow method of filling in the data, should be optimised
     log.debug('Sorting 2D data onto grid')
