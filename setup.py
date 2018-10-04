@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
+
 def get_version(verbose=1):
     """ Extract version information from source code """
 
@@ -23,6 +24,7 @@ def get_version(verbose=1):
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 extras = {
     'MatPlot': ('matplotlib', '2.2.3'),
@@ -59,12 +61,13 @@ setup(name='qcodes',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*']},
       install_requires=[
-          'numpy>=1.10,<1.14',
-          'pyvisa>=1.8',
+          'numpy>=1.10',
+          'pyvisa>=1.9.1',
           'h5py>=2.6',
           'websockets>=3.2',
           'jsonschema',
-          'pyzmq'
+          'pyzmq',
+          'wrapt'
       ],
 
       test_suite='qcodes.tests',
