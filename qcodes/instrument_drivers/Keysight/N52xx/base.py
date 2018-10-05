@@ -86,7 +86,7 @@ class N52xxWindow(InstrumentChannel):
         """
         Add all traces in the channel to the window
         """
-        for trace in channel.trace:
+        for trace in channel.traces:
             self.add_trace(trace)
 
 
@@ -135,8 +135,12 @@ class N52xxBase(VisaInstrument):
         self.add_submodule("port", ports)
 
         self._channels = self._load_channels_from_instrument()
-        self._windows = self._load_windows_from_instrument()
 
+        # We can access the attributes of a selected channel directly on the
+        # instrument class
+        self.selected_channel: N52xxChannel = None
+
+        self._windows = self._load_windows_from_instrument()
         self.connect_message()
 
     def list_existing_instrument_objects(self, cmd: str) -> list:
@@ -257,3 +261,26 @@ class N52xxBase(VisaInstrument):
             logger.warning(f"Command {cmd} produced error {err}")
 
         return ret
+
+    def __getattr__(self, item) ->Any:
+        """
+        We can access channel attributes directly on the instrument class
+        >>> from qcodes.instrument_drivers.Keysight.N5222B import N5222B
+        >>> pna = N5222B('pna', 'GPIB0::16::INSTR')
+        >>> pna.if_bandwidth(1E3)  # This will add and select a channel
+        >>> # Instead of
+        >>> channel = pna.add_channel()
+        >>> channel.if_bandwidth(1E3)
+        """
+        try:
+            return super().__getattr__(item)
+        except AttributeError:
+            if item in ["add_channel", "selected_channel"]:
+                # We have produced an unwanted recursion
+                raise
+
+            # If no channel has been selected, make one
+            if self.selected_channel is None:
+                self.selected_channel = self.add_channel()
+
+            return getattr(self.selected_channel, item)

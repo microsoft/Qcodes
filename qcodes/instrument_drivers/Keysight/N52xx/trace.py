@@ -65,6 +65,7 @@ class N52xxTrace(InstrumentChannel):
     """
 
     data_formats = {
+        "magnitude": {"sweep_format": "MLOG", "unit": "dBm"},
         "log_magnitude": {"sweep_format": "MLOG", "unit": "dBm"},
         "linear_magnitude": {"sweep_format": "MLIN", "unit": "-"},
         "phase": {"sweep_format": "PHAS", "unit": "deg"},
@@ -147,6 +148,8 @@ class N52xxTrace(InstrumentChannel):
         # Warning: writing self.write here will cause an infinite recursion
         self.parent.write(
             f"CALC{self._channel_number}:PAR:SEL {self.short_name}")
+
+        self._channel.selected_trace = self
 
     def write(self, cmd: str) -> None:
         self.select()

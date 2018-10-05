@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import cast, Union
+from typing import cast, Union, Any
 import time
 
 from qcodes import InstrumentChannel, Instrument
@@ -157,6 +157,7 @@ class N52xxChannel(InstrumentChannel):
         )
 
         self._traces = self._load_traces_from_instrument()
+        self.selected_trace: N52xxTrace = None
 
     def _load_traces_from_instrument(self) ->list:
         """
@@ -186,14 +187,32 @@ class N52xxChannel(InstrumentChannel):
         ]
 
     @property
-    def trace(self) ->list:
+    def traces(self) ->list:
         """
         List all traces on the instrument
         """
         return [trace for trace in self._traces if trace.present_on_instrument]
 
+    def trace(self, trace_type: str) -> None:
+        """
+        Select the trace of the given type. We assume that there is zero or
+        one trace of the given type. Else an error is raised. If there are no
+        traces of the given type yet, one is created.
+        """
+        traces = [
+            tr for tr in self._traces if tr.measurement_type() == trace_type
+        ]
+
+        if len(traces) == 0:
+            self.add_trace(trace_type)
+        elif len(traces) > 1:
+            raise RuntimeError(f"Multiple traces of type {trace_type} found")
+        else:
+            trace = traces[0]
+            trace.select()
+
     @property
-    def channel_number(self):
+    def channel_number(self) -> int:
         return self._channel
 
     def add_trace(self, tr_type: str) -> 'N52xxTrace':
@@ -209,7 +228,7 @@ class N52xxChannel(InstrumentChannel):
         """
         name = f"CH{self._channel}_{tr_type}"
 
-        trace = {tr.short_name: tr for tr in self.trace}.get(name, None)
+        trace = {tr.short_name: tr for tr in self.traces}.get(name, None)
         if trace is not None:
             return trace
 
@@ -230,10 +249,10 @@ class N52xxChannel(InstrumentChannel):
             index (str or int): Either the name of the trace to delete or "all"
         """
         if index == "all":
-            for trace in self.trace:
+            for trace in self.traces:
                 trace.delete()
         else:
-            self.trace[index].delete()
+            self.traces[index].delete()
 
     @property
     def present_on_instrument(self):
@@ -264,15 +283,19 @@ class N52xxChannel(InstrumentChannel):
         A channel must be selected (active) to modify its settings. A channel
         is selected by selecting a trace on that channel
         """
-        if len(self.trace) == 0:
-            raise UserWarning("Cannot select channel as no traces have been "
-                              "defined ")
-        else:
-            self.trace[0].select()
+        if len(self.traces) == 0:
+            raise RuntimeError(
+                "Cannot select channel as no traces have been defined"
+            )
+
+        self.traces[0].select()
+        self.parent.selected_channel = self
 
     def delete(self):
         self.write(f"SYST:CHAN:DEL {self._channel}")
         self._present_on_instrument = False
+        if self.parent.selected_channel is self:
+            self.parent.selected_channel = None
 
     def _assert_instrument_presence(self):
         if not self._present_on_instrument:
@@ -389,3 +412,18 @@ class N52xxChannel(InstrumentChannel):
 
     def __repr__(self):
         return f"<Channel type {self.parent}: {str(self._channel)}>"
+
+    def __getattr__(self, item) ->Any:
+        """
+        """
+        try:
+            return super().__getattr__(item)
+        except AttributeError:
+            if item == "selected_trace":
+                # We have produced an unwanted recursion
+                raise
+
+            if self.selected_trace is None:
+                raise
+
+            return getattr(self.selected_trace, item)
