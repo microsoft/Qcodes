@@ -392,6 +392,15 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 2 to version 3
     """
+
+    log.info('Starting database upgrade version 2 -> 3')
+
+    start_version = get_user_version(conn)
+    if start_version != 2:
+        log.warn('Can not upgrade, current database version is '
+                 f'{start_version}, aborting.')
+        return
+
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
 
@@ -487,6 +496,9 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             cur.execute(sql, yaml_str)
 
             log.info(f"Upgrade in transition, run number {run_id}: OK")
+
+    log.info('Succesfully upgraded database version 2 -> 3.')
+    set_user_version(conn, 3)
 
 
 def transaction(conn: SomeConnection,
