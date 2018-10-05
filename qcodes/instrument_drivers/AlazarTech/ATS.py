@@ -697,13 +697,6 @@ class AlazarTech_ATS(Instrument):
         channels_binrep = self.channel_selection.raw_value
         number_of_channels = self.get_num_channels(channels_binrep)
 
-        # bytes per sample
-        max_s, bps = self._get_channel_info(self._handle)
-        # TODO(JHN) Why +7 I guess its to do ceil division?
-        bytes_per_sample = (bps + 7) // 8
-        # bytes per record
-        bytes_per_record = bytes_per_sample * samples_per_record
-
         # bytes per buffer
         bytes_per_buffer = (bytes_per_record *
                             records_per_buffer * number_of_channels)
