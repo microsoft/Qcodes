@@ -161,7 +161,7 @@ def default_config():
     qcodes.Config.cwd_file_name = default
     qcodes.Config.schema_cwd_file_name = default_schema
 
-    default_config_obj = qcodes.config
+    default_config_obj = copy.deepcopy(qcodes.config)
     qcodes.config = qcodes.Config()
 
     try:
