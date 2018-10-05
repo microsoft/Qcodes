@@ -190,8 +190,22 @@ class PNATrace(InstrumentChannel):
             root_instr.root_instrument.sweep_mode('SING')
 
         # Once the sweep mode is in hold, we know we're done
-        while root_instr.sweep_mode() != 'HOLD':
-            time.sleep(0.1)
+        try:
+            while root_instr.sweep_mode() != 'HOLD':
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            # If the user aborts because (s)he is stuck in the infinite loop
+            # mentioned above, provide a hint of what can be wrong.
+            msg = "User abort detected. "
+            source = self.parent.trigger_source()
+            if source == "MAN":
+                msg += "The trigger source is manual. Are you sure this is " \
+                       "correct? Please set the correct source with the " \
+                       "'trigger_source' parameter"
+            elif source == "EXT":
+                msg += "The trigger source is external. Is the trigger " \
+                       "source functional?"
+            logger.warning(msg)
 
         # Return previous mode, incase we want to restore this
         return prev_mode
