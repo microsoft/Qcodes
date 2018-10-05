@@ -362,7 +362,7 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
         log.warn('Can not upgrade, current database version is '
                  f'{start_version}, aborting.')
         return
-    
+
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
     cur = atomic_transaction(conn, sql)
     n_run_tables = len(cur.fetchall())
@@ -389,9 +389,9 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
 
 
 def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
-  """
-  Perform the upgrade from version 2 to version 3
-  """
+    """
+    Perform the upgrade from version 2 to version 3
+    """
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
 
@@ -488,7 +488,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
 
             log.info(f"Upgrade in transition, run number {run_id}: OK")
 
-            
+
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
