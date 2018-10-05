@@ -236,7 +236,7 @@ class PNATrace(InstrumentChannel):
         paramspec = paramspec.strip('"')
         specs = paramspec.split(',')
         for spec_ind in range(len(specs)//2):
-            name, param = specs[spec_ind:spec_ind+2]
+            name, param = specs[spec_ind*2:(spec_ind+1)*2]
             if name == self.trace_name:
                 return name, param
         raise RuntimeError("Can't find selected trace on the PNA")
@@ -425,6 +425,7 @@ class PNABase(VisaInstrument):
         """
         Update channel list with active traces and return the new list
         """
+        active_trace = self.active_trace()
         parlist = self.ask("CALC:PAR:CAT:EXT?").strip('"').split(",")
         self._traces.clear()
         for trace_name in parlist[::2]:
@@ -432,7 +433,7 @@ class PNABase(VisaInstrument):
             trace_num = int(self.ask("CALC:PAR:TNUM?"))
             pna_trace = PNATrace(self, "tr{}".format(trace_num), trace_name, trace_num)
             self._traces.append(pna_trace)
-        self.active_trace(self._traces[0].trace_num)
+        self.active_trace(active_trace)
         return self._traces
 
     def get_options(self) -> Sequence[str]:
