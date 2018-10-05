@@ -393,16 +393,15 @@ class PNABase(VisaInstrument):
         # the channellist to include only active trace numbers
         self._traces = ChannelList(self, "PNATraces", PNATrace)
         self.add_submodule("traces", self._traces)
-        traces = self.traces
-        # Add shortcuts to trace 1
-        trace1 = self._traces[0]
+        # Add shortcuts to first trace
+        trace1 = self.traces[0]
         for param in trace1.parameters.values():
             self.parameters[param.name] = param
         # And also add a link to run sweep
         self.run_sweep = trace1.run_sweep
         # Set this trace to be the default (it's possible to end up in a situation where
         # no traces are selected, causing parameter snapshots to fail)
-        self.active_trace(1)
+        self.active_trace(trace1.trace_num)
 
         # Set auto_sweep parameter
         # If we want to return multiple traces per setpoint without sweeping
