@@ -490,7 +490,8 @@ class AWG70000A(VisaInstrument):
             running = False
             while not running:
                 time.sleep(0.1)
-                running = self.run_state() == 'Running'
+                running = self.run_state() in ('Running',
+                                               'Waiting for trigger')
                 waited_for = start_time - time.perf_counter()
                 if waited_for > timeout:
                     raise RuntimeError(f'Reached timeout ({timeout} s) '
