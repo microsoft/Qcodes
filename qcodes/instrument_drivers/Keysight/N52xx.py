@@ -115,14 +115,15 @@ class PNATrace(InstrumentChannel):
     def __init__(self,
                  parent: 'PNABase',
                  name: str,
-                 trace: int) -> None:
+                 trace_name: str,
+                 trace_num: int) -> None:
         super().__init__(parent, name)
-        self.trace_num = trace
+        self.trace_name = trace_name
+        self.trace_num = trace_num
 
         # Name of parameter (i.e. S11, S21 ...)
         self.add_parameter('trace',
                            label='Trace',
-                           get_cmd='CALC:PAR:SEL?',
                            get_parser=self._Sparam,
                            set_cmd=self._set_Sparam
                            )
@@ -224,20 +225,24 @@ class PNATrace(InstrumentChannel):
         self.root_instrument.active_trace(self.trace_num)
         return super().ask(cmd)
 
-    @staticmethod
-    def parse_paramstring(paramspec: str) -> Tuple[str, str, str]:
+    def parse_paramstring(self) -> Tuple[str, str]:
         """
         Parse parameter specification from PNA
         """
+        paramspec = self.root_instrument.ask("CALC:PAR:CAT:EXT?")
         paramspec = paramspec.strip('"')
-        ch, param, trnum = re.findall(r"CH(\d+)_(S\d+)_(\d+)", paramspec)[0]
-        return ch, param, trnum
+        specs = paramspec.split(',')
+        for spec_ind in range(len(specs)//2):
+            name, param = specs[spec_ind:spec_ind+2]
+            if name == self.trace_name:
+                return name, param
+        raise RuntimeError("Can't find selected trace on the PNA")
 
     def _Sparam(self, paramspec: str) -> str:
         """
         Extrace S_parameter from returned PNA format
         """
-        return self.parse_paramstring(paramspec)[1]
+        return self.parse_paramstring()[1]
 
     def _set_Sparam(self, val: str) -> None:
         """
@@ -371,8 +376,9 @@ class PNABase(VisaInstrument):
         # the channellist to include only active trace numbers
         self._traces = ChannelList(self, "PNATraces", PNATrace)
         self.add_submodule("traces", self._traces)
+        traces = self.traces
         # Add shortcuts to trace 1
-        trace1 = PNATrace(self, "tr1", 1)
+        trace1 = self._traces[0]
         for param in trace1.parameters.values():
             self.parameters[param.name] = param
         # And also add a link to run sweep
@@ -404,10 +410,12 @@ class PNABase(VisaInstrument):
         """
         parlist = self.ask("CALC:PAR:CAT:EXT?").strip('"').split(",")
         self._traces.clear()
-        for trace in parlist[::2]:
-            trnum = PNATrace.parse_paramstring(trace)[2]
-            pna_trace = PNATrace(self, "tr{}".format(trnum), int(trnum))
+        for trace_name in parlist[::2]:
+            self.write(f"CALC:PAR:SEL '{trace_name}'")
+            trace_num = int(self.ask("CALC:PAR:TNUM?"))
+            pna_trace = PNATrace(self, "tr{}".format(trace_num), trace_name, trace_num)
             self._traces.append(pna_trace)
+        self.active_trace(self._traces[0].trace_num)
         return self._traces
 
     def get_options(self) -> Sequence[str]:
