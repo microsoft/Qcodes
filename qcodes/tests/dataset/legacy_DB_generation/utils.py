@@ -11,6 +11,9 @@ from git import Repo
 # dependencies, result-tables
 #
 # Version 1: a GUID column is added to the runs table
+#
+# Version 2: indices are added to runs; GUID and exp_id
+#
 
 
 GIT_HASHES: Dict[int, str] = {0: '78d42620fc245a975b5a615ed5e33061baac7846',
