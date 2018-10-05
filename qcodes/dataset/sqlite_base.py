@@ -6,6 +6,7 @@ import time
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict, cast, Callable
 import itertools
+from functools import wraps
 
 from numbers import Number
 from numpy import ndarray
@@ -111,6 +112,46 @@ class ConnectionPlus(wrapt.ObjectProxy):
 
 
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
+
+
+def upgrader(func: Callable[[SomeConnection], None]):
+    """
+    Decorator for database version upgrade functions. An upgrade function
+    must have the name `perform_db_upgrade_N_to_M` where N = M-1.
+
+    The decorator takes care of logging about the upgrade and managing the
+    database versioning
+    """
+    name_comps = func.__name__.split('_')
+    if not len(name_comps) == 6:
+        raise NameError('Decorated function not a valid upgrader. '
+                        'Must have name "perform_db_upgrade_N_to_M"')
+    if not ''.join(name_comps[:3]+[name_comps[4]]) == 'performdbupgradeto':
+        raise NameError('Decorated function not a valid upgrader. '
+                        'Must have name "perform_db_upgrade_N_to_M"')
+    from_version = int(name_comps[3])
+    to_version = int(name_comps[5])
+
+    @wraps(func)
+    def do_upgrade(conn: SomeConnection) -> None:
+
+        log.info(f'Starting database upgrade version {from_version} '
+                 'to {to_version}')
+
+        start_version = get_user_version(conn)
+        if start_version != from_version:
+            log.warning('Can not upgrade, current database version is '
+                        f'{start_version}, aborting.')
+            return
+
+        # This function either raises or returns
+        func(conn)
+
+        set_user_version(conn, to_version)
+        log.info(f'Succesfully performed upgrade {from_version} '
+                 f'-> {to_version}')
+
+    return do_upgrade
 
 
 # utility function to allow sqlite/numpy type
@@ -303,17 +344,11 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
             action(conn)
 
 
+@upgrader
 def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 0 to version 1
     """
-    log.info('Starting database upgrade version 0 -> 1')
-
-    start_version = get_user_version(conn)
-    if start_version != 0:
-        log.warn('Can not upgrade, current database version is '
-                 f'{start_version}, aborting.')
-        return
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
     cur = atomic_transaction(conn, sql)
@@ -347,21 +382,12 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
-    log.info('Succesfully upgraded database version 0 -> 1.')
-    set_user_version(conn, 1)
 
-
+@upgrader
 def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 1 to version 2
     """
-    log.info('Starting database upgrade version 1 -> 2')
-
-    start_version = get_user_version(conn)
-    if start_version != 1:
-        log.warn('Can not upgrade, current database version is '
-                 f'{start_version}, aborting.')
-        return
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
     cur = atomic_transaction(conn, sql)
@@ -384,22 +410,12 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
-    log.info('Succesfully upgraded database version 1 -> 2.')
-    set_user_version(conn, 2)
 
-
+@upgrader
 def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 2 to version 3
     """
-
-    log.info('Starting database upgrade version 2 -> 3')
-
-    start_version = get_user_version(conn)
-    if start_version != 2:
-        log.warn('Can not upgrade, current database version is '
-                 f'{start_version}, aborting.')
-        return
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
@@ -496,9 +512,6 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             cur.execute(sql, yaml_str)
 
             log.info(f"Upgrade in transition, run number {run_id}: OK")
-
-    log.info('Succesfully upgraded database version 2 -> 3.')
-    set_user_version(conn, 3)
 
 
 def transaction(conn: SomeConnection,
