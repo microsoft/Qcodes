@@ -4,6 +4,9 @@ from qcodes.utils.validators import Numbers, Enum, Bool
 from typing import Sequence, Union, Any, Tuple
 import time
 import re
+import logging
+
+logger = logging.getLogger()
 
 class PNASweep(ArrayParameter):
     def __init__(self,
@@ -318,14 +321,28 @@ class PNABase(VisaInstrument):
                            get_cmd='SENS:FREQ:STAR?',
                            get_parser=float,
                            set_cmd='SENS:FREQ:STAR {}',
-                           unit='',
+                           unit='Hz',
                            vals=Numbers(min_value=min_freq,max_value=max_freq))
         self.add_parameter('stop',
                            label='Stop Frequency',
                            get_cmd='SENS:FREQ:STOP?',
                            get_parser=float,
                            set_cmd='SENS:FREQ:STOP {}',
-                           unit='',
+                           unit='Hz',
+                           vals=Numbers(min_value=min_freq,max_value=max_freq))
+        self.add_parameter('center',
+                           label='Center Frequency',
+                           get_cmd='SENS:FREQ:CENT?',
+                           get_parser=float,
+                           set_cmd='SENS:FREQ:CENT {}',
+                           unit='Hz',
+                           vals=Numbers(min_value=min_freq,max_value=max_freq))
+        self.add_parameter('span',
+                           label='Frequency Span',
+                           get_cmd='SENS:FREQ:SPAN?',
+                           get_parser=float,
+                           set_cmd='SENS:FREQ:SPAN {}',
+                           unit='Hz',
                            vals=Numbers(min_value=min_freq,max_value=max_freq))
 
         # Number of points in a sweep
