@@ -4,6 +4,8 @@ import logging.handlers
 import os
 from pathlib import Path
 
+from typing import Union
+
 # TODO: this import here is critical:
 # when creating a new config obect this imported refrence will remain pointing
 # at the old config object, while imports via 'import qcodes` paired with
@@ -64,7 +66,7 @@ def start_logger() -> None:
     log.info("QCoDes python logger setup")
 
 
-def start_command_history_logger():
+def start_command_history_logger() -> None:
     """
     logging of the history of the interactive command shell
     works only with ipython
@@ -83,6 +85,6 @@ def start_command_history_logger():
     log.info("Started logging IPython history")
 
 
-def start_all_logging():
+def start_all_logging() -> None:
     start_logger()
     start_command_history_logger()
