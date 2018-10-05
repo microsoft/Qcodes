@@ -3,8 +3,12 @@ import logging.handlers
 
 import os
 from pathlib import Path
+from collections import OrderedDict
 
-from typing import Union
+from typing import Optional, List
+
+import pandas as pd
+from pandas.core.series import Series
 
 # TODO: this import here is critical:
 # when creating a new config obect this imported refrence will remain pointing
@@ -17,18 +21,39 @@ from qcodes import config
 
 log = logging.getLogger(__name__)
 
-logging_dir = "logs"
-logging_delimiter = ' ¦ '
-history_log_name = "command_history.log"
-python_log_name = 'qcodes.log'
+LOGGING_DIR = "logs"
+LOGGING_SEPARATOR = ' ¦ '
+HISTORY_LOG_NAME = "command_history.log"
+PYTHON_LOG_NAME = 'qcodes.log'
 QCODES_USER_PATH_ENV='QCODES_USER_PATH'
 
+FORMAT_STRING_DICT = OrderedDict([
+    ('asctime', 's'),
+    ('name', 's'),
+    ('levelname', 's'),
+    ('funcName', 's'),
+    ('lineno', 'd'),
+    ('message', 's')])
+FORMAT_STRING_ITEMS = [f'%({name}){fmt}'
+                       for name, fmt in FORMAT_STRING_DICT.items()]
 
-def _get_qcodes_user_path() -> Union[str, None]:
-    path = os.environ(QCODES_USER_PATH_ENV,
-                      os.path.join(Path.home(), '.qcodes'))
+def _get_qcodes_user_path() -> str:
+    """
+    Get '~/.qcodes' path or if defined the path defined in the QCODES_USER_PATH
+    environment varaible.
+
+    Returns:
+        user_path: path to the user qcodes directory
+    """
+    path = os.environ.get(QCODES_USER_PATH_ENV,
+                          os.path.join(Path.home(), '.qcodes'))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
+
+def get_log_file_name() -> str:
+    return os.path.join(_get_qcodes_user_path(),
+                        LOGGING_DIR,
+                        PYTHON_LOG_NAME)
 
 def start_logger() -> None:
     """
@@ -39,9 +64,8 @@ def start_logger() -> None:
     All logging messages on or above consolelogginglevel
     will be written to stderr.
     """
-    format_string_items = ['%(asctime)s', '%(name)s', '%(levelname)s',
-                           '%(funcName)s', '%(lineno)d', '%(message)s']
-    format_string = logging_delimiter.join(format_string_items)
+
+    format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
     formatter = logging.Formatter(format_string)
     try:
         filelogginglevel = config.core.file_loglevel
@@ -51,9 +75,8 @@ def start_logger() -> None:
     ch = logging.StreamHandler()
     ch.setLevel(consolelogginglevel)
     ch.setFormatter(formatter)
-    filename = os.path.join(_get_qcodes_user_path(),
-                            logging_dir,
-                            python_log_name)
+
+    filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     fh1 = logging.handlers.TimedRotatingFileHandler(filename,
@@ -78,8 +101,8 @@ def start_command_history_logger() -> None:
         return
     ipython.magic("%logstop")
     filename = os.path.join(_get_qcodes_user_path(),
-                            logging_dir,
-                            history_log_name)
+                            LOGGING_DIR,
+                            HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     ipython.magic("%logstart -t -o {} {}".format(filename, "append"))
     log.info("Started logging IPython history")
@@ -88,3 +111,78 @@ def start_command_history_logger() -> None:
 def start_all_logging() -> None:
     start_logger()
     start_command_history_logger()
+
+def logfile_to_dataframe(logfile: Optional[str]=None,
+                         columns: Optional[List[str]]=None,
+                         separator: Optional[str]=None) -> pd.DataFrame:
+    """
+    Return the provided or default logfile as a pandas DataFrame.
+
+    Unless `qcodes.utils.logger.LOGGING_SEPARATOR` or
+    `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
+    for the columns and separtor arguments is encouraged.
+
+    Args:
+        logfile: name of the logfile; defaults to current default log file.
+        columns: column headers for the returned dataframe.
+        separator: seperator of the logfile to seperate the columns.
+
+    Retruns:
+        Pandas DataFrame containing the logfile content.
+    """
+
+    separator = separator or LOGGING_SEPARATOR
+    columns = columns or list(FORMAT_STRING_DICT.keys())
+    logfile = logfile or get_log_file_name()
+
+    with open(logfile) as f:
+        raw_cont = f.readlines()
+
+    # note: if we used commas as separators, pandas read_csv
+    # could be faster than this string comprehension
+
+    split_cont = [line.split(separator) for line in raw_cont
+                  if line[0].isdigit()]  # avoid tracebacks
+    dataframe = pd.DataFrame(split_cont, columns=columns)
+
+    return dataframe
+
+
+def time_difference(firsttimes: Series,
+                    secondtimes: Series,
+                    use_first_series_labels: bool=True) -> Series:
+    """
+    Calculate the time differences between two series
+    containing time stamp strings as their values.
+
+    Args:
+        firsttimes: The oldest times
+        secondtimes: The youngest times
+        use_first_series_labels: If true, the returned Series
+            has the same labels as firsttimes. Else it has
+            the labels of secondtimes
+
+    Returns:
+        A Series with float values of the time difference (s)
+    """
+
+    if ',' in firsttimes.iloc[0]:
+        nfirsttimes = firsttimes.str.replace(',', '.')
+    else:
+        nfirsttimes = firsttimes
+
+    if ',' in secondtimes.iloc[0]:
+        nsecondtimes = secondtimes.str.replace(',', '.')
+    else:
+        nsecondtimes = secondtimes
+
+    t0s = nfirsttimes.astype("datetime64[ns]")
+    t1s = nsecondtimes.astype("datetime64[ns]")
+    timedeltas = (t1s.values - t0s.values).astype('float')*1e-9
+
+    if use_first_series_labels:
+        output = pd.Series(timedeltas, index=nfirsttimes.index)
+    else:
+        output = pd.Series(timedeltas, index=nsecondtimes.index)
+
+    return output
