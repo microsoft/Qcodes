@@ -95,7 +95,6 @@ CREATE TABLE IF NOT EXISTS dependencies (
 """
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
-# utility function to allow sqlite/numpy type
 
 
 class ConnectionPlus(wrapt.ObjectProxy):
@@ -114,6 +113,7 @@ class ConnectionPlus(wrapt.ObjectProxy):
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
+# utility function to allow sqlite/numpy type
 def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     """
     See this:
