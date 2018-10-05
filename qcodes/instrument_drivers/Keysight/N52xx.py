@@ -430,7 +430,7 @@ class PNABase(VisaInstrument):
         self._traces.clear()
         for trace_name in parlist[::2]:
             self.write(f"CALC:PAR:SEL '{trace_name}'")
-            trace_num = int(self.ask("CALC:PAR:TNUM?"))
+            trace_num = int(self.ask("CALC:PAR:MNUM?"))
             pna_trace = PNATrace(self, "tr{}".format(trace_num), trace_name, trace_num)
             self._traces.append(pna_trace)
         self.active_trace(active_trace)
