@@ -31,11 +31,11 @@ def current_driver():
     and z directions.
     """
 
-    mag_x = AMI430_VISA('x', address='GPIB::1::65535::INSTR', visalib=visalib,
+    mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
                         terminator='\n', port=1)
-    mag_y = AMI430_VISA('y', address='GPIB::2::65535::INSTR', visalib=visalib,
+    mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
                         terminator='\n', port=1)
-    mag_z = AMI430_VISA('z', address='GPIB::3::65535::INSTR', visalib=visalib,
+    mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
                         terminator='\n', port=1)
 
     driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
@@ -392,7 +392,7 @@ def test_warning_increased_max_ramp_rate():
 
     with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
         inst = AMI430_VISA("testing_increased_max_ramp_rate",
-                           address='GPIB::4::65535::INSTR', visalib=visalib,
+                           address='GPIB::4::INSTR', visalib=visalib,
                            terminator='\n', port=1,
                            current_ramp_limit=target_ramp_rate)
         assert len(excinfo) >= 1 # Check we at least one warning.

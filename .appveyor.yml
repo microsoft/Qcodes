@@ -18,16 +18,16 @@ install:
   - set PATH=%CONDA_INSTALL_LOCATION%;%CONDA_INSTALL_LOCATION%\scripts;%PATH%;
   - conda config --set always_yes true  # else AppVeyor will hang forever waiting for user ([y]/n)
   - conda update -n base conda
-  - conda env create -q -f environment.yml python=3.6
+  - conda env create -q -f environment.yml
   - activate qcodes
   - pip install -r test_requirements.txt
   - pip install -r docs_requirements.txt
-  - python -m pip install --upgrade pip
-  - pip install .
+  - pip install -e .
 
 # Test scripts
 test_script:
   - cd qcodes
+  - python tests\dataset\legacy_DB_generation\generate_version_0.py
   - cd tests
   - pytest
   - cd ..\..

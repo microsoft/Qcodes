@@ -11,8 +11,16 @@
         "notebook": true,
         "plotlib": "all",
         "pyqtmaxplots": 100,
-        "defaultcolormap": "hot",
-        "smart_colorscale": false
+        "defaultcolormap": "hot"
+    },
+    "plotting":{
+        "default_color_map": "viridis",
+        "auto_color_scale":{
+            "enabled": false,
+            "cutoff_percentile": [0.5, 0.5],
+            "color_over": "#a1c4fc",
+            "color_under": "#017000"
+        }
     },
     "user": {
         "scriptfolder": ".",

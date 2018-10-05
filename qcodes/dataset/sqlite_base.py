@@ -1,3 +1,4 @@
+import sys
 from contextlib import contextmanager
 import logging
 import sqlite3
@@ -130,11 +131,48 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def _convert_numeric(value: bytes) -> Union[float, int]:
-    numeric = float(value)
-    if np.isnan(numeric) or numeric != int(numeric):
+this_session_default_encoding = sys.getdefaultencoding()
+
+
+def _convert_numeric(value: bytes) -> Union[float, int, str]:
+    """
+    This is a converter for sqlite3 'numeric' type class.
+
+    This converter is capable of deducting whether a number is a float or an
+    int.
+
+    Note sqlite3 allows to save data to columns even if their type is not
+    compatible with the table type class (for example, it is possible to save
+    integers into 'text' columns). Due to this fact, and for the reasons of
+    flexibility, the numeric converter is also made capable of handling
+    strings. An obvious exception to this is 'nan' (case insensitive) which
+    gets converted to `np.nan`.
+    """
+    try:
+        # First, try to convert bytes to float
+        numeric = float(value)
+    except ValueError as e:
+        # If an exception has been raised, we first need to find out
+        # if the reason was the conversion to float, and, if so, we are sure
+        # that we need to return a string
+        if "could not convert string to float" in str(e):
+            return str(value, encoding=this_session_default_encoding)
+        else:
+            # otherwise, the exception is forwarded up the stack
+            raise e
+
+    # If that worked, e.g. did not raise an exception, then we check if the
+    # outcome is 'nan'
+    if np.isnan(numeric):
         return numeric
-    return int(numeric)
+
+    # If it is not 'nan', then we need to see if the value is really an
+    # integer or with floating point digits
+    numeric_int = int(numeric)
+    if numeric != numeric_int:
+        return numeric
+    else:
+        return numeric_int
 
 
 def _adapt_float(fl: float) -> Union[float, str]:
@@ -254,7 +292,7 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
           'newest version'
     """
 
-    upgrade_actions = [perform_db_upgrade_0_to_1]
+    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2]
     newest_version = len(upgrade_actions)
     version = newest_version if version == -1 else version
 
@@ -317,14 +355,43 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 1 to version 2
     """
-    log.info('Starting database upgrade version 0 -> 1')
+    log.info('Starting database upgrade version 1 -> 2')
 
     start_version = get_user_version(conn)
     if start_version != 1:
         log.warn('Can not upgrade, current database version is '
                  f'{start_version}, aborting.')
         return
+    
+    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
+    cur = atomic_transaction(conn, sql)
+    n_run_tables = len(cur.fetchall())
 
+    if n_run_tables == 1:
+        _IX_runs_exp_id = """
+                          CREATE INDEX
+                          IF NOT EXISTS IX_runs_exp_id
+                          ON runs (exp_id DESC)
+                          """
+        _IX_runs_guid = """
+                        CREATE INDEX
+                        IF NOT EXISTS IX_runs_guid
+                        ON runs (guid DESC)
+                        """
+        with atomic(conn) as conn:
+            transaction(conn, _IX_runs_exp_id)
+            transaction(conn, _IX_runs_guid)
+    else:
+        raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+
+    log.info('Succesfully upgraded database version 1 -> 2.')
+    set_user_version(conn, 2)
+
+
+def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
+  """
+  Perform the upgrade from version 2 to version 3
+  """
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
 
@@ -421,7 +488,7 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
 
             log.info(f"Upgrade in transition, run number {run_id}: OK")
 
-
+            
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
@@ -520,7 +587,6 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _runs_table_schema)
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
-
 
 def insert_column(conn: SomeConnection, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:

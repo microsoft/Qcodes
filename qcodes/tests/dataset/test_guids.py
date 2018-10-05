@@ -21,11 +21,12 @@ def protected_config():
     ocfg: DotDict = Config().current_config
     original_config = deepcopy(ocfg)
 
-    yield
-
-    cfg = Config()
-    cfg.current_config = original_config
-    cfg.save_to_home()
+    try:
+        yield
+    finally:
+        cfg = Config()
+        cfg.current_config = original_config
+        cfg.save_to_home()
 
 
 @settings(max_examples=50)
@@ -54,7 +55,7 @@ def test_generate_guid(loc, stat, smpl):
         assert comps['time'] - gen_time < 2
 
 
-@settings(max_examples=50, deadline=1000)
+@settings(max_examples=50, deadline=None)
 @given(loc=hst.integers(-10, 350))
 def test_set_guid_location_code(loc, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(loc))
