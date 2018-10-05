@@ -173,6 +173,10 @@ class PNATrace(InstrumentChannel):
                            parameter_class=FormattedSweep)
 
     def run_sweep(self) -> str:
+        """
+        Run a set of sweeps on the network analyzer.
+        Note that this will run all traces on the current channel.
+        """
         root_instr = self.root_instrument
         # Store previous mode
         prev_mode = root_instr.sweep_mode()
@@ -357,6 +361,8 @@ class PNABase(VisaInstrument):
         trace1 = PNATrace(self, "tr1", 1)
         for param in trace1.parameters.values():
             self.parameters[param.name] = param
+        # And also add a link to run sweep
+        self.run_sweep = trace1.run_sweep
         # Set this trace to be the default (it's possible to end up in a situation where
         # no traces are selected, causing parameter snapshots to fail)
         self.active_trace(1)
