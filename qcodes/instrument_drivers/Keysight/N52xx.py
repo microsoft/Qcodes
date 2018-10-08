@@ -4,6 +4,7 @@ import re
 import logging
 
 import numpy as np
+from pyvisa import VisaIOError
 from qcodes import (VisaInstrument, InstrumentChannel, ArrayParameter,
                     ChannelList)
 from qcodes.utils.validators import Ints, Numbers, Enum, Bool
