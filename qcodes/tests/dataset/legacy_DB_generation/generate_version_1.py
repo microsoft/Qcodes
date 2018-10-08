@@ -1,4 +1,4 @@
-# Generate version 0 database files for qcodes' test suite to consume
+# Generate version 1 database files for qcodes' test suite to consume
 
 import os
 
@@ -18,15 +18,14 @@ def generate_empty_DB_file():
 
     import qcodes.dataset.sqlite_base as sqlite_base
 
-    v0fixturepath = os.path.join(fixturepath, 'version0')
+    v0fixturepath = os.path.join(fixturepath, 'version1')
     os.makedirs(v0fixturepath, exist_ok=True)
     path = os.path.join(v0fixturepath, 'empty.db')
 
     if os.path.exists(path):
         os.remove(path)
 
-    conn = sqlite_base.connect(path)
-    sqlite_base.init_db(conn)
+    sqlite_base.connect(path)
 
 
 if __name__ == '__main__':
@@ -34,4 +33,4 @@ if __name__ == '__main__':
     gens = (generate_empty_DB_file,)
 
     # pylint: disable=E1101
-    utils.checkout_to_old_version_and_run_generators(version=0, gens=gens)
+    utils.checkout_to_old_version_and_run_generators(version=1, gens=gens)

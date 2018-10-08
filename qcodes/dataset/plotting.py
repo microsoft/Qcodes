@@ -1,7 +1,8 @@
 import logging
 from collections import OrderedDict
 from functools import partial
-from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
+from typing import (Optional, List, Sequence, Union, Tuple, Dict,
+                    Any, Set)
 import inspect
 import numpy as np
 import matplotlib
@@ -10,8 +11,7 @@ from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
-from qcodes.utils.plotting import auto_range_iqr
-from qcodes import config
+from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (plottype_for_2d_data,
@@ -23,6 +23,7 @@ DB = qc.config["core"]["db_location"]
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
+Number = Union[float, int]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
 # :meth:`plot_by_id` and will be distributed to the respective plotting func.
@@ -42,7 +43,8 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Optional[bool]=None,
+               auto_color_scale: Optional[bool]=None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number], Number]]=None,
                **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given run
@@ -75,21 +77,22 @@ def plot_by_id(run_id: int,
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
-        smart_colorscale: if True, the colorscale of heatmap plots will be
-            automatically adjusted to disregard outliers. If False,
-            the adjustment will not be performed. If None, the value from
-            QCoDeS config->"gui"->"smart_colorscale" will determine if the
-            adjustment is going to be performed.
+        auto_color_scale: if True, the colorscale of heatmap plots will be
+            automatically adjusted to disregard outliers.
+        cutoff_percentile: percentile of data that may maximally be clipped
+            on both sides of the distribution.
+            If given a tuple (a,b) the percentile limits will be a and 100-b.
+            See also the plotting tuorial notebook.
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
+
+    Config dependencies: (qcodesrc.json)
     """
     # handle arguments and defaults
-    if smart_colorscale is None:
-        smart_colorscale = config.gui.smart_colorscale
-    subplots_kwargs = {k: kwargs.pop(k)
+    subplots_kwargs = {k:kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
@@ -175,6 +178,10 @@ def plot_by_id(run_id: int,
             plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
 
             plot_func = how_to_plot[plottype]
+
+            if colorbar is None and 'cmap' not in kwargs:
+                kwargs['cmap'] = qc.config.plotting.default_color_map
+
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
                                      **kwargs)
 
@@ -183,8 +190,8 @@ def plot_by_id(run_id: int,
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
 
-            if smart_colorscale:
-                colorbar.mappable.set_clim(*auto_range_iqr(zpoints))
+            auto_color_scale_from_config(colorbar, auto_color_scale,
+                                         zpoints, cutoff_percentile)
 
             new_colorbars.append(colorbar)
 
