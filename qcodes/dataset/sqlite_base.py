@@ -419,6 +419,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = no_of_runs or 0
 
     # Insert a new column, "run_description", and fill it out with information
     # retrieved from the layouts and dependencies tables

@@ -156,7 +156,7 @@ def test_perform_actual_upgrade_2_to_3():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
-    if not os.path.exists(v1fixpath):
+    if not os.path.exists(v2fixpath):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
 
