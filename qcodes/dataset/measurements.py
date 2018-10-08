@@ -6,8 +6,11 @@ from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
                     MutableMapping, MutableSequence, Optional, Any)
 from inspect import signature
 from numbers import Number
+import subprocess
+from time import sleep
 
 import numpy as np
+import zmq
 
 import qcodes as qc
 from qcodes import Station
@@ -50,7 +53,11 @@ class DataSaver:
     default_callback: Optional[dict] = None
 
     def __init__(self, dataset: DataSet, write_period: numeric_types,
-                 parameters: Dict[str, ParamSpec]) -> None:
+                 parameters: Dict[str, ParamSpec],
+                 socket: zmq.sugar.socket.Socket) -> None:
+
+        self.socket = socket
+
         self._dataset = dataset
         if DataSaver.default_callback is not None and 'run_tables_subscription_callback' in DataSaver.default_callback:
             callback = DataSaver.default_callback[
@@ -215,7 +222,7 @@ class DataSaver:
         self._append_results(res, input_size)
 
         if monotonic() - self._last_save_time > self.write_period:
-            self.flush_data_to_database()
+            self.put_data_into_queue()
             self._last_save_time = monotonic()
 
     def _append_results(self, res: Sequence[res_type],
@@ -371,6 +378,25 @@ class DataSaver:
                                                     parameter.setpoints[i],
                                                     res, found_parameters)
 
+    def put_data_into_queue(self) -> None:
+        """
+        Put results into the PUB queue
+        """
+        log.debug('Enqueing results')
+
+        if self._results != []:
+            try:
+                for res in self._results:
+                    data = json.dumps(res)
+                    # the writer subscribes to a topic; we provide the topic
+                    # as the run_id
+                    mssg = f"{self._dataset.run_id},{data}"
+                    self.socket.send(mssg.encode('utf-8'))
+                self._results = []
+            except Exception as e:
+                log.warning('Could not send to queue for the following '
+                            f'reason: {e}')
+
     def flush_data_to_database(self) -> None:
         """
         Write the in-memory results to the database.
@@ -476,25 +502,50 @@ class Runner:
             log.debug(f'Subscribing callable {callble} with state {state}')
             self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
+        port = 5555
+        ctx = zmq.Context()
+
+        # make the REQ socket to confirm that the subscriber is ready
+        rep_sock = ctx.socket(zmq.REP)
+        rep_sock.bind(f"tcp://127.0.0.1:{port+1}")
+
+        # start the subscriber process
+        # in "real" use, this should be registered with the measurement
+        import qcodes.dataset.datawriters as dw
+        script = dw.__file__.replace('__init__.py', 'writer.py')
+        cmd = f"python {script} {port} {self.ds.run_id}"
+        subprocess.Popen(cmd.split(" "))
+
+        # make the PUB socket for the data queue
+        socket = ctx.socket(zmq.PUB)
+        socket.bind(f"tcp://127.0.0.1:{port}")
+        self.socket = socket
+
+        # do the syncing with the subscriber
+        log.debug('Getting sync ping from subscriber')
+        rep_sock.recv()
+        log.debug('Pinging to subscriber that publishing will start now')
+        rep_sock.send(b"")
+
         print(f'Starting experimental run with id: {self.ds.run_id}')
 
         self.datasaver = DataSaver(dataset=self.ds,
                                    write_period=self.write_period,
-                                   parameters=self.parameters)
+                                   parameters=self.parameters,
+                                   socket=socket)
 
         return self.datasaver
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
 
-        self.datasaver.flush_data_to_database()
+        self.datasaver.put_data_into_queue()
+        mssg = f"{self.ds.run_id},KILL"
+        self.socket.send(mssg.encode('utf-8'))
+        self.socket.close()
 
         # perform the "teardown" events
         for func, args in self.exitactions:
             func(*args)
-
-        # and finally mark the dataset as closed, thus
-        # finishing the measurement
-        self.ds.mark_complete()
 
         self.ds.unsubscribe_all()
 
