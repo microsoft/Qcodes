@@ -152,10 +152,9 @@ class KeithleyChannel(InstrumentChannel):
         # needs get after set (WilliamHPNielsen): why?
         self.add_parameter('sourcerange_v',
                            label='voltage source range',
-                           get_cmd='{}.source.rangev'.format(channel),
+                           get_cmd=f'{channel}.source.rangev',
                            get_parser=float,
-                           set_cmd='{}.source.rangev={}'.format(channel,
-                                                                '{:.4f}'),
+                           set_cmd=f'{channel}.source.rangev={{}}',
                            unit='V',
                            docstring='The range used when sourcing voltage '
                                      'This affects the range and the precision '
@@ -163,9 +162,8 @@ class KeithleyChannel(InstrumentChannel):
                            vals=vals.Enum(*vranges[self.model]))
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
-                           get_cmd='{}.measure.rangev'.format(channel),
-                           set_cmd='{}.measure.rangev={}'.format(channel,
-                                                                 '{:.4f}'),
+                           get_cmd=f'{channel}.measure.rangev',
+                           set_cmd=f'{channel}.measure.rangev={{}}',
                            unit='V',
                            docstring='The range to perform voltage '
                                      'measurements in. This affects the range '
@@ -178,10 +176,9 @@ class KeithleyChannel(InstrumentChannel):
         # needs get after set
         self.add_parameter('sourcerange_i',
                            label='current source range',
-                           get_cmd='{}.source.rangei'.format(channel),
+                           get_cmd=f'{channel}.source.rangei',
                            get_parser=float,
-                           set_cmd='{}.source.rangei={}'.format(channel,
-                                                                '{:.4f}'),
+                           set_cmd=f'{channel}.source.rangei={{}}',
                            unit='A',
                            docstring='The range used when sourcing current '
                                      'This affects the range and the '
