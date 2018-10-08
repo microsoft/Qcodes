@@ -42,6 +42,8 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
 
         Instrument.__init__(self, name, metadata=metadata, **newkwargs)
 
+        self.log = InstrumentLoggerAdapter(logger=log,
+                                           extra={'instrument': self.full_name})
         ##################################################
         # __init__ of VisaInstrument
 

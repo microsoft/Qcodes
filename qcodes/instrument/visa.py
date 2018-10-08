@@ -51,7 +51,8 @@ class VisaInstrument(Instrument):
                  terminator='', device_clear=True, visalib=None, **kwargs):
 
         super().__init__(name, **kwargs)
-        self.log = InstrumentLoggerAdapter(log, {'instrument': self.full_name})
+        self.log = InstrumentLoggerAdapter(logger=log,
+                                           extra={'instrument': self.full_name})
 
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
