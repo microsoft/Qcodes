@@ -12,14 +12,7 @@ from typing import Optional, List
 import pandas
 from pandas.core.series import Series
 
-# TODO: this import here is critical:
-# when creating a new config obect this imported refrence will remain pointing
-# at the old config object, while imports via 'import qcodes` paired with
-# `qcodes.config....` will yield the new config values.
-# Also in combination with the config context manger this will not work.
-# importing all of qcodes here is not a good solution either as already the
-# loading process shall be logged.
-from qcodes import config
+import qcodes as qc
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +64,7 @@ def start_logger() -> None:
     formatter = logging.Formatter(format_string)
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(config.logger.console_level)
+    console_handler.setLevel(qc.config.logger.console_level)
     console_handler.setFormatter(formatter)
 
     filename = get_log_file_name()
@@ -79,7 +72,7 @@ def start_logger() -> None:
 
     file_handler = logging.handlers.TimedRotatingFileHandler(filename,
                                                              when='midnight')
-    file_handler.setLevel(config.logger.file_level)
+    file_handler.setLevel(qc.config.logger.file_level)
     file_handler.setFormatter(formatter)
     logging.basicConfig(handlers=[console_handler, file_handler],
                         level=logging.DEBUG)
