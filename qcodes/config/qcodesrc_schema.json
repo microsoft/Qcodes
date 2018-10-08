@@ -60,6 +60,12 @@
                         "INFO",
                         "DEBUG"
                     ]
+                },
+                "module_logger_levels":{
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 }
             },
             "required":["console_level", "file_level"]
