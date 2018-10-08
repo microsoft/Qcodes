@@ -504,13 +504,15 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             desc = RunDescriber(interdeps=interdeps)
             yaml_str = desc.to_yaml()
 
+            print(f'DEBUG: {yaml_str}\nLength of yaml str: {len(yaml_str)}')
+
             sql = f"""
                    UPDATE runs
                    SET run_description = ?
-                   where run_id == {run_id}
+                   WHERE run_id == ?
                    """
             cur = conn.cursor()
-            cur.execute(sql, yaml_str)
+            cur.execute(sql, (yaml_str, run_id))
 
             log.info(f"Upgrade in transition, run number {run_id}: OK")
 

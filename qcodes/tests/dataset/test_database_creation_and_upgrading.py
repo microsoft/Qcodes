@@ -178,6 +178,19 @@ def test_perform_actual_upgrade_2_to_3():
         c = atomic_transaction(conn, desc_query)
         assert len(c.fetchall()) == 0
 
+    dbname_old = os.path.join(v2fixpath, 'some_runs.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+
+        assert get_user_version(conn) == 2
+
+        perform_db_upgrade_2_to_3(conn)
+
+        desc_query = 'SELECT run_description FROM runs'
+
+        c = atomic_transaction(conn, desc_query)
+        assert len(c.fetchall()) == 10
+
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_update_existing_guids(caplog):
