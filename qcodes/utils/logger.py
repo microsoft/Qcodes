@@ -69,26 +69,25 @@ def start_logger() -> None:
 
     format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
     formatter = logging.Formatter(format_string)
-    try:
-        filelogginglevel = config.core.file_loglevel
-    except KeyError:
-        filelogginglevel = "INFO"
-    consolelogginglevel = config.core.loglevel
-    ch = logging.StreamHandler()
-    ch.setLevel(consolelogginglevel)
-    ch.setFormatter(formatter)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(config.logger.console_level)
+    console_handler.setFormatter(formatter)
 
     filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    fh1 = logging.handlers.TimedRotatingFileHandler(filename,
-                                                    when='midnight')
-    fh1.setLevel(filelogginglevel)
-    fh1.setFormatter(formatter)
-    logging.basicConfig(handlers=[ch, fh1], level=logging.DEBUG)
+    file_handler = logging.handlers.TimedRotatingFileHandler(filename,
+                                                             when='midnight')
+    file_handler.setLevel(config.logger.file_level)
+    file_handler.setFormatter(formatter)
+    logging.basicConfig(handlers=[console_handler, file_handler],
+                        level=logging.DEBUG)
+
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
-    log.info("QCoDes python logger setup")
+
+    log.info("QCoDes logger setup completed")
 
 
 def start_command_history_logger() -> None:

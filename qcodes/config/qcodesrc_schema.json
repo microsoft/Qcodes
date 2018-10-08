@@ -12,30 +12,6 @@
                     "description": "default location formatter",
                     "default": "data/{date}/#{counter}_{name}_{time}"
                 },
-                "loglevel" :{
-                    "type" : "string",
-                    "description": "control logging  level",
-                    "default": "DEBUG",
-                    "enum" : [
-                        "CRITICAL",
-                        "ERROR",
-                        "WARNING",
-                        "INFO",
-                        "DEBUG"
-                    ]
-                },
-                "file_loglevel" :{
-                    "type" : "string",
-                    "description": "control file logging  level",
-                    "default": "INFO",
-                    "enum" : [
-                        "CRITICAL",
-                        "ERROR",
-                        "WARNING",
-                        "INFO",
-                        "DEBUG"
-                    ]
-                },
                 "register_magic" : {
                     "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
                     "anyOf" : [
@@ -55,7 +31,38 @@
                     "default": "./experiments.db"
                 }
             },
-            "required":["loglevel", "db_location"]
+            "required":["db_location"]
+        },
+        "logger" : {
+            "description": "controls all settings related to the logging module `qcodes.utils.logger`.",
+            "type" : "object",
+            "properties" : {
+                "console_level" :{
+                    "type" : "string",
+                    "description": "control logging level of console output",
+                    "default": "DEBUG",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
+                "file_level" :{
+                    "type" : "string",
+                    "description": "control logging level of file output.",
+                    "default": "INFO",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                }
+            },
+            "required":["console_level", "file_level"]
         },
         "gui" : {
             "type" : "object",
