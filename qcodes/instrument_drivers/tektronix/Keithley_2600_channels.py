@@ -131,7 +131,7 @@ class KeithleyChannel(InstrumentChannel):
                            get_parser=float,
                            set_cmd=f'{channel}.source.func={{:d}}',
                            val_mapping={'current': 0, 'voltage': 1},
-                           docstring='Selects the output source type.'
+                           docstring='Selects the output source type. '
                                      'Can be either voltage or current.')
 
         self.add_parameter('output',
@@ -145,7 +145,7 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd=f'{channel}.measure.nplc={{}}',
                            get_cmd=f'{channel}.measure.nplc',
                            get_parser=float,
-                           docstring='Number of power line cyclesm, used'
+                           docstring='Number of power line cycles, used '
                                      'to perform measurements',
                            vals=vals.Numbers(0.001, 25))
         # volt range
@@ -157,9 +157,9 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd='{}.source.rangev={}'.format(channel,
                                                                 '{:.4f}'),
                            unit='V',
-                           docstring='The range used when sourcing voltage'
+                           docstring='The range used when sourcing voltage '
                                      'This affects the range and the precision '
-                                     'of the source. ',
+                                     'of the source.',
                            vals=vals.Enum(*vranges[self.model]))
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
@@ -168,11 +168,11 @@ class KeithleyChannel(InstrumentChannel):
                                                                  '{:.4f}'),
                            unit='V',
                            docstring='The range to perform voltage '
-                                     'measurements in. This affects the range'
-                                     ' and the precision of the measurement. '
-                                     'Note that if you both measure and source '
-                                     'current this will have no effect set '
-                                     '`sourcerange_v` instead',
+                                     'measurements in. This affects the range '
+                                     'and the precision of the measurement. '
+                                     'Note that if you both measure and '
+                                     'source current this will have no effect, '
+                                     'set `sourcerange_v` instead',
                            vals=vals.Enum(*vranges[self.model]))
         # current range
         # needs get after set
@@ -183,9 +183,9 @@ class KeithleyChannel(InstrumentChannel):
                            set_cmd='{}.source.rangei={}'.format(channel,
                                                                 '{:.4f}'),
                            unit='A',
-                           docstring='The range used when sourcing current'
-                                     'This affects the range and the precision '
-                                     'of the source. ',
+                           docstring='The range used when sourcing current '
+                                     'This affects the range and the '
+                                     'precision of the source.',
                            vals=vals.Enum(*iranges[self.model]))
 
         self.add_parameter('measurerange_i',
@@ -194,11 +194,11 @@ class KeithleyChannel(InstrumentChannel):
                            get_parser=float,
                            set_cmd=f'{channel}.measure.rangei={{}}',
                            unit='A',
-                           docstring='The range to perform current measurements'
-                                     'in. This affects the range and the '
-                                     'precision of the measurement. '
+                           docstring='The range to perform current '
+                                     'measurements in. This affects the range '
+                                     'and the precision of the measurement. '
                                      'Note that if you both measure and source '
-                                     'current this will have no effect set '
+                                     'current this will have no effect, set '
                                      '`sourcerange_i` instead',
                            vals=vals.Enum(*iranges[self.model]))
         # Compliance limit
@@ -207,8 +207,8 @@ class KeithleyChannel(InstrumentChannel):
                            get_parser=float,
                            set_cmd=f'{channel}.source.limitv={{}}',
                            docstring='Voltage limit e.g. the maximum voltage '
-                                     'allowed in current mode. If exceeded the'
-                                     ' current will be clipped.',
+                                     'allowed in current mode. If exceeded '
+                                     'the current will be clipped.',
                            vals=vals.Numbers(vlimit_minmax[self.model][0],
                                              vlimit_minmax[self.model][1]),
                            unit='V')
@@ -218,8 +218,8 @@ class KeithleyChannel(InstrumentChannel):
                            get_parser=float,
                            set_cmd=f'{channel}.source.limiti={{}}',
                            docstring='Current limit e.g. the maximum current '
-                                     'allowed in voltage mode. If exceeded the'
-                                     ' voltage will be clipped.',
+                                     'allowed in voltage mode. If exceeded '
+                                     'the voltage will be clipped.',
                            vals=vals.Numbers(ilimit_minmax[self.model][0],
                                              ilimit_minmax[self.model][1]),
                            unit='A')
