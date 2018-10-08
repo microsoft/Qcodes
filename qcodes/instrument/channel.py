@@ -34,12 +34,12 @@ class InstrumentChannel(InstrumentBase):
                  **kwargs) -> None:
         # Initialize base classes of Instrument. We will overwrite what we
         # want to do in the Instrument initializer
-        super().__init__(name=name, **kwargs)
-
+        self._parent = parent
         self.name = "{}_{}".format(parent.name, str(name))
         self.short_name = str(name)
+        super().__init__(name=name, **kwargs)
 
-        self._parent = parent
+
 
     def __repr__(self):
         """Custom repr to give parent information"""
