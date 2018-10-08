@@ -14,7 +14,8 @@ from git import Repo
 
 
 GIT_HASHES: Dict[int, str] = {0: '78d42620fc245a975b5a615ed5e33061baac7846',
-                              1: '056d59627e22fa3ca7aad4c265e9897c343f79cf'}
+                              1: '056d59627e22fa3ca7aad4c265e9897c343f79cf',
+                              2: '8979f3bed18ff3c6d9657977efed0ce3744135c5'}
 
 DB_NAMES: Dict[int, List[str]] = {0: ['']}
 

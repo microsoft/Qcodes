@@ -19,7 +19,8 @@ from qcodes.dataset.sqlite_base import (connect,
                                         get_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
-                                        perform_db_upgrade_1_to_2)
+                                        perform_db_upgrade_1_to_2,
+                                        perform_db_upgrade_2_to_3)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
@@ -149,6 +150,33 @@ def test_perform_actual_upgrade_1_to_2():
 
         c = atomic_transaction(conn, index_query)
         assert len(c.fetchall()) == 2
+
+
+def test_perform_actual_upgrade_2_to_3():
+
+    v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
+
+    if not os.path.exists(v1fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    dbname_old = os.path.join(v2fixpath, 'empty.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+
+        assert get_user_version(conn) == 2
+
+        desc_query = 'SELECT run_description FROM runs'
+
+        with pytest.raises(RuntimeError):
+            atomic_transaction(conn, desc_query)
+
+        perform_db_upgrade_2_to_3(conn)
+
+        assert get_user_version(conn) == 3
+
+        c = atomic_transaction(conn, desc_query)
+        assert len(c.fetchall()) == 0
 
 
 @pytest.mark.usefixtures("empty_temp_db")
