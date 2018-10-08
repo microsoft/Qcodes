@@ -229,7 +229,7 @@ class KeithleyChannel(InstrumentChannel):
 
         self.channel = channel
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset instrument to factory defaults.
         This resets only the relevant channel.
@@ -430,10 +430,10 @@ class Keithley_2600(VisaInstrument):
 
         self.connect_message()
 
-    def _display_settext(self, text):
+    def _display_settext(self, text: str) -> None:
         self.visa_handle.write('display.settext("{}")'.format(text))
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, str]:
         IDN = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         model = model[6:]
@@ -442,26 +442,26 @@ class Keithley_2600(VisaInstrument):
                'serial': serial, 'firmware': firmware}
         return IDN
 
-    def display_clear(self):
+    def display_clear(self) -> None:
         """
         This function clears the display, but also leaves it in user mode
         """
         self.visa_handle.write('display.clear()')
 
-    def display_normal(self):
+    def display_normal(self) -> None:
         """
         Set the display to the default mode
         """
         self.visa_handle.write('display.screen = display.SMUA_SMUB')
 
-    def exit_key(self):
+    def exit_key(self) -> None:
         """
         Get back the normal screen after an error:
         send an EXIT key press event
         """
         self.visa_handle.write('display.sendkey(75)')
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset instrument to factory defaults.
         This resets both channels.
