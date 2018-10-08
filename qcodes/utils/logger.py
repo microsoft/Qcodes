@@ -1,9 +1,11 @@
+import io
 import logging
 import logging.handlers
 
 import os
 from pathlib import Path
 from collections import OrderedDict
+from contextlib import contextmanager
 
 from typing import Optional, List
 
@@ -186,3 +188,61 @@ def time_difference(firsttimes: Series,
         output = pd.Series(timedeltas, index=nsecondtimes.index)
 
     return output
+
+
+@contextmanager
+def log_capture(logger):
+    stashed_handlers = logger.handlers[:]
+    for handler in stashed_handlers:
+        logger.removeHandler(handler)
+
+    log_capture = io.StringIO()
+    string_handler = logging.StreamHandler(log_capture)
+    string_handler.setLevel(logging.DEBUG)
+    logger.addHandler(string_handler)
+    try:
+        yield
+    finally:
+        logger.removeHandler(string_handler)
+        value = log_capture.getvalue()
+        log_capture.close()
+
+        for handler in stashed_handlers:
+            logger.addHandler(handler)
+
+
+class LogCapture():
+
+    """
+    context manager to grab all log messages, optionally
+    from a specific logger
+
+    usage::
+
+        with LogCapture() as logs:
+            code_that_makes_logs(...)
+        log_str = logs.value
+
+    """
+
+    def __init__(self, logger=logging.getLogger()):
+        self.logger = logger
+
+        self.stashed_handlers = self.logger.handlers[:]
+        for handler in self.stashed_handlers:
+            self.logger.removeHandler(handler)
+
+    def __enter__(self):
+        self.log_capture = io.StringIO()
+        self.string_handler = logging.StreamHandler(self.log_capture)
+        self.string_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.string_handler)
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.logger.removeHandler(self.string_handler)
+        self.value = self.log_capture.getvalue()
+        self.log_capture.close()
+
+        for handler in self.stashed_handlers:
+            self.logger.addHandler(handler)
