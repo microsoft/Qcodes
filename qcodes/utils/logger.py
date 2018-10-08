@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 from typing import Optional, List
 
-import pandas as pd
+import pandas
 from pandas.core.series import Series
 
 # TODO: this import here is critical:
@@ -113,9 +113,10 @@ def start_all_logging() -> None:
     start_logger()
     start_command_history_logger()
 
+
 def logfile_to_dataframe(logfile: Optional[str]=None,
                          columns: Optional[List[str]]=None,
-                         separator: Optional[str]=None) -> pd.DataFrame:
+                         separator: Optional[str]=None) -> pandas.DataFrame:
     """
     Return the provided or default logfile as a pandas DataFrame.
 
@@ -144,7 +145,7 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
 
     split_cont = [line.split(separator) for line in raw_cont
                   if line[0].isdigit()]  # avoid tracebacks
-    dataframe = pd.DataFrame(split_cont, columns=columns)
+    dataframe = pandas.DataFrame(split_cont, columns=columns)
 
     return dataframe
 
@@ -182,9 +183,9 @@ def time_difference(firsttimes: Series,
     timedeltas = (t1s.values - t0s.values).astype('float')*1e-9
 
     if use_first_series_labels:
-        output = pd.Series(timedeltas, index=nfirsttimes.index)
+        output = pandas.Series(timedeltas, index=nfirsttimes.index)
     else:
-        output = pd.Series(timedeltas, index=nsecondtimes.index)
+        output = pandas.Series(timedeltas, index=nsecondtimes.index)
 
     return output
 
