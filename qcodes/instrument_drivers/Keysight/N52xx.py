@@ -134,9 +134,8 @@ class PNATrace(InstrumentChannel):
         # Name of parameter (i.e. S11, S21 ...)
         self.add_parameter('trace',
                            label='Trace',
-                           get_parser=self._Sparam,
-                           set_cmd=self._set_Sparam
-                           )
+                           get_cmd=self._Sparam,
+                           set_cmd=self._set_Sparam)
         # Format
         # Note: Currently parameters that return complex values are not
         # supported as there isn't really a good way of saving them into the
@@ -211,7 +210,7 @@ class PNATrace(InstrumentChannel):
             # If the user aborts because (s)he is stuck in the infinite loop
             # mentioned above, provide a hint of what can be wrong.
             msg = "User abort detected. "
-            source = self.parent.trigger_source()
+            source = root_instr.trigger_source()
             if source == "MAN":
                 msg += "The trigger source is manual. Are you sure this is " \
                        "correct? Please set the correct source with the " \
@@ -445,7 +444,14 @@ class PNABase(VisaInstrument):
         """
         Update channel list with active traces and return the new list
         """
-        active_trace = self.active_trace()
+        # Keep track of which trace was active before. This command may fail
+        # if no traces were selected.
+        try:
+            active_trace = self.active_trace()
+        except VisaIOError:
+            active_trace = None
+
+        # Get a list of traces from the instrument and fill in the traces list
         parlist = self.get_trace_catalog().split(",")
         self._traces.clear()
         for trace_name in parlist[::2]:
@@ -453,7 +459,12 @@ class PNABase(VisaInstrument):
             pna_trace = PNATrace(self, "tr{}".format(trace_num),
                                  trace_name, trace_num)
             self._traces.append(pna_trace)
-        self.active_trace(active_trace)
+
+        # Restore the active trace if there was one
+        if active_trace:
+            self.active_trace(active_trace)
+
+        # Return the list of traces on the instrument
         return self._traces
 
     def get_options(self) -> Sequence[str]:
