@@ -1,33 +1,32 @@
-import numpy as np
+"""
+Implementation of the channel object on the N52xx
+"""
 import logging
-from typing import cast, Union, Any
+from typing import cast, Any
+import numpy as np
 import time
 
-from qcodes import InstrumentChannel, Instrument
+from .trace import N52xxTrace
+from ._N52xx_channel_ext import N52xxChannelList, N52xxInstrumentChannel
+from qcodes import Instrument
 from qcodes.utils.validators import Numbers, Enum, MultiType
-
-from qcodes.instrument_drivers.Keysight.N52xx.trace import N52xxTrace
-
 
 logger = logging.getLogger()
 
 
-class N52xxChannel(InstrumentChannel):
-    """
-    Allows operations on specific channels.
-    """
+class N52xxChannel(N52xxInstrumentChannel):
+    discover_command = "SYST:CHAN:CAT?"
+
     def __init__(
-            self, parent: 'Instrument', channel: int,
-            measurement_type: str="S-parameter"
-    ) ->None:
+            self, parent: Instrument, identifier: Any, existence: bool = False,
+            channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
 
-        super().__init__(parent, f"channel{channel}")
+        super().__init__(
+            parent, identifier=f"channel{identifier}", existence=existence,
+            channel_list=channel_list, **kwargs
+        )
 
-        self._channel = channel
-        self._measurement_type = measurement_type
-
-        present_channels = parent.list_existing_channel_numbers()
-        self._present_on_instrument = channel in present_channels
+        self._channel = identifier
 
         self.add_parameter(
             'power',
@@ -156,162 +155,35 @@ class N52xxChannel(InstrumentChannel):
             val_mapping={True: '1', False: '0'}
         )
 
-        self._traces = self._load_traces_from_instrument()
-        self.selected_trace: N52xxTrace = None
+        traces = N52xxChannelList(
+            parent=cast(Instrument, self), name="traces", chan_type=N52xxTrace)
 
-    def _load_traces_from_instrument(self) ->list:
+        self.add_submodule("traces", traces)
+
+    def _create(self) ->None:
         """
-        Interface to access traces on the instrument
-
-        Returns:
-            dict: keys are trace names, values are instance of `N52xxTrace`
+        Create a channel by defining a new measurement on the, as yet,
+        non-existing channel
         """
-        if not self._present_on_instrument:
-            return []
+        self.parent.measurements.add(channel=self._channel, meas_type="S11")
 
-        result = self.ask(f"CALC{self._channel}:PAR:CAT:EXT?")
-        if result == "NO CATALOG":
-            return []
-
-        trace_info = result.strip("\"").split(",")
-        trace_names = trace_info[::2]
-        trace_types = trace_info[1::2]
-
-        parent = cast(Instrument, self.parent)
-
-        # TODO: The type of trace returned should depend on
-        # TODO: self._measurement_type
-        return [N52xxTrace(
-            parent, self, name, trace_type, present_on_instrument=True)
-            for name, trace_type in zip(trace_names, trace_types)
-        ]
+    def _delete(self) ->None:
+        """Delete the channel"""
+        self.write(f"SYST:CHAN:DEL {self._channel}")
 
     @property
-    def traces(self) ->list:
-        """
-        List all traces on the instrument
-        """
-        return [trace for trace in self._traces if trace.present_on_instrument]
-
-    def trace(self, trace_type: str) -> None:
-        """
-        Select the trace of the given type. We assume that there is zero or
-        one trace of the given type. Else an error is raised. If there are no
-        traces of the given type yet, one is created.
-        """
-        traces = [
-            tr for tr in self._traces if tr.measurement_type() == trace_type
-        ]
-
-        if len(traces) == 0:
-            self.add_trace(trace_type)
-        elif len(traces) > 1:
-            raise RuntimeError(f"Multiple traces of type {trace_type} found")
-        else:
-            trace = traces[0]
-            trace.select()
-
-    @property
-    def channel_number(self) -> int:
+    def channel(self) ->int:
+        """Return the channel number"""
         return self._channel
 
-    def add_trace(self, tr_type: str) -> 'N52xxTrace':
-        """
-        Add a trace the instrument.
-
-        Args:
-            tr_type (str): Currently only S-parameter types are supported, which
-                have the format `Sxy` where x and y are integers.
-
-        Returns:
-            trace (N52xxTrace)
-        """
-        name = f"CH{self._channel}_{tr_type}"
-
-        trace = {tr.short_name: tr for tr in self.traces}.get(name, None)
-        if trace is not None:
-            return trace
-
-        parent = cast(Instrument, self.parent)
-        # TODO: The type of trace returned should depend on
-        # TODO: self._measurement_type
-        trace = N52xxTrace(parent, self, name, tr_type)
-        self._traces.append(trace)
-        trace.upload_to_instrument()
-        trace.select()
-        return trace
-
-    def delete_trace(self, index: Union[int, str]) ->None:
-        """
-        Deletes the trace on the instrument
-
-        Args:
-            index (str or int): Either the name of the trace to delete or "all"
-        """
-        if index == "all":
-            for trace in self.traces:
-                trace.delete()
-        else:
-            self.traces[index].delete()
-
-    @property
-    def present_on_instrument(self):
-        return self._present_on_instrument
-
-    def upload_channel_to_instrument(self):
-
-        if self._measurement_type == "S-parameter":
-            type_string = "S11"
-        else:
-            raise ValueError("currently, only S-parameter measurements are "
-                             "supported")
-
-        existing_meas = self.parent.list_existing_measurement_numbers()
-        new_meas = 1
-        while new_meas in existing_meas:
-            new_meas += 1
-
-        # Defining a new measurement on an, as yet, non-existing channel
-        # will create that channel
-        self.parent.write(
-            f"CALC{self._channel}:MEAS{new_meas}:DEF '{type_string}'")
-
-        self._present_on_instrument = True
-
     def select(self) ->None:
-        """
-        A channel must be selected (active) to modify its settings. A channel
-        is selected by selecting a trace on that channel
-        """
+        """We select a channel by select a trace on that channel"""
         if len(self.traces) == 0:
-            raise RuntimeError(
-                "Cannot select channel as no traces have been defined"
-            )
+            raise RuntimeError("Cannot select the channel; no traces defined")
 
         self.traces[0].select()
-        self.parent.selected_channel = self
 
-    def delete(self):
-        self.write(f"SYST:CHAN:DEL {self._channel}")
-        self._present_on_instrument = False
-        if self.parent.selected_channel is self:
-            self.parent.selected_channel = None
-
-    def _assert_instrument_presence(self):
-        if not self._present_on_instrument:
-            raise RuntimeError("The channel is not present (anymore) on the "
-                               "instrument. It was either deleted or never "
-                               "uploaded in the first place")
-
-    def write(self, cmd: str) -> None:
-        self._assert_instrument_presence()
-        super().write(cmd)
-
-    def ask(self, cmd: str) -> str:
-        self._assert_instrument_presence()
-        return super().ask(cmd)
-
-    def run_sweep(self, averages: int =1, blocking: bool=True) ->None:
+    def run_sweep(self, averages: int = 1, blocking: bool = True) -> None:
         """
         Run a sweep
 
@@ -336,7 +208,7 @@ class N52xxChannel(InstrumentChannel):
         if blocking:
             self.block_while_not_hold()
 
-    def block_while_not_hold(self) ->None:
+    def block_while_not_hold(self) -> None:
         """
         Block until a sweep has finished
         """
@@ -347,7 +219,7 @@ class N52xxChannel(InstrumentChannel):
             while self.sweep_mode() != 'HOLD':
                 time.sleep(0.1)
         except KeyboardInterrupt:
-            # If the user aborts because (s)he is stuck in the infinite loop
+            # If the user aborts because we are stuck in the infinite loop
             # mentioned above, provide a hint of what can be wrong.
             msg = "User abort detected. "
             source = self.parent.trigger_source()
@@ -362,7 +234,7 @@ class N52xxChannel(InstrumentChannel):
 
             logger.warning(msg)
 
-    def get_snp_data(self, ports: list=None) ->np.ndarray:
+    def get_snp_data(self, ports: list = None) -> np.ndarray:
         """
         Extract S-parameter data in snp format. The 'n' in 'snp' stands for an
         integer. For instance, s4p stands for scatter parameters
@@ -404,26 +276,8 @@ class N52xxChannel(InstrumentChannel):
         write_string = f'CALC{self._channel}:DATA:SNP:PORT? "{ports_string}"'
         data = np.array(
             self.parent.visa_handle.query_binary_values(
-                write_string,  datatype='f', is_big_endian=True
+                write_string, datatype='f', is_big_endian=True
             )
         )
         self.parent.synchronize()
         return data
-
-    def __repr__(self):
-        return f"<Channel type {self.parent}: {str(self._channel)}>"
-
-    def __getattr__(self, item) ->Any:
-        """
-        """
-        try:
-            return super().__getattr__(item)
-        except AttributeError:
-            if item == "selected_trace":
-                # We have produced an unwanted recursion
-                raise
-
-            if self.selected_trace is None:
-                raise
-
-            return getattr(self.selected_trace, item)

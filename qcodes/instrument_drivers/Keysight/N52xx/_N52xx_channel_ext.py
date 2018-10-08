@@ -186,7 +186,7 @@ class N52xxChannelList(ChannelList):
             self,
             parent: Instrument,
             name: str,
-            chan_type: 'N52xxInstrumentChannel',
+            chan_type: type,
             chan_list: Optional[Sequence['N52xxInstrumentChannel']] = None,
             snapshotable: bool = True,
             multichan_paramclass: type = MultiChannelInstrumentParameter,

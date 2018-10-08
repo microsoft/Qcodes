@@ -1,12 +1,10 @@
-import numpy as np
-from typing import Sequence
 import re
-import logging
+import numpy as np
+from typing import List, Sequence, Any
 
-from qcodes import InstrumentChannel, ArrayParameter, Instrument
+from ._N52xx_channel_ext import N52xxInstrumentChannel
+from qcodes import Instrument, InstrumentChannel, ArrayParameter
 from qcodes.utils.validators import Enum
-
-logger = logging.getLogger()
 
 
 class TraceParameter(ArrayParameter):
@@ -59,11 +57,7 @@ class TraceParameter(ArrayParameter):
         return self._trace._get_raw_data(self._sweep_format)
 
 
-class N52xxTrace(InstrumentChannel):
-    """
-    Allow operations on individual N52xx traces.
-    """
-
+class N52xxTrace(N52xxInstrumentChannel):
     data_formats = {
         "magnitude": {"sweep_format": "MLOG", "unit": "dBm"},
         "log_magnitude": {"sweep_format": "MLOG", "unit": "dBm"},
@@ -75,22 +69,56 @@ class N52xxTrace(InstrumentChannel):
         "imaginary": {"sweep_format": "IMAG", "unit": "-"}
     }
 
-    def __init__(
-            self, parent: 'Instrument', channel: 'InstrumentChannel',
-            name: str, trace_type: str, present_on_instrument: bool=False
-    ) -> None:
+    @classmethod
+    def load_from_instrument(
+            cls, parent, **kwargs) -> List['N52xxInstrumentChannel']:
 
-        self.validate_trace_type(trace_type)
+        obj_list = []
+        for name, trace_type in cls._discover_list_from_instrument(parent):
+            obj = cls(parent, identifier=name, trace_type=trace_type,
+                      existence=True, **kwargs)
+            obj_list.append(obj)
 
-        super().__init__(parent, name)
-        self._channel = channel
-        self._channel_number = channel.channel_number
-        self._trace_type = trace_type
+        return obj_list
+
+    @classmethod
+    def _discover_list_from_instrument(cls, parent, **kwargs) -> List[Any]:
+        result = parent.base_instrument.ask(
+            f"CALC{parent.channel}:PAR:CAT:EXT?")
+        if result == "NO CATALOG":
+            return []
+
+        trace_info = result.strip().strip("\"").split(",")
+        trace_names = trace_info[::2]
+        trace_types = trace_info[1::2]
+        return list(zip(trace_names, trace_types))
+
+    @classmethod
+    def make_unique_id(cls, parent, **kwargs):
+        trace_type = kwargs["trace_type"]
+        name = trace_type
+
+        if (name, trace_type) in cls._discover_list_from_instrument(parent):
+            raise ValueError(
+                f"A trace of type {trace_type} already exists "
+                f"on channel {parent.channel}"
+            )
+
+        return name
+
+    def __init__(self, parent, identifier, existence=False, channel_list=None,
+                 **kwargs):
+
+        super().__init__(parent, identifier, existence=existence,
+                         channel_list=channel_list)
+        self._channel = parent.channel
+        self._trace_type = kwargs["trace_type"]
+        self.validate_trace_type(self._trace_type)
 
         self.add_parameter(
             'format',
-            get_cmd=f'CALC{self._channel_number}:FORM?',
-            set_cmd=f'CALC{self._channel_number}:FORM {{}}',
+            get_cmd=f'CALC{self._channel}:FORM?',
+            set_cmd=f'CALC{self._channel}:FORM {{}}',
             vals=Enum(*[d["sweep_format"] for d in self.data_formats.values()])
         )
 
@@ -104,60 +132,50 @@ class N52xxTrace(InstrumentChannel):
             self.add_parameter(
                 format_name,
                 parameter_class=TraceParameter,
-                channel=self._channel,
+                channel=self.parent,
                 trace=self,
                 label=format_name,
                 **format_args
             )
 
-        self._present_on_instrument = present_on_instrument
-
-    def _change_trace_type(self, new_type) ->None:
-        """
-        Change the measurement type of this trace
-        """
-        self.validate_trace_type(new_type)
-        self.select()
+    def _create(self):
+        # Write via self.parent to avoid a call to self.select. This will cause
+        # the instrument to return an error as the trace does not exist yet
         self.parent.write(
-            f"CALC{self._channel_number}:PAR:MOD:EXT '{new_type}'")
+            f'CALC{self._channel}:PAR:EXT {self.short_name}, '
+            f'{self._trace_type}'
+        )
 
-        self._trace_type = new_type
-
-    @staticmethod
-    def validate_trace_type(trace_type: str) ->None:
-        if re.fullmatch(r"S\d\d", trace_type) is None:
-            raise ValueError(
-                "The trace type needs to be in the form Sxy where "
-                "'x' and 'y' are integers"
-            )
-
-    @property
-    def present_on_instrument(self) ->bool:
-        return self._present_on_instrument
-
-    @property
-    def name_on_instrument(self) ->str:
-        return self.short_name
-
-    def select(self) -> None:
-        if not self._present_on_instrument:
-            raise RuntimeError(
-                "Trace is not present on the instrument (anymore). It was "
-                "either deleted or never uploaded in the first place"
-            )
-        # Warning: writing self.write here will cause an infinite recursion
+    def _delete(self):
         self.parent.write(
-            f"CALC{self._channel_number}:PAR:SEL {self.short_name}")
-
-        self._channel.selected_trace = self
+            f'CALC{self._channel}:PAR:DEL {self.short_name}'
+        )
 
     def write(self, cmd: str) -> None:
         self.select()
         super().write(cmd)
 
-    def ask(self, cmd: str) -> str:
+    def ask(self, cmd: str) ->None:
         self.select()
         return super().ask(cmd)
+
+    def _change_trace_type(self, new_type) -> None:
+        """
+        Change the measurement type of this trace
+        """
+        self.validate_trace_type(new_type)
+        self.write(
+            f"CALC{self._channel}:PAR:MOD:EXT '{new_type}'")
+
+        self._trace_type = new_type
+
+    @staticmethod
+    def validate_trace_type(trace_type: str) -> None:
+        if re.fullmatch(r"S\d\d", trace_type) is None:
+            raise ValueError(
+                f"The trace type format {trace_type}. This needs to be in the "
+                f"form Sxy where 'x' and 'y' are integers"
+            )
 
     def _get_raw_data(self, format_str: str) -> np.ndarray:
         """
@@ -172,37 +190,18 @@ class N52xxTrace(InstrumentChannel):
                 * "REAL"
                 * "IMAG"
         """
-        visa_handle = self.parent.visa_handle
+        visa_handle = self.base_instrument.visa_handle
 
         self.format(format_str)
         self.select()
         data = np.array(visa_handle.query_binary_values(
-            f'CALC{self._channel_number}:DATA? FDATA', datatype='f',
+            f'CALC{self._channel}:DATA? FDATA', datatype='f',
             is_big_endian=True
         ))
 
         return data
 
-    def upload_to_instrument(self) -> None:
-        """
-        upload to instrument
-        """
-        # Do not do self.write; self.select will not work yet as the
-        # instrument has not been uploaded yet
+    def select(self) -> None:
+        # Warning: writing self.write here will cause an infinite recursion
         self.parent.write(
-            f'CALC{self._channel_number}:PAR:EXT {self.short_name}, '
-            f'{self._trace_type}'
-        )
-
-        self._present_on_instrument = True
-
-    def delete(self) -> None:
-        """
-        delete from instrument
-        """
-        self.parent.write(
-            f'CALC{self._channel_number}:PAR:DEL {self.short_name}')
-        self._present_on_instrument = False
-
-    def __repr__(self):
-        return f"<Trace Type: {self._trace_type}>"
+            f"CALC{self._channel}:PAR:SEL {self.short_name}")

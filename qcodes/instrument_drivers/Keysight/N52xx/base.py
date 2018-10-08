@@ -1,15 +1,14 @@
 """
-Base qcodes driver for Agilent/Keysight series PNAs
-http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
+Base instrument module for the Keysight N52xx instrument series
 """
+
 import logging
-from typing import Any
+from typing import Union, Any, Callable
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Enum, Union
-from qcodes.instrument_drivers.Keysight.N52xx.channel import N52xxChannel
-from qcodes.instrument_drivers.Keysight.N52xx.trace import N52xxTrace
-
+from ._N52xx_channel_ext import N52xxChannelList, N52xxInstrumentChannel
+from .channel import N52xxChannel
+from qcodes import Instrument, VisaInstrument, ChannelList, InstrumentChannel
+from qcodes.utils.validators import Enum, Numbers
 
 logger = logging.getLogger()
 
@@ -45,54 +44,60 @@ class N52xxPort(InstrumentChannel):
         )
 
 
-class N52xxWindow(InstrumentChannel):
+class N52xxWindow(N52xxInstrumentChannel):
+    """
+    Windows on the instrument refer to user interface elements on the instrument
+    display which can independently show different measurements
+    """
+    discover_command = "SYST:WIND:CAT?"
 
-    max_trace_count = 24
+    def __init__(
+            self, parent: Instrument, identifier: Any, existence: bool = False,
+            channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
 
-    def __init__(self, parent: 'N52xxBase', window: int):
-        super().__init__(parent, f"window{window}")
+        super().__init__(
+            parent, identifier=f"window{identifier}", existence=existence,
+            channel_list=channel_list, **kwargs
+        )
 
-        self._window = window
-        self._trace_count = 0
+        self._window = identifier
 
-    def load_traces_from_instrument(self) ->None:
-        nums = self.ask(f"DISP:WIND{self._window}:CAT?").strip("\"")
-        if nums != 'EMPTY':
-            self._trace_count = len(nums.split(","))
-
-    def create(self):
+    def _create(self) ->None:
         self.parent.write(f"DISP:WINDow{self._window} ON")
 
-    def delete(self):
+    def _delete(self) ->None:
         self.parent.write(f"DISP:WINDow{self._window} OFF")
 
-    def add_trace(self, trace: N52xxTrace):
-        """
-        Add a trace to the window
-        """
-        trace_number = self._trace_count + 1
 
-        if trace_number > self.max_trace_count:
-            raise RuntimeError("Maximum number of traces in this window "
-                               "exceeded")
+class N52xxMeasurement(N52xxInstrumentChannel):
+    discover_command = "SYST:MEAS:CAT?"
 
-        trace_name = trace.short_name
+    def __init__(
+            self, parent: Instrument, identifier: Any, existence: bool = False,
+            channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
+
+        self._channel = kwargs.pop("channel", None)
+        self._meas_type = kwargs.pop("meas_type", None)
+
+        super().__init__(
+            parent, identifier=f"measurement{identifier}", existence=existence,
+            channel_list=channel_list, **kwargs
+        )
+
+        self._measurement = identifier
+
+    def _create(self) ->None:
         self.parent.write(
-            f"DISP:WIND{self._window}:TRAC{trace_number}:FEED '{trace_name}'")
+            f"CALC{self._channel}:MEAS{self._measurement}:DEF "
+            f"'{self._meas_type}'")
 
-        self._trace_count += 1
-
-    def add_channel(self, channel: N52xxChannel):
-        """
-        Add all traces in the channel to the window
-        """
-        for trace in channel.traces:
-            self.add_trace(trace)
+    def _delete(self) ->None:
+        pass  # TODO: figure this out later
 
 
 class N52xxBase(VisaInstrument):
     """
-    TODO: Proper docstring
+    Base class instrument module for the Keysight N52xx instrument series
     """
 
     min_freq: float = None
@@ -101,10 +106,9 @@ class N52xxBase(VisaInstrument):
     max_power: float = None
     port_count: int = None
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(self, name: str, address: str, **kwargs) ->None:
 
         super().__init__(name, address, terminator='\n', **kwargs)
-        self.active_channel: N52xxChannel = None
 
         self.add_parameter(
             "trigger_source",
@@ -120,7 +124,9 @@ class N52xxBase(VisaInstrument):
             vals=Enum("TILE", "CASC", "OVER", "STAC", "SPL", "QUAD")
         )
 
-        # Ports
+        self.base_instrument = self
+
+        # Add ports
         ports = ChannelList(self, "port", N52xxPort)
         for port_num in range(1, self.port_count + 1):
             port = N52xxPort(
@@ -134,153 +140,66 @@ class N52xxBase(VisaInstrument):
         ports.lock()
         self.add_submodule("port", ports)
 
-        self._channels = self._load_channels_from_instrument()
+        # Windows, measurements and channels are QCoDeS channel types which can
+        # be added and deleted on the instrument. This is unlike ports, which
+        # have a fixed number depending on the instrument type
+        windows = N52xxChannelList(
+            parent=self, name="windows", chan_type=N52xxWindow
+        )
 
-        # We can access the attributes of a selected channel directly on the
-        # instrument class
-        self.selected_channel: N52xxChannel = None
+        measurements = N52xxChannelList(
+            parent=self, name="measurements", chan_type=N52xxMeasurement
+        )
 
-        self._windows = self._load_windows_from_instrument()
-        self.connect_message()
+        channels = N52xxChannelList(
+            parent=self, name="channels", chan_type=N52xxChannel
+        )
 
-    def list_existing_instrument_objects(self, cmd: str) -> list:
-        nums = self.ask(cmd).strip("\"").split(",")
-        return [int(i) for i in nums if i != ""]
+        # Do not lock windows, measurements and channels. We want to be able to
+        # dynamically add the delete from them
+        self.add_submodule("windows", windows)
+        self.add_submodule("measurements", measurements)
+        self.add_submodule("channels", channels)
 
-    def list_existing_measurement_numbers(self) -> list:
-        return self.list_existing_instrument_objects("SYST:MEAS:CAT?")
-
-    def list_existing_channel_numbers(self) -> list:
-        return self.list_existing_instrument_objects("SYST:CHAN:CAT?")
-
-    def list_existing_window_numbers(self) -> list:
-        return self.list_existing_instrument_objects("SYST:WIND:CAT?")
-
-    def _load_windows_from_instrument(self) ->list:
-        windows = []
-        for window_number in self.list_existing_window_numbers():
-            window = N52xxWindow(self, window_number)
-            window.load_traces_from_instrument()
-            windows.append(window)
-        return windows
-
-    def _load_channels_from_instrument(self) ->list:
-        channels = []
-        for channel_number in self.list_existing_channel_numbers():
-            channel = N52xxChannel(self, channel=channel_number)
-            channels.append(channel)
-
-        return channels
-
-    def add_channel(self) ->N52xxChannel:
-        """
-        Channels contain traces. The analyzer can have up to 200 independent
-        channels. Channel settings determine how the trace data is measured .
-        All traces that are assigned to a channel share the same channel
-        settings.
-        """
-        channel_count = len(self._channels)
-        if channel_count >= 200:
-            raise RuntimeError("Cannot add more than 200 channels")
-
-        new_channel_num = 1
-        while new_channel_num in self.list_existing_channel_numbers():
-            new_channel_num += 1
-
-        channel = N52xxChannel(self, channel=new_channel_num)
-        channel.upload_channel_to_instrument()
-        self._channels.append(channel)
-        return channel
-
-    def add_window(self) ->N52xxWindow:
-        """
-        Windows are used for viewing traces. In principle, the analyzer can
-        show an UNLIMITED number of windows on the screen. However, in practice,
-        The SCPI status register can track the status of up to 576 traces. Since
-        each window can have a maximum of 24 traces, the maximum number of
-        windows shall be 24
-        """
-        window_count = len(self._windows)
-        if window_count >= 24:
-            raise RuntimeError("Cannot add more than 24 windows")
-
-        new_window_num = 1
-        while new_window_num in self.list_existing_window_numbers():
-            new_window_num += 1
-
-        window = N52xxWindow(self, new_window_num)
-        window.create()
-        self._windows.append(window)
-        return window
-
-    @property
-    def channel(self) ->list:
-        """
-        Public interface for access to channels
-        """
-        return [c for c in self._channels if c.present_on_instrument]
-
-    @property
-    def window(self) -> list:
-        return self._windows
-
-    def delete_all_traces(self) ->None:
+    def delete_all_traces(self) -> None:
         """
         Delete all traces from the instrument.
         """
         self.write("CALC:PAR:DEL:ALL")
 
-    def synchronize(self):
+    def synchronize(self) ->None:
+        """
+        This is sometimes needed when a parallel SCPI command is called, to
+        ensure we wait until command completion
+        """
         self.ask("*OPC?")
 
-    def reset_instrument(self):
+    def reset_instrument(self) ->None:
+        """
+        Put the instrument back into a sane state
+        """
         self.write("*RST")
         self.write("*CLS")
-        # sane settings
         self.write('FORM REAL,32')
         self.write('FORM:BORD NORM')
         self.trigger_source("IMM")
 
-    def _get_sys_err(self) ->str:
-        err = super().ask_raw('SYST:ERR?')
-        if not err.startswith("+0"):
-            return err
-        return ""
+    def _raw_io(self, cmd: str, io_function: Callable) ->str:
+        """
+        Print error messages from the instrument (if any) if the python
+        logger is in debug mode
+        """
+        ret = io_function(cmd)
 
-    def write_raw(self, cmd):
-        super().write_raw(cmd)
-
-        err = self._get_sys_err()
-        if err != "":
-            logger.warning(f"Command {cmd} produced error {err}")
-
-    def ask_raw(self, cmd):
-        ret = super().ask_raw(cmd)
-        err = self._get_sys_err()
-        if err != "":
-            logger.warning(f"Command {cmd} produced error {err}")
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            err = super().ask_raw('SYST:ERR?')
+            if not err.startswith("+0"):
+                logger.warning(f"Command {cmd} produced error {err}")
 
         return ret
 
-    def __getattr__(self, item) ->Any:
-        """
-        We can access channel attributes directly on the instrument class
-        >>> from qcodes.instrument_drivers.Keysight.N5222B import N5222B
-        >>> pna = N5222B('pna', 'GPIB0::16::INSTR')
-        >>> pna.if_bandwidth(1E3)  # This will add and select a channel
-        >>> # Instead of
-        >>> channel = pna.add_channel()
-        >>> channel.if_bandwidth(1E3)
-        """
-        try:
-            return super().__getattr__(item)
-        except AttributeError:
-            if item in ["add_channel", "selected_channel"]:
-                # We have produced an unwanted recursion
-                raise
+    def write_raw(self, cmd):
+        self._raw_io(cmd, super().write_raw)
 
-            # If no channel has been selected, make one
-            if self.selected_channel is None:
-                self.selected_channel = self.add_channel()
-
-            return getattr(self.selected_channel, item)
+    def ask_raw(self, cmd):
+        self._raw_io(cmd, super().ask_raw)
