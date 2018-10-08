@@ -17,6 +17,9 @@ from .function import Function
 
 log = logging.getLogger(__name__)
 
+class InstrumentLoggerAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        return f"[{self.extra['instrument']}] {msg}", kwargs
 
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
@@ -56,6 +59,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
+        self.log = InstrumentLoggerAdapter(log, {'instrument': self.full_name})
 
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
@@ -183,10 +187,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                log.warning(f"Snapshot: Could not update parameter: "
-                            f"{name} on {self.full_name}")
-                log.info(f"Details for Snapshot of {name}:",
-                         exec_info=True)
+                self.log.warning(f"Snapshot: Could not update parameter: "
+                                 f"{name}")
+                self.log.info(f"Details for Snapshot:",
+                              exec_info=True)
 
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):

@@ -8,6 +8,8 @@ import pyvisa.constants as vi_const
 import pyvisa.resources
 
 from .base import Instrument
+from .base import InstrumentLoggerAdapter
+
 import qcodes.utils.validators as vals
 
 log = logging.getLogger(__name__)
@@ -49,6 +51,7 @@ class VisaInstrument(Instrument):
                  terminator='', device_clear=True, visalib=None, **kwargs):
 
         super().__init__(name, **kwargs)
+        self.log = InstrumentLoggerAdapter(log, {'instrument': self.full_name})
 
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
@@ -79,7 +82,7 @@ class VisaInstrument(Instrument):
         try:
             self.set_address(address)
         except Exception as e:
-            log.info(f"Could not connect to {name} instrument at {address}")
+            self.log.info(f"Could not connect to {name} instrument at {address}")
             self.close()
             raise e
 
@@ -105,17 +108,17 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
 
         if self.visalib:
-            log.info('Opening PyVISA Resource Manager with visalib:'
-                     ' {}'.format(self.visalib))
+            self.log.info('Opening PyVISA Resource Manager with visalib:'
+                          ' {}'.format(self.visalib))
             resource_manager = visa.ResourceManager(self.visalib)
             self.visabackend = self.visalib.split('@')[1]
         else:
-            log.info('Opening PyVISA Resource Manager with default'
-                     ' backend.')
+            self.log.info('Opening PyVISA Resource Manager with default'
+                          ' backend.')
             resource_manager = visa.ResourceManager()
             self.visabackend = 'ni'
 
-        log.info('Opening PyVISA resource at address: {}'.format(address))
+        self.log.info('Opening PyVISA resource at address: {}'.format(address))
         self.visa_handle = resource_manager.open_resource(address)
         self._address = address
 
@@ -137,7 +140,7 @@ class VisaInstrument(Instrument):
         else:
             status_code = self.visa_handle.clear()
             if status_code is not None:
-                log.warning("Cleared visa buffer on "
+                self.log.warning("Cleared visa buffer on "
                             "{} with status code {}".format(self.name,
                                                             status_code))
 
@@ -205,7 +208,7 @@ class VisaInstrument(Instrument):
         Args:
             cmd (str): The command to send to the instrument.
         """
-        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
+        self.log.debug("Writing to instrument {}: {}".format(self.name, cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
@@ -220,9 +223,9 @@ class VisaInstrument(Instrument):
         Returns:
             str: The instrument's response.
         """
-        log.debug("Querying instrument {}: {}".format(self.name, cmd))
+        self.log.debug("Querying instrument {}: {}".format(self.name, cmd))
         response = self.visa_handle.query(cmd)
-        log.debug(f"Got instrument response: {response}")
+        self.log.debug(f"Got instrument response: {response}")
         return response
 
     def snapshot_base(self, update: bool=False,
