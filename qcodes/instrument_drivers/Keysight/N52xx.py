@@ -238,7 +238,7 @@ class PNATrace(InstrumentChannel):
         self.root_instrument.active_trace(self.trace_num)
         return super().ask(cmd)
 
-    def _Sparam(self, paramspec: str) -> str:
+    def _Sparam(self) -> str:
         """
         Extrace S_parameter from returned PNA format
         """
