@@ -83,21 +83,26 @@ def start_logger() -> None:
     log.info("QCoDes logger setup completed")
 
 
-def start_command_history_logger() -> None:
+def start_command_history_logger(log_dir: Optional[str]=None) -> None:
     """
     logging of the history of the interactive command shell
     works only with ipython
+
+    Args:
+        log_dir: directory where log shall be stored to. If left out defaults
+            to '~/.qcodes/logs/command_history.log'
     """
     from IPython import get_ipython
     ipython = get_ipython()
     if ipython is None:
         log.warn("Command history can't be saved outside of IPython/jupyter")
         return
-    ipython.magic("%logstop")
-    filename = os.path.join(_get_qcodes_user_path(),
-                            LOGGING_DIR,
-                            HISTORY_LOG_NAME)
+
+    log_dir = log_dir or os.path.join(_get_qcodes_user_path(), LOGGING_DIR)
+    filename = os.path.join(log_dir, HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+    ipython.magic("%logstop")
     ipython.magic("%logstart -t -o {} {}".format(filename, "append"))
     log.info("Started logging IPython history")
 
@@ -194,10 +199,9 @@ def log_capture(logger):
     string_handler.setLevel(logging.DEBUG)
     logger.addHandler(string_handler)
     try:
-        yield
+        yield log_capture
     finally:
         logger.removeHandler(string_handler)
-        value = log_capture.getvalue()
         log_capture.close()
 
         for handler in stashed_handlers:
