@@ -8,6 +8,8 @@ import pytest
 
 import qcodes as qc
 from qcodes import new_experiment, new_data_set, ParamSpec
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 # pylint: disable=unused-import
@@ -15,6 +17,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
 from qcodes.dataset.sqlite_base import (connect,
+                                        one,
                                         update_GUIDs,
                                         get_user_version,
                                         atomic_transaction,
@@ -190,6 +193,20 @@ def test_perform_actual_upgrade_2_to_3():
 
         c = atomic_transaction(conn, desc_query)
         assert len(c.fetchall()) == 10
+
+        # retrieve the yaml string and recreate the object
+
+        sql = f"""
+              SELECT run_description
+              FROM runs
+              WHERE run_id == 1
+              """
+        c = atomic_transaction(conn, sql)
+        yaml_str = one(c, 'run_description')
+
+        desc = RunDescriber.from_yaml(yaml_str)
+        idp = desc.interdeps
+        assert isinstance(idp, InterDependencies)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
