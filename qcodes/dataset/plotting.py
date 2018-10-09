@@ -64,6 +64,11 @@ def plot_by_id(run_id: int,
     The plot has a title that comprises run id, experiment name, and sample
     name.
 
+    ``**kwargs`` are passed to matplotlib's relevant plotting functions
+    By default the data in any vector plot will be rasterized
+    for scatter plots and heatmaps if more that 5000 points are supplied.
+    This can be overridden by supplying the `rasterized` kwarg.
+
     Args:
         run_id:
             ID of the run to plot
