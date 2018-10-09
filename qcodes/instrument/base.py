@@ -3,8 +3,10 @@ import logging
 import time
 import warnings
 import weakref
+from contextlib import suppress
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
+
 
 import numpy as np
 if TYPE_CHECKING:
@@ -19,7 +21,20 @@ log = logging.getLogger(__name__)
 
 class InstrumentLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
+        kwargs['extra'] = self.extra
         return f"[{self.extra['instrument']}] {msg}", kwargs
+
+class InstrumentFilter(logging.Filter):
+    def __init__(self, instruments):
+        if isinstance(instruments, InstrumentBase):
+            instruments = (instruments,)
+        self.names = [instrument.full_name for instrument in instruments]
+
+    def filter(self, record):
+        try:
+            return record.instrument in self.names
+        except AttributeError:
+            return False
 
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
