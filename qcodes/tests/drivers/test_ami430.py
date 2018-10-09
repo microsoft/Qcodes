@@ -271,7 +271,7 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
         if "CONF:FIELD:TARG" not in msg:
             continue
 
-        g = re.search("(.): CONF:FIELD:TARG", msg)
+        g = re.search("\[(.)\] Writing: CONF:FIELD:TARG", msg)
         name = g.groups()[0]
         order.append(name)
 
