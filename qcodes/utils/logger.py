@@ -111,7 +111,7 @@ def start_logger() -> None:
 def start_command_history_logger(log_dir: Optional[str]=None) -> None:
     """
     logging of the history of the interactive command shell
-    works only with ipython
+    works only with ipython. Call function again to set new path to log file.
 
     Args:
         log_dir: directory where log shall be stored to. If left out defaults
@@ -133,8 +133,41 @@ def start_command_history_logger(log_dir: Optional[str]=None) -> None:
 
 
 def start_all_logging() -> None:
+    """
+    Starts python log module logging and ipython comand history logging.
+    """
     start_logger()
     start_command_history_logger()
+
+
+def log_to_dataframe(log: Optional[str]=None,
+                     columns: Optional[List[str]]=None,
+                     separator: Optional[str]=None) -> pandas.DataFrame:
+    """
+    Return the provided or default log string as a pandas DataFrame.
+
+    Unless `qcodes.utils.logger.LOGGING_SEPARATOR` or
+    `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
+    for the columns and separtor arguments is encouraged.
+
+    Args:
+        log: log content
+        columns: column headers for the returned dataframe.
+        separator: seperator of the logfile to seperate the columns.
+
+    Retruns:
+        Pandas DataFrame containing the logfile content.
+    """
+    separator = separator or LOGGING_SEPARATOR
+    columns = columns or list(FORMAT_STRING_DICT.keys())
+    # note: if we used commas as separators, pandas read_csv
+    # could be faster than this string comprehension
+
+    split_cont = [line.split(separator) for line in log.splitlines()
+                  if line[0].isdigit()]  # avoid tracebacks
+    dataframe = pandas.DataFrame(split_cont, columns=columns)
+
+    return dataframe
 
 
 def logfile_to_dataframe(logfile: Optional[str]=None,
@@ -155,22 +188,11 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
     Retruns:
         Pandas DataFrame containing the logfile content.
     """
-
-    separator = separator or LOGGING_SEPARATOR
-    columns = columns or list(FORMAT_STRING_DICT.keys())
     logfile = logfile or get_log_file_name()
-
     with open(logfile) as f:
         raw_cont = f.readlines()
 
-    # note: if we used commas as separators, pandas read_csv
-    # could be faster than this string comprehension
-
-    split_cont = [line.split(separator) for line in raw_cont
-                  if line[0].isdigit()]  # avoid tracebacks
-    dataframe = pandas.DataFrame(split_cont, columns=columns)
-
-    return dataframe
+    return log_to_dataframe(raw_cont, columns, separator)
 
 
 def time_difference(firsttimes: Series,
