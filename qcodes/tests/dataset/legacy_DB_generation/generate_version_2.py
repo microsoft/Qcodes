@@ -47,12 +47,12 @@ def generate_DB_file_with_some_runs():
     if os.path.exists(path):
         os.remove(path)
 
-    from qcodes.dataset.sqlite_base import connect, new_experiment
+    from qcodes.dataset.sqlite_base import connect
     from qcodes.dataset.measurements import Measurement
     from qcodes.dataset.experiment_container import Experiment
     from qcodes import Parameter
 
-    conn = connect(path)
+    connect(path)
     exp = Experiment(path)
     exp._new(name='experiment_1', sample_name='no_sample_1')
 
