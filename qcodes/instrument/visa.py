@@ -83,7 +83,7 @@ class VisaInstrument(Instrument):
         try:
             self.set_address(address)
         except Exception as e:
-            self.log.info(f"Could not connect to {name} instrument at {address}")
+            self.log.info(f"Could not connect at {address}")
             self.close()
             raise e
 
@@ -141,9 +141,8 @@ class VisaInstrument(Instrument):
         else:
             status_code = self.visa_handle.clear()
             if status_code is not None:
-                self.log.warning("Cleared visa buffer on "
-                            "{} with status code {}".format(self.name,
-                                                            status_code))
+                self.log.warning(
+                    f"Cleared visa buffer with status code {status_code}")
 
     def set_terminator(self, terminator):
         r"""
@@ -209,7 +208,7 @@ class VisaInstrument(Instrument):
         Args:
             cmd (str): The command to send to the instrument.
         """
-        self.log.debug("Writing to instrument {}: {}".format(self.name, cmd))
+        self.log.debug(f"Writing: {cmd}")
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
@@ -224,9 +223,9 @@ class VisaInstrument(Instrument):
         Returns:
             str: The instrument's response.
         """
-        self.log.debug("Querying instrument {}: {}".format(self.name, cmd))
+        self.log.debug(f"Querying: {cmd}")
         response = self.visa_handle.query(cmd)
-        self.log.debug(f"Got instrument response: {response}")
+        self.log.debug(f"Response: {response}")
         return response
 
     def snapshot_base(self, update: bool=False,
