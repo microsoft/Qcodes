@@ -61,10 +61,13 @@
                         "DEBUG"
                     ]
                 },
-                "module_logger_levels":{
+                "logger_levels":{
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    },
+                    "default":{
+                        "pyvisa": "INFO"
                     }
                 }
             },

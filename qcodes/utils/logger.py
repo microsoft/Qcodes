@@ -106,6 +106,10 @@ def start_logger() -> None:
     logging.basicConfig(handlers=[console_handler, file_handler],
                         level=logging.DEBUG)
 
+    for name, level in qc.config.logger.logger_levels.items():
+        logging.getLogger(name).setLevel(level)
+
+
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
 
