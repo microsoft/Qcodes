@@ -1,6 +1,6 @@
 import socket
 import select
-import msvcrt
+from msvcrt import kbhit, getch  # type: ignore
 import logging
 
 from qcodes.instrument_drivers.QuantumDesign.\
@@ -34,11 +34,11 @@ cmd_buffer: str = ''
 while keep_going:
     # Get the list sockets which are ready to be read through select
     # 1 second timeout so that we can process keyboard events
-    read_sockets = select.select(socket_dict.keys(), [], [], 1)[0]
+    read_sockets = select.select(list(socket_dict.keys()), [], [], 1)[0]
 
     # Keyboard
-    if msvcrt.kbhit():
-        if ord(msvcrt.getch()) == 27:
+    if kbhit():
+        if ord(getch()) == 27:
             print('Server exiting')
             break
 
