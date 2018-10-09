@@ -32,6 +32,29 @@ FORMAT_STRING_DICT = OrderedDict([
 FORMAT_STRING_ITEMS = [f'%({name}){fmt}'
                        for name, fmt in FORMAT_STRING_DICT.items()]
 
+# The handlers of the root logger that get set up by `start_logger` are globals
+# for this modules scope, as it is intended to only use a single file and
+# console hander.
+console_handler: Optional[logging.Handler] = None
+file_handler: Optional[logging.Handler] = None
+
+def get_console_handler() -> Optional[logging.Handler]:
+    """
+    Get handler that prints messages from the root logger to the console.
+    Returns `None` if `start_logger` had not been called.
+    """
+    global console_handler
+    return console_handler
+
+def get_file_handler() -> Optional[logging.Handler]:
+    """
+    Get handler that streams messages from the root logger to the qcdoes log
+    file. To setup call `start_logger`.
+    Returns `None` if `start_logger` had not been called
+    """
+    global file_handler
+    return file_handler
+
 def _get_qcodes_user_path() -> str:
     """
     Get '~/.qcodes' path or if defined the path defined in the QCODES_USER_PATH
@@ -59,6 +82,8 @@ def start_logger() -> None:
     All logging messages on or above consolelogginglevel
     will be written to stderr.
     """
+    global console_handler
+    global file_handler
 
     format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
     formatter = logging.Formatter(format_string)
