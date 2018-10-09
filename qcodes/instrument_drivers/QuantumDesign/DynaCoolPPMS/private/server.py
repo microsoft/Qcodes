@@ -66,11 +66,15 @@ while keep_going:
             command = cmd_buffer[:idx].upper().strip(' ')
             cmd_buffer = cmd_buffer[idx+1:]
             if command == 'EXIT':
-                sock.send(bytes(f'Server exiting. {LINE_TERM}', 'utf-8'))
+                # send an error code, since the driver expects that for all
+                # commands
+                sock.send(b'0')
                 print('Server exiting.')
                 keep_going = False
             elif command == 'CLOSE':
-                sock.send(bytes(f'Closing connection. {LINE_TERM}', 'utf-8'))
+                # send an error code, since the driver expects that for all
+                # commands
+                sock.send(b'0')
                 print('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
                 log.info('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
                 socket_dict.pop(sock, None)
