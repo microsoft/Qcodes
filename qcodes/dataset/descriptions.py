@@ -37,15 +37,15 @@ class RunDescriber:
 
         return rundesc
 
-    def to_yaml(self):
+    def to_yaml(self) -> str:
         """
         Output the run description as a yaml string
         """
         yaml = YAML()
-        stream = io.StringIO()
-        yaml.dump(self.serialize(), stream=stream)
-        output = stream.getvalue()
-        stream.close()
+        with io.StringIO() as stream:
+            yaml.dump(self.serialize(), stream=stream)
+            output = stream.getvalue()
+
         return output
 
     @classmethod
