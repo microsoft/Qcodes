@@ -1,19 +1,11 @@
 from typing import Dict, Any
 
-from ruamel.yaml import YAML
-
 from qcodes.dataset.param_spec import ParamSpec
 
 
 class InterDependencies:
     """
-    An object holding the same information as the yaml file plus
-    methods for validation and extraction of data
-
-    My idea is to have the helper functions for plotting (get_layout, get_XX)
-    not call the SQLite database but this object instead. That is to say,
-    the dependencies text will be read out, but all further processing happens
-    via this object
+    Object containing the ParamSpecs of a given run
     """
 
     def __init__(self, *paramspecs: ParamSpec) -> None:
@@ -54,15 +46,3 @@ class InterDependencies:
         paramspecs = [ParamSpec.deserialize(sps) for sps in ser['paramspecs']]
         idp = cls(*paramspecs)
         return idp
-
-
-def yaml_to_interdeps(yaml_str: str) -> InterDependencies:
-    yaml = YAML()
-    par_dict_list = yaml.load(yaml_str)['Parameters']
-
-    ser_ps = tuple({a: b for (a, b) in par_dict.items()}
-                   for par_dict in par_dict_list)
-
-    paramspecs = tuple(ParamSpec.deserialize(sps) for sps in ser_ps)
-
-    return InterDependencies(*paramspecs)
