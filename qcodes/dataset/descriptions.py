@@ -7,6 +7,14 @@ from qcodes.dataset.dependencies import InterDependencies
 
 
 class RunDescriber:
+    """
+    The object that holds the description of each run in the database. This
+    object serialises itself to a string and is found under the run_description
+    column in the runs table
+
+    Extension of this object is planned for the future, for now it holds the
+    parameter interdependencies
+    """
 
     def __init__(self, interdeps: InterDependencies) -> None:
         self.interdeps = interdeps
