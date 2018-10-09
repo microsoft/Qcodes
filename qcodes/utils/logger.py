@@ -7,12 +7,16 @@ from pathlib import Path
 from collections import OrderedDict
 from contextlib import contextmanager
 
-from typing import Optional, List
+from typing import Optional, List, Union, Sequence
 
 import pandas
 from pandas.core.series import Series
 
 import qcodes as qc
+from qcodes.instrument.base import InstrumentFilter, InstrumentBase
+
+LevelType = Union[int, str]
+
 
 log = logging.getLogger(__name__)
 
@@ -236,23 +240,70 @@ def time_difference(firsttimes: Series,
 
 
 @contextmanager
-def log_capture(logger):
-    stashed_handlers = logger.handlers[:]
-    for handler in stashed_handlers:
-        logger.removeHandler(handler)
+def handler_level(level: LevelType,
+                  handlers: logging.Handler):
+    if isinstance(handlers, logging.Handler):
+        handlers = (handlers,)
+    original_levels = [handler.level for handler in handlers]
+    for handler in handlers: 
+        handler.setLevel(level)
+    yield
+    for handler, original_level in zip(handlers, original_levels): 
+        handler.setLevel(original_level)
 
+@contextmanager
+def console_level(level: LevelType):
+    global console_handler
+    with handler_level(level, handlers=console_handler):
+        yield
+
+
+@contextmanager
+def filter_instruments(instruments: Union[InstrumentBase,
+                                          Sequence[InstrumentBase]],
+                       handlers: Optional[
+                           Union[logging.Handler,
+                                 Sequence[logging.Handler]]]=None,
+                       level: Optional[LevelType]=None):
+    if handlers is None:
+        global console_handler
+        handlers = (console_handler,)
+    if isinstance(handlers, logging.Handler):
+        handlers = (handlers,)
+
+    instrument_filter = InstrumentFilter(instruments)
+    for handler in handlers:
+        handler.addFilter(instrument_filter)
+    if level is not None:
+        with handler_level(level, handlers):
+            yield
+    else:
+        yield
+    for handler in handlers:
+        handler.removeFilter(instrument_filter)
+
+
+@contextmanager
+def capture_dataframe(level: LevelType='Debug',
+                      logger: logging.Logger=None):
+
+    # get root logger if none is specified.
+    logger = logger or logging.getLogger()
     log_capture = io.StringIO()
     string_handler = logging.StreamHandler(log_capture)
-    string_handler.setLevel(logging.DEBUG)
-    logger.addHandler(string_handler)
-    try:
-        yield log_capture
-    finally:
-        logger.removeHandler(string_handler)
-        log_capture.close()
+    string_handler.setLevel(level)
+    format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
+    formatter = logging.Formatter(format_string)
+    string_handler.setFormatter(formatter)
 
-        for handler in stashed_handlers:
-            logger.addHandler(handler)
+    logger.addHandler(string_handler)
+
+    yield string_handler, lambda: log_to_dataframe(log_capture.getvalue())
+
+    logger.removeHandler(string_handler)
+    log_capture.close()
+
+
 
 
 class LogCapture():
