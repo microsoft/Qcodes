@@ -176,6 +176,7 @@ def plot_by_id(run_id: int,
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
 
             plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
+
             plot_func = how_to_plot[plottype]
 
             if colorbar is None and 'cmap' not in kwargs:
@@ -243,7 +244,7 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         colorbar: matplotlib.colorbar.Colorbar=None,
                         **kwargs) -> AxesTuple:
     """
-    Make a 2D scatterplot of the data. *kwargs are passed to matplotlib's
+    Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
     scatter used for the plotting. By default the data will be rasterized
     in any vector plot if more that 5000 points are supplied. This can be
     overridden by supplying the `rasterized` kwarg.
@@ -298,7 +299,7 @@ def plot_on_a_plain_grid(x: np.ndarray,
     way, but data must belong together such that z[n] has x[n] and
     y[n] as setpoints.  The setpoints need not be equidistantly
     spaced, but linear interpolation is used to find the edges of the
-    plotted squares. *kwargs are passed to matplotlib's pcolormesh used
+    plotted squares. ``**kwargs`` are passed to matplotlib's pcolormesh used
     for the plotting. By default the data in any vector plot will be rasterized
     if more that 5000 points are supplied. This can be overridden
     by supplying the `rasterized` kwarg.
