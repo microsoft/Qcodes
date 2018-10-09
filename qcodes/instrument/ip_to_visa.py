@@ -1,6 +1,10 @@
-from qcodes.instrument.base import Instrument
+import logging
+from qcodes.instrument.base import Instrument, InstrumentLoggerAdapter
 from qcodes.instrument.ip import IPInstrument
-from qcodes.instrument.visa import VisaInstrument
+# previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument
+# was logging in the name of the `VisaInstrument`. To maintain that behaviour
+# import the `instrument.visa.log` and log to this one.
+from qcodes.instrument.visa import VisaInstrument, log
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
 from qcodes.utils.helpers import strip_attrs
 import qcodes.utils.validators as vals
@@ -12,6 +16,8 @@ import qcodes.utils.validators as vals
 
 # At the end of the module, a 'zoo' of was-ip-is-now-visa drivers can be found.
 # Such a driver is just a two-line class definition.
+
+
 
 
 class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
@@ -39,6 +45,7 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
         ipkwargs = ['write_confirmation']
         newkwargs = {kw: val for (kw, val) in kwargs.items()
                      if kw not in ipkwargs}
+
 
         Instrument.__init__(self, name, metadata=metadata, **newkwargs)
 
