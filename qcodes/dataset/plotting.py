@@ -262,7 +262,7 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     if 'rasterized' in kwargs.keys():
         rasterized = kwargs.pop('rasterized')
     else:
-        rasterized = len(z) > 5000
+        rasterized = len(z) > qc.config.plotting.rasterize_threshold
 
     z_is_string_valued = isinstance(z[0], str)
 
@@ -331,7 +331,8 @@ def plot_on_a_plain_grid(x: np.ndarray,
     if 'rasterized' in kwargs.keys():
         rasterized = kwargs.pop('rasterized')
     else:
-        rasterized = len(x_edges) * len(y_edges) > 5000
+        rasterized = len(x_edges) * len(y_edges) \
+                      > qc.config.plotting.rasterize_threshold
 
     colormesh = ax.pcolormesh(x_edges, y_edges,
                               np.ma.masked_invalid(z_to_plot),

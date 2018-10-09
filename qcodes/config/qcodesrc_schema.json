@@ -90,6 +90,11 @@
                     "type": "string",
                     "default": "viridis"
                 },
+                "rasterize_threshold":{
+                    "description": "Scatter plots and heatmaps with more than this number of points will have their data rasterized by default when saved in vector format",
+                    "type": "integer",
+                    "default": 5000
+                },
                 "auto_color_scale":{
                     "type" : "object",
                     "description": "Control of a auto color scale, that scales such that potential outliers of the data will not be included in the min/max range.",
