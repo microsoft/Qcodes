@@ -1,7 +1,7 @@
 from qcodes.instrument.visa import VisaInstrument
 from functools import partial
 import logging
-from typing import Dict, Optional, Union, cast, Any
+from typing import Dict, Optional, Union, cast, Any, List
 import warnings
 
 from visa import VisaIOError
@@ -220,6 +220,7 @@ class DynaCool(VisaInstrument):
         The combined set function for the three field parameters,
         field_setpoint, field_rate, and field_approach
         """
+        vals: List[Union[int, float]]
         vals = list(self.parameters[p].raw_value for p in self.field_params)
         vals[self.field_params.index(param)] = value
 
@@ -242,6 +243,7 @@ class DynaCool(VisaInstrument):
         The setter function for the temperature parameters. All three are set
         with the same call to the instrument API
         """
+        vals: List[Union[int, float]]
         vals = list(self.parameters[par].raw_value for par in self.temp_params)
         vals[self.temp_params.index(param)] = value
 
