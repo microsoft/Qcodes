@@ -1,5 +1,7 @@
 import pytest
 
+from ruamel_yaml import YAML
+
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -79,6 +81,8 @@ def test_serialization_and_back(some_paramspecs):
 
 def test_yaml_creation_and_loading(some_paramspecs):
 
+    yaml = YAML()
+
     for group in some_paramspecs.values():
         paramspecs = group.values()
         idp = InterDependencies(*paramspecs)
@@ -86,6 +90,8 @@ def test_yaml_creation_and_loading(some_paramspecs):
 
         yaml_str = desc.to_yaml()
         assert isinstance(yaml_str, str)
+        ydict = dict(yaml.load(yaml_str))
+        assert list(ydict.keys()) == ['Parameters']
 
         new_desc = RunDescriber.from_yaml(yaml_str)
         assert new_desc == desc
