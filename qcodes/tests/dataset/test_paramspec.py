@@ -1,6 +1,5 @@
 import pytest
 from numbers import Number
-from typing import List
 
 from numpy import ndarray
 from hypothesis import given
@@ -81,6 +80,7 @@ def test_repr(name):
 
 alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
 
+
 @given(
     name1=hst.text(min_size=4, alphabet=alphabet),
     name2=hst.text(min_size=4, alphabet=alphabet),
@@ -119,7 +119,6 @@ def test_add_inferred_from(name1, name2, name3):
 def test_copy(name1, name2, name3):
 
     ps_indep = ParamSpec(name1, "numeric")
-    ps_indep_2 = ParamSpec(name2, "numeric")
     ps = ParamSpec(name3, "numeric", depends_on=[ps_indep])
     ps_copy = ps.copy()
 
