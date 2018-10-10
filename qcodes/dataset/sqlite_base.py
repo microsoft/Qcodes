@@ -4,7 +4,8 @@ import logging
 import sqlite3
 import time
 import io
-from typing import Any, List, Optional, Tuple, Union, Dict, cast, Callable
+from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
+                    Sequence)
 import itertools
 from functools import wraps
 
@@ -424,6 +425,90 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
 
+def _2to3_get_result_table(conn: SomeConnection, run_id: int) -> str:
+    rst_query = ("SELECT result_table_name FROM runs "
+                f"WHERE run_id=?")
+    cur = conn.cursor()
+    cur.execute(rst_query, (run_id,))
+    return one(cur, 'result_table_name')
+
+
+def _2to3_get_layout_ids(conn: SomeConnection, run_id: int) -> Sequence[int]:
+    layout_id_query = f"""
+                            SELECT layout_id
+                            FROM layouts
+                            WHERE run_id == ?
+                            """
+    cur = conn.cursor()
+    cur.execute(layout_id_query, (run_id,))
+    return tuple(l[0] for l in many_many(cur, 'layout_id'))
+
+
+def _2to3_get_indeps(conn: SomeConnection,
+                     l_ids: Sequence[int]) -> Sequence[int]:
+    idps_query = f"""
+                    SELECT independent
+                    FROM dependencies
+                    WHERE independent in {l_ids}
+                    """
+    c = transaction(conn, idps_query)
+    return tuple(l[0] for l in many_many(c, 'independent'))
+
+
+def _2to3_get_paramspecs(conn: SomeConnection, deps: Sequence[int],
+                         indeps: Sequence[int],
+                         result_table_name: str) -> Dict[int, ParamSpec]:
+
+    paramspecs: Dict[int, ParamSpec] = {}
+
+    layout_query = """
+                   SELECT parameter, label, unit, inferred_from
+                   FROM layouts
+                   WHERE layout_id == ?
+                   """
+    layout_ids = list(indeps) + list(deps)
+
+    for layout_id in layout_ids:
+        cur = conn.cursor()
+        cur.execute(layout_query, (layout_id,))
+        res = many(cur, 'parameter', 'label', 'unit', 'inferred_from')
+        (name, label, unit, inferred_from) = res
+        # get the data type
+        sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
+        c = transaction(conn, sql)
+        for row in c.fetchall():
+            if row['name'] == name:
+                paramtype = row['type']
+                break
+
+        if layout_id in indeps:
+            paramspec = ParamSpec(name=name, paramtype=paramtype,
+                                  label=label, unit=unit,
+                                  inferred_from=inferred_from)
+            paramspecs[layout_id] = paramspec
+
+        elif layout_id in deps:
+
+            sp_query = f"""
+                    SELECT independent
+                    FROM dependencies
+                    WHERE dependent == {layout_id}
+                    ORDER BY axis_num ASC
+                    """
+            c = transaction(conn, sp_query)
+            setpoints = [l[0] for l in many_many(c, 'independent')]
+            depends_on = [paramspecs[idp].name for idp in setpoints]
+
+            paramspec = ParamSpec(name=name,
+                                  paramtype=paramtype,
+                                  label=label, unit=unit,
+                                  depends_on=depends_on,
+                                  inferred_from=inferred_from)
+            paramspecs[layout_id] = paramspec
+
+    return paramspecs
+
+
 @upgrader
 def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     """
@@ -448,75 +533,13 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
 
         for run_id in range(1, no_of_runs+1):
 
-            paramspecs: Dict[int, ParamSpec] = {}
+            result_table_name = _2to3_get_result_table(conn, run_id)
+            layout_ids = _2to3_get_layout_ids(conn, run_id)
+            independents = _2to3_get_indeps(conn, layout_ids)
+            dependents = tuple(set(layout_ids).difference(set(independents)))
 
-            rst_query = ("SELECT result_table_name FROM runs "
-                         f"WHERE run_id=?")
-            cur = conn.cursor()
-            cur.execute(rst_query, (run_id,))
-            result_table_name = one(cur, 'result_table_name')
-
-            layout_id_query = f"""
-                            SELECT layout_id
-                            FROM layouts
-                            WHERE run_id == ?
-                            """
-            cur = conn.cursor()
-            cur.execute(layout_id_query, (run_id,))
-            layout_ids = tuple(l[0] for l in many_many(cur, 'layout_id'))
-
-            idps_query = f"""
-                        SELECT independent
-                        FROM dependencies
-                        WHERE independent in {layout_ids}
-                        """
-            c = transaction(conn, idps_query)
-            independents = [l[0] for l in many_many(c, 'independent')]
-            dependents = set(layout_ids).difference(set(independents))
-
-            layout_query_r = """
-                            SELECT parameter, label, unit, inferred_from
-                            FROM layouts
-                            WHERE layout_id == {}
-                            """
-
-            for layout_id in layout_ids:
-                layout_query = layout_query_r.format(layout_id)
-                c = transaction(conn, layout_query)
-                res = many(c, 'parameter', 'label', 'unit', 'inferred_from')
-                (name, label, unit, inferred_from) = res
-                # get the data type
-                sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
-                c = transaction(conn, sql)
-                for row in c.fetchall():
-                    if row['name'] == name:
-                        paramtype = row['type']
-                        break
-
-                if layout_id in independents:
-                    paramspec = ParamSpec(name=name, paramtype=paramtype,
-                                          label=label, unit=unit,
-                                          inferred_from=inferred_from)
-                    paramspecs[layout_id] = paramspec
-
-                elif layout_id in dependents:
-
-                    sp_query = f"""
-                            SELECT independent
-                            FROM dependencies
-                            WHERE dependent == {layout_id}
-                            ORDER BY axis_num ASC
-                            """
-                    c = transaction(conn, sp_query)
-                    setpoints = [l[0] for l in many_many(c, 'independent')]
-                    depends_on = [paramspecs[idp].name for idp in setpoints]
-
-                    paramspec = ParamSpec(name=name,
-                                          paramtype=paramtype,
-                                          label=label, unit=unit,
-                                          depends_on=depends_on,
-                                          inferred_from=inferred_from)
-                    paramspecs[layout_id] = paramspec
+            paramspecs = _2to3_get_paramspecs(conn, dependents,
+                                              independents, result_table_name)
 
             interdeps = InterDependencies(*paramspecs.values())
             desc = RunDescriber(interdeps=interdeps)
