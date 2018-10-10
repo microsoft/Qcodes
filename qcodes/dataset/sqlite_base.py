@@ -343,7 +343,8 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
           'newest version'
     """
 
-    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2]
+    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
+                       perform_db_upgrade_2_to_3]
     newest_version = len(upgrade_actions)
     version = newest_version if version == -1 else version
 
