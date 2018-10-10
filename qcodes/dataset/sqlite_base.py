@@ -554,7 +554,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             cur = conn.cursor()
             cur.execute(sql, (yaml_str, run_id))
 
-            log.info(f"Upgrade in transition, run number {run_id}: OK")
+            log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 
 def transaction(conn: SomeConnection,
