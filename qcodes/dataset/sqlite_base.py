@@ -357,6 +357,8 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
 def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 0 to version 1
+
+    Add a GUID column to the runs table and assign guids for all existing runs
     """
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
@@ -396,6 +398,8 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
 def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 1 to version 2
+
+    Add two indeces on the runs table, one for exp_id and one for GUID
     """
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
@@ -424,14 +428,18 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
 def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 2 to version 3
+
+    Insert a new column, run_description, to the runs table and fill it out
+    for exisitng runs with information retrieved from the layouts and
+    dependencies tables represented as the to_yaml output of a RunDescriber
+    object
     """
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
     no_of_runs = no_of_runs or 0
 
-    # Insert a new column, "run_description", and fill it out with information
-    # retrieved from the layouts and dependencies tables
+
     # If one run fails, we want the whole upgrade to role back, hence the
     # entire upgrade is one atomic transaction
 
