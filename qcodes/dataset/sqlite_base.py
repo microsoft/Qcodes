@@ -451,17 +451,19 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             paramspecs: Dict[int, ParamSpec] = {}
 
             rst_query = ("SELECT result_table_name FROM runs "
-                         f"WHERE run_id={run_id}")
-            c = transaction(conn, rst_query)
-            result_table_name = one(c, 'result_table_name')
+                         f"WHERE run_id=?")
+            cur = conn.cursor()
+            cur.execute(rst_query, (run_id,))
+            result_table_name = one(cur, 'result_table_name')
 
             layout_id_query = f"""
                             SELECT layout_id
                             FROM layouts
-                            WHERE run_id == {run_id}
+                            WHERE run_id == ?
                             """
-            c = transaction(conn, layout_id_query)
-            layout_ids = tuple(l[0] for l in many_many(c, 'layout_id'))
+            cur = conn.cursor()
+            cur.execute(layout_id_query, (run_id,))
+            layout_ids = tuple(l[0] for l in many_many(cur, 'layout_id'))
 
             idps_query = f"""
                         SELECT independent
