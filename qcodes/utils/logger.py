@@ -1,11 +1,11 @@
 import io
 import logging
-import logging.handlers
 
 import os
 from pathlib import Path
 from collections import OrderedDict
 from contextlib import contextmanager
+from copy import copy
 
 from typing import Optional, List, Union, Sequence
 
@@ -25,6 +25,8 @@ LOGGING_SEPARATOR = ' ¦ '
 HISTORY_LOG_NAME = "command_history.log"
 PYTHON_LOG_NAME = 'qcodes.log'
 QCODES_USER_PATH_ENV='QCODES_USER_PATH'
+QCODES_FILE_HANDLER_NAME = 'qcodes_file_handler_name'
+QCODES_CONSOLE_HANDLER_NAME = 'qcodes_console_handler_name'
 
 FORMAT_STRING_DICT = OrderedDict([
     ('asctime', 's'),
@@ -36,7 +38,7 @@ FORMAT_STRING_DICT = OrderedDict([
 FORMAT_STRING_ITEMS = [f'%({name}){fmt}'
                        for name, fmt in FORMAT_STRING_DICT.items()]
 
-# The handlers of the root logger that get set up by `start_logger` are globals
+# The handler of the root logger that get set up by `start_logger` are globals
 # for this modules scope, as it is intended to only use a single file and
 # console hander.
 console_handler: Optional[logging.Handler] = None
@@ -44,7 +46,7 @@ file_handler: Optional[logging.Handler] = None
 
 def get_console_handler() -> Optional[logging.Handler]:
     """
-    Get handler that prints messages from the root logger to the console.
+    Get h that prints messages from the root logger to the console.
     Returns `None` if `start_logger` had not been called.
     """
     global console_handler
@@ -52,7 +54,7 @@ def get_console_handler() -> Optional[logging.Handler]:
 
 def get_file_handler() -> Optional[logging.Handler]:
     """
-    Get handler that streams messages from the root logger to the qcdoes log
+    Get h that streams messages from the root logger to the qcdoes log
     file. To setup call `start_logger`.
     Returns `None` if `start_logger` had not been called
     """
@@ -89,13 +91,34 @@ def start_logger() -> None:
     global console_handler
     global file_handler
 
+    # set loggers to the supplied levels
+    for name, level in qc.config.logger.logger_levels.items():
+        logging.getLogger(name).setLevel(level)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    # remove previously set handlers
+    handlers = copy(root_logger.handlers)
+    for handler in handlers:
+        if handler.name in (QCODES_CONSOLE_HANDLER_NAME,
+                            QCODES_FILE_HANDLER_NAME):
+            handler.close()
+            root_logger.removeHandler(handler)
+
+    # add qcodes handlers
+
     format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
     formatter = logging.Formatter(format_string)
 
+    # console
     console_handler = logging.StreamHandler()
     console_handler.setLevel(qc.config.logger.console_level)
     console_handler.setFormatter(formatter)
+    console_handler.set_name(QCODES_CONSOLE_HANDLER_NAME)
+    root_logger.addHandler(console_handler)
 
+    # file
     filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
@@ -103,11 +126,8 @@ def start_logger() -> None:
                                                              when='midnight')
     file_handler.setLevel(qc.config.logger.file_level)
     file_handler.setFormatter(formatter)
-    logging.basicConfig(handlers=[console_handler, file_handler],
-                        level=logging.DEBUG)
-
-    for name, level in qc.config.logger.logger_levels.items():
-        logging.getLogger(name).setLevel(level)
+    file_handler.set_name(QCODES_FILE_HANDLER_NAME)
+    root_logger.addHandler(file_handler)
 
 
     # capture any warnings from the warnings module
@@ -245,50 +265,50 @@ def time_difference(firsttimes: Series,
 
 @contextmanager
 def handler_level(level: LevelType,
-                  handlers: logging.Handler):
-    if isinstance(handlers, logging.Handler):
-        handlers = (handlers,)
-    original_levels = [handler.level for handler in handlers]
-    for handler in handlers: 
-        handler.setLevel(level)
+                  handler: logging.Handler):
+    if isinstance(handler, logging.Handler):
+        handler = (handler,)
+    original_levels = [h.level for h in handler]
+    for h in handler:
+        h.setLevel(level)
     yield
-    for handler, original_level in zip(handlers, original_levels): 
-        handler.setLevel(original_level)
+    for h, original_level in zip(handler, original_levels):
+        h.setLevel(original_level)
 
 @contextmanager
 def console_level(level: LevelType):
     global console_handler
-    with handler_level(level, handlers=console_handler):
+    with handler_level(level, handler=console_handler):
         yield
 
 
 @contextmanager
-def filter_instruments(instruments: Union[InstrumentBase,
+def filter_instrument(instrument: Union[InstrumentBase,
                                           Sequence[InstrumentBase]],
-                       handlers: Optional[
+                       handler: Optional[
                            Union[logging.Handler,
                                  Sequence[logging.Handler]]]=None,
                        level: Optional[LevelType]=None):
-    if handlers is None:
+    if handler is None:
         global console_handler
-        handlers = (console_handler,)
-    if isinstance(handlers, logging.Handler):
-        handlers = (handlers,)
+        handler = (console_handler,)
+    if isinstance(handler, logging.Handler):
+        handler = (handler,)
 
-    instrument_filter = InstrumentFilter(instruments)
-    for handler in handlers:
-        handler.addFilter(instrument_filter)
+    instrument_filter = InstrumentFilter(instrument)
+    for h in handler:
+        h.addFilter(instrument_filter)
     if level is not None:
-        with handler_level(level, handlers):
+        with handler_level(level, handler):
             yield
     else:
         yield
-    for handler in handlers:
-        handler.removeFilter(instrument_filter)
+    for h in handler:
+        h.removeFilter(instrument_filter)
 
 
 @contextmanager
-def capture_dataframe(level: LevelType='Debug',
+def capture_dataframe(level: LevelType=logging.DEBUG,
                       logger: logging.Logger=None):
 
     # get root logger if none is specified.
@@ -324,17 +344,19 @@ class LogCapture():
 
     """
 
-    def __init__(self, logger=logging.getLogger()):
+    def __init__(self, logger=logging.getLogger(),
+                 level: Optional[LevelType]=None):
         self.logger = logger
+        self.level = level or logging.DEBUG
 
-        self.stashed_handlers = self.logger.handlers[:]
-        for handler in self.stashed_handlers:
-            self.logger.removeHandler(handler)
+        self.stashed_handlers = copy(self.logger.handlers)
+        for h in self.stashed_handlers:
+            self.logger.removeHandler(h)
 
     def __enter__(self):
         self.log_capture = io.StringIO()
         self.string_handler = logging.StreamHandler(self.log_capture)
-        self.string_handler.setLevel(logging.DEBUG)
+        self.string_handler.setLevel(self.level)
         self.logger.addHandler(self.string_handler)
         return self
 
@@ -343,5 +365,5 @@ class LogCapture():
         self.value = self.log_capture.getvalue()
         self.log_capture.close()
 
-        for handler in self.stashed_handlers:
-            self.logger.addHandler(handler)
+        for h in self.stashed_handlers:
+            self.logger.addHandler(h)
