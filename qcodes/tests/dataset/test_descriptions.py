@@ -56,6 +56,14 @@ def test_equality(some_paramspecs):
     assert desc_3 != desc_2
 
 
+def test_serialization_dict_keys(some_paramspecs):
+    idp = InterDependencies(*some_paramspecs[1].values())
+    desc = RunDescriber(interdeps=idp)
+
+    ser_desc = desc.serialize()
+    assert list(ser_desc.keys()) == ['Parameters']
+
+
 def test_serialization_and_back(some_paramspecs):
 
     idp = InterDependencies(*some_paramspecs[1].values())
