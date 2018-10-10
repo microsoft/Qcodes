@@ -266,6 +266,16 @@ def time_difference(firsttimes: Series,
 @contextmanager
 def handler_level(level: LevelType,
                   handler: logging.Handler):
+    """
+    Context manager to temporarily change the level of handlers.
+    Example:
+        >>> with logger.handler_level(level=logging.DEBUG, handler=[h1, h1]):
+        >>>     root_logger.debug('this is now visible)
+
+    Args:
+        level: level to set the handlers to
+        handler: single or sequence of handlers which to change
+    """
     if isinstance(handler, logging.Handler):
         handler = (handler,)
     original_levels = [h.level for h in handler]
@@ -277,6 +287,16 @@ def handler_level(level: LevelType,
 
 @contextmanager
 def console_level(level: LevelType):
+    """
+    Context manager to temporarily change the level of the qcodes console
+    handler.
+    Example:
+        >>> with logger.console_level(level=logging.DEBUG):
+        >>>     root_logger.debug('this is now visible)
+
+    Args:
+        level: level to set the console handler to
+    """
     global console_handler
     with handler_level(level, handler=console_handler):
         yield
@@ -289,6 +309,20 @@ def filter_instrument(instrument: Union[InstrumentBase,
                            Union[logging.Handler,
                                  Sequence[logging.Handler]]]=None,
                        level: Optional[LevelType]=None):
+
+    """
+    Context manager that adds a filter that only enables the log messages of
+    the supplied instruments to pass.
+    Example:
+        >>> h1, h2 = logger.get_console_handler(), logger.get_file_handler()
+        >>> with logger.filter_instruments((qdac, dmm2), handler=[h1, h1]):
+        >>>     qdac.ch01(1)  # logged
+        >>>     v = dmm2.v()  # not logged
+
+    Args:
+        level: level to set the handlers to
+        handler: single or sequence of handlers which to change
+    """
     if handler is None:
         global console_handler
         handler = (console_handler,)
@@ -310,7 +344,22 @@ def filter_instrument(instrument: Union[InstrumentBase,
 @contextmanager
 def capture_dataframe(level: LevelType=logging.DEBUG,
                       logger: logging.Logger=None):
+    """
+    Context manager to capture the logs in a `pandas.DataFrame`
 
+    Example:
+        >>> with logger.capture_dataframe() as (handler, cb):
+        >>>     qdac.ch01(1)  # some commands
+        >>>     data_frame = cb()
+
+    Args:
+        level: level to at which to capture
+        handler: single or sequence of handlers which to change
+
+    Returns:
+        Tuple of handle that is used to capture the log messages and callback
+        that returns the pandas.DataSet at any given point (within the context)
+    """
     # get root logger if none is specified.
     logger = logger or logging.getLogger()
     log_capture = io.StringIO()
