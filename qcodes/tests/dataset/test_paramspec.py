@@ -121,3 +121,59 @@ def test_copy(name1, name2, name3):
     ps_copy.add_depends_on([ps_indep_2])
     assert ps_copy.depends_on == f"{ps_indep.name}, {ps_indep_2.name}"
     assert ps.depends_on == f"{ps_indep.name}"
+
+
+def test_equality():
+
+    ps1 = ParamSpec(name='first',
+                    paramtype='numeric',
+                    label='test',
+                    unit='arb. un.')
+
+    ps2 = ps1.copy()
+
+    assert ps1 == ps2
+    assert ps2 == ps1
+
+    ps2 = ParamSpec(name='second',
+                    paramtype='numeric',
+                    label='test',
+                    unit='arb. un.')
+
+    assert ps1 != ps2
+
+    ps3 = ParamSpec(name='third',
+                    paramtype='numeric',
+                    label='slave ps',
+                    unit='V',
+                    depends_on=[ps1, ps2])
+
+    assert ps1 != ps3
+    assert ps2 != ps3
+
+    ps4 = ParamSpec(name='third',
+                    paramtype='numeric',
+                    label='slave ps',
+                    unit='V',
+                    depends_on=[ps2, ps1])
+
+    assert ps3 == ps4
+
+    ps5 = ParamSpec(name='fourth',
+                    paramtype='array',
+                    inferred_from=(ps3, ps4))
+
+    ps6 = ParamSpec(name='fourth',
+                    paramtype='array',
+                    inferred_from=(ps4, ps3))
+
+    assert ps5 == ps6
+
+    ps7 = ParamSpec('new_axis',
+                    paramtype='numeric',
+                    label='foo',
+                    unit='bar')
+
+    ps5.add_depends_on((ps7,))
+
+    assert ps5 != ps6
