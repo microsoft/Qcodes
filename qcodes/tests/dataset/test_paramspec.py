@@ -20,6 +20,20 @@ def version_0_serializations():
                 'version: 0\n')
     return sers
 
+@pytest.fixture
+def version_0_deserializations():
+    """
+    The paramspecs that the above serializations should deserialize to
+    """
+    ps = []
+    ps.append(ParamSpec('dmm_v1', paramtype='numeric', label='Gate v1',
+                        unit='V', inferred_from=[],
+                        depends_on=['dac_ch1', 'dac_ch2']))
+    ps.append(ParamSpec('some_name', paramtype='array',
+                        label='My Array ParamSpec', unit='Ars',
+                        inferred_from=['p1', 'p2'], depends_on=[]))
+    return ps
+
 
 @given(name=hst.text(min_size=1),
        sp1=hst.text(min_size=1), sp2=hst.text(min_size=1),
@@ -157,10 +171,11 @@ def test_serialize():
     assert ser['version'] == p1.version
 
 
-def test_deserialize(version_0_serializations):
+def test_deserialize(version_0_serializations, version_0_deserializations):
 
     yaml = YAML()
 
-    for ser in version_0_serializations:
+    for ser, ps in zip(version_0_serializations, version_0_deserializations):
         sdict = {a: b for (a, b) in yaml.load(ser).items()}
-        ParamSpec.deserialize(sdict)
+        deps = ParamSpec.deserialize(sdict)
+        assert ps == deps
