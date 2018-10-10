@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 import logging
 import tempfile
+from sqlite3 import OperationalError
 
 import pytest
 
@@ -115,8 +116,10 @@ def test_perform_actual_upgrade_0_to_1():
 
         guid_table_query = "SELECT guid FROM runs"
 
-        with pytest.raises(RuntimeError):
+        try:
             atomic_transaction(conn, guid_table_query)
+        except RuntimeError as err:
+            assert str(err.__cause__) == 'no such column: guid'
 
         perform_db_upgrade_0_to_1(conn)
         assert get_user_version(conn) == 1
@@ -171,8 +174,10 @@ def test_perform_actual_upgrade_2_to_3():
 
         desc_query = 'SELECT run_description FROM runs'
 
-        with pytest.raises(RuntimeError):
+        try:
             atomic_transaction(conn, desc_query)
+        except RuntimeError as err:
+            assert str(err.__cause__) == 'no such column: run_description'
 
         perform_db_upgrade_2_to_3(conn)
 
