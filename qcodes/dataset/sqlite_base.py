@@ -118,9 +118,13 @@ def upgrader(func: Callable[[SomeConnection], None]):
     """
     Decorator for database version upgrade functions. An upgrade function
     must have the name `perform_db_upgrade_N_to_M` where N = M-1.
+    The upgrade function must either perform the upgrade and return (no return
+    values allowed) or fail to perform the upgrade, in which case it must raise
+    a RuntimeError. A failed upgrade must be completely rolled back before the
+    RuntimeError is raises.
 
     The decorator takes care of logging about the upgrade and managing the
-    database versioning
+    database versioning.
     """
     name_comps = func.__name__.split('_')
     if not len(name_comps) == 6:
@@ -140,8 +144,8 @@ def upgrader(func: Callable[[SomeConnection], None]):
 
         start_version = get_user_version(conn)
         if start_version != from_version:
-            log.warning('Can not upgrade, current database version is '
-                        f'{start_version}, aborting.')
+            log.info(f'Skipping upgrade {from_version} -> {to_version} as'
+                     f' current database version is {start_version}.')
             return
 
         # This function either raises or returns
