@@ -158,7 +158,7 @@ def test_perform_actual_upgrade_1_to_2():
         assert len(c.fetchall()) == 2
 
 
-def test_perform_actual_upgrade_2_to_3():
+def test_perform_actual_upgrade_2_to_3_empty():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
@@ -185,6 +185,11 @@ def test_perform_actual_upgrade_2_to_3():
 
         c = atomic_transaction(conn, desc_query)
         assert len(c.fetchall()) == 0
+
+
+def test_perform_actual_upgrade_2_to_3_some_runs():
+
+    v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
     dbname_old = os.path.join(v2fixpath, 'some_runs.db')
 
