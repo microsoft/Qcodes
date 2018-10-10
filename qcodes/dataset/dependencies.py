@@ -13,13 +13,7 @@ class InterDependencies:
 
     def __repr__(self) -> str:
         output = self.__class__.__name__
-        output += '('
-        for ii, paramspec in enumerate(self.paramspecs):
-            if ii == 0:
-                output += f'{paramspec}'
-            else:
-                output += f', {paramspec}'
-        output += ')'
+        output += f'({", ".join(self.paramspecs)})'
         return output
 
     def __eq__(self, other) -> bool:
