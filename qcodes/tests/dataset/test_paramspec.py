@@ -4,7 +4,6 @@ from numbers import Number
 from numpy import ndarray
 from hypothesis import given
 import hypothesis.strategies as hst
-from ruamel.yaml import YAML
 
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -12,13 +11,22 @@ from qcodes.dataset.param_spec import ParamSpec
 @pytest.fixture
 def version_0_serializations():
     sers = []
-    sers.append('name: dmm_v1\nparamtype: numeric\nlabel: Gate v1\nunit: V\n'
-                'inferred_from: []\n'
-                'depends_on:\n- dac_ch1\n- dac_ch2\nversion: 0\n')
-    sers.append('name: some_name\nparamtype: array\nlabel: My Array ParamSpec\n'
-                'unit: Ars\ninferred_from:\n- p1\n- p2\ndepends_on: []\n'
-                'version: 0\n')
+    sers.append({'name': 'dmm_v1',
+                 'paramtype': 'numeric',
+                 'label': 'Gate v1',
+                 'unit': 'V',
+                 'inferred_from': [],
+                 'depends_on': ['dac_ch1', 'dac_ch2'],
+                 'version': 0})
+    sers.append({'name': 'some_name',
+                 'paramtype': 'array',
+                 'label': 'My Array ParamSpec',
+                 'unit': 'Ars',
+                 'inferred_from': ['p1', 'p2' ],
+                 'depends_on': [],
+                 'version': 0})
     return sers
+
 
 @pytest.fixture
 def version_0_deserializations():
@@ -173,9 +181,6 @@ def test_serialize():
 
 def test_deserialize(version_0_serializations, version_0_deserializations):
 
-    yaml = YAML()
-
-    for ser, ps in zip(version_0_serializations, version_0_deserializations):
-        sdict = {a: b for (a, b) in yaml.load(ser).items()}
+    for sdict, ps in zip(version_0_serializations, version_0_deserializations):
         deps = ParamSpec.deserialize(sdict)
         assert ps == deps
