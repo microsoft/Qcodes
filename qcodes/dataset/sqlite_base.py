@@ -439,8 +439,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
     no_of_runs = no_of_runs or 0
 
-
-    # If one run fails, we want the whole upgrade to role back, hence the
+    # If one run fails, we want the whole upgrade to roll back, hence the
     # entire upgrade is one atomic transaction
 
     with atomic(conn) as conn:
