@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 import logging
 import tempfile
-from sqlite3 import OperationalError
 
 import pytest
 
