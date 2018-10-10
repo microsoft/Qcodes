@@ -145,7 +145,7 @@ def upgrader(func: Callable[[SomeConnection], None]):
     def do_upgrade(conn: SomeConnection) -> None:
 
         log.info(f'Starting database upgrade version {from_version} '
-                 'to {to_version}')
+                 f'to {to_version}')
 
         start_version = get_user_version(conn)
         if start_version != from_version:
