@@ -153,6 +153,7 @@ class DataSaver:
             paramstr = str(parameter)
             value = partial_result[1]
             found_parameters.append(paramstr)
+            inserting_this_as_array = False
             if paramstr not in self._known_parameters:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
@@ -160,6 +161,7 @@ class DataSaver:
             param_spec = self.parameters[paramstr]
             if param_spec.type == 'array':
                 inserting_as_arrays = True
+                inserting_this_as_array = True
             if any(isinstance(value, typ) for typ in array_like_types):
 
                 value = cast(np.ndarray, partial_result[1])
@@ -174,7 +176,7 @@ class DataSaver:
                 else:
                     input_size = array_size
             elif is_number(value):
-                if inserting_as_arrays:
+                if inserting_this_as_array:
                     raise ValueError("Trying to insert into an ArrayType with "
                                      "a scalar value")
                 if param_spec.type == 'text':
