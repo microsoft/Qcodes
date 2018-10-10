@@ -762,8 +762,8 @@ def test_datasaver_numeric_after_array_paramtype():
 
     data = datasaver.dataset.get_data(
         *datasaver.dataset.parameters.split(','))
-    assert 3.75 == data[0][1]
-    assert np.allclose(data[0][0], signal)
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
 
 
 @pytest.mark.usefixtures("experiment")
