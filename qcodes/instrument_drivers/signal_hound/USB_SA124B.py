@@ -8,7 +8,7 @@ from typing import Dict, Union, Optional, Any, Tuple
 from qcodes.instrument.base import Instrument
 import qcodes.utils.validators as vals
 from qcodes.instrument.parameter import Parameter, ArrayParameter, \
-                                         ArrayParameter2
+    ParameterWithSetpoints
 
 log = logging.getLogger(__name__)
 
@@ -333,7 +333,7 @@ class SignalHound_USB_SA124B(Instrument):
                            unit='depends on mode',
                            get_cmd=self._get_averaged_sweep_data,
                            set_cmd=False,
-                           parameter_class=ArrayParameter2,
+                           parameter_class=ParameterWithSetpoints,
                            vals=vals.Arrays(),
                            setpoints=(self.frequency_axis,),
                            snapshot_value=False)

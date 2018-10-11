@@ -947,11 +947,16 @@ class Parameter(_BaseParameter):
                                 step=step, num=num)
 
 
-class ArrayParameter2(Parameter):
+class ParameterWithSetpoints(Parameter):
     """
+    A parameter that has associated setpoints. The setpoints is nothing
+    more than a list of other paramameters that descripe the values, names
+    and units of the setpoint axis for this parameter.
 
-
-
+    In most cases this will probably be a parameter that returns an array.
+    It is expected that the setpoint arrays are 1D arrays such that the
+    combined shape of the parameter. E.G if parameter is of shape (m,n)
+    self.setpoints is a list of parameters of shape (m,) and (n,)
     """
     def __init__(self, *args, setpoints=None, **kwargs):
         if setpoints is None:
