@@ -24,7 +24,7 @@ LOGGING_DIR = "logs"
 LOGGING_SEPARATOR = ' ¦ '
 HISTORY_LOG_NAME = "command_history.log"
 PYTHON_LOG_NAME = 'qcodes.log'
-QCODES_USER_PATH_ENV='QCODES_USER_PATH'
+QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 QCODES_FILE_HANDLER_NAME = 'qcodes_file_handler_name'
 QCODES_CONSOLE_HANDLER_NAME = 'qcodes_console_handler_name'
 
@@ -44,6 +44,7 @@ FORMAT_STRING_ITEMS = [f'%({name}){fmt}'
 console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
 
+
 def get_console_handler() -> Optional[logging.Handler]:
     """
     Get h that prints messages from the root logger to the console.
@@ -51,6 +52,7 @@ def get_console_handler() -> Optional[logging.Handler]:
     """
     global console_handler
     return console_handler
+
 
 def get_file_handler() -> Optional[logging.Handler]:
     """
@@ -60,6 +62,7 @@ def get_file_handler() -> Optional[logging.Handler]:
     """
     global file_handler
     return file_handler
+
 
 def _get_qcodes_user_path() -> str:
     """
@@ -74,10 +77,12 @@ def _get_qcodes_user_path() -> str:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
+
 def get_log_file_name() -> str:
     return os.path.join(_get_qcodes_user_path(),
                         LOGGING_DIR,
                         PYTHON_LOG_NAME)
+
 
 def start_logger() -> None:
     """
@@ -99,7 +104,7 @@ def start_logger() -> None:
     root_logger.setLevel(logging.DEBUG)
 
     # remove previously set handlers
-    handlers = copy(root_logger.handlers)
+    handlers: Sequence[logging.Handler] = copy(root_logger.handlers)
     for handler in handlers:
         if handler.name in (QCODES_CONSOLE_HANDLER_NAME,
                             QCODES_FILE_HANDLER_NAME):
@@ -128,7 +133,6 @@ def start_logger() -> None:
     file_handler.setFormatter(formatter)
     file_handler.set_name(QCODES_FILE_HANDLER_NAME)
     root_logger.addHandler(file_handler)
-
 
     # capture any warnings from the warnings module
     logging.captureWarnings(capture=True)
@@ -168,7 +172,7 @@ def start_all_logging() -> None:
     start_command_history_logger()
 
 
-def log_to_dataframe(log: Optional[str]=None,
+def log_to_dataframe(log: List[str]=None,
                      columns: Optional[List[str]]=None,
                      separator: Optional[str]=None) -> pandas.DataFrame:
     """
@@ -191,7 +195,7 @@ def log_to_dataframe(log: Optional[str]=None,
     # note: if we used commas as separators, pandas read_csv
     # could be faster than this string comprehension
 
-    split_cont = [line.split(separator) for line in log.splitlines()
+    split_cont = [line.split(separator) for line in log
                   if line[0].isdigit()]  # avoid tracebacks
     dataframe = pandas.DataFrame(split_cont, columns=columns)
 
@@ -265,7 +269,9 @@ def time_difference(firsttimes: Series,
 
 @contextmanager
 def handler_level(level: LevelType,
-                  handler: logging.Handler):
+                  handler: Optional[
+                           Union[logging.Handler,
+                                 Sequence[logging.Handler]]]=None):
     """
     Context manager to temporarily change the level of handlers.
     Example:
@@ -284,6 +290,7 @@ def handler_level(level: LevelType,
     yield
     for h, original_level in zip(handler, original_levels):
         h.setLevel(original_level)
+
 
 @contextmanager
 def console_level(level: LevelType):
@@ -304,12 +311,11 @@ def console_level(level: LevelType):
 
 @contextmanager
 def filter_instrument(instrument: Union[InstrumentBase,
-                                          Sequence[InstrumentBase]],
-                       handler: Optional[
-                           Union[logging.Handler,
-                                 Sequence[logging.Handler]]]=None,
-                       level: Optional[LevelType]=None):
-
+                                        Sequence[InstrumentBase]],
+                      handler: Optional[
+                          Union[logging.Handler,
+                                Sequence[logging.Handler]]]=None,
+                      level: Optional[LevelType]=None):
     """
     Context manager that adds a filter that only enables the log messages of
     the supplied instruments to pass.
@@ -371,12 +377,11 @@ def capture_dataframe(level: LevelType=logging.DEBUG,
 
     logger.addHandler(string_handler)
 
-    yield string_handler, lambda: log_to_dataframe(log_capture.getvalue())
+    yield string_handler, lambda: log_to_dataframe(
+        log_capture.getvalue().splitlines())
 
     logger.removeHandler(string_handler)
     log_capture.close()
-
-
 
 
 class LogCapture():
@@ -394,7 +399,7 @@ class LogCapture():
     """
 
     def __init__(self, logger=logging.getLogger(),
-                 level: Optional[LevelType]=None):
+                 level: Optional[LevelType]=None) -> None:
         self.logger = logger
         self.level = level or logging.DEBUG
 
