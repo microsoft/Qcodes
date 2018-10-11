@@ -92,8 +92,10 @@ def test_filter_instrument():
     ]
 
     driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+
+    # filter one instrument
     driver.cartesian((0, 0, 0))
-    with logger.LogCapture(level=logging.INFO) as logs:
+    with logger.LogCapture(level=logging.DEBUG) as logs:
         with logger.filter_instrument(mag_x, handler=logs.string_handler):
             driver.cartesian((0, 0, 1))
     for line in logs.value.splitlines():
@@ -101,6 +103,26 @@ def test_filter_instrument():
         assert '[y]' not in line
         assert '[z]' not in line
 
+    # filter multiple instruments
+    driver.cartesian((0, 0, 0))
+    with logger.LogCapture(level=logging.DEBUG) as logs:
+        with logger.filter_instrument((mag_x, mag_y), handler=logs.string_handler):
+            driver.cartesian((0, 0, 1))
+
+    any_x = False
+    any_y = False
+    for line in logs.value.splitlines():
+        has_x = '[x]' in line
+        has_y = '[y]' in line
+        has_z = '[z]' in line
+
+        assert has_x or has_y
+        assert not has_z
+
+        any_x |= has_x
+        any_y |= has_y
+    assert any_x
+    assert any_y
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe():
