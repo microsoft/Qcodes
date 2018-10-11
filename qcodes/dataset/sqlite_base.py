@@ -426,34 +426,68 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
 
-def _2to3_get_result_table(conn: SomeConnection, run_id: int) -> str:
-    rst_query = ("SELECT result_table_name FROM runs "
-                f"WHERE run_id=?")
+def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
+    rst_query = "SELECT run_id, result_table_name FROM runs"
     cur = conn.cursor()
-    cur.execute(rst_query, (run_id,))
-    return one(cur, 'result_table_name')
+    cur.execute(rst_query)
+
+    data = cur.fetchall()
+    cur.close()
+    results = {}
+    for row in data:
+        results[row['run_id']] = row['result_table_name']
+    return results
 
 
-def _2to3_get_layout_ids(conn: SomeConnection, run_id: int) -> Sequence[int]:
-    layout_id_query = f"""
-                            SELECT layout_id
-                            FROM layouts
-                            WHERE run_id == ?
-                            """
+def _2to3_get_layout_ids(conn: SomeConnection) -> Dict:
+    query = """
+            select runs.run_id, layouts.layout_id
+            FROM layouts
+            INNER JOIN runs ON runs.run_id == layouts.run_id
+            """
     cur = conn.cursor()
-    cur.execute(layout_id_query, (run_id,))
-    return tuple(l[0] for l in many_many(cur, 'layout_id'))
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+
+    # we are allowed to assume that no run_id is missing and the first one
+    # is 1
+    results: Dict[int, List[int]] = {1: []}
+    current_run_id = 1
+    for row in data:
+        run_id = row['run_id']
+        layout_id = row['layout_id']
+        if run_id == current_run_id:
+            results[run_id].append(layout_id)
+        else:
+            results[run_id] = [layout_id]
+            current_run_id = run_id
+
+    return results
 
 
-def _2to3_get_indeps(conn: SomeConnection,
-                     l_ids: Sequence[int]) -> Sequence[int]:
-    idps_query = f"""
-                    SELECT independent
-                    FROM dependencies
-                    WHERE independent in {l_ids}
-                    """
-    c = transaction(conn, idps_query)
-    return tuple(l[0] for l in many_many(c, 'independent'))
+def _2to3_get_indeps(conn: SomeConnection) -> Dict:
+    query = """
+            SELECT layouts.run_id, layouts.layout_id
+            FROM layouts
+            INNER JOIN dependencies
+            ON layouts.layout_id==dependencies.independent
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    results: Dict[int, List[int]] = {1: []}
+    current_run_id = 1
+    for row in data:
+        run_id = row['run_id']
+        layout_id = row['layout_id']
+        if run_id == current_run_id:
+            results[run_id].append(layout_id)
+        else:
+            results[run_id] = [layout_id]
+            current_run_id = run_id
+    return results
 
 
 def _2to3_get_paramspecs(conn: SomeConnection, deps: Sequence[int],
@@ -521,9 +555,9 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     object
     """
 
-    sql_query_time = 0
-    sql_update_time = 0
-    yaml_time = 0
+    sql_query_time = 0.0
+    sql_update_time = 0.0
+    yaml_time = 0.0
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
@@ -536,12 +570,19 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
         sql = "ALTER TABLE runs ADD COLUMN run_description TEXT"
         transaction(conn, sql)
 
+        t0 = time.perf_counter()
+        result_tables = _2to3_get_result_tables(conn)
+        layout_ids_all = _2to3_get_layout_ids(conn)
+        indeps_all = _2to3_get_indeps(conn)
+        t1 = time.perf_counter()
+        sql_query_time += t1 - t0
+
         for run_id in range(1, no_of_runs+1):
 
             sql_query_t0 = time.perf_counter()
-            result_table_name = _2to3_get_result_table(conn, run_id)
-            layout_ids = _2to3_get_layout_ids(conn, run_id)
-            independents = _2to3_get_indeps(conn, layout_ids)
+            result_table_name = result_tables[run_id]
+            layout_ids = tuple(layout_ids_all[run_id])
+            independents = tuple(indeps_all[run_id])
             dependents = tuple(set(layout_ids).difference(set(independents)))
 
             paramspecs = _2to3_get_paramspecs(conn, dependents,
