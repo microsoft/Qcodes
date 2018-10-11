@@ -490,24 +490,89 @@ def _2to3_get_indeps(conn: SomeConnection) -> Dict:
     return results
 
 
-def _2to3_get_paramspecs(conn: SomeConnection, deps: Sequence[int],
+def _2to3_get_deps(conn: SomeConnection) -> Dict:
+    query = """
+            SELECT layouts.run_id, layouts.layout_id
+            FROM layouts
+            INNER JOIN dependencies
+            ON layouts.layout_id==dependencies.dependent
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    results: Dict[int, List[int]] = {1: []}
+    current_run_id = 1
+    for row in data:
+        run_id = row['run_id']
+        layout_id = row['layout_id']
+        if run_id == current_run_id:
+            results[run_id].append(layout_id)
+        else:
+            results[run_id] = [layout_id]
+            current_run_id = run_id
+    return results
+
+
+def _2to3_get_dependencies(conn: SomeConnection) -> Dict:
+    query = """
+            SELECT dependent, independent
+            FROM dependencies
+            ORDER BY dependent, axis_num ASC
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    results: Dict[int, List[int]] = {}
+
+    if len(data) == 0:
+        return results
+
+    current_dep = data[0]['dependent']
+
+    results[current_dep] = [data[0]['independent']]
+
+    for row in data[1:]:
+        dep = row['dependent']
+        indep = row['independent']
+        if dep == current_dep:
+            results[dep].append(indep)
+        else:
+            results[dep] = [indep]
+            current_dep = dep
+    return results
+
+
+def _2to3_get_layouts(conn: SomeConnection) -> Dict:
+    query = """
+            SELECT layout_id, parameter, label, unit, inferred_from
+            FROM layouts
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+
+    results: Dict[int, Tuple[str, str, str, str]] = {}
+    for row in cur.fetchall():
+        results[row['layout_id']] = (row['parameter'],
+                                     row['label'],
+                                     row['unit'],
+                                     row['inferred_from'])
+    return results
+
+
+def _2to3_get_paramspecs(conn: SomeConnection,
+                         layout_ids: List[int],
+                         layouts: Dict[int, Tuple[str, str, str, str]],
+                         dependencies: Dict[int, List[int]],
+                         deps: Sequence[int],
                          indeps: Sequence[int],
                          result_table_name: str) -> Dict[int, ParamSpec]:
 
     paramspecs: Dict[int, ParamSpec] = {}
 
-    layout_query = """
-                   SELECT parameter, label, unit, inferred_from
-                   FROM layouts
-                   WHERE layout_id == ?
-                   """
-    layout_ids = list(indeps) + list(deps)
-
     for layout_id in layout_ids:
-        cur = conn.cursor()
-        cur.execute(layout_query, (layout_id,))
-        res = many(cur, 'parameter', 'label', 'unit', 'inferred_from')
-        (name, label, unit, inferred_from) = res
+        (name, label, unit, inferred_from) = layouts[layout_id]
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
@@ -516,22 +581,17 @@ def _2to3_get_paramspecs(conn: SomeConnection, deps: Sequence[int],
                 paramtype = row['type']
                 break
 
+        # first possibility: another parameter depends on this parameter
         if layout_id in indeps:
             paramspec = ParamSpec(name=name, paramtype=paramtype,
                                   label=label, unit=unit,
                                   inferred_from=inferred_from)
             paramspecs[layout_id] = paramspec
 
+        # second possibility: this parameter depends on another parameter
         elif layout_id in deps:
 
-            sp_query = f"""
-                    SELECT independent
-                    FROM dependencies
-                    WHERE dependent == {layout_id}
-                    ORDER BY axis_num ASC
-                    """
-            c = transaction(conn, sp_query)
-            setpoints = [l[0] for l in many_many(c, 'independent')]
+            setpoints = dependencies[layout_id]
             depends_on = [paramspecs[idp].name for idp in setpoints]
 
             paramspec = ParamSpec(name=name,
@@ -539,6 +599,15 @@ def _2to3_get_paramspecs(conn: SomeConnection, deps: Sequence[int],
                                   label=label, unit=unit,
                                   depends_on=depends_on,
                                   inferred_from=inferred_from)
+            paramspecs[layout_id] = paramspec
+
+        # third possibility: no dependencies
+        else:
+            paramspec = ParamSpec(name=name,
+                                  paramtype=paramtype,
+                                  label=label, unit=unit,
+                                  depends_on=[],
+                                  inferred_from=[])
             paramspecs[layout_id] = paramspec
 
     return paramspecs
@@ -574,6 +643,9 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
         result_tables = _2to3_get_result_tables(conn)
         layout_ids_all = _2to3_get_layout_ids(conn)
         indeps_all = _2to3_get_indeps(conn)
+        deps_all = _2to3_get_deps(conn)
+        layouts = _2to3_get_layouts(conn)
+        dependencies = _2to3_get_dependencies(conn)
         t1 = time.perf_counter()
         sql_query_time += t1 - t0
 
@@ -583,9 +655,13 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             result_table_name = result_tables[run_id]
             layout_ids = tuple(layout_ids_all[run_id])
             independents = tuple(indeps_all[run_id])
-            dependents = tuple(set(layout_ids).difference(set(independents)))
+            dependents = tuple(deps_all[run_id])
 
-            paramspecs = _2to3_get_paramspecs(conn, dependents,
+            paramspecs = _2to3_get_paramspecs(conn,
+                                              layout_ids,
+                                              layouts,
+                                              dependencies,
+                                              dependents,
                                               independents, result_table_name)
             sql_query_t1 = time.perf_counter()
             sql_query_time += sql_query_t1 - sql_query_t0
