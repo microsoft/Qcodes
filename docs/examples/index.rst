@@ -40,6 +40,13 @@ Drivers
 
     ../_notebooks/driver_examples/*
 
+Logging
+--------
+
+.. toctree::
+    :glob:
+
+    ../_notebooks/logging/*
 
 Benchmarking
 ------------

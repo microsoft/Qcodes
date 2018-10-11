@@ -94,6 +94,7 @@ if "%1" == "htmlapi" (
 	jupyter-nbconvert --to rst "examples\driver_examples\*.ipynb" --output-dir="_notebooks\driver_examples"
 	jupyter-nbconvert --to rst "examples\benchmarking\*.ipynb" --output-dir="_notebooks\benchmarking"
 	jupyter-nbconvert --to rst "examples\plotting\*.ipynb" --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --output-dir="_notebooks\plotting"
+	jupyter-nbconvert --to rst "examples\logging\*.ipynb" --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --output-dir="_notebooks\logging"
   echo D | xcopy "examples/files" "_notebooks/files" /e
   echo D | xcopy "examples/plotting/files" "_notebooks/plotting/files" /e
 	goto HTML
