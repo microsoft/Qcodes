@@ -1,9 +1,4 @@
 import itertools
-import tempfile
-import os
-from contextlib import contextmanager
-from copy import deepcopy
-import logging
 
 import pytest
 import numpy as np
@@ -14,114 +9,17 @@ import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 
-import qcodes.dataset.data_set
-
-from qcodes.dataset.sqlite_base import (connect, _unicode_categories,
-                                        get_user_version,
-                                        atomic_transaction,
-                                        perform_db_upgrade_0_to_1,
-                                        update_GUIDs)
+from qcodes.dataset.sqlite_base import _unicode_categories
 
 from qcodes.dataset.data_set import CompletedError
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 from qcodes.dataset.guids import parse_guid
-
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment, dataset)
 
 n_experiments = 0
-
-
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    global n_experiments
-    n_experiments = 0
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
-
-
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = new_data_set("test-dataset")
-    yield dataset
-    dataset.conn.close()
-
-
-@contextmanager
-def location_and_station_set_to(location: int, work_station: int):
-    cfg = qc.Config()
-    old_cfg = deepcopy(cfg.current_config)
-    cfg['GUID_components']['location'] = location
-    cfg['GUID_components']['work_station'] = work_station
-    cfg.save_to_home()
-
-    try:
-        yield
-    finally:
-        cfg.current_config = old_cfg
-        cfg.save_to_home()
-
-
-def test_tables_exist(empty_temp_db):
-    for version in [-1, 0, 1]:
-        conn = connect(qc.config["core"]["db_location"],
-                       qc.config["core"]["db_debug"],
-                       version=version)
-        cursor = conn.execute("select sql from sqlite_master"
-                              " where type = 'table'")
-        expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
-        rows = [row for row in cursor]
-        assert len(rows) == len(expected_tables)
-        for row, expected_table in zip(rows, expected_tables):
-            assert expected_table in row['sql']
-        conn.close()
-
-
-def test_initialise_database_at_for_nonexisting_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
-
-        initialise_or_create_database_at(db_location)
-
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
-
-        test_tables_exist(None)
-
-
-def test_initialise_database_at_for_existing_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # Define DB location
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
-
-        # Create DB file
-        qc.config["core"]["db_location"] = db_location
-        initialise_database()
-
-        # Check if it has been created correctly
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
-        test_tables_exist(None)
-
-        # Call function under test
-        initialise_or_create_database_at(db_location)
-
-        # Check if the DB is still correct
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
-        test_tables_exist(None)
 
 
 @settings(deadline=None)
@@ -129,7 +27,8 @@ def test_initialise_database_at_for_existing_db():
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
                              min_size=1))
-def test_add_experiments(empty_temp_db, experiment_name,
+@pytest.mark.usefixtures("empty_temp_db")
+def test_add_experiments(experiment_name,
                          sample_name, dataset_name):
     global n_experiments
     n_experiments += 1
@@ -215,7 +114,8 @@ def test_add_paramspec_one_by_one(dataset):
     assert len(dataset.paramspecs.keys()) == 3
 
 
-def test_add_data_1d(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_1d():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -252,7 +152,8 @@ def test_add_data_1d(experiment):
         mydataset.add_result({'x': 5})
 
 
-def test_add_data_array(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_array():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -275,7 +176,8 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
-def test_adding_too_many_results(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_adding_too_many_results():
     """
     This test really tests the "chunking" functionality of the
     insert_many_values function of the sqlite_base module
@@ -302,7 +204,8 @@ def test_adding_too_many_results(experiment):
     dataset.add_results(results)
 
 
-def test_modify_result(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_modify_result():
     dataset = new_data_set("test_modify_result")
     xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
@@ -349,7 +252,8 @@ def test_modify_result(experiment):
 @settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
-def test_add_parameter_values(experiment, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
@@ -370,7 +274,8 @@ def test_add_parameter_values(experiment, N, M):
     mydataset.mark_complete()
 
 
-def test_load_by_counter(dataset):
+@pytest.mark.usefixtures("dataset")
+def test_load_by_counter():
     dataset = load_by_counter(1, 1)
     exps = experiments()
     assert len(exps) == 1
@@ -381,7 +286,8 @@ def test_load_by_counter(dataset):
     assert exp.last_counter == 1
 
 
-def test_dataset_with_no_experiment_raises(empty_temp_db):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_dataset_with_no_experiment_raises():
     with pytest.raises(ValueError):
         new_data_set("test-dataset",
                      specs=[ParamSpec("x", "numeric"),
@@ -392,111 +298,6 @@ def test_guid(dataset):
     guid = dataset.guid
     assert len(guid) == 36
     parse_guid(guid)
-
-
-def test_update_existing_guids(empty_temp_db, caplog):
-
-    old_loc = 101
-    old_ws = 1200
-
-    new_loc = 232
-    new_ws = 52123
-
-    # prepare five runs with different location and work station codes
-
-    with location_and_station_set_to(0, 0):
-        new_experiment('test', sample_name='test_sample')
-
-        ds1 = new_data_set('ds_one')
-        xparam = ParamSpec('x', 'numeric')
-        ds1.add_parameter(xparam)
-        ds1.add_result({'x': 1})
-
-        ds2 = new_data_set('ds_two')
-        ds2.add_parameter(xparam)
-        ds2.add_result({'x': 2})
-
-        guid_comps_1 = parse_guid(ds1.guid)
-        assert guid_comps_1['location'] == 0
-        assert guid_comps_1['work_station'] == 0
-
-        guid_comps_2 = parse_guid(ds2.guid)
-        assert guid_comps_2['location'] == 0
-        assert guid_comps_2['work_station'] == 0
-
-    with location_and_station_set_to(0, old_ws):
-        ds3 = new_data_set('ds_three')
-        xparam = ParamSpec('x', 'numeric')
-        ds3.add_parameter(xparam)
-        ds3.add_result({'x': 3})
-
-    with location_and_station_set_to(old_loc, 0):
-        ds4 = new_data_set('ds_four')
-        xparam = ParamSpec('x', 'numeric')
-        ds4.add_parameter(xparam)
-        ds4.add_result({'x': 4})
-
-    with location_and_station_set_to(old_loc, old_ws):
-        ds5 = new_data_set('ds_five')
-        xparam = ParamSpec('x', 'numeric')
-        ds5.add_parameter(xparam)
-        ds5.add_result({'x': 5})
-
-    with location_and_station_set_to(new_loc, new_ws):
-
-        caplog.clear()
-        expected_levels = ['INFO',
-                           'INFO', 'INFO',
-                           'INFO', 'INFO',
-                           'INFO', 'WARNING',
-                           'INFO', 'WARNING',
-                           'INFO', 'INFO']
-
-        with caplog.at_level(logging.INFO):
-            update_GUIDs(ds1.conn)
-
-            for record, lvl in zip(caplog.records, expected_levels):
-                assert record.levelname == lvl
-
-        guid_comps_1 = parse_guid(ds1.guid)
-        assert guid_comps_1['location'] == new_loc
-        assert guid_comps_1['work_station'] == new_ws
-
-        guid_comps_2 = parse_guid(ds2.guid)
-        assert guid_comps_2['location'] == new_loc
-        assert guid_comps_2['work_station'] == new_ws
-
-        guid_comps_3 = parse_guid(ds3.guid)
-        assert guid_comps_3['location'] == 0
-        assert guid_comps_3['work_station'] == old_ws
-
-        guid_comps_4 = parse_guid(ds4.guid)
-        assert guid_comps_4['location'] == old_loc
-        assert guid_comps_4['work_station'] == 0
-
-        guid_comps_5 = parse_guid(ds5.guid)
-        assert guid_comps_5['location'] == old_loc
-        assert guid_comps_5['work_station'] == old_ws
-
-
-def test_perform_actual_upgrade_0_to_1():
-    # we cannot use the empty_temp_db, since that has already called connect
-    # and is therefore latest version already
-    connection = connect(':memory:', debug=False,
-                         version=0)
-
-    assert get_user_version(connection) == 0
-
-    guid_table_query = "SELECT guid FROM runs"
-
-    with pytest.raises(RuntimeError):
-        atomic_transaction(connection, guid_table_query)
-
-    perform_db_upgrade_0_to_1(connection)
-    assert get_user_version(connection) == 1
-
-    c = atomic_transaction(connection, guid_table_query)
-    assert len(c.fetchall()) == 0
 
 
 def test_numpy_ints(dataset):
@@ -529,6 +330,7 @@ def test_numpy_floats(dataset):
     dataset.add_results(results)
     expected_result = [[tp(1.2)] for tp in numpy_floats]
     assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+
 
 
 def test_numpy_nan(dataset):

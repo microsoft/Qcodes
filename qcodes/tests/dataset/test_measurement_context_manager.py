@@ -1,5 +1,5 @@
 import pytest
-import tempfile
+
 import os
 from time import sleep
 import json
@@ -22,24 +22,9 @@ from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
-from qcodes.dataset.database import initialise_database
-
-
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment)
 
 
 @pytest.fixture  # scope is "function" per default
@@ -304,7 +289,8 @@ def test_unregister_parameter(DAC, DMM):
     meas.unregister_parameter(DAC.ch2)
 
 
-def test_adding_scalars_as_array_raises(experiment, DAC):
+@pytest.mark.usefixtures("experiment")
+def test_adding_scalars_as_array_raises(DAC):
     """
     Test that adding scalars to an array type parameter raises
     """
@@ -318,7 +304,8 @@ def test_adding_scalars_as_array_raises(experiment, DAC):
                                  (DAC.ch2, DAC.ch2()))
 
 
-def test_mixing_array_and_numeric_raises(experiment, DAC):
+@pytest.mark.usefixtures("experiment")
+def test_mixing_array_and_numeric_raises(DAC):
     """
     Test that mixing array and numeric types raises
     """
@@ -330,6 +317,7 @@ def test_mixing_array_and_numeric_raises(experiment, DAC):
         with pytest.raises(RuntimeError):
             datasaver.add_result((DAC.ch1, np.array([DAC.ch1(), DAC.ch1()])),
                                  (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
+
 
 def test_measurement_name(experiment, DAC, DMM):
     fmt = experiment.format_string
@@ -352,7 +340,8 @@ def test_measurement_name(experiment, DAC, DMM):
 @settings(deadline=None)
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
-def test_setting_write_period(empty_temp_db, wp):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_setting_write_period(wp):
     new_experiment('firstexp', sample_name='no sample')
     meas = Measurement()
 
@@ -370,9 +359,10 @@ def test_setting_write_period(empty_temp_db, wp):
             assert datasaver.write_period == float(wp)
 
 
+@pytest.mark.usefixtures("experiment")
 @settings(deadline=None)
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
-def test_enter_and_exit_actions(experiment, DAC, words):
+def test_enter_and_exit_actions(DAC, words):
     # we use a list to check that the functions executed
     # in the correct order
 
@@ -638,7 +628,8 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
-def test_datasaver_arrays_lists_tuples(empty_temp_db, N):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_arrays_lists_tuples(N):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -708,7 +699,75 @@ def test_datasaver_arrays_lists_tuples(empty_temp_db, N):
     assert datasaver.points_written == N
 
 
-def test_datasaver_foul_input(experiment):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_numeric_and_array_paramtype():
+    """
+    Test saving one parameter with 'numeric' paramtype and one parameter with
+    'array' paramtype
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+
+    signal = np.random.randn(113)
+
+    with meas.run() as datasaver:
+        datasaver.add_result(('numeric_1', 3.75), ('array_1', signal))
+
+    assert datasaver.points_written == 1
+
+    data = datasaver.dataset.get_data(
+        *datasaver.dataset.parameters.split(','))
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_numeric_after_array_paramtype():
+    """
+    Test that passing values for 'array' parameter in `add_result` before
+    passing values for 'numeric' parameter works.
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+
+    signal = np.random.randn(113)
+
+    with meas.run() as datasaver:
+        # it is important that first comes the 'array' data and then 'numeric'
+        datasaver.add_result(('array_1', signal), ('numeric_1', 3.75))
+
+    assert datasaver.points_written == 1
+
+    data = datasaver.dataset.get_data(
+        *datasaver.dataset.parameters.split(','))
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_foul_input():
     meas = Measurement()
 
     meas.register_custom_parameter('foul',
@@ -725,7 +784,8 @@ def test_datasaver_foul_input(experiment):
 
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
-def test_datasaver_unsized_arrays(empty_temp_db, N):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_unsized_arrays(N):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -754,7 +814,8 @@ def test_datasaver_unsized_arrays(empty_temp_db, N):
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
-def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M):
     spectrum = SpectrumAnalyzer.spectrum
 
     meas = Measurement()
@@ -788,7 +849,8 @@ def test_datasaver_array_parameters(experiment, SpectrumAnalyzer, DAC, N, M):
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
-def test_datasaver_arrayparams_lists(experiment, SpectrumAnalyzer, DAC, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_arrayparams_lists(SpectrumAnalyzer, DAC, N, M):
     lspec = SpectrumAnalyzer.listspectrum
 
     meas = Measurement()
@@ -821,7 +883,8 @@ def test_datasaver_arrayparams_lists(experiment, SpectrumAnalyzer, DAC, N, M):
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
-def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_arrayparams_tuples(SpectrumAnalyzer, DAC, N, M):
     tspec = SpectrumAnalyzer.tuplespectrum
 
     meas = Measurement()
@@ -853,8 +916,8 @@ def test_datasaver_arrayparams_tuples(experiment, SpectrumAnalyzer, DAC, N, M):
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
-def test_datasaver_array_parameters_channel(experiment,
-                                            channel_array_instrument,
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_array_parameters_channel(channel_array_instrument,
                                             DAC, N):
     meas = Measurement()
 
@@ -904,8 +967,8 @@ def test_datasaver_array_parameters_channel(experiment,
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
-def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
-                                          DAC, N):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N):
     """
     Test that storing array parameters inside a loop with the sqlite
     Array type works as expected
@@ -970,7 +1033,7 @@ def test_datasaver_array_parameters_array(experiment, channel_array_instrument,
         assert datadict['data'].shape == (N * M,)
 
 
-def test_datasaver_multidim_array(experiment):
+def test_datasaver_multidim_array(experiment):  # noqa: F811
     """
     Test that inserting multidim parameters as arrays works as expected
     """
@@ -1063,8 +1126,8 @@ def test_datasaver_multidim_numeric(experiment):
             assert datadict['data'].shape == (size1 * size2,)
 
 
-def test_datasaver_multidimarrayparameter_as_array(experiment,
-                                                   SpectrumAnalyzer):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer):
     """
     Test that inserting multidim Arrrayparameters as array works as expected
     """
@@ -1129,8 +1192,8 @@ def test_datasaver_multidimarrayparameter_as_array(experiment,
             assert_allclose(datadict['data'], expected_data)
 
 
-def test_datasaver_multidimarrayparameter_as_numeric(experiment,
-                                                     SpectrumAnalyzer):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer):
     """
     Test that storing a multidim Array parameter as numeric unravels the
     parameter as expected.
@@ -1199,8 +1262,8 @@ def test_datasaver_multidimarrayparameter_as_numeric(experiment,
             assert_allclose(datadict['data'], expected_data)
 
 
-def test_datasaver_multi_parameters_scalar(experiment,
-                                           channel_array_instrument):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_multi_parameters_scalar(channel_array_instrument):
     """
     Test that we can register multiparameters that are scalar.
     """
@@ -1219,8 +1282,8 @@ def test_datasaver_multi_parameters_scalar(experiment,
     assert ds.get_data('thatparam') == [[1]]
 
 
-def test_datasaver_multi_parameters_array(experiment,
-                                          channel_array_instrument):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_multi_parameters_array(channel_array_instrument):
     """
     Test that we can register multiparameters that are array like.
     """
@@ -1251,8 +1314,8 @@ def test_datasaver_multi_parameters_array(experiment,
     assert ds.get_data('that') == [[1], [1], [1], [1], [1]]
 
 
-def test_datasaver_2d_multi_parameters_array(experiment,
-                                             channel_array_instrument):
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
     """
     Test that we can register multiparameters that are array like and 2D.
     """
@@ -1320,7 +1383,8 @@ def test_datasaver_2d_multi_parameters_array(experiment,
                                    [1], [1], [1], [1], [1]]
 
 
-def test_load_legacy_files_2D(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_load_legacy_files_2D():
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
     dir = os.path.dirname(__file__)
     full_location = os.path.join(dir, location)
@@ -1345,7 +1409,8 @@ def test_load_legacy_files_2D(experiment):
                                              'loop', 'station']
 
 
-def test_load_legacy_files_1D(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_load_legacy_files_1D():
     location = 'fixtures/2018-01-17/#001_testsweep_15-42-57'
     dir = os.path.dirname(__file__)
     full_location = os.path.join(dir, location)
