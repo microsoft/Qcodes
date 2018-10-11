@@ -521,6 +521,10 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     object
     """
 
+    sql_query_time = 0
+    sql_update_time = 0
+    yaml_time = 0
+
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
     no_of_runs = no_of_runs or 0
@@ -534,6 +538,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
 
         for run_id in range(1, no_of_runs+1):
 
+            sql_query_t0 = time.perf_counter()
             result_table_name = _2to3_get_result_table(conn, run_id)
             layout_ids = _2to3_get_layout_ids(conn, run_id)
             independents = _2to3_get_indeps(conn, layout_ids)
@@ -541,10 +546,15 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
 
             paramspecs = _2to3_get_paramspecs(conn, dependents,
                                               independents, result_table_name)
+            sql_query_t1 = time.perf_counter()
+            sql_query_time += sql_query_t1 - sql_query_t0
 
+            yaml_t0 = time.perf_counter()
             interdeps = InterDependencies(*paramspecs.values())
             desc = RunDescriber(interdeps=interdeps)
             yaml_str = desc.to_yaml()
+            yaml_t1 = time.perf_counter()
+            yaml_time += yaml_t1 - yaml_t0
 
             sql = f"""
                    UPDATE runs
@@ -552,9 +562,20 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
                    WHERE run_id == ?
                    """
             cur = conn.cursor()
+            sql_update_t0 = time.perf_counter()
             cur.execute(sql, (yaml_str, run_id))
+            sql_update_t1 = time.perf_counter()
+            sql_update_time += sql_update_t1 - sql_update_t0
 
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
+
+        pre_commit_time = time.perf_counter()
+
+    post_commit_time = time.perf_counter()
+    log.info(f'Committed changes in {post_commit_time-pre_commit_time:.3f} s')
+    log.info(f"The yaml dance took {yaml_time:.3f} s")
+    log.info(f"All the sql querying took {sql_query_time:.3f} s")
+    log.info(f"The sql update took {sql_update_time:.3f} s")
 
 
 def transaction(conn: SomeConnection,
