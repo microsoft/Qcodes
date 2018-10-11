@@ -5,12 +5,14 @@ import logging
 from enum import IntEnum
 from typing import Dict, Union, Optional, Any, Tuple
 
-from qcodes import Instrument, ArrayParameter, Parameter, validators as vals
+from qcodes.instrument.base import Instrument
+import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import Parameter, ArrayParameter, \
+                                         ArrayParameter2
 
 log = logging.getLogger(__name__)
 
 number = Union[int, float]
-
 
 class TraceParameter(Parameter):
     """
@@ -317,6 +319,25 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Enum('log-scale', 'lin-scale',
                                           'log-full-scale', 'lin-full-scale'),
                            parameter_class=ScaleParameter)
+
+        self.add_parameter('frequency_axis',
+                           label='Frequency',
+                           unit='Hz',
+                           get_cmd=self._get_freq_axis,
+                           set_cmd=False,
+                           vals=vals.Arrays(),
+                           snapshot_value=False
+                           )
+        self.add_parameter('freq_sweep',
+                           label='Power',
+                           unit='depends on mode',
+                           get_cmd=self._get_averaged_sweep_data,
+                           set_cmd=False,
+                           parameter_class=ArrayParameter2,
+                           vals=vals.Arrays(),
+                           setpoints=(self.frequency_axis,),
+                           snapshot_value=False)
+
         self.openDevice()
         self.configure()
 
@@ -656,6 +677,12 @@ class SignalHound_USB_SA124B(Instrument):
         self.check_for_error(err, 'saGetFirmwareString')
         output['firmware'] = fw_version.value.decode('ascii')
         return output
+
+    def _get_freq_axis(self) -> np.ndarray:
+        sweep_len, start_freq, stepsize = self.QuerySweep()
+        end_freq = start_freq + stepsize*(sweep_len-1)
+        freq_points = np.linspace(start_freq, end_freq, sweep_len)
+        return freq_points
 
 
 class Constants:
