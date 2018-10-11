@@ -12,7 +12,7 @@ import numpy as np
 import qcodes as qc
 from qcodes import Station
 from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter, ArrayParameter2
+    Parameter, MultiParameter, ParameterWithSetpoints
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -156,10 +156,10 @@ class DataSaver:
                     self._unbundle_arrayparameter(parameter,
                                                   res,
                                                   found_parameters)
-                elif isinstance(parameter, ArrayParameter2):
-                    self._unbundle_arrayparameter2(parameter,
-                                                   res,
-                                                   found_parameters)
+                elif isinstance(parameter, ParameterWithSetpoints):
+                    self._unbundle_parameter_with_setpoints(parameter,
+                                                            res,
+                                                            found_parameters)
 
         for partial_result in res:
             parameter = partial_result[0]
@@ -292,9 +292,10 @@ class DataSaver:
                                             parameter.setpoints,
                                             res, found_parameters)
 
-    def _unbundle_arrayparameter2(self, parameter: ArrayParameter2,
-                                  res: List[res_type],
-                                  found_parameters: List[str]) -> None:
+    def _unbundle_parameter_with_setpoints(self,
+                                           parameter: ParameterWithSetpoints,
+                                           res: List[res_type],
+                                           found_parameters: List[str]) -> None:
         setpoint_names = []
         setpoint_data = []
         for setpointparam in parameter.setpoints:
@@ -653,11 +654,11 @@ class Measurement:
                                           setpoints,
                                           basis,
                                           paramtype)
-        elif isinstance(parameter, ArrayParameter2):
-            self._register_arrayparameter2(parameter,
-                                           setpoints,
-                                           basis,
-                                           paramtype)
+        elif isinstance(parameter, ParameterWithSetpoints):
+            self._register_parameter_with_setpoints(parameter,
+                                                    setpoints,
+                                                    basis,
+                                                    paramtype)
         elif isinstance(parameter, MultiParameter):
             self._register_multiparameter(parameter,
                                           setpoints,
@@ -753,14 +754,14 @@ class Measurement:
                                  basis,
                                  paramtype)
 
-    def _register_arrayparameter2(self,
-                                 parameter: ArrayParameter2,
-                                 setpoints: setpoints_type,
-                                 basis: setpoints_type,
-                                 paramtype: str) -> None:
+    def _register_parameter_with_setpoints(self,
+                                           parameter: ParameterWithSetpoints,
+                                           setpoints: setpoints_type,
+                                           basis: setpoints_type,
+                                           paramtype: str) -> None:
         """
-        Register an ArrayParameter2 and the setpoints belonging to the
-        ArrayParameter2
+        Register an ParameterWithSetpoints and the setpoints belonging to the
+        Parameter
         """
         name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
