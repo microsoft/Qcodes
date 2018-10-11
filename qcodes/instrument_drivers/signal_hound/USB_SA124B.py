@@ -604,7 +604,10 @@ class SignalHound_USB_SA124B(Instrument):
         Averages over SH.sweep Navg times
 
         """
+        if not self._parameters_synced:
+            self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
+        print(sweep_len)
         data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
