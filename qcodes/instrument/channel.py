@@ -32,12 +32,18 @@ class InstrumentChannel(InstrumentBase):
                  parent: Union[Instrument, 'InstrumentChannel'],
                  name: str,
                  **kwargs) -> None:
-        # Initialize base classes of Instrument. We will overwrite what we
-        # want to do in the Instrument initializer
+        # need to specify parent before `super().__init__` so that the right
+        # `full_name` is available in that scope. `full_name` is used for
+        # registering the filter for the log messages. It is composed by
+        # iteratively concatenating the full names of the parent instruments
+        # scope of `Base`
         self._parent = parent
-        self.name = "{}_{}".format(parent.name, str(name))
-        self.short_name = str(name)
         super().__init__(name=name, **kwargs)
+        # Naming insanity:
+        # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
+        # this has been a confusion about names. don't use name but
+        # full_name, or short_name. 
+        self.name = "{}_{}".format(parent.name, str(name))
 
 
 
