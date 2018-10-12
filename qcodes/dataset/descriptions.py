@@ -19,6 +19,11 @@ class RunDescriber:
     """
 
     def __init__(self, interdeps: InterDependencies) -> None:
+
+        if not isinstance(interdeps, InterDependencies):
+            raise ValueError('The interdeps arg must be of type: '
+                             f'InterDependencies. Got {type(interdeps)}.')
+
         self.interdeps = interdeps
 
     def serialize(self) -> Dict[str, Any]:

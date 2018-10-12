@@ -42,6 +42,14 @@ def some_paramspecs():
     return groups
 
 
+def test_wrong_input_type_raises():
+
+    for interdeps in ['interdeps', ['p1', 'p2'], 0]:
+
+        with pytest.raises(ValueError):
+            RunDescriber(interdeps=interdeps)
+
+
 def test_equality(some_paramspecs):
     idp1 = InterDependencies(*some_paramspecs[1].values())
     idp2 = InterDependencies(*some_paramspecs[2].values())
