@@ -699,6 +699,73 @@ def test_datasaver_arrays_lists_tuples(N):
     assert datasaver.points_written == N
 
 
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_numeric_and_array_paramtype():
+    """
+    Test saving one parameter with 'numeric' paramtype and one parameter with
+    'array' paramtype
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+
+    signal = np.random.randn(113)
+
+    with meas.run() as datasaver:
+        datasaver.add_result(('numeric_1', 3.75), ('array_1', signal))
+
+    assert datasaver.points_written == 1
+
+    data = datasaver.dataset.get_data(
+        *datasaver.dataset.parameters.split(','))
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_numeric_after_array_paramtype():
+    """
+    Test that passing values for 'array' parameter in `add_result` before
+    passing values for 'numeric' parameter works.
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+
+    signal = np.random.randn(113)
+
+    with meas.run() as datasaver:
+        # it is important that first comes the 'array' data and then 'numeric'
+        datasaver.add_result(('array_1', signal), ('numeric_1', 3.75))
+
+    assert datasaver.points_written == 1
+
+    data = datasaver.dataset.get_data(
+        *datasaver.dataset.parameters.split(','))
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
+
+
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_foul_input():
     meas = Measurement()

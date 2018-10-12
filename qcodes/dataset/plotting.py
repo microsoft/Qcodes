@@ -64,6 +64,11 @@ def plot_by_id(run_id: int,
     The plot has a title that comprises run id, experiment name, and sample
     name.
 
+    ``**kwargs`` are passed to matplotlib's relevant plotting functions
+    By default the data in any vector plot will be rasterized
+    for scatter plots and heatmaps if more that 5000 points are supplied.
+    This can be overridden by supplying the `rasterized` kwarg.
+
     Args:
         run_id:
             ID of the run to plot
@@ -244,7 +249,10 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         colorbar: matplotlib.colorbar.Colorbar=None,
                         **kwargs) -> AxesTuple:
     """
-    Make a 2D scatterplot of the data
+    Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
+    scatter used for the plotting. By default the data will be rasterized
+    in any vector plot if more that 5000 points are supplied. This can be
+    overridden by supplying the `rasterized` kwarg.
 
     Args:
         x: The x values
@@ -256,13 +264,20 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
+    if 'rasterized' in kwargs.keys():
+        rasterized = kwargs.pop('rasterized')
+    else:
+        rasterized = len(z) > qc.config.plotting.rasterize_threshold
+
     z_is_string_valued = isinstance(z[0], str)
 
     if z_is_string_valued:
         z_int = list(range(len(z)))
-        mappable = ax.scatter(x=x, y=y, c=z_int, **kwargs)
+        mappable = ax.scatter(x=x, y=y, c=z_int,
+                              rasterized=rasterized,**kwargs)
     else:
-        mappable = ax.scatter(x=x, y=y, c=z, **kwargs)
+        mappable = ax.scatter(x=x, y=y, c=z,
+                              rasterized=rasterized, **kwargs)
 
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
@@ -289,7 +304,10 @@ def plot_on_a_plain_grid(x: np.ndarray,
     way, but data must belong together such that z[n] has x[n] and
     y[n] as setpoints.  The setpoints need not be equidistantly
     spaced, but linear interpolation is used to find the edges of the
-    plotted squares.
+    plotted squares. ``**kwargs`` are passed to matplotlib's pcolormesh used
+    for the plotting. By default the data in any vector plot will be rasterized
+    if more that 5000 points are supplied. This can be overridden
+    by supplying the `rasterized` kwarg.
 
     Args:
         x: The x values
@@ -315,9 +333,15 @@ def plot_on_a_plain_grid(x: np.ndarray,
     y_edges = np.concatenate((np.array([yrow[0] - dys[0]]),
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
+    if 'rasterized' in kwargs.keys():
+        rasterized = kwargs.pop('rasterized')
+    else:
+        rasterized = len(x_edges) * len(y_edges) \
+                      > qc.config.plotting.rasterize_threshold
 
     colormesh = ax.pcolormesh(x_edges, y_edges,
                               np.ma.masked_invalid(z_to_plot),
+                              rasterized=rasterized,
                               **kwargs)
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)

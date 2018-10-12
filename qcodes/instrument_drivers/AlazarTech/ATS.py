@@ -291,11 +291,18 @@ class AlazarTech_ATS(Instrument):
         """
         This methods gets the most relevant information of this instrument
 
+        The firmware version reported should match the version number of
+        downloadable fw files from AlazarTech. But note that the firmware
+        version has often been found to be incorrect for several firmware
+        versions. At the time of writing it is known to be correct for the
+        9360 (v 21.07) and 9373 (v 30.04) but incorrect for several earlier
+        versions. In Alazar DSO this is reported as FPGA Version.
+
         Returns:
 
             Dictionary containing
 
-                - 'firmware': None
+                - 'firmware': as string
                 - 'model': as string
                 - 'serial': board serial number
                 - 'vendor': 'AlazarTech',
@@ -361,7 +368,17 @@ class AlazarTech_ATS(Instrument):
                        self._handle, 0x10000031, 0, ctypes.byref(value))
         pcie_link_width = str(value.value)
 
-        return {'firmware': None,
+
+        # Alazartech has confirmed in a support mail that this
+        # is the way to get the firmware version
+        firmware_major = (int(asopc_type) >> 16) & 0xff
+        firmware_minor = (int(asopc_type) >> 24) & 0xf
+        # firmware_minor above does not contain any prefixed zeros
+        # but the minor version is always 2 digits.
+        firmware_version = f'{firmware_major}.{firmware_minor:02d}'
+
+
+        return {'firmware': firmware_version,
                 'model': board_kind,
                 'max_samples': max_s,
                 'bits_per_sample': bps,
