@@ -9,6 +9,7 @@ from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
 import itertools
 from functools import wraps
 
+from tqdm import tqdm
 from numbers import Number
 from numpy import ndarray
 import numpy as np
@@ -649,7 +650,13 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
         t1 = time.perf_counter()
         sql_query_time += t1 - t0
 
-        for run_id in range(1, no_of_runs+1):
+        pbar = tqdm(range(1, no_of_runs+1))
+
+
+        pbar.set_description("Upgrading database")
+
+        for run_id in pbar:
+
 
             sql_query_t0 = time.perf_counter()
             result_table_name = result_tables[run_id]
