@@ -669,7 +669,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             yaml_t0 = time.perf_counter()
             interdeps = InterDependencies(*paramspecs.values())
             desc = RunDescriber(interdeps=interdeps)
-            yaml_str = desc.to_yaml()
+            yaml_str = desc.to_json()
             yaml_t1 = time.perf_counter()
             yaml_time += yaml_t1 - yaml_t0
 
