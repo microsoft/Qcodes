@@ -13,9 +13,9 @@ import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
 from qcodes.utils.plotting import auto_color_scale_from_config
 
-from .data_export import get_data_by_id, flatten_1D_data_for_plot
-from .data_export import (plottype_for_2d_data,
-                          plottype_for_3d_data, reshape_2D_data)
+from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
+                          plottype_for_1d_data,
+                          plottype_for_2d_data, reshape_2D_data)
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
@@ -35,6 +35,7 @@ SUBPLOTS_OWN_KWARGS.remove('fig_kw')
 FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
 FIGURE_KWARGS.remove('kwargs')
 SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
+
 
 def plot_by_id(run_id: int,
                axes: Optional[Union[matplotlib.axes.Axes,
@@ -141,7 +142,7 @@ def plot_by_id(run_id: int,
             xpoints = data[0]['data']
             ypoints = data[1]['data']
 
-            plottype = plottype_for_2d_data(xpoints, ypoints)
+            plottype = plottype_for_1d_data(xpoints, ypoints)
 
             if plottype == 'line':
                 # sort for plotting
@@ -175,7 +176,7 @@ def plot_by_id(run_id: int,
             ypoints = flatten_1D_data_for_plot(data[1]['data'])
             zpoints = flatten_1D_data_for_plot(data[2]['data'])
 
-            plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
+            plottype = plottype_for_2d_data(xpoints, ypoints, zpoints)
 
             how_to_plot = {'grid': plot_on_a_plain_grid,
                            'equidistant': plot_on_a_plain_grid,

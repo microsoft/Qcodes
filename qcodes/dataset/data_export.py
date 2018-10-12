@@ -218,9 +218,9 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
-def plottype_for_2d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+def plottype_for_1d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     """
-    Determine plot type for 2D data by inspecting it
+    Determine plot type for 1D data by inspecting it
 
     Possible plot types are:
     * 'point' - scatter plot
@@ -261,12 +261,12 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         return 'line'
 
 
-def plottype_for_3d_data(xpoints: np.ndarray,
+def plottype_for_2d_data(xpoints: np.ndarray,
                          ypoints: np.ndarray,
                          zpoints: np.ndarray
                          ) -> str:
     """
-    Determine plot type for 3D data by inspecting it
+    Determine plot type for 2D data by inspecting it
 
     Plot types are:
     * 'grid' - colormap plot for data that is on a grid
