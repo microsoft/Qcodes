@@ -31,6 +31,10 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
     Adapter. It is filled by the `__init__` method:
     >>> LoggerAdapter(log, {'instrument': self.full_name})
     """
+    def __init__(self, logger, instrument_instance, *args, **kwargs):
+        super().__init__(logger, *args, **kwargs)
+        self.extra.update({'instrument': instrument_instance.full_name})
+
     def process(self, msg, kwargs):
         """
         returns the message and the kwargs for the handlers.
@@ -99,7 +103,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
-        self.log = InstrumentLoggerAdapter(log, {'instrument': self.full_name})
+        self.log = InstrumentLoggerAdapter(log, self)
 
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
