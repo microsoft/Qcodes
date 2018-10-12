@@ -20,11 +20,6 @@ def a_func():
 
 class TestBaseClass(TestCase):
 
-    def test_instantiate(self):
-        # you cannot instantiate the base class
-        with self.assertRaises(NotImplementedError):
-            Validator()
-
     class BrokenValidator(Validator):
 
         def __init__(self):
