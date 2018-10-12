@@ -1,5 +1,7 @@
 import math
-from typing import Union, Tuple, cast, Optional
+from typing import Union, Optional, Tuple
+from typing import Callable as TCallable
+from typing import Sequence as TSequence
 import collections
 
 import numpy as np
@@ -8,7 +10,7 @@ BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
 
-def validate_all(*args, context=''):
+def validate_all(*args, context: str='') -> None:
     """
     Takes a list of (validator, value) couplets and tests whether they are
     all valid, raising ValueError otherwise
@@ -67,7 +69,7 @@ class Validator:
     is_numeric: is this a numeric type (so it can be swept)?
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         raise NotImplementedError
 
     def validate(self, value, context=''):
@@ -99,6 +101,7 @@ class Anything(Validator):
     def __repr__(self):
         return '<Anything>'
 
+
 class Nothing(Validator):
     """allow no value to pass"""
 
@@ -113,6 +116,7 @@ class Nothing(Validator):
 
     def __repr__(self):
         return '<Nothing({})>'.format(self.reason)
+
 
 class Bool(Validator):
     """
@@ -385,7 +389,7 @@ class PermissiveMultiples(Validator):
         self.precision = precision
         self._numval = Numbers()
         if isinstance(divisor, int):
-            self._mulval = Multiples(divisor=abs(divisor)) # type: Optional[Multiples]
+            self._mulval: Optional[Multiples] = Multiples(divisor=abs(divisor))
         else:
             self._mulval = None
         self._valid_values = [divisor]
@@ -477,14 +481,15 @@ class Arrays(Validator):
     Args:
         min_value:  Min value allowed, default inf.
         max_value: Max value allowed, default inf.
-        shape: The shape of the array, standard numpy format.
+        shape: The shape of the array, tuple of either ints or Callables taking
+          no arguments that return the size along that dim as an int.
     """
 
     validtypes = (int, float, np.integer, np.floating)
 
     def __init__(self, min_value: Union[float, int]=-float("inf"),
                  max_value: Union[float, int]=float("inf"),
-                 shape: Tuple[int]=None) -> None:
+                 shape: TSequence[Union[int, TCallable[[], int]]]=None) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
@@ -499,12 +504,28 @@ class Arrays(Validator):
             raise TypeError('max_value must be a number bigger than min_value')
         self._shape = shape
 
-        if self._shape is None:
-            self._valid_values = [np.array([min_value])]
+    @property
+    def valid_values(self):
+        shape = self.shape
+        if shape is None:
+            return [np.array([self._min_value])]
         else:
-            val_arr = np.empty(self._shape)
-            val_arr.fill(min_value)
-            self._valid_values = [val_arr]
+            val_arr = np.empty(shape)
+            val_arr.fill(self._min_value)
+            return [val_arr]
+
+    @property
+    def shape(self) -> Optional[Tuple[int, ...]]:
+        if self._shape is None:
+            return None
+        shape_array = []
+        for s in self._shape:
+            if callable(s):
+                shape_array.append(s())
+            else:
+                shape_array.append(s)
+        shape = tuple(shape_array)
+        return shape
 
     def validate(self, value, context=''):
 
@@ -515,11 +536,12 @@ class Arrays(Validator):
         if value.dtype not in self.validtypes:
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
-        if self._shape is not None:
-            if (np.shape(value) != self._shape):
+        if self.shape is not None:
+            shape = self.shape
+            if np.shape(value) != shape:
                 raise ValueError(
-                    '{} does not have expected shape {}; {}'.format(
-                        repr(value), self._shape, context))
+                    f'{repr(value)} does not have expected shape {shape},'
+                    f'it has shape {np.shape(value)}; {context}')
 
         # Only check if max is not inf as it can be expensive for large arrays
         if self._max_value != (float("inf")):
@@ -545,7 +567,7 @@ class Arrays(Validator):
         minv = self._min_value if math.isfinite(self._min_value) else None
         maxv = self._max_value if math.isfinite(self._max_value) else None
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
-                                              self._shape)
+                                              self.shape)
 
 
 class Lists(Validator):
@@ -572,6 +594,7 @@ class Lists(Validator):
         if not isinstance(self._elt_validator, Anything):
             for elt in value:
                 self._elt_validator.validate(elt)
+
 
 class Sequence(Validator):
     """
@@ -608,6 +631,7 @@ class Sequence(Validator):
         if not isinstance(self._elt_validator, Anything):
             for elt in value:
                 self._elt_validator.validate(elt)
+
 
 class Callable(Validator):
     """
