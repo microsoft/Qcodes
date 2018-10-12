@@ -1,13 +1,19 @@
 import math
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, Any, Hashable
+# rename on import since this file implements its own classes
+# with these names.
 from typing import Callable as TCallable
 from typing import Sequence as TSequence
+from typing import List as TList
+
 import collections
 
 import numpy as np
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
+
+numbertypes = Union[float, int, np.floating, np.integer]
 
 
 def validate_all(*args, context: str='') -> None:
@@ -25,7 +31,8 @@ def validate_all(*args, context: str='') -> None:
         validator.validate(value, 'argument ' + str(i) + context)
 
 
-def range_str(min_val, max_val, name):
+def range_str(min_val: Union[float, int], max_val: Union[float, int],
+              name: str) -> str:
     """
     utility to represent ranges in Validator repr's
     """
@@ -46,7 +53,7 @@ def range_str(min_val, max_val, name):
 class Validator:
     """
     base class for all value validators
-    each should have its own constructor, and override:
+    each validator should implement:
 
     __init__: here a private attribute, _valid_values, should be set.
         _valid_values must be a list of at least one valid value.
@@ -60,52 +67,54 @@ class Validator:
 
         raises an error (TypeError or ValueError) if the value fails
 
+    is_numeric: A boolean flag that marks if this a numeric type.
+
+    The base class implements:
+
     valid_values: a property exposing _valid_values, which is a list
         of examples of valid values. For very simple validators, like
         Bool or Enum, the list contains all valid values, but in general
         it just holds SOME valid values. These example values are intended
         to be useful when simulating instruments.
 
-    is_numeric: is this a numeric type (so it can be swept)?
+    Alternatively you may override valid_values and provide your own
+    implementation of getting valid values.
     """
+    _valid_values: Any = None
+    is_numeric = False  # is this a numeric type (so it can be swept)?
 
-    def __init__(self) -> None:
-        raise NotImplementedError
-
-    def validate(self, value, context=''):
+    def validate(self, value, context: str=''):
         raise NotImplementedError
 
     @property
-    def valid_values(self):
-        if not hasattr(self, '_valid_values'):
-            raise NotImplementedError
-        else:
+    def valid_values(self) -> TList[Any]:
+        if hasattr(self, '_valid_values'):
             return self._valid_values
-
-    is_numeric = False  # is this a numeric type (so it can be swept)?
+        else:
+            raise NotImplementedError
 
 
 class Anything(Validator):
     """allow any value to pass"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._valid_values = [0]
 
-    def validate(self, value, context=''):
+    def validate(self, value: Any, context: str=''):
         pass
     # NOTE(giulioungaretti): why is_numeric?
     # it allows for set_step in parameter
     # TODO(giulioungaretti): possible refactor
     is_numeric = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Anything>'
 
 
 class Nothing(Validator):
     """allow no value to pass"""
 
-    def __init__(self, reason):
+    def __init__(self, reason: str) -> None:
         if reason:
             self.reason = reason
         else:
@@ -123,15 +132,15 @@ class Bool(Validator):
     requires a boolean
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._valid_values = [True, False]
 
-    def validate(self, value, context=''):
+    def validate(self, value: bool, context: str='') -> None:
         if not isinstance(value, bool) and not isinstance(value, np.bool8):
             raise TypeError(
                 '{} is not Boolean; {}'.format(repr(value), context))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Boolean>'
 
 
@@ -142,7 +151,7 @@ class Strings(Validator):
     to min_length <= len(value) <= max_length
     """
 
-    def __init__(self, min_length=0, max_length=BIGSTRING):
+    def __init__(self, min_length: int=0, max_length: int=BIGSTRING) -> None:
         if isinstance(min_length, int) and min_length >= 0:
             self._min_length = min_length
         else:
@@ -154,7 +163,7 @@ class Strings(Validator):
                             'no smaller than min_length')
         self._valid_values = ['.'*min_length]
 
-    def validate(self, value, context=''):
+    def validate(self, value: str, context: str=''):
         if not isinstance(value, str):
             raise TypeError(
                 '{} is not a string; {}'.format(repr(value), context))
@@ -166,7 +175,7 @@ class Strings(Validator):
                 '{} and {} inclusive; {}'.format(
                     repr(value), self._min_length, self._max_length, context))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         minv = self._min_length or None
         maxv = self._max_length if self._max_length < BIGSTRING else None
         return '<Strings{}>'.format(range_str(minv, maxv, 'len'))
@@ -186,8 +195,8 @@ class Numbers(Validator):
 
     validtypes = (float, int, np.integer, np.floating)
 
-    def __init__(self, min_value: Union[int, float]=-float("inf"),
-                 max_value: Union[int, float]=float("inf")) -> None:
+    def __init__(self, min_value: numbertypes=-float("inf"),
+                 max_value: numbertypes=float("inf")) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
@@ -203,7 +212,7 @@ class Numbers(Validator):
 
         self._valid_values = [min_value, max_value]
 
-    def validate(self, value, context=''):
+    def validate(self, value: numbertypes, context: str='') -> None:
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
@@ -216,7 +225,7 @@ class Numbers(Validator):
 
     is_numeric = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         minv = self._min_value if math.isfinite(self._min_value) else None
         maxv = self._max_value if math.isfinite(self._max_value) else None
         return '<Numbers{}>'.format(range_str(minv, maxv, 'v'))
@@ -230,8 +239,10 @@ class Ints(Validator):
     """
 
     validtypes = (int, np.integer)
+    inttypes = Union[int, np.integer]
 
-    def __init__(self, min_value=-BIGINT, max_value=BIGINT):
+    def __init__(self, min_value: inttypes=-BIGINT,
+                 max_value: inttypes=BIGINT) -> None:
         if isinstance(min_value, self.validtypes):
             self._min_value = int(min_value)
         else:
@@ -247,7 +258,7 @@ class Ints(Validator):
 
         self._valid_values = [min_value, max_value]
 
-    def validate(self, value, context=''):
+    def validate(self, value: inttypes, context: str='') -> None:
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int; {}'.format(repr(value), context))
@@ -260,7 +271,7 @@ class Ints(Validator):
 
     is_numeric = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         minv = self._min_value if self._min_value > -BIGINT else None
         maxv = self._max_value if self._max_value < BIGINT else None
         return '<Ints{}>'.format(range_str(minv, maxv, 'v'))
@@ -275,7 +286,7 @@ class PermissiveInts(Ints):
     set_parser that converts the float repr to an actual int
     """
 
-    def validate(self, value, context=''):
+    def validate(self, value: numbertypes, context: str='') -> None:
         if isinstance(value, (float, np.floating)):
             intrepr = int(round(value))
             remainder = abs(value - intrepr)
@@ -295,14 +306,14 @@ class Enum(Validator):
     eg. Enum(val1, val2, val3)
     """
 
-    def __init__(self, *values):
+    def __init__(self, *values: Hashable) -> None:
         if not len(values):
             raise TypeError('Enum needs at least one value')
 
         self._values = set(values)
         self._valid_values = list(values)
 
-    def validate(self, value, context=''):
+    def validate(self, value, context: str='') -> None:
         try:
             if value not in self._values:
                 raise ValueError('{} is not in {}; {}'.format(
@@ -313,7 +324,7 @@ class Enum(Validator):
                 repr(value), repr(self._values), context),)
             raise
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Enum: {}>'.format(repr(self._values))
 
 
@@ -322,12 +333,12 @@ class OnOff(Validator):
     requires either the string 'on' or 'off'
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._validator = Enum('on', 'off')
         self._valid_values = self._validator._valid_values
 
-    def validate(self, value, context=''):
-        return self._validator.validate(value, context)
+    def validate(self, value: str, context: str='') -> None:
+        self._validator.validate(value, context)
 
 
 class Multiples(Ints):
@@ -345,21 +356,21 @@ class Multiples(Ints):
         min_value, value must be >= min_value
     """
 
-    def __init__(self, divisor=1, **kwargs):
+    def __init__(self, divisor: int=1, **kwargs) -> None:
         super().__init__(**kwargs)
         if not isinstance(divisor, int) or divisor <= 0:
             raise TypeError('divisor must be a positive integer')
         self._divisor = divisor
         self._valid_values = [divisor]
 
-    def validate(self, value, context=''):
+    def validate(self, value: int, context: str='') -> None:
         super().validate(value=value, context=context)
         if not value % self._divisor == 0:
             raise ValueError('{} is not a multiple of {}; {}'.format(
                 repr(value), repr(self._divisor), context))
 
-    def __repr__(self):
-        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
+    def __repr__(self) -> str:
+        return super().__repr__()[:-1] + f', Multiples of {self._divisor}>'
 
     is_numeric = True
 
@@ -380,7 +391,8 @@ class PermissiveMultiples(Validator):
             the nearest true multiple
     """
 
-    def __init__(self, divisor: Union[float, int, np.floating],
+
+    def __init__(self, divisor: numbertypes,
                  precision: float=1e-9) -> None:
         if divisor == 0:
             raise ValueError('Can not meaningfully check for multiples of'
@@ -394,7 +406,7 @@ class PermissiveMultiples(Validator):
             self._mulval = None
         self._valid_values = [divisor]
 
-    def validate(self, value: Union[float, int, np.floating],
+    def validate(self, value: numbertypes,
                  context: str='') -> None:
         """
         Validate the given value. Note that this validator does not use
@@ -418,10 +430,10 @@ class PermissiveMultiples(Validator):
                 raise ValueError('{} is not a multiple'.format(value) +
                                  ' of {}.'.format(self.divisor))
 
-    def __repr__(self):
-        repr = ('<PermissiveMultiples, Multiples of '
-                '{} to within {}>'.format(self.divisor, self.precision))
-        return repr
+    def __repr__(self) -> str:
+        repr_str = ('<PermissiveMultiples, Multiples of '
+                    '{} to within {}>'.format(self.divisor, self.precision))
+        return repr_str
 
     is_numeric = True
 
@@ -435,7 +447,7 @@ class MultiType(Validator):
     different validators
     """
 
-    def __init__(self, *validators):
+    def __init__(self, *validators: Validator) -> None:
         if not validators:
             raise TypeError('MultiType needs at least one Validator')
 
@@ -457,8 +469,8 @@ class MultiType(Validator):
             self._valid_values += val._valid_values
         self._valid_values = list(set(self._valid_values))
 
-    def validate(self, value, context=''):
-        args = ()
+    def validate(self, value: Any, context: str='') -> None:
+        args: TList[str] = []
         for v in self._validators:
             try:
                 v.validate(value, context)
@@ -466,11 +478,11 @@ class MultiType(Validator):
             except Exception as e:
                 # collect the args from all validators so you can see why
                 # each one failed
-                args = args + e.args
+                args = args + list(e.args)
 
         raise ValueError(*args)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
         return '<MultiType: {}>'.format(', '.join(parts))
 
@@ -487,8 +499,8 @@ class Arrays(Validator):
 
     validtypes = (int, float, np.integer, np.floating)
 
-    def __init__(self, min_value: Union[float, int]=-float("inf"),
-                 max_value: Union[float, int]=float("inf"),
+    def __init__(self, min_value: numbertypes=-float("inf"),
+                 max_value: numbertypes=float("inf"),
                  shape: TSequence[Union[int, TCallable[[], int]]]=None) -> None:
 
         if isinstance(min_value, self.validtypes):
@@ -505,7 +517,7 @@ class Arrays(Validator):
         self._shape = shape
 
     @property
-    def valid_values(self):
+    def valid_values(self) -> TList[np.ndarray]:
         shape = self.shape
         if shape is None:
             return [np.array([self._min_value])]
@@ -527,7 +539,7 @@ class Arrays(Validator):
         shape = tuple(shape_array)
         return shape
 
-    def validate(self, value, context=''):
+    def validate(self, value: np.ndarray, context: str='') -> None:
 
         if not isinstance(value, np.ndarray):
             raise TypeError(
@@ -563,7 +575,7 @@ class Arrays(Validator):
 
     is_numeric = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         minv = self._min_value if math.isfinite(self._min_value) else None
         maxv = self._max_value if math.isfinite(self._max_value) else None
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
@@ -577,16 +589,16 @@ class Lists(Validator):
         elt_validator: used to validate the individual elements of the list
     """
 
-    def __init__(self, elt_validator=Anything()):
+    def __init__(self, elt_validator: Validator=Anything()) -> None:
         self._elt_validator = elt_validator
         self._valid_values = [elt_validator._valid_values]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         msg = '<Lists : '
         msg += self._elt_validator.__repr__() + '>'
         return msg
 
-    def validate(self, value, context=''):
+    def validate(self, value: TList[Anything], context: str='') -> None:
         if not isinstance(value, list):
             raise TypeError(
                 '{} is not a list; {}'.format(repr(value), context))
@@ -603,21 +615,21 @@ class Sequence(Validator):
         elt_validator: used to validate the individual elements of the Sequence
     """
 
-    def __init__(self, elt_validator=Anything(),
-                 length=None, require_sorted=False):
+    def __init__(self, elt_validator: Validator=Anything(),
+                 length: int=None, require_sorted: bool=False) -> None:
         self._elt_validator = elt_validator
         self._length = length
         self._require_sorted = require_sorted
         self._valid_values = [elt_validator._valid_values]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         msg = '<Sequence : '
         msg += f'len: {self._length} '
         msg += f'sorted: {self._require_sorted} '
         msg += self._elt_validator.__repr__() + '>'
         return msg
 
-    def validate(self, value, context=''):
+    def validate(self, value: collections.Sequence, context: str='') -> None:
         if not isinstance(value, collections.Sequence):
             raise TypeError(
                 '{} is not a sequence; {}'.format(repr(value), context))
@@ -637,15 +649,15 @@ class Callable(Validator):
     """
     Validator for callables such as functions.
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self._valid_values = [lambda: 0]
 
-    def validate(self, value, context=''):
+    def validate(self, value: TCallable, context: str='') -> None:
         if not callable(value):
             raise TypeError(
                 '{} is not a callable; {}'.format(repr(value), context))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Callable>'
 
 
@@ -654,7 +666,7 @@ class Dict(Validator):
     Validator for dictionaries
     """
 
-    def __init__(self, allowed_keys=None):
+    def __init__(self, allowed_keys: TSequence[Hashable]=None) -> None:
         """
         Validator for dictionary keys
         Args:
@@ -663,7 +675,7 @@ class Dict(Validator):
         self.allowed_keys = allowed_keys
         self._valid_values = [{0: 1}]
 
-    def validate(self, value, context=''):
+    def validate(self, value: dict, context: str='') -> None:
         if not isinstance(value, dict):
             raise TypeError(
                 '{} is not a dictionary; {}'.format(repr(value), context))
@@ -675,7 +687,7 @@ class Dict(Validator):
                                   '{}'.format(forbidden_keys,
                                               self.allowed_keys))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.allowed_keys is None:
             return '<Dict>'
         else:
