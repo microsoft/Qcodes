@@ -9,6 +9,13 @@ class InterDependencies:
     """
 
     def __init__(self, *paramspecs: ParamSpec) -> None:
+
+        for paramspec in paramspecs:
+            if not isinstance(paramspec, ParamSpec):
+                raise ValueError('Got invalid input. All paramspecs must be '
+                                 f'ParamSpecs, but {paramspec} is of type '
+                                 f'{type(paramspec)}.')
+
         self.paramspecs = paramspecs
 
     def __repr__(self) -> str:
