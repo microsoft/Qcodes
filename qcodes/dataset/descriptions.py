@@ -1,7 +1,6 @@
 import io
 from typing import Dict, Any
-
-from ruamel.yaml import YAML
+import json
 
 from qcodes.dataset.dependencies import InterDependencies
 
@@ -40,10 +39,26 @@ class RunDescriber:
 
         return rundesc
 
+    @staticmethod
+    def _ruamel_importer():
+        try:
+            from ruamel_yaml import YAML
+        except ImportError:
+            try:
+                from ruamel.yaml import YAML
+            except ImportError:
+                raise ImportError('No ruamel module found. Please install '
+                                  'either ruamel.yaml or ruamel_yaml to '
+                                  'use the methods to_yaml and from_yaml')
+        return YAML
+
     def to_yaml(self) -> str:
         """
         Output the run description as a yaml string
         """
+
+        YAML = self._ruamel_importer()
+
         yaml = YAML()
         with io.StringIO() as stream:
             yaml.dump(self.serialize(), stream=stream)
@@ -51,16 +66,33 @@ class RunDescriber:
 
         return output
 
+    def to_json(self) -> str:
+        """
+        Output the run describtion as a JSON string
+        """
+        return json.dumps(self.serialize())
+
     @classmethod
     def from_yaml(cls, yaml_str: str) -> 'RunDescriber':
         """
         Parse a yaml string (the return of `to_yaml`) into a RunDescriber
         object
         """
+
+        YAML = cls._ruamel_importer()
+
         yaml = YAML()
         # yaml.load returns an OrderedDict, but we need a dict
         ser = dict(yaml.load(yaml_str))
         return cls.deserialize(ser)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> 'RunDescriber':
+        """
+        Parse a JSON string (the return value of `to_json`) into a
+        RunDescriber object
+        """
+        return cls.deserialize(json.loads(json_str))
 
     def __eq__(self, other):
         if not isinstance(other, RunDescriber):

@@ -8,5 +8,4 @@ git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml
 codecov
 asv
-ruamel.yaml
 gitpython
