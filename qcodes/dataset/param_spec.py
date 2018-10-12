@@ -8,7 +8,6 @@ from copy import deepcopy
 # str, Number, List, ndarray, bool
 class ParamSpec:
 
-    version = 0  # used when serializing
     allowed_types = ['array', 'numeric', 'text']
 
     def __init__(self, name: str,
@@ -120,7 +119,6 @@ class ParamSpec:
         output['unit'] = self.unit
         output['inferred_from'] = self._inferred_from
         output['depends_on'] = self._depends_on
-        output['version'] = self.version
 
         return output
 

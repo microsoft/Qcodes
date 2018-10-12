@@ -16,15 +16,13 @@ def version_0_serializations():
                  'label': 'Gate v1',
                  'unit': 'V',
                  'inferred_from': [],
-                 'depends_on': ['dac_ch1', 'dac_ch2'],
-                 'version': 0})
+                 'depends_on': ['dac_ch1', 'dac_ch2']})
     sers.append({'name': 'some_name',
                  'paramtype': 'array',
                  'label': 'My Array ParamSpec',
                  'unit': 'Ars',
                  'inferred_from': ['p1', 'p2' ],
-                 'depends_on': [],
-                 'version': 0})
+                 'depends_on': []})
     return sers
 
 
@@ -176,7 +174,6 @@ def test_serialize():
     assert ser['unit'] == p1.unit
     assert ser['depends_on'] == p1._depends_on
     assert ser['inferred_from'] == p1._inferred_from
-    assert ser['version'] == p1.version
 
 
 def test_deserialize(version_0_serializations, version_0_deserializations):
