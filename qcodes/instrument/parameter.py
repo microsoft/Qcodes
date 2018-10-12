@@ -1075,7 +1075,10 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = getattr(self.parent, 'ask', None)
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
-            self.get = self._wrap_get(self.get_raw)
+            if self.wrap_get:
+                self.get = self._wrap_get(self.get_raw)
+            else:
+                self.get = self.get_raw
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
@@ -1083,7 +1086,10 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = getattr(self.parent, 'write', None)
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
-            self.set = self._wrap_set(self.set_raw)
+            if self.wrap_set:
+                self.set = self._wrap_set(self.set_raw)
+            else:
+                self.set = self.set_raw
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
