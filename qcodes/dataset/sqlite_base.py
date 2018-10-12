@@ -625,10 +625,6 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
     object
     """
 
-    sql_query_time = 0.0
-    sql_update_time = 0.0
-    yaml_time = 0.0
-
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
     no_of_runs = no_of_runs or 0
@@ -640,25 +636,18 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
         sql = "ALTER TABLE runs ADD COLUMN run_description TEXT"
         transaction(conn, sql)
 
-        t0 = time.perf_counter()
         result_tables = _2to3_get_result_tables(conn)
         layout_ids_all = _2to3_get_layout_ids(conn)
         indeps_all = _2to3_get_indeps(conn)
         deps_all = _2to3_get_deps(conn)
         layouts = _2to3_get_layouts(conn)
         dependencies = _2to3_get_dependencies(conn)
-        t1 = time.perf_counter()
-        sql_query_time += t1 - t0
 
         pbar = tqdm(range(1, no_of_runs+1))
-
-
         pbar.set_description("Upgrading database")
 
         for run_id in pbar:
 
-
-            sql_query_t0 = time.perf_counter()
             result_table_name = result_tables[run_id]
             layout_ids = tuple(layout_ids_all[run_id])
             independents = tuple(indeps_all[run_id])
@@ -670,15 +659,10 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
                                               dependencies,
                                               dependents,
                                               independents, result_table_name)
-            sql_query_t1 = time.perf_counter()
-            sql_query_time += sql_query_t1 - sql_query_t0
 
-            yaml_t0 = time.perf_counter()
             interdeps = InterDependencies(*paramspecs.values())
             desc = RunDescriber(interdeps=interdeps)
-            yaml_str = desc.to_json()
-            yaml_t1 = time.perf_counter()
-            yaml_time += yaml_t1 - yaml_t0
+            json_str = desc.to_json()
 
             sql = f"""
                    UPDATE runs
@@ -686,20 +670,8 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
                    WHERE run_id == ?
                    """
             cur = conn.cursor()
-            sql_update_t0 = time.perf_counter()
-            cur.execute(sql, (yaml_str, run_id))
-            sql_update_t1 = time.perf_counter()
-            sql_update_time += sql_update_t1 - sql_update_t0
-
+            cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
-
-        pre_commit_time = time.perf_counter()
-
-    post_commit_time = time.perf_counter()
-    log.info(f'Committed changes in {post_commit_time-pre_commit_time:.3f} s')
-    log.info(f"The yaml dance took {yaml_time:.3f} s")
-    log.info(f"All the sql querying took {sql_query_time:.3f} s")
-    log.info(f"The sql update took {sql_update_time:.3f} s")
 
 
 def transaction(conn: SomeConnection,
