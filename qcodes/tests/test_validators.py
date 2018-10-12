@@ -576,15 +576,26 @@ class TestArrays(TestCase):
 
     def test_shape(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
-        v = np.array([[2, 0], [1, 2], [2, 3]])
-        with self.assertRaises(ValueError):
-            m.validate(v)
 
-        # should pass if no shape specified
+        v1 = np.array([[2, 0], [1, 2]])
+        v2 = np.array([[2, 0], [1, 2], [2, 3]])
+
+        # v1 is the correct shape but v2 is not
+        m.validate(v1)
+        with self.assertRaises(ValueError):
+            m.validate(v2)
+        # both should pass if no shape specified
         m = Arrays(min_value=-5, max_value=50)
-        m.validate(v)
-        v = np.array([[2, 0], [1, 2]])
-        m.validate(v)
+        m.validate(v1)
+        m.validate(v2)
+
+    def test_shape_defered(self):
+        m = Arrays(min_value=-5, max_value=50, shape=(lambda: 2, lambda: 2))
+        v1 = np.array([[2, 5], [3, 7]])
+        m.validate(v1)
+        v2 = np.array([[2, 0], [1, 2], [2, 3]])
+        with self.assertRaises(ValueError):
+            m.validate(v2)
 
     def test_valid_values(self):
         val = Arrays(min_value=-5, max_value=50, shape=(2, 2))
