@@ -153,6 +153,8 @@ def plot_by_id(run_id: int,
                 ax.plot(xpoints, ypoints, **kwargs)
             elif plottype == 'point':
                 ax.scatter(xpoints, ypoints, **kwargs)
+            elif plottype == 'bar':
+                ax.bar(xpoints, ypoints, **kwargs)
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 

@@ -223,6 +223,7 @@ def plottype_for_1d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     Determine plot type for 1D data by inspecting it
 
     Possible plot types are:
+    * 'bar' - bar plot
     * 'point' - scatter plot
     * 'line' - line plot
 
@@ -233,11 +234,16 @@ def plottype_for_1d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     Returns:
         Determined plot type as a string
     """
+
+    if isinstance(xpoints[0], str) and not isinstance(ypoints[0], str):
+        if len(xpoints) == len(np.unique(xpoints)):
+            return 'bar'
+        else:
+            return 'point'
     if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
-        plottype = 'point'
+        return 'point'
     else:
-        plottype = datatype_from_setpoints_1d(xpoints)
-    return plottype
+        return datatype_from_setpoints_1d(xpoints)
 
 
 def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
