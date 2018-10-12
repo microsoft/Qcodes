@@ -19,11 +19,37 @@ from .function import Function
 log = logging.getLogger(__name__)
 
 class InstrumentLoggerAdapter(logging.LoggerAdapter):
+    """
+    In the python logging module adapters are used to add context information
+    to logging. The `LoggerAdapter` has the same methods as the `Logger` and
+    can thus be used as such.
+
+    Here it is used to add the instruments full name to the log records so that
+    they can be filetered by the `InstrumentFilter` by the instrument instance.
+
+    The context data gets stored in the `extra` dictionary as a property of the
+    Adapter. It is filled by the `__init__` method:
+    >>> LoggerAdapter(log, {'instrument': self.full_name})
+    """
     def process(self, msg, kwargs):
+        """
+        returns the message and the kwargs for the handlers.
+        """
         kwargs['extra'] = self.extra
         return f"[{self.extra['instrument']}] {msg}", kwargs
 
+
 class InstrumentFilter(logging.Filter):
+    """
+    Filter to filter out records that originate from the given instruments.
+    Records created through the `InstrumentLoggerAdapter` have additional
+    properties as specified in the `extra` dictionary which is a property of
+    the adapter.
+
+    Here the `instrument` property gets used to reject records that don't have
+    originate from the list of instruments that has been passed to the
+    `__init__`
+    """
     def __init__(self, instruments):
         if isinstance(instruments, InstrumentBase):
             instruments = (instruments,)
