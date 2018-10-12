@@ -649,7 +649,7 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
         for run_id in pbar:
 
             result_table_name = result_tables[run_id]
-            layout_ids = tuple(layout_ids_all[run_id])
+            layout_ids = list(layout_ids_all[run_id])
             independents = tuple(indeps_all[run_id])
             dependents = tuple(deps_all[run_id])
 
