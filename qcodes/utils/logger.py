@@ -25,8 +25,6 @@ LOGGING_SEPARATOR = ' ¦ '
 HISTORY_LOG_NAME = "command_history.log"
 PYTHON_LOG_NAME = 'qcodes.log'
 QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
-QCODES_FILE_HANDLER_NAME = 'qcodes_file_handler_name'
-QCODES_CONSOLE_HANDLER_NAME = 'qcodes_console_handler_name'
 
 FORMAT_STRING_DICT = OrderedDict([
     ('asctime', 's'),
@@ -126,10 +124,8 @@ def start_logger() -> None:
     root_logger.setLevel(logging.DEBUG)
 
     # remove previously set handlers
-    handlers: Sequence[logging.Handler] = copy(root_logger.handlers)
-    for handler in handlers:
-        if handler.name in (QCODES_CONSOLE_HANDLER_NAME,
-                            QCODES_FILE_HANDLER_NAME):
+    for handler in (console_handler, file_handler):
+        if handler is not None:
             handler.close()
             root_logger.removeHandler(handler)
 
@@ -142,7 +138,6 @@ def start_logger() -> None:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(qc.config.logger.console_level)
     console_handler.setFormatter(formatter)
-    console_handler.set_name(QCODES_CONSOLE_HANDLER_NAME)
     root_logger.addHandler(console_handler)
 
     # file
@@ -153,7 +148,6 @@ def start_logger() -> None:
                                                              when='midnight')
     file_handler.setLevel(qc.config.logger.file_level)
     file_handler.setFormatter(formatter)
-    file_handler.set_name(QCODES_FILE_HANDLER_NAME)
     root_logger.addHandler(file_handler)
 
     # capture any warnings from the warnings module
