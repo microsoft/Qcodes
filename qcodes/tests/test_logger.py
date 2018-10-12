@@ -29,18 +29,15 @@ def test_get_log_file_name():
 def test_start_logger():
     # remove all Handlers
     logger.start_logger()
-    assert isinstance(logger.get_console_handler, logging.Handler)
-    assert isinstance(logger.get_file_handler, logging.Handler)
+    assert isinstance(logger.get_console_handler(), logging.Handler)
+    assert isinstance(logger.get_file_handler(), logging.Handler)
 
-    console_level = qc.config.logger.console_level
-    file_level = qc.config.logger.file_level
-    for level in console_level, file_level:
-        if isinstance(level, str):
-            level = logging.getLevelName(level)
-    assert logger.get_console_handler.level == console_level
-    assert logger.get_file_handler.level == file_level
+    console_level = logger.get_level_code(qc.config.logger.console_level)
+    file_level = logger.get_level_code(qc.config.logger.file_level)
+    assert logger.get_console_handler().level == console_level
+    assert logger.get_file_handler().level == file_level
 
-    assert logging.getLogger().getEffectiveLevel() == 'INFO'
+    assert logging.getLogger().level == logger.get_level_code('DEBUG')
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger_twice():
