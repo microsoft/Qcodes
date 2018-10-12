@@ -1,4 +1,3 @@
-import logging
 from qcodes.instrument.base import Instrument, InstrumentLoggerAdapter
 from qcodes.instrument.ip import IPInstrument
 # previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument

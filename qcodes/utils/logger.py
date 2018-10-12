@@ -414,7 +414,7 @@ class LogCapture():
         self.logger.addHandler(self.string_handler)
         return self
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self, exception_type, exception_value, traceback):
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()

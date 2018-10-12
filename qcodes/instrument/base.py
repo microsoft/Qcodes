@@ -3,7 +3,6 @@ import logging
 import time
 import warnings
 import weakref
-from contextlib import suppress
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 

@@ -28,22 +28,19 @@ def test_get_log_file_name():
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger():
     # remove all Handlers
-    try:
-        logger.start_logger()
-        assert isinstance(logger.get_console_handler, logging.Handler)
-        assert isinstance(logger.get_file_handler, logging.Handler)
+    logger.start_logger()
+    assert isinstance(logger.get_console_handler, logging.Handler)
+    assert isinstance(logger.get_file_handler, logging.Handler)
 
-        console_level = qc.config.logger.console_level
-        file_level = qc.config.logger.file_level
-        for level in console_level, file_level:
-            if isinstance(level, str):
-                level = logging.getLevelName(level)
-        assert logger.get_console_handler.level == console_level
-        assert logger.get_file_handler.level == file_level
+    console_level = qc.config.logger.console_level
+    file_level = qc.config.logger.file_level
+    for level in console_level, file_level:
+        if isinstance(level, str):
+            level = logging.getLevelName(level)
+    assert logger.get_console_handler.level == console_level
+    assert logger.get_file_handler.level == file_level
 
-        assert logging.getLogger().getEffectiveLevel() == 'INFO'
-    except:
-        remove_root_handlers()
+    assert logging.getLogger().getEffectiveLevel() == 'INFO'
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger_twice():
@@ -52,7 +49,7 @@ def test_start_logger_twice():
     handlers = logging.getLogger().handlers
     for h in handlers:
         print(h.__module__)
-    # there is always one logger registered 
+    # there is always one logger registered
     assert len(logging.getLogger().handlers) == 2+1
 
 
@@ -72,8 +69,7 @@ def test_handler_level():
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_filter_instrument():
     from qcodes.instrument.ip_to_visa import AMI430_VISA
-    from qcodes.instrument_drivers.american_magnetics.AMI430 import(
-        AMI430_3D, AMI430Warning)
+    from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
     import qcodes.instrument.sims as sims
     import numpy as np
 
@@ -127,9 +123,8 @@ def test_filter_instrument():
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe():
     root_logger = logging.getLogger()
-    with logger.capture_dataframe() as (handler, cb):
+    with logger.capture_dataframe() as (_, cb):
         root_logger.debug(TEST_LOG_MESSAGE)
         df = cb()
     assert len(df) == 1
     assert df.message[0] == TEST_LOG_MESSAGE
-    
