@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 import logging
 import tempfile
+import json
 
 import pytest
 
@@ -203,7 +204,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         c = atomic_transaction(conn, desc_query)
         assert len(c.fetchall()) == 10
 
-        # retrieve the yaml string and recreate the object
+        # retrieve the json string and recreate the object
 
         sql = f"""
               SELECT run_description
@@ -211,9 +212,9 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
               WHERE run_id == 1
               """
         c = atomic_transaction(conn, sql)
-        yaml_str = one(c, 'run_description')
+        json_str = one(c, 'run_description')
 
-        desc = RunDescriber.from_yaml(yaml_str)
+        desc = RunDescriber.from_json(json_str)
         idp = desc.interdeps
         assert isinstance(idp, InterDependencies)
 
