@@ -143,6 +143,7 @@ def plot_by_id(run_id: int,
             ypoints = data[1]['data']
 
             plottype = plottype_for_1d_data(xpoints, ypoints)
+            log.debug(f'Determined plottype: {plottype}')
 
             if plottype == 'line':
                 # sort for plotting
