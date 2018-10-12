@@ -25,6 +25,7 @@ dependencies:
  - ruamel_yaml
  - gitpython
  - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
+ - tqdm
  - pip:
     - websockets>=3.2
     - broadbean>=0.9.1
