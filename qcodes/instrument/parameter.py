@@ -958,12 +958,24 @@ class ParameterWithSetpoints(Parameter):
     combined shape of the parameter. E.G if parameter is of shape (m,n)
     self.setpoints is a list of parameters of shape (m,) and (n,)
     """
-    def __init__(self, *args, setpoints=None, **kwargs):
+    def __init__(self, *args,
+                 setpoints: Sequence[Parameter]=None, **kwargs) -> None:
         if setpoints is None:
-            self.setpoints = []
+            self._setpoints = ()
         else:
             self.setpoints = setpoints
         super().__init__(*args, **kwargs)
+
+    @property
+    def setpoints(self):
+        return self._setpoints
+
+    @setpoints.setter
+    def setpoints(self, setpoints):
+        for setpointarray in setpoints:
+            if not isinstance(setpointarray, Parameter):
+                raise RuntimeError
+        self._setpoints = setpoints
 
 
 class GeneratedSetPoints(Parameter):
