@@ -64,6 +64,28 @@ def get_file_handler() -> Optional[logging.Handler]:
     return file_handler
 
 
+def get_level_name(level: Union[str, int]) -> str:
+    if isinstance(level, str):
+        return level
+    elif isinstance(level, int):
+        return logging.getLevelName(level)
+    else:
+        raise RuntimeError('get_level_name: '
+                           f'Cannot to convert level {level} of type '
+                           f'{type(level)} to logging level name. Need '
+                           'string or int.')
+
+def get_level_code(level: Union[str, int]) -> int:
+    if isinstance(level, int):
+        return level
+    elif isinstance(level, str):
+        return logging.getLevelName(level)
+    else:
+        raise RuntimeError('get_level_code: '
+                           f'Cannot to convert level {level} of type '
+                           f'{type(level)} to logging level code. Need '
+                           'string or int.')
+
 def _get_qcodes_user_path() -> str:
     """
     Get '~/.qcodes' path or if defined the path defined in the QCODES_USER_PATH
