@@ -25,6 +25,7 @@ class N52xxMeasurement(N52xxInstrumentChannel):
             return []
 
         channel = kwargs.get("channel", parent.channel)
+        print(kwargs)
 
         discover_command = cls.discover_command.format(channel=channel)
         ans = parent.base_instrument.ask(discover_command)
