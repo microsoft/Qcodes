@@ -1,5 +1,7 @@
 """
 Base instrument module for the Keysight N52xx instrument series
+For documentation, see:
+http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
 """
 
 import logging
@@ -7,6 +9,7 @@ from typing import Union, Any, Callable
 
 from ._N52xx_channel_ext import N52xxChannelList, N52xxInstrumentChannel
 from .channel import N52xxChannel
+from .trace import N52xxTrace
 from qcodes import Instrument, VisaInstrument, ChannelList, InstrumentChannel
 from qcodes.utils.validators import Enum, Numbers
 
@@ -50,6 +53,7 @@ class N52xxWindow(N52xxInstrumentChannel):
     display which can independently show different measurements
     """
     discover_command = "SYST:WIND:CAT?"
+    max_trace_count = 24
 
     def __init__(
             self, parent: Instrument, identifier: Any, existence: bool = False,
@@ -61,6 +65,7 @@ class N52xxWindow(N52xxInstrumentChannel):
         )
 
         self._window = identifier
+        self._trace_count = 0
 
     def _create(self) ->None:
         self.parent.write(f"DISP:WINDow{self._window} ON")
@@ -68,31 +73,21 @@ class N52xxWindow(N52xxInstrumentChannel):
     def _delete(self) ->None:
         self.parent.write(f"DISP:WINDow{self._window} OFF")
 
+    def add_trace(self, trace: N52xxTrace) ->None:
+        """
+        Add a trace to the window
+        """
+        trace_number = self._trace_count + 1
 
-class N52xxMeasurement(N52xxInstrumentChannel):
-    discover_command = "SYST:MEAS:CAT?"
+        if trace_number > self.max_trace_count:
+            raise RuntimeError("Maximum number of traces in this window "
+                               "exceeded")
 
-    def __init__(
-            self, parent: Instrument, identifier: Any, existence: bool = False,
-            channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
-
-        self._channel = kwargs.pop("channel", None)
-        self._meas_type = kwargs.pop("meas_type", None)
-
-        super().__init__(
-            parent, identifier=f"measurement{identifier}", existence=existence,
-            channel_list=channel_list, **kwargs
-        )
-
-        self._measurement = identifier
-
-    def _create(self) ->None:
+        trace_name = trace.short_name
         self.parent.write(
-            f"CALC{self._channel}:MEAS{self._measurement}:DEF "
-            f"'{self._meas_type}'")
+            f"DISP:WIND{self._window}:TRAC{trace_number}:FEED '{trace_name}'")
 
-    def _delete(self) ->None:
-        pass  # TODO: figure this out later
+        self._trace_count += 1
 
 
 class N52xxBase(VisaInstrument):
@@ -143,29 +138,17 @@ class N52xxBase(VisaInstrument):
         # Windows, measurements and channels are QCoDeS channel types which can
         # be added and deleted on the instrument. This is unlike ports, which
         # have a fixed number depending on the instrument type
-        windows = N52xxChannelList(
-            parent=self, name="windows", chan_type=N52xxWindow
-        )
-
-        measurements = N52xxChannelList(
-            parent=self, name="measurements", chan_type=N52xxMeasurement
-        )
-
         channels = N52xxChannelList(
             parent=self, name="channels", chan_type=N52xxChannel
         )
-
-        # Do not lock windows, measurements and channels. We want to be able to
-        # dynamically add the delete from them
-        self.add_submodule("windows", windows)
-        self.add_submodule("measurements", measurements)
         self.add_submodule("channels", channels)
 
-    def delete_all_traces(self) -> None:
-        """
-        Delete all traces from the instrument.
-        """
-        self.write("CALC:PAR:DEL:ALL")
+        windows = N52xxChannelList(
+            parent=self, name="windows", chan_type=N52xxWindow
+        )
+        self.add_submodule("windows", windows)
+
+        self.connect_message()
 
     def synchronize(self) ->None:
         """
@@ -199,7 +182,7 @@ class N52xxBase(VisaInstrument):
         return ret
 
     def write_raw(self, cmd):
-        self._raw_io(cmd, super().write_raw)
+        return self._raw_io(cmd, super().write_raw)
 
     def ask_raw(self, cmd):
-        self._raw_io(cmd, super().ask_raw)
+        return self._raw_io(cmd, super().ask_raw)

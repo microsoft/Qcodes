@@ -2,7 +2,7 @@
 Implementation of the channel object on the N52xx
 """
 import logging
-from typing import cast, Any
+from typing import cast, Any, List
 import numpy as np
 import time
 
@@ -12,6 +12,73 @@ from qcodes import Instrument
 from qcodes.utils.validators import Numbers, Enum, MultiType
 
 logger = logging.getLogger()
+
+
+class N52xxMeasurement(N52xxInstrumentChannel):
+    discover_command = "SYST:MEAS:CAT? {channel}"
+
+    @classmethod
+    def _discover_list_from_instrument(
+            cls, parent: 'N52xxChannel', **kwargs) -> List[Any]:
+
+        if not parent.exists_on_instrument:
+            return []
+
+        channel = kwargs.get("channel", parent.channel)
+
+        discover_command = cls.discover_command.format(channel=channel)
+        ans = parent.base_instrument.ask(discover_command)
+        ans = ans.strip().strip("\"").split(",")
+        return [int(i) for i in ans if i != ""]
+
+    @classmethod
+    def make_unique_id(cls, parent: 'N52xxChannel', **kwargs) -> Any:
+        """
+        Given a list of ID's, make a new unique ID. By default we assume that
+        ID's are numbers (e.g. channel numbers). Simply return a number not
+        already in the list
+
+        Args:
+            parent (Instrument): The instrument through which the instrument
+                channel is accessible
+        """
+        existing_ids = cls._discover_list_from_instrument(parent, channel="")
+        new_id = 1
+        while new_id in existing_ids:
+            new_id += 1
+
+        return new_id
+
+    def __init__(
+            self, parent: Instrument, identifier: Any, existence: bool = False,
+            channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
+
+        self._channel: int = parent.channel
+        self._meas_type: str = kwargs.pop("meas_type", None)
+
+        super().__init__(
+            parent, identifier=f"measurement{identifier}", existence=existence,
+            channel_list=channel_list, **kwargs
+        )
+
+        self._measurement = identifier
+
+    def _create(self) ->None:
+
+        if not all([self._channel, self._meas_type]):
+            raise ValueError(
+                "Both channel and measurement type need to be given for "
+                "creation on instrument"
+            )
+
+        self.base_instrument.write(
+            f"CALC{self._channel}:MEAS{self._measurement}:DEF "
+            f"'{self._meas_type}'")
+
+    def _delete(self) ->None:
+        raise NotImplementedError(
+            "Measurements are not meant to be deleted independently"
+        )
 
 
 class N52xxChannel(N52xxInstrumentChannel):
@@ -160,12 +227,19 @@ class N52xxChannel(N52xxInstrumentChannel):
 
         self.add_submodule("traces", traces)
 
+        measurement = N52xxChannelList(
+            parent=cast(Instrument, self), name="measurements",
+            chan_type=N52xxMeasurement
+        )
+
+        self.add_submodule("measurements", measurement)
+
     def _create(self) ->None:
         """
         Create a channel by defining a new measurement on the, as yet,
         non-existing channel
         """
-        self.parent.measurements.add(channel=self._channel, meas_type="S11")
+        self.measurements.add(meas_type="S11")
 
     def _delete(self) ->None:
         """Delete the channel"""
@@ -183,24 +257,29 @@ class N52xxChannel(N52xxInstrumentChannel):
 
         self.traces[0].select()
 
-    def run_sweep(self, averages: int = 1, blocking: bool = True) -> None:
+    def run_sweep(self, averages: int = None, blocking: bool = True) -> None:
         """
         Run a sweep
 
         Args:
-            averages (int): The number of averages
+            averages (int): The number of averages. The number given here will
+                override the number given to the "averages" interface. For
+                instance
+                >>> pna.channel[0].averages(3)
+                >>> pna.channel[0].run_sweep(averages=5) # This will override
+                >>> # the number given to `averages`
             blocking (bool): If True, this method will block until the sweep
                                 has finished
         """
         self.select()
+
+        averages = averages or self.averages()
 
         if averages == 1:
             self.averages_enabled(False)
             self.sweep_mode('SING')
         else:
             self.averages_enabled(True)
-            self.averages(averages)
-
             self.write(f'SENS{self._channel}:AVER:CLE')
             self.write(f'SENS{self._channel}:SWE:GRO:COUN {averages}')
             self.sweep_mode('GRO')

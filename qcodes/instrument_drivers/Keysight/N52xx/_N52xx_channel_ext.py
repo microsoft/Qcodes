@@ -108,8 +108,8 @@ class N52xxInstrumentChannel(InstrumentChannel):
 
     def create(self) ->None:
         """Create the channel on the instrument"""
-        self._exists_on_instrument = True
         self._create()
+        self._exists_on_instrument = True
 
     def _create(self) ->None:
         raise NotImplementedError("Please subclass")
@@ -144,6 +144,10 @@ class N52xxInstrumentChannel(InstrumentChannel):
         """
         self._assert_existence()
         return super().ask(cmd)
+
+    @property
+    def exists_on_instrument(self):
+        return self._exists_on_instrument
 
 
 class N52xxChannelList(ChannelList):
