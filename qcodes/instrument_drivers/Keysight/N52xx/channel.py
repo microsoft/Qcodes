@@ -22,33 +22,14 @@ class N52xxMeasurement(N52xxInstrumentChannel):
             cls, parent: 'N52xxChannel', **kwargs) -> List[Any]:
 
         if not parent.exists_on_instrument:
-            return []
-
-        channel = kwargs.get("channel", parent.channel)
-        print(kwargs)
+            channel = ""
+        else:
+            channel = parent.channel
 
         discover_command = cls.discover_command.format(channel=channel)
         ans = parent.base_instrument.ask(discover_command)
         ans = ans.strip().strip("\"").split(",")
         return [int(i) for i in ans if i != ""]
-
-    @classmethod
-    def make_unique_id(cls, parent: 'N52xxChannel', **kwargs) -> Any:
-        """
-        Given a list of ID's, make a new unique ID. By default we assume that
-        ID's are numbers (e.g. channel numbers). Simply return a number not
-        already in the list
-
-        Args:
-            parent (Instrument): The instrument through which the instrument
-                channel is accessible
-        """
-        existing_ids = cls._discover_list_from_instrument(parent, channel="")
-        new_id = 1
-        while new_id in existing_ids:
-            new_id += 1
-
-        return new_id
 
     def __init__(
             self, parent: Instrument, identifier: Any, existence: bool = False,
