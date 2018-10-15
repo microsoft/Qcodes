@@ -33,6 +33,22 @@ fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
 
 
+def error_caused_by(excinfo, cause: str) -> bool:
+    """
+    Helper function to figure out whether an exception was caused by another
+    exception with the message provided.
+
+    Args:
+        excinfo: the output of with pytest.raises() as excinfo
+        cause: the error message or a substring of it
+    """
+    chain = excinfo.getrepr().chain
+    cause_found = False
+    for link in chain:
+        cause_found = cause_found or cause in str(link[1])
+    return cause_found
+
+
 @contextmanager
 def location_and_station_set_to(location: int, work_station: int):
     cfg = qc.Config()
@@ -174,10 +190,10 @@ def test_perform_actual_upgrade_2_to_3_empty():
 
         desc_query = 'SELECT run_description FROM runs'
 
-        try:
+        with pytest.raises(RuntimeError) as excinfo:
             atomic_transaction(conn, desc_query)
-        except RuntimeError as err:
-            assert str(err.__cause__) == 'no such column: run_description'
+
+        assert error_caused_by(excinfo, 'no such column: run_description')
 
         perform_db_upgrade_2_to_3(conn)
 
