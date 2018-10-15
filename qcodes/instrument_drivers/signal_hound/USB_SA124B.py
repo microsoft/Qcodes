@@ -145,7 +145,7 @@ class FrequencySweep(ArrayParameter):
                                "for 'SignalHound_USB_SA124B'")
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
-        data = self._instrument._get_averaged_sweep_data()
+        data = self._instrument._get_sweep_data()
         sleep(2*self.instrument.sleep_time.get())
         return data
 
@@ -612,14 +612,6 @@ class SignalHound_USB_SA124B(Instrument):
 
         return data / Navg
 
-    def _get_averaged_sweep_data(self) -> np.ndarray:
-        """
-        Averages over SH.sweep Navg times
-
-        """
-        data = self._get_sweep_data()
-        return data
-
     def _get_power_at_freq(self) -> float:
         """
         Returns the maximum power in a window of 250 kHz
@@ -638,7 +630,7 @@ class SignalHound_USB_SA124B(Instrument):
             # the parameters on the device and the
             # setpoints and units
             self.configure()
-        data = self._get_averaged_sweep_data()
+        data = self._get_sweep_data()
         max_power = np.max(data)
         if needs_reset:
             self.span(original_span)
