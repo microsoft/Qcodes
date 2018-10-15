@@ -154,7 +154,7 @@ def start_logger() -> None:
     filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    file_handler = logging.handlers.TimedRotatingFileHandler(filename,  # type: ignore
+    file_handler = logging.handlers.TimedRotatingFileHandler(filename,
                                                              when='midnight')
 
     file_handler.setLevel(qc.config.logger.file_level)
