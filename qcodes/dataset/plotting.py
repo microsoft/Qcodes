@@ -330,6 +330,7 @@ def plot_on_a_plain_grid(x: np.ndarray,
 
     x_is_stringy = isinstance(x[0], str)
     y_is_stringy = isinstance(y[0], str)
+    z_is_stringy = isinstance(z[0], str)
 
     if x_is_stringy:
         x_strings = np.unique(x)
@@ -338,6 +339,10 @@ def plot_on_a_plain_grid(x: np.ndarray,
     if y_is_stringy:
         y_strings = np.unique(y)
         y = _strings_as_ints(y)
+
+    if z_is_stringy:
+        z_strings = np.unique(z)
+        z = _strings_as_ints(z)
 
     xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
 
@@ -358,9 +363,16 @@ def plot_on_a_plain_grid(x: np.ndarray,
         rasterized = len(x_edges) * len(y_edges) \
                       > qc.config.plotting.rasterize_threshold
 
+    cmap = kwargs.pop('cmap') if 'cmap' in kwargs else None
+
+    if z_is_stringy:
+        name = cmap.name if hasattr(cmap, 'name') else 'viridis'
+        cmap = matplotlib.cm.get_cmap(name, len(z_strings))
+
     colormesh = ax.pcolormesh(x_edges, y_edges,
                               np.ma.masked_invalid(z_to_plot),
                               rasterized=rasterized,
+                              cmap=cmap,
                               **kwargs)
 
     if x_is_stringy:
@@ -375,6 +387,13 @@ def plot_on_a_plain_grid(x: np.ndarray,
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
     else:
         colorbar = ax.figure.colorbar(colormesh, ax=ax)
+
+    if z_is_stringy:
+        N = len(z_strings)
+        f = (N-1)/N
+        colorbar.set_ticks([(n+0.5)*f for n in range(N)])
+        colorbar.set_ticklabels(z_strings)
+
     return ax, colorbar
 
 

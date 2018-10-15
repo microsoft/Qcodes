@@ -378,13 +378,17 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
 
     # potentially slow method of filling in the data, should be optimised
     log.debug('Sorting 2D data onto grid')
-    z_to_plot = np.full((ny, nx), np.nan)
+
+    if isinstance(z[0], str):
+        z_to_plot = np.full((ny, nx), ' '*int(str(z.dtype)[2:]))
+    else:
+        z_to_plot = np.full((ny, nx), np.nan)
     x_index = np.zeros_like(x, dtype=np.int)
     y_index = np.zeros_like(y, dtype=np.int)
     for i, xval in enumerate(xrow):
-        x_index[np.where(x==xval)[0]] = i
+        x_index[np.where(x == xval)[0]] = i
     for i, yval in enumerate(yrow):
-        y_index[np.where(y==yval)[0]] = i
+        y_index[np.where(y == yval)[0]] = i
 
     z_to_plot[y_index, x_index] = z
 
