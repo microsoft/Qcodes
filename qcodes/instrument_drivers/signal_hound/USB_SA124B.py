@@ -178,6 +178,40 @@ class SignalHound_USB_SA124B(Instrument):
         self._trace_updated = False
         log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
+
+        self.dll.saConfigCenterSpan.argtypes = [ct.c_int,
+                                                ct.c_double,
+                                                ct.c_double]
+        self.dll.saConfigAcquisition.argtypes = [ct.c_int,
+                                                 ct.c_int,
+                                                 ct.c_int]
+        self.dll.saConfigLevel.argtypes = [ct.c_int,
+                                           ct.c_double]
+        self.dll.saSetTimebase.argtypes = [ct.c_int,
+                                           ct.c_int]
+        self.dll.saConfigSweepCoupling.argypes = [ct.c_int,
+                                                  ct.c_double,
+                                                  ct.c_double,
+                                                  ct.c_bool]
+        self.dll.saInitiate.argtypes = [ct.c_int,
+                                        ct.c_int,
+                                        ct.c_int]
+        self.dll.saOpenDevice.argtypes = [ct.POINTER(ct.c_int)]
+        self.dll.saCloseDevice.argtypes = [ct.c_int]
+        self.dll.saPreset.argtypes = [ct.c_int]
+        self.dll.saGetDeviceType.argtypes = [ct.c_int,
+                                             ct.POINTER(ct.c_int)]
+        self.dll.saQuerySweepInfo.argtypes = [ct.c_int,
+                                              ct.POINTER(ct.c_int),
+                                              ct.POINTER(ct.c_double),
+                                              ct.POINTER(ct.c_double)]
+        self.dll.saGetSweep_32f.argtypes = [ct.c_int, ct.POINTER(ct.c_float),
+                                            ct.POINTER(ct.c_float)]
+        self.dll.saGetSerialNumber.argtypes = [ct.c_int,
+                                               ct.POINTER(ct.c_int)]
+        self.dll.saGetFirmwareString.argtypes = [ct.c_int,
+                                                 ct.c_char_p]
+
         self.hf = Constants
         self.add_parameter('frequency',
                            label='Frequency',
@@ -361,14 +395,14 @@ class SignalHound_USB_SA124B(Instrument):
 
         # 2. Acquisition configuration
         detectorVals = {
-            'min-max': ct.c_uint(self.hf.sa_MIN_MAX),
-            'average': ct.c_uint(self.hf.sa_AVERAGE)
+            'min-max': ct.c_int(self.hf.sa_MIN_MAX),
+            'average': ct.c_int(self.hf.sa_AVERAGE)
         }
         scaleVals = {
-            'log-scale': ct.c_uint(self.hf.sa_LOG_SCALE),
-            'lin-scale': ct.c_uint(self.hf.sa_LIN_SCALE),
-            'log-full-scale': ct.c_uint(self.hf.sa_LOG_FULL_SCALE),
-            'lin-full-scale': ct.c_uint(self.hf.sa_LIN_FULL_SCALE)
+            'log-scale': ct.c_int(self.hf.sa_LOG_SCALE),
+            'lin-scale': ct.c_int(self.hf.sa_LIN_SCALE),
+            'log-full-scale': ct.c_int(self.hf.sa_LOG_FULL_SCALE),
+            'lin-full-scale': ct.c_int(self.hf.sa_LIN_FULL_SCALE)
         }
         detector = detectorVals[self.acquisition_mode()]
         scale = scaleVals[self.scale()]
@@ -502,7 +536,7 @@ class SignalHound_USB_SA124B(Instrument):
         """
         log.info('Querying device for model information')
 
-        devType = ct.c_uint(0)
+        devType = ct.c_int(0)
         devTypePnt = ct.pointer(devType)
 
         err = self.dll.saGetDeviceType(self.deviceHandle, devTypePnt)
@@ -605,7 +639,7 @@ class SignalHound_USB_SA124B(Instrument):
             self.rbw(1e3)
         if not self._parameters_synced:
             # call configure to update both
-            # the paramters on the device and the
+            # the parameters on the device and the
             # setpoints and units
             self.configure()
         data = self._get_averaged_sweep_data()
