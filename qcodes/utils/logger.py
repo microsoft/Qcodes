@@ -106,12 +106,15 @@ def get_log_file_name() -> str:
 
 def start_logger() -> None:
     """
-    Logging of messages passed throug the python logging module
+    Logging of messages passed through the python logging module
     This sets up logging to a time based logging.
     This means that all logging messages on or above
-    filelogginglevel will be written to pythonlog.log
-    All logging messages on or above consolelogginglevel
+    `filelogginglevel` will be written to pythonlog.log
+    All logging messages on or above `consolelogginglevel`
     will be written to stderr.
+    `filelogginglevel` and `consolelogginglevel` are defined in the
+    qcodesrc.json file.
+
     """
     global console_handler
     global file_handler
@@ -162,7 +165,7 @@ def start_command_history_logger(log_dir: Optional[str]=None) -> None:
     works only with ipython. Call function again to set new path to log file.
 
     Args:
-        log_dir: directory where log shall be stored to. If left out defaults
+        log_dir: directory where log shall be stored to. If left out, defaults
             to '~/.qcodes/logs/command_history.log'
     """
     from IPython import get_ipython
@@ -198,13 +201,18 @@ def log_to_dataframe(log: List[str]=None,
     `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
     for the columns and separtor arguments is encouraged.
 
+    Lines starting with a digit are ignored. In the log setup of `start_logging`
+    Traceback messages are also logged. These start with a digit.
+
     Args:
         log: log content
-        columns: column headers for the returned dataframe.
-        separator: seperator of the logfile to seperate the columns.
+        columns: column headers for the returned dataframe, defaults to
+            columns used by handlers set up by `start_logger`.
+        separator: seperator of the logfile to seperate the columns, defaults to
+            separtor used by handlers set up by `start_logger`.
 
     Retruns:
-        Pandas DataFrame containing the logfile content.
+        Pandas DataFrame containing the log content.
     """
     separator = separator or LOGGING_SEPARATOR
     columns = columns or list(FORMAT_STRING_DICT.keys())
@@ -228,10 +236,15 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
     `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
     for the columns and separtor arguments is encouraged.
 
+    Lines starting with a digit are ignored. In the log setup of `start_logging`
+    Traceback messages are also logged. These start with a digit.
+
     Args:
         logfile: name of the logfile; defaults to current default log file.
-        columns: column headers for the returned dataframe.
-        separator: seperator of the logfile to seperate the columns.
+        columns: column headers for the returned dataframe, defaults to
+            columns used by handlers set up by `start_logger`.
+        separator: seperator of the logfile to seperate the columns, defaults to
+            separtor used by handlers set up by `start_logger`.
 
     Retruns:
         Pandas DataFrame containing the logfile content.
@@ -285,9 +298,8 @@ def time_difference(firsttimes: Series,
 
 @contextmanager
 def handler_level(level: LevelType,
-                  handler: Optional[
-                           Union[logging.Handler,
-                                 Sequence[logging.Handler]]]=None):
+                  handler:Union[logging.Handler,
+                                 Sequence[logging.Handler]]):
     """
     Context manager to temporarily change the level of handlers.
     Example:
@@ -303,9 +315,11 @@ def handler_level(level: LevelType,
     original_levels = [h.level for h in handler]
     for h in handler:
         h.setLevel(level)
-    yield
-    for h, original_level in zip(handler, original_levels):
-        h.setLevel(original_level)
+    try:
+        yield
+    finally:
+        for h, original_level in zip(handler, original_levels):
+            h.setLevel(original_level)
 
 
 @contextmanager
@@ -354,13 +368,15 @@ def filter_instrument(instrument: Union[InstrumentBase,
     instrument_filter = InstrumentFilter(instrument)
     for h in handler:
         h.addFilter(instrument_filter)
-    if level is not None:
-        with handler_level(level, handler):
+    try:
+        if level is not None:
+            with handler_level(level, handler):
+                yield
+        else:
             yield
-    else:
-        yield
-    for h in handler:
-        h.removeFilter(instrument_filter)
+    finally:
+        for h in handler:
+            h.removeFilter(instrument_filter)
 
 
 @contextmanager
@@ -375,29 +391,29 @@ def capture_dataframe(level: LevelType=logging.DEBUG,
         >>>     data_frame = cb()
 
     Args:
-        level: level to at which to capture
+        level: level at which to capture
         handler: single or sequence of handlers which to change
 
     Returns:
-        Tuple of handle that is used to capture the log messages and callback
-        that returns the pandas.DataSet at any given point (within the context)
+        Tuple of handler that is used to capture the log messages and callback
+        that returns the cummulative pandas.DataSet at any given
+        point (within the context)
     """
     # get root logger if none is specified.
     logger = logger or logging.getLogger()
-    log_capture = io.StringIO()
-    string_handler = logging.StreamHandler(log_capture)
-    string_handler.setLevel(level)
-    format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
-    formatter = logging.Formatter(format_string)
-    string_handler.setFormatter(formatter)
+    with io.StringIO() as log_capture:
+        string_handler = logging.StreamHandler(log_capture)
+        string_handler.setLevel(level)
+        format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
+        formatter = logging.Formatter(format_string)
+        string_handler.setFormatter(formatter)
 
-    logger.addHandler(string_handler)
-
-    yield string_handler, lambda: log_to_dataframe(
-        log_capture.getvalue().splitlines())
-
-    logger.removeHandler(string_handler)
-    log_capture.close()
+        logger.addHandler(string_handler)
+        try:
+            yield string_handler, lambda: log_to_dataframe(
+                log_capture.getvalue().splitlines())
+        finally:
+            logger.removeHandler(string_handler)
 
 
 class LogCapture():
