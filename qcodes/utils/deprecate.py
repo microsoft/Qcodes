@@ -1,7 +1,9 @@
 from functools import wraps
 import warnings
+from typing import Optional
 
-def deprecate(reason=None, alternative=None):
+def deprecate(reason:Optional[str]=None,
+              alternative:Optional[str]=None):
     def actual_decorator(func):
         @wraps(func)
         def decorated_func(*args, **kwargs):
