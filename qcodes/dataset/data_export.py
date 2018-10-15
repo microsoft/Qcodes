@@ -218,6 +218,21 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
+def _strings_as_ints(inputarray: np.ndarray) -> np.ndarray:
+    """
+    Return an integer-valued array version of a string-valued array. Maps, e.g.
+    array(['a', 'b', 'c', 'a', 'c']) to array([0, 1, 2, 0, 2]). Useful for
+    numerical setpoint analysis
+
+    Args:
+        inputarray: A 1D array of strings
+    """
+    newdata = np.zeros(len(inputarray))
+    for n, word in enumerate(np.unique(inputarray)):
+        newdata += ((inputarray == word).astype(int)*n)
+    return newdata
+
+
 def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     """
     Determine plot type for a 1D plot by inspecting the data
@@ -288,12 +303,8 @@ def get_2D_plottype(xpoints: np.ndarray,
     Returns:
         Determined plot type as a string
     """
-    if isinstance(xpoints[0], str) \
-            or isinstance(ypoints[0], str) \
-            or isinstance(zpoints[0], str):
-        plottype = 'point'
-    else:
-        plottype = datatype_from_setpoints_2d(xpoints, ypoints)
+
+    plottype = datatype_from_setpoints_2d(xpoints, ypoints)
     return plottype
 
 
@@ -318,6 +329,12 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     Returns:
         A string with the name of the determined plot type
     """
+    # We represent categorical data as integer-valued data
+    if isinstance(xpoints[0], str):
+        xpoints = _strings_as_ints(xpoints)
+    if isinstance(ypoints[0], str):
+        ypoints = _strings_as_ints(ypoints)
+
     # First check whether all setpoints are identical along
     # any dimension
     x_all_the_same = np.allclose(xpoints, xpoints[0])

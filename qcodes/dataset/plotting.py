@@ -14,7 +14,8 @@ from qcodes.dataset.data_set import load_by_id
 from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
-                          get_1D_plottype, get_2D_plottype, reshape_2D_data)
+                          get_1D_plottype, get_2D_plottype, reshape_2D_data,
+                          _strings_as_ints)
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
@@ -96,8 +97,9 @@ def plot_by_id(run_id: int,
 
     Config dependencies: (qcodesrc.json)
     """
+
     # handle arguments and defaults
-    subplots_kwargs = {k:kwargs.pop(k)
+    subplots_kwargs = {k: kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
@@ -324,6 +326,19 @@ def plot_on_a_plain_grid(x: np.ndarray,
         The matplotlib axes handle for plot and colorbar
     """
 
+    log.debug(f'Got kwargs: {kwargs}')
+
+    x_is_stringy = isinstance(x[0], str)
+    y_is_stringy = isinstance(y[0], str)
+
+    if x_is_stringy:
+        x_strings = np.unique(x)
+        x = _strings_as_ints(x)
+
+    if y_is_stringy:
+        y_strings = np.unique(y)
+        y = _strings_as_ints(y)
+
     xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
 
     # we use a general edge calculator,
@@ -347,6 +362,15 @@ def plot_on_a_plain_grid(x: np.ndarray,
                               np.ma.masked_invalid(z_to_plot),
                               rasterized=rasterized,
                               **kwargs)
+
+    if x_is_stringy:
+        ax.set_xticks(np.arange(len(np.unique(x_strings))))
+        ax.set_xticklabels(x_strings)
+
+    if y_is_stringy:
+        ax.set_yticks(np.arange(len(np.unique(y_strings))))
+        ax.set_yticklabels(y_strings)
+
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
     else:
