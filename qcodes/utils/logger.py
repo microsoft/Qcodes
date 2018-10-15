@@ -154,9 +154,9 @@ def start_logger() -> None:
 
     # This is probably a bug in typeshed: mypy complains that there is no
     # module `logging.handlers` yet there is.. therefore:
-    # type: ignore
-    file_handler = logging.handlers.TimedRotatingFileHandler(filename,
+    file_handler = logging.handlers.TimedRotatingFileHandler(filename,  # type: ignore
                                                              when='midnight')
+
     file_handler.setLevel(qc.config.logger.file_level)
     file_handler.setFormatter(formatter)
     root_logger.addHandler(file_handler)
