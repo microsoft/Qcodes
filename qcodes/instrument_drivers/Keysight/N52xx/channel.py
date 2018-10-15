@@ -15,21 +15,26 @@ logger = logging.getLogger()
 
 
 class N52xxMeasurement(N52xxInstrumentChannel):
-    discover_command = "SYST:MEAS:CAT? {channel}"
+    discover_command = "SYST:MEAS:CAT?"
 
     @classmethod
-    def _discover_list_from_instrument(
-            cls, parent: 'N52xxChannel', **kwargs) -> List[Any]:
+    def load_from_instrument(
+            cls, parent: Instrument, **kwargs)-> List['N52xxInstrumentChannel']:
 
         if not parent.exists_on_instrument:
-            channel = ""
-        else:
-            channel = parent.channel
+            return []
 
-        discover_command = cls.discover_command.format(channel=channel)
+        discover_command = f"{cls.discover_command} {parent.channel}"
         ans = parent.base_instrument.ask(discover_command)
         ans = ans.strip().strip("\"").split(",")
-        return [int(i) for i in ans if i != ""]
+        identifiers = [int(i) for i in ans if i != ""]
+
+        obj_list = []
+        for identifier in identifiers:
+            obj = cls(parent, identifier=identifier, existence=True, **kwargs)
+            obj_list.append(obj)
+
+        return obj_list
 
     def __init__(
             self, parent: Instrument, identifier: Any, existence: bool = False,

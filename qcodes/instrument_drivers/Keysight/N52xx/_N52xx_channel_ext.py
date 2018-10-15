@@ -62,7 +62,8 @@ class N52xxInstrumentChannel(InstrumentChannel):
         if cls.discover_command is None:
             raise NotImplementedError("Please subclass")
 
-        ans = parent.ask(cls.discover_command).strip().strip("\"").split(",")
+        ans = parent.base_instrument.ask(cls.discover_command)
+        ans = ans.strip().strip("\"").split(",")
         return [int(i) for i in ans if i != ""]
 
     @classmethod
