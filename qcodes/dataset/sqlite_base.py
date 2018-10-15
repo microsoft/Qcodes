@@ -140,8 +140,10 @@ def upgrader(func: Callable[[SomeConnection], None]):
 
     if not to_version == from_version+1:
         raise ValueError(f'Invalid upgrade versions in function name: '
-                         f'{func.__name__}. Can only upgrade from version N'
-                         'to version N+1')
+                         f'{func.__name__}; upgrade from version '
+                         f'{from_version} to version {to_version}.'
+                         ' Can only upgrade from version N'
+                         ' to version N+1')
 
     @wraps(func)
     def do_upgrade(conn: SomeConnection) -> None:
