@@ -1,5 +1,7 @@
 import io
 import logging
+# logging.handlers is not imported by logging. This extra import is neccessary
+import logging.handlers
 
 import os
 from pathlib import Path
@@ -152,8 +154,6 @@ def start_logger() -> None:
     filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    # This is probably a bug in typeshed: mypy complains that there is no
-    # module `logging.handlers` yet there is.. therefore:
     file_handler = logging.handlers.TimedRotatingFileHandler(filename,  # type: ignore
                                                              when='midnight')
 
