@@ -578,7 +578,7 @@ class SignalHound_USB_SA124B(Instrument):
 
         return sweep_len.value, start_freq.value, stepsize.value
 
-    def _get_sweep_data(self, retry: bool=False) -> np.ndarray:
+    def _get_sweep_data(self) -> np.ndarray:
         """
         This function performs a sweep over the configured ranges.
         The result of the sweep is returned along with the sweep points
@@ -594,34 +594,31 @@ class SignalHound_USB_SA124B(Instrument):
             self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
 
-        datamin = np.zeros((sweep_len), dtype=np.float32)
-        datamax = np.zeros((sweep_len), dtype=np.float32)
 
-        minarr = datamin.ctypes.data_as(ct.POINTER(ct.c_float))
-        maxarr = datamax.ctypes.data_as(ct.POINTER(ct.c_float))
+        data = np.zeros(sweep_len)
+        Navg = self.avg()
+        for i in range(Navg):
 
-        sleep(self.sleep_time.get())  # Added extra sleep for updating issue
-        err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        if not err == saStatus.saNoError and not retry:
-            log.warning('Error raised in _get_sweep_data, '
-                        'retrying to get data')
-            datamin = self._get_sweep_data(retry=True)
-        else:
+            datamin = np.zeros((sweep_len), dtype=np.float32)
+            datamax = np.zeros((sweep_len), dtype=np.float32)
+
+            minarr = datamin.ctypes.data_as(ct.POINTER(ct.c_float))
+            maxarr = datamax.ctypes.data_as(ct.POINTER(ct.c_float))
+
+            sleep(self.sleep_time.get())  # Added extra sleep for updating issue
+            err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
             self.check_for_error(err, 'saGetSweep_32f')
+            data += datamin
 
-        return datamin
+        return data / Navg
 
     def _get_averaged_sweep_data(self) -> np.ndarray:
         """
         Averages over SH.sweep Navg times
 
         """
-        sweep_len, _, _ = self.QuerySweep()
-        data = np.zeros(sweep_len)
-        Navg = self.avg()
-        for i in range(Navg):
-            data += self._get_sweep_data()
-        return data / Navg
+        data = self._get_sweep_data()
+        return data
 
     def _get_power_at_freq(self) -> float:
         """
