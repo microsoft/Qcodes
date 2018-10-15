@@ -180,6 +180,8 @@ def plot_by_id(run_id: int,
 
             plottype = get_2D_plottype(xpoints, ypoints, zpoints)
 
+            log.debug(f'Determined plottype: {plottype}')
+
             how_to_plot = {'grid': plot_on_a_plain_grid,
                            'equidistant': plot_on_a_plain_grid,
                            'point': plot_2d_scatterplot,
