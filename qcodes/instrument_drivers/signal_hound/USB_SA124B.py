@@ -578,10 +578,14 @@ class SignalHound_USB_SA124B(Instrument):
 
         return sweep_len.value, start_freq.value, stepsize.value
 
-    def _get_sweep_data(self) -> np.ndarray:
+    def _get_sweep_data(self, retry: bool=False) -> np.ndarray:
         """
         This function performs a sweep over the configured ranges.
         The result of the sweep is returned along with the sweep points
+
+        Args:
+            retry: It this the second attempt? This method will attempt
+             to get the data exactly twice.
 
         returns:
             datamin numpy array
@@ -590,25 +594,20 @@ class SignalHound_USB_SA124B(Instrument):
             self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
 
-        minarr = (ct.c_float * sweep_len)()
-        maxarr = (ct.c_float * sweep_len)()
-        sleep_time = self.sleep_time.get()
-        sleep(sleep_time)  # Added extra sleep for updating issue
-        err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        sleep(sleep_time)  # Added extra sleep
-        if not err == saStatus.saNoError:
-            # if an error occurs tries preparing the device and then asks again
-            log.warning('Error raised in _get_sweep_data, '
-                        'trying to get data')
-            sleep(sleep_time)
-            self.sync_parameters()
-            sleep(sleep_time)
-            minarr = (ct.c_float * sweep_len)()
-            maxarr = (ct.c_float * sweep_len)()
-            err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        self.check_for_error(err, 'saGetSweep_32f')
+        datamin = np.zeros((sweep_len), dtype=np.float32)
+        datamax = np.zeros((sweep_len), dtype=np.float32)
 
-        datamin = np.array([minarr[elem] for elem in range(sweep_len)])
+        minarr = datamin.ctypes.data_as(ct.POINTER(ct.c_float))
+        maxarr = datamax.ctypes.data_as(ct.POINTER(ct.c_float))
+
+        sleep(self.sleep_time.get())  # Added extra sleep for updating issue
+        err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
+        if not err == saStatus.saNoError and not retry:
+            log.warning('Error raised in _get_sweep_data, '
+                        'retrying to get data')
+            datamin = self._get_sweep_data(retry=True)
+        else:
+            self.check_for_error(err, 'saGetSweep_32f')
 
         return datamin
 
