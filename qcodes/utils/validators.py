@@ -88,10 +88,7 @@ class Validator:
 
     @property
     def valid_values(self) -> TList[Any]:
-        if hasattr(self, '_valid_values'):
-            return self._valid_values
-        else:
-            raise NotImplementedError
+        return self._valid_values
 
 
 class Anything(Validator):
