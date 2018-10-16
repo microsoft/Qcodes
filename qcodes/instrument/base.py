@@ -186,7 +186,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 log.warning(f"Snapshot: Could not update parameter: "
                             f"{name} on {self.full_name}")
                 log.info(f"Details for Snapshot of {name}:",
-                         exec_info=True)
+                         exc_info=True)
 
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
