@@ -24,6 +24,14 @@ DataSet
     ../_notebooks/DataSet/*
     ../_notebooks/DataSet/Real_instruments/*
 
+Plotting
+--------
+
+.. toctree::
+    :glob:
+
+    ../_notebooks/plotting/*
+
 Drivers
 -------
 

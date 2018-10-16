@@ -1,8 +1,9 @@
 """
 Test suite for  instument.*
 """
+import weakref
 from unittest import TestCase
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
 from .instrument_mocks import DummyInstrument, MockParabola
 from qcodes.instrument.parameter import Parameter
 import gc
@@ -111,7 +112,119 @@ class TestInstrument(TestCase):
 
         snapshot = self.instrument.snapshot()
 
+        self.assertIn('name', snapshot)
+        self.assertEqual('testdummy', snapshot['name'])
+
         self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
+
+class TestFindOrCreateInstrument(TestCase):
+    """Tests for find_or_create_instrument function"""
+
+    def setUp(self):
+        Instrument.close_all()
+
+    def tearDown(self):
+        Instrument.close_all()
+
+    def test_find(self):
+        """Test finding an existing instrument"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        instr_2 = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual(instr_2, instr)
+        self.assertEqual(instr_2.name, instr.name)
+
+        instr.close()
+
+    def test_find_same_name_but_different_class(self):
+        """Test finding an existing instrument with different class"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        class GammyInstrument(Instrument):
+            some_other_attr = 25
+
+        # Find an instrument with the same name but of different class
+        with self.assertRaises(TypeError) as cm:
+            _ = find_or_create_instrument(
+                GammyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual("Instrument instr is <class "
+                         "'qcodes.tests.instrument_mocks.DummyInstrument'> but "
+                         "<class 'qcodes.tests.test_instrument"
+                         ".TestFindOrCreateInstrument"
+                         ".test_find_same_name_but_different_class.<locals>"
+                         ".GammyInstrument'> was requested",
+                         str(cm.exception))
+        instr.close()
+
+    def test_create(self):
+        """Test creating an instrument that does not yet exist"""
+        instr = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual('instr', instr.name)
+
+        instr.close()
+
+    def test_other_exception(self):
+        """Test an unexpected exception occurred during finding instrument"""
+        with self.assertRaises(TypeError) as cm:
+            # in order to raise an unexpected exception, and make sure it is
+            # passed through the call stack, let's pass an empty dict instead
+            # of a string with instrument name
+            _ = find_or_create_instrument(DummyInstrument, {})
+        self.assertEqual(str(cm.exception), "unhashable type: 'dict'")
+
+    def test_recreate(self):
+        """Test the case when instrument needs to be recreated"""
+        instr = DummyInstrument(
+            name='instr', gates=['dac1', 'dac2', 'dac3'])
+        instr_ref = weakref.ref(instr)
+
+        self.assertListEqual(
+            ['instr'], list(Instrument._all_instruments.keys()))
+
+        instr_2 = find_or_create_instrument(
+            DummyInstrument, name='instr', gates=['dac1', 'dac2'],
+            recreate=True
+        )
+        instr_2_ref = weakref.ref(instr_2)
+
+        self.assertListEqual(
+            ['instr'], list(Instrument._all_instruments.keys()))
+
+        self.assertIn(instr_2_ref, Instrument._all_instruments.values())
+        self.assertNotIn(instr_ref, Instrument._all_instruments.values())
+
+        instr_2.close()
+
+
+class TestInstrumentBase(TestCase):
+    """
+    This class contains tests that are relevant to the InstrumentBase class.
+    """
+
+    def test_snapshot_and_meta_attrs(self):
+        """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
+        instr = InstrumentBase('instr')
+
+        self.assertEqual(instr.name, 'instr')
+
+        self.assertTrue(hasattr(instr, '_meta_attrs'))
+        self.assertListEqual(instr._meta_attrs, ['name'])
+
+        snapshot = instr.snapshot()
+
+        self.assertIn('name', snapshot)
+        self.assertEqual('instr', snapshot['name'])
+
+        self.assertIn('__class__', snapshot)
+        self.assertIn('InstrumentBase', snapshot['__class__'])

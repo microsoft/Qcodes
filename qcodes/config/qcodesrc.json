@@ -13,6 +13,16 @@
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot"
     },
+    "plotting":{
+        "default_color_map": "viridis",
+        "rasterize_threshold": 5000,
+        "auto_color_scale":{
+            "enabled": false,
+            "cutoff_percentile": [0.5, 0.5],
+            "color_over": "#a1c4fc",
+            "color_under": "#017000"
+        }
+    },
     "user": {
         "scriptfolder": ".",
         "mainfolder": "."
@@ -21,5 +31,10 @@
         "enable_forced_reconnect": false,
         "default_folder": ".",
         "default_file": "instrument_config.yml"
+    },
+    "GUID_components": {
+        "location": 0,
+        "work_station": 0,
+        "sample": 0
     }
 }

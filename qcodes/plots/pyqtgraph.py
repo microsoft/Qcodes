@@ -29,8 +29,8 @@ class QtPlot(BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
-    For information on how x/y/z \*args are handled see add() in the base
-    plotting class.
+    For information on how ``x/y/z *args`` are handled see ``add()`` in the
+     base plotting class.
 
     Args:
         *args: shortcut to provide the x/y/z data. See BasePlot.add
@@ -531,8 +531,7 @@ class QtPlot(BasePlot):
         """
         # seem to be a bug in mypy but the type of self.subplots cannot be
         # deducted even when typed above so ignore it and cast for now
-        subplots = self.subplots # type: ignore
-        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        subplots = self.subplots
         for subplot in subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
@@ -571,8 +570,7 @@ class QtPlot(BasePlot):
         standardunits = self.standardunits
         # seem to be a bug in mypy but the type of self.subplots cannot be
         # deducted even when typed above so ignore it and cast for now
-        subplots = self.subplots # type: ignore
-        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        subplots = self.subplots
         for i, plot in enumerate(subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
