@@ -31,7 +31,7 @@ class RunDescriber:
         Serialize this object into a dictionary
         """
         ser = {}
-        ser['Parameters'] = self.interdeps.serialize()
+        ser['interdependencies'] = self.interdeps.serialize()
         return ser
 
     @classmethod
@@ -39,7 +39,7 @@ class RunDescriber:
         """
         Make a RunDescriber object based on a serialized version of it
         """
-        idp = InterDependencies.deserialize(ser['Parameters'])
+        idp = InterDependencies.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)
 
         return rundesc

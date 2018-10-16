@@ -69,7 +69,7 @@ def test_serialization_dict_keys(some_paramspecs):
     desc = RunDescriber(interdeps=idp)
 
     ser_desc = desc.serialize()
-    assert list(ser_desc.keys()) == ['Parameters']
+    assert list(ser_desc.keys()) == ['interdependencies']
 
 
 def test_serialization_and_back(some_paramspecs):
@@ -102,7 +102,7 @@ def test_yaml_creation_and_loading(some_paramspecs):
         yaml_str = desc.to_yaml()
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
-        assert list(ydict.keys()) == ['Parameters']
+        assert list(ydict.keys()) == ['interdependencies']
 
         new_desc = RunDescriber.from_yaml(yaml_str)
         assert new_desc == desc
