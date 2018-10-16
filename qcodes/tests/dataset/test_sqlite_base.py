@@ -11,7 +11,8 @@ import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
+from qcodes.tests.dataset.temporary_databases import \
+    empty_temp_db, experiment, dataset
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -112,3 +113,9 @@ def test_get_dependents(experiment):
                      mut.get_layout_id(experiment.conn, 'z', run_id)]
 
     assert deps == expected_deps
+
+
+@pytest.mark.usefixtures('dataset')
+def test_column_in_table(dataset):
+    assert mut.column_in_table(dataset.conn, "runs", "run_id")
+    assert not mut.column_in_table(dataset.conn, "runs", "non-existing-column")
