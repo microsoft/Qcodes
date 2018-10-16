@@ -1,4 +1,6 @@
 language: python
+sudo: required
+dist: xenial
 notifications:
   email: false
     # send all notifcations to slack
