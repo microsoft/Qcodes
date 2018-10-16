@@ -4,6 +4,7 @@ from copy import deepcopy
 import logging
 import tempfile
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -29,11 +30,14 @@ from qcodes.dataset.sqlite_base import (connect,
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
+if TYPE_CHECKING:
+    from _pytest._code.code import ExceptionInfo
+
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
 
 
-def error_caused_by(excinfo, cause: str) -> bool:
+def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
     """
     Helper function to figure out whether an exception was caused by another
     exception with the message provided.
