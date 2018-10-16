@@ -67,15 +67,15 @@ class ZIHDAWG8(Instrument):
         """
         self.set('awgs_{}_enable'.format(awg_number), 1)
 
-    def stop_awg(self, awg):
+    def stop_awg(self, awg_number):
         """
         Deactivate an AWG
         Args:
-            awg (int): The AWG that should be disabled.
+            awg_number (int): The AWG that should be disabled.
 
         Returns: None
         """
-        self.set('awgs_{}_enable'.format(awg), 0)
+        self.set('awgs_{}_enable'.format(awg_number), 0)
 
     def upload_sequence_program(self, awg, sequence_program):
         """
