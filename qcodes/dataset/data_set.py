@@ -183,17 +183,33 @@ class _Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str, run_id: Optional[int]=None,
-                 conn=None) -> None:
+    def __init__(self, path_to_db: str,
+                 run_id: Optional[int]=None,
+                 conn=None,
+                 exp_id=None,
+                 name: str=None,
+                 specs: SPECS=None,
+                 values=None,
+                 metadata=None) -> None:
         """
-        Create a new DataSet object. The object can either be intended
-        to hold a new run or and old run.
+        Create a new DataSet object. The object can either hold a new run or
+        an already existing run. If a run_id is provided, then an old run is
+        looked up, else a new run is created.
 
         Args:
             path_to_db: path to the sqlite file on disk
             run_id: provide this when loading an existing run, leave it
               as None when creating a new run
             conn: connection to the DB
+            exp_id: the id of the experiment in which to create a new run.
+              Ignored if run_id is provided.
+            name: the name of the dataset. Ignored if run_id is provided.
+            specs: paramspecs belonging to the dataset. Ignored if run_id is
+              provided.
+            values: values to insert into the dataset. Ignored if run_id is
+              provided.
+            metadata: metadata to insert into the dataset. Ignored if run_id
+              is provided.
         """
         # TODO: handle fail here by defaulting to
         # a standard db
@@ -208,20 +224,28 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         if run_id:
             self._completed = completed(self.conn, self.run_id)
+        else:
 
-    def _new(self, name, exp_id, specs: SPECS = None, values=None,
-             metadata=None) -> None:
-        """
-        Actually perform all the side effects needed for
-        the creation of a new dataset.
-        """
-        _, run_id, __ = create_run(self.conn, exp_id, name,
-                                   generate_guid(),
-                                   specs, values, metadata)
+            if exp_id is None:
+                if len(get_experiments(self.conn)) > 0:
+                    exp_id = get_last_experiment(self.conn)
+                else:
+                    raise ValueError("No experiments found."
+                                     "You can start a new one with:"
+                                     " new_experiment(name, sample_name)")
 
-        # this is really the UUID (an ever increasing count in the db)
-        self.run_id = run_id
-        self._completed = False
+            # Actually perform all the side effects needed for
+            # the creation of a new dataset.
+
+            name = name or "dataset"
+
+            _, run_id, __ = create_run(self.conn, exp_id, name,
+                                       generate_guid(),
+                                       specs, values, metadata)
+
+            # this is really the UUID (an ever increasing count in the db)
+            self.run_id = run_id
+            self._completed = False
 
     @property
     def name(self):
@@ -779,13 +803,12 @@ def new_data_set(name, exp_id: Optional[int] = None,
             raise ValueError("No experiments found."
                              "You can start a new one with:"
                              " new_experiment(name, sample_name)")
-    # This is admittedly a bit weird. We create a dataset, link it to some
-    # run in the DB and then (using _new) change what it's linked to
     if tempcon:
         conn.close()
         conn = None
-    d = DataSet(path_to_db, run_id=None, conn=conn)
-    d._new(name, exp_id, specs, values, metadata)
+    d = DataSet(path_to_db, run_id=None, conn=conn,
+                name=name, specs=specs, values=values,
+                metadata=metadata)
 
     return d
 
