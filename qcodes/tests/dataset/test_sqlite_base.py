@@ -13,6 +13,8 @@ from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset
+from qcodes.tests.dataset.test_database_creation_and_upgrading import \
+    error_caused_by
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -56,8 +58,9 @@ def test_insert_many_values_raises(experiment):
 
 
 def test_get_metadata_raises(experiment):
-    with pytest.raises(OperationalError, match="no such column: something"):
+    with pytest.raises(RuntimeError) as excinfo:
         mut.get_metadata(experiment.conn, 'something', 'results')
+    assert error_caused_by(excinfo, "no such column: something")
 
 
 @given(table_name=hst.text(max_size=50))
