@@ -240,6 +240,7 @@ class DataSet(Sized):
 
     @property
     def snapshot(self):
+        """Returns snapshot of the run in JSON format (or None)"""
         if column_in_table(self.conn, "runs", "snapshot"):
             return select_one_where(self.conn, "runs", "snapshot",
                                     "run_id", self.run_id)
