@@ -490,7 +490,7 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.Iterable):
+        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
         else:
             raise ValueError("field limit should either be"
