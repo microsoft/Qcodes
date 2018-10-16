@@ -132,10 +132,10 @@ def test_perform_actual_upgrade_0_to_1():
 
         guid_table_query = "SELECT guid FROM runs"
 
-        try:
+        with pytest.raises(RuntimeError) as excinfo:
             atomic_transaction(conn, guid_table_query)
-        except RuntimeError as err:
-            assert str(err.__cause__) == 'no such column: guid'
+
+        assert error_caused_by(excinfo, 'no such column: guid')
 
         perform_db_upgrade_0_to_1(conn)
         assert get_user_version(conn) == 1
