@@ -238,17 +238,17 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         # tests/dataset/legacy_DB_generation/generate_version_2.py
         # are recovered
 
-        p1 = [p for p in idp.paramspecs if p.name == 'p0'][0]
-        assert p1.depends_on == ''
-        assert p1.inferred_from == ''
-        assert p1.label == "Parameter 0"
-        assert p1.unit == "unit 0"
+        p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
+        assert p0.depends_on == ''
+        assert p0.inferred_from == ''
+        assert p0.label == "Parameter 0"
+        assert p0.unit == "unit 0"
 
-        p5 = [p for p in idp.paramspecs if p.name == 'p4'][0]
-        assert p5.depends_on == 'p2, p3'
-        assert p5.inferred_from == ''
-        assert p5.label == "Parameter 4"
-        assert p5.unit == "unit 4"
+        p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
+        assert p4.depends_on == 'p2, p3'
+        assert p4.inferred_from == ''
+        assert p4.label == "Parameter 4"
+        assert p4.unit == "unit 4"
 
 
 @pytest.mark.usefixtures("empty_temp_db")
