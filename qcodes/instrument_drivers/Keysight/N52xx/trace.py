@@ -37,6 +37,9 @@ class TraceParameter(ArrayParameter):
 
     @property
     def shape(self) -> tuple:
+        if not self._channel.exists_on_instrument:
+            return tuple()
+
         return self._channel.points(),
 
     @shape.setter
@@ -45,6 +48,9 @@ class TraceParameter(ArrayParameter):
 
     @property
     def setpoints(self) -> tuple:
+        if not self._channel.exists_on_instrument:
+            return tuple()
+
         start = self._channel.start()
         stop = self._channel.stop()
         return np.linspace(start, stop, self.shape[0]),
@@ -96,21 +102,21 @@ class N52xxTrace(N52xxInstrumentChannel):
     @classmethod
     def make_unique_id(cls, parent, **kwargs):
         trace_type = kwargs["trace_type"]
-        name = trace_type
+        name = f"{parent.short_name}_{trace_type}"
+        existing_traces = cls._discover_list_from_instrument(parent)
 
-        if (name, trace_type) in cls._discover_list_from_instrument(parent):
-            raise ValueError(
-                f"A trace of type {trace_type} already exists "
-                f"on channel {parent.channel}"
-            )
+        count = 1
+        while (f"{name}_{count}", trace_type) in existing_traces:
+            count += 1
 
-        return name
+        return f"{name}_{count}"
 
     def __init__(self, parent, identifier, existence=False, channel_list=None,
                  **kwargs):
 
         super().__init__(parent, identifier, existence=existence,
                          channel_list=channel_list)
+
         self._channel = parent.channel
         self._trace_type = kwargs["trace_type"]
         self.validate_trace_type(self._trace_type)
@@ -141,7 +147,7 @@ class N52xxTrace(N52xxInstrumentChannel):
     def _create(self):
         # Write via self.parent to avoid a call to self.select. This will cause
         # the instrument to return an error as the trace does not exist yet
-        self.parent.write(
+        self.base_instrument.write(
             f'CALC{self._channel}:PAR:EXT {self.short_name}, '
             f'{self._trace_type}'
         )

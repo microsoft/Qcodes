@@ -14,60 +14,6 @@ from qcodes.utils.validators import Numbers, Enum, MultiType
 logger = logging.getLogger()
 
 
-class N52xxMeasurement(N52xxInstrumentChannel):
-    discover_command = "SYST:MEAS:CAT?"
-
-    @classmethod
-    def load_from_instrument(
-            cls, parent: Instrument, **kwargs)-> List['N52xxInstrumentChannel']:
-
-        if not parent.exists_on_instrument:
-            return []
-
-        discover_command = f"{cls.discover_command} {parent.channel}"
-        ans = parent.base_instrument.ask(discover_command)
-        ans = ans.strip().strip("\"").split(",")
-        identifiers = [int(i) for i in ans if i != ""]
-
-        obj_list = []
-        for identifier in identifiers:
-            obj = cls(parent, identifier=identifier, existence=True, **kwargs)
-            obj_list.append(obj)
-
-        return obj_list
-
-    def __init__(
-            self, parent: Instrument, identifier: Any, existence: bool = False,
-            channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
-
-        self._channel: int = parent.channel
-        self._meas_type: str = kwargs.pop("meas_type", None)
-
-        super().__init__(
-            parent, identifier=f"measurement{identifier}", existence=existence,
-            channel_list=channel_list, **kwargs
-        )
-
-        self._measurement = identifier
-
-    def _create(self) ->None:
-
-        if not all([self._channel, self._meas_type]):
-            raise ValueError(
-                "Both channel and measurement type need to be given for "
-                "creation on instrument"
-            )
-
-        self.base_instrument.write(
-            f"CALC{self._channel}:MEAS{self._measurement}:DEF "
-            f"'{self._meas_type}'")
-
-    def _delete(self) ->None:
-        raise NotImplementedError(
-            "Measurements are not meant to be deleted independently"
-        )
-
-
 class N52xxChannel(N52xxInstrumentChannel):
     discover_command = "SYST:CHAN:CAT?"
 
@@ -76,7 +22,7 @@ class N52xxChannel(N52xxInstrumentChannel):
             channel_list: 'N52xxChannelList' = None, **kwargs) -> None:
 
         super().__init__(
-            parent, identifier=f"channel{identifier}", existence=existence,
+            parent, identifier=f"CHN{identifier}", existence=existence,
             channel_list=channel_list, **kwargs
         )
 
@@ -214,19 +160,12 @@ class N52xxChannel(N52xxInstrumentChannel):
 
         self.add_submodule("traces", traces)
 
-        measurement = N52xxChannelList(
-            parent=cast(Instrument, self), name="measurements",
-            chan_type=N52xxMeasurement
-        )
-
-        self.add_submodule("measurements", measurement)
-
     def _create(self) ->None:
         """
         Create a channel by defining a new measurement on the, as yet,
         non-existing channel
         """
-        self.measurements.add(meas_type="S11")
+        self.traces.add(trace_type="S11")
 
     def _delete(self) ->None:
         """Delete the channel"""

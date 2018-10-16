@@ -68,7 +68,7 @@ class N52xxWindow(N52xxInstrumentChannel):
         self._trace_count = 0
 
     def _create(self) ->None:
-        self.parent.write(f"DISP:WINDow{self._window} ON")
+        self.base_instrument.write(f"DISP:WINDow{self._window} ON")
 
     def _delete(self) ->None:
         self.parent.write(f"DISP:WINDow{self._window} OFF")
