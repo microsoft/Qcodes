@@ -37,23 +37,26 @@ def strip_outer_tags(sml: str) -> str:
 @pytest.fixture(scope='function')
 def awg2():
     awg2_sim = AWG70002A('awg2_sim',
-                         address='GPIB0::2::65535::INSTR',
+                         address='GPIB0::2::INSTR',
                          visalib=visalib)
     yield awg2_sim
 
     awg2_sim.close()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def random_wfm_m1_m2_package():
     """
     Make a random 2400 points np.array([wfm, m1, m2]).
     The waveform has values in [-0.1, 0.1)
     """
-    wfm = 0.2*(np.random.rand(2400) - 0.5)
-    m1 = np.random.randint(0, 2, 2400)
-    m2 = np.random.randint(0, 2, 2400)
-    return np.array([wfm, m1, m2])
+    def make():
+        length = np.random.randint(2400, 2500)
+        wfm = 0.2*(np.random.rand(length) - 0.5)
+        m1 = np.random.randint(0, 2, length)
+        m2 = np.random.randint(0, 2, length)
+        return np.array([wfm, m1, m2])
+    return make
 
 
 @pytest.fixture(scope='module')
@@ -225,7 +228,7 @@ def test_makeSEQXFile(awg2, random_wfm_m1_m2_package):
     event_jumps = [0]*seqlen
     event_jump_to = [0]*seqlen
     go_to = [0]*seqlen
-    wfms = [[wfmpkg for i in range(seqlen)] for j in range(chans)]
+    wfms = [[wfmpkg() for i in range(seqlen)] for j in range(chans)]
     amplitudes = [0.5]*chans
     seqname = "testseq"
 

@@ -1,66 +1,34 @@
+import itertools
+
+import pytest
+import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
-import numpy as np
-import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
-import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
-from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database
 
-import qcodes.dataset.experiment_container
-import pytest
-import tempfile
-import os
+from qcodes.dataset.sqlite_base import _unicode_categories
+
+from qcodes.dataset.data_set import CompletedError
+from qcodes.dataset.database import (initialise_database,
+                                     initialise_or_create_database_at)
+from qcodes.dataset.guids import parse_guid
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment, dataset)
 
 n_experiments = 0
 
 
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    global n_experiments
-    n_experiments = 0
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
-
-
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = new_data_set("test-dataset")
-    yield dataset
-    dataset.conn.close()
-
-
-def test_tabels_exists(empty_temp_db):
-    print(qc.config["core"]["db_location"])
-    conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-    cursor = conn.execute("select sql from sqlite_master where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
-    for row, expected_table in zip(cursor, expected_tables):
-        assert expected_table in row['sql']
-    conn.close()
-
-
+@settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
                              min_size=1))
-def test_add_experiments(empty_temp_db, experiment_name,
+@pytest.mark.usefixtures("empty_temp_db")
+def test_add_experiments(experiment_name,
                          sample_name, dataset_name):
     global n_experiments
     n_experiments += 1
@@ -146,7 +114,8 @@ def test_add_paramspec_one_by_one(dataset):
     assert len(dataset.paramspecs.keys()) == 3
 
 
-def test_add_data_1d(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_1d():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -183,7 +152,8 @@ def test_add_data_1d(experiment):
         mydataset.add_result({'x': 5})
 
 
-def test_add_data_array(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_array():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -206,7 +176,8 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
-def test_adding_too_many_results(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_adding_too_many_results():
     """
     This test really tests the "chunking" functionality of the
     insert_many_values function of the sqlite_base module
@@ -233,7 +204,8 @@ def test_adding_too_many_results(experiment):
     dataset.add_results(results)
 
 
-def test_modify_result(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_modify_result():
     dataset = new_data_set("test_modify_result")
     xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
@@ -277,10 +249,11 @@ def test_modify_result(experiment):
         dataset.modify_result(0, {'x': 2})
 
 
-@settings(max_examples=25)
+@settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
-def test_add_parameter_values(experiment, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
@@ -301,7 +274,8 @@ def test_add_parameter_values(experiment, N, M):
     mydataset.mark_complete()
 
 
-def test_load_by_counter(dataset):
+@pytest.mark.usefixtures("dataset")
+def test_load_by_counter():
     dataset = load_by_counter(1, 1)
     exps = experiments()
     assert len(exps) == 1
@@ -312,25 +286,18 @@ def test_load_by_counter(dataset):
     assert exp.last_counter == 1
 
 
-def test_dataset_with_no_experiment_raises(empty_temp_db):
+@pytest.mark.usefixtures("empty_temp_db")
+def test_dataset_with_no_experiment_raises():
     with pytest.raises(ValueError):
         new_data_set("test-dataset",
                      specs=[ParamSpec("x", "numeric"),
                             ParamSpec("y", "numeric")])
 
 
-def test_database_upgrade(empty_temp_db):
-    connection = connect(qc.config["core"]["db_location"],
-                 qc.config["core"]["db_debug"])
-    userversion = get_user_version(connection)
-    if userversion != 0:
-        raise RuntimeError("trying to upgrade from version 0"
-                           " but your database is version"
-                           " {}".format(userversion))
-    sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
-
-    atomic_transaction(connection, sql)
-    set_user_version(connection, 1)
+def test_guid(dataset):
+    guid = dataset.guid
+    assert len(guid) == 36
+    parse_guid(guid)
 
 
 def test_numpy_ints(dataset):
@@ -363,6 +330,7 @@ def test_numpy_floats(dataset):
     dataset.add_results(results)
     expected_result = [[tp(1.2)] for tp in numpy_floats]
     assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
+
 
 
 def test_numpy_nan(dataset):
@@ -413,9 +381,11 @@ def test_missing_keys(dataset):
     assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
     assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
 
-    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+    assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
     tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
     expected_setpoints = [[[v] for v in vals] for vals in tmp]
 
-    assert dataset.get_setpoints("b") == expected_setpoints
+    assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
+    assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
+
