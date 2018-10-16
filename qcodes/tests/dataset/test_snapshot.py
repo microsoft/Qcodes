@@ -24,7 +24,6 @@ def dmm():
     dmm.close()
 
 
-@pytest.mark.usefixtures("experiment")
 def test_station_snapshot_during_measurement(experiment, dac, dmm):
     station = qc.Station()
     station.add_component(dac)
@@ -40,8 +39,16 @@ def test_station_snapshot_during_measurement(experiment, dac, dmm):
     with measurement.run() as data_saver:
         data_saver.add_result((dac.ch1, 7), (dmm.v1, 5))
 
+    # 1. Test `get_metadata('snapshot')` method
+
     json_snapshot_from_dataset = data_saver.dataset.get_metadata('snapshot')
     snapshot_from_dataset = json.loads(json_snapshot_from_dataset)
 
     expected_snapshot = {'station': snapshot_of_station}
     assert expected_snapshot == snapshot_from_dataset
+
+    # 2. Test `snapshot` property
+
+    snapshot_from_dataset_via_property = data_saver.dataset.snapshot
+
+    assert json_snapshot_from_dataset == snapshot_from_dataset_via_property
