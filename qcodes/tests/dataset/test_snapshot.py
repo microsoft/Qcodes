@@ -1,30 +1,13 @@
 import json
-import os
-import tempfile
 
 import pytest
 
 import qcodes as qc
-from qcodes.dataset.database import initialise_database
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.measurements import Measurement
 
-
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
-
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = qc.new_experiment('experiment_name', 'sample_name')
-    yield e
-    e.conn.close()
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
 
 
 @pytest.fixture  # scope is "function" per default
@@ -41,6 +24,7 @@ def dmm():
     dmm.close()
 
 
+@pytest.mark.usefixtures("experiment")
 def test_station_snapshot_during_measurement(experiment, dac, dmm):
     station = qc.Station()
     station.add_component(dac)
