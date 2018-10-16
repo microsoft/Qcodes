@@ -116,7 +116,7 @@ class Advantech_PCIE_1751(Instrument):
         integers, writes the binary representations of their values to the pins
         of ports i, ..., i+len(value)-1 respectively.
         """
-        if isinstance(value, collections.Iterable):
+        if isinstance(value, collections.abc.Iterable):
             vallist = list(value)
         else:
             vallist = [value]
