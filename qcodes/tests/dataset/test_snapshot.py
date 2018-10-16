@@ -47,8 +47,10 @@ def test_station_snapshot_during_measurement(experiment, dac, dmm):
     expected_snapshot = {'station': snapshot_of_station}
     assert expected_snapshot == snapshot_from_dataset
 
-    # 2. Test `snapshot` property
+    # 2. Test `snapshot_raw` property
 
-    snapshot_from_dataset_via_property = data_saver.dataset.snapshot
+    assert json_snapshot_from_dataset == data_saver.dataset.snapshot_raw
 
-    assert json_snapshot_from_dataset == snapshot_from_dataset_via_property
+    # 3. Test `snapshot` property
+
+    assert expected_snapshot == data_saver.dataset.snapshot

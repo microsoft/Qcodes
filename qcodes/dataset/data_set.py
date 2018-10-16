@@ -7,6 +7,7 @@
 # Distributed under terms of the MIT license.
 # import json
 import functools
+import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
 import time
@@ -240,7 +241,16 @@ class DataSet(Sized):
 
     @property
     def snapshot(self):
-        """Returns snapshot of the run in JSON format (or None)"""
+        """Snapshot of the run as dictionary (or None)"""
+        snapshot_json = self.snapshot_raw
+        if snapshot_json is not None:
+            return json.loads(snapshot_json)
+        else:
+            return None
+
+    @property
+    def snapshot_raw(self):
+        """Snapshot of the run in JSON format (or None)"""
         if column_in_table(self.conn, "runs", "snapshot"):
             return select_one_where(self.conn, "runs", "snapshot",
                                     "run_id", self.run_id)
