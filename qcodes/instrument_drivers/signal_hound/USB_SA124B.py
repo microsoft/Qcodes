@@ -583,10 +583,6 @@ class SignalHound_USB_SA124B(Instrument):
         This function performs a sweep over the configured ranges.
         The result of the sweep is returned along with the sweep points
 
-        Args:
-            retry: It this the second attempt? This method will attempt
-             to get the data exactly twice.
-
         returns:
             datamin numpy array
         """
