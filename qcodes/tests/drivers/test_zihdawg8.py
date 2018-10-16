@@ -1,11 +1,12 @@
+import sys
 import textwrap
 import unittest
 from unittest.mock import patch, MagicMock
 
+sys.modules['zhinst'] = MagicMock(name='zhinst')
 import zhinst
-from qcodes.instrument_drivers.ZI.ZIHDAWG8 import ZIHDAWG8
 
-import qcodes
+from qcodes.instrument_drivers.ZI.ZIHDAWG8 import ZIHDAWG8
 from qcodes.utils import validators
 
 
@@ -54,7 +55,7 @@ class TestZIHDAWG8(unittest.TestCase):
 
     def test_create_parameters_from_node_tree(self):
         with patch.object(zhinst.utils, 'create_api_session', return_value=3 * (MagicMock(),)), \
-             patch.object(qcodes.instrument_drivers.ZI.ZIHDAWG8.ZIHDAWG8, 'download_device_node_tree',
+             patch.object(ZIHDAWG8, 'download_device_node_tree',
                           return_value=self.node_tree):
             hdawg8 = ZIHDAWG8('Name', 'dev-test')
 
