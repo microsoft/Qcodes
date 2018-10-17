@@ -9,6 +9,7 @@ from qcodes.station import Station
 
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
+from qcodes.tests.test_station import set_default_station_to_none
 
 
 @pytest.fixture  # scope is "function" per default
@@ -26,6 +27,7 @@ def dmm():
 
 
 @pytest.mark.parametrize("pass_station", (True, False))
+@pytest.mark.usefixtures('set_default_station_to_none')
 def test_station_snapshot_during_measurement(experiment, dac, dmm,
                                              pass_station):
     station = Station()
