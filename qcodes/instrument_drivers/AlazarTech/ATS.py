@@ -260,6 +260,16 @@ class AlazarTech_ATS(Instrument):
 
         self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [
             ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
+        self._ATS_dll.AlazarReadRegister.argtypes = [
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.c_uint32]
+        self._ATS_dll.AlazarWriteRegister.argtypes = [
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_uint32]
         self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
                                                         ctypes.c_uint32,
                                                         ctypes.c_long,
@@ -999,6 +1009,41 @@ class AlazarTech_ATS(Instrument):
             return 16
         else:
             raise RuntimeError('Invalid channel configuration supplied')
+
+
+    def _read_register(self, offset: int) -> int:
+        """
+        Read a value from a given register in the Alazars memory
+
+        Args:
+            offset: Offset into he memmory to read from
+
+        Returns:
+            The value read as en integer
+        """
+        output = ctypes.c_uint32(0)
+        pwd = ctypes.c_uint32(0x32145876)
+        self._call_dll('AlazarReadRegister',
+                       self._handle,
+                       offset,
+                       ctypes.byref(output),
+                       pwd)
+        return output.value
+
+    def _write_register(self, offset: int, value: int) -> None:
+        """
+        Write a value to a given offset in the Alazars memory
+
+        Args:
+            offset: The offset to write to
+            value: The value to write
+        """
+        pwd = ctypes.c_uint32(0x32145876)
+        self._call_dll('AlazarWriteRegister',
+                       self._handle,
+                       offset,
+                       value,
+                       pwd)
 
 
 class Buffer:

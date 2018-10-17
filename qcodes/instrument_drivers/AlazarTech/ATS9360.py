@@ -1,3 +1,7 @@
+import numpy as np
+from distutils.version import LooseVersion
+import warnings
+
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
 
@@ -15,6 +19,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
     """
     samples_divisor = 128
+    _trigger_holdoff_min_fw_version = '21.07'
 
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -334,7 +339,70 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
 
+
+        self.add_parameter(name='trigger_holdoff',
+                           label='Trigger Holdoff',
+                           docstring=f'If enabled Alazar will '
+                                     f'ignore any additional triggers '
+                                     f'while capturing a record. If disabled '
+                                     f'this will result in corrupt data. '
+                                     f'Support for this requires at least '
+                                     f'firmware version '
+                                     f'{self._trigger_holdoff_min_fw_version}',
+                           vals=validators.Bool(),
+                           get_cmd=self._get_trigger_holdoff,
+                           set_cmd=self._set_trigger_holdoff)
+
+
+
         model = self.get_idn()['model']
         if model != 'ATS9360':
             raise Exception("The Alazar board kind is not 'ATS9360',"
                             " found '" + str(model) + "' instead.")
+
+    def _get_trigger_holdoff(self) -> bool:
+        fwversion = self.get_idn()['firmware']
+
+        if LooseVersion(fwversion) < \
+                LooseVersion(self._trigger_holdoff_min_fw_version):
+            return False
+
+        # we want to check if the 26h bit (zero indexed) is high or not
+        output = np.uint32(self._read_register(58))
+        # the two first two chars in the bit string is the sign and a 'b'
+        # remove those to only get the bit pattern
+        bitmask = bin(output)[2:]
+        # all prefixed zeros are ignored in the bit conversion so the
+        # bit mask may be shorter than what we expect. in that case
+        # the bit we care about is zero so we return False
+        if len(bitmask) < 27:
+            return False
+
+        return bool(bin(output)[-27])
+
+    def _set_trigger_holdoff(self, value: bool) -> None:
+        fwversion = self.get_idn()['firmware']
+        if LooseVersion(fwversion) < \
+                LooseVersion(self._trigger_holdoff_min_fw_version):
+            raise RuntimeError(f"Alazar 9360 requires at least firmware "
+                               f"version {self._trigger_holdoff_min_fw_version}"
+                               f" for trigger holdoff support. "
+                               f"You have version {fwversion}")
+        current_value = self._read_register(58)
+
+        if value is True:
+            # to enable trigger hold off we want to flip the
+            # 26th bit to 1. We do that by making a bitwise or
+            # with a number that has a 1 on the 26th place and zero
+            # otherwise. We use numpy.unit32 instead of python numbers
+            # to have unsigned ints of the right size
+            enable_mask = np.uint32(1 << 26)
+            new_value = current_value | enable_mask
+        else:
+            # to disable trigger hold off we want to flip the
+            # 26th bit to 0. We do that by making a bitwise and
+            # with a number that has a 0 on the 26th place and 1
+            # otherwise
+            disable_mask = ~np.uint32(1 << 26)
+            new_value = current_value & disable_mask
+        self._write_register(58, new_value)
