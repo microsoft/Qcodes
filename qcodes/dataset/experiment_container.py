@@ -1,4 +1,4 @@
-from collections import Sized
+from collections.abc import Sized
 from typing import Optional, List
 import logging
 

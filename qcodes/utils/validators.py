@@ -626,8 +626,8 @@ class Sequence(Validator):
         msg += self._elt_validator.__repr__() + '>'
         return msg
 
-    def validate(self, value: collections.Sequence, context: str='') -> None:
-        if not isinstance(value, collections.Sequence):
+    def validate(self, value: collections.abc.Sequence, context: str='') -> None:
+        if not isinstance(value, collections.abc.Sequence):
             raise TypeError(
                 '{} is not a sequence; {}'.format(repr(value), context))
         if self._length and not len(value) == self._length:

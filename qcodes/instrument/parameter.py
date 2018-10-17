@@ -367,11 +367,11 @@ class _BaseParameter(Metadatable):
                 # apply offset first (native scale)
                 if self.offset is not None:
                     # offset values
-                    if isinstance(self.offset, collections.Iterable):
+                    if isinstance(self.offset, collections.abc.Iterable):
                         # offset contains multiple elements, one for each value
                         value = tuple(value - offset for value, offset
                                       in zip(value, self.offset))
-                    elif isinstance(value, collections.Iterable):
+                    elif isinstance(value, collections.abc.Iterable):
                         # Use single offset for all values
                         value = tuple(value - self.offset for value in value)
                     else:
@@ -380,11 +380,11 @@ class _BaseParameter(Metadatable):
                 # scale second
                 if self.scale is not None:
                     # Scale values
-                    if isinstance(self.scale, collections.Iterable):
+                    if isinstance(self.scale, collections.abc.Iterable):
                         # Scale contains multiple elements, one for each value
                         value = tuple(value / scale for value, scale
                                       in zip(value, self.scale))
-                    elif isinstance(value, collections.Iterable):
+                    elif isinstance(value, collections.abc.Iterable):
                         # Use single scale for all values
                         value = tuple(value / self.scale for value in value)
                     else:
@@ -431,7 +431,7 @@ class _BaseParameter(Metadatable):
                     # getter:
                     # apply scale first
                     if self.scale is not None:
-                        if isinstance(self.scale, collections.Iterable):
+                        if isinstance(self.scale, collections.abc.Iterable):
                             # Scale contains multiple elements, one for each value
                             raw_value = tuple(val * scale for val, scale
                                               in zip(raw_value, self.scale))
@@ -441,7 +441,7 @@ class _BaseParameter(Metadatable):
 
                     # apply offset next
                     if self.offset is not None:
-                        if isinstance(self.offset, collections.Iterable):
+                        if isinstance(self.offset, collections.abc.Iterable):
                             # offset contains multiple elements, one for each value
                             raw_value = tuple(val + offset for val, offset
                                               in zip(raw_value, self.offset))
@@ -501,7 +501,7 @@ class _BaseParameter(Metadatable):
         if step is None:
             return [value]
         else:
-            if isinstance(value, collections.Sized) and len(value) > 1:
+            if isinstance(value, collections.abc.Sized) and len(value) > 1:
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
@@ -1052,8 +1052,8 @@ class ArrayParameter(_BaseParameter):
         # require one setpoint per dimension of shape
         sp_shape = (len(shape),)
 
-        sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator, numpy.ndarray)
+        sp_types = (nt, DataArray, collections.abc.Sequence,
+                    collections.abc.Iterator, numpy.ndarray)
         if (setpoints is not None and
                 not is_sequence_of(setpoints, sp_types, shape=sp_shape)):
             raise ValueError('setpoints must be a tuple of arrays')
@@ -1251,8 +1251,8 @@ class MultiParameter(_BaseParameter):
                              'of ints, not ' + repr(shapes))
         self.shapes = shapes
 
-        sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator, numpy.ndarray)
+        sp_types = (nt, DataArray, collections.abc.Sequence,
+                    collections.abc.Iterator, numpy.ndarray)
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
             raise ValueError('setpoints must be a tuple of tuples of arrays')
 
