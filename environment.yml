@@ -5,7 +5,7 @@ channels:
 dependencies:
  - python=3.6
  - numpy=1.15
- - matplotlib=2.2.3
+ - matplotlib=3.0.0
  - pyqtgraph=0.10.0
  - pyvisa=1.9.1
  - h5py=2.8.0
@@ -13,7 +13,6 @@ dependencies:
  - QtPy
  - jsonschema
  - jupyter=1.0.0
- - ipykernel=4.8.2 # https://github.com/spyder-ide/spyder/issues/7842
  - hypothesis
  - pytest
  - pytest-runner
@@ -24,6 +23,8 @@ dependencies:
  - lxml
  - scipy
  - ruamel_yaml
+ - gitpython
+ - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
  - pip:
     - websockets>=3.2
     - broadbean>=0.9.1

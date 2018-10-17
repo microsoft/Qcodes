@@ -1,7 +1,8 @@
 import logging
 from collections import OrderedDict
 from functools import partial
-from typing import Optional, List, Sequence, Union, Tuple, Dict, Any, Set
+from typing import (Optional, List, Sequence, Union, Tuple, Dict,
+                    Any, Set)
 import inspect
 import numpy as np
 import matplotlib
@@ -10,8 +11,7 @@ from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
-from qcodes.utils.plotting import auto_range_iqr
-from qcodes import config
+from qcodes.utils.plotting import auto_color_scale_from_config
 
 from .data_export import get_data_by_id, flatten_1D_data_for_plot
 from .data_export import (plottype_for_2d_data,
@@ -23,6 +23,7 @@ DB = qc.config["core"]["db_location"]
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
+Number = Union[float, int]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
 # :meth:`plot_by_id` and will be distributed to the respective plotting func.
@@ -42,7 +43,8 @@ def plot_by_id(run_id: int,
                                    Sequence[
                                        matplotlib.colorbar.Colorbar]]]=None,
                rescale_axes: bool=True,
-               smart_colorscale: Optional[bool]=None,
+               auto_color_scale: Optional[bool]=None,
+               cutoff_percentile: Optional[Union[Tuple[Number, Number], Number]]=None,
                **kwargs) -> AxesTupleList:
     """
     Construct all plots for a given run
@@ -62,6 +64,11 @@ def plot_by_id(run_id: int,
     The plot has a title that comprises run id, experiment name, and sample
     name.
 
+    ``**kwargs`` are passed to matplotlib's relevant plotting functions
+    By default the data in any vector plot will be rasterized
+    for scatter plots and heatmaps if more that 5000 points are supplied.
+    This can be overridden by supplying the `rasterized` kwarg.
+
     Args:
         run_id:
             ID of the run to plot
@@ -75,21 +82,22 @@ def plot_by_id(run_id: int,
             with standard SI units will be rescaled so that, for example,
             '0.00000005' tick label on 'V' axis are transformed to '50' on 'nV'
             axis ('n' is 'nano')
-        smart_colorscale: if True, the colorscale of heatmap plots will be
-            automatically adjusted to disregard outliers. If False,
-            the adjustment will not be performed. If None, the value from
-            QCoDeS config->"gui"->"smart_colorscale" will determine if the
-            adjustment is going to be performed.
+        auto_color_scale: if True, the colorscale of heatmap plots will be
+            automatically adjusted to disregard outliers.
+        cutoff_percentile: percentile of data that may maximally be clipped
+            on both sides of the distribution.
+            If given a tuple (a,b) the percentile limits will be a and 100-b.
+            See also the plotting tuorial notebook.
 
     Returns:
         a list of axes and a list of colorbars of the same length. The
         colorbar axes may be None if no colorbar is created (e.g. for
         1D plots)
+
+    Config dependencies: (qcodesrc.json)
     """
     # handle arguments and defaults
-    if smart_colorscale is None:
-        smart_colorscale = config.gui.smart_colorscale
-    subplots_kwargs = {k: kwargs.pop(k)
+    subplots_kwargs = {k:kwargs.pop(k)
                        for k in set(kwargs).intersection(SUBPLOTS_KWARGS)}
 
     # Retrieve info about the run for the title
@@ -175,6 +183,10 @@ def plot_by_id(run_id: int,
             plottype = plottype_for_3d_data(xpoints, ypoints, zpoints)
 
             plot_func = how_to_plot[plottype]
+
+            if colorbar is None and 'cmap' not in kwargs:
+                kwargs['cmap'] = qc.config.plotting.default_color_map
+
             ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
                                      **kwargs)
 
@@ -183,8 +195,8 @@ def plot_by_id(run_id: int,
             if rescale_axes:
                 _rescale_ticks_and_units(ax, data, colorbar)
 
-            if smart_colorscale:
-                colorbar.mappable.set_clim(*auto_range_iqr(zpoints))
+            auto_color_scale_from_config(colorbar, auto_color_scale,
+                                         zpoints, cutoff_percentile)
 
             new_colorbars.append(colorbar)
 
@@ -237,7 +249,10 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                         colorbar: matplotlib.colorbar.Colorbar=None,
                         **kwargs) -> AxesTuple:
     """
-    Make a 2D scatterplot of the data
+    Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
+    scatter used for the plotting. By default the data will be rasterized
+    in any vector plot if more that 5000 points are supplied. This can be
+    overridden by supplying the `rasterized` kwarg.
 
     Args:
         x: The x values
@@ -249,13 +264,20 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
+    if 'rasterized' in kwargs.keys():
+        rasterized = kwargs.pop('rasterized')
+    else:
+        rasterized = len(z) > qc.config.plotting.rasterize_threshold
+
     z_is_string_valued = isinstance(z[0], str)
 
     if z_is_string_valued:
         z_int = list(range(len(z)))
-        mappable = ax.scatter(x=x, y=y, c=z_int, **kwargs)
+        mappable = ax.scatter(x=x, y=y, c=z_int,
+                              rasterized=rasterized,**kwargs)
     else:
-        mappable = ax.scatter(x=x, y=y, c=z, **kwargs)
+        mappable = ax.scatter(x=x, y=y, c=z,
+                              rasterized=rasterized, **kwargs)
 
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
@@ -282,7 +304,10 @@ def plot_on_a_plain_grid(x: np.ndarray,
     way, but data must belong together such that z[n] has x[n] and
     y[n] as setpoints.  The setpoints need not be equidistantly
     spaced, but linear interpolation is used to find the edges of the
-    plotted squares.
+    plotted squares. ``**kwargs`` are passed to matplotlib's pcolormesh used
+    for the plotting. By default the data in any vector plot will be rasterized
+    if more that 5000 points are supplied. This can be overridden
+    by supplying the `rasterized` kwarg.
 
     Args:
         x: The x values
@@ -308,9 +333,15 @@ def plot_on_a_plain_grid(x: np.ndarray,
     y_edges = np.concatenate((np.array([yrow[0] - dys[0]]),
                               yrow[:-1] + dys,
                               np.array([yrow[-1] + dys[-1]])))
+    if 'rasterized' in kwargs.keys():
+        rasterized = kwargs.pop('rasterized')
+    else:
+        rasterized = len(x_edges) * len(y_edges) \
+                      > qc.config.plotting.rasterize_threshold
 
     colormesh = ax.pcolormesh(x_edges, y_edges,
                               np.ma.masked_invalid(z_to_plot),
+                              rasterized=rasterized,
                               **kwargs)
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
