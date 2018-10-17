@@ -183,7 +183,7 @@ class _Subscriber(Thread):
 
 
 class DataSet(Sized):
-    def __init__(self, path_to_db: str,
+    def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
                  conn=None,
                  exp_id=None,
@@ -197,7 +197,8 @@ class DataSet(Sized):
         looked up, else a new run is created.
 
         Args:
-            path_to_db: path to the sqlite file on disk
+            path_to_db: path to the sqlite file on disk. If not provided, the
+              path will be read from the config.
             run_id: provide this when loading an existing run, leave it
               as None when creating a new run
             conn: connection to the DB
@@ -213,7 +214,7 @@ class DataSet(Sized):
         """
         # TODO: handle fail here by defaulting to
         # a standard db
-        self.path_to_db = path_to_db
+        self.path_to_db = path_to_db or get_DB_location()
         if conn is None:
             self.conn = connect(self.path_to_db)
         else:
@@ -791,9 +792,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
         values: the values to associate with the parameters
         metadata:  the values to associate with the dataset
     """
-    path_to_db = get_DB_location()
-
-    d = DataSet(path_to_db, run_id=None, conn=conn,
+    d = DataSet(path_to_db=None, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
                 metadata=metadata, exp_id=exp_id)
 
