@@ -1072,9 +1072,11 @@ class Parameter(_BaseParameter):
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
                 self.get_raw = self._get_raw_value
-            else:
+            elif isinstance(get_cmd, str):
                 exec_str = getattr(self.parent, 'ask', None)
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
+            else:
+                self.get_raw = get_cmd
             if self.wrap_get:
                 self.get = self._wrap_get(self.get_raw)
             else:
@@ -1083,9 +1085,12 @@ class Parameter(_BaseParameter):
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)
-            else:
+            elif isinstance(set_cmd, str):
                 exec_str = getattr(self.parent, 'write', None)
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
+            else:
+                self.set_raw = set_cmd
+
             if self.wrap_set:
                 self.set = self._wrap_set(self.set_raw)
             else:
@@ -1102,7 +1107,7 @@ class Parameter(_BaseParameter):
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None:
-            if hasattr(self, 'set'):
+            if hasattr(self, 'set') and self.wrap_set:
                 self.set(initial_value, evaluate=False)
             else:
                 # No set function defined, so create a wrapper function

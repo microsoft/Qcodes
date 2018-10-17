@@ -320,7 +320,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         # perform a set without evaluating, which saves the value,
         # ensuring that new modifications such as the set_parser are
         # taken into account
-        if hasattr(parameter, 'set') and parameter.raw_value is not None:
+        if hasattr(parameter, 'set') and parameter.raw_value is not None and parameter.wrap_set:
             parameter.set(copy(parameter.get_latest()), evaluate=False)
 
     def add_function(self, name: str, **kwargs):
