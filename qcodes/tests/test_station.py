@@ -171,13 +171,26 @@ def test_station_after_instrument_is_closed():
 
     bob.close()
 
+    # 'bob' is closed, but it is still part of the station
     assert bob == station['bob']
 
-    station.snapshot()
+    # check that snapshot method executes without exceptions
+    snapshot = station.snapshot()
 
+    # check that 'bob's snapshot is not here (because 'bob' is closed,
+    # hence it was ignored, and even removed from the station by
+    # `snapshot_base` method)
+    assert {'instruments': {},
+            'parameters': {},
+            'components': {},
+            'default_measurement': []
+            } == snapshot
+
+    # check that 'bob' has been removed from the station
     with pytest.raises(KeyError, match='bob'):
         _ = station.components['bob']
 
+    # check that 'bob' has been removed from the station, again
     with pytest.raises(KeyError, match='Component bob is not part of the '
                                        'station'):
         station.remove_component('bob')
