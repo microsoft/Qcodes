@@ -5,6 +5,7 @@ import pytest
 import qcodes as qc
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.measurements import Measurement
+from qcodes.station import Station
 
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import experiment, empty_temp_db
@@ -27,7 +28,7 @@ def dmm():
 @pytest.mark.parametrize("pass_station", (True, False))
 def test_station_snapshot_during_measurement(experiment, dac, dmm,
                                              pass_station):
-    station = qc.Station()
+    station = Station()
     station.add_component(dac)
     station.add_component(dmm, 'renamed_dmm')
 
