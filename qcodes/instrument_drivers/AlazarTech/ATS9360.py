@@ -365,20 +365,16 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
         if LooseVersion(fwversion) < \
                 LooseVersion(self._trigger_holdoff_min_fw_version):
-            warnings.warn(f"Alazar 9360 requires at least firmware version"
-                          f"{self._trigger_holdoff_min_fw_version} for "
-                          f"trigger holdoff support. You have version "
-                          f"{fwversion}")
             return False
 
-        # we want to check if the 27th bit is high or not
+        # we want to check if the 26h bit (zero indexed) is high or not
         output = np.uint32(self._read_register(58))
         # the two first two chars in the bit string is the sign and a 'b'
         # remove those to only get the bit pattern
         bitmask = bin(output)[2:]
         # all prefixed zeros are ignored in the bit conversion so the
         # bit mask may be shorter than what we expect. in that case
-        # the bit we care about is zero adn we return False
+        # the bit we care about is zero so we return False
         if len(bitmask) < 27:
             return False
 
