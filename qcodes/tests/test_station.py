@@ -121,6 +121,13 @@ def test_remove_component():
 def test_snapshot():
     station = Station()
 
+    empty_snapshot = station.snapshot()
+    assert {'instruments': {},
+            'parameters': {},
+            'components': {},
+            'default_measurement': []
+            } == empty_snapshot
+
     instrument = DummyInstrument('instrument', gates=['one'])
     station.add_component(instrument)
     instrument_snapshot = instrument.snapshot()
