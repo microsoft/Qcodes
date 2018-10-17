@@ -128,6 +128,29 @@ class Station(Metadatable, DelegateAttributes):
         self.components[namestr] = component
         return namestr
 
+    def remove_component(self, name: str) -> Optional[Metadatable]:
+        """
+        Remove a component with a given name from this Station.
+
+        Args:
+            name: name of the component
+
+        Returns:
+            the component that has been removed (this behavior is the same as
+            for python dictionaries)
+
+        Raises:
+            KeyError if a component with the given name is not part of this
+            station
+        """
+        try:
+            return self.components.pop(name)
+        except KeyError as e:
+            if name in str(e):
+                raise KeyError(f'Component {name} is not part of the station')
+            else:
+                raise e
+
     def set_measurement(self, *actions):
         """
         Save a set ``*actions``` as the default measurement for this Station.
