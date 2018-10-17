@@ -7,14 +7,12 @@ from qcodes.tests.dataset.test_database_creation_and_upgrading \
     import error_caused_by
 
 
-@pytest.mark.usefixtures("dataset")
 def test_get_metadata_from_dataset(dataset):
     dataset.add_metadata('something', 123)
     something = dataset.get_metadata('something')
     assert 123 == something
 
 
-@pytest.mark.usefixtures("dataset")
 def test_get_nonexisting_metadata(dataset):
     with pytest.raises(RuntimeError) as excinfo:
         _ = dataset.get_metadata('something')

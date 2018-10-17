@@ -118,7 +118,6 @@ def test_get_dependents(experiment):
     assert deps == expected_deps
 
 
-@pytest.mark.usefixtures('dataset')
 def test_column_in_table(dataset):
     assert mut.column_in_table(dataset.conn, "runs", "run_id")
     assert not mut.column_in_table(dataset.conn, "runs", "non-existing-column")

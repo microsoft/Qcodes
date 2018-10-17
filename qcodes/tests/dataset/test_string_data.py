@@ -9,7 +9,6 @@ from qcodes.dataset.data_export import load_by_id
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 
-@pytest.mark.usefixtures('experiment')
 def test_string_via_dataset(experiment):
     """
     Test that we can save text into database via DataSet API
@@ -26,7 +25,6 @@ def test_string_via_dataset(experiment):
     assert test_set.get_data("p") == [["some text"]]
 
 
-@pytest.mark.usefixtures('experiment')
 def test_string_via_datasaver(experiment):
     """
     Test that we can save text into database via DataSaver API
@@ -45,7 +43,6 @@ def test_string_via_datasaver(experiment):
     assert test_set.get_data("p") == [["some text"]]
 
 
-@pytest.mark.usefixtures('experiment')
 def test_string(experiment):
     """
     Test that we can save text into database via Measurement API
@@ -64,7 +61,6 @@ def test_string(experiment):
     assert test_set.get_data("p") == [["some text"]]
 
 
-@pytest.mark.usefixtures('experiment')
 def test_string_with_wrong_paramtype(experiment):
     """
     Test that an exception occurs when saving string data if when registering a
@@ -85,7 +81,6 @@ def test_string_with_wrong_paramtype(experiment):
             datasaver.add_result((p, "some text"))
 
 
-@pytest.mark.usefixtures('experiment')
 def test_string_with_wrong_paramtype_via_datasaver(experiment):
     """
     Test that it is not possible to add a string value for a non-text
@@ -108,7 +103,6 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
         data_saver.dataset.conn.close()
 
 
-@pytest.mark.usefixtures('experiment')
 def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     """
     Test that it is possible to save a string value of a non-'text' parameter
@@ -130,7 +124,6 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
         test_set.conn.close()
 
 
-@pytest.mark.usefixtures('experiment')
 def test_list_of_strings(experiment):
     """
     Test saving list of strings via DataSaver
