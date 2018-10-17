@@ -275,23 +275,31 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     else:
         rasterized = len(z) > qc.config.plotting.rasterize_threshold
 
-    z_is_string_valued = isinstance(z[0], str)
+    z_is_stringy = isinstance(z[0], str)
 
-    if z_is_string_valued:
-        z_int = list(range(len(z)))
-        mappable = ax.scatter(x=x, y=y, c=z_int,
-                              rasterized=rasterized,**kwargs)
-    else:
-        mappable = ax.scatter(x=x, y=y, c=z,
-                              rasterized=rasterized, **kwargs)
+    if z_is_stringy:
+        z_strings = np.unique(z)
+        z = _strings_as_ints(z)
+
+    cmap = kwargs.pop('cmap') if 'cmap' in kwargs else None
+
+    if z_is_stringy:
+        name = cmap.name if hasattr(cmap, 'name') else 'viridis'
+        cmap = matplotlib.cm.get_cmap(name, len(z_strings))
+
+    mappable = ax.scatter(x=x, y=y, c=z,
+                          rasterized=rasterized, cmap=cmap, **kwargs)
 
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
     else:
         colorbar = ax.figure.colorbar(mappable, ax=ax)
 
-    if z_is_string_valued:
-        colorbar.ax.set_yticklabels(z)
+    if z_is_stringy:
+        N = len(z_strings)
+        f = (N-1)/N
+        colorbar.set_ticks([(n+0.5)*f for n in range(N)])
+        colorbar.set_ticklabels(z_strings)
 
     return ax, colorbar
 
