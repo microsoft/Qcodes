@@ -1,7 +1,8 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple, Iterable
+from collections import namedtuple
+from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
