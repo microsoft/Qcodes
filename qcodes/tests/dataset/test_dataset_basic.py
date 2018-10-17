@@ -12,8 +12,6 @@ from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
-from qcodes.dataset.database import (initialise_database,
-                                     initialise_or_create_database_at)
 from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
