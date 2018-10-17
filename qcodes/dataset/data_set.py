@@ -795,7 +795,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
 
     d = DataSet(path_to_db, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
-                metadata=metadata)
+                metadata=metadata, exp_id=exp_id)
 
     return d
 
