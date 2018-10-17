@@ -24,14 +24,22 @@ def dmm():
     dmm.close()
 
 
-def test_station_snapshot_during_measurement(experiment, dac, dmm):
+@pytest.mark.parametrize("pass_station", (True, False))
+def test_station_snapshot_during_measurement(experiment, dac, dmm,
+                                             pass_station):
     station = qc.Station()
     station.add_component(dac)
     station.add_component(dmm, 'renamed_dmm')
 
     snapshot_of_station = station.snapshot()
 
-    measurement = Measurement(experiment, station)
+    if pass_station:
+        measurement = Measurement(experiment, station)
+    else:
+        # in this branch of the `if` we expect that `Measurement` object
+        # will be initialized with `Station.default` which is equal to the
+        # station object that is instantiated above
+        measurement = Measurement(experiment)
 
     measurement.register_parameter(dac.ch1)
     measurement.register_parameter(dmm.v1, setpoints=[dac.ch1])
