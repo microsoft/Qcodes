@@ -72,6 +72,10 @@ class Station(Metadatable, DelegateAttributes):
         """
         State of the station as a JSON-compatible dict.
 
+        Note: in the station contains an instrument that has already been
+        closed, not only will it not be snapshotted, it will also be removed
+        from the station during the execution of this function.
+
         Args:
             update (bool): If True, update the state by querying the
              all the children: f.ex. instruments, parameters, components, etc.
@@ -88,9 +92,17 @@ class Station(Metadatable, DelegateAttributes):
                 self.default_measurement, update)
         }
 
+        components_to_remove = []
+
         for name, itm in self.components.items():
-            if isinstance(itm, (Instrument)):
-                snap['instruments'][name] = itm.snapshot(update=update)
+            if isinstance(itm, Instrument):
+                # instruments can be closed during the lifetime of the
+                # station object, hence this 'if' allows to avoid
+                # snapshotting instruments that are already closed
+                if Instrument.is_valid(itm):
+                    snap['instruments'][name] = itm.snapshot(update=update)
+                else:
+                    components_to_remove.append(name)
             elif isinstance(itm, (Parameter,
                                   ManualParameter,
                                   StandardParameter
@@ -98,6 +110,9 @@ class Station(Metadatable, DelegateAttributes):
                 snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)
+
+        for c in components_to_remove:
+            self.remove_component(c)
 
         return snap
 
