@@ -28,18 +28,23 @@ def test_has_attributes_after_init():
     """
 
     attrs = ['path_to_db', 'conn', 'run_id', '_debug', 'subscribers',
-             '_completed']
+             '_completed', 'name', 'table_name', 'guid', 'number_of_results',
+             'counter', 'parameters', 'paramspecs', 'exp_id', 'exp_name',
+             'sample_name', 'run_timestamp_raw', 'completed_timestamp_raw',
+             'completed']
 
     path_to_db = get_DB_location()
     ds = DataSet(path_to_db, run_id=None)
 
     for attr in attrs:
         assert hasattr(ds, attr)
+        getattr(ds, attr)
 
     ds = DataSet(path_to_db, run_id=1)
 
     for attr in attrs:
         assert hasattr(ds, attr)
+        getattr(ds, attr)
 
 
 @settings(deadline=None)
