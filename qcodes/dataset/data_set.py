@@ -778,7 +778,9 @@ def load_by_counter(counter, exp_id):
 def new_data_set(name, exp_id: Optional[int] = None,
                  specs: SPECS = None, values=None,
                  metadata=None, conn=None) -> DataSet:
-    """ Create a new dataset.
+    """
+    Create a new dataset in the currently active/selected database.
+
     If exp_id is not specified the last experiment will be loaded by default.
 
     Args:
@@ -790,22 +792,7 @@ def new_data_set(name, exp_id: Optional[int] = None,
         metadata:  the values to associate with the dataset
     """
     path_to_db = get_DB_location()
-    if conn is None:
-        tempcon = True
-        conn = connect(get_DB_location())
-    else:
-        tempcon = False
 
-    if exp_id is None:
-        if len(get_experiments(conn)) > 0:
-            exp_id = get_last_experiment(conn)
-        else:
-            raise ValueError("No experiments found."
-                             "You can start a new one with:"
-                             " new_experiment(name, sample_name)")
-    if tempcon:
-        conn.close()
-        conn = None
     d = DataSet(path_to_db, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
                 metadata=metadata)
