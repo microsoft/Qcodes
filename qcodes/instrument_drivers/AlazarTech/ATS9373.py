@@ -44,7 +44,7 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
                            parameter_class=TraceParameter,
                            label='External Sample Rate',
                            unit='S/s',
-                           vals=validators.MultiType(validators.Ints(300000000, 1800000000),
+                           vals=validators.MultiType(validators.Ints(300000000, 2000000000),
                                                      validators.Enum('UNDEFINED')),
                            initial_value='UNDEFINED')
         self.add_parameter(name='sample_rate',
