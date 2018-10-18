@@ -175,8 +175,6 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
     def __getattr__(self, attr):
         if attr == 'use_as_attributes':
             return super().__getattr__(attr)
-        elif attr in self.parameter_nodes:
-            return self.parameter_nodes[attr]
         elif attr in self.parameters:
             parameter = self.parameters[attr]
             if self.use_as_attributes:
@@ -185,6 +183,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             else:
                 # Return parameter instance
                 return parameter
+        elif attr in self.parameter_nodes:
+            return self.parameter_nodes[attr]
         else:
             return super().__getattr__(attr)
 
