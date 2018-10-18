@@ -9,7 +9,16 @@ from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
 
 class AlazarTech_ATS9373(AlazarTech_ATS):
     """
-    This class is the driver for the ATS9373 board
+    This class is the driver for the ATS9373 board.
+
+    Note that this board is very similar to ATS9360. Refer to
+    ATS SDK for details.
+
+    Note that channels of this board have 12-bit resolution
+    (see `IDN()['bits_per_sample']`) which means that the
+    raw data that is returned by the card should be converted to
+    uint16 type with a bit shift by 4 bits. Refer to ATS SDK
+    for more infromation.
     """
     samples_divisor = 128
     _trigger_holdoff_min_fw_version = '30.04'
