@@ -148,6 +148,7 @@ class AlazarTech_ATS(Instrument):
     }
 
     _board_names = {
+        0: 'ATS_NONE',
         1: 'ATS850',
         2: 'ATS310',
         3: 'ATS330',
@@ -177,7 +178,13 @@ class AlazarTech_ATS(Instrument):
         27: 'ATS9370',
         28: 'ATU7825',
         29: 'ATS9373',
-        30: 'ATS9416'
+        30: 'ATS9416',
+        31: 'ATS9637',
+        32: 'ATS9120',
+        33: 'ATS9371',
+        34: 'ATS9130',
+        35: 'ATS9352',
+        36: 'ATS9453',
     }
 
     @classmethod
