@@ -1,0 +1,15 @@
+spec: 1.1
+devices:
+  KeysightB2200:
+    eom:
+      GPIB INSTR:
+        q: "\r"
+        r: "\r"
+
+    dialogues:
+      - q: "*IDN?"
+        r: "AGILENT TECHNOLOGIES,B2200A,0,A.01.00"
+
+resources:
+  GPIB::1::INSTR:
+    device: KeysightB2200
