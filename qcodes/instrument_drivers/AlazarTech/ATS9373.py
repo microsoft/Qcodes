@@ -197,8 +197,7 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
                            label='External Trigger Range',
                            unit=None,
                            initial_value='ETR_2V5',
-                           val_mapping={'ETR_5V': 0, 'ETR_1V': 1,
-                                        'ETR_TTL': 2, 'ETR_2V5': 3})
+                           val_mapping={'ETR_TTL': 2, 'ETR_2V5': 3})
         self.add_parameter(name='trigger_delay',
                            get_cmd=None,
                            parameter_class=TraceParameter,
