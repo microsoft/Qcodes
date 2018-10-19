@@ -8,7 +8,9 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -413,4 +415,23 @@ def test_missing_keys(dataset):
 
     assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
     assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
+
+
+@pytest.mark.usefixtures('experiment')
+def test_get_description(some_paramspecs):
+
+    paramspecs = some_paramspecs[2]
+
+    ds = DataSet()
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies())
+
+    ds.add_parameter(paramspecs['ps1'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1']))
+
+    ds.add_parameter(paramspecs['ps2'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
+                                                  paramspecs['ps2']))
 

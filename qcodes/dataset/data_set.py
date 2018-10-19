@@ -39,6 +39,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_completed_timestamp_from_run_id)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -225,6 +227,7 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         if run_id:
             self._completed = completed(self.conn, self.run_id)
+            self._description = self._get_run_description_from_db()
         else:
 
             if exp_id is None:
@@ -244,9 +247,11 @@ class DataSet(Sized):
                                        generate_guid(),
                                        specs, values, metadata)
 
-            # this is really the UUID (an ever increasing count in the db)
+            # this is the (Locally) UID (an ever increasing count in the db)
             self.run_id = run_id
             self._completed = False
+            specs = specs or []
+            self._description = RunDescriber(InterDependencies(*specs))
 
     @property
     def name(self):
@@ -309,6 +314,10 @@ class DataSet(Sized):
         """
         return get_run_timestamp_from_run_id(self.conn, self.run_id)
 
+    @property
+    def description(self) -> RunDescriber:
+        return self._description
+
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format
@@ -349,6 +358,14 @@ class DataSet(Sized):
             completed_timestamp = None
 
         return completed_timestamp
+
+    def _get_run_description_from_db(self) -> RunDescriber:
+        """
+        Look up the run_description from the database
+        """
+        desc_str = select_one_where("run_description", "runs",
+                                    "run_id", self.run_id)
+        return RunDescriber.from_json(desc_str)
 
     def toggle_debug(self):
         """
