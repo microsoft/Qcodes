@@ -1174,6 +1174,21 @@ def get_last_run(conn: SomeConnection, exp_id: int) -> str:
     return one(c, 'run_id')
 
 
+def run_exists(conn: SomeConnection, run_id: int) -> bool:
+    # the following query always returns a single sqlite3.Row with an integer
+    # value of `1` or `0` for existing and non-existing run_id in the database
+    query = """
+    SELECT EXISTS(
+        SELECT 1
+        FROM runs
+        WHERE run_id = ?
+        LIMIT 1
+    );
+    """
+    res: sqlite3.Row = atomic_transaction(conn, query, run_id).fetchone()
+    return bool(res[0])
+
+
 def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
     """ Get a list of datasets
     Args:
