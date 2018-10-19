@@ -222,6 +222,15 @@ class TestParameter(TestCase):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
 
+    def test_bad_name(self):
+        with self.assertRaises(ValueError):
+            Parameter('p with space')
+        with self.assertRaises(ValueError):
+            Parameter('⛄')
+        with self.assertRaises(ValueError):
+            Parameter('1')
+
+
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
         p(42)
