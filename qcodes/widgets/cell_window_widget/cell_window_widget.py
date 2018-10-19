@@ -5,13 +5,9 @@ from traitlets import Unicode, Bool
 from qcodes.widgets import display_auto
 
 
-display_auto('widgets/plot_window_widget/plot_window_widget.css')
-display_auto('widgets/plot_window_widget/plot_window_widget.js')
-
-
-class PlotWindowWidget(DOMWidget):
-    _view_name = Unicode('PlotWindowView').tag(sync=True)
-    _view_module = Unicode('plot_window').tag(sync=True)
+class CellWindowWidget(DOMWidget):
+    _view_name = Unicode('CellWindowView').tag(sync=True)
+    _view_module = Unicode('cell_window').tag(sync=True)
 
     cell_text = Unicode('').tag(sync=True)
     _execute_code = Bool().tag(sync=True)
@@ -22,7 +18,9 @@ class PlotWindowWidget(DOMWidget):
 
     def __init__(self):
         super().__init__()
-        display(self)
+
+        display_auto('widgets/cell_window_widget/cell_window_widget.css')
+        display_auto('widgets/cell_window_widget/cell_window_widget.js')
 
     def execute_code(self, code, expand=True):
         self.cell_text = str(code)

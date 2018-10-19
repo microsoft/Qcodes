@@ -1,0 +1,48 @@
+#cell-window-toolbar {
+  padding-left: 4pt;
+}
+#nbextension-cellwindowview {
+  position: fixed;
+  right: 19px;
+  bottom: 0;
+  width: auto;
+  min-width: 500px;
+  background-color: #F8F5E1;
+  border-left: 1px solid #aaa;
+  border-top: 1px solid #aaa;
+  z-index: 105;
+}
+
+#nbextension-cellwindowview .cell-wrapper {
+  overflow: auto;
+}
+
+.cellwindowview-btn {
+  float: right;
+  margin-right: 24px;
+  opacity: 0.2;
+  font-size: 24px;
+  z-index: 106;
+}
+
+.cellwindowview-btn:hover {
+  opacity: 1;
+}
+
+.cellwindowview-close {
+  display: none;
+  position: absolute;
+  float: right;
+  bottom: 8px;
+  right: 0;
+}
+
+.cellwindowview-open {
+  margin-top: -32px;
+}
+
+.window-cell {
+  display: flex !important;
+}
+
+button.link { background:none;border:none; }

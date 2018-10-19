@@ -16,3 +16,6 @@
 .sidebar-wrapper.right {
     right: 18px;
 }
+.hidden-cell {
+    padding: 0.05em !important;
+}
