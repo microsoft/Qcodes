@@ -486,7 +486,7 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _dependencies_table_schema)
 
 
-def column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
+def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
     """
     A look-before-you-leap function to look up if a table has a certain column.
 

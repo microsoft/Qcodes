@@ -22,7 +22,7 @@ from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
                                         connect, create_run, completed,
-                                        column_in_table,
+                                        is_column_in_table,
                                         get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
@@ -276,7 +276,7 @@ class DataSet(Sized):
     @property
     def snapshot_raw(self):
         """Snapshot of the run in JSON format (or None)"""
-        if column_in_table(self.conn, "runs", "snapshot"):
+        if is_column_in_table(self.conn, "runs", "snapshot"):
             return select_one_where(self.conn, "runs", "snapshot",
                                     "run_id", self.run_id)
         else:

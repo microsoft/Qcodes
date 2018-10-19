@@ -119,5 +119,5 @@ def test_get_dependents(experiment):
 
 
 def test_column_in_table(dataset):
-    assert mut.column_in_table(dataset.conn, "runs", "run_id")
-    assert not mut.column_in_table(dataset.conn, "runs", "non-existing-column")
+    assert mut.is_column_in_table(dataset.conn, "runs", "run_id")
+    assert not mut.is_column_in_table(dataset.conn, "runs", "non-existing-column")
