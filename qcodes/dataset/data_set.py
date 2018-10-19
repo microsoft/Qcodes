@@ -265,7 +265,7 @@ class DataSet(Sized):
         return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
-    def snapshot(self) -> Optional[str]:
+    def snapshot(self) -> Optional[dict]:
         """Snapshot of the run as dictionary (or None)"""
         snapshot_json = self.snapshot_raw
         if snapshot_json is not None:
