@@ -284,7 +284,6 @@ def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
-    xparam.type = 'number'
     mydataset.add_parameter(xparam)
 
     x_results = [{'x': x} for x in range(N)]
