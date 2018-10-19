@@ -183,7 +183,7 @@ class TestParameter(TestCase):
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
-        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
         self.assertTrue(hasattr(gettable_parameter, 'get'))
         self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
@@ -192,14 +192,14 @@ class TestParameter(TestCase):
         self.assertIsNone(gettable_parameter())
 
         # Create parameter that saves value during set, and has no get_cmd
-        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
         self.assertFalse(hasattr(settable_parameter, 'get'))
         self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
             settable_parameter()
         settable_parameter(42)
 
-        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
         self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
         self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
         self.assertIsNone(settable_gettable_parameter())
@@ -221,6 +221,15 @@ class TestParameter(TestCase):
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
+
+    def test_bad_name(self):
+        with self.assertRaises(ValueError):
+            Parameter('p with space')
+        with self.assertRaises(ValueError):
+            Parameter('⛄')
+        with self.assertRaises(ValueError):
+            Parameter('1')
+
 
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
