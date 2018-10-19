@@ -380,7 +380,7 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
     log.debug('Sorting 2D data onto grid')
 
     if isinstance(z[0], str):
-        z_to_plot = np.full((ny, nx), ' '*int(str(z.dtype)[2:]))
+        z_to_plot = np.full((ny, nx), '', dtype=z.dtype)
     else:
         z_to_plot = np.full((ny, nx), np.nan)
     x_index = np.zeros_like(x, dtype=np.int)
