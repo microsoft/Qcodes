@@ -134,8 +134,10 @@ class FieldVector(object):
 
         for f in [
             lambda: FieldVector._cartesian_to_other(self._x, self._y, self._z),
-            lambda: FieldVector._spherical_to_other(self._r, self._theta, self._phi),
-            lambda: FieldVector._cylindrical_to_other(self._phi, self._rho, self._z)
+            lambda: FieldVector._spherical_to_other(self._r, self._theta,
+                                                    self._phi),
+            lambda: FieldVector._cylindrical_to_other(self._phi, self._rho,
+                                                      self._z)
         ]:
             new_values = f()
             if new_values is not None:  # this will return None if any of the
@@ -146,7 +148,7 @@ class FieldVector(object):
     def copy(self, other):
         """Copy the properties of other vector to yourself"""
         for att in FieldVector.attributes:
-            value = getattr(other, "_"+ att)
+            value = getattr(other, "_" + att)
             setattr(self, "_" + att, value)
 
     def set_vector(self, **new_values):

@@ -9,7 +9,7 @@ visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG5014C.yaml@sim')
 @pytest.fixture(scope='function')
 def awg():
     awg_sim = Tektronix_AWG5014('awg_sim',
-                                address='GPIB0::1::65535::INSTR',
+                                address='GPIB0::1::INSTR',
                                 timeout=1,
                                 terminator='\n',
                                 visalib=visalib)

@@ -88,7 +88,7 @@ class _SetParamContext:
 
     Example usage:
     >>> v = dac.voltage()
-    >>> with dac.voltage(-1):
+    >>> with dac.voltage.set_to(-1):
         ...     # Do stuff with the DAC output set to -1 V.
         ...
     >>> assert abs(dac.voltage() - v) <= tolerance
@@ -367,11 +367,11 @@ class _BaseParameter(Metadatable):
                 # apply offset first (native scale)
                 if self.offset is not None:
                     # offset values
-                    if isinstance(self.offset, collections.Iterable):
+                    if isinstance(self.offset, collections.abc.Iterable):
                         # offset contains multiple elements, one for each value
                         value = tuple(value - offset for value, offset
                                       in zip(value, self.offset))
-                    elif isinstance(value, collections.Iterable):
+                    elif isinstance(value, collections.abc.Iterable):
                         # Use single offset for all values
                         value = tuple(value - self.offset for value in value)
                     else:
@@ -380,11 +380,11 @@ class _BaseParameter(Metadatable):
                 # scale second
                 if self.scale is not None:
                     # Scale values
-                    if isinstance(self.scale, collections.Iterable):
+                    if isinstance(self.scale, collections.abc.Iterable):
                         # Scale contains multiple elements, one for each value
                         value = tuple(value / scale for value, scale
                                       in zip(value, self.scale))
-                    elif isinstance(value, collections.Iterable):
+                    elif isinstance(value, collections.abc.Iterable):
                         # Use single scale for all values
                         value = tuple(value / self.scale for value in value)
                     else:
@@ -431,7 +431,7 @@ class _BaseParameter(Metadatable):
                     # getter:
                     # apply scale first
                     if self.scale is not None:
-                        if isinstance(self.scale, collections.Iterable):
+                        if isinstance(self.scale, collections.abc.Iterable):
                             # Scale contains multiple elements, one for each value
                             raw_value = tuple(val * scale for val, scale
                                               in zip(raw_value, self.scale))
@@ -441,7 +441,7 @@ class _BaseParameter(Metadatable):
 
                     # apply offset next
                     if self.offset is not None:
-                        if isinstance(self.offset, collections.Iterable):
+                        if isinstance(self.offset, collections.abc.Iterable):
                             # offset contains multiple elements, one for each value
                             raw_value = tuple(val + offset for val, offset
                                               in zip(raw_value, self.offset))
@@ -501,7 +501,7 @@ class _BaseParameter(Metadatable):
         if step is None:
             return [value]
         else:
-            if isinstance(value, collections.Sized) and len(value) > 1:
+            if isinstance(value, collections.abc.Sized) and len(value) > 1:
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
@@ -661,7 +661,6 @@ class _BaseParameter(Metadatable):
                 'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
 
-    # Deprecated
     @property
     def full_name(self):
         return "_".join(self.name_parts)
@@ -721,7 +720,14 @@ class _BaseParameter(Metadatable):
     @property
     def name_parts(self) -> List[str]:
         if self.instrument is not None:
-            name_parts = self.instrument.name_parts
+            name_parts = getattr(self.instrument, 'name_parts', [])
+            if name_parts == []:
+                # add fallback for the case where someone has bound
+                # the parameter to something that is not an instrument
+                # but perhaps it has a name anyway?
+                name = getattr(self.instrument, 'name', None)
+                if name is not None:
+                    name_parts = [name]
         else:
             name_parts = []
 
@@ -747,8 +753,10 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit ``get``/``set`` method. This
-       enables more advanced functionality.
+    2. Creating a subclass with an explicit ``get_raw``/``set_raw`` method.
+       This enables more advanced functionality. The ``get_raw`` and
+       ``set_raw`` methods are automatically wrapped to provide ``get`` and
+       ``set``.
 
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
@@ -939,7 +947,8 @@ class ArrayParameter(_BaseParameter):
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
 
-    Subclasses should define a ``.get`` method, which returns an array.
+    Subclasses should define a ``.get_raw`` method, which returns an array.
+    This method is automatically wrapped to provide a ``.get``` method.
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -950,7 +959,7 @@ class ArrayParameter(_BaseParameter):
     the dimension, and the size of each dimension can vary from call to call.
 
     Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -1046,8 +1055,8 @@ class ArrayParameter(_BaseParameter):
         # require one setpoint per dimension of shape
         sp_shape = (len(shape),)
 
-        sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator, numpy.ndarray)
+        sp_types = (nt, DataArray, collections.abc.Sequence,
+                    collections.abc.Iterator, numpy.ndarray)
         if (setpoints is not None and
                 not is_sequence_of(setpoints, sp_types, shape=sp_shape)):
             raise ValueError('setpoints must be a tuple of arrays')
@@ -1085,6 +1094,27 @@ class ArrayParameter(_BaseParameter):
         if not hasattr(self, 'get') and not hasattr(self, 'set'):
             raise AttributeError('ArrayParameter must have a get, set or both')
 
+    @property
+    def setpoint_full_names(self):
+        """
+        Full names of setpoints including instrument names if available
+        """
+        if self.setpoint_names is None:
+            return None
+        # omit the last part of name_parts which is the parameter name
+        # and not part of the setpoint names
+        inst_name = "_".join(self.name_parts[:-1])
+        if inst_name != '':
+            spnames = []
+            for spname in self.setpoint_names:
+                if spname is not None:
+                    spnames.append(inst_name + '_' + spname)
+                else:
+                    spnames.append(None)
+            return tuple(spnames)
+        else:
+            return self.setpoint_names
+
 
 def _is_nested_sequence_or_none(obj, types, shapes):
     """Validator for MultiParameter setpoints/names/labels"""
@@ -1107,20 +1137,21 @@ class MultiParameter(_BaseParameter):
     each of arbitrary shape.
     Not necessarily part of an instrument.
 
-    Subclasses should define a ``.get`` method, which returns a sequence of
-    values. When used in a ``Loop`` or ``Measure`` operation, each of these
+    Subclasses should define a ``.get_raw`` method, which returns a sequence of
+    values. This method is automatically wrapped to provide a ``.get``` method.
+    When used in a ``Loop`` or ``Measure`` operation, each of these
     values will be entered into a different ``DataArray``. The constructor
     args describe what data we expect from each ``.get`` call and how it
     should be handled. ``.get`` should always return the same number of items,
     and most of the constructor arguments should be tuples of that same length.
 
     For now you must specify upfront the array shape of each item returned by
-    ``.get``, and this cannot change from one call to the next. Later we intend
-    to require only that you specify the dimension of each item returned, and
-    the size of each dimension can vary from call to call.
+    ``.get_raw``, and this cannot change from one call to the next. Later we
+    intend to require only that you specify the dimension of each item returned,
+    and the size of each dimension can vary from call to call.
 
     Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the whole parameter. Should be a valid
@@ -1224,8 +1255,8 @@ class MultiParameter(_BaseParameter):
                              'of ints, not ' + repr(shapes))
         self.shapes = shapes
 
-        sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator, numpy.ndarray)
+        sp_types = (nt, DataArray, collections.abc.Sequence,
+                    collections.abc.Iterator, numpy.ndarray)
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
             raise ValueError('setpoints must be a tuple of tuples of arrays')
 
@@ -1264,16 +1295,49 @@ class MultiParameter(_BaseParameter):
             raise AttributeError('MultiParameter must have a get, set or both')
 
     @property
-    def full_names(self):
-        """Include the instrument name with the Parameter names if possible."""
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return [inst_name + '_' + name for name in self.names]
-        except AttributeError:
-            pass
+    def short_names(self):
+        """
+        short_names is indentical to names i.e. the names of the paramter parts
+        but does not add the intrument name.
+
+        It exists for consistency with instruments and other parameters.
+        """
 
         return self.names
+
+    @property
+    def full_names(self):
+        """Include the instrument name with the Parameter names if possible."""
+        inst_name = "_".join(self.name_parts[:-1])
+        if inst_name != '':
+            return [inst_name + '_' + name for name in self.names]
+        else:
+            return self.names
+
+    @property
+    def setpoint_full_names(self):
+        """
+        Full names of setpoints including instrument names if available
+        """
+        if self.setpoint_names is None:
+            return None
+        # omit the last part of name_parts which is the parameter name
+        # and not part of the setpoint names
+        inst_name = "_".join(self.name_parts[:-1])
+        if inst_name != '':
+            full_sp_names = []
+            for sp_group in self.setpoint_names:
+                full_sp_names_subgroupd = []
+                for spname in sp_group:
+                    if spname is not None:
+                        full_sp_names_subgroupd.append(inst_name + '_' + spname)
+                    else:
+                        full_sp_names_subgroupd.append(None)
+                full_sp_names.append(tuple(full_sp_names_subgroupd))
+
+            return tuple(full_sp_names)
+        else:
+            return self.setpoint_names
 
 
 class GetLatest(DelegateAttributes):
