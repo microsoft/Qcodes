@@ -215,7 +215,7 @@ class Sweep(MultiParameter):
 
         self._instrument.sweep_correctly_built = True
 
-    def get(self):
+    def get_raw(self):
         """
         Execute the sweeper and return the data corresponding to the
         subscribed signals.
@@ -502,7 +502,7 @@ class Scope(MultiParameter):
         self._instrument.daq.sync()
         self._instrument.scope_correctly_built = True
 
-    def get(self):
+    def get_raw(self):
         """
         Acquire data from the scope.
 

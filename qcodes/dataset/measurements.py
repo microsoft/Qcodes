@@ -32,8 +32,10 @@ class ParameterTypeError(Exception):
 
 def is_number(thing: Any) -> bool:
     """
-    Test if an object can be converted to a number
+    Test if an object can be converted to a number UNLESS it is a string
     """
+    if isinstance(thing, str):
+        return False
     try:
         float(thing)
         return True
