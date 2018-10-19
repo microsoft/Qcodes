@@ -29,6 +29,11 @@ def test_load_by_id():
     assert loaded_ds.completed is False
     assert loaded_ds.exp_id == 1
 
+    # let's take a reasonably arbitrary run number that is quite definitely not
+    # in the temporary test database file
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_id(run_id + 9999)
+
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_load_by_counter():
