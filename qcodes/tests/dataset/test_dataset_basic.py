@@ -47,6 +47,15 @@ def test_has_attributes_after_init():
         getattr(ds, attr)
 
 
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("non_existing_run_id", (999999, 'number#42'))
+def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = DataSet(run_id=non_existing_run_id)
+
+
 @settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),

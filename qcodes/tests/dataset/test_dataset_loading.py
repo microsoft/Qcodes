@@ -31,8 +31,11 @@ def test_load_by_id():
 
     # let's take a reasonably arbitrary run number that is quite definitely not
     # in the temporary test database file
-    with pytest.raises(RuntimeError, match='Expected one row'):
-        _ = load_by_id(run_id + 9999)
+    non_existing_run_id = run_id + 9999
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = load_by_id(non_existing_run_id)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
