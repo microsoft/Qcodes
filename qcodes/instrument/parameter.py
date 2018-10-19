@@ -753,8 +753,10 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit ``get``/``set`` method. This
-       enables more advanced functionality.
+    2. Creating a subclass with an explicit ``get_raw``/``set_raw`` method.
+       This enables more advanced functionality. The ``get_raw`` and
+       ``set_raw`` methods are automatically wrapped to provide ``get`` and
+       ``set``.
 
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
@@ -945,7 +947,8 @@ class ArrayParameter(_BaseParameter):
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
 
-    Subclasses should define a ``.get`` method, which returns an array.
+    Subclasses should define a ``.get_raw`` method, which returns an array.
+    This method is automatically wrapped to provide a ``.get``` method.
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -956,7 +959,7 @@ class ArrayParameter(_BaseParameter):
     the dimension, and the size of each dimension can vary from call to call.
 
     Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -1134,20 +1137,21 @@ class MultiParameter(_BaseParameter):
     each of arbitrary shape.
     Not necessarily part of an instrument.
 
-    Subclasses should define a ``.get`` method, which returns a sequence of
-    values. When used in a ``Loop`` or ``Measure`` operation, each of these
+    Subclasses should define a ``.get_raw`` method, which returns a sequence of
+    values. This method is automatically wrapped to provide a ``.get``` method.
+    When used in a ``Loop`` or ``Measure`` operation, each of these
     values will be entered into a different ``DataArray``. The constructor
     args describe what data we expect from each ``.get`` call and how it
     should be handled. ``.get`` should always return the same number of items,
     and most of the constructor arguments should be tuples of that same length.
 
     For now you must specify upfront the array shape of each item returned by
-    ``.get``, and this cannot change from one call to the next. Later we intend
-    to require only that you specify the dimension of each item returned, and
-    the size of each dimension can vary from call to call.
+    ``.get_raw``, and this cannot change from one call to the next. Later we
+    intend to require only that you specify the dimension of each item returned,
+    and the size of each dimension can vary from call to call.
 
     Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the whole parameter. Should be a valid
