@@ -202,6 +202,11 @@ class _BaseParameter(Metadatable):
                  vals: Optional[Validator]=None,
                  delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
+        if not str(name).isidentifier():
+            raise ValueError(f"Parameter name must be a valid identifier "
+                             f"got {name} which is not. Parameter names "
+                             f"cannot start with a number and "
+                             f"must not contain spaces or special characters")
         self.name = str(name)
         self.short_name = str(name)
         self._instrument = instrument
