@@ -1473,12 +1473,52 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
     run_counter += 1
     formatted_name = format_string.format(name, exp_id, run_counter)
     table = "runs"
+
+    parameters = parameters or []
+    desc_str = RunDescriber(InterDependencies(*parameters)).to_json()
+
     with atomic(conn) as conn:
 
         if parameters:
             query = f"""
             INSERT INTO {table}
-                (name,exp_id,guid,result_table_name,result_counter,run_timestamp,parameters,is_completed)
+                (name,
+                 exp_id,
+                 guid,
+                 result_table_name,
+                 result_counter,
+                 run_timestamp,
+                 parameters,
+                 is_completed,
+                 run_description)
+            VALUES
+                (?,?,?,?,?,?,?,?,?)
+            """
+            curr = transaction(conn, query,
+                               name,
+                               exp_id,
+                               guid,
+                               formatted_name,
+                               run_counter,
+                               time.time(),
+                               ",".join([p.name for p in parameters]),
+                               False,
+                               desc_str)
+
+            _add_parameters_to_layout_and_deps(conn, formatted_name,
+                                               *parameters)
+
+        else:
+            query = f"""
+            INSERT INTO {table}
+                (name,
+                 exp_id,
+                 guid,
+                 result_table_name,
+                 result_counter,
+                 run_timestamp,
+                 is_completed,
+                 run_description)
             VALUES
                 (?,?,?,?,?,?,?,?)
             """
@@ -1489,27 +1529,8 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
                                formatted_name,
                                run_counter,
                                time.time(),
-                               ",".join([p.name for p in parameters]),
-                               False)
-
-            _add_parameters_to_layout_and_deps(conn, formatted_name,
-                                               *parameters)
-
-        else:
-            query = f"""
-            INSERT INTO {table}
-                (name,exp_id,guid,result_table_name,result_counter,run_timestamp,is_completed)
-            VALUES
-                (?,?,?,?,?,?,?)
-            """
-            curr = transaction(conn, query,
-                               name,
-                               exp_id,
-                               guid,
-                               formatted_name,
-                               run_counter,
-                               time.time(),
-                               False)
+                               False,
+                               desc_str)
     run_id = curr.lastrowid
     return run_counter, formatted_name, run_id
 
