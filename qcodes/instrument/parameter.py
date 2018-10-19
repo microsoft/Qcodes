@@ -1433,24 +1433,33 @@ class CombinedParameter(Metadatable):
     sequentially.
     """
 
-    def __init__(self, parameters, name, label=None,
-                 unit=None, units=None, aggregator=None):
+    def __init__(self, parameters: Sequence[Parameter], name: str,
+                 label: str = None, unit: str=None, units: str=None,
+                 aggregator: Callable=None) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
         # this is a dummy parameter
         # that mimicks the api that a normal parameter has
+        if not name.isidentifier():
+            raise ValueError(f"Parameter name must be a valid identifier "
+                             f"got {name} which is not. Parameter names "
+                             f"cannot start with a number and "
+                             f"must not contain spaces or special characters")
+
         self.parameter = lambda: None
-        self.parameter.full_name = name
-        self.parameter.name = name
-        self.parameter.label = label
+        # mypy will complain that a callable does not have these attributes
+        # but you can still create them here.
+        self.parameter.full_name = name  # type: ignore
+        self.parameter.name = name  # type: ignore
+        self.parameter.label = label  # type: ignore
 
         if units is not None:
             warn_units('CombinedParameter', self)
             if unit is None:
                 unit = units
-        self.parameter.unit = unit
-        self.setpoints=[]
+        self.parameter.unit = unit  # type: ignore
+        self.setpoints: List[Any] = []
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
