@@ -112,11 +112,11 @@ class _BaseParameter(Metadatable):
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
-        name (str): the local name of the parameter. Should be a valid
-            identifier, ie no spaces or special characters. If this parameter
-            is part of an Instrument or Station, this should match how it will
-            be referenced from that parent, ie ``instrument.name`` or
-            ``instrument.parameters[name]``
+        name (str): the local name of the parameter. Must be a valid
+            identifier, ie no spaces or special characters or starting with a
+            number. If this parameter is part of an Instrument or Station,
+            this should match how it will be referenced from that parent,
+            ie ``instrument.name`` or ``instrument.parameters[name]``
 
         instrument (Optional[Instrument]): the instrument this parameter
             belongs to, if any
