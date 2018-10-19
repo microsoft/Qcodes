@@ -1641,6 +1641,27 @@ def get_paramspec(conn: SomeConnection,
     return parspec
 
 
+def update_run_description(conn: SomeConnection, run_id: int,
+                           description: str) -> None:
+    """
+    Update the run_description field for the given run_id. The description
+    string must be a valid JSON string representation of a RunDescriber object
+    """
+    try:
+        RunDescriber.from_json(description)
+    except Exception as e:
+        raise ValueError("Invalid description string. Must be a JSON string "
+                         "representaion of a RunDescriber object.") from e
+
+    sql = """
+          UPDATE runs
+          SET run_description = ?
+          WHERE run_id = ?
+          """
+    with atomic(conn) as conn:
+        conn.cursor().execute(sql, (description, run_id))
+
+
 def add_parameter(conn: SomeConnection,
                   formatted_name: str,
                   *parameter: ParamSpec):
