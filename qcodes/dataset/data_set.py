@@ -36,7 +36,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
                                         get_run_timestamp_from_run_id,
-                                        get_completed_timestamp_from_run_id)
+                                        get_completed_timestamp_from_run_id,
+                                        update_run_description)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.descriptions import RunDescriber
@@ -222,10 +223,11 @@ class DataSet(Sized):
         else:
             self.conn = conn
 
-        self.run_id = run_id
+
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
         if run_id:
+            self.run_id = run_id
             self._completed = completed(self.conn, self.run_id)
             self._description = self._get_run_description_from_db()
         else:
@@ -363,9 +365,17 @@ class DataSet(Sized):
         """
         Look up the run_description from the database
         """
-        desc_str = select_one_where("run_description", "runs",
+        desc_str = select_one_where(self.conn, "runs", "run_description",
                                     "run_id", self.run_id)
         return RunDescriber.from_json(desc_str)
+
+    def _perform_start_actions(self) -> None:
+        """
+        Perform the actions that must take place once the run has been started
+        """
+        # So far it is only one action: write down the run_description
+        update_run_description(self.conn, self.run_id,
+                               self.description.to_json())
 
     def toggle_debug(self):
         """
@@ -414,6 +424,10 @@ class DataSet(Sized):
 
         add_parameter(self.conn, self.table_name, spec)
 
+        desc = self.description
+        desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
+        self._description = desc
+
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
@@ -438,6 +452,10 @@ class DataSet(Sized):
         add_meta_data(self.conn, self.run_id, {tag: metadata})
         # adding meta-data does not commit
         self.conn.commit()
+
+    @property
+    def started(self) -> bool:
+        return self.number_of_results > 0
 
     @property
     def completed(self) -> bool:
@@ -474,6 +492,10 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
+
+        if not self.started:
+            self._perform_start_actions()
+
         # TODO: Make this check less fugly
         for param in results.keys():
             if self.paramspecs[param].depends_on != '':
@@ -509,6 +531,10 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
+
+        if not self.started:
+            self._perform_start_actions()
+
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 

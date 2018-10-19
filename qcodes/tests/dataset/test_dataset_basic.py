@@ -423,6 +423,9 @@ def test_get_description(some_paramspecs):
     paramspecs = some_paramspecs[2]
 
     ds = DataSet()
+
+    assert ds.run_id == 1
+
     desc = ds.description
     assert desc == RunDescriber(InterDependencies())
 
@@ -435,3 +438,17 @@ def test_get_description(some_paramspecs):
     assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
                                                   paramspecs['ps2']))
 
+    # the run description gets written as the first data point is added,
+    # so now no description should be stored in the database
+    prematurely_loaded_ds = DataSet(run_id=1)
+    assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
+
+    ds.add_result({'ps1': 1, 'ps2': 2})
+
+    loaded_ds = DataSet(run_id=1)
+
+    print(loaded_ds.description)
+    print('+'*10)
+    print(desc)
+
+    assert loaded_ds.description == desc
