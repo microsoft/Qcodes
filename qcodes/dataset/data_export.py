@@ -218,11 +218,27 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     return aigos
 
 
-def plottype_for_2d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+def _strings_as_ints(inputarray: np.ndarray) -> np.ndarray:
     """
-    Determine plot type for 2D data by inspecting it
+    Return an integer-valued array version of a string-valued array. Maps, e.g.
+    array(['a', 'b', 'c', 'a', 'c']) to array([0, 1, 2, 0, 2]). Useful for
+    numerical setpoint analysis
+
+    Args:
+        inputarray: A 1D array of strings
+    """
+    newdata = np.zeros(len(inputarray))
+    for n, word in enumerate(np.unique(inputarray)):
+        newdata += ((inputarray == word).astype(int)*n)
+    return newdata
+
+
+def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
+    """
+    Determine plot type for a 1D plot by inspecting the data
 
     Possible plot types are:
+    * 'bar' - bar plot
     * 'point' - scatter plot
     * 'line' - line plot
 
@@ -233,11 +249,16 @@ def plottype_for_2d_data(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     Returns:
         Determined plot type as a string
     """
+
+    if isinstance(xpoints[0], str) and not isinstance(ypoints[0], str):
+        if len(xpoints) == len(np.unique(xpoints)):
+            return 'bar'
+        else:
+            return 'point'
     if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
-        plottype = 'point'
+        return 'point'
     else:
-        plottype = datatype_from_setpoints_1d(xpoints)
-    return plottype
+        return datatype_from_setpoints_1d(xpoints)
 
 
 def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
@@ -261,12 +282,11 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         return 'line'
 
 
-def plottype_for_3d_data(xpoints: np.ndarray,
-                         ypoints: np.ndarray,
-                         zpoints: np.ndarray
-                         ) -> str:
+def get_2D_plottype(xpoints: np.ndarray,
+                    ypoints: np.ndarray,
+                    zpoints: np.ndarray) -> str:
     """
-    Determine plot type for 3D data by inspecting it
+    Determine plot type for a 2D plot by inspecting the data
 
     Plot types are:
     * 'grid' - colormap plot for data that is on a grid
@@ -283,12 +303,8 @@ def plottype_for_3d_data(xpoints: np.ndarray,
     Returns:
         Determined plot type as a string
     """
-    if isinstance(xpoints[0], str) \
-            or isinstance(ypoints[0], str) \
-            or isinstance(zpoints[0], str):
-        plottype = 'point'
-    else:
-        plottype = datatype_from_setpoints_2d(xpoints, ypoints)
+
+    plottype = datatype_from_setpoints_2d(xpoints, ypoints)
     return plottype
 
 
@@ -313,6 +329,12 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     Returns:
         A string with the name of the determined plot type
     """
+    # We represent categorical data as integer-valued data
+    if isinstance(xpoints[0], str):
+        xpoints = _strings_as_ints(xpoints)
+    if isinstance(ypoints[0], str):
+        ypoints = _strings_as_ints(ypoints)
+
     # First check whether all setpoints are identical along
     # any dimension
     x_all_the_same = np.allclose(xpoints, xpoints[0])
@@ -347,24 +369,26 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     return 'unknown'
 
 
-def reshape_2D_data(x: np.ndarray, y: np.ndarray,
-                    z: np.ndarray) -> Tuple[np.ndarray, np.ndarray,
-                                            np.ndarray]:
+def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
+                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     xrow = np.array(_rows_from_datapoints(x)[0])
     yrow = np.array(_rows_from_datapoints(y)[0])
     nx = len(xrow)
     ny = len(yrow)
 
-
     # potentially slow method of filling in the data, should be optimised
     log.debug('Sorting 2D data onto grid')
-    z_to_plot = np.full((ny, nx), np.nan)
+
+    if isinstance(z[0], str):
+        z_to_plot = np.full((ny, nx), '', dtype=z.dtype)
+    else:
+        z_to_plot = np.full((ny, nx), np.nan)
     x_index = np.zeros_like(x, dtype=np.int)
     y_index = np.zeros_like(y, dtype=np.int)
     for i, xval in enumerate(xrow):
-        x_index[np.where(x==xval)[0]] = i
+        x_index[np.where(x == xval)[0]] = i
     for i, yval in enumerate(yrow):
-        y_index[np.where(y==yval)[0]] = i
+        y_index[np.where(y == yval)[0]] = i
 
     z_to_plot[y_index, x_index] = z
 
