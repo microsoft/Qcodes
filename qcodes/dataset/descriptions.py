@@ -105,3 +105,6 @@ class RunDescriber:
         if self.interdeps != other.interdeps:
             return False
         return True
+
+    def __repr__(self) -> str:
+        return f"RunDescriber({self.interdeps})"
