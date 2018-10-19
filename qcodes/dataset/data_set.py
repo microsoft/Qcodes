@@ -265,7 +265,7 @@ class DataSet(Sized):
         return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
-    def snapshot(self):
+    def snapshot(self) -> Optional[str]:
         """Snapshot of the run as dictionary (or None)"""
         snapshot_json = self.snapshot_raw
         if snapshot_json is not None:
@@ -274,7 +274,7 @@ class DataSet(Sized):
             return None
 
     @property
-    def snapshot_raw(self):
+    def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run in JSON format (or None)"""
         if is_column_in_table(self.conn, "runs", "snapshot"):
             return select_one_where(self.conn, "runs", "snapshot",
