@@ -1,8 +1,8 @@
 """Instrument base class."""
-import logging
 import time
 import warnings
 import weakref
+import logging
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
@@ -13,53 +13,11 @@ if TYPE_CHECKING:
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
+from qcodes.logger.instrument_logger import get_instrument_logger
 from .parameter import Parameter, _BaseParameter
 from .function import Function
 
 log = logging.getLogger(__name__)
-
-class InstrumentLoggerAdapter(logging.LoggerAdapter):
-    """
-    In the python logging module adapters are used to add context information
-    to logging. The `LoggerAdapter` has the same methods as the `Logger` and
-    can thus be used as such.
-
-    Here it is used to add the instruments full name to the log records so that
-    they can be filetered by the `InstrumentFilter` by the instrument instance.
-
-    The context data gets stored in the `extra` dictionary as a property of the
-    Adapter. It is filled by the `__init__` method:
-    >>> LoggerAdapter(log, {'instrument': self.full_name})
-    """
-    def process(self, msg, kwargs):
-        """
-        returns the message and the kwargs for the handlers.
-        """
-        kwargs['extra'] = self.extra
-        return f"[{self.extra['instrument']}] {msg}", kwargs
-
-
-class InstrumentFilter(logging.Filter):
-    """
-    Filter to filter out records that originate from the given instruments.
-    Records created through the `InstrumentLoggerAdapter` have additional
-    properties as specified in the `extra` dictionary which is a property of
-    the adapter.
-
-    Here the `instrument` property gets used to reject records that don't have
-    originate from the list of instruments that has been passed to the
-    `__init__`
-    """
-    def __init__(self, instruments):
-        if isinstance(instruments, InstrumentBase):
-            instruments = (instruments,)
-        self.names = [instrument.full_name for instrument in instruments]
-
-    def filter(self, record):
-        try:
-            return record.instrument in self.names
-        except AttributeError:
-            return False
 
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
@@ -99,7 +57,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
-        self.log = InstrumentLoggerAdapter(log, {'instrument': self.full_name})
+
+        self.log = get_instrument_logger(self, __name__)
 
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
@@ -478,7 +437,7 @@ class Instrument(InstrumentBase):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            log.debug('Error getting or interpreting *IDN?: '
+            self.log.debug('Error getting or interpreting *IDN?: '
                       + repr(idstr))
             idparts = [None, self.name, None, None]
 

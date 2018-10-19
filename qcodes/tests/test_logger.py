@@ -5,7 +5,7 @@ import pytest
 import os
 import logging
 from copy import copy
-import qcodes.utils.logger as logger
+import qcodes.logger as logger
 import qcodes as qc
 
 TEST_LOG_MESSAGE = 'test log message'
@@ -19,9 +19,9 @@ def remove_root_handlers():
         root_logger.removeHandler(handler)
 
 def test_get_log_file_name():
-    fp = logger.get_log_file_name().split(os.sep)
-    assert fp[-1] == logger.PYTHON_LOG_NAME
-    assert fp[-2] == logger.LOGGING_DIR
+    fp = logger.logger.get_log_file_name().split(os.sep)
+    assert fp[-1] == logger.logger.PYTHON_LOG_NAME
+    assert fp[-2] == logger.logger.LOGGING_DIR
     assert fp[-3] == '.qcodes'
 
 
@@ -92,9 +92,9 @@ def test_filter_instrument():
         with logger.filter_instrument(mag_x, handler=logs.string_handler):
             driver.cartesian((0, 0, 1))
     for line in logs.value.splitlines():
-        assert '[x]' in line
-        assert '[y]' not in line
-        assert '[z]' not in line
+        assert '[x(AMI430_VISA)]' in line
+        assert '[y(AMI430_VISA)]' not in line
+        assert '[z(AMI430_VISA)]' not in line
 
     # filter multiple instruments
     driver.cartesian((0, 0, 0))
@@ -105,9 +105,9 @@ def test_filter_instrument():
     any_x = False
     any_y = False
     for line in logs.value.splitlines():
-        has_x = '[x]' in line
-        has_y = '[y]' in line
-        has_z = '[z]' in line
+        has_x = '[x(AMI430_VISA)]' in line
+        has_y = '[y(AMI430_VISA)]' in line
+        has_z = '[z(AMI430_VISA)]' in line
 
         assert has_x or has_y
         assert not has_z
