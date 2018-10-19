@@ -231,6 +231,7 @@ class DataSet(Sized):
         if run_id:
             self.run_id = run_id
             self._completed = completed(self.conn, self.run_id)
+            self._started = self.number_of_results > 0
             self._description = self._get_run_description_from_db()
         else:
 
@@ -254,6 +255,7 @@ class DataSet(Sized):
             # this is the (Locally) UID (an ever increasing count in the db)
             self.run_id = run_id
             self._completed = False
+            self._started = False
             specs = specs or []
             self._description = RunDescriber(InterDependencies(*specs))
 
@@ -475,7 +477,7 @@ class DataSet(Sized):
 
     @property
     def started(self) -> bool:
-        return self.number_of_results > 0
+        return self._started
 
     @property
     def completed(self) -> bool:
@@ -515,6 +517,7 @@ class DataSet(Sized):
 
         if not self.started:
             self._perform_start_actions()
+            self._started = True
 
         # TODO: Make this check less fugly
         for param in results.keys():
@@ -554,6 +557,7 @@ class DataSet(Sized):
 
         if not self.started:
             self._perform_start_actions()
+            self._started = True
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
