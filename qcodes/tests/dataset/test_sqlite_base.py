@@ -11,7 +11,10 @@ import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
+from qcodes.tests.dataset.temporary_databases import \
+    empty_temp_db, experiment, dataset
+from qcodes.tests.dataset.test_database_creation_and_upgrading import \
+    error_caused_by
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -52,6 +55,12 @@ def test_insert_many_values_raises(experiment):
     with pytest.raises(ValueError):
         mut.insert_many_values(conn, 'some_string', ['column1'],
                                values=[[1], [1, 3]])
+
+
+def test_get_metadata_raises(experiment):
+    with pytest.raises(RuntimeError) as excinfo:
+        mut.get_metadata(experiment.conn, 'something', 'results')
+    assert error_caused_by(excinfo, "no such column: something")
 
 
 @given(table_name=hst.text(max_size=50))
@@ -107,3 +116,8 @@ def test_get_dependents(experiment):
                      mut.get_layout_id(experiment.conn, 'z', run_id)]
 
     assert deps == expected_deps
+
+
+def test_column_in_table(dataset):
+    assert mut.is_column_in_table(dataset.conn, "runs", "run_id")
+    assert not mut.is_column_in_table(dataset.conn, "runs", "non-existing-column")
