@@ -578,9 +578,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             if hasattr(submodule, '_channels'):
                 if submodule._snapshotable:
                     for channel in submodule._channels:
-                        channel.print_readable_snapshot()
+                        channel.print_snapshot()
             else:
-                submodule.print_readable_snapshot(update, max_chars)
+                submodule.print_snapshot(update, max_chars)
 
         for parameter_node in self.parameter_nodes.values():
             print('')
