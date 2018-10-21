@@ -46,8 +46,8 @@ class InstrumentChannel(ParameterNode):
 
     def snapshot_base(self, update: bool=False,
                       params_to_skip_update: Sequence[str]=['_parent']):
-        super().snapshot_base(update=update,
-                              params_to_skip_update=params_to_skip_update)
+        return super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
 
     # Pass any commands to read or write from the instrument up to the parent
     def write(self, cmd):
