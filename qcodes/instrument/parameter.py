@@ -1135,7 +1135,7 @@ class Parameter(_BaseParameter):
         Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
         """
-        if isinstance(keys, slice):
+        if isinstance(keys, (slice, list, tuple, numpy.ndarray)):
             return SweepFixedValues(self, keys)
         else:
             return super().__getitem__(keys)
