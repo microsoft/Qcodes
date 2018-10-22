@@ -632,10 +632,9 @@ class TestJSONencoder(TestCase):
             self.assertEqual(e.encode(np.complex(1, 2)),
                              '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
 
-        def test_numpy_types(self):
+        def test_numpy_array(self):
             e = NumpyJSONEncoder()
 
-            # test numpy array
             x = np.array([1, 0, 0])
             v = e.encode(x)
             self.assertEqual(v, '[1, 0, 0]')
