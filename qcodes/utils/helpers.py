@@ -32,8 +32,10 @@ class NumpyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         """
         List of conversions that this encoder performs:
-        * `numpy.integer` gets converted to python `int`
-        * `numpy.floating` gets converted to python `float`
+        * `numpy.generic` (all integer, floating, and other types) gets
+        converted to its python equivalent using its `item` method (see
+        `numpy` docs for more information,
+        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html)
         * `numpy.ndarray` gets converted to python list using its `tolist`
         method
         * complex number (a number that conforms to `numbers.Complex` ABC) gets
@@ -45,11 +47,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * other objects which cannot be serialized get converted to their
         string representation (suing the `str` function)
         """
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
+        if isinstance(obj, np.generic) \
+                and not isinstance(obj, np.complexfloating):
+            # for numpy scalars
+            return obj.item()
         elif isinstance(obj, np.ndarray):
+            # for numpy arrays
             return obj.tolist()
         elif (isinstance(obj, numbers.Complex) and
               not isinstance(obj, numbers.Real)):
