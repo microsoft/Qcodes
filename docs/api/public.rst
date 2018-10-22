@@ -121,5 +121,5 @@ Utils & misc
    :toctree: generated/
 
    qcodes.utils.validators
-   qcodes.utils.logger
    qcodes.utils.plotting
+   qcodes.logger
