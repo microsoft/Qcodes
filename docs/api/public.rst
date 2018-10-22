@@ -107,7 +107,7 @@ Instrument
 
    Function
    Parameter
-   StandardParameter
+   ParameterWithSetpoints
    ArrayParameter
    MultiParameter
    ManualParameter
