@@ -9,7 +9,9 @@ from typing import List, Optional
 from .logger import (LOGGING_SEPARATOR,
                      FORMAT_STRING_DICT,
                      FORMAT_STRING_ITEMS,
-                     LevelType)
+                     LevelType,
+                     get_log_file_name)
+
 
 def log_to_dataframe(log: List[str]=None,
                      columns: Optional[List[str]]=None,
@@ -19,7 +21,7 @@ def log_to_dataframe(log: List[str]=None,
 
     Unless `qcodes.utils.logger.LOGGING_SEPARATOR` or
     `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
-    for the columns and separtor arguments is encouraged.
+    for the columns and separator arguments is encouraged.
 
     Lines starting with a digit are ignored. In the log setup of `start_logging`
     Traceback messages are also logged. These start with a digit.
@@ -28,7 +30,7 @@ def log_to_dataframe(log: List[str]=None,
         log: log content
         columns: column headers for the returned dataframe, defaults to
             columns used by handlers set up by `start_logger`.
-        separator: seperator of the logfile to seperate the columns, defaults to
+        separator: separator of the log file to seperate the columns, defaults to
             separtor used by handlers set up by `start_logger`.
 
     Retruns:
@@ -54,7 +56,7 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
 
     Unless `qcodes.utils.logger.LOGGING_SEPARATOR` or
     `qcodes.utils.logger.FORMAT_STRING...` have been changed using the default
-    for the columns and separtor arguments is encouraged.
+    for the columns and separator arguments is encouraged.
 
     Lines starting with a digit are ignored. In the log setup of `start_logging`
     Traceback messages are also logged. These start with a digit.
