@@ -91,14 +91,6 @@ if "%1" == "htmlapi" (
 	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
 	mkdir api\generated\
 	copy _auto\qcodes.instrument_drivers.* api\generated\
-	jupyter-nbconvert --to rst "examples\*.ipynb" --output-dir="_notebooks"
-	jupyter-nbconvert --to rst "examples\DataSet\Real_instruments\*.ipynb" --output-dir="_notebooks\DataSet\Real_instruments"
-	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --execute "examples\DataSet\*.ipynb" --output-dir="_notebooks\DataSet"
-	jupyter-nbconvert --to rst "examples\driver_examples\*.ipynb" --output-dir="_notebooks\driver_examples"
-	jupyter-nbconvert --to rst "examples\benchmarking\*.ipynb" --output-dir="_notebooks\benchmarking"
-	jupyter-nbconvert --to rst "examples\plotting\*.ipynb" --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --output-dir="_notebooks\plotting"
-  echo D | xcopy "examples/files" "_notebooks/files" /e
-  echo D | xcopy "examples/plotting/files" "_notebooks/plotting/files" /e
 	goto HTML
 )
 
