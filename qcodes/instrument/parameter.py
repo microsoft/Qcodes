@@ -957,6 +957,9 @@ class ParameterWithSetpoints(Parameter):
     It is expected that the setpoint arrays are 1D arrays such that the
     combined shape of the parameter. E.G if parameter is of shape (m,n)
     self.setpoints is a list of parameters of shape (m,) and (n,)
+
+    In all other ways this is identical to  :class:`Parameter` See the
+    documentation of :class:`Parameter` for more details.
     """
     def __init__(self, *args,
                  setpoints: Sequence[Parameter]=None, **kwargs) -> None:
