@@ -1,25 +1,27 @@
-import numpy as np
 from distutils.version import LooseVersion
-import warnings
 
-from .ATS import AlazarTech_ATS
-from .utils import TraceParameter
+import numpy as np
 
 from qcodes.utils import validators
+from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
+from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
 
-class AlazarTech_ATS9360(AlazarTech_ATS):
+
+class AlazarTech_ATS9373(AlazarTech_ATS):
     """
-    This class is the driver for the ATS9360 board
-    it inherits from the ATS base class
+    This class is the driver for the ATS9373 board.
 
-    TODO(nataliejpg):
-        -  add clock source options and sample rate options
-           (problem being that byte_to_value_dict of
-           sample_rate relies on value of clock_source)
+    Note that this board is very similar to ATS9360. Refer to
+    ATS SDK for details.
 
+    Note that channels of this board have 12-bit resolution
+    (see `IDN()['bits_per_sample']`) which means that the
+    raw data that is returned by the card should be converted to
+    uint16 type with a bit shift by 4 bits. Refer to ATS SDK
+    for more infromation.
     """
     samples_divisor = 128
-    _trigger_holdoff_min_fw_version = '21.07'
+    _trigger_holdoff_min_fw_version = '30.04'
 
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -42,7 +44,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=TraceParameter,
                            label='External Sample Rate',
                            unit='S/s',
-                           vals=validators.MultiType(validators.Ints(300000000, 1800000000),
+                           vals=validators.MultiType(validators.Ints(300000000, 2000000000),
                                                      validators.Enum('UNDEFINED')),
                            initial_value='UNDEFINED')
         self.add_parameter(name='sample_rate',
@@ -65,15 +67,25 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                     5_000_000: 26,
                                    10_000_000: 28,
                                    20_000_000: 30,
+                                   25_000_000: 33,
                                    50_000_000: 34,
                                   100_000_000: 36,
+                                  125_000_000: 37,
+                                  160_000_000: 38,
+                                  180_000_000: 39,
                                   200_000_000: 40,
+                                  250_000_000: 43,
                                   500_000_000: 48,
                                   800_000_000: 50,
                                 1_000_000_000: 53,
                                 1_200_000_000: 55,
                                 1_500_000_000: 58,
                                 1_800_000_000: 61,
+                                2_000_000_000: 63,
+                                2_400_000_000: 106,
+                                3_000_000_000: 117,
+                                3_600_000_000: 123,
+                                4_000_000_000: 128,
                              'EXTERNAL_CLOCK': 64,
                                   'UNDEFINED': 'UNDEFINED'})
         self.add_parameter(name='clock_edge',
@@ -339,7 +351,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
 
-
         self.add_parameter(name='trigger_holdoff',
                            label='Trigger Holdoff',
                            docstring=f'If enabled Alazar will '
@@ -353,11 +364,9 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            get_cmd=self._get_trigger_holdoff,
                            set_cmd=self._set_trigger_holdoff)
 
-
-
         model = self.get_idn()['model']
-        if model != 'ATS9360':
-            raise Exception("The Alazar board kind is not 'ATS9360',"
+        if model != 'ATS9373':
+            raise Exception("The Alazar board kind is not 'ATS9373',"
                             " found '" + str(model) + "' instead.")
 
     def _get_trigger_holdoff(self) -> bool:
