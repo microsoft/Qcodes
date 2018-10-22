@@ -608,7 +608,7 @@ class TestIsSequenceOf(TestCase):
 # tests related to JSON encoding
 class TestJSONencoder(TestCase):
 
-        def testNumpyJSONEncoder(self):
+        def test_python_types(self):
             e = NumpyJSONEncoder()
 
             # test basic python types
@@ -625,14 +625,21 @@ class TestJSONencoder(TestCase):
                 else:
                     self.assertEqual(v, r)
 
+        def test_numpy_types(self):
+            e = NumpyJSONEncoder()
+
             # test numpy array
             x = np.array([1, 0, 0])
             v = e.encode(x)
             self.assertEqual(v, '[1, 0, 0]')
 
+        def test_class(self):
+            e = NumpyJSONEncoder()
+
             # test class
             class dummy(object):
                 pass
+
             # test that does not raise, do not care about
             # return value
             e.encode(dummy())
