@@ -114,7 +114,7 @@ def generate_DB_file_with_empty_runs():
                                 unit=f'unit {n}', set_cmd=None, get_cmd=None))
 
     # truly empty run, no layouts table, no nothing
-    dataset = DataSet(path, conn)
+    dataset = DataSet(path, conn=conn)
     dataset._new('empty_dataset', exp_id=1)
 
     # empty run

@@ -207,6 +207,17 @@ def test_perform_actual_upgrade_2_to_3_empty():
         assert len(c.fetchall()) == 0
 
 
+def test_perform_actual_upgrade_2_to_3_empty_runs():
+
+    v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
+
+    dbname_old = os.path.join(v2fixpath, 'empty_runs.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+
+        perform_db_upgrade_2_to_3(conn)
+
+
 def test_perform_actual_upgrade_2_to_3_some_runs():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
