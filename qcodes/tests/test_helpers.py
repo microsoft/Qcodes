@@ -689,6 +689,26 @@ class TestJSONencoder(TestCase):
             self.assertEqual(e.encode(Dummy()),
                              '"i am a dummy with \\\\ slashes /"')
 
+        def test_object_with_serialization_method(self):
+            """
+            Test that objects with `_JSONEncoder` method are serialized via
+            calling that method
+            """
+            e = NumpyJSONEncoder()
+
+            class Dummy(object):
+                def __init__(self):
+                    self.confession = 'a_dict_addict'
+
+                def __str__(self):
+                    return 'me as a string'
+
+                def _JSONEncoder(self):
+                    return {'i_am_actually': self.confession}
+
+            self.assertEqual(e.encode(Dummy()),
+                             '{"i_am_actually": "a_dict_addict"}')
+
 
 class TestCompareDictionaries(TestCase):
     def test_same(self):
