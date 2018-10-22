@@ -656,6 +656,13 @@ class TestJSONencoder(TestCase):
             for float_type in numpy_floats:
                 self.assertEqual(e.encode(float_type(2.5)), '2.5')
 
+        def test_numpy_bool_type(self):
+            e = NumpyJSONEncoder()
+
+            self.assertEqual(e.encode(np.bool_(True)), 'true')
+            self.assertEqual(e.encode(np.int8(5) == 5), 'true')
+            self.assertEqual(e.encode(np.array([8, 5]) == 5), '[false, true]')
+
         def test_numpy_array(self):
             e = NumpyJSONEncoder()
 
