@@ -655,9 +655,14 @@ class TestJSONencoder(TestCase):
         def test_numpy_array(self):
             e = NumpyJSONEncoder()
 
-            x = np.array([1, 0, 0])
-            v = e.encode(x)
-            self.assertEqual(v, '[1, 0, 0]')
+            self.assertEqual(e.encode(np.array([1, 0, 0])),
+                             '[1, 0, 0]')
+
+            self.assertEqual(e.encode(np.arange(1.0, 3.0, 1.0)),
+                             '[1.0, 2.0]')
+
+            self.assertEqual(e.encode(np.meshgrid((1, 2), (3, 4))),
+                             '[[[1, 2], [1, 2]], [[3, 3], [4, 4]]]')
 
         def test_class(self):
             e = NumpyJSONEncoder()
