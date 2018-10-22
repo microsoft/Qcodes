@@ -632,6 +632,26 @@ class TestJSONencoder(TestCase):
             self.assertEqual(e.encode(np.complex(1, 2)),
                              '{"__dtype__": "complex", "re": 1.0, "im": 2.0}')
 
+        def test_numpy_int_types(self):
+            e = NumpyJSONEncoder()
+
+            numpy_ints = (np.int, np.int_, np.int8, np.int16, np.int32,
+                          np.int64, np.intc, np.intp,
+                          np.uint, np.uint8, np.uint16, np.uint32, np.uint64,
+                          np.uintc, np.uintp)
+
+            for int_type in numpy_ints:
+                self.assertEqual(e.encode(int_type(3)), '3')
+
+        def test_numpy_float_types(self):
+            e = NumpyJSONEncoder()
+
+            numpy_floats = (np.float, np.float_, np.float16, np.float32,
+                            np.float64)
+
+            for float_type in numpy_floats:
+                self.assertEqual(e.encode(float_type(2.5)), '2.5')
+
         def test_numpy_array(self):
             e = NumpyJSONEncoder()
 
