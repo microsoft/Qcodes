@@ -1,4 +1,7 @@
+import csv
 import json
+import os
+import textwrap
 import time
 from functools import partial
 
@@ -12,7 +15,6 @@ from qcodes.utils import validators as validators
 class ZIHDAWG8(Instrument):
     """
     QCoDeS driver for ZI HDAWG8.
-
     Requires ZI LabOne software to be installed on the computer running QCoDeS (tested using LabOne (18.05.54618)
     and firmware (53866).
     Furthermore, the Data Server and Web Server must be running and a connection
@@ -22,7 +24,6 @@ class ZIHDAWG8(Instrument):
     def __init__(self, name: str, device_id: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
-
         Args:
             name (str): The internal QCoDeS name of the instrument
             device_ID (str): The device name as listed in the web server.
@@ -42,7 +43,6 @@ class ZIHDAWG8(Instrument):
         Enable a signal output, turns on a blue LED on the device.
         Args:
             channel_number (int): Output channel that should be enabled.
-
         Returns: None
         """
         self.set('sigouts_{}_on'.format(channel_number), 1)
@@ -52,7 +52,6 @@ class ZIHDAWG8(Instrument):
         Disable a signal output, turns off a blue LED on the device.
         Args:
             channel_number (int): Output channel that should be disabled.
-
         Returns: None
         """
         self.set('sigouts_{}_on'.format(channel_number), 0)
@@ -62,7 +61,6 @@ class ZIHDAWG8(Instrument):
         Activate an AWG
         Args:
             awg_number (int): The AWG that should be enabled.
-
         Returns: None
         """
         self.set('awgs_{}_enable'.format(awg_number), 1)
@@ -72,7 +70,6 @@ class ZIHDAWG8(Instrument):
         Deactivate an AWG
         Args:
             awg_number (int): The AWG that should be disabled.
-
         Returns: None
         """
         self.set('awgs_{}_enable'.format(awg_number), 0)
@@ -89,7 +86,6 @@ class ZIHDAWG8(Instrument):
             one waveforms then they have to be of equal length, if not the longer ones will be truncated.
 
         Returns: None
-
         """
         data_dir = self.awg_module.getString('awgModule/directory')
         wave_dir = os.path.join(data_dir, "awg", "waves")
@@ -110,7 +106,6 @@ class ZIHDAWG8(Instrument):
             channels (list, optional): Channels to play the waveforms on.
 
         Returns (str): A sequencing program that can be uploaded to the device.
-
         """
         awg_program = textwrap.dedent("""
             HEADER
@@ -161,9 +156,7 @@ class ZIHDAWG8(Instrument):
             waveform: An array of floating point values from -1.0 to 1.0, or integers in the range (-32768...+32768)
             index: Index of the waveform that will be replaced. If there are more than 1 waveforms used then the index
                    corresponds to the position of the waveform in the Waveforms sub-tab of the AWG tab in the GUI.
-
         Returns: None
-
         """
         self.set('awgs_{}_waveform_index'.format(awg_number), index)
         self.daq.sync()
@@ -172,13 +165,11 @@ class ZIHDAWG8(Instrument):
     def set_channel_grouping(self, group):
         """
         Set the channel grouping mode of the device.
-
         Args:
             group (int): 0: Use the outputs in groups of 2. One sequencer program controls 2 outputs.
                          1: Use the outputs in groups of 4. One sequencer program controls 4 outputs.
                          2: Use the outputs in groups of 8. One sequencer program controls 8 outputs.
         Returns: None
-
         """
         self.set('system_awg_channelgrouping', group)
 
@@ -187,9 +178,7 @@ class ZIHDAWG8(Instrument):
         Create QuCoDeS parameters from the device node tree.
         Args:
             parameters (dict): A device node tree.
-
         Returns: None
-
         """
         for parameter in parameters.values():
             getter = partial(self._getter, parameter['Node'], parameter['Type']) if 'Read' in parameter[
@@ -224,7 +213,6 @@ class ZIHDAWG8(Instrument):
                    ziPython.ziListEnum.basechannel -> 0x40
                         Return only one instance of a node in case of multiple channels
                    Or any combination of flags can be used.
-
         Returns: A dictionary of the device node tree.
         """
         node_tree = self.daq.listNodesJSON('/{}/'.format(self.device), flags)
@@ -249,3 +237,4 @@ class ZIHDAWG8(Instrument):
             return self.daq.getString(name)
         elif param_type == "ZIVectorData":
             return self.daq.vectorRead(name)
+
