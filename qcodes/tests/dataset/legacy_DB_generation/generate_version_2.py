@@ -101,8 +101,9 @@ def generate_DB_file_with_empty_runs():
     from qcodes.dataset.measurements import Measurement
     from qcodes.dataset.experiment_container import Experiment
     from qcodes import Parameter
+    from qcodes.dataset.data_set import DataSet
 
-    connect(path)
+    conn = connect(path)
     exp = Experiment(path)
     exp._new(name='experiment_1', sample_name='no_sample_1')
 
@@ -111,6 +112,11 @@ def generate_DB_file_with_empty_runs():
     for n in range(5):
         params.append(Parameter(f'p{n}', label=f'Parameter {n}',
                                 unit=f'unit {n}', set_cmd=None, get_cmd=None))
+
+    # truly empty run, no layouts table, no nothing
+    dataset = DataSet(path, conn)
+    dataset._new('empty_dataset', exp_id=1)
+
     # empty run
     meas = Measurement(exp)
     with meas.run() as datasaver:
