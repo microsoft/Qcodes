@@ -664,16 +664,19 @@ class TestJSONencoder(TestCase):
             self.assertEqual(e.encode(np.meshgrid((1, 2), (3, 4))),
                              '[[[1, 2], [1, 2]], [[3, 3], [4, 4]]]')
 
-        def test_class(self):
+        def test_non_serializable(self):
+            """
+            Test that non-serializable objects are serialzed to their
+            string representation
+            """
             e = NumpyJSONEncoder()
 
-            # test class
-            class dummy(object):
-                pass
+            class Dummy(object):
+                def __str__(self):
+                    return 'i am a dummy with \\ slashes /'
 
-            # test that does not raise, do not care about
-            # return value
-            e.encode(dummy())
+            self.assertEqual(e.encode(Dummy()),
+                             '"i am a dummy with \\\\ slashes /"')
 
 
 class TestCompareDictionaries(TestCase):
