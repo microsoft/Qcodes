@@ -48,7 +48,7 @@ def test_has_attributes_after_init():
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize("non_existing_run_id", (999999, 'number#42'))
+@pytest.mark.parametrize("non_existing_run_id", (1, 'number#42'))
 def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
     with pytest.raises(ValueError, match=f"Run with run_id "
                                          f"{non_existing_run_id} does not "

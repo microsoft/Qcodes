@@ -125,4 +125,4 @@ def test_column_in_table(dataset):
 
 def test_run_exist(dataset):
     assert mut.run_exists(dataset.conn, dataset.run_id)
-    assert not mut.run_exists(dataset.conn, dataset.run_id + 9999)
+    assert not mut.run_exists(dataset.conn, dataset.run_id + 1)
