@@ -650,21 +650,34 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
 
         for run_id in pbar:
 
-            result_table_name = result_tables[run_id]
-            layout_ids = list(layout_ids_all[run_id])
-            independents = tuple(indeps_all[run_id])
-            dependents = tuple(deps_all[run_id])
+            if run_id in layout_ids_all:
 
-            paramspecs = _2to3_get_paramspecs(conn,
-                                              layout_ids,
-                                              layouts,
-                                              dependencies,
-                                              dependents,
-                                              independents, result_table_name)
+                result_table_name = result_tables[run_id]
+                layout_ids = list(layout_ids_all[run_id])
+                if run_id in indeps_all:
+                    independents = tuple(indeps_all[run_id])
+                else:
+                    independents = ()
+                if run_id in deps_all:
+                    dependents = tuple(deps_all[run_id])
+                else:
+                    dependents = ()
 
-            interdeps = InterDependencies(*paramspecs.values())
-            desc = RunDescriber(interdeps=interdeps)
-            json_str = desc.to_json()
+                paramspecs = _2to3_get_paramspecs(conn,
+                                                  layout_ids,
+                                                  layouts,
+                                                  dependencies,
+                                                  dependents,
+                                                  independents,
+                                                  result_table_name)
+
+                interdeps = InterDependencies(*paramspecs.values())
+                desc = RunDescriber(interdeps=interdeps)
+                json_str = desc.to_json()
+
+            else:
+
+                json_str = RunDescriber(InterDependencies()).to_json()
 
             sql = f"""
                    UPDATE runs
