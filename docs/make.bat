@@ -97,7 +97,7 @@ if "%1" == "htmlapi" (
 )
 
 if "%1" == "htmlfast" (
-   set ALLSPHINXOPTS=-D nbsphinx_execute=never %ALLSPHINXOPTS%
+	set ALLSPHINXOPTS=-D nbsphinx_execute=never %ALLSPHINXOPTS%
 	goto HTMLAPI
 )
 
