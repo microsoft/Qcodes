@@ -19,9 +19,9 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 .PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  htmlapi    to make standalone HTML including auto gen API docs. Executes example notebooks.
-	@echo "  htmlfast   like htmlapi but skips execution of notebooks
 	@echo "  html       to make standalone HTML files"
+	@echo "  htmlapi    to make standalone HTML files including generated api docs"
+	@echo "  htmlfast   like htmlapi but skips execution of notebooks"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -58,6 +58,15 @@ clean:
 .PHONY: html
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+.PHONY: htmlapi
+htmlapi: genapis html
+
+.PHONY: htmlfast
+htmlfast: genapis
+	$(SPHINXBUILD) -D nbsphinx_execute=never -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
@@ -233,21 +242,14 @@ dummy:
 
 # this is only left for backwards compatibility. Changed to be consistent with windows
 .PHONY: html-api
-html-api:
-	make htmlapi
+html-api: htmlapi
 
-.PHONY: htmlfast
-htmlfast:
-	export ALLSPHINXOPTS=-D nbsphinx_execute=never $(ALLSPHINXOPTS)
-	make htmlapi
-
-.PHONY: htmlapi
-htmlapi:
-	unset qcodes_fast_docs_build
+# generate api docs for instruments automatically
+.PHONY: genapis
+genapis:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
 	cp _auto/qcodes.instrument_drivers.* api/generated/
-	make html
 
 .PHONY: gh-pages
 gh-pages:
