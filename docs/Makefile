@@ -237,7 +237,7 @@ html-api:
 	make htmlapi
 
 .PHONY: htmlfast
-htmlapi:
+htmlfast:
 	export qcodes_fast_docs_build="True"
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
