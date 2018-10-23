@@ -4,10 +4,8 @@ from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
 import time
 import logging
-import hashlib
 import uuid
 from queue import Queue, Empty
-import warnings
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -814,18 +812,3 @@ def new_data_set(name, exp_id: Optional[int] = None,
                 metadata=metadata, exp_id=exp_id)
 
     return d
-
-
-# helpers
-def hash_from_parts(*parts: str) -> str:
-    """
-    Args:
-        *parts:  parts to use to create hash
-    Returns:
-        hash created with the given parts
-    """
-    warnings.warn("hash_from_parts has been deprecated and will be removed. "
-                  "Use stdlib uuid4 instead",
-                  stacklevel=2)
-    combined = "".join(parts)
-    return hashlib.sha1(combined.encode("utf-8")).hexdigest()
