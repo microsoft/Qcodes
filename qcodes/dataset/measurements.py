@@ -16,6 +16,7 @@ from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
 
@@ -464,7 +465,9 @@ class Runner:
 
         if station:
             self.ds.add_metadata('snapshot',
-                                 json.dumps({'station': station.snapshot()}))
+                                 json.dumps({'station': station.snapshot()},
+                                            cls=NumpyJSONEncoder)
+                                 )
 
         if self.parameters is not None:
             for paramspec in self.parameters.values():
