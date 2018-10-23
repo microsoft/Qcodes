@@ -396,3 +396,10 @@ templates_path = []
 suppress_warnings = ['image.nonlocal_uri']
 
 numfig=True
+
+if os.environ.get('qcodes_fast_docs_build', None):
+    print("Skipping execution of notebooks")
+    nbsphinx_execute = 'never'
+else:
+    print("Executing notebooks as part of build process")
+    nbsphinx_execute = 'always'
