@@ -213,6 +213,7 @@ class ZIHDAWG8(Instrument):
                    ziPython.ziListEnum.basechannel -> 0x40
                         Return only one instance of a node in case of multiple channels
                    Or any combination of flags can be used.
+
         Returns: A dictionary of the device node tree.
         """
         node_tree = self.daq.listNodesJSON('/{}/'.format(self.device), flags)
@@ -237,4 +238,3 @@ class ZIHDAWG8(Instrument):
             return self.daq.getString(name)
         elif param_type == "ZIVectorData":
             return self.daq.vectorRead(name)
-
