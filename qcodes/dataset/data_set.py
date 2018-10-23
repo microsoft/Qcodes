@@ -234,8 +234,10 @@ class DataSet(Sized):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
-        else:
 
+        else:
+            # Actually perform all the side effects needed for the creation
+            # of a new dataset
             if exp_id is None:
                 if len(get_experiments(self.conn)) > 0:
                     exp_id = get_last_experiment(self.conn)
@@ -243,16 +245,10 @@ class DataSet(Sized):
                     raise ValueError("No experiments found."
                                      "You can start a new one with:"
                                      " new_experiment(name, sample_name)")
-
-            # Actually perform all the side effects needed for
-            # the creation of a new dataset.
-
             name = name or "dataset"
-
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
                                        specs, values, metadata)
-
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
             self._completed = False
