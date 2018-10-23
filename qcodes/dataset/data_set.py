@@ -1,10 +1,3 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
-#
-# Copyright © 2017 unga <giulioungaretti@me.com>
-#
-# Distributed under terms of the MIT license.
 import functools
 import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
