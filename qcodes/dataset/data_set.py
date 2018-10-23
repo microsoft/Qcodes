@@ -38,7 +38,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
                                         get_run_timestamp_from_run_id,
-                                        get_completed_timestamp_from_run_id)
+                                        get_completed_timestamp_from_run_id,
+                                        run_exists)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 
@@ -226,6 +227,9 @@ class DataSet(Sized):
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
         if run_id:
+            if not run_exists(self.conn, run_id):
+                raise ValueError(f"Run with run_id {run_id} does not exist in "
+                                 f"the database")
             self._completed = completed(self.conn, self.run_id)
         else:
 
