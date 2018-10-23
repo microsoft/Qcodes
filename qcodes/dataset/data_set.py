@@ -204,7 +204,10 @@ class DataSet(Sized):
               path will be read from the config.
             run_id: provide this when loading an existing run, leave it
               as None when creating a new run
-            conn: connection to the DB
+            conn: connection to the DB; if provided and `path_to_db` is
+              provided as well, then a ValueError is raised (this is to
+              prevent the possibility of providing a connection to a DB
+              file that is different from `path_to_db`)
             exp_id: the id of the experiment in which to create a new run.
               Ignored if run_id is provided.
             name: the name of the dataset. Ignored if run_id is provided.
@@ -215,7 +218,13 @@ class DataSet(Sized):
             metadata: metadata to insert into the dataset. Ignored if run_id
               is provided.
         """
+        if path_to_db is not None and conn is not None:
+            raise ValueError("Both `path_to_db` and `conn` arguments have "
+                             "been passed together with non-None values. "
+                             "This is not allowed.")
+
         self.path_to_db = path_to_db or get_DB_location()
+
         if conn is None:
             self.conn = connect(self.path_to_db)
         else:
@@ -224,6 +233,7 @@ class DataSet(Sized):
         self.run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
+
         if run_id:
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "

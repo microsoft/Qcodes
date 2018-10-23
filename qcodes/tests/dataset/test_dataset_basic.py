@@ -56,6 +56,15 @@ def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
         _ = DataSet(run_id=non_existing_run_id)
 
 
+def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
+    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
+                                         "arguments have been passed together "
+                                         "with non-None values. This is not "
+                                         "allowed."):
+        some_valid_connection = experiment.conn
+        _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
+
+
 @settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
