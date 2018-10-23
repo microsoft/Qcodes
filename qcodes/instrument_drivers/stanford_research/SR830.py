@@ -392,7 +392,7 @@ class SR830(VisaInstrument):
                            docstring=("The snap command records the values of X and Y at a single instant."
                                      " This is a way to query values at the same time."
                                      " This is important when the time constant is very short, < 100 ms. "
-                                     " -> tuple (x,y) " )
+                                     " -> tuple (x,y) " ),
                            get_cmd='SNAP? 1,2',
                            get_parser=lambda s: tuple((float(el) for el in s.split(','))),
                            unit=('V','V'))
