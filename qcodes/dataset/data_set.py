@@ -225,7 +225,7 @@ class DataSet(Sized):
         self.path_to_db = path_to_db or get_DB_location()
         self.conn = conn or connect(self.path_to_db)
 
-        self.run_id = run_id
+        self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
 
@@ -254,8 +254,12 @@ class DataSet(Sized):
                                        specs, values, metadata)
 
             # this is really the UUID (an ever increasing count in the db)
-            self.run_id = run_id
+            self._run_id = run_id
             self._completed = False
+
+    @property
+    def run_id(self):
+        return self._run_id
 
     @property
     def name(self):

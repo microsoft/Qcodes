@@ -27,7 +27,7 @@ def test_has_attributes_after_init():
     (run_id is None / run_id is not None)
     """
 
-    attrs = ['path_to_db', 'conn', 'run_id', '_debug', 'subscribers',
+    attrs = ['path_to_db', 'conn', '_run_id', 'run_id', '_debug', 'subscribers',
              '_completed', 'name', 'table_name', 'guid', 'number_of_results',
              'counter', 'parameters', 'paramspecs', 'exp_id', 'exp_name',
              'sample_name', 'run_timestamp_raw', 'completed_timestamp_raw',
@@ -45,6 +45,20 @@ def test_has_attributes_after_init():
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
+
+
+def test_dataset_read_only_properties(dataset):
+    read_only_props = ['run_id', 'name', 'table_name', 'guid',
+                       'number_of_results', 'counter', 'parameters',
+                       'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+                       'run_timestamp_raw', 'completed_timestamp_raw',
+                       'snapshot', 'snapshot_raw']
+
+    for prop in read_only_props:
+        with pytest.raises(AttributeError, match="can't set attribute",
+                           message=f"It is not expected to be possible to set "
+                                   f"property {prop!r}"):
+            setattr(dataset, prop, True)
 
 
 @pytest.mark.usefixtures("experiment")
