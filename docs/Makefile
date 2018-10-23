@@ -19,6 +19,9 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 .PHONY: help
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  htmlapi    to make standalone HTML including auto gen API docs. Executes example notebooks.
+	@echo "  htmlfast   like htmlapi but skips execution of notebooks
+	@echo "  apidocs    generates apidocs rst but produces no final output.
 	@echo "  html       to make standalone HTML files"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
@@ -229,8 +232,23 @@ dummy:
 	@echo
 	@echo "Build finished. Dummy builder generates no files."
 
+# this is only left for backwards compatibility. Changed to be consistent with windows
 .PHONY: html-api
 html-api:
+	make htmlapi
+
+.PHONY: htmlfast
+htmlapi:
+	export qcodes_fast_docs_build="True"
+	make apidocs
+
+.PHONY: htmlapi
+htmlapi:
+	unset qcodes_fast_docs_build
+	make apidocs
+
+.PHONY: apidocs
+apidocs:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
 	cp _auto/qcodes.instrument_drivers.* api/generated/
@@ -246,7 +264,7 @@ gh-pages:
 	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
-	cd docs && make html-api && \
+	cd docs && make htmlapi && \
 	mv -fv $(BUILDDIR)/html/* ../
 	rm -rf $(GH_PAGES_SOURCES) build
 	git add -A
