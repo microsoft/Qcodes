@@ -10,6 +10,8 @@ from qcodes.instrument_drivers.ZI.ZIHDAWG8 import ZIHDAWG8
 from qcodes.utils import validators
 
 
+
+
 class TestZIHDAWG8(unittest.TestCase):
     def setUp(self):
         self.node_tree = {"/DEV8049/SYSTEM/AWG/CHANNELGROUPING": {

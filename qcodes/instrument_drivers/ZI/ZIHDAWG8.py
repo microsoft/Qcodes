@@ -5,8 +5,13 @@ import textwrap
 import time
 from functools import partial
 
-import zhinst
-import zhinst.utils
+try:
+    import zhinst
+except ImportError:
+    raise ImportError('''Could not find Zurich Instruments Lab One software.
+                         Please refer to the Zi UHF-LI User Manual for
+                         download and installation instructions.
+                      ''')
 
 from qcodes import Instrument
 from qcodes.utils import validators as validators
@@ -225,7 +230,8 @@ class ZIHDAWG8(Instrument):
             flags: ziPython.ziListEnum.settingsonly -> 0x08: Returns only nodes which are marked as setting
                    ziPython.ziListEnum.streamingonly -> 0x10: Returns only streaming nodes
                    ziPython.ziListEnum.subscribedonly -> 0x20: Returns only subscribed nodes
-                   ziPython.ziListEnum.basechannel -> 0x40: Return only one instance of a node in case of multiple channels
+                   ziPython.ziListEnum.basechannel -> 0x40: Return only one instance of a node in case of multiple
+                   channels
                    Or any combination of flags can be used.
 
         Returns: A dictionary of the device node tree.

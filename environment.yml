@@ -30,4 +30,3 @@ dependencies:
  - pip:
     - websockets>=3.2
     - broadbean>=0.9.1
-    - zhinst
