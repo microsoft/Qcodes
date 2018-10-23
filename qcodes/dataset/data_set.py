@@ -50,6 +50,8 @@ from qcodes.dataset.guids import generate_guid
 
 
 # SPECS is a list of ParamSpec
+from qcodes.utils.deprecate import deprecate
+
 SPECS = List[ParamSpec]
 
 
@@ -415,7 +417,7 @@ class DataSet(Sized):
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
-    # TODO: deprecate
+    @deprecate(reason=None, alternative="DataSet.add_parameter")
     def add_parameters(self, specs: SPECS):
         add_parameter(self.conn, self.table_name, *specs)
 
