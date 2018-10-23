@@ -61,19 +61,19 @@ class CompletedError(RuntimeError):
 
 class _Subscriber(Thread):
     """
-    Class to add a subscriber to a DataSet. The subscriber gets called
-    every time an insert is made to the results_table.
+    Class to add a subscriber to a DataSet. The subscriber gets called every
+    time an insert is made to the results_table.
 
     The _Subscriber is not meant to be instantiated directly, but rather used
     via the 'subscribe' method of the DataSet.
 
     NOTE: A subscriber should be added *after* all parameters have been added.
 
-    NOTE: Special care shall be taken when using the *state* object: it is the user's
-    responsibility to operate with it in a thread-safe way.
+    NOTE: Special care shall be taken when using the *state* object: it is the
+    user's responsibility to operate with it in a thread-safe way.
     """
     def __init__(self,
-                 dataSet,
+                 dataSet: 'DataSet',
                  id_: str,
                  callback: Callable[..., None],
                  state: Optional[Any] = None,
@@ -367,8 +367,8 @@ class DataSet(Sized):
 
     def toggle_debug(self):
         """
-        Toggle debug mode, if debug mode is on
-        all the queries made are echoed back.
+        Toggle debug mode, if debug mode is on all the queries made are
+        echoed back.
         """
         self._debug = not self._debug
         self.conn.close()
@@ -446,8 +446,9 @@ class DataSet(Sized):
             mark_run_complete(self.conn, self.run_id)
 
     def mark_complete(self) -> None:
-        """Mark dataset as complete and thus read only and notify the
-        subscribers"""
+        """
+        Mark dataset as complete and thus read only and notify the subscribers
+        """
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
@@ -457,20 +458,20 @@ class DataSet(Sized):
         Add a logically single result to existing parameters
 
         Args:
-            - results: dictionary with name of a parameter as the key and the
-               value to associate as the value.
+            results: dictionary with name of a parameter as the key and the
+                value to associate as the value.
 
         Returns:
-
-            - index in the DataSet that the result was stored at
+            index in the DataSet that the result was stored at
 
         If a parameter exist in the dataset and it's not in the results
-        dictionary Null values are inserted.
+        dictionary, "Null" values are inserted.
+
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to add results to a completed DataSet.
         """
-        # TODO: Make this check less fugly
         for param in results.keys():
             if self.paramspecs[param].depends_on != '':
                 deps = self.paramspecs[param].depends_on.split(', ')
@@ -482,6 +483,7 @@ class DataSet(Sized):
 
         if self.completed:
             raise CompletedError
+
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
                               list(results.values())
@@ -493,46 +495,52 @@ class DataSet(Sized):
         Adds a sequence of results to the DataSet.
 
         Args:
-            - list of name, value dictionaries  where each
-              dictionary provides the values for the parameters in
-              that result. If some parameters are missing the corresponding
-              values are assumed to be None
+            results: list of name-value dictionaries where each dictionary
+                provides the values for the parameters in that result. If some
+                parameters are missing the corresponding values are assumed
+                to be None
 
         Returns:
-            - the index in the DataSet that the **first** result was stored at
+            the index in the DataSet that the **first** result was stored at
 
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to add results to a completed DataSet.
         """
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         len_before_add = length(self.conn, self.table_name)
+
         insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         return len_before_add
 
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
-        """ Modify a logically single result of existing parameters
+        """
+        Modify a logically single result of existing parameters
 
         Args:
-            - index: zero-based index of the result to be modified.
-            - results: dictionary of updates with name of a parameter as the
+            index: zero-based index of the result to be modified.
+            results: dictionary of updates with name of a parameter as the
                key and the value to associate as the value.
-
 
         It is an error to modify a result at an index less than zero or
         beyond the end of the DataSet.
+
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to modify a result in a completed DataSet.
         """
         if self.completed:
             raise CompletedError
+
         for param in results.keys():
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
+
         with atomic(self.conn) as self.conn:
             modify_values(self.conn, self.table_name, index,
                           list(results.keys()),
@@ -541,18 +549,21 @@ class DataSet(Sized):
 
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
-        """ Modify a sequence of results in the DataSet.
+        """
+        Modify a sequence of results in the DataSet.
 
         Args:
-            - index: zero-based index of the result to be modified.
-            - results: sequence of dictionares of updates with name of a
+            index: zero-based index of the result to be modified.
+            results: sequence of dictionares of updates with name of a
                 parameter as the key and the value to associate as the value.
 
 
         It is an error to modify a result at an index less than zero or
         beyond the end of the DataSet.
+
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to modify a result in a completed DataSet.
         """
         if self.completed:
@@ -583,14 +594,11 @@ class DataSet(Sized):
         Add a parameter to the DataSet and associates result values with the
         new parameter.
 
-        Adds a parameter to the DataSet and associates result values with the
-        new parameter.
-        If the DataSet is not empty, then the count of provided
-        values must equal the current count of results in the DataSet, or an
-        error will result.
+        If the DataSet is not empty, then the count of provided values must
+        equal the current count of results in the DataSet, or an error will
+        be raised.
 
         It is an error to add parameters to a completed DataSet.
-        # TODO: fix type checking
         """
         # first check that the len of values (if dataset is not empty)
         # is the right size i.e. the same as the dataset
@@ -600,6 +608,7 @@ class DataSet(Sized):
                     len(self),
                     len(values)
                 ))
+
         with atomic(self.conn) as self.conn:
             add_parameter(self.conn, self.table_name, spec)
             # now add values!
@@ -610,34 +619,36 @@ class DataSet(Sized):
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
                  end: Optional[int] = None) -> List[List[Any]]:
-        """ Returns the values stored in the DataSet for the specified parameters.
+        """
+        Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a list of lists, SQL rows by SQL columns,
-        e.g. datapoints by parameters. The data type of each element is based on
-        the datatype provided when the DataSet was created. The parameter list may
-        contain a mix of string parameter names, QCoDeS Parameter objects, and
-        ParamSpec objects. As long as they have a `name` field. If provided,
-        the start and end parameters select a range of results by result count
-        (index).
-        If the range is empty -- that is, if the end is less than or
-        equal to the start, or if start is after the current end of the
-        DataSet – then a list of empty arrays is returned.
+        e.g. datapoints by parameters. The data type of each element is based
+        on the datatype provided when the DataSet was created. The parameter
+        list may contain a mix of string parameter names, QCoDeS Parameter
+        objects, and ParamSpec objects (as long as they have a `name` field).
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a list of empty arrays is returned.
 
         For a more type independent and easier to work with view of the data
         you may want to consider using
         :py:meth:`qcodes.dataset.data_export.get_data_by_id`
 
-
         Args:
-            - *params: string parameter names, QCoDeS Parameter objects, and
-               ParamSpec objects
-            - start:
-            - end:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
 
         Returns:
-            - list of lists SQL rows of data by SQL columns. Each SQL row
-              is a datapoint and each SQL column is a parameter.  Each element
-              will be of the datatypes stored in the database
-              (numeric, array or string)
+            list of lists SQL rows of data by SQL columns. Each SQL row is a
+            datapoint and each SQL column is a parameter. Each element will
+            be of the datatypes stored in the database (numeric, array or
+            string)
         """
         valid_param_names = []
         for maybeParam in params:
@@ -685,7 +696,6 @@ class DataSet(Sized):
 
         return setpoints
 
-    # NEED to pass Any for some reason
     def subscribe(self,
                   callback: Callable[[Any, int, Optional[Any]], None],
                   min_wait: int = 0,
@@ -694,8 +704,8 @@ class DataSet(Sized):
                   callback_kwargs: Optional[Dict[str, Any]] = None
                   ) -> str:
         subscriber_id = uuid.uuid4().hex
-        subscriber = _Subscriber(self, subscriber_id, callback, state, min_wait, min_count,
-                                 callback_kwargs)
+        subscriber = _Subscriber(self, subscriber_id, callback, state,
+                                 min_wait, min_count, callback_kwargs)
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
         return subscriber_id
@@ -748,29 +758,34 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id)->DataSet:
-    """ Load dataset by id
+def load_by_id(run_id) -> DataSet:
+    """
+    Load dataset by run id
+
+    Lookup is performed in the database file that is specified in the config.
 
     Args:
-        run_id: id of the dataset
+        run_id: run id of the dataset
 
     Returns:
-        the datasets
-
+        dataset with the given run id
     """
     d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
-def load_by_counter(counter, exp_id):
+def load_by_counter(counter, exp_id) -> DataSet:
     """
-    Load a dataset given its counter in one experiment
+    Load a dataset given its counter in a given experiment
+
+    Lookup is performed in the database file that is specified in the config.
+
     Args:
-        counter: Counter of the dataset
-        exp_id:  Experiment the dataset belongs to
+        counter: counter of the dataset within the given experiment
+        exp_id: id of the experiment where to look for the dataset
 
     Returns:
-        the dataset
+        dataset of the given counter in the given experiment
     """
     conn = connect(get_DB_location())
     sql = """
@@ -784,8 +799,8 @@ def load_by_counter(counter, exp_id):
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
     conn.close()
-    d = DataSet(get_DB_location(), run_id=run_id)
 
+    d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
@@ -795,15 +810,18 @@ def new_data_set(name, exp_id: Optional[int] = None,
     """
     Create a new dataset in the currently active/selected database.
 
-    If exp_id is not specified the last experiment will be loaded by default.
+    If exp_id is not specified, the last experiment will be loaded by default.
 
     Args:
         name: the name of the new dataset
-        exp_id:  the id of the experiments this dataset belongs to
-            defaults to the last experiment
+        exp_id: the id of the experiments this dataset belongs to, defaults
+            to the last experiment
         specs: list of parameters to create this data_set with
         values: the values to associate with the parameters
-        metadata:  the values to associate with the dataset
+        metadata: the values to associate with the dataset
+
+    Return:
+        the newly created dataset
     """
     d = DataSet(path_to_db=None, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
