@@ -243,7 +243,7 @@ def load_experiment_by_name(name: str,
 
 
 def load_or_create_experiment(experiment_name: str,
-                              sample_name: str
+                              sample_name: Optional[str] = None
                               ) -> Experiment:
     """
     Find and return an experiment with the given name and sample name,
