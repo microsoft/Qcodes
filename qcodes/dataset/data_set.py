@@ -222,13 +222,8 @@ class DataSet(Sized):
             raise ValueError("Both `path_to_db` and `conn` arguments have "
                              "been passed together with non-None values. "
                              "This is not allowed.")
-
         self.path_to_db = path_to_db or get_DB_location()
-
-        if conn is None:
-            self.conn = connect(self.path_to_db)
-        else:
-            self.conn = conn
+        self.conn = conn or connect(self.path_to_db)
 
         self.run_id = run_id
         self._debug = False
