@@ -1,4 +1,6 @@
 language: python
+sudo: required
+dist: xenial
 notifications:
   email: false
     # send all notifcations to slack
@@ -12,6 +14,7 @@ addons:
 
 python:
   - "3.6"
+  - "3.7"
   # whitelist
 branches:
   only:

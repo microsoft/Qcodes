@@ -158,6 +158,15 @@ class TestMultiPar(unittest.TestCase):
             combine(*self.parameters,
                     name="combined").sweep(x_vals, y_vals, z_vals)
 
+
+    def testInvalidName(self):
+        x_vals = np.linspace(1, 1, 2)
+        y_vals = np.linspace(1, 1, 2)
+        z_vals = np.linspace(1, 1, 2)
+        with self.assertRaises(ValueError):
+            combine(*self.parameters,
+                    name="combined with spaces").sweep(x_vals, y_vals, z_vals)
+
     def testLen(self):
         x_vals = np.linspace(1, 1, 2)
         y_vals = np.linspace(1, 1, 2)

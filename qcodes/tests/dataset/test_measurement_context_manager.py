@@ -25,6 +25,7 @@ from qcodes.dataset.data_set import load_by_id
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
+from qcodes.tests.test_station import set_default_station_to_none
 
 
 @pytest.fixture  # scope is "function" per default
@@ -587,6 +588,7 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
        write_period=hst.floats(min_value=0.1, max_value=1.5),
        set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
        get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20))
+@pytest.mark.usefixtures('set_default_station_to_none')
 def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
                            breakpoint, write_period):
     no_of_runs = len(experiment)
@@ -619,9 +621,6 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DAC.ch2, 1), (DAC.ch2, 2))
         with pytest.raises(ValueError):
             datasaver.add_result((DMM.v1, 0))
-
-    # important cleanup, else the following tests will fail
-    qc.Station.default = None
 
     # More assertions of setpoints, labels and units in the DB!
 

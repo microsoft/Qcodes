@@ -6,7 +6,7 @@ import numbers
 import time
 import os
 
-from collections import Iterator, Sequence, Mapping
+from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
 from typing import Dict, List, Any
 from contextlib import contextmanager
