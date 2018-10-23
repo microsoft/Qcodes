@@ -89,7 +89,7 @@ if "%1" == "html" (
 )
 
 if "%1" == "htmlapi" (
-	set qcodes_fast_docs_build=
+:HTMLAPI:
 	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
 	mkdir api\generated\
 	copy _auto\qcodes.instrument_drivers.* api\generated\
@@ -97,11 +97,8 @@ if "%1" == "htmlapi" (
 )
 
 if "%1" == "htmlfast" (
-	set qcodes_fast_docs_build=True
-	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
-	mkdir api\generated\
-	copy _auto\qcodes.instrument_drivers.* api\generated\
-	goto HTML
+   set ALLSPHINXOPTS=-D nbsphinx_execute=never %ALLSPHINXOPTS%
+	goto HTMLAPI
 )
 
 if "%1" == "dirhtml" (
