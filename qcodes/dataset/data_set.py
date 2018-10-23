@@ -54,8 +54,6 @@ from qcodes.dataset.guids import generate_guid
 # how do the user/us know which are metatadata?  I THINK the only sane solution
 # is to store JSON in a column called metadata
 
-# TODO: we cant have parameters with the same name in the same dataset/run
-
 # TODO: fixix  a subset of metadata that we define well known (and create them)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column

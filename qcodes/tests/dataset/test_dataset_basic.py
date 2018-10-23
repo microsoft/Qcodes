@@ -166,8 +166,11 @@ def test_add_paramspec_one_by_one(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
-    with pytest.raises(ValueError):
+    # Test that is not possible to add the same parameter again to the dataset
+    with pytest.raises(ValueError, match=f'Duplicate parameter name: '
+                                         f'{parameters[0].name}'):
         dataset.add_parameter(parameters[0])
+
     assert len(dataset.paramspecs.keys()) == 3
 
 
