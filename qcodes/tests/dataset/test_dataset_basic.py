@@ -27,11 +27,12 @@ def test_has_attributes_after_init():
     (run_id is None / run_id is not None)
     """
 
-    attrs = ['path_to_db', 'conn', '_run_id', 'run_id', '_debug', 'subscribers',
-             '_completed', 'name', 'table_name', 'guid', 'number_of_results',
-             'counter', 'parameters', 'paramspecs', 'exp_id', 'exp_name',
-             'sample_name', 'run_timestamp_raw', 'completed_timestamp_raw',
-             'completed', 'snapshot', 'snapshot_raw']
+    attrs = ['path_to_db', '_path_to_db', 'conn', '_run_id', 'run_id',
+             '_debug', 'subscribers', '_completed', 'name', 'table_name',
+             'guid', 'number_of_results', 'counter', 'parameters',
+             'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+             'run_timestamp_raw', 'completed_timestamp_raw', 'completed',
+             'snapshot', 'snapshot_raw']
 
     path_to_db = get_DB_location()
     ds = DataSet(path_to_db, run_id=None)
@@ -48,7 +49,7 @@ def test_has_attributes_after_init():
 
 
 def test_dataset_read_only_properties(dataset):
-    read_only_props = ['run_id', 'name', 'table_name', 'guid',
+    read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
                        'number_of_results', 'counter', 'parameters',
                        'paramspecs', 'exp_id', 'exp_name', 'sample_name',
                        'run_timestamp_raw', 'completed_timestamp_raw',

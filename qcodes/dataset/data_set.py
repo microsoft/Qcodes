@@ -210,7 +210,8 @@ class DataSet(Sized):
             raise ValueError("Both `path_to_db` and `conn` arguments have "
                              "been passed together with non-None values. "
                              "This is not allowed.")
-        self.path_to_db = path_to_db or get_DB_location()
+        self._path_to_db = path_to_db or get_DB_location()
+
         self.conn = conn or connect(self.path_to_db)
 
         self._run_id = run_id
@@ -244,6 +245,10 @@ class DataSet(Sized):
     @property
     def run_id(self):
         return self._run_id
+
+    @property
+    def path_to_db(self):
+        return self._path_to_db
 
     @property
     def name(self):
