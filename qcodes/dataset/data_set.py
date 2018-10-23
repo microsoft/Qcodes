@@ -281,9 +281,7 @@ class DataSet(Sized):
 
     @property
     def number_of_results(self):
-        tabnam = self.table_name
-        # TODO: is it better/faster to use the max index?
-        sql = f'SELECT COUNT(*) FROM "{tabnam}"'
+        sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
         cursor = atomic_transaction(self.conn, sql)
         return one(cursor, 'COUNT(*)')
 
