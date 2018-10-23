@@ -425,14 +425,9 @@ class DataSet(Sized):
         Args:
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
-
         """
-        # TODO: this follows the spec but another option:
-        # json_meta_data = json.dumps(metadata)
-        # add_meta_data(self.conn, self.run_id, {"metadata": json_meta_data})
-
         add_meta_data(self.conn, self.run_id, {tag: metadata})
-        # adding meta-data does not commit
+        # `add_meta_data` does not commit, hence we commit here:
         self.conn.commit()
 
     @property
