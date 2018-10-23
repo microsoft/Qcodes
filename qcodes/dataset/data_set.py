@@ -5,7 +5,6 @@
 # Copyright © 2017 unga <giulioungaretti@me.com>
 #
 # Distributed under terms of the MIT license.
-# import json
 import functools
 import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
