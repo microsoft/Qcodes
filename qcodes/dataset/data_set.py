@@ -387,8 +387,6 @@ class DataSet(Sized):
         else:
             old_params = []
 
-        # better to catch this one early
-        # alternatively make this a warning and a NOOP
         if spec.name in old_params:
             raise ValueError(f'Duplicate parameter name: {spec.name}')
 
