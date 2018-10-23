@@ -24,6 +24,7 @@ class ZIHDAWG8(Instrument):
     def __init__(self, name: str, device_id: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
+
         Args:
             name (str): The internal QCoDeS name of the instrument
             device_ID (str): The device name as listed in the web server.
@@ -41,8 +42,10 @@ class ZIHDAWG8(Instrument):
     def enable_channel(self, channel_number):
         """
         Enable a signal output, turns on a blue LED on the device.
+
         Args:
             channel_number (int): Output channel that should be enabled.
+
         Returns: None
         """
         self.set('sigouts_{}_on'.format(channel_number), 1)
@@ -50,8 +53,10 @@ class ZIHDAWG8(Instrument):
     def disable_channel(self, channel_number):
         """
         Disable a signal output, turns off a blue LED on the device.
+
         Args:
             channel_number (int): Output channel that should be disabled.
+
         Returns: None
         """
         self.set('sigouts_{}_on'.format(channel_number), 0)
@@ -59,8 +64,10 @@ class ZIHDAWG8(Instrument):
     def start_awg(self, awg_number):
         """
         Activate an AWG
+
         Args:
             awg_number (int): The AWG that should be enabled.
+
         Returns: None
         """
         self.set('awgs_{}_enable'.format(awg_number), 1)
@@ -68,8 +75,10 @@ class ZIHDAWG8(Instrument):
     def stop_awg(self, awg_number):
         """
         Deactivate an AWG
+
         Args:
             awg_number (int): The AWG that should be disabled.
+
         Returns: None
         """
         self.set('awgs_{}_enable'.format(awg_number), 0)
@@ -101,6 +110,7 @@ class ZIHDAWG8(Instrument):
         """
         Generates and returns a sequencing program that plays the given waves on the given channels. There has to be a
         CSV file with a corresponding name to a wave in wave_names.
+
         Args:
             wave_names (list): List of wave names that are to be played.
             channels (list, optional): Channels to play the waveforms on.
@@ -128,9 +138,11 @@ class ZIHDAWG8(Instrument):
     def upload_sequence_program(self, awg_number, sequence_program):
         """
         Uploads a sequence program to the device equivalent to using the the sequencer tab in the device's gui.
+
         Args:
             awg_number (int): The AWG that the sequence program will be uploaded to.
             sequence_program (str): A sequence program that should be played on the device.
+
         Returns (int): 0: Compilation was successful with no warnings.
                        1: Compilation was successful but with warnings.
         """
@@ -149,13 +161,17 @@ class ZIHDAWG8(Instrument):
     def upload_waveform(self, awg_number, waveform, index):
         """
         Upload a waveform to the device memory at a given index.
-        Node: There needs to be a place holder on the device as this only replaces a data in the device memory and there
-              for does not allocate new memory space.
+
+        Note:
+            There needs to be a place holder on the device as this only replaces a data in the device memory but
+            does not allocate new memory space.
+
         Args:
             awg_number (int): The AWG where waveform should be uploaded to.
             waveform: An array of floating point values from -1.0 to 1.0, or integers in the range (-32768...+32768)
             index: Index of the waveform that will be replaced. If there are more than 1 waveforms used then the index
                    corresponds to the position of the waveform in the Waveforms sub-tab of the AWG tab in the GUI.
+
         Returns: None
         """
         self.set('awgs_{}_waveform_index'.format(awg_number), index)
@@ -165,10 +181,10 @@ class ZIHDAWG8(Instrument):
     def set_channel_grouping(self, group):
         """
         Set the channel grouping mode of the device.
+
         Args:
-            group (int): 0: Use the outputs in groups of 2. One sequencer program controls 2 outputs.
-                         1: Use the outputs in groups of 4. One sequencer program controls 4 outputs.
-                         2: Use the outputs in groups of 8. One sequencer program controls 8 outputs.
+            group (int): 0: groups of 2. 1: groups of 4. 2: groups of 8 i.e., one sequencer program controls 8 outputs.
+
         Returns: None
         """
         self.set('system_awg_channelgrouping', group)
@@ -176,8 +192,10 @@ class ZIHDAWG8(Instrument):
     def create_parameters_from_node_tree(self, parameters):
         """
         Create QuCoDeS parameters from the device node tree.
+
         Args:
             parameters (dict): A device node tree.
+
         Returns: None
         """
         for parameter in parameters.values():
@@ -204,15 +222,12 @@ class ZIHDAWG8(Instrument):
     def download_device_node_tree(self, flags=0):
         """
         Args:
-            flags: ziPython.ziListEnum.settingsonly -> 0x08
-                        Returns only nodes which are marked as setting
-                   ziPython.ziListEnum.streamingonly -> 0x10
-                        Returns only streaming nodes
-                   ziPython.ziListEnum.subscribedonly -> 0x20
-                        Returns only subscribed nodes
-                   ziPython.ziListEnum.basechannel -> 0x40
-                        Return only one instance of a node in case of multiple channels
+            flags: ziPython.ziListEnum.settingsonly -> 0x08: Returns only nodes which are marked as setting
+                   ziPython.ziListEnum.streamingonly -> 0x10: Returns only streaming nodes
+                   ziPython.ziListEnum.subscribedonly -> 0x20: Returns only subscribed nodes
+                   ziPython.ziListEnum.basechannel -> 0x40: Return only one instance of a node in case of multiple channels
                    Or any combination of flags can be used.
+
         Returns: A dictionary of the device node tree.
         """
         node_tree = self.daq.listNodesJSON('/{}/'.format(self.device), flags)
