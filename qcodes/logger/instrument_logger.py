@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 import logging
-from typing import Optional, Sequence, Union
-from .logger import get_console_handler, LevelType
+from typing import Optional, Sequence, Union, TYPE_CHECKING
+from .logger import get_console_handler, LevelType, handler_level
+if TYPE_CHECKING:
+    import qcodes.instrument.InstrumentBase as InstrumentBase  # noqa: F401 pylint: disable=unused-import
+
 
 class InstrumentLoggerAdapter(logging.LoggerAdapter):
     """
@@ -40,7 +43,8 @@ class InstrumentFilter(logging.Filter):
         # This local import is necessary to avoid a circular import dependency.
         # The alternative is to merge this module with the instrument.base,
         # which is also not favorable.
-        from qcodes.instrument.base import InstrumentBase
+        super().__init__()
+        from qcodes.instrument.base import InstrumentBase  # noqa: F811
         if isinstance(instruments, InstrumentBase):
             instruments = (instruments,)
         self.instruments = instruments
@@ -53,10 +57,28 @@ class InstrumentFilter(logging.Filter):
 
 
 def get_instrument_logger(instrument_instance: 'InstrumentBase',
-                          logger_name:Optional[str]=None) -> InstrumentLoggerAdapter:
+                          logger_name: Optional[str]=None
+                          ) -> InstrumentLoggerAdapter:
+    """
+    Return an `InstrumentLoggerAdapter` that can be used to log messages
+    including `instrument_instance` as  an additional context.
+
+    The `LoggerAdapter` object can be used as any logger.
+
+    Args:
+        instrument_instance: the instrument instance to be added to the context
+            of the log record.
+        logger_name: name of the logger to which the records will be passed.
+            If `None`, defaults to the root logger.
+
+    Returns:
+        LoggerAdapter instance, that can be used for instrument specific
+        logging.
+    """
     logger_name = logger_name or ''
     return InstrumentLoggerAdapter(logging.getLogger(logger_name),
                                    {'instrument': instrument_instance})
+
 
 @contextmanager
 def filter_instrument(instrument: Union['InstrumentBase',

@@ -19,6 +19,7 @@ from .function import Function
 
 log = logging.getLogger(__name__)
 
+
 class InstrumentBase(Metadatable, DelegateAttributes):
     """
     Base class for all QCodes instruments and instrument channels
