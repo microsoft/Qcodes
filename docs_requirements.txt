@@ -5,3 +5,4 @@ nbsphinx
 ipython
 jupyter
 scipy
+pandas
