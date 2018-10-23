@@ -32,6 +32,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         run_exists)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
+from qcodes.utils.deprecate import deprecate
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -48,9 +49,6 @@ from qcodes.dataset.guids import generate_guid
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
 
-
-# SPECS is a list of ParamSpec
-from qcodes.utils.deprecate import deprecate
 
 SPECS = List[ParamSpec]
 
