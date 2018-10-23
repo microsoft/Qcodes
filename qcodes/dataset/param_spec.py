@@ -1,9 +1,6 @@
 from typing import Union, Sequence, List
 
-# TODO: we should validate type somehow
-# we can't accept everything (or we can but crash at runtime?)
-# we only support the types in VALUES type, that is:
-# str, Number, List, ndarray, bool
+
 class ParamSpec:
 
     allowed_types = ['array', 'numeric', 'text']
