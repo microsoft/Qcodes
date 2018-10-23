@@ -215,8 +215,6 @@ class DataSet(Sized):
             metadata: metadata to insert into the dataset. Ignored if run_id
               is provided.
         """
-        # TODO: handle fail here by defaulting to
-        # a standard db
         self.path_to_db = path_to_db or get_DB_location()
         if conn is None:
             self.conn = connect(self.path_to_db)
