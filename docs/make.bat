@@ -18,7 +18,8 @@ if "%1" == "" goto help
 if "%1" == "help" (
 	:help
 	echo.Please use `make ^<target^>` where ^<target^> is one of
-	echo.  htmlapi    to make standalone HTML including automatically generated API docs and notebooks
+	echo.  htmlapi    to make standalone HTML including auto gen API docs. Executes example notebooks.
+	echo.  htmlfast   like htmlapi but skips execution of notebooks
 	echo.  html       to make standalone HTML files
 	echo.  dirhtml    to make HTML files named index.html in directories
 	echo.  singlehtml to make a single large HTML file
@@ -88,6 +89,15 @@ if "%1" == "html" (
 )
 
 if "%1" == "htmlapi" (
+	set qcodes_fast_docs_build=
+	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
+	mkdir api\generated\
+	copy _auto\qcodes.instrument_drivers.* api\generated\
+	goto HTML
+)
+
+if "%1" == "htmlfast" (
+	set qcodes_fast_docs_build=True
 	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes\ ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\keysight
 	mkdir api\generated\
 	copy _auto\qcodes.instrument_drivers.* api\generated\

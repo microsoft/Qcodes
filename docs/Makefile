@@ -21,7 +21,6 @@ help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  htmlapi    to make standalone HTML including auto gen API docs. Executes example notebooks.
 	@echo "  htmlfast   like htmlapi but skips execution of notebooks
-	@echo "  apidocs    generates apidocs rst but produces no final output.
 	@echo "  html       to make standalone HTML files"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
@@ -240,15 +239,14 @@ html-api:
 .PHONY: htmlfast
 htmlapi:
 	export qcodes_fast_docs_build="True"
-	make apidocs
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
+	mkdir -p api/generated/
+	cp _auto/qcodes.instrument_drivers.* api/generated/
+	make html
 
 .PHONY: htmlapi
 htmlapi:
 	unset qcodes_fast_docs_build
-	make apidocs
-
-.PHONY: apidocs
-apidocs:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
 	mkdir -p api/generated/
 	cp _auto/qcodes.instrument_drivers.* api/generated/
