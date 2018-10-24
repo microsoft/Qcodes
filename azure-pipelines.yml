@@ -39,7 +39,7 @@ jobs:
         displayName: "Pytest"
       - script: |
           cd docs
-          set SPHINXOPTS=-W
+          set SPHINXOPTS=-W #Turn warnings into errors
           make.bat htmlapi
         displayName: "docsbuild"
       - task: PublishTestResults@1
