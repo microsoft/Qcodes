@@ -550,6 +550,8 @@ class TestMultiType(TestCase):
         for val in m.valid_values:
             m.validate(val)
 
+    def test_issue_1337_MultiType_should_be_able_to_hold_Lists(self):
+        MultiType(Ints(1, 4), Lists(Ints(-9, -2)))
 
 class TestArrays(TestCase):
 
