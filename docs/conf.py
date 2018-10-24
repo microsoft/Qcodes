@@ -351,10 +351,10 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'matplotlib': ('http://matplotlib.org/', None),
+    'matplotlib': ('https://matplotlib.org/', None),
     'python': ('https://docs.python.org/3.5', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('http://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None)
 }
 # theming
 import sphinx_rtd_theme
@@ -397,9 +397,4 @@ suppress_warnings = ['image.nonlocal_uri']
 
 numfig=True
 
-if os.environ.get('qcodes_fast_docs_build', None):
-    print("Skipping execution of notebooks")
-    nbsphinx_execute = 'never'
-else:
-    print("Executing notebooks as part of build process")
-    nbsphinx_execute = 'always'
+nbsphinx_execute = 'always'
