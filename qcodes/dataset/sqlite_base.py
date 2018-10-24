@@ -1164,7 +1164,18 @@ def get_runs(conn: SomeConnection,
     return c.fetchall()
 
 
-def get_last_run(conn: SomeConnection, exp_id: int) -> str:
+def get_last_run(conn: SomeConnection, exp_id: int) -> Optional[int]:
+    """
+    Get run_id of the last run in experiment with exp_id
+
+    Args:
+        conn: connection to use for the query
+        exp_id: id of the experiment to look inside
+
+    Returns:
+        the integer id of the last run or None if there are not runs in the
+        experiment
+    """
     query = """
     SELECT run_id, max(run_timestamp), exp_id
     FROM runs
