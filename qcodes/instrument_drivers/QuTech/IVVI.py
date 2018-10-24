@@ -185,31 +185,17 @@ class IVVI(VisaInstrument):
             return ver
     
     def linsweep(self,start,end,points):
-        """ A replacement of numpy.linspace for use with the ivvi rack dacs.
-        
-        The voltage output is not the same as the set voltage using
-        ivvi.set_dac1(v) due to 16 bit quantitation of the DAC.
-        If you only record the requested value, and not the value
-        from ivvi.get_dac1() the values will be slightly wrong.
-
-        This can lead to:
-         - accidental oversampling (having the same voltage twice,
-         thinking you have different voltages)
-         - uneven spacing (changing by 2 bits, then 3, then 2 etc...)
-         
-        This is solved by correctly rounding and picking the correct
-        start and end values with a fixed spacing with knowledge of
-        the quantitation.
-
+        """
+        A replacement of numpy.linspace for use with the ivvi rack dacs.
         ivvi.linsweep gives:
          - even spacing in voltages
          - voltages match the set voltages
          - protection from oversampling
          
         Args:
-            start : starting voltage
-            end : ending voltage
-            points : number of points between start and end, inclusive
+            start (number): starting voltage
+            end (number): ending voltage
+            points (int): number of points between start and end, inclusive
             
         Returns:
             list of valid voltages for the ivvi rack
@@ -221,17 +207,20 @@ class IVVI(VisaInstrument):
             #protection from oversampling
             ivvi.linsweep(start=108.8,end=109,points=11) -> 
                 [108.82734416723888, 108.88838025482566,108.94941634241245, 109.01045242999923]
-                
         """
+        points = max(round(abs(points)),2)
+        use_reversed = end < start
+        if use_reversed:
+            start,end = end,start
         dac_quata = 4.0/65535.0
-        byte_start =  int(round(start/1000/dac_quata))
-        byte_end = int(round(end/1000/dac_quata))
+        byte_start =  int(round(start/1000.0/dac_quata))
+        byte_end = int(round(end/1000.0/dac_quata))
         delta_bytes =  abs(byte_end - byte_start)+1
-        spacing =  max(round(delta_bytes / points),1)
-        byte_start = round(byte_start/spacing)*spacing
-        byte_end = round(byte_end/spacing)*spacing
-        return  [ el*dac_quata*1000 for el in range(byte_start,byte_end+spacing,spacing)]
-        
+        spacing =  max(round(delta_bytes / (points-1)),1)
+        l =  [ el*dac_quata*1000 for el in range(byte_start,byte_end+spacing,spacing)]
+        if use_reversed:
+             l = list(reversed(l))
+        return l
     
     def get_all(self):
         return self.snapshot(update=True)
