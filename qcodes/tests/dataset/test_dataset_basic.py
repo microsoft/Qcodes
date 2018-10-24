@@ -10,16 +10,50 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 
 from qcodes.dataset.sqlite_base import _unicode_categories
-
-from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import (initialise_database,
-                                     initialise_or_create_database_at)
+from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 
 n_experiments = 0
+
+
+@pytest.mark.usefixtures("experiment")
+def test_has_attributes_after_init():
+    """
+    Ensure that all attributes are populated after __init__ in BOTH cases
+    (run_id is None / run_id is not None)
+    """
+
+    attrs = ['path_to_db', 'conn', 'run_id', '_debug', 'subscribers',
+             '_completed', 'name', 'table_name', 'guid', 'number_of_results',
+             'counter', 'parameters', 'paramspecs', 'exp_id', 'exp_name',
+             'sample_name', 'run_timestamp_raw', 'completed_timestamp_raw',
+             'completed', 'snapshot', 'snapshot_raw']
+
+    path_to_db = get_DB_location()
+    ds = DataSet(path_to_db, run_id=None)
+
+    for attr in attrs:
+        assert hasattr(ds, attr)
+        getattr(ds, attr)
+
+    ds = DataSet(path_to_db, run_id=1)
+
+    for attr in attrs:
+        assert hasattr(ds, attr)
+        getattr(ds, attr)
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("non_existing_run_id", (1, 'number#42'))
+def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = DataSet(run_id=non_existing_run_id)
 
 
 @settings(deadline=None)

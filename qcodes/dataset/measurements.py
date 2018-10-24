@@ -16,6 +16,7 @@ from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +33,10 @@ class ParameterTypeError(Exception):
 
 def is_number(thing: Any) -> bool:
     """
-    Test if an object can be converted to a number
+    Test if an object can be converted to a number UNLESS it is a string
     """
+    if isinstance(thing, str):
+        return False
     try:
         float(thing)
         return True
@@ -462,7 +465,9 @@ class Runner:
 
         if station:
             self.ds.add_metadata('snapshot',
-                                 json.dumps({'station': station.snapshot()}))
+                                 json.dumps({'station': station.snapshot()},
+                                            cls=NumpyJSONEncoder)
+                                 )
 
         if self.parameters is not None:
             for paramspec in self.parameters.values():

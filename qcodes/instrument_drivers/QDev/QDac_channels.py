@@ -126,7 +126,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
     def __init__(self, channels, param_name, *args, **kwargs):
         super().__init__(channels, param_name, *args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         """
         Return a tuple containing the data from each of the channels in the
         list.

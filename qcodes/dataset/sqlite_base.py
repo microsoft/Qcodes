@@ -485,6 +485,26 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _layout_table_schema)
         transaction(conn, _dependencies_table_schema)
 
+
+def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
+    """
+    A look-before-you-leap function to look up if a table has a certain column.
+
+    Intended for the 'runs' table where columns might be dynamically added
+    via `add_meta_data`/`insert_meta_data` functions.
+
+    Args:
+        conn: The connection
+        table: the table name
+        column: the column name
+    """
+    cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
+    for row in cur.fetchall():
+        if row['name'] == column:
+            return True
+    return False
+
+
 def insert_column(conn: SomeConnection, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
@@ -1152,6 +1172,21 @@ def get_last_run(conn: SomeConnection, exp_id: int) -> str:
     """
     c = atomic_transaction(conn, query, exp_id)
     return one(c, 'run_id')
+
+
+def run_exists(conn: SomeConnection, run_id: int) -> bool:
+    # the following query always returns a single sqlite3.Row with an integer
+    # value of `1` or `0` for existing and non-existing run_id in the database
+    query = """
+    SELECT EXISTS(
+        SELECT 1
+        FROM runs
+        WHERE run_id = ?
+        LIMIT 1
+    );
+    """
+    res: sqlite3.Row = atomic_transaction(conn, query, run_id).fetchone()
+    return bool(res[0])
 
 
 def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
