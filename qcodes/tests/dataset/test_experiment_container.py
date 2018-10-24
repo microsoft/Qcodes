@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from qcodes.dataset.database import get_DB_location
@@ -173,6 +175,121 @@ def test_format_string(empty_temp_db):
                                          r"format \(name, exp_id, "
                                          r"run_counter\)"):
         _ = Experiment(exp_id=None, format_string=fmt_str)
+
+
+def test_load_experiment_by_name_defaults(empty_temp_db):
+    exp1 = Experiment(exp_id=None)
+
+    exp2 = load_experiment_by_name('experiment_1')
+    assert_experiments_equal(exp1, exp2)
+
+    exp3 = load_experiment_by_name('experiment_1', 'some_sample')
+    assert_experiments_equal(exp1, exp3)
+
+
+def test_load_experiment_by_name(empty_temp_db):
+    exp1 = Experiment(exp_id=None, name='myname')
+
+    exp2 = load_experiment_by_name('myname')
+    assert_experiments_equal(exp1, exp2)
+
+    exp3 = load_experiment_by_name('myname', 'some_sample')
+    assert_experiments_equal(exp1, exp3)
+
+    exp4 = Experiment(exp_id=None, name='with_sample', sample_name='mysample')
+
+    exp5 = load_experiment_by_name('with_sample')
+    assert_experiments_equal(exp4, exp5)
+
+    exp6 = load_experiment_by_name('with_sample', 'mysample')
+    assert_experiments_equal(exp4, exp6)
+
+
+def test_load_experiment_by_name_bad_name(empty_temp_db):
+    Experiment(exp_id=None, name='myname')
+
+    with pytest.raises(ValueError, match='Experiment not found'):
+        _ = load_experiment_by_name('myname__')
+
+    with pytest.raises(ValueError, match='Experiment not found'):
+        _ = load_experiment_by_name('myname__', 'some_sample')
+
+    with pytest.raises(ValueError, match='Experiment not found'):
+        _ = load_experiment_by_name('myname__', 'some_sample__')
+
+
+def test_load_experiment_by_name_bad_sample_name(empty_temp_db):
+    Experiment(exp_id=None, sample_name='mysample')
+
+    with pytest.raises(ValueError, match='Experiment not found'):
+        _ = load_experiment_by_name('experiment_1', 'mysample__')
+
+    with pytest.raises(ValueError, match='Experiment not found'):
+        _ = load_experiment_by_name('experiment_1__', 'mysample')
+
+    with pytest.raises(ValueError, match='Experiment not found'):
+        _ = load_experiment_by_name('experiment_1__', 'mysample__')
+
+
+def test_load_experiment_by_name_duplicate_name(empty_temp_db):
+    exp1 = Experiment(exp_id=None, name='exp')
+    exp2 = Experiment(exp_id=None, name='exp')
+    exp3 = Experiment(exp_id=None, name='exp', sample_name='my_sample')
+
+    repr_str_1_2 = f"Many experiments matching your request found:\n" \
+                   f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) " \
+                   f"started at ({exp1.started_at})\n" \
+                   f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) " \
+                   f"started at ({exp2.started_at})"
+    repr_str_1_2_3 = repr_str_1_2 + "\n" + \
+        f"exp_id:{exp3.exp_id} ({exp3.name}-{exp3.sample_name}) " \
+        f"started at ({exp3.started_at})"
+    repr_str_1_2_regex = re.escape(repr_str_1_2)
+    repr_str_1_2_3_regex = re.escape(repr_str_1_2_3)
+
+    with pytest.raises(ValueError, match=repr_str_1_2_3_regex):
+        load_experiment_by_name('exp')
+
+    with pytest.raises(ValueError, match=repr_str_1_2_regex):
+        load_experiment_by_name('exp', 'some_sample')
+
+    exp3_loaded = load_experiment_by_name('exp', 'my_sample')
+    assert_experiments_equal(exp3, exp3_loaded)
+
+
+def test_load_experiment_by_name_duplicate_sample_name(empty_temp_db):
+    exp1 = Experiment(exp_id=None, name='exp1', sample_name='sss')
+    exp2 = Experiment(exp_id=None, name='exp2', sample_name='sss')
+
+    exp1_loaded = load_experiment_by_name('exp1')
+    assert_experiments_equal(exp1, exp1_loaded)
+
+    exp2_loaded = load_experiment_by_name('exp2')
+    assert_experiments_equal(exp2, exp2_loaded)
+
+    exp1_loaded_with_sample = load_experiment_by_name('exp1', 'sss')
+    assert_experiments_equal(exp1, exp1_loaded_with_sample)
+
+    exp2_loaded_with_sample = load_experiment_by_name('exp2', 'sss')
+    assert_experiments_equal(exp2, exp2_loaded_with_sample)
+
+
+def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db):
+    exp1 = Experiment(exp_id=None, name='exp', sample_name='sss')
+    exp2 = Experiment(exp_id=None, name='exp', sample_name='sss')
+
+    repr_str = f"Many experiments matching your request found:\n" \
+               f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) " \
+               f"started at ({exp1.started_at})\n" \
+               f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) " \
+               f"started at ({exp2.started_at})"
+    repr_str_regex = re.escape(repr_str)
+
+    with pytest.raises(ValueError, match=repr_str_regex):
+        load_experiment_by_name('exp')
+
+    with pytest.raises(ValueError, match=repr_str_regex):
+        load_experiment_by_name('exp', 'sss')
 
 
 def test_load_last_experiment(empty_temp_db):

@@ -272,16 +272,16 @@ def load_experiment_by_name(name: str,
         c = transaction(conn, sql, name)
     rows = c.fetchall()
     if len(rows) == 0:
-        raise ValueError("Experiment not found \n")
+        raise ValueError("Experiment not found")
     elif len(rows) > 1:
         _repr = []
         for row in rows:
             s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
-                 f" started at({row['start_time']})")
+                 f" started at ({row['start_time']})")
             _repr.append(s)
         _repr_str = "\n".join(_repr)
         raise ValueError(f"Many experiments matching your request"
-                         f" found {_repr_str}")
+                         f" found:\n{_repr_str}")
     else:
         e = Experiment(exp_id=rows[0]['exp_id'])
     return e
