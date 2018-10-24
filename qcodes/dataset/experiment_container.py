@@ -45,7 +45,7 @@ class Experiment(Sized):
                 raise ValueError('No such experiment in the database')
             self._exp_id = exp_id
         else:
-            log.info("creating new experiment in {}".format(get_DB_location()))
+            log.info("creating new experiment in {}".format(self.path_to_db))
 
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
