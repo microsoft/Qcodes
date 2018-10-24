@@ -1379,15 +1379,17 @@ def get_paramspec(conn: SomeConnection,
 def add_parameter(conn: SomeConnection,
                   formatted_name: str,
                   *parameter: ParamSpec):
-    """ Add parameters to the dataset
+    """
+    Add parameters to the dataset
 
     This will update the layouts and dependencies tables
 
     NOTE: two parameters with the same name are not allowed
+
     Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
-        - parameter: the paraemters to add
+        conn: the connection to the sqlite database
+        formatted_name: name of the table
+        parameter: the list of ParamSpecs for parameters to add
     """
     with atomic(conn) as conn:
         p_names = []
