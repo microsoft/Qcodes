@@ -88,10 +88,10 @@ def test_has_attributes_after_init():
     attrs = ['name', 'sample_name', 'last_counter', 'path_to_db',
              'conn', 'started_at', 'finished_at']
 
-    # This creates a run in the db
+    # This creates an experiment in the db
     exp1 = Experiment(exp_id=None)
 
-    # This loads the run that we just created
+    # This loads the experiment that we just created
     exp2 = Experiment(exp_id=1)
 
     # This tries to load an experiment that we don't have
