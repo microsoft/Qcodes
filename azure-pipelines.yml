@@ -39,6 +39,7 @@ jobs:
         displayName: "Pytest"
       - script: |
           cd docs
+          set SPHINXOPTS=-W
           make.bat htmlapi
         displayName: "docsbuild"
       - task: PublishTestResults@1
