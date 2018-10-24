@@ -775,7 +775,7 @@ def load_by_id(run_id: int) -> DataSet:
     return d
 
 
-def load_by_counter(counter, exp_id) -> DataSet:
+def load_by_counter(counter: int, exp_id: int) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 

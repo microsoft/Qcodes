@@ -359,14 +359,33 @@ def test_add_parameter_values(N, M):
 
 @pytest.mark.usefixtures("dataset")
 def test_load_by_counter():
-    dataset = load_by_counter(1, 1)
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
-    assert dataset.name == "test-dataset"
     assert exp.name == "test-experiment"
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
+
+    dataset = load_by_counter(1, 1)
+
+    assert "test-dataset" == dataset.name
+    assert exp.sample_name == dataset.sample_name
+    assert exp.name == dataset.exp_name
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize('nonexisting_counter', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_counter(nonexisting_counter):
+    exp_id = 1
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(exp_id, nonexisting_counter)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.parametrize('nonexisting_exp_id', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_experiment(nonexisting_exp_id):
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(nonexisting_exp_id, 1)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
