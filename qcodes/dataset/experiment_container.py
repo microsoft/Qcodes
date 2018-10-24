@@ -40,8 +40,7 @@ class Experiment(Sized):
             format_string: The format string used to name result-tables.
               Ignored if exp_id is not None.
         """
-
-        self.path_to_db = path_to_db or get_DB_location()
+        self._path_to_db = path_to_db or get_DB_location()
         self.conn = connect(self.path_to_db, get_DB_debug())
 
         max_id = len(get_experiments(self.conn))
@@ -71,6 +70,10 @@ class Experiment(Sized):
     @property
     def exp_id(self) -> int:
         return self._exp_id
+
+    @property
+    def path_to_db(self) -> str:
+        return self._path_to_db
 
     @property
     def name(self) -> str:
