@@ -126,6 +126,18 @@ def test_has_attributes_after_init():
             getattr(exp, attr)
 
 
+def test_experiment_read_only_properties(experiment):
+    read_only_props = ['name', 'exp_id', 'sample_name', 'last_counter',
+                       'path_to_db', 'started_at', 'finished_at',
+                       'format_string']
+
+    for prop in read_only_props:
+        with pytest.raises(AttributeError, match="can't set attribute",
+                           message=f"It is not expected to be possible to set "
+                                   f"property {prop!r}"):
+            setattr(experiment, prop, True)
+
+
 def test_format_string(empty_temp_db):
     # default format string
     exp1 = Experiment(exp_id=None)
