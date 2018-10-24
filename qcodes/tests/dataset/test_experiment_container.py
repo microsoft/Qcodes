@@ -106,8 +106,9 @@ def test_has_attributes_after_init():
     (exp_id is None / exp_id is not None)
     """
 
-    attrs = ['name', 'sample_name', 'last_counter', 'path_to_db',
-             'conn', 'started_at', 'finished_at']
+    attrs = ['name', 'exp_id', '_exp_id', 'sample_name', 'last_counter',
+             'path_to_db', '_path_to_db', 'conn', 'started_at',
+             'finished_at', 'format_string']
 
     # This creates an experiment in the db
     exp1 = Experiment(exp_id=None)
