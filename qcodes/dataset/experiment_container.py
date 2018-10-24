@@ -45,7 +45,7 @@ class Experiment(Sized):
 
         max_id = len(get_experiments(self.conn))
 
-        if exp_id:
+        if exp_id is not None:
             if exp_id not in range(1, max_id+1):
                 raise ValueError('No such experiment in the database')
             self._exp_id = exp_id

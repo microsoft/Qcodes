@@ -116,10 +116,6 @@ def test_has_attributes_after_init():
     # This loads the experiment that we just created
     exp2 = Experiment(exp_id=1)
 
-    # This tries to load an experiment that we don't have
-    with pytest.raises(ValueError, match='No such experiment in the database'):
-        Experiment(exp_id=2)
-
     for exp in (exp1, exp2):
         for attr in attrs:
             assert hasattr(exp, attr)
@@ -136,6 +132,13 @@ def test_experiment_read_only_properties(experiment):
                            message=f"It is not expected to be possible to set "
                                    f"property {prop!r}"):
             setattr(experiment, prop, True)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.parametrize("non_existing_id", (1, 0, -1, 'number#42'))
+def test_create_experiment_from_non_existing_id(non_existing_id):
+    with pytest.raises(ValueError, match="No such experiment in the database"):
+        _ = Experiment(exp_id=non_existing_id)
 
 
 def test_format_string(empty_temp_db):
