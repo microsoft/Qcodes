@@ -218,7 +218,7 @@ class DataSet(Sized):
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
 
-        if run_id:
+        if run_id is not None:
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
