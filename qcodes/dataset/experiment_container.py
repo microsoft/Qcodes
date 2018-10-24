@@ -26,6 +26,21 @@ class Experiment(Sized):
                  name: Optional[str]=None,
                  sample_name: Optional[str]=None,
                  format_string: Optional[str]="{}-{}-{}") -> None:
+        """
+        Create or load an experiment. If exp_id is None, a new experiment is
+        created. If exp_id is not None, an experiment is loaded.
+
+        Args:
+            path_to_db: The path of the database file to create in/load from
+            exp_id: The id of the experiment to load
+            name: The name of the experiment to create. Ignored if exp_id is
+              not None
+            sample_name: The sample name for this experiment. Ignored if exp_id
+              is not None
+            format_string: The format string used to name result-tables.
+              Ignored if exp_id is not None.
+        """
+
 
         self.path_to_db = path_to_db or get_DB_location()
         self.conn = connect(self.path_to_db, get_DB_debug())
