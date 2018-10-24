@@ -25,7 +25,7 @@ class Experiment(Sized):
                  exp_id: Optional[int]=None,
                  name: Optional[str]=None,
                  sample_name: Optional[str]=None,
-                 format_string: Optional[str]="{}-{}-{}") -> None:
+                 format_string: str="{}-{}-{}") -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -58,14 +58,13 @@ class Experiment(Sized):
                 format_string.format("name", 1, 1)
             except Exception as e:
                 raise ValueError("Invalid format string. Can not format "
-                                "(name, exp_id, run_counter)") from e
+                                 "(name, exp_id, run_counter)") from e
 
             log.info("creating new experiment in {}".format(self.path_to_db))
 
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
             self._exp_id = ne(self.conn, name, sample_name, format_string)
-            self.format_string = format_string
 
     @property
     def exp_id(self) -> int:
@@ -95,6 +94,11 @@ class Experiment(Sized):
     @property
     def finished_at(self) -> int:
         return select_one_where(self.conn, "experiments", "end_time",
+                                "exp_id", self.exp_id)
+
+    @property
+    def format_string(self) -> str:
+        return select_one_where(self.conn, "experiments", "format_string",
                                 "exp_id", self.exp_id)
 
     def new_data_set(self, name, specs: SPECS = None, values=None,

@@ -124,3 +124,21 @@ def test_has_attributes_after_init():
         for attr in attrs:
             assert hasattr(exp, attr)
             getattr(exp, attr)
+
+
+def test_format_string(empty_temp_db):
+    # default format string
+    exp1 = Experiment(exp_id=None)
+    assert "{}-{}-{}" == exp1.format_string
+
+    # custom format string
+    fmt_str = "name_{}__id_{}__run_cnt_{}"
+    exp2 = Experiment(exp_id=None, format_string=fmt_str)
+    assert fmt_str == exp2.format_string
+
+    # invalid format string
+    fmt_str = "name_{}__id_{}__{}__{}"
+    with pytest.raises(ValueError, match=r"Invalid format string. Can not "
+                                         r"format \(name, exp_id, "
+                                         r"run_counter\)"):
+        _ = Experiment(exp_id=None, format_string=fmt_str)
