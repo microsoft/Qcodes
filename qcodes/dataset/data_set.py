@@ -817,9 +817,9 @@ def new_data_set(name, exp_id: Optional[int] = None,
         name: the name of the new dataset
         exp_id: the id of the experiments this dataset belongs to, defaults
             to the last experiment
-        specs: list of parameters to create this data_set with
+        specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
-        metadata: the values to associate with the dataset
+        metadata: the metadata to associate with the dataset
 
     Return:
         the newly created dataset
