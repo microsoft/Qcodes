@@ -40,11 +40,11 @@ class KeysightB220X(VisaInstrument):
                           call_cmd=':BIAS:CHAN:ENAB:CARD 0')
 
         self.add_function(name='bias_enable_channel',
-                          call_cmd=':BIAS:CHAN:ENAB (@101{:02d})',
+                          call_cmd=':BIAS:CHAN:ENAB (@001{:02d})',
                           args=[validators.Ints(1, 48), ])
 
         self.add_function(name='bias_disable_channel',
-                          call_cmd=':BIAS:CHAN:DIS (@101{:02d})',
+                          call_cmd=':BIAS:CHAN:DIS (@001{:02d})',
                           args=[validators.Ints(1, 48), ])
 
         self.add_parameter(name='bias_input_port',

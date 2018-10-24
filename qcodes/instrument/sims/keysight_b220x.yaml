@@ -19,8 +19,8 @@ devices:
         r: "SROU"
       - q: ":BIAS:CHAN:DIS:CARD 0"
       - q: ":BIAS:CHAN:ENAB:CARD 0"
-      - q: ":BIAS:CHAN:DIS (@10101)"
-      - q: ":BIAS:CHAN:ENAB (@10101)"
+      - q: ":BIAS:CHAN:DIS (@00101)"
+      - q: ":BIAS:CHAN:ENAB (@00101)"
 
 resources:
   GPIB::1::INSTR:
