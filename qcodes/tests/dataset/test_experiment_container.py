@@ -1,10 +1,11 @@
 import pytest
 
 from qcodes.dataset.experiment_container import load_experiment_by_name, \
-    new_experiment, load_or_create_experiment, experiments
+    new_experiment, load_or_create_experiment, experiments, load_experiment
 from qcodes.dataset.measurements import Measurement
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db
+from qcodes.tests.dataset.temporary_databases import empty_temp_db, dataset, \
+    experiment
 
 
 def assert_experiments_equal(exp, exp_2):
@@ -28,6 +29,25 @@ def test_run_loaded_experiment():
 
     with meas.run():
         pass
+
+def test_last_data_set_from_experiment(dataset):
+    experiment = load_experiment(dataset.exp_id)
+    ds = experiment.last_data_set()
+
+    assert dataset.run_id == ds.run_id
+    assert dataset.name == ds.name
+    assert dataset.exp_id == ds.exp_id
+    assert dataset.exp_name == ds.exp_name
+    assert dataset.sample_name == ds.sample_name
+    assert dataset.path_to_db == ds.path_to_db
+
+    assert experiment.path_to_db == ds.path_to_db
+
+
+def test_last_data_set_from_experiment_with_no_datasets(experiment):
+    with pytest.raises(ValueError, match='There are no runs in this '
+                                         'experiment'):
+        _ = experiment.last_data_set()
 
 
 @pytest.mark.usefixtures("empty_temp_db")

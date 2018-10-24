@@ -99,7 +99,10 @@ class Experiment(Sized):
         return data_sets
 
     def last_data_set(self) -> DataSet:
-        return load_by_id(get_last_run(self.conn, self.exp_id))
+        run_id = get_last_run(self.conn, self.exp_id)
+        if run_id is None:
+            raise ValueError('There are no runs in this experiment')
+        return load_by_id(run_id)
 
     def finish(self) -> None:
         """
