@@ -1,11 +1,13 @@
 import pytest
 
+from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.experiment_container import (load_experiment_by_name,
                                                  new_experiment,
                                                  load_or_create_experiment,
                                                  experiments,
                                                  load_experiment,
-                                                 Experiment)
+                                                 Experiment,
+                                                 load_last_experiment)
 from qcodes.dataset.measurements import Measurement
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, dataset, \
@@ -157,3 +159,22 @@ def test_format_string(empty_temp_db):
                                          r"format \(name, exp_id, "
                                          r"run_counter\)"):
         _ = Experiment(exp_id=None, format_string=fmt_str)
+
+
+def test_load_last_experiment(empty_temp_db):
+    # test in case of no experiments
+    with pytest.raises(ValueError, match='There are no experiments in the '
+                                         'database file'):
+        _ = load_last_experiment()
+
+    # create 2 experiments
+    exp1 = Experiment(exp_id=None)
+    exp2 = Experiment(exp_id=None)
+    assert get_DB_location() == exp1.path_to_db
+    assert get_DB_location() == exp2.path_to_db
+
+    # load last and assert that its the 2nd one that was created
+    last_exp = load_last_experiment()
+    assert last_exp.exp_id == exp2.exp_id
+    assert last_exp.exp_id != exp1.exp_id
+    assert last_exp.path_to_db == exp2.path_to_db

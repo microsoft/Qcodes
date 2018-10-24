@@ -1129,9 +1129,11 @@ def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def get_last_experiment(conn: SomeConnection) -> int:
+def get_last_experiment(conn: SomeConnection) -> Optional[int]:
     """
     Return last started experiment id
+
+    Returns None if there are no experiments in the database
     """
     query = "SELECT MAX(exp_id) FROM experiments"
     c = atomic_transaction(conn, query)

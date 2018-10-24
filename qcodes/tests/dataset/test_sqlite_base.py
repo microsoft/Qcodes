@@ -8,6 +8,7 @@ from hypothesis import given
 import unicodedata
 
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
+from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
@@ -134,3 +135,12 @@ def test_get_last_run(dataset):
 
 def test_get_last_run_no_runs(experiment):
     assert None is mut.get_last_run(experiment.conn, experiment.exp_id)
+
+
+def test_get_last_experiment(experiment):
+    assert experiment.exp_id == mut.get_last_experiment(experiment.conn)
+
+
+def test_get_last_experiment_no_experiments(empty_temp_db):
+    conn = mut.connect(get_DB_location())
+    assert None is mut.get_last_experiment(conn)

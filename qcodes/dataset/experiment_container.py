@@ -224,8 +224,10 @@ def load_last_experiment() -> Experiment:
     Returns:
         last experiment
     """
-    conn = connect(get_DB_location())
-    return Experiment(exp_id=get_last_experiment(conn))
+    last_exp_id = get_last_experiment(connect(get_DB_location()))
+    if last_exp_id is None:
+        raise ValueError('There are no experiments in the database file')
+    return Experiment(exp_id=last_exp_id)
 
 
 def load_experiment_by_name(name: str,
