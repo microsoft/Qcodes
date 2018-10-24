@@ -184,7 +184,7 @@ class IVVI(VisaInstrument):
             ver = mes[2]
             return ver
     
-        def linsweep(self,start,end,points):
+    def linsweep(self,start,end,points):
         """ A replacement of numpy.linspace for use with the ivvi rack dacs.
         
         The voltage output is not the same as the set voltage using
