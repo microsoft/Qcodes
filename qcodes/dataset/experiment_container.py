@@ -41,17 +41,8 @@ class Experiment(Sized):
               Ignored if exp_id is not None.
         """
 
-
         self.path_to_db = path_to_db or get_DB_location()
         self.conn = connect(self.path_to_db, get_DB_debug())
-
-        # it is better to catch an invalid format string earlier than later
-        try:
-            # the sqlite_base will try to format (name, exp_id, run_counter)
-            format_string.format("name", 1, 1)
-        except Exception as e:
-            raise ValueError("Invalid format string. Can not format "
-                             "(name, exp_id, run_counter)") from e
 
         max_id = len(get_experiments(self.conn))
 
@@ -60,6 +51,16 @@ class Experiment(Sized):
                 raise ValueError('No such experiment in the database')
             self._exp_id = exp_id
         else:
+
+            # it is better to catch an invalid format string earlier than later
+            try:
+                # the sqlite_base will try to format
+                # (name, exp_id, run_counter)
+                format_string.format("name", 1, 1)
+            except Exception as e:
+                raise ValueError("Invalid format string. Can not format "
+                                "(name, exp_id, run_counter)") from e
+
             log.info("creating new experiment in {}".format(self.path_to_db))
 
             name = name or f"experiment_{max_id+1}"
