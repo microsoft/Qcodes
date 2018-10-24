@@ -1,6 +1,11 @@
 spec: 1.1
 devices:
   KeysightB2200:
+    error:
+      status_register:
+        - q: "*ESR?"
+          command_error: 32
+          query_error: 4
     eom:
       GPIB INSTR:
         q: "\r"
@@ -9,6 +14,13 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "AGILENT TECHNOLOGIES,B2200A,0,A.01.00"
+      - q: ":CONN:RULE 0,SROU"
+      - q: ":CONN:RULE? 0"
+        r: "SROU"
+      - q: ":BIAS:CHAN:DIS:CARD 0"
+      - q: ":BIAS:CHAN:ENAB:CARD 0"
+      - q: ":BIAS:CHAN:DIS (@10101)"
+      - q: ":BIAS:CHAN:ENAB (@10101)"
 
 resources:
   GPIB::1::INSTR:
