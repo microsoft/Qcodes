@@ -387,16 +387,6 @@ class SR830(VisaInstrument):
                            get_parser=float,
                            unit='deg')
         
-        self.add_function('snap_xy',
-                           label='Coherent snapshot of X and Y',
-                           docstring=("The snap command records the values of X and Y at a single instant."
-                                     " This is a way to query values at the same time."
-                                     " This is important when the time constant is very short, < 100 ms. "
-                                     " -> tuple (x,y) " ),
-                           call_cmd='SNAP? 1,2',
-                           return_parser=lambda s: tuple((float(el) for el in s.split(','))),
-                           unit=('V','V'))
-        
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -482,6 +472,60 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
+    
+    
+    SNAP_PARAMETERS = {
+            'x': '1',   
+            'y': '2',  
+            'r': '3', 
+            'p': '4',   
+        'phase': '4',  
+           'θ' : '4',
+        'aux 1': '5',  
+        'aux 2': '6',   
+        'aux 3': '7',  
+        'aux 4': '8',  
+         'freq': '9',   
+         'ch 1': '10',
+         'ch 2': '11'  
+    }
+    
+    def snap(self, *parameter_names: str) -> Tuple[float, ...]:
+            """
+            Gets the values of either 2, 3, 4, 5 or 6 parameters at a single instant.
+            For example, SNAP? is a way to query values of
+            X and Y (or R and θ) which are taken at the same time. This is important
+            when the time constant is very short. Using the OUTP? or OUTR? com-
+            mands will result in time delays, which may be greater than the time con-
+            stant, between reading X and Y (or R and θ)
+            Thus reading  X,Y  OR  R,θ yields  a  coherent  snapshot  of  the  output  signal.
+            
+            Args:
+                *parameter_names
+                    2 or 3 names of parameters for which the values are
+                    requested; valid names can be found in `PARAMETER_NAMES`
+                    attribute of the driver class
+            Returns:
+                a tuple of floating point values
+                
+            Examples:
+                lockin.snap('x','y') -> tuple(x,y)
+                lockin.snap('aux 1','aux 2','freq','phase') -> tuple(aux1,aux2,freq,phase)
+            """
+            if not 2 <= len(parameter_names) <= 6:
+                raise KeyError(
+                    'It is only possible to request values of 2 to 6 parameters '
+                    'at a time.')
+
+            for name in parameter_names:
+                if name.lower() not in self.SNAP_PARAMETERS:
+                    raise KeyError(f'{name} is not a valid parameter name. Refer '
+                                   f'to `SNAP_PARAMETERS` for a list of valid '
+                                   f'parameter names')
+
+            p_ids = [self.PARAMETER_NAMES[name.lower()] for name in parameter_names]
+            output = self.ask(f'SNAP? {",".join(p_ids)}')
+            return tuple(float(val) for val in output.split(','))
 
     def _set_buffer_SR(self, SR):
         self.write('SRAT {}'.format(SR))
