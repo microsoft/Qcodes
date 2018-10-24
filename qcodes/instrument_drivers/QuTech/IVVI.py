@@ -183,27 +183,28 @@ class IVVI(VisaInstrument):
             mes = self.ask(bytes([3, 4]))
             ver = mes[2]
             return ver
-    def linsweep(self,start,end,points):
-        """
-        A replacement of numpy.linspace for use with the ivvi rack dacs.
+    
+        def linsweep(self,start,end,points):
+        """ A replacement of numpy.linspace for use with the ivvi rack dacs.
         
         The voltage output is not the same as the set voltage using
-        ivvi.set_dac1(v) due to 16 bit quantisation of the DAC.
+        ivvi.set_dac1(v) due to 16 bit quantitation of the DAC.
         If you only record the requested value, and not the value
-        from ivvi.get_dac1() the values will be slightlly wrong.
+        from ivvi.get_dac1() the values will be slightly wrong.
 
         This can lead to:
          - accidental oversampling (having the same voltage twice,
          thinking you have different voltages)
-         - uneven spacing (chainging by 2 bits, then 3, then 2 etc...)
+         - uneven spacing (changing by 2 bits, then 3, then 2 etc...)
          
-        This is solved by correctlly rounding and picking the correct
+        This is solved by correctly rounding and picking the correct
         start and end values with a fixed spacing with knowledge of
-        the quantisation.
+        the quantitation.
 
-        lindacsweep gives:
+        ivvi.linsweep gives:
          - even spacing in voltages
-         - recorded voltages match the set voltages
+         - voltages match the set voltages
+         - protection from oversampling
          
         Args:
             start : starting voltage
@@ -231,6 +232,7 @@ class IVVI(VisaInstrument):
         byte_end = round(byte_end/spacing)*spacing
         return  [ el*dac_quata*1000 for el in range(byte_start,byte_end+spacing,spacing)]
         
+    
     def get_all(self):
         return self.snapshot(update=True)
 
