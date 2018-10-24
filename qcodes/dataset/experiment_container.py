@@ -99,35 +99,32 @@ class Experiment(Sized):
 
     def new_data_set(self, name, specs: SPECS = None, values=None,
                      metadata=None) -> DataSet:
-        """ Create a new dataset in this experimetn
+        """
+        Create a new dataset in this experiment
 
         Args:
             name: the name of the new dataset
-            specs: list of parameters to create this data_set with
+            specs: list of parameters (as ParamSpecs) to create this data_set
+                with
             values: the values to associate with the parameters
-            metadata:  the values to associate with the dataset
+            metadata: the metadata to associate with the dataset
         """
         return new_data_set(name, self.exp_id, specs, values, metadata)
 
     def data_set(self, counter: int) -> DataSet:
-        """ Get dataset with the secified counter from this experiment
+        """
+        Get dataset with the specified counter from this experiment
 
         Args:
-            counter: the counter we want to load
+            counter: the counter of the run we want to load
 
         Returns:
             the dataset
-
         """
         return load_by_counter(counter, self.exp_id)
 
     def data_sets(self) -> List[DataSet]:
-        """ Get all the datasets
-
-        Returns:
-            All the datasets of this experiment
-
-        """
+        """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
         data_sets = []
         for run in runs:
@@ -135,6 +132,7 @@ class Experiment(Sized):
         return data_sets
 
     def last_data_set(self) -> DataSet:
+        """Get the last dataset of this experiment"""
         run_id = get_last_run(self.conn, self.exp_id)
         if run_id is None:
             raise ValueError('There are no runs in this experiment')
@@ -142,7 +140,8 @@ class Experiment(Sized):
 
     def finish(self) -> None:
         """
-        Marks this experiment as finished
+        Marks this experiment as finished by saving the moment in time
+        when this method is called
         """
         finish_experiment(self.conn, self.exp_id)
 
@@ -168,11 +167,10 @@ class Experiment(Sized):
 
 def experiments()->List[Experiment]:
     """
-    List all the experiments in the container
+    List all the experiments in the container (database file from config)
 
     Returns:
         All the experiments in the container
-
     """
     log.info("loading experiments from {}".format(get_DB_location()))
     rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
@@ -185,7 +183,8 @@ def experiments()->List[Experiment]:
 def new_experiment(name: str,
                    sample_name: str,
                    format_string: Optional[str] = "{}-{}-{}") -> Experiment:
-    """ Create a new experiment
+    """
+    Create a new experiment (in the database file from config)
 
     Args:
         name: the name of the experiment
@@ -195,14 +194,14 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
-
     return Experiment(name=name, sample_name=sample_name,
                       format_string=format_string)
 
 
 def load_experiment(exp_id: int) -> Experiment:
     """
-    Load experiment with the specified id
+    Load experiment with the specified id (from database file from config)
+
     Args:
         exp_id: experiment id
 
@@ -216,7 +215,7 @@ def load_experiment(exp_id: int) -> Experiment:
 
 def load_last_experiment() -> Experiment:
     """
-    Load last experiment
+    Load last experiment (from database file from config)
 
     Returns:
         last experiment
@@ -229,9 +228,10 @@ def load_experiment_by_name(name: str,
                             sample: Optional[str] = None) -> Experiment:
     """
     Try to load experiment with the specified name.
-    Nothing stops you from having many experiments with
-    the same name and sample_name.
-    In that case this won't work. And warn you.
+
+    Nothing stops you from having many experiments with the same name and
+    sample_name. In that case this won't work. And warn you.
+
     Args:
         name: the name of the experiment
         sample: the name of the sample
