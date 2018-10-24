@@ -397,4 +397,7 @@ suppress_warnings = ['image.nonlocal_uri']
 
 numfig=True
 
+# Use this kernel instead of the one stored in the notebook metadata:
+nbsphinx_kernel_name = 'python3'
+# always execute notebooks.
 nbsphinx_execute = 'always'
