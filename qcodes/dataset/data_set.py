@@ -416,8 +416,8 @@ class DataSet(Sized):
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
-    @deprecate(reason=None, alternative="DataSet.add_parameter")
-    def add_parameters(self, specs: SPECS):
+    @deprecate(reason=None, alternative="DataSet.add_parameter")  # type: ignore
+    def add_parameters(self, specs: SPECS) -> None:
         add_parameter(self.conn, self.table_name, *specs)
 
     def add_metadata(self, tag: str, metadata: Any):
