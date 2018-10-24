@@ -1,7 +1,11 @@
 import pytest
 
-from qcodes.dataset.experiment_container import load_experiment_by_name, \
-    new_experiment, load_or_create_experiment, experiments, load_experiment
+from qcodes.dataset.experiment_container import (load_experiment_by_name,
+                                                 new_experiment,
+                                                 load_or_create_experiment,
+                                                 experiments,
+                                                 load_experiment,
+                                                 Experiment)
 from qcodes.dataset.measurements import Measurement
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, dataset, \
@@ -93,3 +97,29 @@ def test_load_or_create_experiment_creating_not_empty():
 
     assert_experiments_equal(actual_experiments[0], exp)
     assert_experiments_equal(actual_experiments[1], exp_2)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_has_attributes_after_init():
+    """
+    Ensure that all attributes are populated after __init__ in BOTH cases
+    (exp_id is None / exp_id is not None)
+    """
+
+    attrs = ['name', 'sample_name', 'last_counter', 'path_to_db',
+             'conn', 'started_at', 'finished_at']
+
+    # This creates an experiment in the db
+    exp1 = Experiment(exp_id=None)
+
+    # This loads the experiment that we just created
+    exp2 = Experiment(exp_id=1)
+
+    # This tries to load an experiment that we don't have
+    with pytest.raises(ValueError, match='No such experiment in the database'):
+        Experiment(exp_id=2)
+
+    for exp in (exp1, exp2):
+        for attr in attrs:
+            assert hasattr(exp, attr)
+            getattr(exp, attr)

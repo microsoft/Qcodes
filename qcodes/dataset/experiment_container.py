@@ -21,23 +21,56 @@ log = logging.getLogger(__name__)
 
 
 class Experiment(Sized):
-    def __init__(self, path_to_db: str) -> None:
-        self.path_to_db = path_to_db
-        self.conn = connect(self.path_to_db, get_DB_debug())
-        self._debug = False
+    def __init__(self, path_to_db: Optional[str]=None,
+                 exp_id: Optional[int]=None,
+                 name: Optional[str]=None,
+                 sample_name: Optional[str]=None,
+                 format_string: Optional[str]="{}-{}-{}") -> None:
+        """
+        Create or load an experiment. If exp_id is None, a new experiment is
+        created. If exp_id is not None, an experiment is loaded.
 
-    def _new(self,
-             name: str,
-             sample_name: str,
-             format_string: Optional[str] = "{}-{}-{}"
-             ) -> None:
+        Args:
+            path_to_db: The path of the database file to create in/load from
+            exp_id: The id of the experiment to load
+            name: The name of the experiment to create. Ignored if exp_id is
+              not None
+            sample_name: The sample name for this experiment. Ignored if exp_id
+              is not None
+            format_string: The format string used to name result-tables.
+              Ignored if exp_id is not None.
         """
-        Actually perform all the side effects needed for
-        the creation of a new dataset.
-        """
-        exp_id = ne(self.conn, name, sample_name, format_string)
-        self.exp_id = exp_id
-        self.format_string = format_string
+
+        self.path_to_db = path_to_db or get_DB_location()
+        self.conn = connect(self.path_to_db, get_DB_debug())
+
+        max_id = len(get_experiments(self.conn))
+
+        if exp_id:
+            if exp_id not in range(1, max_id+1):
+                raise ValueError('No such experiment in the database')
+            self._exp_id = exp_id
+        else:
+
+            # it is better to catch an invalid format string earlier than later
+            try:
+                # the sqlite_base will try to format
+                # (name, exp_id, run_counter)
+                format_string.format("name", 1, 1)
+            except Exception as e:
+                raise ValueError("Invalid format string. Can not format "
+                                "(name, exp_id, run_counter)") from e
+
+            log.info("creating new experiment in {}".format(self.path_to_db))
+
+            name = name or f"experiment_{max_id+1}"
+            sample_name = sample_name or "some_sample"
+            self._exp_id = ne(self.conn, name, sample_name, format_string)
+            self.format_string = format_string
+
+    @property
+    def exp_id(self) -> int:
+        return self._exp_id
 
     @property
     def name(self) -> str:
@@ -53,13 +86,13 @@ class Experiment(Sized):
 
     @property
     def started_at(self) -> int:
-        return select_one_where(self.conn, "experiments",
-                                "exp_id", "start_time", self.exp_id)
+        return select_one_where(self.conn, "experiments", "start_time",
+                                "exp_id", self.exp_id)
 
     @property
     def finished_at(self) -> int:
-        return select_one_where(self.conn, "experiments",
-                                "exp_id", "end_time", self.exp_id)
+        return select_one_where(self.conn, "experiments", "end_time",
+                                "exp_id", self.exp_id)
 
     def new_data_set(self, name, specs: SPECS = None, values=None,
                      metadata=None) -> DataSet:
@@ -159,10 +192,9 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
-    log.info("creating new experiment in {}".format(get_DB_location()))
-    e = Experiment(get_DB_location())
-    e._new(name, sample_name, format_string)
-    return e
+
+    return Experiment(name=name, sample_name=sample_name,
+                      format_string=format_string)
 
 
 def load_experiment(exp_id: int) -> Experiment:
@@ -174,9 +206,9 @@ def load_experiment(exp_id: int) -> Experiment:
     Returns:
         experiment with the specified id
     """
-    e = Experiment(get_DB_location())
-    e.exp_id = exp_id
-    return e
+    if not isinstance(exp_id, int):
+        raise ValueError('Experiment ID must be an integer')
+    return Experiment(exp_id=exp_id)
 
 
 def load_last_experiment() -> Experiment:
@@ -186,9 +218,8 @@ def load_last_experiment() -> Experiment:
     Returns:
         last experiment
     """
-    e = Experiment(get_DB_location())
-    e.exp_id = get_last_experiment(e.conn)
-    return e
+    conn = connect(get_DB_location())
+    return Experiment(exp_id=get_last_experiment(conn))
 
 
 def load_experiment_by_name(name: str,
@@ -208,7 +239,7 @@ def load_experiment_by_name(name: str,
     Raises:
         ValueError if the name is not unique and sample name is None.
     """
-    e = Experiment(get_DB_location())
+    conn = connect(get_DB_location())
     if sample:
         sql = """
         SELECT
@@ -219,7 +250,7 @@ def load_experiment_by_name(name: str,
             sample_name = ? AND
             name = ?
         """
-        c = transaction(e.conn, sql, sample, name)
+        c = transaction(conn, sql, sample, name)
     else:
         sql = """
         SELECT
@@ -229,19 +260,21 @@ def load_experiment_by_name(name: str,
         WHERE
             name = ?
         """
-        c = transaction(e.conn, sql, name)
+        c = transaction(conn, sql, name)
     rows = c.fetchall()
     if len(rows) == 0:
         raise ValueError("Experiment not found \n")
     elif len(rows) > 1:
         _repr = []
         for row in rows:
-            s = f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']}) started at({row['start_time']})"
+            s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
+                 f" started at({row['start_time']})")
             _repr.append(s)
         _repr_str = "\n".join(_repr)
-        raise ValueError(f"Many experiments matching your request found {_repr_str}")
+        raise ValueError(f"Many experiments matching your request"
+                         f" found {_repr_str}")
     else:
-        e.exp_id = rows[0]['exp_id']
+        e = Experiment(exp_id=rows[0]['exp_id'])
     return e
 
 
