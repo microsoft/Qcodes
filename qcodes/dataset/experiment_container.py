@@ -203,6 +203,8 @@ def load_experiment(exp_id: int) -> Experiment:
     Returns:
         experiment with the specified id
     """
+    if not isinstance(exp_id, int):
+        raise ValueError('Experiment ID must be an integer')
     return Experiment(exp_id=exp_id)
 
 
