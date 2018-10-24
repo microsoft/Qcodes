@@ -80,6 +80,28 @@ def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
         _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
 
 
+def test_load_by_id(dataset):
+    ds = load_by_id(dataset.run_id)
+    assert dataset.run_id == ds.run_id
+    assert dataset.path_to_db == ds.path_to_db
+
+
+@pytest.mark.usefixtures('experiment')
+@pytest.mark.parametrize('non_existing_run_id', (1, 0, -1))
+def test_load_by_id_for_nonexisting_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f'Run with run_id '
+                                         f'{non_existing_run_id} does not '
+                                         f'exist in the database'):
+        _ = load_by_id(non_existing_run_id)
+
+
+@pytest.mark.usefixtures('experiment')
+def test_load_by_id_for_none():
+    with pytest.raises(ValueError, match='run_id has to be a positive integer, '
+                                         'not None.'):
+        _ = load_by_id(None)
+
+
 @settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),

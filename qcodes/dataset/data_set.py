@@ -756,7 +756,7 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id) -> DataSet:
+def load_by_id(run_id: int) -> DataSet:
     """
     Load dataset by run id
 
@@ -768,7 +768,10 @@ def load_by_id(run_id) -> DataSet:
     Returns:
         dataset with the given run id
     """
-    d = DataSet(get_DB_location(), run_id=run_id)
+    if run_id is None:
+        raise ValueError('run_id has to be a positive integer, not None.')
+
+    d = DataSet(path_to_db=get_DB_location(), run_id=run_id)
     return d
 
 
