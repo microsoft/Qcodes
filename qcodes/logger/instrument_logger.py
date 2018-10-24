@@ -47,11 +47,12 @@ class InstrumentFilter(logging.Filter):
         from qcodes.instrument.base import InstrumentBase  # noqa: F811
         if isinstance(instruments, InstrumentBase):
             instruments = (instruments,)
-        self.instruments = instruments
+        self.instrument_set = set(instruments)
 
     def filter(self, record):
         try:
-            return record.instrument in self.instruments
+            inst = record.instrument
+            return not self.instrument_set.isdisjoint(inst.hierarchy)
         except AttributeError:
             return False
 
