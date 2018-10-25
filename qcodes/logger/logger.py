@@ -31,14 +31,22 @@ FORMAT_STRING_DICT = OrderedDict([
     ('funcName', 's'),
     ('lineno', 'd'),
     ('message', 's')])
-FORMAT_STRING_ITEMS = [f'%({name}){fmt}'
-                       for name, fmt in FORMAT_STRING_DICT.items()]
 
 # The handler of the root logger that get set up by `start_logger` are globals
 # for this modules scope, as it is intended to only use a single file and
 # console hander.
 console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
+
+
+def get_formatter() -> logging.Formatter:
+    """
+    Returns logging.formatter according to FORMAT_STRING_DICT
+    """
+    format_string_items = [f'%({name}){fmt}'
+                           for name, fmt in FORMAT_STRING_DICT.items()]
+    format_string = LOGGING_SEPARATOR.join(format_string_items)
+    return logging.Formatter(format_string)
 
 
 def get_console_handler() -> Optional[logging.Handler]:
@@ -138,14 +146,10 @@ def start_logger() -> None:
             root_logger.removeHandler(handler)
 
     # add qcodes handlers
-
-    format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
-    formatter = logging.Formatter(format_string)
-
     # console
     console_handler = logging.StreamHandler()
     console_handler.setLevel(qc.config.logger.console_level)
-    console_handler.setFormatter(formatter)
+    console_handler.setFormatter(get_formatter())
     root_logger.addHandler(console_handler)
 
     # file
@@ -156,7 +160,7 @@ def start_logger() -> None:
                                                              when='midnight')
 
     file_handler.setLevel(qc.config.logger.file_level)
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(get_formatter())
     root_logger.addHandler(file_handler)
 
     # capture any warnings from the warnings module

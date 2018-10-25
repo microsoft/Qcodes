@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from .logger import (LOGGING_SEPARATOR,
                      FORMAT_STRING_DICT,
-                     FORMAT_STRING_ITEMS,
+                     get_formatter,
                      LevelType,
                      get_log_file_name)
 
@@ -143,9 +143,7 @@ def capture_dataframe(level: LevelType=logging.DEBUG,
     with io.StringIO() as log_capture:
         string_handler = logging.StreamHandler(log_capture)
         string_handler.setLevel(level)
-        format_string = LOGGING_SEPARATOR.join(FORMAT_STRING_ITEMS)
-        formatter = logging.Formatter(format_string)
-        string_handler.setFormatter(formatter)
+        string_handler.setFormatter(get_formatter())
 
         logger.addHandler(string_handler)
         try:
