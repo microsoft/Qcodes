@@ -38,12 +38,3 @@ Drivers
     :glob:
 
     driver_examples/*
-
-
-Benchmarking
-------------
-
-.. toctree::
-    :glob:
-
-    benchmarking/*
