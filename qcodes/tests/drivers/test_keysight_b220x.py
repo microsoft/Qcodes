@@ -33,6 +33,23 @@ def test_idn_command(uut):
     assert 0 == uut.get_status()
 
 
+def test_connect(uut):
+    uut.connect(2, 48)
+    assert 0 == uut.get_status()
+
+
+def test_disconnect_all(uut):
+    uut.connect(2, 48)
+    uut.disconnect_all()
+    assert 0 == uut.get_status()
+
+
+def test_disconnect(uut):
+    uut.connect(2, 48)
+    uut.disconnect(2, 48)
+    assert 0 == uut.get_status()
+
+
 def test_connection_rule(uut):
     uut.connection_rule('single')
     assert 0 == uut.get_status()
@@ -149,6 +166,7 @@ def test_couple_ports(uut):
 def test_couple_port_autodetect(uut):
     uut.couple_port_autodetect()
     assert 0 == uut.get_status()
+
 
 def test_get_error(uut):
     uut.get_error()
