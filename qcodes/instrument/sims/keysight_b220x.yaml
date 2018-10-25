@@ -40,6 +40,16 @@ devices:
             specs:
               valid: ['SROU', 'FREE']
               type: str
+          connection_sequence:
+            default: "BBM"
+            setter:
+              q: ":CONN:SEQ {ch_id},{}"
+            getter:
+              q: ":CONN:SEQ? {ch_id}"
+              r: "{}"
+            specs:
+              valid: ['NSEQ', 'BBM', 'MBBR']
+              type: str
           bias_mode:
             default: 0
             setter:

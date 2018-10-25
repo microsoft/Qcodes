@@ -39,6 +39,13 @@ def test_connection_rule(uut):
     assert 'single' == uut.connection_rule()
     assert 0 == uut.get_status()
 
+def test_connection_sequence(uut):
+    assert 'bbm' == uut.connection_sequence()
+    assert 0 == uut.get_status()
+    uut.connection_sequence('mbb')
+    assert 0 == uut.get_status()
+    assert 'mbb' == uut.connection_sequence()
+
 
 def test_bias_disable_all(uut):
     uut.bias_disable_all()
