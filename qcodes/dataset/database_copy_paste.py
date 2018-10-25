@@ -95,6 +95,17 @@ def copy_single_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
     source_conn = dataset.conn
     target_conn = connect(path_to_db)
 
+    already_in_query = """
+                       SELECT run_id
+                       FROM runs
+                       WHERE guid = ?
+                       """
+    cursor = target_conn.cursor()
+    cursor.execute(already_in_query, (dataset.guid,))
+    res = cursor.fetchall()
+    if len(res) > 0:
+        return
+
     exp_id = get_last_experiment(target_conn)
 
     with atomic(target_conn) as target_conn:
