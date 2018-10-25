@@ -29,6 +29,13 @@ def test_load_by_id():
     assert loaded_ds.completed is False
     assert loaded_ds.exp_id == 1
 
+    # let's take a run number that is not in the temporary test database file
+    non_existing_run_id = run_id + 1
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = load_by_id(non_existing_run_id)
+
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_load_by_counter():

@@ -1432,9 +1432,11 @@ def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def get_last_experiment(conn: SomeConnection) -> int:
+def get_last_experiment(conn: SomeConnection) -> Optional[int]:
     """
     Return last started experiment id
+
+    Returns None if there are no experiments in the database
     """
     query = "SELECT MAX(exp_id) FROM experiments"
     c = atomic_transaction(conn, query)
@@ -1467,7 +1469,18 @@ def get_runs(conn: SomeConnection,
     return c.fetchall()
 
 
-def get_last_run(conn: SomeConnection, exp_id: int) -> str:
+def get_last_run(conn: SomeConnection, exp_id: int) -> Optional[int]:
+    """
+    Get run_id of the last run in experiment with exp_id
+
+    Args:
+        conn: connection to use for the query
+        exp_id: id of the experiment to look inside
+
+    Returns:
+        the integer id of the last run or None if there are not runs in the
+        experiment
+    """
     query = """
     SELECT run_id, max(run_timestamp), exp_id
     FROM runs
@@ -1475,6 +1488,21 @@ def get_last_run(conn: SomeConnection, exp_id: int) -> str:
     """
     c = atomic_transaction(conn, query, exp_id)
     return one(c, 'run_id')
+
+
+def run_exists(conn: SomeConnection, run_id: int) -> bool:
+    # the following query always returns a single sqlite3.Row with an integer
+    # value of `1` or `0` for existing and non-existing run_id in the database
+    query = """
+    SELECT EXISTS(
+        SELECT 1
+        FROM runs
+        WHERE run_id = ?
+        LIMIT 1
+    );
+    """
+    res: sqlite3.Row = atomic_transaction(conn, query, run_id).fetchone()
+    return bool(res[0])
 
 
 def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
@@ -1698,15 +1726,17 @@ def update_run_description(conn: SomeConnection, run_id: int,
 def add_parameter(conn: SomeConnection,
                   formatted_name: str,
                   *parameter: ParamSpec):
-    """ Add parameters to the dataset
+    """
+    Add parameters to the dataset
 
     This will update the layouts and dependencies tables
 
     NOTE: two parameters with the same name are not allowed
+
     Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
-        - parameter: the paraemters to add
+        conn: the connection to the sqlite database
+        formatted_name: name of the table
+        parameter: the list of ParamSpecs for parameters to add
     """
     with atomic(conn) as conn:
         p_names = []

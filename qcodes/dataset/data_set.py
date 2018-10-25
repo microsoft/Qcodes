@@ -1,21 +1,11 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
-#
-# Copyright © 2017 unga <giulioungaretti@me.com>
-#
-# Distributed under terms of the MIT license.
-# import json
 import functools
 import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
 import time
 import logging
-import hashlib
 import uuid
 from queue import Queue, Empty
-import warnings
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -39,11 +29,14 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_guid_from_run_id,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
-                                        update_run_description)
-from qcodes.dataset.database import get_DB_location
-from qcodes.dataset.guids import generate_guid
+                                        update_run_description,
+                                        run_exists)
+
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.guids import generate_guid
+from qcodes.utils.deprecate import deprecate
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -56,14 +49,11 @@ from qcodes.dataset.dependencies import InterDependencies
 # how do the user/us know which are metatadata?  I THINK the only sane solution
 # is to store JSON in a column called metadata
 
-# TODO: we cant have parameters with the same name in the same dataset/run
-
 # TODO: fixix  a subset of metadata that we define well known (and create them)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
 
 
-# SPECS is a list of ParamSpec
 SPECS = List[ParamSpec]
 
 
@@ -73,19 +63,19 @@ class CompletedError(RuntimeError):
 
 class _Subscriber(Thread):
     """
-    Class to add a subscriber to a DataSet. The subscriber gets called
-    every time an insert is made to the results_table.
+    Class to add a subscriber to a DataSet. The subscriber gets called every
+    time an insert is made to the results_table.
 
     The _Subscriber is not meant to be instantiated directly, but rather used
     via the 'subscribe' method of the DataSet.
 
     NOTE: A subscriber should be added *after* all parameters have been added.
 
-    NOTE: Special care shall be taken when using the *state* object: it is the user's
-    responsibility to operate with it in a thread-safe way.
+    NOTE: Special care shall be taken when using the *state* object: it is the
+    user's responsibility to operate with it in a thread-safe way.
     """
     def __init__(self,
-                 dataSet,
+                 dataSet: 'DataSet',
                  id_: str,
                  callback: Callable[..., None],
                  state: Optional[Any] = None,
@@ -206,7 +196,10 @@ class DataSet(Sized):
               path will be read from the config.
             run_id: provide this when loading an existing run, leave it
               as None when creating a new run
-            conn: connection to the DB
+            conn: connection to the DB; if provided and `path_to_db` is
+              provided as well, then a ValueError is raised (this is to
+              prevent the possibility of providing a connection to a DB
+              file that is different from `path_to_db`)
             exp_id: the id of the experiment in which to create a new run.
               Ignored if run_id is provided.
             name: the name of the dataset. Ignored if run_id is provided.
@@ -217,24 +210,27 @@ class DataSet(Sized):
             metadata: metadata to insert into the dataset. Ignored if run_id
               is provided.
         """
-        # TODO: handle fail here by defaulting to
-        # a standard db
-        self.path_to_db = path_to_db or get_DB_location()
-        if conn is None:
-            self.conn = connect(self.path_to_db)
-        else:
-            self.conn = conn
+        if path_to_db is not None and conn is not None:
+            raise ValueError("Both `path_to_db` and `conn` arguments have "
+                             "been passed together with non-None values. "
+                             "This is not allowed.")
+        self._path_to_db = path_to_db or get_DB_location()
 
+        self.conn = conn or connect(self.path_to_db)
 
+        self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
-        if run_id:
-            self.run_id = run_id
-            self._completed = completed(self.conn, self.run_id)
-            self._started = self.number_of_results > 0
-            self._description = self._get_run_description_from_db()
-        else:
 
+        if run_id is not None:
+            if not run_exists(self.conn, run_id):
+                raise ValueError(f"Run with run_id {run_id} does not exist in "
+                                 f"the database")
+            self._completed = completed(self.conn, self.run_id)
+
+        else:
+            # Actually perform all the side effects needed for the creation
+            # of a new dataset
             if exp_id is None:
                 if len(get_experiments(self.conn)) > 0:
                     exp_id = get_last_experiment(self.conn)
@@ -242,22 +238,24 @@ class DataSet(Sized):
                     raise ValueError("No experiments found."
                                      "You can start a new one with:"
                                      " new_experiment(name, sample_name)")
-
-            # Actually perform all the side effects needed for
-            # the creation of a new dataset.
-
             name = name or "dataset"
-
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
                                        specs, values, metadata)
-
-            # this is the (Locally) UID (an ever increasing count in the db)
-            self.run_id = run_id
+            # this is really the UUID (an ever increasing count in the db)
+            self._run_id = run_id
             self._completed = False
             self._started = False
             specs = specs or []
             self._description = RunDescriber(InterDependencies(*specs))
+
+    @property
+    def run_id(self):
+        return self._run_id
+
+    @property
+    def path_to_db(self):
+        return self._path_to_db
 
     @property
     def name(self):
@@ -293,9 +291,7 @@ class DataSet(Sized):
 
     @property
     def number_of_results(self):
-        tabnam = self.table_name
-        # TODO: is it better/faster to use the max index?
-        sql = f'SELECT COUNT(*) FROM "{tabnam}"'
+        sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
         cursor = atomic_transaction(self.conn, sql)
         return one(cursor, 'COUNT(*)')
 
@@ -401,8 +397,8 @@ class DataSet(Sized):
 
     def toggle_debug(self):
         """
-        Toggle debug mode, if debug mode is on
-        all the queries made are echoed back.
+        Toggle debug mode, if debug mode is on all the queries made are
+        echoed back.
         """
         self._debug = not self._debug
         self.conn.close()
@@ -421,8 +417,6 @@ class DataSet(Sized):
         else:
             old_params = []
 
-        # better to catch this one early
-        # alternatively make this a warning and a NOOP
         if spec.name in old_params:
             raise ValueError(f'Duplicate parameter name: {spec.name}')
 
@@ -453,8 +447,8 @@ class DataSet(Sized):
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
-    # TODO: deprecate
-    def add_parameters(self, specs: SPECS):
+    @deprecate(reason=None, alternative="DataSet.add_parameter")  # type: ignore
+    def add_parameters(self, specs: SPECS) -> None:
         add_parameter(self.conn, self.table_name, *specs)
 
     def add_metadata(self, tag: str, metadata: Any):
@@ -465,14 +459,9 @@ class DataSet(Sized):
         Args:
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
-
         """
-        # TODO: this follows the spec but another option:
-        # json_meta_data = json.dumps(metadata)
-        # add_meta_data(self.conn, self.run_id, {"metadata": json_meta_data})
-
         add_meta_data(self.conn, self.run_id, {tag: metadata})
-        # adding meta-data does not commit
+        # `add_meta_data` does not commit, hence we commit here:
         self.conn.commit()
 
     @property
@@ -490,8 +479,9 @@ class DataSet(Sized):
             mark_run_complete(self.conn, self.run_id)
 
     def mark_complete(self) -> None:
-        """Mark dataset as complete and thus read only and notify the
-        subscribers"""
+        """
+        Mark dataset as complete and thus read only and notify the subscribers
+        """
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
@@ -501,17 +491,18 @@ class DataSet(Sized):
         Add a logically single result to existing parameters
 
         Args:
-            - results: dictionary with name of a parameter as the key and the
-               value to associate as the value.
+            results: dictionary with name of a parameter as the key and the
+                value to associate as the value.
 
         Returns:
-
-            - index in the DataSet that the result was stored at
+            index in the DataSet that the result was stored at
 
         If a parameter exist in the dataset and it's not in the results
-        dictionary Null values are inserted.
+        dictionary, "Null" values are inserted.
+
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to add results to a completed DataSet.
         """
 
@@ -531,6 +522,7 @@ class DataSet(Sized):
 
         if self.completed:
             raise CompletedError
+
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
                               list(results.values())
@@ -542,16 +534,17 @@ class DataSet(Sized):
         Adds a sequence of results to the DataSet.
 
         Args:
-            - list of name, value dictionaries  where each
-              dictionary provides the values for the parameters in
-              that result. If some parameters are missing the corresponding
-              values are assumed to be None
+            results: list of name-value dictionaries where each dictionary
+                provides the values for the parameters in that result. If some
+                parameters are missing the corresponding values are assumed
+                to be None
 
         Returns:
-            - the index in the DataSet that the **first** result was stored at
+            the index in the DataSet that the **first** result was stored at
 
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to add results to a completed DataSet.
         """
 
@@ -563,30 +556,35 @@ class DataSet(Sized):
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         len_before_add = length(self.conn, self.table_name)
+
         insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         return len_before_add
 
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
-        """ Modify a logically single result of existing parameters
+        """
+        Modify a logically single result of existing parameters
 
         Args:
-            - index: zero-based index of the result to be modified.
-            - results: dictionary of updates with name of a parameter as the
+            index: zero-based index of the result to be modified.
+            results: dictionary of updates with name of a parameter as the
                key and the value to associate as the value.
-
 
         It is an error to modify a result at an index less than zero or
         beyond the end of the DataSet.
+
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to modify a result in a completed DataSet.
         """
         if self.completed:
             raise CompletedError
+
         for param in results.keys():
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
+
         with atomic(self.conn) as self.conn:
             modify_values(self.conn, self.table_name, index,
                           list(results.keys()),
@@ -595,18 +593,21 @@ class DataSet(Sized):
 
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
-        """ Modify a sequence of results in the DataSet.
+        """
+        Modify a sequence of results in the DataSet.
 
         Args:
-            - index: zero-based index of the result to be modified.
-            - results: sequence of dictionares of updates with name of a
+            index: zero-based index of the result to be modified.
+            results: sequence of dictionares of updates with name of a
                 parameter as the key and the value to associate as the value.
 
 
         It is an error to modify a result at an index less than zero or
         beyond the end of the DataSet.
+
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
+
         It is an error to modify a result in a completed DataSet.
         """
         if self.completed:
@@ -637,14 +638,11 @@ class DataSet(Sized):
         Add a parameter to the DataSet and associates result values with the
         new parameter.
 
-        Adds a parameter to the DataSet and associates result values with the
-        new parameter.
-        If the DataSet is not empty, then the count of provided
-        values must equal the current count of results in the DataSet, or an
-        error will result.
+        If the DataSet is not empty, then the count of provided values must
+        equal the current count of results in the DataSet, or an error will
+        be raised.
 
         It is an error to add parameters to a completed DataSet.
-        # TODO: fix type checking
         """
         # first check that the len of values (if dataset is not empty)
         # is the right size i.e. the same as the dataset
@@ -654,6 +652,7 @@ class DataSet(Sized):
                     len(self),
                     len(values)
                 ))
+
         with atomic(self.conn) as self.conn:
             add_parameter(self.conn, self.table_name, spec)
             # now add values!
@@ -664,34 +663,36 @@ class DataSet(Sized):
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
                  end: Optional[int] = None) -> List[List[Any]]:
-        """ Returns the values stored in the DataSet for the specified parameters.
+        """
+        Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a list of lists, SQL rows by SQL columns,
-        e.g. datapoints by parameters. The data type of each element is based on
-        the datatype provided when the DataSet was created. The parameter list may
-        contain a mix of string parameter names, QCoDeS Parameter objects, and
-        ParamSpec objects. As long as they have a `name` field. If provided,
-        the start and end parameters select a range of results by result count
-        (index).
-        If the range is empty -- that is, if the end is less than or
-        equal to the start, or if start is after the current end of the
-        DataSet – then a list of empty arrays is returned.
+        e.g. datapoints by parameters. The data type of each element is based
+        on the datatype provided when the DataSet was created. The parameter
+        list may contain a mix of string parameter names, QCoDeS Parameter
+        objects, and ParamSpec objects (as long as they have a `name` field).
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a list of empty arrays is returned.
 
         For a more type independent and easier to work with view of the data
         you may want to consider using
         :py:meth:`qcodes.dataset.data_export.get_data_by_id`
 
-
         Args:
-            - *params: string parameter names, QCoDeS Parameter objects, and
-               ParamSpec objects
-            - start:
-            - end:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
 
         Returns:
-            - list of lists SQL rows of data by SQL columns. Each SQL row
-              is a datapoint and each SQL column is a parameter.  Each element
-              will be of the datatypes stored in the database
-              (numeric, array or string)
+            list of lists SQL rows of data by SQL columns. Each SQL row is a
+            datapoint and each SQL column is a parameter. Each element will
+            be of the datatypes stored in the database (numeric, array or
+            string)
         """
         valid_param_names = []
         for maybeParam in params:
@@ -739,7 +740,6 @@ class DataSet(Sized):
 
         return setpoints
 
-    # NEED to pass Any for some reason
     def subscribe(self,
                   callback: Callable[[Any, int, Optional[Any]], None],
                   min_wait: int = 0,
@@ -748,8 +748,8 @@ class DataSet(Sized):
                   callback_kwargs: Optional[Dict[str, Any]] = None
                   ) -> str:
         subscriber_id = uuid.uuid4().hex
-        subscriber = _Subscriber(self, subscriber_id, callback, state, min_wait, min_count,
-                                 callback_kwargs)
+        subscriber = _Subscriber(self, subscriber_id, callback, state,
+                                 min_wait, min_count, callback_kwargs)
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
         return subscriber_id
@@ -802,29 +802,37 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id)->DataSet:
-    """ Load dataset by id
+def load_by_id(run_id: int) -> DataSet:
+    """
+    Load dataset by run id
+
+    Lookup is performed in the database file that is specified in the config.
 
     Args:
-        run_id: id of the dataset
+        run_id: run id of the dataset
 
     Returns:
-        the datasets
-
+        dataset with the given run id
     """
-    d = DataSet(get_DB_location(), run_id=run_id)
+    if run_id is None:
+        raise ValueError('run_id has to be a positive integer, not None.')
+
+    d = DataSet(path_to_db=get_DB_location(), run_id=run_id)
     return d
 
 
-def load_by_counter(counter, exp_id):
+def load_by_counter(counter: int, exp_id: int) -> DataSet:
     """
-    Load a dataset given its counter in one experiment
+    Load a dataset given its counter in a given experiment
+
+    Lookup is performed in the database file that is specified in the config.
+
     Args:
-        counter: Counter of the dataset
-        exp_id:  Experiment the dataset belongs to
+        counter: counter of the dataset within the given experiment
+        exp_id: id of the experiment where to look for the dataset
 
     Returns:
-        the dataset
+        dataset of the given counter in the given experiment
     """
     conn = connect(get_DB_location())
     sql = """
@@ -838,8 +846,8 @@ def load_by_counter(counter, exp_id):
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
     conn.close()
-    d = DataSet(get_DB_location(), run_id=run_id)
 
+    d = DataSet(get_DB_location(), run_id=run_id)
     return d
 
 
@@ -849,33 +857,23 @@ def new_data_set(name, exp_id: Optional[int] = None,
     """
     Create a new dataset in the currently active/selected database.
 
-    If exp_id is not specified the last experiment will be loaded by default.
+    If exp_id is not specified, the last experiment will be loaded by default.
 
     Args:
         name: the name of the new dataset
-        exp_id:  the id of the experiments this dataset belongs to
-            defaults to the last experiment
-        specs: list of parameters to create this data_set with
+        exp_id: the id of the experiments this dataset belongs to, defaults
+            to the last experiment
+        specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
-        metadata:  the values to associate with the dataset
+        metadata: the metadata to associate with the dataset
+
+    Return:
+        the newly created dataset
     """
+    # note that passing `conn` is a secret feature that is unfortunately used
+    # in `Runner` to pass a connection from an existing `Experiment`.
     d = DataSet(path_to_db=None, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
                 metadata=metadata, exp_id=exp_id)
 
     return d
-
-
-# helpers
-def hash_from_parts(*parts: str) -> str:
-    """
-    Args:
-        *parts:  parts to use to create hash
-    Returns:
-        hash created with the given parts
-    """
-    warnings.warn("hash_from_parts has been deprecated and will be removed. "
-                  "Use stdlib uuid4 instead",
-                  stacklevel=2)
-    combined = "".join(parts)
-    return hashlib.sha1(combined.encode("utf-8")).hexdigest()
