@@ -5,7 +5,6 @@ import math
 import numbers
 import time
 import os
-
 from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
 from typing import Dict, List, Any
@@ -21,19 +20,41 @@ from qcodes.utils.deprecate import deprecate
 
 _tprint_times= {} # type: Dict[str, float]
 
+
 log = logging.getLogger(__name__)
 
+
 class NumpyJSONEncoder(json.JSONEncoder):
-    """Return numpy types as standard types."""
-    # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
-    # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+    """
+    This JSON encoder adds support for serializing types that the built-in
+    `json` module does not support out-of-the-box. See the docstring of the
+    `default` method for the description of all conversions.
+    """
 
     def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
+        """
+        List of conversions that this encoder performs:
+        * `numpy.generic` (all integer, floating, and other types) gets
+        converted to its python equivalent using its `item` method (see
+        `numpy` docs for more information,
+        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html)
+        * `numpy.ndarray` gets converted to python list using its `tolist`
+        method
+        * complex number (a number that conforms to `numbers.Complex` ABC) gets
+        converted to a dictionary with fields "re" and "im" containing floating
+        numbers for the real and imaginary parts respectively, and a field
+        "__dtype__" containing value "complex"
+        * object with a `_JSONEncoder` method get converted the return value of
+        that method
+        * other objects which cannot be serialized get converted to their
+        string representation (suing the `str` function)
+        """
+        if isinstance(obj, np.generic) \
+                and not isinstance(obj, np.complexfloating):
+            # for numpy scalars
+            return obj.item()
         elif isinstance(obj, np.ndarray):
+            # for numpy arrays
             return obj.tolist()
         elif (isinstance(obj, numbers.Complex) and
               not isinstance(obj, numbers.Real)):

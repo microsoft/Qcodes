@@ -3,7 +3,7 @@ channels:
  - defaults
  - conda-forge
 dependencies:
- - python=3.6
+ - python=3.6.6 # Currently there is a problem with 3.6.7 and matplotlib 3.0.0 on conda
  - numpy=1.15
  - matplotlib=3.0.0
  - pyqtgraph=0.10.0

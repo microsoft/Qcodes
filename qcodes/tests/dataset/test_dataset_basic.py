@@ -27,11 +27,12 @@ def test_has_attributes_after_init():
     (run_id is None / run_id is not None)
     """
 
-    attrs = ['path_to_db', 'conn', 'run_id', '_debug', 'subscribers',
-             '_completed', 'name', 'table_name', 'guid', 'number_of_results',
-             'counter', 'parameters', 'paramspecs', 'exp_id', 'exp_name',
-             'sample_name', 'run_timestamp_raw', 'completed_timestamp_raw',
-             'completed', 'snapshot', 'snapshot_raw']
+    attrs = ['path_to_db', '_path_to_db', 'conn', '_run_id', 'run_id',
+             '_debug', 'subscribers', '_completed', 'name', 'table_name',
+             'guid', 'number_of_results', 'counter', 'parameters',
+             'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+             'run_timestamp_raw', 'completed_timestamp_raw', 'completed',
+             'snapshot', 'snapshot_raw']
 
     path_to_db = get_DB_location()
     ds = DataSet(path_to_db, run_id=None)
@@ -45,6 +46,60 @@ def test_has_attributes_after_init():
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
+
+
+def test_dataset_read_only_properties(dataset):
+    read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
+                       'number_of_results', 'counter', 'parameters',
+                       'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+                       'run_timestamp_raw', 'completed_timestamp_raw',
+                       'snapshot', 'snapshot_raw']
+
+    for prop in read_only_props:
+        with pytest.raises(AttributeError, match="can't set attribute",
+                           message=f"It is not expected to be possible to set "
+                                   f"property {prop!r}"):
+            setattr(dataset, prop, True)
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("non_existing_run_id", (1, 0, -1, 'number#42'))
+def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = DataSet(run_id=non_existing_run_id)
+
+
+def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
+    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
+                                         "arguments have been passed together "
+                                         "with non-None values. This is not "
+                                         "allowed."):
+        some_valid_connection = experiment.conn
+        _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
+
+
+def test_load_by_id(dataset):
+    ds = load_by_id(dataset.run_id)
+    assert dataset.run_id == ds.run_id
+    assert dataset.path_to_db == ds.path_to_db
+
+
+@pytest.mark.usefixtures('experiment')
+@pytest.mark.parametrize('non_existing_run_id', (1, 0, -1))
+def test_load_by_id_for_nonexisting_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f'Run with run_id '
+                                         f'{non_existing_run_id} does not '
+                                         f'exist in the database'):
+        _ = load_by_id(non_existing_run_id)
+
+
+@pytest.mark.usefixtures('experiment')
+def test_load_by_id_for_none():
+    with pytest.raises(ValueError, match='run_id has to be a positive integer, '
+                                         'not None.'):
+        _ = load_by_id(None)
 
 
 @settings(deadline=None)
@@ -134,8 +189,11 @@ def test_add_paramspec_one_by_one(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
-    with pytest.raises(ValueError):
+    # Test that is not possible to add the same parameter again to the dataset
+    with pytest.raises(ValueError, match=f'Duplicate parameter name: '
+                                         f'{parameters[0].name}'):
         dataset.add_parameter(parameters[0])
+
     assert len(dataset.paramspecs.keys()) == 3
 
 
@@ -301,14 +359,33 @@ def test_add_parameter_values(N, M):
 
 @pytest.mark.usefixtures("dataset")
 def test_load_by_counter():
-    dataset = load_by_counter(1, 1)
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
-    assert dataset.name == "test-dataset"
     assert exp.name == "test-experiment"
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
+
+    dataset = load_by_counter(1, 1)
+
+    assert "test-dataset" == dataset.name
+    assert exp.sample_name == dataset.sample_name
+    assert exp.name == dataset.exp_name
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize('nonexisting_counter', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_counter(nonexisting_counter):
+    exp_id = 1
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(exp_id, nonexisting_counter)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.parametrize('nonexisting_exp_id', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_experiment(nonexisting_exp_id):
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(nonexisting_exp_id, 1)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
