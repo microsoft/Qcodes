@@ -46,7 +46,10 @@ def test_disconnect_all(uut):
 
 def test_disconnect(uut):
     uut.connect(2, 48)
+    assert 0 == uut.get_status()
     uut.disconnect(2, 48)
+    assert 0 == uut.get_status()
+    uut.disconnect(3, 22)
     assert 0 == uut.get_status()
 
 

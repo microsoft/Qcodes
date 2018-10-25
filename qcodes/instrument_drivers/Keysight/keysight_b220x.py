@@ -28,7 +28,7 @@ class KeysightB220X(VisaInstrument):
                           args=[Ints(1, 14), Ints(1, 48)])
 
         self.add_function(name='disconnect',
-                          call_cmd=self._connect,
+                          call_cmd=self._disconnect,
                           args=[Ints(1, 14), Ints(1, 48)])
 
         self.add_function(name='disconnect_all',
