@@ -25,7 +25,7 @@ class Experiment(Sized):
                  exp_id: Optional[int]=None,
                  name: Optional[str]=None,
                  sample_name: Optional[str]=None,
-                 format_string: Optional[str]="{}-{}-{}") -> None:
+                 format_string: str="{}-{}-{}") -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -40,13 +40,12 @@ class Experiment(Sized):
             format_string: The format string used to name result-tables.
               Ignored if exp_id is not None.
         """
-
-        self.path_to_db = path_to_db or get_DB_location()
+        self._path_to_db = path_to_db or get_DB_location()
         self.conn = connect(self.path_to_db, get_DB_debug())
 
         max_id = len(get_experiments(self.conn))
 
-        if exp_id:
+        if exp_id is not None:
             if exp_id not in range(1, max_id+1):
                 raise ValueError('No such experiment in the database')
             self._exp_id = exp_id
@@ -59,18 +58,21 @@ class Experiment(Sized):
                 format_string.format("name", 1, 1)
             except Exception as e:
                 raise ValueError("Invalid format string. Can not format "
-                                "(name, exp_id, run_counter)") from e
+                                 "(name, exp_id, run_counter)") from e
 
             log.info("creating new experiment in {}".format(self.path_to_db))
 
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
             self._exp_id = ne(self.conn, name, sample_name, format_string)
-            self.format_string = format_string
 
     @property
     def exp_id(self) -> int:
         return self._exp_id
+
+    @property
+    def path_to_db(self) -> str:
+        return self._path_to_db
 
     @property
     def name(self) -> str:
@@ -94,37 +96,39 @@ class Experiment(Sized):
         return select_one_where(self.conn, "experiments", "end_time",
                                 "exp_id", self.exp_id)
 
+    @property
+    def format_string(self) -> str:
+        return select_one_where(self.conn, "experiments", "format_string",
+                                "exp_id", self.exp_id)
+
     def new_data_set(self, name, specs: SPECS = None, values=None,
                      metadata=None) -> DataSet:
-        """ Create a new dataset in this experimetn
+        """
+        Create a new dataset in this experiment
 
         Args:
             name: the name of the new dataset
-            specs: list of parameters to create this data_set with
+            specs: list of parameters (as ParamSpecs) to create this data_set
+                with
             values: the values to associate with the parameters
-            metadata:  the values to associate with the dataset
+            metadata: the metadata to associate with the dataset
         """
         return new_data_set(name, self.exp_id, specs, values, metadata)
 
     def data_set(self, counter: int) -> DataSet:
-        """ Get dataset with the secified counter from this experiment
+        """
+        Get dataset with the specified counter from this experiment
 
         Args:
-            counter: the counter we want to load
+            counter: the counter of the run we want to load
 
         Returns:
             the dataset
-
         """
         return load_by_counter(counter, self.exp_id)
 
     def data_sets(self) -> List[DataSet]:
-        """ Get all the datasets
-
-        Returns:
-            All the datasets of this experiment
-
-        """
+        """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
         data_sets = []
         for run in runs:
@@ -132,11 +136,16 @@ class Experiment(Sized):
         return data_sets
 
     def last_data_set(self) -> DataSet:
-        return load_by_id(get_last_run(self.conn, self.exp_id))
+        """Get the last dataset of this experiment"""
+        run_id = get_last_run(self.conn, self.exp_id)
+        if run_id is None:
+            raise ValueError('There are no runs in this experiment')
+        return load_by_id(run_id)
 
     def finish(self) -> None:
         """
-        Marks this experiment as finished
+        Marks this experiment as finished by saving the moment in time
+        when this method is called
         """
         finish_experiment(self.conn, self.exp_id)
 
@@ -162,11 +171,10 @@ class Experiment(Sized):
 
 def experiments()->List[Experiment]:
     """
-    List all the experiments in the container
+    List all the experiments in the container (database file from config)
 
     Returns:
         All the experiments in the container
-
     """
     log.info("loading experiments from {}".format(get_DB_location()))
     rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
@@ -179,7 +187,8 @@ def experiments()->List[Experiment]:
 def new_experiment(name: str,
                    sample_name: str,
                    format_string: Optional[str] = "{}-{}-{}") -> Experiment:
-    """ Create a new experiment
+    """
+    Create a new experiment (in the database file from config)
 
     Args:
         name: the name of the experiment
@@ -189,14 +198,14 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
-
     return Experiment(name=name, sample_name=sample_name,
                       format_string=format_string)
 
 
 def load_experiment(exp_id: int) -> Experiment:
     """
-    Load experiment with the specified id
+    Load experiment with the specified id (from database file from config)
+
     Args:
         exp_id: experiment id
 
@@ -210,22 +219,25 @@ def load_experiment(exp_id: int) -> Experiment:
 
 def load_last_experiment() -> Experiment:
     """
-    Load last experiment
+    Load last experiment (from database file from config)
 
     Returns:
         last experiment
     """
-    conn = connect(get_DB_location())
-    return Experiment(exp_id=get_last_experiment(conn))
+    last_exp_id = get_last_experiment(connect(get_DB_location()))
+    if last_exp_id is None:
+        raise ValueError('There are no experiments in the database file')
+    return Experiment(exp_id=last_exp_id)
 
 
 def load_experiment_by_name(name: str,
                             sample: Optional[str] = None) -> Experiment:
     """
     Try to load experiment with the specified name.
-    Nothing stops you from having many experiments with
-    the same name and sample_name.
-    In that case this won't work. And warn you.
+
+    Nothing stops you from having many experiments with the same name and
+    sample_name. In that case this won't work. And warn you.
+
     Args:
         name: the name of the experiment
         sample: the name of the sample
@@ -260,23 +272,23 @@ def load_experiment_by_name(name: str,
         c = transaction(conn, sql, name)
     rows = c.fetchall()
     if len(rows) == 0:
-        raise ValueError("Experiment not found \n")
+        raise ValueError("Experiment not found")
     elif len(rows) > 1:
         _repr = []
         for row in rows:
             s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
-                 f" started at({row['start_time']})")
+                 f" started at ({row['start_time']})")
             _repr.append(s)
         _repr_str = "\n".join(_repr)
         raise ValueError(f"Many experiments matching your request"
-                         f" found {_repr_str}")
+                         f" found:\n{_repr_str}")
     else:
         e = Experiment(exp_id=rows[0]['exp_id'])
     return e
 
 
 def load_or_create_experiment(experiment_name: str,
-                              sample_name: str
+                              sample_name: Optional[str] = None
                               ) -> Experiment:
     """
     Find and return an experiment with the given name and sample name,
