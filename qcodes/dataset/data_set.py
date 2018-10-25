@@ -227,6 +227,8 @@ class DataSet(Sized):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
+            self._started = self.number_of_results > 0
+            self._description = self._get_run_description_from_db()
 
         else:
             # Actually perform all the side effects needed for the creation
