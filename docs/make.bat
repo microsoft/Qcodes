@@ -50,7 +50,7 @@ if "%1" == "clean" (
 	del /q /s %BUILDDIR%\*
 	del /q /s "_auto"
 	del /q /s "_notebooks"
-	del /q /s "api/generated"
+	del /q /s "api\generated"
 	goto end
 )
 
