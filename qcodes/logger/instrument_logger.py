@@ -52,7 +52,7 @@ class InstrumentFilter(logging.Filter):
     def filter(self, record):
         try:
             inst = record.instrument
-            return not self.instrument_set.isdisjoint(inst.hierarchy)
+            return not self.instrument_set.isdisjoint(inst.anscestors)
         except AttributeError:
             return False
 

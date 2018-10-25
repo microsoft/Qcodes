@@ -269,14 +269,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return None
 
     @property
-    def hierarchy(self) -> Optional[List['InstrumentBase']]:
+    def ancestors(self) -> Optional[List['InstrumentBase']]:
         """
         Returns a list of instruments, starting from the current instrument
         and following to the parent instrument and the parents parent
         instrument until the root instrument is reached.
         """
         if self.parent is not None:
-            return [self] + self.parent.hierarchy
+            return [self] + self.parent.ancestors
         else:
             return [self]
 
