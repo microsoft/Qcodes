@@ -107,17 +107,17 @@ class KeysightB220X(VisaInstrument):
 
         self.add_parameter(name='ground_enabled_unused_inputs',
                            get_cmd=':AGND:UNUSED? 0',
-                           set_cmd=':AGND:UNUSED 0,{}',
-                           get_parser=lambda response: [int(x) for x in response.split(',') if x.strip().isdigit()],
+                           set_cmd=":AGND:UNUSED 0,'{}'",
+                           get_parser=lambda response: [int(x) for x in response.strip("'").split(',') if x.strip().isdigit()],
                            set_parser=lambda value: str(value).strip('[]()')
                            # todo: add `vals=MultiType(Ints(1, 14), Lists(Ints(1, 14)))` as soon as #1337 is fixed
                            )
 
         self.add_parameter(name='couple_ports',
                            get_cmd=':COUP:PORT? 0',
-                           set_cmd=':COUP:PORT 0,{}',
+                           set_cmd=":COUP:PORT 0,'{}'",
                            set_parser=lambda value: str(value).strip('[]()'),
-                           get_parser=lambda response: [int(x) for x in response.split(',') if x.strip().isdigit()]
+                           get_parser=lambda response: [int(x) for x in response.strip("'").split(',') if x.strip().isdigit()]
                            # todo: add `vals=MultiType(Enum(1, 3, 5, 7, 9, 11, 13), Lists(Enum(1, 3, 5, 7, 9, 11, 13)))` as soon as #1337 is fixed
                            )
 

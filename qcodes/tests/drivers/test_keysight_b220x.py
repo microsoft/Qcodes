@@ -110,10 +110,14 @@ def test_gnd_mode(uut):
 def test_ground_enabled_unused_inputs(uut):
     uut.ground_enabled_unused_inputs()
     assert 0 == uut.get_status()
+
     uut.ground_enabled_unused_inputs(1)
     assert 0 == uut.get_status()
-    uut.ground_enabled_unused_inputs([1, 2, 3])
+    assert [1] == uut.ground_enabled_unused_inputs()
+
+    uut.ground_enabled_unused_inputs([5, 6, 7, 8])
     assert 0 == uut.get_status()
+    assert [5, 6, 7, 8] == uut.ground_enabled_unused_inputs()
 
 
 def test_couple_ports(uut):
