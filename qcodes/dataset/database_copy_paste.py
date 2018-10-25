@@ -5,6 +5,11 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         insert_column,
                                         SomeConnection)
 
+def sql_placeholder_string(n: int) -> str:
+    """
+    Return an SQL placeholder string of length n.
+    """
+    return '(' + ','.join('?'*n) + ')'
 
 def copy_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
     """
