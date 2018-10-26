@@ -45,6 +45,6 @@ Logging
 .. toctree::
     :glob:
 
-    ../_notebooks/logging/*
+    logging/*
 
 
