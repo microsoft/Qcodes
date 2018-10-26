@@ -86,7 +86,7 @@ class KeysightB220X(VisaInstrument):
         self.add_function(name='gnd_enable_all',
                           call_cmd=':AGND:CHAN:ENAB:CARD 0')
 
-        self.add_function(name='gnd_enable_channel',
+        self.add_function(name='gnd_enable_output',
                           call_cmd=':AGND:CHAN:ENAB (@001{:02d})',
                           args=[Ints(1, 48), ])
 
@@ -105,7 +105,7 @@ class KeysightB220X(VisaInstrument):
                                         False: 0}
                            )
 
-        self.add_parameter(name='ground_enabled_unused_inputs',
+        self.add_parameter(name='gnd_enable_input',
                            get_cmd=':AGND:UNUSED? 0',
                            set_cmd=":AGND:UNUSED 0,'{}'",
                            get_parser=lambda response: [int(x) for x in response.strip("'").split(',') if x.strip().isdigit()],
@@ -124,6 +124,13 @@ class KeysightB220X(VisaInstrument):
         self.add_function(name='couple_port_autodetect',
                           call_cmd=':COUP:PORT:DET')
 
+    def write(self, cmd: str):
+        print('write: ', cmd)
+        return super(KeysightB220X, self).write(cmd)
+
+    def ask(self, cmd: str):
+        print('ask: ', cmd)
+        return super(KeysightB220X, self).ask(cmd)
 
     def _connect(self, channel1, channel2):
         self.write(":CLOS (@{card:01d}{ch1:02d}{ch2:02d})".format(card=0,

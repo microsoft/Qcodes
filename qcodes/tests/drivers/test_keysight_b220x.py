@@ -115,8 +115,8 @@ def test_gnd_enable_all(uut):
     assert 0 == uut.get_status()
 
 
-def test_gnd_enable_channel(uut):
-    uut.gnd_enable_channel(1)
+def test_gnd_enable_output(uut):
+    uut.gnd_enable_output(1)
     assert 0 == uut.get_status()
 
 
@@ -134,17 +134,17 @@ def test_gnd_mode(uut):
     assert 0 == uut.get_status()
 
 
-def test_ground_enabled_unused_inputs(uut):
-    uut.ground_enabled_unused_inputs()
+def test_ground_enable_input(uut):
+    uut.gnd_enable_input()
     assert 0 == uut.get_status()
 
-    uut.ground_enabled_unused_inputs(1)
+    uut.gnd_enable_input(1)
     assert 0 == uut.get_status()
-    assert [1] == uut.ground_enabled_unused_inputs()
+    assert [1] == uut.gnd_enable_input()
 
-    uut.ground_enabled_unused_inputs([5, 6, 7, 8])
+    uut.gnd_enable_input([5, 6, 7, 8])
     assert 0 == uut.get_status()
-    assert [5, 6, 7, 8] == uut.ground_enabled_unused_inputs()
+    assert [5, 6, 7, 8] == uut.gnd_enable_input()
 
 
 def test_couple_ports(uut):
@@ -174,4 +174,39 @@ def test_couple_port_autodetect(uut):
 def test_get_error(uut):
     uut.get_error()
     assert 0 == uut.get_status()
+
+
+def test_notebook():
+    import qcodes as qc
+
+    from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
+    from pyvisa.errors import VisaIOError
+
+    # Create a station to hold all the instruments
+
+    station = qc.Station()
+
+    # instantiate the Switch Matrix and add it to the station
+    try:
+        switch_matrix = KeysightB220X('switch_matrix',
+                                      address='GPIB::22::INSTR')
+        print("using physical instrument")
+    except (ValueError, VisaIOError):
+        # Either there is no VISA lib installed or there was no real instrument found at the
+        # specified address => use simulated instrument
+        import qcodes.instrument.sims as sims
+        path_to_yaml = sims.__file__.replace('__init__.py', 'keysight_b220x.yaml')
+
+        switch_matrix = KeysightB220X('switch_matrix',
+                                      address='GPIB::1::INSTR',
+                                      visalib=path_to_yaml + '@sim'
+                                      )
+        print("using simulated instrument")
+
+    station.add_component(switch_matrix)
+
+    switch_matrix.connect(2, 48)  # connect input 2 to output 48
+    switch_matrix.connect(14, 3)  # connect input 14 to output 3
+    switch_matrix.disconnect(14, 3)  # disconnect input 14 from output 3
+
 
