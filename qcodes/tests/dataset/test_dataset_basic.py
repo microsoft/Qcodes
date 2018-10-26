@@ -523,8 +523,4 @@ def test_get_description(some_paramspecs):
 
     loaded_ds = DataSet(run_id=1)
 
-    print(loaded_ds.description)
-    print('+'*10)
-    print(desc)
-
     assert loaded_ds.description == desc
