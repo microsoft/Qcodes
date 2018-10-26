@@ -134,24 +134,24 @@ def test_gnd_mode(uut):
     assert 0 == uut.get_status()
 
 
-def test_ground_enable_input(uut):
-    uut.gnd_enable_input()
+def test_ground_enabled_inputs(uut):
+    uut.gnd_enabled_inputs()
     assert 0 == uut.get_status()
 
-    uut.gnd_enable_input(1)
+    uut.gnd_enabled_inputs([3])
     assert 0 == uut.get_status()
-    assert [1] == uut.gnd_enable_input()
+    assert [3] == uut.gnd_enabled_inputs()
 
-    uut.gnd_enable_input([5, 6, 7, 8])
+    uut.gnd_enabled_inputs([5, 6, 7, 8])
     assert 0 == uut.get_status()
-    assert [5, 6, 7, 8] == uut.gnd_enable_input()
+    assert [5, 6, 7, 8] == uut.gnd_enabled_inputs()
 
 
 def test_couple_ports(uut):
     assert not uut.couple_ports()
     assert 0 == uut.get_status()
 
-    uut.couple_ports(1)
+    uut.couple_ports([1])
     assert 0 == uut.get_status()
     assert [1] == uut.couple_ports()
 
@@ -159,11 +159,10 @@ def test_couple_ports(uut):
     assert 0 == uut.get_status()
     assert [1,3,5] == uut.couple_ports()
 
-    # todo: Add as soon as #1337 is fixed
-    # with pytest.raises(ValueError):
-    #    uut.couple_ports(2)
-    # with pytest.raises(ValueError):
-    #    uut.couple_ports([2, 3])
+    with pytest.raises(ValueError):
+        uut.couple_ports([2])
+    with pytest.raises(ValueError):
+        uut.couple_ports([2, 3])
 
 
 def test_couple_port_autodetect(uut):

@@ -81,7 +81,7 @@ devices:
             specs:
               valid: [0, 1]
               type: int
-          ground_enabled_unused_inputs:
+          gnd_enabled_inputs:
             default: "''"
             setter:
               q: ":AGND:UNUSED {ch_id},{}"
@@ -89,7 +89,7 @@ devices:
               q: ":AGND:UNUSED? {ch_id}"
               r: "{}"
             specs:
-              valid: ["''", "'5, 6, 7, 8'", "'1'"]
+              valid: ["''", "'5, 6, 7, 8'", "'3'"]
               type: str
           couple_ports:
             default: "''"
