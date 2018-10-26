@@ -40,6 +40,8 @@ jobs:
         displayName: "Pytest"
       - script: |
           cd docs
+          REM Turn warnings into errors
+          set SPHINXOPTS=-W
           make.bat htmlapi
         displayName: "docsbuild"
       - task: PublishTestResults@1
