@@ -26,6 +26,18 @@ def empty_temp_db():
 
 
 @pytest.fixture(scope='function')
+def two_empty_temp_dbs():
+    """
+    Yield the paths of two empty files. Meant for use with the
+    test_database_copy_paste
+    """
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        source_path = os.path.join(tmpdirname, 'source.db')
+        target_path = os.path.join(tmpdirname, 'target.db')
+        yield (source_path, target_path)
+
+
+@pytest.fixture(scope='function')
 def experiment(empty_temp_db):
     e = new_experiment("test-experiment", sample_name="test-sample")
     try:
