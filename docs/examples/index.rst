@@ -47,10 +47,4 @@ Logging
 
     ../_notebooks/logging/*
 
-Benchmarking
-------------
 
-.. toctree::
-    :glob:
-
-    benchmarking/*
