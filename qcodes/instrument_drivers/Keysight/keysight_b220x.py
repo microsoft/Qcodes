@@ -47,17 +47,17 @@ class KeysightB220X(VisaInstrument):
                                         'bbm': 'BBM',
                                         'mbb': 'MBBR'})
 
-        self.add_function(name='bias_disable_all',
+        self.add_function(name='bias_disable_all_outputs',
                           call_cmd=':BIAS:CHAN:DIS:CARD 0')
 
-        self.add_function(name='bias_enable_all',
+        self.add_function(name='bias_enable_all_outputs',
                           call_cmd=':BIAS:CHAN:ENAB:CARD 0')
 
-        self.add_function(name='bias_enable_channel',
+        self.add_function(name='bias_enable_output',
                           call_cmd=':BIAS:CHAN:ENAB (@001{:02d})',
                           args=[Ints(1, 48), ])
 
-        self.add_function(name='bias_disable_channel',
+        self.add_function(name='bias_disable_output',
                           call_cmd=':BIAS:CHAN:DIS (@001{:02d})',
                           args=[Ints(1, 48), ])
 
@@ -76,14 +76,14 @@ class KeysightB220X(VisaInstrument):
                                         False: 0}
                            )
 
-        self.add_function(name='gnd_disable_all',
+        self.add_function(name='gnd_disable_all_outputs',
                           call_cmd=':AGND:CHAN:DIS:CARD 0')
 
-        self.add_function(name='gnd_disable_channel',
+        self.add_function(name='gnd_disable_output',
                           call_cmd=':AGND:CHAN:DIS (@001{:02d})',
                           args=[Ints(1, 48), ])
 
-        self.add_function(name='gnd_enable_all',
+        self.add_function(name='gnd_enable_all_outputs',
                           call_cmd=':AGND:CHAN:ENAB:CARD 0')
 
         self.add_function(name='gnd_enable_output',

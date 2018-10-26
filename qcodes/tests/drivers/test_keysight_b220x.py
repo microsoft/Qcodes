@@ -67,23 +67,23 @@ def test_connection_sequence(uut):
     assert 'mbb' == uut.connection_sequence()
 
 
-def test_bias_disable_all(uut):
-    uut.bias_disable_all()
+def test_bias_disable_all_outputs(uut):
+    uut.bias_disable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_bias_disable_channel(uut):
-    uut.bias_disable_channel(1)
+def test_bias_disable_ouput(uut):
+    uut.bias_disable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_bias_enable_all(uut):
-    uut.bias_enable_all()
+def test_bias_enable_all_outputs(uut):
+    uut.bias_enable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_bias_enable_channel(uut):
-    uut.bias_enable_channel(1)
+def test_bias_enable_output(uut):
+    uut.bias_enable_output(1)
     assert 0 == uut.get_status()
 
 
@@ -100,18 +100,18 @@ def test_bias_mode(uut):
     assert 0 == uut.get_status()
 
 
-def test_gnd_disable_all(uut):
-    uut.gnd_disable_all()
+def test_gnd_disable_all_outputs(uut):
+    uut.gnd_disable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_gnd_disable_channel(uut):
-    uut.gnd_disable_channel(1)
+def test_gnd_disable_output(uut):
+    uut.gnd_disable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_gnd_enable_all(uut):
-    uut.gnd_enable_all()
+def test_gnd_enable_all_outputs(uut):
+    uut.gnd_enable_all_outputs()
     assert 0 == uut.get_status()
 
 
