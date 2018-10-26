@@ -153,7 +153,9 @@ def test_add_paramspec(dataset):
     parameter_b = ParamSpec("b_param", "NUMERIC", key="value", number=1)
     parameter_c = ParamSpec("c_param", "array", inferred_from=[parameter_a,
                                                                parameter_b])
-    dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+    dataset.add_parameter(parameter_a)
+    dataset.add_parameter(parameter_b)
+    dataset.add_parameter(parameter_c)
 
     # Now retrieve the paramspecs
 
@@ -407,7 +409,7 @@ def test_numpy_ints(dataset):
      Test that we can insert numpy integers in the data set
     """
     xparam = ParamSpec('x', 'numeric')
-    dataset.add_parameters([xparam])
+    dataset.add_parameter(xparam)
 
     numpy_ints = [
         np.int, np.int8, np.int16, np.int32, np.int64,
@@ -425,7 +427,7 @@ def test_numpy_floats(dataset):
     Test that we can insert numpy floats in the data set
     """
     float_param = ParamSpec('y', 'numeric')
-    dataset.add_parameters([float_param])
+    dataset.add_parameter(float_param)
 
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
@@ -437,7 +439,7 @@ def test_numpy_floats(dataset):
 
 def test_numpy_nan(dataset):
     parameter_m = ParamSpec("m", "numeric")
-    dataset.add_parameters([parameter_m])
+    dataset.add_parameter(parameter_m)
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
