@@ -113,6 +113,7 @@ def copy_single_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
                                  target_conn,
                                  dataset.run_id,
                                  exp_id)
+        _update_run_counter(target_conn, exp_id)
 
 
 def _copy_runs_table_entries(source_conn: SomeConnection,
@@ -160,3 +161,13 @@ def _copy_runs_table_entries(source_conn: SomeConnection,
 
     cursor = target_conn.cursor()
     cursor.execute(sql_insert_values, values)
+
+
+def _update_run_counter(target_conn: SomeConnection, target_exp_id) -> None:
+    update_sql = """
+                 UPDATE experiments
+                 SET run_counter = run_counter + 1
+                 WHERE exp_id = ?
+                 """
+    cursor = target_conn.cursor()
+    cursor.execute(update_sql, (target_exp_id,))
