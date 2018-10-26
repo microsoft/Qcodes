@@ -211,6 +211,10 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
+    if not os.path.exists(v2fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
     dbname_old = os.path.join(v2fixpath, 'empty_runs.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
@@ -221,6 +225,10 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
 def test_perform_actual_upgrade_2_to_3_some_runs():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
+
+    if not os.path.exists(v2fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
 
     dbname_old = os.path.join(v2fixpath, 'some_runs.db')
 
