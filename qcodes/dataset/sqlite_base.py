@@ -5,9 +5,10 @@ import sqlite3
 import time
 import io
 from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
-                    Sequence)
+                    Sequence, DefaultDict)
 import itertools
 from functools import wraps
+from collections import defaultdict
 
 from tqdm import tqdm
 from numbers import Number
@@ -442,7 +443,7 @@ def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
     return results
 
 
-def _2to3_get_layout_ids(conn: SomeConnection) -> Dict[int, List[int]]:
+def _2to3_get_layout_ids(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     query = """
             select runs.run_id, layouts.layout_id
             FROM layouts
@@ -453,23 +454,17 @@ def _2to3_get_layout_ids(conn: SomeConnection) -> Dict[int, List[int]]:
     data = cur.fetchall()
     cur.close()
 
-    # we are allowed to assume that no run_id is missing and the first one
-    # is 1
-    results: Dict[int, List[int]] = {1: []}
-    current_run_id = 1
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
     for row in data:
         run_id = row['run_id']
         layout_id = row['layout_id']
-        if run_id == current_run_id:
-            results[run_id].append(layout_id)
-        else:
-            results[run_id] = [layout_id]
-            current_run_id = run_id
+        results[run_id].append(layout_id)
 
     return results
 
 
-def _2to3_get_indeps(conn: SomeConnection) -> Dict[int, List[int]]:
+def _2to3_get_indeps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -480,20 +475,17 @@ def _2to3_get_indeps(conn: SomeConnection) -> Dict[int, List[int]]:
     cur.execute(query)
     data = cur.fetchall()
     cur.close()
-    results: Dict[int, List[int]] = {1: []}
-    current_run_id = 1
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
     for row in data:
         run_id = row['run_id']
         layout_id = row['layout_id']
-        if run_id == current_run_id:
-            results[run_id].append(layout_id)
-        else:
-            results[run_id] = [layout_id]
-            current_run_id = run_id
+        results[run_id].append(layout_id)
+
     return results
 
 
-def _2to3_get_deps(conn: SomeConnection) -> Dict[int, List[int]]:
+def _2to3_get_deps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -504,20 +496,17 @@ def _2to3_get_deps(conn: SomeConnection) -> Dict[int, List[int]]:
     cur.execute(query)
     data = cur.fetchall()
     cur.close()
-    results: Dict[int, List[int]] = {1: []}
-    current_run_id = 1
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
     for row in data:
         run_id = row['run_id']
         layout_id = row['layout_id']
-        if run_id == current_run_id:
-            results[run_id].append(layout_id)
-        else:
-            results[run_id] = [layout_id]
-            current_run_id = run_id
+        results[run_id].append(layout_id)
+
     return results
 
 
-def _2to3_get_dependencies(conn: SomeConnection) -> Dict[int, List[int]]:
+def _2to3_get_dependencies(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -527,23 +516,16 @@ def _2to3_get_dependencies(conn: SomeConnection) -> Dict[int, List[int]]:
     cur.execute(query)
     data = cur.fetchall()
     cur.close()
-    results: Dict[int, List[int]] = {}
+    results: DefaultDict[int, List[int]] = defaultdict(list)
 
     if len(data) == 0:
         return results
 
-    current_dep = data[0]['dependent']
-
-    results[current_dep] = [data[0]['independent']]
-
-    for row in data[1:]:
+    for row in data:
         dep = row['dependent']
         indep = row['independent']
-        if dep == current_dep:
-            results[dep].append(indep)
-        else:
-            results[dep] = [indep]
-            current_dep = dep
+        results[dep].append(indep)
+
     return results
 
 
