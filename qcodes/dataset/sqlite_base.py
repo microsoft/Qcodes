@@ -4,9 +4,13 @@ import logging
 import sqlite3
 import time
 import io
-from typing import Any, List, Optional, Tuple, Union, Dict, cast, Callable
+from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
+                    Sequence, DefaultDict)
 import itertools
+from functools import wraps
+from collections import defaultdict
 
+from tqdm import tqdm
 from numbers import Number
 from numpy import ndarray
 import numpy as np
@@ -15,6 +19,8 @@ import wrapt
 
 import qcodes as qc
 import unicodedata
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
 
@@ -93,7 +99,6 @@ CREATE TABLE IF NOT EXISTS dependencies (
 """
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
-# utility function to allow sqlite/numpy type
 
 
 class ConnectionPlus(wrapt.ObjectProxy):
@@ -112,6 +117,58 @@ class ConnectionPlus(wrapt.ObjectProxy):
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
+def upgrader(func: Callable[[SomeConnection], None]):
+    """
+    Decorator for database version upgrade functions. An upgrade function
+    must have the name `perform_db_upgrade_N_to_M` where N = M-1.
+    The upgrade function must either perform the upgrade and return (no return
+    values allowed) or fail to perform the upgrade, in which case it must raise
+    a RuntimeError. A failed upgrade must be completely rolled back before the
+    RuntimeError is raises.
+
+    The decorator takes care of logging about the upgrade and managing the
+    database versioning.
+    """
+    name_comps = func.__name__.split('_')
+    if not len(name_comps) == 6:
+        raise NameError('Decorated function not a valid upgrader. '
+                        'Must have name "perform_db_upgrade_N_to_M"')
+    if not ''.join(name_comps[:3]+[name_comps[4]]) == 'performdbupgradeto':
+        raise NameError('Decorated function not a valid upgrader. '
+                        'Must have name "perform_db_upgrade_N_to_M"')
+    from_version = int(name_comps[3])
+    to_version = int(name_comps[5])
+
+    if not to_version == from_version+1:
+        raise ValueError(f'Invalid upgrade versions in function name: '
+                         f'{func.__name__}; upgrade from version '
+                         f'{from_version} to version {to_version}.'
+                         ' Can only upgrade from version N'
+                         ' to version N+1')
+
+    @wraps(func)
+    def do_upgrade(conn: SomeConnection) -> None:
+
+        log.info(f'Starting database upgrade version {from_version} '
+                 f'to {to_version}')
+
+        start_version = get_user_version(conn)
+        if start_version != from_version:
+            log.info(f'Skipping upgrade {from_version} -> {to_version} as'
+                     f' current database version is {start_version}.')
+            return
+
+        # This function either raises or returns
+        func(conn)
+
+        set_user_version(conn, to_version)
+        log.info(f'Succesfully performed upgrade {from_version} '
+                 f'-> {to_version}')
+
+    return do_upgrade
+
+
+# utility function to allow sqlite/numpy type
 def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     """
     See this:
@@ -290,7 +347,8 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
           'newest version'
     """
 
-    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2]
+    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
+                       perform_db_upgrade_2_to_3]
     newest_version = len(upgrade_actions)
     version = newest_version if version == -1 else version
 
@@ -301,17 +359,13 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
             action(conn)
 
 
+@upgrader
 def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 0 to version 1
-    """
-    log.info('Starting database upgrade version 0 -> 1')
 
-    start_version = get_user_version(conn)
-    if start_version != 0:
-        log.warn('Can not upgrade, current database version is '
-                 f'{start_version}, aborting.')
-        return
+    Add a GUID column to the runs table and assign guids for all existing runs
+    """
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
     cur = atomic_transaction(conn, sql)
@@ -345,21 +399,14 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
-    log.info('Succesfully upgraded database version 0 -> 1.')
-    set_user_version(conn, 1)
 
-
+@upgrader
 def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     """
     Perform the upgrade from version 1 to version 2
-    """
-    log.info('Starting database upgrade version 1 -> 2')
 
-    start_version = get_user_version(conn)
-    if start_version != 1:
-        log.warn('Can not upgrade, current database version is '
-                 f'{start_version}, aborting.')
-        return
+    Add two indeces on the runs table, one for exp_id and one for GUID
+    """
 
     sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='runs'"
     cur = atomic_transaction(conn, sql)
@@ -382,8 +429,252 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
-    log.info('Succesfully upgraded database version 1 -> 2.')
-    set_user_version(conn, 2)
+
+def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
+    rst_query = "SELECT run_id, result_table_name FROM runs"
+    cur = conn.cursor()
+    cur.execute(rst_query)
+
+    data = cur.fetchall()
+    cur.close()
+    results = {}
+    for row in data:
+        results[row['run_id']] = row['result_table_name']
+    return results
+
+
+def _2to3_get_layout_ids(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+    query = """
+            select runs.run_id, layouts.layout_id
+            FROM layouts
+            INNER JOIN runs ON runs.run_id == layouts.run_id
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
+    for row in data:
+        run_id = row['run_id']
+        layout_id = row['layout_id']
+        results[run_id].append(layout_id)
+
+    return results
+
+
+def _2to3_get_indeps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+    query = """
+            SELECT layouts.run_id, layouts.layout_id
+            FROM layouts
+            INNER JOIN dependencies
+            ON layouts.layout_id==dependencies.independent
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
+    for row in data:
+        run_id = row['run_id']
+        layout_id = row['layout_id']
+        results[run_id].append(layout_id)
+
+    return results
+
+
+def _2to3_get_deps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+    query = """
+            SELECT layouts.run_id, layouts.layout_id
+            FROM layouts
+            INNER JOIN dependencies
+            ON layouts.layout_id==dependencies.dependent
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
+    for row in data:
+        run_id = row['run_id']
+        layout_id = row['layout_id']
+        results[run_id].append(layout_id)
+
+    return results
+
+
+def _2to3_get_dependencies(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+    query = """
+            SELECT dependent, independent
+            FROM dependencies
+            ORDER BY dependent, axis_num ASC
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    results: DefaultDict[int, List[int]] = defaultdict(list)
+
+    if len(data) == 0:
+        return results
+
+    for row in data:
+        dep = row['dependent']
+        indep = row['independent']
+        results[dep].append(indep)
+
+    return results
+
+
+def _2to3_get_layouts(conn: SomeConnection) -> Dict[int,
+                                                    Tuple[str, str, str, str]]:
+    query = """
+            SELECT layout_id, parameter, label, unit, inferred_from
+            FROM layouts
+            """
+    cur = conn.cursor()
+    cur.execute(query)
+
+    results: Dict[int, Tuple[str, str, str, str]] = {}
+    for row in cur.fetchall():
+        results[row['layout_id']] = (row['parameter'],
+                                     row['label'],
+                                     row['unit'],
+                                     row['inferred_from'])
+    return results
+
+
+def _2to3_get_paramspecs(conn: SomeConnection,
+                         layout_ids: List[int],
+                         layouts: Dict[int, Tuple[str, str, str, str]],
+                         dependencies: Dict[int, List[int]],
+                         deps: Sequence[int],
+                         indeps: Sequence[int],
+                         result_table_name: str) -> Dict[int, ParamSpec]:
+
+    paramspecs: Dict[int, ParamSpec] = {}
+
+    the_rest = set(layout_ids).difference(set(deps).union(set(indeps)))
+
+    # We ensure that we first retrieve the ParamSpecs on which other ParamSpecs
+    # depend, then the dependent ParamSpecs and finally the rest
+
+    for layout_id in list(indeps) + list(deps) + list(the_rest):
+        (name, label, unit, inferred_from) = layouts[layout_id]
+        # get the data type
+        sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
+        c = transaction(conn, sql)
+        for row in c.fetchall():
+            if row['name'] == name:
+                paramtype = row['type']
+                break
+
+        # first possibility: another parameter depends on this parameter
+        if layout_id in indeps:
+            paramspec = ParamSpec(name=name, paramtype=paramtype,
+                                  label=label, unit=unit,
+                                  inferred_from=inferred_from)
+            paramspecs[layout_id] = paramspec
+
+        # second possibility: this parameter depends on another parameter
+        elif layout_id in deps:
+
+            setpoints = dependencies[layout_id]
+            depends_on = [paramspecs[idp].name for idp in setpoints]
+
+            paramspec = ParamSpec(name=name,
+                                  paramtype=paramtype,
+                                  label=label, unit=unit,
+                                  depends_on=depends_on,
+                                  inferred_from=inferred_from)
+            paramspecs[layout_id] = paramspec
+
+        # third possibility: no dependencies
+        else:
+            paramspec = ParamSpec(name=name,
+                                  paramtype=paramtype,
+                                  label=label, unit=unit,
+                                  depends_on=[],
+                                  inferred_from=[])
+            paramspecs[layout_id] = paramspec
+
+    return paramspecs
+
+
+@upgrader
+def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
+    """
+    Perform the upgrade from version 2 to version 3
+
+    Insert a new column, run_description, to the runs table and fill it out
+    for exisitng runs with information retrieved from the layouts and
+    dependencies tables represented as the to_json output of a RunDescriber
+    object
+    """
+
+    no_of_runs_query = "SELECT max(run_id) FROM runs"
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = no_of_runs or 0
+
+    # If one run fails, we want the whole upgrade to roll back, hence the
+    # entire upgrade is one atomic transaction
+
+    with atomic(conn) as conn:
+        sql = "ALTER TABLE runs ADD COLUMN run_description TEXT"
+        transaction(conn, sql)
+
+        result_tables = _2to3_get_result_tables(conn)
+        layout_ids_all = _2to3_get_layout_ids(conn)
+        indeps_all = _2to3_get_indeps(conn)
+        deps_all = _2to3_get_deps(conn)
+        layouts = _2to3_get_layouts(conn)
+        dependencies = _2to3_get_dependencies(conn)
+
+        pbar = tqdm(range(1, no_of_runs+1))
+        pbar.set_description("Upgrading database")
+
+        for run_id in pbar:
+
+            if run_id in layout_ids_all:
+
+                result_table_name = result_tables[run_id]
+                layout_ids = list(layout_ids_all[run_id])
+                if run_id in indeps_all:
+                    independents = tuple(indeps_all[run_id])
+                else:
+                    independents = ()
+                if run_id in deps_all:
+                    dependents = tuple(deps_all[run_id])
+                else:
+                    dependents = ()
+
+                paramspecs = _2to3_get_paramspecs(conn,
+                                                  layout_ids,
+                                                  layouts,
+                                                  dependencies,
+                                                  dependents,
+                                                  independents,
+                                                  result_table_name)
+
+                interdeps = InterDependencies(*paramspecs.values())
+                desc = RunDescriber(interdeps=interdeps)
+                json_str = desc.to_json()
+
+            else:
+
+                json_str = RunDescriber(InterDependencies()).to_json()
+
+            sql = f"""
+                   UPDATE runs
+                   SET run_description = ?
+                   WHERE run_id == ?
+                   """
+            cur = conn.cursor()
+            cur.execute(sql, (json_str, run_id))
+            log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 
 def transaction(conn: SomeConnection,
@@ -1231,12 +1522,52 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
     run_counter += 1
     formatted_name = format_string.format(name, exp_id, run_counter)
     table = "runs"
+
+    parameters = parameters or []
+    desc_str = RunDescriber(InterDependencies(*parameters)).to_json()
+
     with atomic(conn) as conn:
 
         if parameters:
             query = f"""
             INSERT INTO {table}
-                (name,exp_id,guid,result_table_name,result_counter,run_timestamp,parameters,is_completed)
+                (name,
+                 exp_id,
+                 guid,
+                 result_table_name,
+                 result_counter,
+                 run_timestamp,
+                 parameters,
+                 is_completed,
+                 run_description)
+            VALUES
+                (?,?,?,?,?,?,?,?,?)
+            """
+            curr = transaction(conn, query,
+                               name,
+                               exp_id,
+                               guid,
+                               formatted_name,
+                               run_counter,
+                               time.time(),
+                               ",".join([p.name for p in parameters]),
+                               False,
+                               desc_str)
+
+            _add_parameters_to_layout_and_deps(conn, formatted_name,
+                                               *parameters)
+
+        else:
+            query = f"""
+            INSERT INTO {table}
+                (name,
+                 exp_id,
+                 guid,
+                 result_table_name,
+                 result_counter,
+                 run_timestamp,
+                 is_completed,
+                 run_description)
             VALUES
                 (?,?,?,?,?,?,?,?)
             """
@@ -1247,27 +1578,8 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
                                formatted_name,
                                run_counter,
                                time.time(),
-                               ",".join([p.name for p in parameters]),
-                               False)
-
-            _add_parameters_to_layout_and_deps(conn, formatted_name,
-                                               *parameters)
-
-        else:
-            query = f"""
-            INSERT INTO {table}
-                (name,exp_id,guid,result_table_name,result_counter,run_timestamp,is_completed)
-            VALUES
-                (?,?,?,?,?,?,?)
-            """
-            curr = transaction(conn, query,
-                               name,
-                               exp_id,
-                               guid,
-                               formatted_name,
-                               run_counter,
-                               time.time(),
-                               False)
+                               False,
+                               desc_str)
     run_id = curr.lastrowid
     return run_counter, formatted_name, run_id
 
@@ -1376,6 +1688,27 @@ def get_paramspec(conn: SomeConnection,
                         inferred_from,
                         depends_on)
     return parspec
+
+
+def update_run_description(conn: SomeConnection, run_id: int,
+                           description: str) -> None:
+    """
+    Update the run_description field for the given run_id. The description
+    string must be a valid JSON string representation of a RunDescriber object
+    """
+    try:
+        RunDescriber.from_json(description)
+    except Exception as e:
+        raise ValueError("Invalid description string. Must be a JSON string "
+                         "representaion of a RunDescriber object.") from e
+
+    sql = """
+          UPDATE runs
+          SET run_description = ?
+          WHERE run_id = ?
+          """
+    with atomic(conn) as conn:
+        conn.cursor().execute(sql, (description, run_id))
 
 
 def add_parameter(conn: SomeConnection,
