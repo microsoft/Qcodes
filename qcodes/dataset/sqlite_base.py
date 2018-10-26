@@ -442,7 +442,7 @@ def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
     return results
 
 
-def _2to3_get_layout_ids(conn: SomeConnection) -> Dict:
+def _2to3_get_layout_ids(conn: SomeConnection) -> Dict[int, List[int]]:
     query = """
             select runs.run_id, layouts.layout_id
             FROM layouts
@@ -469,7 +469,7 @@ def _2to3_get_layout_ids(conn: SomeConnection) -> Dict:
     return results
 
 
-def _2to3_get_indeps(conn: SomeConnection) -> Dict:
+def _2to3_get_indeps(conn: SomeConnection) -> Dict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -493,7 +493,7 @@ def _2to3_get_indeps(conn: SomeConnection) -> Dict:
     return results
 
 
-def _2to3_get_deps(conn: SomeConnection) -> Dict:
+def _2to3_get_deps(conn: SomeConnection) -> Dict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -517,7 +517,7 @@ def _2to3_get_deps(conn: SomeConnection) -> Dict:
     return results
 
 
-def _2to3_get_dependencies(conn: SomeConnection) -> Dict:
+def _2to3_get_dependencies(conn: SomeConnection) -> Dict[int, List[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -547,7 +547,8 @@ def _2to3_get_dependencies(conn: SomeConnection) -> Dict:
     return results
 
 
-def _2to3_get_layouts(conn: SomeConnection) -> Dict:
+def _2to3_get_layouts(conn: SomeConnection) -> Dict[int,
+                                                    Tuple[str, str, str, str]]:
     query = """
             SELECT layout_id, parameter, label, unit, inferred_from
             FROM layouts
@@ -574,7 +575,12 @@ def _2to3_get_paramspecs(conn: SomeConnection,
 
     paramspecs: Dict[int, ParamSpec] = {}
 
-    for layout_id in layout_ids:
+    the_rest = set(layout_ids).difference(set(deps).union(set(indeps)))
+
+    # We ensure that we first retrieve the ParamSpecs on which other ParamSpecs
+    # depend, then the dependent ParamSpecs and finally the rest
+
+    for layout_id in list(indeps) + list(deps) + list(the_rest):
         (name, label, unit, inferred_from) = layouts[layout_id]
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
