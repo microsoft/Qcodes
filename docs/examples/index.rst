@@ -45,12 +45,6 @@ Logging
 .. toctree::
     :glob:
 
-    ../_notebooks/logging/*
+    logging/*
 
-Benchmarking
-------------
 
-.. toctree::
-    :glob:
-
-    benchmarking/*

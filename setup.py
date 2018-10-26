@@ -68,7 +68,8 @@ setup(name='qcodes',
           'jsonschema',
           'pyzmq',
           'wrapt',
-          'pandas'
+          'pandas',
+          'tqdm'
       ],
 
       test_suite='qcodes.tests',
