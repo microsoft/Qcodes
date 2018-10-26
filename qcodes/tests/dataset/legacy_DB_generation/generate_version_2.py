@@ -115,7 +115,7 @@ def generate_DB_file_with_empty_runs():
 
     # truly empty run, no layouts table, no nothing
     dataset = DataSet(path, conn=conn)
-    dataset._new('empty_dataset', exp_id=1)
+    dataset._new('empty_dataset', exp_id=exp.exp_id)
 
     # empty run
     meas = Measurement(exp)
