@@ -67,7 +67,8 @@ setup(name='qcodes',
           'websockets>=3.2',
           'jsonschema',
           'pyzmq',
-          'wrapt'
+          'wrapt',
+          'tqdm'
       ],
 
       test_suite='qcodes.tests',
