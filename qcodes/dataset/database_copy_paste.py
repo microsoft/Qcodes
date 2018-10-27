@@ -4,6 +4,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.sqlite_base import (atomic,
                                         connect,
+                                        format_table_name,
                                         get_last_experiment,
                                         insert_column,
                                         SomeConnection)
@@ -114,6 +115,12 @@ def copy_single_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
                                  dataset.run_id,
                                  exp_id)
         _update_run_counter(target_conn, exp_id)
+        _copy_layouts_and_dependencies(source_conn,
+                                       target_conn,
+                                       dataset.run_id)
+        _copy_results_table(source_conn,
+                            target_conn,
+                            dataset.run_id)
 
 
 def _copy_runs_table_entries(source_conn: SomeConnection,
@@ -122,7 +129,8 @@ def _copy_runs_table_entries(source_conn: SomeConnection,
                              target_exp_id: int) -> None:
     """
     Copy an entire runs table row from one DB and paste it all
-    (expect the primary key) into another DB. The two DBs may be the same.
+    (expect the primary key) into another DB. The two DBs may not be the same.
+    Note that this function does not create a new results table
 
     This function should be executed with an atomically guarded target_conn
     as a part of a larger atomic transaction
@@ -164,6 +172,9 @@ def _copy_runs_table_entries(source_conn: SomeConnection,
 
 
 def _update_run_counter(target_conn: SomeConnection, target_exp_id) -> None:
+    """
+    Update the run_counter in the target DB experiments table
+    """
     update_sql = """
                  UPDATE experiments
                  SET run_counter = run_counter + 1
@@ -171,3 +182,140 @@ def _update_run_counter(target_conn: SomeConnection, target_exp_id) -> None:
                  """
     cursor = target_conn.cursor()
     cursor.execute(update_sql, (target_exp_id,))
+
+
+def _copy_layouts_and_dependencies(target_conn: SomeConnection,
+                                   source_conn: SomeConnection,
+                                   source_run_id: int) -> None:
+    """
+    Copy over the layouts and dependencies tables. Note that the layout_ids
+    are not preserved in the target DB, but of course their relationships are
+    (e.g. layout_id 10 that depends on layout_id 9 might be inserted as
+    layout_id 2 that depends on layout_id 1)
+    """
+    layout_query = """
+                   SELECT layout_id, run_id, parameter, label, unit, inferred_from
+                   FROM layouts
+                   WHERE run_id = ?
+                   """
+    cursor = source_conn.cursor()
+    cursor.execute(layout_query, (source_run_id,))
+    rows = cursor.fetchall()
+
+    layout_insert = """
+                    INSERT INTO layouts
+                    (run_id, parameter, label, unit, inferred_from)
+                    VALUES (?,?,?,?,?)
+                    """
+
+    colnames = ('run_id', 'parameter', 'label', 'unit', 'inferred_from')
+    cursor = target_conn.cursor()
+    source_layout_ids = []
+    target_layout_ids = []
+    for row in rows:
+        values = tuple(row[colname] for colname in colnames)
+        cursor.execute(layout_insert, values)
+        source_layout_ids.append(row['layout_id'])
+        target_layout_ids.append(cursor.lastrowid)
+
+    # for the dependencies, we need a map from source layout_id to
+    # target layout_id
+    layout_id_map = dict(zip(source_layout_ids, target_layout_ids))
+
+    placeholders = sql_placeholder_string(len(source_layout_ids))
+
+    deps_query = f"""
+                 SELECT dependent, independent, axis_num
+                 FROM dependencies
+                 WHERE dependent IN {placeholders}
+                 OR independent IN {placeholders}
+                 """
+
+    cursor = source_conn.cursor()
+    cursor.execute(deps_query, tuple(source_layout_ids*2))
+    rows = cursor.fetchall()
+
+    deps_insert = """
+                  INSERT INTO dependencies
+                  (dependent, independent, axis_num)
+                  VALUES (?,?,?)
+                  """
+    cursor = target_conn.cursor()
+
+    for row in rows:
+        values = (layout_id_map[row['dependent']],
+                  layout_id_map[row['independent']],
+                  row['axis_num'])
+        cursor.execute(deps_insert, values)
+
+
+def _copy_results_table(source_conn: SomeConnection,
+                        target_conn: SomeConnection,
+                        source_run_id) -> None:
+    """
+    Copy the contents of the results table. Creates a new results_table with
+    a name appropriate for the target DB and updates the
+    """
+    table_name_query = """
+                       SELECT result_table_name, name
+                       FROM runs
+                       WHERE run_id = ?
+                       """
+    cursor = source_conn.cursor()
+    cursor.execute(table_name_query, (source_run_id,))
+    row = cursor.fetchall()[0]
+    table_name = row['result_table_name']
+    run_name = row['name']
+
+    format_string_query = """
+                          SELECT format_string, run_counter, experiments.exp_id
+                          FROM experiments
+                          INNER JOIN runs
+                          ON runs.exp_id = experiments.exp_id
+                          WHERE runs.run_id = ?
+                          """
+    cursor.execute(format_string_query, (source_run_id,))
+    row = cursor.fetchall()[0]
+    format_string = row['format_string']
+    run_counter = row['run_counter']
+    exp_id = int(row['exp_id'])
+
+    get_data_query = f"""
+                     SELECT *
+                     FROM "{table_name}"
+                     """
+
+    cursor.execute(get_data_query)
+    data_rows = cursor.fetchall()
+    data_columns = data_rows[0].keys()
+    data_columns.remove('id')
+
+    target_table_name = format_table_name(format_string,
+                                          run_name,
+                                          exp_id,
+                                          run_counter)
+
+    column_names = ','.join(data_columns)
+    make_table = f"""
+                  CREATE TABLE "{target_table_name}" (
+                      id INTEGER PRIMARY KEY,
+                      {column_names}
+                  )
+                  """
+
+    cursor = target_conn.cursor()
+    cursor.execute(make_table)
+
+    # according to one of our reports, multiple single-row inserts
+    # are okay if there's only one commit
+
+    value_placeholders = sql_placeholder_string(len(data_columns))
+    insert_data = f"""
+                   INSERT INTO "{target_table_name}"
+                   ({column_names})
+                   values {value_placeholders}
+                   """
+
+    for row in data_rows:
+        # the first row entry is the ID, which is automatically inserted
+        cursor.execute(insert_data, tuple(v for v in row[1:]))
