@@ -155,7 +155,7 @@ class CryogenicSMS120C(VisaInstrument):
             value : parsed value extracted from output message
         """
         value = self.ask(msg)
-        
+
         #BUG: The SMS60C sometimes returns an incorrect \x13 at the beginning of the string
         value = value.strip('\x13')
         m = re.match(r'((\S{8})\s)+(([^:]+)(:([^:]+))?)', value)
