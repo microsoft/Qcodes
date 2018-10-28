@@ -1,9 +1,10 @@
-from . import N52xx
+from qcodes.instrument_drivers.Keysight.N52xx import N52xxBase
 
-class N5230C(N52xx.PNABase):
-    def __init__(self, name, address, **kwargs):
-        super().__init__(name, address,
-                         min_freq=300e3, max_freq=13.5e9,
-                         min_power=-90, max_power=13,
-                         nports=2,
-                         **kwargs)
+
+class N5230C(N52xxBase):
+    min_freq: float = 300e3
+    max_freq: float = 13.5e9
+    min_power: float = -90
+    max_power: float = 13
+    port_count: int = 2
+
