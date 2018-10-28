@@ -262,7 +262,7 @@ class CryogenicSMS120C(VisaInstrument):
     def _get_field(self):
         if self._get_unit() != 1:
             raise Exception('Controller is not in TESLA mode, switch to TESLA to get the field')
-        
+
         _, value = self.query('GET OUTPUT')
         m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,CryogenicSMS120C._re_float_exp), value)
         field = float(m[1])
