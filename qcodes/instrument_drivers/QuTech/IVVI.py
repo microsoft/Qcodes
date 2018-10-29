@@ -25,8 +25,11 @@ class IVVI(VisaInstrument):
     http://qtwork.tudelft.nl/~schouten/ivvi/doc-d5/rs232linkformat.txt
     A copy of this file can be found at the bottom of this file.
     '''
-    Fullrange = 4000
+    
+    Fullrange = 4000.0
     Halfrange = Fullrange / 2
+    resolution = 16
+    dac_quata = fullRange /2**resolution
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
                  dac_delay=.1, safe_version=True,
@@ -183,52 +186,108 @@ class IVVI(VisaInstrument):
             mes = self.ask(bytes([3, 4]))
             ver = mes[2]
             return ver
-    
-    def linsweep(self,start,end,points):
-        """
-        A replacement of numpy.linspace for use with the ivvi rack dacs.
-        ivvi.linsweep gives:
-         - even spacing in voltages
-         - voltages match the set voltages
-         - protection from oversampling
-         
-        Args:
-            start (number): starting voltage
-            end (number): ending voltage
-            points (int): number of points between start and end, inclusive
-            
-        Returns:
-            list of valid voltages for the ivvi rack
-            
-        Examples:
-            #normal dac aligned voltages
-            ivvi.linsweep(-200,200,201) -> [ -199.404, -197.391 ... ] 
-            
-            #protection from oversampling
-            ivvi.linsweep(start=108.8,end=109,points=11) -> 
-                [108.82734416723888, 108.88838025482566,108.94941634241245, 109.01045242999923]
-        """
-        points = max(round(abs(points)),2)
-        use_reversed = end < start
-        if use_reversed:
-            start,end = end,start
-        dac_quata = 4.0/65535.0
-        byte_start =  int(round(start/1000.0/dac_quata))
-        byte_end = int(round(end/1000.0/dac_quata))
-        delta_bytes =  abs(byte_end - byte_start)+1
-        spacing =  max(round(delta_bytes / (points-1)),1)
-        l =  [ el*dac_quata*1000 for el in range(byte_start,byte_end+spacing,spacing)]
-        if use_reversed:
-             l = list(reversed(l))
-        return l
-    
+
     def get_all(self):
         return self.snapshot(update=True)
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):
             self.set('dac{}'.format(i + 1), 0)
-
+    
+    def linspace(self,start,end,samples,flexible = False,bip=True):
+        '''
+        Creates array of voltages, with correct alignment to the DAC
+        quantisation, in a similar manner to numpy.linspace.
+        This guarrientees an even spacing and no double sampling inside
+        the requested range.
+        
+        Args:
+            start : the start of the voltage range, in millivolts
+            end : the end of the voltage range, in millivolts
+            samples : number of sample voltages
+            flexible : occasionally get a different number of samples if
+                    they can still fit inside the range.
+            bip : if the dac set to bi-polar (-2V to +2V) or
+                  not (-4 to -0, or 0 to +4), 
+            
+        Returns:
+            list of voltages in millivolts suitable for the ivvi DAC.
+            Voltages are inside [start:end]
+            Voltages are evenly spaced
+            Voltages align with the DAC quantisation.
+            
+        Examples:
+        
+            # normal usage
+            linspace(-100,100,8) -> [-99.88555733577478, .. 6 more ..
+                                     , 99.64141298542764]
+            
+            linspace(-1000, 1000, 2000) -> 
+                    [-976.4858472571908, .. 1998 more .., 975.6923781185626 ]
+            
+            # with a flexable number of points
+            linspace(-1000, 1000, 2000, true) ->
+                    [-999.9237048905165, .. 2046 more .., 999.1302357518883]
+            # 4 bits is the optimal spacing, so this gives 2048 (= 2^11)
+            # points in a 2 V range
+            
+            # insufficient resolution
+            linspace(500, 502, 100) -> ValueError: Insufficient resolution
+                        for 100 samples in the range 500 to 502. Maximum :16
+                                     
+            # resolution limited sweep using the flexable option
+            linspace(500, 502, 100, true) -> [500.0991836423285, .. 14 more ..
+                                              , 501.9302662699321]
+            
+            # a too narrow range
+            linspace(0, 0.01, 100, True) #-> ValueError: No DAC values exist
+                                             in the range 0 : 0.01
+        '''
+        import math
+        if not isinstance(samples, (int)):
+            raise ValueError('points: must be an integer larger than 1')
+        if not isinstance(start, (int, float)):
+            raise ValueError('start: must be a number')
+        if not isinstance(end, (int, float)):
+            raise ValueError('end: must be a number')
+        if samples < 2:
+            raise ValueError('points: needs to be 2 or more')
+        
+        use_reversed = end < start
+        if use_reversed:
+            start,end = end,start
+        half = 0.5 if bip else 0.0 # half bit difference between bip and neg,pos
+        byte_start =  int(math.ceil(half + start/self.dac_quata))
+        byte_end = int(math.floor(half + end/self.dac_quata))
+        delta_bytes =  abs(byte_end - byte_start)-1
+        spacing =  max(int(math.floor(delta_bytes / (samples-1))),2)
+        l =  [ (el+half)*self.dac_quata
+               for el in range(byte_start,byte_end,spacing)]
+        # Adjust the points until the length is correct
+        if not flexible:
+            if len(l) > samples:
+                if (len(l) - samples)%2==1:
+                    l = l[1:]
+                s = int((len(l) - samples) / 2)
+                if s > 0:
+                    l = l[s:-s]
+            if len(l) < samples:
+                msg = ( 'Insufficient resolution for '+ str(samples)
+                       + ' samples in the range '
+                       + str(start)+' to ' + str(end) )
+                msg += '. Maximum :' + str(len(l))
+                raise ValueError(msg)
+        if len(l) == 0:
+            msg = ('No DAC values exist in the range ' + 
+                    str(start) + ' : ' + str(end)
+                  )
+            raise ValueError(msg)
+            
+        if use_reversed:
+             l = list(reversed(l))
+        return l
+        
+    
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
         '''
