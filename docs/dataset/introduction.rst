@@ -37,7 +37,7 @@ The **name** and the **sample name** of an experiment must be provided by the us
 
 The **start time** is automatically added upon creation, and the **end time** is added when (if ever) the user decides to mark the experiment as *completed* after which point no more runs may be added.
 
-For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../_notebooks/DataSet/example-creation>`.
+For an example notebook showing the useage of the database as a container for experiments, see the :doc:`Experiment Container Notebook <../examples/DataSet/example-creation>`.
 
 
 .. _sec:intro_dataset:
@@ -62,7 +62,7 @@ The **experiment-ID** provides the link to the experiment that this dataset belo
 
 The **name** must be provided by the user at creation time.
 
-The **table of results** is where the actual *data* of the ``DataSet`` resides. The table has a number of associated **parameters** as columns with data points as rows. The parameters may be QCoDeS ``Parameters``, but are not limited to that. The preferred procedure for associating parameters with a run and adding data is via the ``Measurement`` object as described in the :doc:`Measurement Object Example Notebook <../_notebooks/DataSet/Dataset Context Manager>`. The deep thinking behind how different parameters relate to and depend on each other within a ``DataSet`` is explained in :ref:`interdependentparams`.
+The **table of results** is where the actual *data* of the ``DataSet`` resides. The table has a number of associated **parameters** as columns with data points as rows. The parameters may be QCoDeS ``Parameters``, but are not limited to that. The preferred procedure for associating parameters with a run and adding data is via the ``Measurement`` object as described in the :doc:`Measurement Object Example Notebook <../examples/DataSet/Dataset Context Manager>`. The deep thinking behind how different parameters relate to and depend on each other within a ``DataSet`` is explained in :ref:`interdependentparams`.
 
 The **start time** is automatically added upon creation, and the **end time** is added when (if ever) the user decides to mark the run as *completed* after which point no more data points may be added.
 

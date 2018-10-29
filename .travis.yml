@@ -45,6 +45,7 @@ script:
       cd qcodes/tests/dataset/legacy_DB_generation
       python generate_version_0.py
       python generate_version_1.py
+      python generate_version_2.py
       cd ../../../..
       pip uninstall -y qcodes
       pip install .
@@ -61,7 +62,7 @@ script:
     # build docs with warnings as errors
     - |
       cd docs
-      make SPHINXOPTS="-W" html-api
+      make SPHINXOPTS="-W" htmlapi
     - cd ..
 
 after_success:

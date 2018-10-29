@@ -7,6 +7,8 @@ import hypothesis.strategies as hst
 from hypothesis import given
 import unicodedata
 
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
@@ -144,3 +146,15 @@ def test_get_last_experiment(experiment):
 def test_get_last_experiment_no_experiments(empty_temp_db):
     conn = mut.connect(get_DB_location())
     assert None is mut.get_last_experiment(conn)
+
+
+def test_update_runs_description(dataset):
+
+    invalid_descs = ['{}', 'description']
+
+    for idesc in invalid_descs:
+        with pytest.raises(ValueError):
+            mut.update_run_description(dataset.conn, dataset.run_id, idesc)
+
+    desc = RunDescriber(InterDependencies()).to_json()
+    mut.update_run_description(dataset.conn, dataset.run_id, desc)

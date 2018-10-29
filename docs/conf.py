@@ -32,10 +32,11 @@ sys.path.insert(0, os.path.abspath('..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+        'nbsphinx',
         'sphinx.ext.autodoc',
         'sphinx.ext.autosummary',
         'sphinx.ext.napoleon',
-        'sphinxcontrib.jsonschema',
+        'sphinx-jsonschema',
         'sphinx.ext.doctest',
         'sphinx.ext.intersphinx',
         'sphinx.ext.todo',
@@ -95,7 +96,8 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_templates', '_auto']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_templates', '_auto',
+                    '**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -349,10 +351,10 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'matplotlib': ('http://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.5', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('http://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None)
 }
 # theming
 import sphinx_rtd_theme
@@ -394,3 +396,8 @@ templates_path = []
 suppress_warnings = ['image.nonlocal_uri']
 
 numfig=True
+
+# Use this kernel instead of the one stored in the notebook metadata:
+nbsphinx_kernel_name = 'python3'
+# always execute notebooks.
+nbsphinx_execute = 'always'
