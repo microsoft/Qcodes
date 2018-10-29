@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 from qcodes.dataset.data_set import DataSet
@@ -48,17 +50,21 @@ def copy_runs_into_db(source_db_path: str,
         raise ValueError('Did not receive runs from a single experiment. '
                          f'Got runs from experiments {source_exp_ids}')
 
-    # Fetch the name and sample name of the runs' experiment
+    # Fetch the attributes of the runs' experiment
+    # hopefully, this is enough to uniquely identify the experiment
 
-    names_query = """
-                  SELECT name, sample_name
+    exp_attr_names = ['name', 'sample_name', 'start_time', 'end_time',
+                      'format_string']
+
+    attrs_query = f"""
+                  SELECT {','.join(exp_attr_names)}
                   FROM experiments
                   WHERE exp_id = ?
                   """
     cursor = source_conn.cursor()
-    cursor.execute(names_query, (source_exp_ids[0],))
+    cursor.execute(attrs_query, (source_exp_ids[0],))
     row = cursor.fetchall()[0]
-    (source_exp_name, source_sample_name) = (row['name'], row['sample_name'])
+    exp_attrs = {attr: row[attr] for attr in exp_attr_names}
 
     # Massage the target DB file to accomodate the runs
     # (create new experiment if needed)
@@ -70,18 +76,65 @@ def copy_runs_into_db(source_db_path: str,
 
     with atomic(target_conn) as target_conn:
 
-        load_or_create_experiment(source_exp_name, source_sample_name,
-                                  conn=target_conn)
+        target_exp_id = _create_exp_if_needed(target_conn,
+                                              exp_attrs['name'],
+                                              exp_attrs['sample_name'],
+                                              exp_attrs['format_string'],
+                                              exp_attrs['start_time'],
+                                              exp_attrs['end_time'])
 
         # Finally insert the runs
         for run_id in run_ids:
             _copy_single_dataset_into_db(DataSet(run_id=run_id,
                                                  conn=source_conn),
-                                         target_conn)
+                                         target_conn,
+                                         target_exp_id)
+
+
+def _create_exp_if_needed(target_conn: SomeConnection,
+                          exp_name: str, sample_name: str,
+                          fmt_str: str,
+                          start_time: float,
+                          end_time: Union[float, None]) -> int:
+    """
+    Look up in the database whether an experiment already exists and create
+    it if it doesn't. Note that experiments do not have GUIDs, so this method
+    is not guaranteed to work. Matching names and times is the best we can do.
+    """
+
+    time_eq = "=" if end_time is not None else "IS"
+
+    exp_exists_query = f"""
+                       SELECT exp_id
+                       FROM experiments
+                       WHERE name = ?
+                       AND sample_name = ?
+                       AND format_string = "{fmt_str}"
+                       AND start_time = ?
+                       AND end_time {time_eq} ?
+                       """
+    values = (exp_name, sample_name, start_time, end_time)
+    cursor = target_conn.execute(exp_exists_query, values)
+
+    rows = cursor.fetchall()
+
+    if len(rows) > 0:
+        return rows[0]['exp_id']
+    else:
+        create_exp = f"""
+                     INSERT INTO experiments
+                     (name, sample_name, format_string, start_time, end_time)
+                     VALUES
+                     (?,?,?,?,?)
+                     """
+        cursor.execute(create_exp, (exp_name, sample_name, fmt_str,
+                                    start_time, end_time))
+        return cursor.lastrowid
 
 
 def _copy_single_dataset_into_db(dataset: DataSet,
-                                 target_conn: SomeConnection) -> None:
+                                 target_conn: SomeConnection,
+                                 target_exp_id: int) -> None:
     """
     NB: This function should only be called from within
     :meth:copy_runs_into_db
@@ -114,13 +167,11 @@ def _copy_single_dataset_into_db(dataset: DataSet,
     if len(res) > 0:
         return
 
-    exp_id = get_last_experiment(target_conn)
-
     _copy_runs_table_entries(source_conn,
                              target_conn,
                              dataset.run_id,
-                             exp_id)
-    _update_run_counter(target_conn, exp_id)
+                             target_exp_id)
+    _update_run_counter(target_conn, target_exp_id)
     _copy_layouts_and_dependencies(source_conn,
                                    target_conn,
                                    dataset.run_id)
