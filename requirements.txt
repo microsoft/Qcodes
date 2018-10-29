@@ -9,4 +9,5 @@ jsonschema
 pyzmq>=16.0.2
 broadbean>=0.9.1
 wrapt
+pandas
 tqdm
