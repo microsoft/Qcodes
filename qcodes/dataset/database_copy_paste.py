@@ -68,25 +68,33 @@ def copy_runs_into_db(source_db_path: str,
     # this function raises if the target DB file has several experiments
     # matching both the name and sample_name
 
-    load_or_create_experiment(source_exp_name, source_sample_name,
-                              conn=target_conn)
+    with atomic(target_conn) as target_conn:
 
-    # Finally insert the runs
-    for run_id in run_ids:
-        copy_single_dataset_into_db(DataSet(run_id=run_id, conn=source_conn),
-                                    target_db_path)
+        load_or_create_experiment(source_exp_name, source_sample_name,
+                                  conn=target_conn)
+
+        # Finally insert the runs
+        for run_id in run_ids:
+            _copy_single_dataset_into_db(DataSet(run_id=run_id,
+                                                 conn=source_conn),
+                                         target_conn)
 
 
-def copy_single_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
+def _copy_single_dataset_into_db(dataset: DataSet,
+                                 target_conn: SomeConnection) -> None:
     """
+    NB: This function should only be called from within
+    :meth:copy_runs_into_db
+
     Insert the given dataset into the specified database file as the latest
     run. The database file must exist and its latest experiment must have name
     and sample_name matching that of the dataset's parent experiment
 
+    Trying to insert a run already in the DB is a NOOP.
+
     Args:
         dataset: A dataset representing the run to be copied
-        path_to_db: The path to the target DB into which the run should be
-          inserted
+        path_to_db: connection to the DB. Must be atomically guarded
     """
 
     if not dataset.completed:
@@ -94,7 +102,6 @@ def copy_single_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
                          'can not be copied.')
 
     source_conn = dataset.conn
-    target_conn = connect(path_to_db)
 
     already_in_query = """
                        SELECT run_id
@@ -109,18 +116,17 @@ def copy_single_dataset_into_db(dataset: DataSet, path_to_db: str) -> None:
 
     exp_id = get_last_experiment(target_conn)
 
-    with atomic(target_conn) as target_conn:
-        _copy_runs_table_entries(source_conn,
-                                 target_conn,
-                                 dataset.run_id,
-                                 exp_id)
-        _update_run_counter(target_conn, exp_id)
-        _copy_layouts_and_dependencies(source_conn,
-                                       target_conn,
-                                       dataset.run_id)
-        _copy_results_table(source_conn,
-                            target_conn,
-                            dataset.run_id)
+    _copy_runs_table_entries(source_conn,
+                             target_conn,
+                             dataset.run_id,
+                             exp_id)
+    _update_run_counter(target_conn, exp_id)
+    _copy_layouts_and_dependencies(source_conn,
+                                   target_conn,
+                                   dataset.run_id)
+    _copy_results_table(source_conn,
+                        target_conn,
+                        dataset.run_id)
 
 
 def _copy_runs_table_entries(source_conn: SomeConnection,
