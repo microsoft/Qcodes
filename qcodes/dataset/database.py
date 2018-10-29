@@ -48,7 +48,7 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
 
 def path_of_connection(conn: SomeConnection) -> str:
     """
-    Return the path of the connection
+    Return the path of the database file that the conn object is connected to
     """
     cursor = conn.cursor()
     cursor.execute("PRAGMA database_list")
