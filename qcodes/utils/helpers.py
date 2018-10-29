@@ -44,6 +44,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
         "__dtype__" containing value "complex"
         * object with a `_JSONEncoder` method get converted the return value of
         that method
+        * objects which support the pickle protocol get converted using the data
+        provided by that protocol
         * other objects which cannot be serialized get converted to their
         string representation (suing the `str` function)
         """
@@ -68,8 +70,16 @@ class NumpyJSONEncoder(json.JSONEncoder):
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
             except TypeError:
-                # we cannot convert the object to JSON, just take a string
-                s = str(obj)
+                # See if the object supports the pickle protocol.
+                # If so, we should be able to use that to serialize.
+                if hasattr(o, '__getnewargs__'):
+                    return {
+                        '__class__': type(o).__class__.__name__,
+                        '__args__': o.__getnewargs__()
+                    }
+                else:
+                    # we cannot convert the object to JSON, just take a string
+                    s = str(obj)
             return s
 
 
