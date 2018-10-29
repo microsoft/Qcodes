@@ -20,20 +20,47 @@ def test_basic_copy_paste(two_empty_temp_dbs, some_paramspecs):
     source_conn = connect(source_path)
     target_conn = connect(target_path)
 
-    exp = Experiment(conn=source_conn)
-    dataset = DataSet(conn=source_conn)
+    source_exp = Experiment(conn=source_conn)
+    source_dataset = DataSet(conn=source_conn)
 
     with pytest.raises(ValueError, match='Dataset not completed'):
-        copy_runs_into_db(source_path, target_path, dataset.run_id)
+        copy_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     for ps in some_paramspecs[1].values():
-        dataset.add_parameter(ps)
+        source_dataset.add_parameter(ps)
 
     value = 0  # an arbitrary data value
     result = {ps.name: type_casters[ps.type](value)
               for ps in some_paramspecs[1].values()}
 
-    dataset.add_result(result)
-    dataset.mark_complete()
+    source_dataset.add_result(result)
+    source_dataset.mark_complete()
 
-    copy_runs_into_db(source_path, target_path, dataset.run_id)
+    copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+    target_exp = Experiment(conn=target_conn, exp_id=1)
+
+    length1 = len(target_exp)
+
+    # trying to insert the same run again should be a NOOP
+    copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+    assert len(target_exp) == length1
+
+    target_dataset = DataSet(conn=source_conn, run_id=1)
+
+    # Now make the interesting comparisons: are the target objects the same as
+    # the source objects?
+
+    exp_attrs = ['name', 'sample_name', 'started_at', 'finished_at',
+                 'format_string']
+
+    ds_attrs = ['name', 'table_name', 'guid', 'number_of_results',
+                'counter', 'parameters', 'paramspecs', 'exp_name',
+                'sample_name', 'completed', 'snapshot', 'run_timestamp_raw']
+
+    for ds_attr in ds_attrs:
+        assert getattr(source_dataset, ds_attr) == getattr(target_dataset, ds_attr)
+
+    # for exp_attr in exp_attrs:
+    #     assert getattr(source_exp, exp_attr) == getattr(target_exp, exp_attr)
