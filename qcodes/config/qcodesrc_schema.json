@@ -12,6 +12,30 @@
                     "description": "default location formatter",
                     "default": "data/{date}/#{counter}_{name}_{time}"
                 },
+                "loglevel" :{
+                    "type" : "string",
+                    "description": "deprecated - use logger.console_level",
+                    "default": "DEBUG",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
+                "file_loglevel" :{
+                    "type" : "string",
+                    "description": "deprecated - use logger.file_level",
+                    "default": "INFO",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
                 "register_magic" : {
                     "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
                     "anyOf" : [
