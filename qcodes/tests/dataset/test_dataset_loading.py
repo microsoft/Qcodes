@@ -156,7 +156,10 @@ def test_get_data_by_id_order(dataset):
     indepB = ParamSpec('indep2', "numeric")
     depAB = ParamSpec('depAB', "numeric", depends_on=[indepA, indepB])
     depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
-    dataset.add_parameters([indepA, indepB, depAB, depBA])
+    dataset.add_parameter(indepA)
+    dataset.add_parameter(indepB)
+    dataset.add_parameter(depAB)
+    dataset.add_parameter(depBA)
 
     dataset.add_result({'depAB': 12,
                         'indep2': 2,
