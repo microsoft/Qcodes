@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import logging
 from typing import Optional, Sequence, Union, TYPE_CHECKING
+import collections.abc
 from .logger import get_console_handler, LevelType, handler_level
 if TYPE_CHECKING:
     import qcodes.instrument.InstrumentBase as InstrumentBase  # noqa: F401 pylint: disable=unused-import
@@ -44,10 +45,11 @@ class InstrumentFilter(logging.Filter):
         # The alternative is to merge this module with the instrument.base,
         # which is also not favorable.
         super().__init__()
-        from qcodes.instrument.base import InstrumentBase  # noqa: F811
-        if isinstance(instruments, InstrumentBase):
-            instruments = (instruments,)
-        self.instrument_set = set(instruments)
+        if not isinstance(instruments, collections.abc.Sequence):
+            instrument_seq = (instruments,)
+        else:
+            instrument_seq = instruments
+        self.instrument_set = set(instrument_seq)
 
     def filter(self, record):
         try:
@@ -103,7 +105,7 @@ def filter_instrument(instrument: Union['InstrumentBase',
     """
     if handler is None:
         handler = (get_console_handler(),)
-    if isinstance(handler, logging.Handler):
+    if not isinstance(handler, collections.abc.Sequence):
         handler = (handler,)
 
     instrument_filter = InstrumentFilter(instrument)

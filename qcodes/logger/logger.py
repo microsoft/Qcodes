@@ -84,11 +84,11 @@ def get_level_code(level: Union[str, int]) -> int:
     if isinstance(level, int):
         return level
     elif isinstance(level, str):
-        # seemingly the type is defined incorrectly in the logging module
-        # in a fresh ipython session:
+        # It is possible to get the level code from the
+        # `getLevelName` call due to backwards compatibillity to an earlier
+        # bug:
         # >>> import logging
         # >>> print(logging.getLevelName('DEBUG'))
-        # works as expected from the documentation
         return logging.getLevelName(level)  # type: ignore
     else:
         raise RuntimeError('get_level_code: '

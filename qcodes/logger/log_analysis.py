@@ -13,7 +13,7 @@ from .logger import (LOGGING_SEPARATOR,
                      get_log_file_name)
 
 
-def log_to_dataframe(log: List[str]=None,
+def log_to_dataframe(log: List[str],
                      columns: Optional[List[str]]=None,
                      separator: Optional[str]=None) -> pandas.DataFrame:
     """

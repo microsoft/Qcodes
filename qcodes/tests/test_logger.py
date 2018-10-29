@@ -65,9 +65,7 @@ def test_start_logger_twice():
     logger.start_logger()
     logger.start_logger()
     handlers = logging.getLogger().handlers
-    for h in handlers:
-        print(h.__module__)
-    # there is always one logger registered
+    # there is always one logger registered from pytest
     assert len(logging.getLogger().handlers) == 2+1
 
 
@@ -183,7 +181,7 @@ def test_channels(model372):
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_channels_nomessages(model372):
     """
-    Test that messages logged in a channel are propagated to
+    Test that messages logged in a channel are not propagated to
     any instrument.
     """
     inst = model372
