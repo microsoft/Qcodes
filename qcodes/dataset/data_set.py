@@ -29,7 +29,11 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_guid_from_run_id,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
+                                        update_run_description,
                                         run_exists)
+
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
@@ -223,6 +227,8 @@ class DataSet(Sized):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
+            self._started = self.number_of_results > 0
+            self._description = self._get_run_description_from_db()
 
         else:
             # Actually perform all the side effects needed for the creation
@@ -241,6 +247,9 @@ class DataSet(Sized):
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
             self._completed = False
+            self._started = False
+            specs = specs or []
+            self._description = RunDescriber(InterDependencies(*specs))
 
     @property
     def run_id(self):
@@ -327,6 +336,10 @@ class DataSet(Sized):
         """
         return get_run_timestamp_from_run_id(self.conn, self.run_id)
 
+    @property
+    def description(self) -> RunDescriber:
+        return self._description
+
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format
@@ -367,6 +380,22 @@ class DataSet(Sized):
             completed_timestamp = None
 
         return completed_timestamp
+
+    def _get_run_description_from_db(self) -> RunDescriber:
+        """
+        Look up the run_description from the database
+        """
+        desc_str = select_one_where(self.conn, "runs", "run_description",
+                                    "run_id", self.run_id)
+        return RunDescriber.from_json(desc_str)
+
+    def _perform_start_actions(self) -> None:
+        """
+        Perform the actions that must take place once the run has been started
+        """
+        # So far it is only one action: write down the run_description
+        update_run_description(self.conn, self.run_id,
+                               self.description.to_json())
 
     def toggle_debug(self):
         """
@@ -413,6 +442,10 @@ class DataSet(Sized):
 
         add_parameter(self.conn, self.table_name, spec)
 
+        desc = self.description
+        desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
+        self._description = desc
+
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
@@ -432,6 +465,10 @@ class DataSet(Sized):
         add_meta_data(self.conn, self.run_id, {tag: metadata})
         # `add_meta_data` does not commit, hence we commit here:
         self.conn.commit()
+
+    @property
+    def started(self) -> bool:
+        return self._started
 
     @property
     def completed(self) -> bool:
@@ -470,6 +507,12 @@ class DataSet(Sized):
 
         It is an error to add results to a completed DataSet.
         """
+
+        if not self.started:
+            self._perform_start_actions()
+            self._started = True
+
+        # TODO: Make this check less fugly
         for param in results.keys():
             if self.paramspecs[param].depends_on != '':
                 deps = self.paramspecs[param].depends_on.split(', ')
@@ -506,6 +549,11 @@ class DataSet(Sized):
 
         It is an error to add results to a completed DataSet.
         """
+
+        if not self.started:
+            self._perform_start_actions()
+            self._started = True
+
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 

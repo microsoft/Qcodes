@@ -8,7 +8,9 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -153,7 +155,9 @@ def test_add_paramspec(dataset):
     parameter_b = ParamSpec("b_param", "NUMERIC", key="value", number=1)
     parameter_c = ParamSpec("c_param", "array", inferred_from=[parameter_a,
                                                                parameter_b])
-    dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+    dataset.add_parameter(parameter_a)
+    dataset.add_parameter(parameter_b)
+    dataset.add_parameter(parameter_c)
 
     # Now retrieve the paramspecs
 
@@ -340,7 +344,6 @@ def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
-    xparam.type = 'number'
     mydataset.add_parameter(xparam)
 
     x_results = [{'x': x} for x in range(N)]
@@ -407,7 +410,7 @@ def test_numpy_ints(dataset):
      Test that we can insert numpy integers in the data set
     """
     xparam = ParamSpec('x', 'numeric')
-    dataset.add_parameters([xparam])
+    dataset.add_parameter(xparam)
 
     numpy_ints = [
         np.int, np.int8, np.int16, np.int32, np.int64,
@@ -425,7 +428,7 @@ def test_numpy_floats(dataset):
     Test that we can insert numpy floats in the data set
     """
     float_param = ParamSpec('y', 'numeric')
-    dataset.add_parameters([float_param])
+    dataset.add_parameter(float_param)
 
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
@@ -437,7 +440,7 @@ def test_numpy_floats(dataset):
 
 def test_numpy_nan(dataset):
     parameter_m = ParamSpec("m", "numeric")
-    dataset.add_parameters([parameter_m])
+    dataset.add_parameter(parameter_m)
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
@@ -491,3 +494,35 @@ def test_missing_keys(dataset):
     assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
     assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
 
+
+@pytest.mark.usefixtures('experiment')
+def test_get_description(some_paramspecs):
+
+    paramspecs = some_paramspecs[2]
+
+    ds = DataSet()
+
+    assert ds.run_id == 1
+
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies())
+
+    ds.add_parameter(paramspecs['ps1'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1']))
+
+    ds.add_parameter(paramspecs['ps2'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
+                                                  paramspecs['ps2']))
+
+    # the run description gets written as the first data point is added,
+    # so now no description should be stored in the database
+    prematurely_loaded_ds = DataSet(run_id=1)
+    assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
+
+    ds.add_result({'ps1': 1, 'ps2': 2})
+
+    loaded_ds = DataSet(run_id=1)
+
+    assert loaded_ds.description == desc
