@@ -47,6 +47,7 @@ def copy_runs_into_db(source_db_path: str,
     rows = cursor.fetchall()
     source_exp_ids = np.unique([exp_id for row in rows for exp_id in row])
     if len(source_exp_ids) != 1:
+        source_conn.close()
         raise ValueError('Did not receive runs from a single experiment. '
                          f'Got runs from experiments {source_exp_ids}')
 
@@ -74,21 +75,25 @@ def copy_runs_into_db(source_db_path: str,
     # this function raises if the target DB file has several experiments
     # matching both the name and sample_name
 
-    with atomic(target_conn) as target_conn:
+    try:
+        with atomic(target_conn) as target_conn:
 
-        target_exp_id = _create_exp_if_needed(target_conn,
-                                              exp_attrs['name'],
-                                              exp_attrs['sample_name'],
-                                              exp_attrs['format_string'],
-                                              exp_attrs['start_time'],
-                                              exp_attrs['end_time'])
+            target_exp_id = _create_exp_if_needed(target_conn,
+                                                  exp_attrs['name'],
+                                                  exp_attrs['sample_name'],
+                                                  exp_attrs['format_string'],
+                                                  exp_attrs['start_time'],
+                                                  exp_attrs['end_time'])
 
-        # Finally insert the runs
-        for run_id in run_ids:
-            _copy_single_dataset_into_db(DataSet(run_id=run_id,
-                                                 conn=source_conn),
-                                         target_conn,
-                                         target_exp_id)
+            # Finally insert the runs
+            for run_id in run_ids:
+                _copy_single_dataset_into_db(DataSet(run_id=run_id,
+                                                    conn=source_conn),
+                                             target_conn,
+                                             target_exp_id)
+    finally:
+        source_conn.close()
+        target_conn.close()
 
 
 def _create_exp_if_needed(target_conn: SomeConnection,
