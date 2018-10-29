@@ -1515,6 +1515,22 @@ def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
+def format_table_name(fmt_str: str, name: str, exp_id: int,
+                      run_counter: int) -> str:
+    """
+    Format the format_string into a table name
+
+    Args:
+        fmt_str: a valid format string
+        name: the run name
+        exp_id: the experiment ID
+        run_counter: the intra-experiment runnumber of this run
+    """
+    table_name = fmt_str.format(name, exp_id, run_counter)
+    _validate_table_name(table_name)  # raises if table_name not valid
+    return table_name
+
+
 def _insert_run(conn: SomeConnection, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
@@ -1527,7 +1543,8 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
                                                    where_column="exp_id",
                                                    where_value=exp_id)
     run_counter += 1
-    formatted_name = format_string.format(name, exp_id, run_counter)
+    formatted_name = format_table_name(format_string, name, exp_id,
+                                       run_counter)
     table = "runs"
 
     parameters = parameters or []
