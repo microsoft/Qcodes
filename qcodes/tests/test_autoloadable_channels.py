@@ -89,6 +89,14 @@ class DummyInstrument(Instrument):
             return ""
 
 
+class DummyInstrumentWithChannelList(DummyInstrument):
+    def __init__(self, name):
+        super().__init__(name)
+
+        channels = AutoLoadableChannelList(self, "channels", SimpleTestChannel)
+        self.add_submodule("channels", channels)
+
+
 def test_sanity():
 
     instrument = DummyInstrument("instrument")
@@ -112,3 +120,20 @@ def test_sanity():
     with pytest.raises(RuntimeError):
         new_channel.hello()  # We have deleted the channel and it should no longer be
         # available
+
+
+def test_channels_list():
+    instrument = DummyInstrumentWithChannelList("instrument2")
+    assert instrument.channels[0].hello() == "Hello from channel 1"
+    assert instrument.channels[1].hello() == "Hello from channel 2"
+    assert instrument.channels[2].hello() == "Hello from channel 4"
+
+    new_channel = instrument.channels.add()
+    assert len(instrument.channels) == 4
+    assert new_channel is instrument.channels[-1]
+    assert new_channel.hello() == "Hello from channel 3"
+
+    new_channel.delete()
+    assert len(instrument.channels) == 3
+    with pytest.raises(RuntimeError):
+        new_channel.hello()

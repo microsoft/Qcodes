@@ -555,8 +555,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
         obj_list = []
         for new_kwargs in cls._discover_from_instrument(parent, **kwargs):
-            name = new_kwargs.pop("name")
-            obj = cls(parent, name=name, existence=True, **new_kwargs)
+            obj = cls(parent, existence=True, **new_kwargs)
             obj_list.append(obj)
 
         return obj_list
@@ -699,11 +698,9 @@ class AutoLoadableChannelList(ChannelList):
         Add a channel to the list
         """
         new_kwargs = self._chan_type.get_new_instance_kwargs(self._parent, **kwargs)
-        name = new_kwargs.pop("name")
 
         new_channel: AutoLoadableInstrumentChannel = self._chan_type(
-            self._parent, name=name, channel_list=self,
-            **kwargs
+            parent=self._parent, channel_list=self, **new_kwargs
         )
 
         new_channel.create()
