@@ -88,7 +88,7 @@ def copy_runs_into_db(source_db_path: str,
             # Finally insert the runs
             for run_id in run_ids:
                 _copy_single_dataset_into_db(DataSet(run_id=run_id,
-                                                    conn=source_conn),
+                                                     conn=source_conn),
                                              target_conn,
                                              target_exp_id)
     finally:
@@ -128,12 +128,13 @@ def _create_exp_if_needed(target_conn: SomeConnection,
     else:
         create_exp = f"""
                      INSERT INTO experiments
-                     (name, sample_name, format_string, start_time, end_time)
+                     (name, sample_name, format_string,
+                      run_counter, start_time, end_time)
                      VALUES
-                     (?,?,?,?,?)
+                     (?,?,?,?,?,?)
                      """
         cursor.execute(create_exp, (exp_name, sample_name, fmt_str,
-                                    start_time, end_time))
+                                    0, start_time, end_time))
         return cursor.lastrowid
 
 
@@ -145,14 +146,15 @@ def _copy_single_dataset_into_db(dataset: DataSet,
     :meth:copy_runs_into_db
 
     Insert the given dataset into the specified database file as the latest
-    run. The database file must exist and its latest experiment must have name
-    and sample_name matching that of the dataset's parent experiment
+    run.
 
     Trying to insert a run already in the DB is a NOOP.
 
     Args:
         dataset: A dataset representing the run to be copied
         path_to_db: connection to the DB. Must be atomically guarded
+        target_exp_id: The exp_id of the (target DB) experiment in which to
+          insert the run
     """
 
     if not dataset.completed:
@@ -172,23 +174,24 @@ def _copy_single_dataset_into_db(dataset: DataSet,
     if len(res) > 0:
         return
 
-    _copy_runs_table_entries(source_conn,
-                             target_conn,
-                             dataset.run_id,
-                             target_exp_id)
+    target_run_id = _copy_runs_table_entries(source_conn,
+                                             target_conn,
+                                             dataset.run_id,
+                                             target_exp_id)
     _update_run_counter(target_conn, target_exp_id)
     _copy_layouts_and_dependencies(source_conn,
                                    target_conn,
                                    dataset.run_id)
     _copy_results_table(source_conn,
                         target_conn,
-                        dataset.run_id)
+                        dataset.run_id,
+                        target_run_id)
 
 
 def _copy_runs_table_entries(source_conn: SomeConnection,
                              target_conn: SomeConnection,
                              source_run_id: int,
-                             target_exp_id: int) -> None:
+                             target_exp_id: int) -> int:
     """
     Copy an entire runs table row from one DB and paste it all
     (expect the primary key) into another DB. The two DBs may not be the same.
@@ -231,6 +234,8 @@ def _copy_runs_table_entries(source_conn: SomeConnection,
 
     cursor = target_conn.cursor()
     cursor.execute(sql_insert_values, values)
+
+    return cursor.lastrowid
 
 
 def _update_run_counter(target_conn: SomeConnection, target_exp_id) -> None:
@@ -313,10 +318,11 @@ def _copy_layouts_and_dependencies(target_conn: SomeConnection,
 
 def _copy_results_table(source_conn: SomeConnection,
                         target_conn: SomeConnection,
-                        source_run_id) -> None:
+                        source_run_id: int,
+                        target_run_id: int) -> None:
     """
     Copy the contents of the results table. Creates a new results_table with
-    a name appropriate for the target DB and updates the
+    a name appropriate for the target DB and updates the rows of that table
     """
     table_name_query = """
                        SELECT result_table_name, name
@@ -336,7 +342,8 @@ def _copy_results_table(source_conn: SomeConnection,
                           ON runs.exp_id = experiments.exp_id
                           WHERE runs.run_id = ?
                           """
-    cursor.execute(format_string_query, (source_run_id,))
+    cursor = target_conn.cursor()
+    cursor.execute(format_string_query, (target_run_id,))
     row = cursor.fetchall()[0]
     format_string = row['format_string']
     run_counter = row['run_counter']
@@ -346,7 +353,7 @@ def _copy_results_table(source_conn: SomeConnection,
                      SELECT *
                      FROM "{table_name}"
                      """
-
+    cursor = source_conn.cursor()
     cursor.execute(get_data_query)
     data_rows = cursor.fetchall()
     data_columns = data_rows[0].keys()
