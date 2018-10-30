@@ -139,7 +139,7 @@ class CryogenicSMS120C(VisaInstrument):
     def get_idn(self):
         """
         Overwrites the get_idn function using constants as the hardware
-        does not have a proper \*IDN function.
+        does not have a proper ``*IDN`` function.
         """
         idparts = ['Cryogenic', 'Magnet PS SMS120C', 'None', '1.0']
 
