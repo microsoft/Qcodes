@@ -46,7 +46,7 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
     initialise_database()
 
 
-def path_of_connection(conn: SomeConnection) -> str:
+def path_to_dbfile(conn: SomeConnection) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """
