@@ -33,7 +33,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
-                                        run_exists)
+                                        run_exists, SomeConnection)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -848,14 +848,16 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[SomeConnection]=None) -> DataSet:
     """
     Load dataset by run id
 
-    Lookup is performed in the database file that is specified in the config.
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
 
     Args:
         run_id: run id of the dataset
+        conn: connection to the database to load from
 
     Returns:
         dataset with the given run id
@@ -863,7 +865,9 @@ def load_by_id(run_id: int) -> DataSet:
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
 
-    d = DataSet(path_to_db=get_DB_location(), run_id=run_id)
+    conn = conn or connect(get_DB_location())
+
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 

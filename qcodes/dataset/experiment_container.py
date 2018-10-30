@@ -136,7 +136,7 @@ class Experiment(Sized):
         runs = get_runs(self.conn, self.exp_id)
         data_sets = []
         for run in runs:
-            data_sets.append(load_by_id(run['run_id']))
+            data_sets.append(load_by_id(run['run_id'], conn=self.conn))
         return data_sets
 
     def last_data_set(self) -> DataSet:
