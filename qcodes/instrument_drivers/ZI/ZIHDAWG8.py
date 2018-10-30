@@ -5,13 +5,7 @@ import textwrap
 import time
 from functools import partial
 
-try:
-    import zhinst
-except ImportError:
-    raise ImportError('''Could not find Zurich Instruments Lab One software.
-                         Please refer to the Zi UHF-LI User Manual for
-                         download and installation instructions.
-                      ''')
+import zhinst
 
 from qcodes import Instrument
 from qcodes.utils import validators as validators
@@ -207,7 +201,7 @@ class ZIHDAWG8(Instrument):
             getter = partial(self._getter, parameter['Node'], parameter['Type']) if 'Read' in parameter[
                 'Properties'] else None
             setter = partial(self._setter, parameter['Node'], parameter['Type']) if 'Write' in parameter[
-                'Properties'] else None
+                'Properties'] else False
             options = validators.Enum(*[int(val) for val in parameter['Options'].keys()]) \
                 if parameter['Type'] == 'Integer (enumerated)' else None
             parameter_name = self._generate_parameter_name(parameter['Node'])
@@ -258,3 +252,4 @@ class ZIHDAWG8(Instrument):
             return self.daq.getString(name)
         elif param_type == "ZIVectorData":
             return self.daq.vectorRead(name)
+
