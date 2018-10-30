@@ -41,7 +41,7 @@ jobs:
       - script: |
           cd docs
           REM Turn warnings into errors
-          set SPHINXOPTS=-W
+          set SPHINXOPTS=-W -v
           make.bat htmlapi
         displayName: "docsbuild"
       - task: PublishTestResults@1
