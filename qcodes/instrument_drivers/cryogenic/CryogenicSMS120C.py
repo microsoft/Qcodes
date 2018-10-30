@@ -8,6 +8,9 @@
 This magnet PS driver has been tested with:
     FTDI chip drivers (USB to serial), D2XX version installed.
     Cryogenic SMS120C and SMS60C (though the default init arguments are not correct for the latter)
+    Both the coil_constant and current_rating should be based on calibration data accompanying the magnet.
+    The SMS60C current_rating should be slightly below 60, as indicated by its name.
+    Examples of values for a 2T magnet using SMS60C are: coil_constant=0.0380136, current_rating=52.61
 
 """
 
@@ -58,6 +61,11 @@ class CryogenicSMS120C(VisaInstrument):
                  current_ramp_limit=0.0506, reset=False, timeout=5, **kwargs):
 
         log.debug('Initializing instrument')
+
+        if 'terminator' in kwargs.keys():
+            kwargs.pop('terminator')
+            log.warning('Passing terminator to CryogenicSMS is no longer supported and has no effect')
+
         super().__init__(name, address, terminator='\r\n', **kwargs)
 
         self.visa_handle.baud_rate = 9600
