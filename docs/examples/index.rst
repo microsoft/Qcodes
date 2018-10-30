@@ -38,3 +38,13 @@ Drivers
     :glob:
 
     driver_examples/*
+
+Logging
+--------
+
+.. toctree::
+    :glob:
+
+    logging/*
+
+

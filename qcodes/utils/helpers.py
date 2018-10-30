@@ -15,6 +15,8 @@ from functools import partial
 
 import numpy as np
 
+from qcodes.utils.deprecate import deprecate
+
 
 _tprint_times= {} # type: Dict[str, float]
 
@@ -312,6 +314,8 @@ class LogCapture():
 
     """
 
+    @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+               alternative="`qcodes.utils.logger.LogCapture`")
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
@@ -568,19 +572,35 @@ def add_to_spyder_UMR_excludelist(modulename: str):
     nothing if Spyder is not found.
     TODO is there a better way to detect if we are in spyder?
     """
-
-
     if any('SPYDER' in name for name in os.environ):
+
+        sitecustomize_found = False
         try:
             from spyder.utils.site import sitecustomize
-            excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
-                                              '').split(',')
-            if modulename not in excludednamelist:
-                log.info("adding {} to excluded modules".format(modulename))
-                excludednamelist.append(modulename)
-                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
+        else:
+            sitecustomize_found = True
+        if sitecustomize_found is False:
+            try:
+                from spyder_kernels.customize import spydercustomize as sitecustomize # type: ignore
+
+            except ImportError:
+                pass
+            else:
+                print("found kernels site")
+                sitecustomize_found = True
+
+        if sitecustomize_found is False:
+            return
+
+        excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                          '').split(',')
+        if modulename not in excludednamelist:
+            log.info("adding {} to excluded modules".format(modulename))
+            excludednamelist.append(modulename)
+            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
+            os.environ['SPY_UMR_NAMELIST'] = ','.join(excludednamelist)
 
 
 @contextmanager
