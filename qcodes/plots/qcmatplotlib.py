@@ -129,13 +129,12 @@ class MatPlot(BasePlot):
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
-    def add_to_plot(self, use_offset=False, **kwargs):
+    def add_to_plot(self, use_offset: bool=False, **kwargs):
         """
         adds one trace to this MatPlot.
 
         Args:
-            use_offset (bool, Optional): Whether or not ticks can have an offset
-
+            use_offset: Whether or not ticks can have an offset
             kwargs: with the following exceptions (mostly the data!), these are
                 passed directly to the matplotlib plotting routine.
                 `subplot`: the 1-based axes number to append to (default 1)
