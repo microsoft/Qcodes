@@ -4,7 +4,7 @@ import numpy as np
 from qcodes.dataset.sqlite_base import connect, get_experiments
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.database import path_of_connection
+from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_copy_paste import copy_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
@@ -14,8 +14,8 @@ from qcodes.tests.dataset.test_database_creation_and_upgrading import error_caus
 def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
     source_conn, target_conn = two_empty_temp_db_connections
 
-    source_path = path_of_connection(source_conn)
-    target_path = path_of_connection(target_conn)
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
 
     type_casters = {'numeric': float,
                     'array': (lambda x: np.array(x) if hasattr(x, '__iter__')
@@ -114,8 +114,8 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
     ds.mark_complete()
 
-    source_path = path_of_connection(source_conn)
-    target_path = path_of_connection(target_conn)
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
 
     # now copy 2 runs
     copy_runs_into_db(source_path, target_path, *exp_1_run_ids[:2])
