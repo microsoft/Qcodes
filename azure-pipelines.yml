@@ -17,7 +17,7 @@ jobs:
         inputs:
           createCustomEnvironment: true
           environmentName: qcodes
-          packageSpecs: 'python=3'
+          packageSpecs: 'python=3.6'
           updateConda: true
       - script: |
           conda env update -n qcodes -f environment.yml
@@ -41,7 +41,7 @@ jobs:
       - script: |
           cd docs
           REM Turn warnings into errors
-          set SPHINXOPTS=-W
+          set SPHINXOPTS=-W -v
           make.bat htmlapi
         displayName: "docsbuild"
       - task: PublishTestResults@1
