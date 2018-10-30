@@ -97,6 +97,7 @@
             },
             "required":["console_level", "file_level"]
         },
+        "subscription":{},
         "gui" : {
             "type" : "object",
             "description": "controls legacy gui of qcodes",
