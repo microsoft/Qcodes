@@ -364,29 +364,28 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 extensions.append('sphinx.ext.todo')
 todo_include_todos=True
 
-# basically hack to avoid having __init__() when we want just
+
+# try to limit  auto summary and extensive auto doc only to the
+# api part of the docs
 autoclass_content = "init"
-# try to limit  auto sumamry and extensive auto doc only to the api part of the docs
+autosummary_generate = False
+autodoc_default_flags = []
+
 with open("index.rst") as f:
     index_rst_lines = f.readlines()
 
-autosummary_generate = False
-
-if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
-    autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
+if any([re.match("\s*api\s*", l) for l in index_rst_lines]):
+    autoclass_content = "both"
+    # classes should include both the
+    # class' and the __init__ method's docstring
     autosummary_generate = True
-    autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
+    autodoc_default_flags = ['members', 'undoc-members',
+                             'inherited-members', 'show-inheritance' ]
 
-autodoc_default_flags = []
-# we have to do this, do avoid sideeffects when importing matplotlib
-autodoc_mock_imports = []
-autodoc_mock_imports.append('pyspcm')
-autodoc_mock_imports.append('zhinst')
-autodoc_mock_imports.append('zhinst.utils')
-autodoc_mock_imports.append('keysightSD1')
-autodoc_mock_imports.append('cffi')
-autodoc_mock_imports.append('spirack')
-autodoc_mock_imports.append('clr')
+# we mock modules that for one reason or another is not
+# there when generating the docs
+autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils',
+                        'keysightSD1', 'cffi', 'spirack', 'clr']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -395,7 +394,7 @@ templates_path = ['_templates']
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
 
-numfig=True
+numfig = True
 
 # Use this kernel instead of the one stored in the notebook metadata:
 nbsphinx_kernel_name = 'python3'
