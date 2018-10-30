@@ -68,6 +68,7 @@ setup(name='qcodes',
           'jsonschema',
           'pyzmq',
           'wrapt',
+          'pandas',
           'tqdm'
       ],
 
