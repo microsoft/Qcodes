@@ -487,11 +487,12 @@ class MultiType(Validator):
 class Arrays(Validator):
     """
     Validator for numerical numpy arrays
+
     Args:
         min_value:  Min value allowed, default inf.
         max_value: Max value allowed, default inf.
         shape: The shape of the array, tuple of either ints or Callables taking
-          no arguments that return the size along that dim as an int.
+            no arguments that return the size along that dim as an int.
     """
 
     validtypes = (int, float, np.integer, np.floating)
