@@ -548,7 +548,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     def load_from_instrument(
             cls, parent: Instrument, **kwargs) ->List['AutoLoadableInstrumentChannel']:
         """
-        Discover and load channels from the instrument
+        Load channels that already exist on the instrument
 
         Args:
             parent (Instrument): The instrument through which the instrument
