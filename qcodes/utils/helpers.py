@@ -15,6 +15,8 @@ from functools import partial
 
 import numpy as np
 
+from qcodes.utils.deprecate import deprecate
+
 
 _tprint_times= {} # type: Dict[str, float]
 
@@ -312,6 +314,8 @@ class LogCapture():
 
     """
 
+    @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+               alternative="`qcodes.utils.logger.LogCapture`")
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
