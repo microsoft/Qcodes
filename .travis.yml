@@ -62,7 +62,7 @@ script:
     # build docs with warnings as errors
     - |
       cd docs
-      make SPHINXOPTS="-W" htmlapi
+      make SPHINXOPTS="-W -v" htmlapi
     - cd ..
 
 after_success:
