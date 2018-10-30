@@ -36,7 +36,7 @@ extensions = [
         'sphinx.ext.autodoc',
         'sphinx.ext.autosummary',
         'sphinx.ext.napoleon',
-        'sphinxcontrib.jsonschema',
+        'sphinx-jsonschema',
         'sphinx.ext.doctest',
         'sphinx.ext.intersphinx',
         'sphinx.ext.todo',
@@ -389,7 +389,7 @@ autodoc_mock_imports.append('spirack')
 autodoc_mock_imports.append('clr')
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = []
+templates_path = ['_templates']
 
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.

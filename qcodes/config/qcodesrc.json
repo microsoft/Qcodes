@@ -1,11 +1,16 @@
 {
     "core":{
-        "loglevel": "WARNING",
-        "file_loglevel": "INFO",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
         "register_magic": true,
         "db_location": "~/experiments.db",
         "db_debug": false
+    },
+    "logger":{
+        "console_level": "WARNING",
+        "file_level": "INFO",
+        "logger_levels":{
+            "pyvisa": "INFO"
+        }
     },
     "gui" :{
         "notebook": true,
