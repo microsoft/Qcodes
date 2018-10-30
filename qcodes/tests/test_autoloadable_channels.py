@@ -181,5 +181,6 @@ def test_channels_list():
 
     new_channel.delete()
     assert len(instrument.channels) == 3
+    assert new_channel not in instrument.channels
     with pytest.raises(RuntimeError):
         new_channel.hello()
