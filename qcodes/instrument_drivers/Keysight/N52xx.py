@@ -4,7 +4,7 @@ import re
 import logging
 
 import numpy as np
-from pyvisa import VisaIOError
+from pyvisa import VisaIOError, errors
 from qcodes import (VisaInstrument, InstrumentChannel, ArrayParameter,
                     ChannelList)
 from qcodes.utils.validators import Ints, Numbers, Enum, Bool
@@ -449,8 +449,11 @@ class PNABase(VisaInstrument):
         # if no traces were selected.
         try:
             active_trace = self.active_trace()
-        except VisaIOError:
-            active_trace = None
+        except VisaIOError as e:
+            if e.error_code == errors.StatusCode.error_timeout:
+                active_trace = None
+            else:
+                raise
 
         # Get a list of traces from the instrument and fill in the traces list
         parlist = self.get_trace_catalog().split(",")
