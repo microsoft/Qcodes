@@ -580,17 +580,69 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
         Returns:
               list: List of keyword arguments to initialize channels
+
+        Example:
+            The keyword arguments in this function come from `load_from_instrument`. If
+            we are using a `AutoLoadableChannelList`, the keyword arguments ultimately
+            come from the initialization method of the channel list. In the example below,
+            the folder="shared:" keyword argument is supplied to _discover_from_instrument:
+            >>> from qcodes import VisaInstrument
+            >>> from qcodes.instrument.channel import AutoLoadableChannelList
+            >>> self = VisaInstrument("self", "USB:1:INSTR")
+            >>> channels = AutoLoadableChannelList(self, "channels", MyChannelClass, folder="shared:")
         """
         raise NotImplementedError("Please subclass")
 
     @classmethod
-    def get_new_instance_kwargs(cls, parent: Instrument, **kwargs)->dict:
+    def new_instance(
+            cls, parent: Instrument, create_on_instrument: bool=True,
+            channel_list: 'AutoLoadableChannelList'=None, **kwargs
+    )->'AutoLoadableInstrumentChannel':
+        """
+        Create a new instance of the channel
+
+        Args:
+            parent (Instrument): The instrument through which the instrument
+                channel is accessible
+            create_on_instrument (bool): When True, the channel is immediately
+                created on the instrument
+            channel_list (AutoLoadableChannelList): The channel list this channel is going to belong to
+            **kwargs (dict): Keyword arguments needed to create a new instance.
+        """
+        new_kwargs = cls._get_new_instance_kwargs(parent=parent, **kwargs)
+        new_instance = cls(parent, channel_list=channel_list, **new_kwargs)
+        if create_on_instrument:
+            new_instance.create()
+
+        return new_instance
+
+    @classmethod
+    def _get_new_instance_kwargs(cls, parent: Instrument=None, **kwargs)->dict:
         """
         When creating a new instance of this channel type,
         this method will return kwargs to create this
 
         Args:
-            parent: The instrument the new channel will belong to
+            parent: The instrument the new channel will belong to. Not all instruments need this so it is an
+            optional argument
+            **kwargs (dict): See example
+
+        Example:
+             We show an example implementation to clarify the use of keyword arguments in this method. We have an
+             instrument with a number of channels which can be added or deleted from the instrument. Each channel
+             has 'traces' which are also represented in software as channel objects. We implement the
+             `_get_new_instance_kwargs` of the trace objects. Simply look up how many traces have already been
+             defined on a channel and add a trace with the next trace number.
+
+             >>> class TraceClass(AutoLoadableInstrumentChannel):
+             >>> ...
+             >>>> def _get_new_instance_kwargs(cls, channel_number:int, parent: Instrument=None):
+             >>>>>  trace_numbers = parent.root_instrument.channels[channel_number].trace_numbers
+             >>>>>  new_trace_number = len(trace_numbers)
+             >>>>>  return {"trace_number": new_trace_number}
+             >>> new_trace = TraceClass.new_instance(parent, channel_number=2)
+
+             In this case, we expect the kwargs of _get_new_instance_kwargs to contain a channel_number key.
         """
         raise NotImplementedError("Please subclass")
 
@@ -622,10 +674,13 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     def create(self) ->None:
         """Create the channel on the instrument"""
+        if self._exists_on_instrument:
+            raise RuntimeError("Channel already exists on instrument")
+
         self._create()
         self._exists_on_instrument = True
 
-    def _create(self) ->None:
+    def _create(self)->None:
         """
         (SCPI) commands needed to create the instrument. Note that we
         need to use `self.root_instrument.write` to send commands,
@@ -634,31 +689,32 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         """
         raise NotImplementedError("Please subclass")
 
-    def delete(self) ->None:
+    def remove(self)->None:
         """
         Delete the channel from the instrument and remove from channel list
         """
-        self._delete()
-        if self._channel_list is not None:
+        self._assert_existence()
+        self._remove()
+        if self._channel_list is not None and self in self._channel_list:
             self._channel_list.remove(self)
         self._exists_on_instrument = False
 
-    def _delete(self) ->None:
+    def _remove(self) ->None:
         raise NotImplementedError("Please subclass")
 
-    def _assert_existence(self) ->None:
+    def _assert_existence(self)->None:
         if not self._exists_on_instrument:
             raise RuntimeError(
                 "Object does not exist (anymore) on the instrument")
 
-    def write(self, cmd: str) ->Any:
+    def write(self, cmd: str)->Any:
         """
         Only write to the instrument if the channel is present on the instrument
         """
         self._assert_existence()
         return super().write(cmd)
 
-    def ask(self, cmd: str) ->None:
+    def ask(self, cmd: str)->None:
         """
         Only query to the instrument if the channel is present on the instrument
         """
@@ -666,7 +722,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return super().ask(cmd)
 
     @property
-    def exists_on_instrument(self):
+    def exists_on_instrument(self)->bool:
         return self._exists_on_instrument
 
 
@@ -703,12 +759,12 @@ class AutoLoadableChannelList(ChannelList):
         """
         Add a channel to the list
         """
-        new_kwargs = self._chan_type.get_new_instance_kwargs(self._parent, **kwargs)
-
-        new_channel: AutoLoadableInstrumentChannel = self._chan_type(
-            parent=self._parent, channel_list=self, **new_kwargs
+        new_channel = self._chan_type.new_instance(
+            self._parent,
+            create_on_instrument=True,
+            channel_list=self,
+            **kwargs
         )
 
-        new_channel.create()
         self.append(new_channel)
         return new_channel

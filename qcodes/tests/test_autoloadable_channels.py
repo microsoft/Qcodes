@@ -5,7 +5,7 @@ instrument. Please note that `channel` in this context does not necessarily
 mean a physical instrument channel, but rather an instrument sub-module.
 """
 
-from typing import List, Union
+from typing import List, Union, Any
 import pytest
 import re
 
@@ -15,11 +15,19 @@ from qcodes.instrument.channel import (
 )
 
 
-class DummyBackendBase:
-    def __init__(self):
+class MockBackendBase:
+    """
+    A very simple mock backend that contains a dictionary with string keys and callable
+    values. The keys are matched to input commands with regular expressions and on
+    match the corresponding callable is called.
+    """
+    def __init__(self)->None:
         self._command_dict = {}
 
-    def send(self, cmd):
+    def send(self, cmd: str)->Any:
+        """
+        Instead of sending a string to the Visa backend, we use this function as a mock
+        """
         keys = self._command_dict.keys()
         ans = None
         key = ""
@@ -35,10 +43,25 @@ class DummyBackendBase:
         return self._command_dict[key](*args)
 
 
-class TestInstrumentBackend(DummyBackendBase):
-    def __init__(self):
+class MockBackend(MockBackendBase):
+    """
+    A mock backend for our test instrument. It defines the following SCPI (like) commands:
+
+    INST:CHN<n>:HLO
+    Return the string "Hello from channel <n>" where n is a channel number
+
+    INST:CHN:ADD <n>
+    Add a channel with channel number n
+
+    INST:CHN:DEL <n>
+    Delete a channel with channel number n
+
+    INST:CHN:CAT
+    Return a catalog of currently defined channels
+    """
+    def __init__(self)->None:
         super().__init__()
-        self._channel_catalog = ["1", "2", "4"]
+        self._channel_catalog = ["1", "2", "4"]  # Pre-existing channels
 
         self._command_dict = {
             r":INST:CHN(\d):HLO": lambda chn: f"Hello from channel {chn}",
@@ -68,7 +91,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         return kwarg_list
 
     @classmethod
-    def get_new_instance_kwargs(cls, parent: Instrument, **kwargs) -> dict:
+    def _get_new_instance_kwargs(cls, parent: Instrument=None, **kwargs) -> dict:
         """
         Find the smallest channel number not yet occupied
         """
@@ -105,82 +128,94 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     def _create(self)->None:
         """Create the channel on the instrument"""
-        self.parent.write(f":INST:CHN:ADD {self._channel}")
+        self.parent.root_instrument.write(f":INST:CHN:ADD {self._channel}")
 
-    def _delete(self)->None:
+    def _remove(self)->None:
         """Remove the channel from the instrument"""
         self.write(f":INST:CHN:DEL {self._channel}")
 
 
-class TestInstrument(Instrument):
+class DummyInstrument(Instrument):
     """
     This dummy instrument allows the creation and deletion of
     channels
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str)->None:
         super().__init__(name)
 
-        self._backend = TestInstrumentBackend()
+        self._backend = MockBackend()
 
         self.add_parameter(
             "channel_catalog",
             get_cmd=":INST:CHN:CAT",
         )
 
-    def write_raw(self, cmd: str):
-        return self._backend.send(cmd)
-
-    def ask_raw(self, cmd: str):
-        return self._backend.send(cmd)
-
-
-class DummyInstrumentWithChannelList(TestInstrument):
-    def __init__(self, name):
-        super().__init__(name)
-
         channels = AutoLoadableChannelList(self, "channels", SimpleTestChannel)
         self.add_submodule("channels", channels)
 
+    def write_raw(self, cmd: str)->None:
+        self._backend.send(cmd)
 
-def test_sanity():
+    def ask_raw(self, cmd: str)->str:
+        return self._backend.send(cmd)
 
-    instrument = TestInstrument("instrument")
-    channels = SimpleTestChannel.load_from_instrument(instrument)
+
+@pytest.fixture(scope='function')
+def dummy_instrument():
+    instrument = DummyInstrument("instrument")
+    yield instrument
+    instrument.close()
+
+
+def test_sanity(dummy_instrument):
+    """
+    Test the basic functionality of the auto-loadable channels, without using
+    the auto-loadable channels list
+    """
+    # Test that we are able to discover instruments automatically
+    channels = SimpleTestChannel.load_from_instrument(dummy_instrument)
     assert len(channels) == 3
     assert channels[0].hello() == "Hello from channel 1"
     assert channels[1].hello() == "Hello from channel 2"
     assert channels[2].hello() == "Hello from channel 4"
-
-    new_channel_kwargs = SimpleTestChannel.get_new_instance_kwargs(instrument)
-    new_channel = SimpleTestChannel(instrument, **new_channel_kwargs)
-
-    with pytest.raises(RuntimeError):
-        new_channel.hello()  # We have only instantiated a channel class, we
-        # have yet to create it on the instrument
-
+    # Test that we can generate a new instance of the channels without conflicting names
+    new_channel_kwargs = SimpleTestChannel._get_new_instance_kwargs(dummy_instrument)
+    new_channel = SimpleTestChannel(dummy_instrument, **new_channel_kwargs)
+    # Instrument IO through the newly instantiated channel should raise an
+    # exception before actually creating the channel on the instrument
+    with pytest.raises(RuntimeError) as e1:
+        new_channel.hello()
+    assert e1.value.args[0] == "Object does not exist (anymore) on the instrument"
+    # After creating the channel we should be able to talk to the instrument.
     new_channel.create()
     assert new_channel.hello() == "Hello from channel 3"
-    new_channel.delete()
-
-    with pytest.raises(RuntimeError):
+    # Once we remove the channel we should no longer be able to talk to the instrument
+    new_channel.remove()
+    with pytest.raises(RuntimeError) as e2:
         new_channel.hello()  # We have deleted the channel and it should no longer be
         # available
+    assert e2.value.args[0] == "Object does not exist (anymore) on the instrument"
 
 
-def test_channels_list():
-    instrument = DummyInstrumentWithChannelList("instrument2")
-    assert instrument.channels[0].hello() == "Hello from channel 1"
-    assert instrument.channels[1].hello() == "Hello from channel 2"
-    assert instrument.channels[2].hello() == "Hello from channel 4"
-
-    new_channel = instrument.channels.add()
-    assert len(instrument.channels) == 4
-    assert new_channel is instrument.channels[-1]
+def test_channels_list(dummy_instrument):
+    """
+    Test the auto-loadable channels list
+    """
+    assert dummy_instrument.channels[0].hello() == "Hello from channel 1"
+    assert dummy_instrument.channels[1].hello() == "Hello from channel 2"
+    assert dummy_instrument.channels[2].hello() == "Hello from channel 4"
+    assert len(dummy_instrument.channels) == 3
+    # Test that we can add channels
+    new_channel = dummy_instrument.channels.add()
+    assert len(dummy_instrument.channels) == 4
+    assert new_channel is dummy_instrument.channels[-1]
     assert new_channel.hello() == "Hello from channel 3"
-
-    new_channel.delete()
-    assert len(instrument.channels) == 3
-    assert new_channel not in instrument.channels
-    with pytest.raises(RuntimeError):
+    # Test that we can remove them
+    new_channel.remove()
+    assert len(dummy_instrument.channels) == 3
+    assert new_channel not in dummy_instrument.channels
+    # Once removed we should no longer be able to talk to the channel
+    with pytest.raises(RuntimeError) as e:
         new_channel.hello()
+    assert e.value.args[0] == "Object does not exist (anymore) on the instrument"
