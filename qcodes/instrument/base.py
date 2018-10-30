@@ -186,7 +186,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 log.warning(f"Snapshot: Could not update parameter: "
                             f"{name} on {self.full_name}")
                 log.info(f"Details for Snapshot of {name}:",
-                         exec_info=True)
+                         exc_info=True)
 
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
@@ -641,6 +641,24 @@ class Instrument(InstrumentBase):
                 raise exception
 
         return instrument_exists
+
+    @staticmethod
+    def is_valid(instr_instance: 'Instrument') -> bool:
+        """
+        Check if a given instance of an instrument is valid: if an instrument
+        has been closed, its instance is not longer a "valid" instrument.
+
+        Args:
+            instr_instance: instance of an Instrument class or its subclass
+        """
+        if isinstance(instr_instance, Instrument) \
+                and instr_instance in instr_instance.instances():
+            # note that it is important to call `instances` on the instance
+            # object instead of `Instrument` class, because instances of
+            # Instrument subclasses are recorded inside their subclasses; see
+            # `instances` for more information
+            return True
+        return False
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #

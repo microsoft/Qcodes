@@ -29,6 +29,13 @@ def test_load_by_id():
     assert loaded_ds.completed is False
     assert loaded_ds.exp_id == 1
 
+    # let's take a run number that is not in the temporary test database file
+    non_existing_run_id = run_id + 1
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = load_by_id(non_existing_run_id)
+
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_load_by_counter():
@@ -149,7 +156,10 @@ def test_get_data_by_id_order(dataset):
     indepB = ParamSpec('indep2', "numeric")
     depAB = ParamSpec('depAB', "numeric", depends_on=[indepA, indepB])
     depBA = ParamSpec('depBA', "numeric", depends_on=[indepB, indepA])
-    dataset.add_parameters([indepA, indepB, depAB, depBA])
+    dataset.add_parameter(indepA)
+    dataset.add_parameter(indepB)
+    dataset.add_parameter(depAB)
+    dataset.add_parameter(depBA)
 
     dataset.add_result({'depAB': 12,
                         'indep2': 2,

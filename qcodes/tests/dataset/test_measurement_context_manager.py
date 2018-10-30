@@ -25,6 +25,7 @@ from qcodes.dataset.data_set import load_by_id
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
+from qcodes.tests.test_station import set_default_station_to_none
 
 
 @pytest.fixture  # scope is "function" per default
@@ -587,6 +588,7 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
        write_period=hst.floats(min_value=0.1, max_value=1.5),
        set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
        get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20))
+@pytest.mark.usefixtures('set_default_station_to_none')
 def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
                            breakpoint, write_period):
     no_of_runs = len(experiment)
@@ -619,9 +621,6 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
             datasaver.add_result((DAC.ch2, 1), (DAC.ch2, 2))
         with pytest.raises(ValueError):
             datasaver.add_result((DMM.v1, 0))
-
-    # important cleanup, else the following tests will fail
-    qc.Station.default = None
 
     # More assertions of setpoints, labels and units in the DB!
 
@@ -697,6 +696,73 @@ def test_datasaver_arrays_lists_tuples(N):
                              ('gate_voltage', 0))
 
     assert datasaver.points_written == N
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_numeric_and_array_paramtype():
+    """
+    Test saving one parameter with 'numeric' paramtype and one parameter with
+    'array' paramtype
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+
+    signal = np.random.randn(113)
+
+    with meas.run() as datasaver:
+        datasaver.add_result(('numeric_1', 3.75), ('array_1', signal))
+
+    assert datasaver.points_written == 1
+
+    data = datasaver.dataset.get_data(
+        *datasaver.dataset.parameters.split(','))
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_numeric_after_array_paramtype():
+    """
+    Test that passing values for 'array' parameter in `add_result` before
+    passing values for 'numeric' parameter works.
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+
+    signal = np.random.randn(113)
+
+    with meas.run() as datasaver:
+        # it is important that first comes the 'array' data and then 'numeric'
+        datasaver.add_result(('array_1', signal), ('numeric_1', 3.75))
+
+    assert datasaver.points_written == 1
+
+    data = datasaver.dataset.get_data(
+        *datasaver.dataset.parameters.split(','))
+    assert 3.75 == data[0][0]
+    assert np.allclose(data[0][1], signal)
 
 
 @pytest.mark.usefixtures("experiment")
