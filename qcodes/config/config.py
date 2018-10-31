@@ -9,7 +9,7 @@ from os.path import expanduser
 from pathlib import Path
 
 import jsonschema
-from typing import Dict
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class Config:
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()
 
-    def load_default(self):
+    def load_default(self) -> Tuple[dict, dict]:
         defaults = self.load_config(self.default_file_name)
         defaults_schema = self.load_config(self.schema_default_file_name)
         self.validate(defaults, defaults_schema)
@@ -156,7 +156,9 @@ class Config:
             schema_file = os.path.join(self.config_file_path,
                                        self.schema_file_name)
             self._update_config_from_file(config_file, schema_file, config)
-
+        if config is None:
+            raise RuntimeError("Could not load config from any of the "
+                               "expected locations.")
         self.current_config = config
         self.current_config_path = self._loaded_config_files[-1]
 
