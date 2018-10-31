@@ -83,10 +83,17 @@ DataSet
 .. autosummary::
    :toctree: generated/
 
-    qcodes.dataset.measurements.DataSaver
-    qcodes.dataset.measurements.Runner
     qcodes.dataset.measurements.Measurement
+    qcodes.dataset.measurements.DataSaver
 
+    qcodes.dataset.experiment_container.Experiment
+    qcodes.dataset.experiment_container.new_experiment
+    qcodes.dataset.experiment_container.load_last_experiment
+
+    qcodes.dataset.database.initialise_database
+    qcodes.dataset.database.initialise_or_create_database_at
+
+    qcodes.dataset.plotting.plot_by_id
 
 Instrument
 ~~~~~~~~~~
