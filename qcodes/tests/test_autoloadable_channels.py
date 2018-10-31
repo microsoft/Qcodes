@@ -17,16 +17,17 @@ from qcodes.instrument.channel import (
 
 class MockBackendBase:
     """
-    A very simple mock backend that contains a dictionary with string keys and callable
-    values. The keys are matched to input commands with regular expressions and on
-    match the corresponding callable is called.
+    A very simple mock backend that contains a dictionary with string keys and
+    callable values. The keys are matched to input commands with regular
+    expressions and on match the corresponding callable is called.
     """
     def __init__(self)->None:
         self._command_dict = {}
 
     def send(self, cmd: str)->Any:
         """
-        Instead of sending a string to the Visa backend, we use this function as a mock
+        Instead of sending a string to the Visa backend, we use this function
+        as a mock
         """
         keys = self._command_dict.keys()
         ans = None
@@ -45,14 +46,15 @@ class MockBackendBase:
 
 class MockBackend(MockBackendBase):
     """
-    A mock backend for our test instrument. It defines the following SCPI (like) commands:
+    A mock backend for our test instrument. It defines the following SCPI (like)
+    commands:
 
     INST:CHN<n>:HLO
     Return the string "Hello from channel <n>" where n is a channel number
 
     INST:CHN:ADD <n>, <greeting>
-    Add a channel with channel number n. We use the greeting when the hello parameter
-    is called.
+    Add a channel with channel number n. We use the greeting when the hello
+    parameter is called.
 
     INST:CHN:DEL <n>
     Delete a channel with channel number n
@@ -69,10 +71,12 @@ class MockBackend(MockBackendBase):
         self._greetings = {chn: "Hello" for chn in self._channel_catalog}
 
         self._command_dict = {
-            r":INST:CHN(\d):HLO": lambda chn: self._greetings[chn] + " from channel " + str(chn),
+            r":INST:CHN(\d):HLO":
+                lambda chn: self._greetings[chn] + " from channel " + str(chn),
             r":INST:CHN:ADD (\d), (.+)": self._add_channel,
             r":INST:CHN:DEL (\d)": self._channel_catalog.remove,
-            r":INST:CHN:CAT": lambda: ",".join([str(i) for i in self._channel_catalog]),
+            r":INST:CHN:CAT": lambda: ",".join([
+                str(i) for i in self._channel_catalog]),
             r":INST:CHN(\d):GRT":  self._greetings.get
         }
 
@@ -80,7 +84,7 @@ class MockBackend(MockBackendBase):
         """
         Add a channel on the mock instrument
         """
-        self._channel_catalog.append(str(chn))
+        self._channel_catalog.append(chn)
         self._greetings[chn] = greeting
 
 
@@ -118,7 +122,8 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         return kwarg_list
 
     @classmethod
-    def _get_new_instance_kwargs(cls, parent: Instrument=None, **kwargs) -> dict:
+    def _get_new_instance_kwargs(
+            cls, parent: Instrument=None, **kwargs) -> dict:
         """
         Find the smallest channel number not yet occupied. An optional keyword
         `greeting` is extracted from the kwargs. The default is "Hello"
@@ -159,7 +164,8 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     def _create(self)->None:
         """Create the channel on the instrument"""
-        self.parent.root_instrument.write(f":INST:CHN:ADD {self._channel}, {self._greeting}")
+        self.parent.root_instrument.write(
+            f":INST:CHN:ADD {self._channel}, {self._greeting}")
 
     def _remove(self)->None:
         """Remove the channel from the instrument"""
@@ -182,7 +188,8 @@ class DummyInstrument(Instrument):
             get_cmd=":INST:CHN:CAT",
         )
 
-        channels = AutoLoadableChannelList(self, "channels", SimpleTestChannel, channels_to_skip=["5"])
+        channels = AutoLoadableChannelList(
+            self, "channels", SimpleTestChannel, channels_to_skip=["5"])
         self.add_submodule("channels", channels)
 
     def write_raw(self, cmd: str)->None:
@@ -211,23 +218,30 @@ def test_sanity(dummy_instrument):
     assert channels[1].hello() == "Hello from channel 2"
     assert channels[2].hello() == "Hello from channel 4"
     assert channels[3].hello() == "Hello from channel 5"
-    # Test that we can generate a new instance of the channels without conflicting names
-    new_channel_kwargs = SimpleTestChannel._get_new_instance_kwargs(dummy_instrument)
+    # Test that we can generate a new instance of the channels without
+    # conflicting names
+    new_channel_kwargs = SimpleTestChannel._get_new_instance_kwargs(
+        dummy_instrument)
+
     new_channel = SimpleTestChannel(dummy_instrument, **new_channel_kwargs)
     # Instrument IO through the newly instantiated channel should raise an
     # exception before actually creating the channel on the instrument
     with pytest.raises(RuntimeError) as e1:
         new_channel.hello()
-    assert e1.value.args[0] == "Object does not exist (anymore) on the instrument"
+    assert e1.value.args[0] == "Object does not exist (anymore) on the " \
+                               "instrument"
     # After creating the channel we should be able to talk to the instrument.
     new_channel.create()
     assert new_channel.hello() == "Hello from channel 3"
-    # Once we remove the channel we should no longer be able to talk to the instrument
+    # Once we remove the channel we should no longer be able to talk to the
+    # instrument
     new_channel.remove()
     with pytest.raises(RuntimeError) as e2:
-        new_channel.hello()  # We have deleted the channel and it should no longer be
+        new_channel.hello()  # We have deleted the channel and it should no
+        # longer be
         # available
-    assert e2.value.args[0] == "Object does not exist (anymore) on the instrument"
+    assert e2.value.args[0] == "Object does not exist (anymore) on the " \
+                               "instrument"
 
 
 def test_channels_list(dummy_instrument):
@@ -250,7 +264,8 @@ def test_channels_list(dummy_instrument):
     # Once removed we should no longer be able to talk to the channel
     with pytest.raises(RuntimeError) as e:
         new_channel.hello()
-    assert e.value.args[0] == "Object does not exist (anymore) on the instrument"
+    assert e.value.args[0] == "Object does not exist (anymore) on the " \
+                              "instrument"
     # Remove a channel that was pre-existing on the instrument.
     dummy_instrument.channels[-1].remove()
     assert len(dummy_instrument.channels) == 2

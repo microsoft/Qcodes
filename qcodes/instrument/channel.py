@@ -45,7 +45,7 @@ class InstrumentChannel(InstrumentBase):
         # Naming insanity:
         # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
         # this has been a confusion about names. don't use name but
-        # full_name, or short_name. 
+        # full_name, or short_name.
         self.name = "{}_{}".format(parent.name, str(name))
 
 
@@ -546,14 +546,16 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def load_from_instrument(
-            cls, parent: Instrument, channel_list=None, **kwargs) ->List['AutoLoadableInstrumentChannel']:
+            cls, parent: Instrument, channel_list=None, **kwargs
+    )->List['AutoLoadableInstrumentChannel']:
         """
         Load channels that already exist on the instrument
 
         Args:
             parent (Instrument): The instrument through which the instrument
                 channel is accessible
-            channel_list (AutoLoadableChannelList): A channel list this channel is a part of
+            channel_list (AutoLoadableChannelList): The channel list this
+                channel is a part of
             **kwargs (dict): Keyword arguments needed to create the channels
 
         Returns:
@@ -562,7 +564,10 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
         obj_list = []
         for new_kwargs in cls._discover_from_instrument(parent, **kwargs):
-            obj = cls(parent, existence=True, channel_list=channel_list, **new_kwargs)
+            obj = cls(
+                parent, existence=True, channel_list=channel_list,
+                **new_kwargs
+            )
             obj_list.append(obj)
 
         return obj_list
@@ -580,17 +585,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             **kwargs (dict): Keyword arguments needed to discover the channels
 
         Returns:
-              list: List of keyword arguments to initialize channels
-
-        Example:
-            The keyword arguments in this function come from `load_from_instrument`. If
-            we are using a `AutoLoadableChannelList`, the keyword arguments ultimately
-            come from the initialization method of the channel list. In the example below,
-            the folder="shared:" keyword argument is supplied to _discover_from_instrument:
-            >>> from qcodes import VisaInstrument
-            >>> from qcodes.instrument.channel import AutoLoadableChannelList
-            >>> self = VisaInstrument("self", "USB:1:INSTR")
-            >>> channels = AutoLoadableChannelList(self, "channels", MyChannelClass, folder="shared:")
+              list: List of keyword arguments to initialize channels.
         """
         raise NotImplementedError("Please subclass")
 
@@ -607,7 +602,8 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
                 channel is accessible
             create_on_instrument (bool): When True, the channel is immediately
                 created on the instrument
-            channel_list (AutoLoadableChannelList): The channel list this channel is going to belong to
+            channel_list (AutoLoadableChannelList): The channel list this
+                channel is going to belong to
             **kwargs (dict): Keyword arguments needed to create a new instance.
         """
         new_kwargs = cls._get_new_instance_kwargs(parent=parent, **kwargs)
@@ -620,13 +616,19 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def _get_new_instance_kwargs(cls, parent: Instrument=None, **kwargs)->dict:
         """
-        Returns a dictionary which is used as keyword args when instantiating a channel
+        Returns a dictionary which is used as keyword args when instantiating a
+        channel
 
         Args:
-            parent: The instrument the new channel will belong to. Not all instruments need this so it is an
-                optional argument
-            **kwargs (dict): Additional arguments which are needed to instantiate a channel can be
-                given directly by the calling function.
+            parent: The instrument the new channel will belong to. Not all
+                instruments need this so it is an optional argument
+            **kwargs (dict): Additional arguments which are needed to
+                instantiate a channel can be given directly by the calling
+                function.
+
+        Returns:
+            new_kwargs (dict): A keyword argument dictionary with at least a
+            `name` key
         """
         raise NotImplementedError("Please subclass")
 
