@@ -7,6 +7,7 @@ from functools import partial
 from contextlib import contextmanager
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
+from typing import Optional
 import pytest
 import tempfile
 import qcodes.config
@@ -136,7 +137,7 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   }
 
 @contextmanager
-def default_config():
+def default_config(user_config: Optional[str]=None):
     """
     Context manager to temporarily establish default config settings.
     This is achieved by overwritting the config paths of the user-,
@@ -145,8 +146,6 @@ def default_config():
     Additionally the current config object `qcodes.config` gets copied and
     reestablished.
     """
-    default = qcodes.Config.default_file_name
-    default_schema = qcodes.Config.schema_default_file_name
     home_file_name = qcodes.Config.home_file_name
     schema_home_file_name = qcodes.Config.schema_home_file_name
     env_file_name = qcodes.Config.env_file_name
@@ -154,27 +153,34 @@ def default_config():
     cwd_file_name = qcodes.Config.cwd_file_name
     schema_cwd_file_name = qcodes.Config.schema_cwd_file_name
 
-    qcodes.Config.home_file_name = default
-    qcodes.Config.schema_home_file_name = default_schema
-    qcodes.Config.env_file_name = default
-    qcodes.Config.schema_env_file_name = default_schema
-    qcodes.Config.cwd_file_name = default
-    qcodes.Config.schema_cwd_file_name = default_schema
+    qcodes.Config.home_file_name = ''
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file_name = os.path.join(tmpdirname, 'user_config.json')
+        if user_config is not None:
+            with open(file_name, 'w') as f:
+                f.write(user_config)
 
-    default_config_obj = copy.deepcopy(qcodes.config)
-    qcodes.config = qcodes.Config()
+        qcodes.Config.home_file_name = file_name
+        qcodes.Config.schema_home_file_name = ''
+        qcodes.Config.env_file_name = ''
+        qcodes.Config.schema_env_file_name = ''
+        qcodes.Config.cwd_file_name = ''
+        qcodes.Config.schema_cwd_file_name = ''
 
-    try:
-        yield
-    finally:
-        qcodes.Config.home_file_name = home_file_name
-        qcodes.Config.schema_home_file_name = schema_home_file_name
-        qcodes.Config.env_file_name = env_file_name
-        qcodes.Config.schema_env_file_name = schema_env_file_name
-        qcodes.Config.cwd_file_name = cwd_file_name
-        qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+        default_config_obj = copy.deepcopy(qcodes.config)
+        qcodes.config = qcodes.Config()
 
-        qcodes.config = default_config_obj
+        try:
+            yield
+        finally:
+            qcodes.Config.home_file_name = home_file_name
+            qcodes.Config.schema_home_file_name = schema_home_file_name
+            qcodes.Config.env_file_name = env_file_name
+            qcodes.Config.schema_env_file_name = schema_env_file_name
+            qcodes.Config.cwd_file_name = cwd_file_name
+            qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+
+            qcodes.config = default_config_obj
 
 
 def side_effect(map, name):
