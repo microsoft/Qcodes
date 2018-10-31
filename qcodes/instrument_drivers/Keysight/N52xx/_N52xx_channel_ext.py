@@ -6,7 +6,7 @@ these channels and keeps track of creation and deletion. Write and ask actions
 are only allowed if the channels exists on the instrument.
 """
 
-from typing import List, Optional, Sequence, Any
+from typing import List, Optional, Sequence, Any, cast
 
 from qcodes import Instrument, InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
@@ -20,7 +20,7 @@ class N52xxInstrumentChannel(InstrumentChannel):
     ChannelList classes.
     """
 
-    discover_command = None
+    discover_command: str = None
 
     @classmethod
     def load_from_instrument(
@@ -191,18 +191,21 @@ class N52xxChannelList(ChannelList):
             self,
             parent: Instrument,
             name: str,
-            chan_type: type,
+            chan_type: 'N52xxInstrumentChannel',
             chan_list: Optional[Sequence['N52xxInstrumentChannel']] = None,
             snapshotable: bool = True,
             multichan_paramclass: type = MultiChannelInstrumentParameter,
             **kwargs
     ) ->None:
 
-        super().__init__(parent, name, chan_type, chan_list, snapshotable,
-                         multichan_paramclass)
+        super().__init__(
+            parent, name, cast(type, chan_type), chan_list, snapshotable,
+            multichan_paramclass
+        )
 
         new_channels = self._chan_type.load_from_instrument(
-            self._parent, channel_list=self, **kwargs)
+            self._parent, channel_list=self, **kwargs
+        )
 
         for channel in new_channels:
             # NB: There is a bug in `extend`. TODO: Make a PR!

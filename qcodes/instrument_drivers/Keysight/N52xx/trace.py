@@ -36,7 +36,7 @@ class TraceParameter(ArrayParameter):
         )
 
     @property
-    def shape(self) -> tuple:
+    def shape(self) -> Sequence[int]:
         if not self._channel.exists_on_instrument:
             return tuple()
 
@@ -47,7 +47,7 @@ class TraceParameter(ArrayParameter):
         pass
 
     @property
-    def setpoints(self) -> tuple:
+    def setpoints(self) -> Sequence:
         if not self._channel.exists_on_instrument:
             return tuple()
 

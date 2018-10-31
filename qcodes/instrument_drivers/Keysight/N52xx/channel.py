@@ -272,9 +272,9 @@ class N52xxChannel(N52xxInstrumentChannel):
             qcodes/docs/examples/driver_examples/Qcodes_example_with_Keysight_PNA_N5222B.ipynb
         """
         if ports is None:
-            ports_string = "1,2,3,4"
-        else:
-            ports_string = ",".join([str(p) for p in ports])
+            ports = range(1, self.base_instrument.port_count + 1)
+
+        ports_string = ",".join([str(p) for p in ports])
 
         # We want our SNP data in Real-Imaginary format
         self.write('MMEM:STOR:TRAC:FORM:SNP RI')
