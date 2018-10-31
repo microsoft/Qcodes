@@ -95,6 +95,8 @@ DataSet
     qcodes.dataset.database.initialise_database
     qcodes.dataset.database.initialise_or_create_database_at
 
+    qcodes.dataset.data_set.load_by_id
+
     qcodes.dataset.plotting.plot_by_id
 
 Instrument
