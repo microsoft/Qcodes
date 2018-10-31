@@ -174,6 +174,9 @@ def _copy_single_dataset_into_db(dataset: DataSet,
     if len(res) > 0:
         return
 
+    parspecs = dataset.paramspecs.values()
+    data_column_names_and_types = ",".join([p.sql_repr() for p in parspecs])
+
     target_run_id = _copy_runs_table_entries(source_conn,
                                              target_conn,
                                              dataset.run_id,
@@ -185,7 +188,8 @@ def _copy_single_dataset_into_db(dataset: DataSet,
     _copy_results_table(source_conn,
                         target_conn,
                         dataset.run_id,
-                        target_run_id)
+                        target_run_id,
+                        data_column_names_and_types)
 
 
 def _copy_runs_table_entries(source_conn: SomeConnection,
@@ -251,8 +255,8 @@ def _update_run_counter(target_conn: SomeConnection, target_exp_id) -> None:
     cursor.execute(update_sql, (target_exp_id,))
 
 
-def _copy_layouts_and_dependencies(target_conn: SomeConnection,
-                                   source_conn: SomeConnection,
+def _copy_layouts_and_dependencies(source_conn: SomeConnection,
+                                   target_conn: SomeConnection,
                                    source_run_id: int) -> None:
     """
     Copy over the layouts and dependencies tables. Note that the layout_ids
@@ -261,7 +265,7 @@ def _copy_layouts_and_dependencies(target_conn: SomeConnection,
     layout_id 2 that depends on layout_id 1)
     """
     layout_query = """
-                   SELECT layout_id, run_id, parameter, label, unit, inferred_from
+                   SELECT layout_id, run_id, "parameter", label, unit, inferred_from
                    FROM layouts
                    WHERE run_id = ?
                    """
@@ -319,7 +323,8 @@ def _copy_layouts_and_dependencies(target_conn: SomeConnection,
 def _copy_results_table(source_conn: SomeConnection,
                         target_conn: SomeConnection,
                         source_run_id: int,
-                        target_run_id: int) -> None:
+                        target_run_id: int,
+                        column_names_and_types: str) -> None:
     """
     Copy the contents of the results table. Creates a new results_table with
     a name appropriate for the target DB and updates the rows of that table
@@ -364,11 +369,10 @@ def _copy_results_table(source_conn: SomeConnection,
                                           exp_id,
                                           run_counter)
 
-    column_names = ','.join(data_columns)
     make_table = f"""
                   CREATE TABLE "{target_table_name}" (
                       id INTEGER PRIMARY KEY,
-                      {column_names}
+                      {column_names_and_types}
                   )
                   """
 
@@ -378,6 +382,7 @@ def _copy_results_table(source_conn: SomeConnection,
     # according to one of our reports, multiple single-row inserts
     # are okay if there's only one commit
 
+    column_names = ','.join(data_columns)
     value_placeholders = sql_placeholder_string(len(data_columns))
     insert_data = f"""
                    INSERT INTO "{target_table_name}"
