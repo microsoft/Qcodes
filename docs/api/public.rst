@@ -89,6 +89,7 @@ DataSet
     qcodes.dataset.experiment_container.Experiment
     qcodes.dataset.experiment_container.new_experiment
     qcodes.dataset.experiment_container.load_last_experiment
+    qcodes.dataset.experiment_container.load_or_create_experiment
 
     qcodes.dataset.database.initialise_database
     qcodes.dataset.database.initialise_or_create_database_at
