@@ -240,6 +240,8 @@ def console_level(level: LevelType):
         level: level to set the console handler to
     """
     global console_handler
+    if console_handler is None:
+        raise RuntimeError("Console handler is None")
     with handler_level(level, handler=console_handler):
         yield
 
