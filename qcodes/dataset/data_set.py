@@ -182,6 +182,15 @@ class _Subscriber(Thread):
 
 
 class DataSet(Sized):
+
+    # the "persistent traits" are the attributes/properties of the DataSet
+    # that are NOT tied to the representation of the DataSet in any particular
+    # database
+    persistent_traits = ('name', 'guid', 'number_of_results', 'counter',
+                         'parameters', 'paramspecs', 'exp_name', 'sample_name',
+                         'completed', 'snapshot', 'run_timestamp_raw',
+                         'description', 'completed_timestamp_raw')
+
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
                  conn=None,
@@ -349,6 +358,34 @@ class DataSet(Sized):
     @property
     def metadata(self) -> Dict:
         return self._metadata
+
+    def the_same_dataset_as(self, other: 'DataSet') -> bool:
+        """
+        Check if two datasets correspond to the same run by comparing
+        all their persistent traits. Note that this method
+        does not compare the data itself.
+
+        This function raises if the GUIDs match but anything else doesn't
+
+        Args:
+            other: the dataset to compare self to
+        """
+
+        if not isinstance(other, DataSet):
+            return False
+
+        guids_match = self.guid == other.guid
+
+        for attr in DataSet.persistent_traits:
+            if getattr(self, attr) != getattr(other, attr):
+                if guids_match:
+                    raise RuntimeError('Bad inconsistency detected! '
+                                       'The two datasets have the same GUID,'
+                                       f' but their "{attr}" differ.')
+                else:
+                    return False
+
+        return True
 
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
