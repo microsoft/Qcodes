@@ -3,7 +3,7 @@ import numpy as np
 
 from qcodes.dataset.sqlite_base import connect, get_experiments
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set import DataSet, load_by_guid
 from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_copy_paste import copy_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
@@ -59,20 +59,15 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
     exp_attrs = ['name', 'sample_name', 'format_string', 'started_at',
                  'finished_at']
 
-    ds_attrs = ['name', 'guid', 'number_of_results',
-                'counter', 'parameters', 'paramspecs', 'exp_name',
-                'sample_name', 'completed', 'snapshot', 'run_timestamp_raw']
-
-    for ds_attr in ds_attrs:
-        assert getattr(source_dataset, ds_attr) == getattr(target_dataset, ds_attr)
-
-    for exp_attr in exp_attrs:
-        assert getattr(source_exp, exp_attr) == getattr(target_exp, exp_attr)
+    assert source_dataset.the_same_dataset_as(target_dataset)
 
     source_data = source_dataset.get_data(*source_dataset.parameters.split(','))
     target_data = target_dataset.get_data(*target_dataset.parameters.split(','))
 
     assert source_data == target_data
+
+    for exp_attr in exp_attrs:
+        assert getattr(source_exp, exp_attr) == getattr(target_exp, exp_attr)
 
 
 def test_correct_experiment_routing(two_empty_temp_db_connections,
@@ -105,6 +100,7 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
     source_exp_2 = Experiment(conn=source_conn)
     ds = DataSet(conn=source_conn, exp_id=source_exp_2.exp_id)
+    exp_2_run_ids = [ds.run_id]
 
     for ps in some_paramspecs[2].values():
         ds.add_parameter(ps)
@@ -147,3 +143,18 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
     assert len(target_exps) == 2
     assert len(test_exp1) == 5
+
+    # check that all the datasets match up
+    for run_id in exp_1_run_ids + exp_2_run_ids:
+        source_ds = DataSet(conn=source_conn, run_id=run_id)
+        target_ds = load_by_guid(guid=source_ds.guid, conn=target_conn)
+
+        print(source_ds.paramspecs)
+        print(target_ds.paramspecs)
+
+        assert source_ds.the_same_dataset_as(target_ds)
+
+        source_data = source_ds.get_data(*source_ds.parameters.split(','))
+        target_data = target_ds.get_data(*target_ds.parameters.split(','))
+
+        assert source_data == target_data
