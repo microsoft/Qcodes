@@ -77,7 +77,27 @@ Data
     GNUPlotFormat
     DiskIO
 
+DataSet
+~~~~~~~
 
+.. autosummary::
+   :toctree: generated/
+
+    qcodes.dataset.measurements.Measurement
+    qcodes.dataset.measurements.DataSaver
+
+    qcodes.dataset.experiment_container.Experiment
+    qcodes.dataset.experiment_container.new_experiment
+    qcodes.dataset.experiment_container.load_last_experiment
+    qcodes.dataset.experiment_container.load_experiment_by_name
+    qcodes.dataset.experiment_container.load_or_create_experiment
+
+    qcodes.dataset.database.initialise_database
+    qcodes.dataset.database.initialise_or_create_database_at
+
+    qcodes.dataset.data_set.load_by_id
+
+    qcodes.dataset.plotting.plot_by_id
 
 Instrument
 ~~~~~~~~~~
