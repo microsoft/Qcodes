@@ -619,30 +619,13 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def _get_new_instance_kwargs(cls, parent: Instrument=None, **kwargs)->dict:
         """
-        When creating a new instance of this channel type,
-        this method will return kwargs to create this
+        Returns a dictionary which is used as keyword args when instantiating a channel
 
         Args:
             parent: The instrument the new channel will belong to. Not all instruments need this so it is an
-            optional argument
-            **kwargs (dict): See example
-
-        Example:
-             We show an example implementation to clarify the use of keyword arguments in this method. We have an
-             instrument with a number of channels which can be added or deleted from the instrument. Each channel
-             has 'traces' which are also represented in software as channel objects. We implement the
-             `_get_new_instance_kwargs` of the trace objects. Simply look up how many traces have already been
-             defined on a channel and add a trace with the next trace number.
-
-             >>> class TraceClass(AutoLoadableInstrumentChannel):
-             >>> ...
-             >>>> def _get_new_instance_kwargs(cls, channel_number:int, parent: Instrument=None):
-             >>>>>  trace_numbers = parent.root_instrument.channels[channel_number].trace_numbers
-             >>>>>  new_trace_number = len(trace_numbers)
-             >>>>>  return {"trace_number": new_trace_number}
-             >>> new_trace = TraceClass.new_instance(parent, channel_number=2)
-
-             In this case, we expect the kwargs of _get_new_instance_kwargs to contain a channel_number key.
+                optional argument
+            **kwargs (dict): Additional arguments which are needed to instantiate a channel can be
+                given directly by the calling function.
         """
         raise NotImplementedError("Please subclass")
 

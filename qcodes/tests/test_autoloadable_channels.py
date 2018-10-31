@@ -50,25 +50,38 @@ class MockBackend(MockBackendBase):
     INST:CHN<n>:HLO
     Return the string "Hello from channel <n>" where n is a channel number
 
-    INST:CHN:ADD <n>
-    Add a channel with channel number n
+    INST:CHN:ADD <n>, <greeting>
+    Add a channel with channel number n. We use the greeting when the hello parameter
+    is called.
 
     INST:CHN:DEL <n>
     Delete a channel with channel number n
 
     INST:CHN:CAT
     Return a catalog of currently defined channels
+
+    INST:CHN<n>:GRT
+    Return the greeting of this channel
     """
     def __init__(self)->None:
         super().__init__()
-        self._channel_catalog = ["1", "2", "4"]  # Pre-existing channels
+        self._channel_catalog = ["1", "2", "4", "5"]  # Pre-existing channels
+        self._greetings = {chn: "Hello" for chn in self._channel_catalog}
 
         self._command_dict = {
-            r":INST:CHN(\d):HLO": lambda chn: f"Hello from channel {chn}",
-            r":INST:CHN:ADD (\d)": self._channel_catalog.append,
+            r":INST:CHN(\d):HLO": lambda chn: self._greetings[chn] + " from channel " + str(chn),
+            r":INST:CHN:ADD (\d), (.+)": self._add_channel,
             r":INST:CHN:DEL (\d)": self._channel_catalog.remove,
-            r":INST:CHN:CAT": lambda: ",".join([str(i) for i in self._channel_catalog])
+            r":INST:CHN:CAT": lambda: ",".join([str(i) for i in self._channel_catalog]),
+            r":INST:CHN(\d):GRT":  self._greetings.get
         }
+
+    def _add_channel(self, chn: int, greeting: str)->None:
+        """
+        Add a channel on the mock instrument
+        """
+        self._channel_catalog.append(chn)
+        self._greetings[chn] = greeting
 
 
 class SimpleTestChannel(AutoLoadableInstrumentChannel):
@@ -83,17 +96,32 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         New channels need `name` and `channel` keyword arguments.
         """
         channels_str = parent.channel_catalog()
-        kwarg_list = [
-            {"name": f"channel{i}", "channel": int(i)}
-            for i in channels_str.split(",")
-        ]
+        channels_to_skip = kwargs.get("channels_to_skip", [])  # Note that
+        # `channels_to_skip` is an optional kwarg for loading from instrument.
+        # We test this by giving this keyword during the initialization of the
+        # AutoLoadableChannelList.
+        kwarg_list = []
+        for channel_str in channels_str.split(","):
+
+            if channel_str in channels_to_skip:
+                continue
+
+            channel = int(channel_str)
+            greeting = parent.ask(f":INST:CHN{channel}:GRT")
+            new_kwargs = {
+                "name": f"channel{channel}",
+                "channel": channel,
+                "greeting": greeting
+            }
+            kwarg_list.append(new_kwargs)
 
         return kwarg_list
 
     @classmethod
     def _get_new_instance_kwargs(cls, parent: Instrument=None, **kwargs) -> dict:
         """
-        Find the smallest channel number not yet occupied
+        Find the smallest channel number not yet occupied. An optional keyword
+        `greeting` is extracted from the kwargs. The default is "Hello"
         """
         channels_str = parent.channel_catalog()
         existing_channels = [int(i) for i in channels_str.split(",")]
@@ -102,24 +130,27 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         while new_channel in existing_channels:
             new_channel += 1
 
-        kwargs = {
+        new_kwargs = {
             "name": f"channel{new_channel}",
-            "channel": new_channel
+            "channel": new_channel,
+            "greeting": kwargs.get("greeting", "Hello")
         }
 
-        return kwargs
+        return new_kwargs
 
     def __init__(
             self,
             parent: Union[Instrument, 'InstrumentChannel'],
             name: str,
             channel: int,
+            greeting: str,
             existence: bool = False,
             channel_list: 'AutoLoadableChannelList' = None,
     ) -> None:
 
         super().__init__(parent, name, existence, channel_list)
         self._channel = channel
+        self._greeting = greeting
 
         self.add_parameter(
             "hello",
@@ -128,7 +159,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     def _create(self)->None:
         """Create the channel on the instrument"""
-        self.parent.root_instrument.write(f":INST:CHN:ADD {self._channel}")
+        self.parent.root_instrument.write(f":INST:CHN:ADD {self._channel}, {self._greeting}")
 
     def _remove(self)->None:
         """Remove the channel from the instrument"""
@@ -151,7 +182,7 @@ class DummyInstrument(Instrument):
             get_cmd=":INST:CHN:CAT",
         )
 
-        channels = AutoLoadableChannelList(self, "channels", SimpleTestChannel)
+        channels = AutoLoadableChannelList(self, "channels", SimpleTestChannel, channels_to_skip=["5"])
         self.add_submodule("channels", channels)
 
     def write_raw(self, cmd: str)->None:
@@ -175,10 +206,11 @@ def test_sanity(dummy_instrument):
     """
     # Test that we are able to discover instruments automatically
     channels = SimpleTestChannel.load_from_instrument(dummy_instrument)
-    assert len(channels) == 3
+    assert len(channels) == 4
     assert channels[0].hello() == "Hello from channel 1"
     assert channels[1].hello() == "Hello from channel 2"
     assert channels[2].hello() == "Hello from channel 4"
+    assert channels[3].hello() == "Hello from channel 5"
     # Test that we can generate a new instance of the channels without conflicting names
     new_channel_kwargs = SimpleTestChannel._get_new_instance_kwargs(dummy_instrument)
     new_channel = SimpleTestChannel(dummy_instrument, **new_channel_kwargs)
@@ -219,3 +251,11 @@ def test_channels_list(dummy_instrument):
     with pytest.raises(RuntimeError) as e:
         new_channel.hello()
     assert e.value.args[0] == "Object does not exist (anymore) on the instrument"
+
+
+def test_with_kwargs(dummy_instrument):
+    """
+    Test keyword arguments given to the add method
+    """
+    new_channel = dummy_instrument.channels.add(greeting="Guden tag")
+    assert new_channel.hello() == "Guden tag from channel 3"
