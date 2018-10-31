@@ -884,6 +884,8 @@ class DataSet(Sized):
         return "\n".join(out)
 
 
+log = logging.getLogger(__name__)
+
 # public api
 def load_by_id(run_id: int, conn: Optional[SomeConnection]=None) -> DataSet:
     """
@@ -906,6 +908,48 @@ def load_by_id(run_id: int, conn: Optional[SomeConnection]=None) -> DataSet:
 
     d = DataSet(conn=conn, run_id=run_id)
     return d
+
+
+def load_by_guid(guid: str, conn: Optional[SomeConnection]=None) -> DataSet:
+    """
+    Load a dataset by its GUID
+
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
+
+    Args:
+        guid: guid of the dataset
+        conn: connection to the database to load from
+
+    Returns:
+        dataset with the given guid
+
+    Raises:
+        NameError if no run with the specified GUID exists in the database
+        RuntimError if several runs with the same GUID are found
+    """
+    conn = conn or connect(get_DB_location())
+
+    query = """
+            SELECT run_id
+            FROM runs
+            WHERE guid = ?
+            """
+    cursor = conn.cursor()
+    cursor.execute(query, (guid,))
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        raise NameError(f'No run with guid {guid} found in database.')
+    elif len(rows) > 1:
+        errormssg = ('Critical consistency error: multiple runs with'
+                     f' the same GUID found! {len(rows)} runs have GUID '
+                     f'{guid}')
+        log.critical(errormssg)
+        raise RuntimeError(errormssg)
+    else:
+        run_id = int(rows[0]['run_id'])
+
+    return DataSet(run_id=run_id, conn=conn)
 
 
 def load_by_counter(counter: int, exp_id: int) -> DataSet:
