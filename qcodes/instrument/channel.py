@@ -546,13 +546,14 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def load_from_instrument(
-            cls, parent: Instrument, **kwargs) ->List['AutoLoadableInstrumentChannel']:
+            cls, parent: Instrument, channel_list=None, **kwargs) ->List['AutoLoadableInstrumentChannel']:
         """
         Load channels that already exist on the instrument
 
         Args:
             parent (Instrument): The instrument through which the instrument
                 channel is accessible
+            channel_list (AutoLoadableChannelList): A channel list this channel is a part of
             **kwargs (dict): Keyword arguments needed to create the channels
 
         Returns:
@@ -561,7 +562,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
         obj_list = []
         for new_kwargs in cls._discover_from_instrument(parent, **kwargs):
-            obj = cls(parent, existence=True, **new_kwargs)
+            obj = cls(parent, existence=True, channel_list=channel_list, **new_kwargs)
             obj_list.append(obj)
 
         return obj_list

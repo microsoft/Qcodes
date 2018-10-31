@@ -80,7 +80,7 @@ class MockBackend(MockBackendBase):
         """
         Add a channel on the mock instrument
         """
-        self._channel_catalog.append(chn)
+        self._channel_catalog.append(str(chn))
         self._greetings[chn] = greeting
 
 
@@ -251,6 +251,9 @@ def test_channels_list(dummy_instrument):
     with pytest.raises(RuntimeError) as e:
         new_channel.hello()
     assert e.value.args[0] == "Object does not exist (anymore) on the instrument"
+    # Remove a channel that was pre-existing on the instrument.
+    dummy_instrument.channels[-1].remove()
+    assert len(dummy_instrument.channels) == 2
 
 
 def test_with_kwargs(dummy_instrument):
