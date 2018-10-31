@@ -8,7 +8,7 @@ Public
 Classes and Functions
 ---------------------
 
-This page lists the entrypoints to the plubic qcodes API.
+This page lists the entrypoints to the public qcodes API.
 
 .. toctree::
    :maxdepth: 4
