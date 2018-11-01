@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 VALUE = Union[str, Number, List, ndarray, bool]
 
 
-class TestSubscriber():
+class MockSubscriber():
     """
     A basic subscriber factory that create a subscriber, that
     just puts results and length into state.
@@ -96,7 +96,7 @@ def test_subscription_from_config(dataset, basic_subscriber):
         "subscription":{
             "subscribers":{
                 "test_subscriber":{
-                    "factory": "qcodes.tests.dataset.test_subscribing.TestSubscriber",
+                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
                     "factory_kwargs":{
                         "lg": false
                     },
@@ -126,8 +126,6 @@ def test_subscription_from_config(dataset, basic_subscriber):
                            unit='Hz', depends_on=[xparam])
         dataset.add_parameter(xparam)
         dataset.add_parameter(yparam)
-
-
 
         sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
                                    state={})
