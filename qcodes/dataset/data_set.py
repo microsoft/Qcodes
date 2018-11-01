@@ -776,7 +776,7 @@ class DataSet(Sized):
         except (AttributeError, KeyError):
             keys = ','.join(subscribers.keys())
             raise RuntimeError(
-                f'subscribe_from_config: failed to subscribe "{name}" DataSet '
+                f'subscribe_from_config: failed to subscribe "{name}" to DataSet '
                 f'from list of subscribers in `qcodesrc.json` (subscriptions.'
                 f'subscribers). Chose one of: {keys}')
         # get callback from string
