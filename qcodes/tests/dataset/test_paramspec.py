@@ -158,14 +158,15 @@ def test_add_inferred_from(name1, name2, name3):
 
 @given(
     name1=hst.text(min_size=4, alphabet=alphabet),
-    name2=hst.text(min_size=4, alphabet=alphabet),
-    name3=hst.text(min_size=4, alphabet=alphabet),
+    name2=hst.text(min_size=4, alphabet=alphabet)
 )
-def test_copy(name1, name2, name3):
-
+def test_copy(name1, name2):
     ps_indep = ParamSpec(name1, "numeric")
-    ps = ParamSpec(name3, "numeric", depends_on=[ps_indep])
+    ps = ParamSpec(name2, "numeric", depends_on=[ps_indep, 'other_param'])
     ps_copy = ps.copy()
+
+    assert ps_copy == ps
+    assert hash(ps_copy) == hash(ps)
 
     att_names = ["name", "type", "label", "unit",
                  "_inferred_from", "_depends_on"]
@@ -184,6 +185,9 @@ def test_copy(name1, name2, name3):
         else:
             setattr(ps_copy, att, attributes[att] + ['bob'])
         assert getattr(ps, att) == attributes[att]
+
+    assert ps_copy != ps
+    assert hash(ps_copy) != hash(ps)
 
 
 def test_serialize():
