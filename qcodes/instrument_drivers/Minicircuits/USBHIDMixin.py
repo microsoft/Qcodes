@@ -62,8 +62,10 @@ class USBHIDMixin(Instrument):
         self._device = devs[0]
         self._device.open()
         self._data_buffer: Optional[bytes] = None
-        self._timeout = timeout
         self._device.set_raw_data_handler(self._handler)
+
+        self._timeout = timeout
+        self._tries_per_second = 5
 
         super().__init__(name, **kwargs)
 
@@ -103,12 +105,11 @@ class USBHIDMixin(Instrument):
         """
         self.write_raw(cmd)
 
-        tries_per_second = 5
-        number_of_tries = int(tries_per_second * self._timeout)
+        number_of_tries = int(self._tries_per_second * self._timeout)
 
         response = None
         for _ in range(number_of_tries):
-            time.sleep(1 / tries_per_second)
+            time.sleep(1 / self._tries_per_second)
             response = self._get_data_buffer()
             if response is not None:
                 break
