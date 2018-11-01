@@ -722,7 +722,7 @@ class AutoLoadableChannelList(ChannelList):
             self,
             parent: Instrument,
             name: str,
-            chan_type: 'type',
+            chan_type: type,
             chan_list: Optional[Sequence['AutoLoadableInstrumentChannel']]=None,
             snapshotable: bool=True,
             multichan_paramclass: type=MultiChannelInstrumentParameter,
