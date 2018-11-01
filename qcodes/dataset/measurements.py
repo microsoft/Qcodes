@@ -642,6 +642,8 @@ class Measurement:
             raise RuntimeError("Does not know how to register a parameter"
                                f"of type {type(parameter)}")
 
+        return self
+
     def _register_parameter(self, name: str,
                             label: str,
                             unit: str,
