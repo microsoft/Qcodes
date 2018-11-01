@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence, Optional, Any)
+                    MutableMapping, MutableSequence, Optional, TypeVar)
 from inspect import signature
 from numbers import Number
 
@@ -17,6 +17,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 
+T = TypeVar('T')
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
@@ -593,10 +594,10 @@ class Measurement:
         return depends_on, inf_from
 
     def register_parameter(
-            self, parameter: _BaseParameter,
+            self : T, parameter: _BaseParameter,
             setpoints: setpoints_type = None,
             basis: setpoints_type = None,
-            paramtype: str = 'numeric') -> None:
+            paramtype: str = 'numeric') -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -682,6 +683,8 @@ class Measurement:
             self.parameters.pop(name)
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
+
+        return self
 
     def _register_arrayparameter(self,
                                  parameter: ArrayParameter,
@@ -774,11 +777,11 @@ class Measurement:
                                      paramtype)
 
     def register_custom_parameter(
-            self, name: str,
+            self : T, name: str,
             label: str = None, unit: str = None,
             basis: setpoints_type = None,
             setpoints: setpoints_type = None,
-            paramtype: str = 'numeric') -> None:
+            paramtype: str = 'numeric') -> T:
         """
         Register a custom parameter with this measurement
 
@@ -833,7 +836,7 @@ class Measurement:
         self.parameters.pop(param)
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self, func: Callable, args: tuple) -> None:
+    def add_before_run(self : T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -865,7 +868,9 @@ class Measurement:
 
         self.exitactions.append((func, args))
 
-    def add_subscriber(self,
+        return self
+
+    def add_subscriber(self : T,
                        func: Callable,
                        state: Union[MutableSequence, MutableMapping]) -> None:
         """
@@ -878,6 +883,8 @@ class Measurement:
             state: The variable to hold the state.
         """
         self.subscribers.append((func, state))
+
+        return self
 
     def run(self) -> Runner:
         """
