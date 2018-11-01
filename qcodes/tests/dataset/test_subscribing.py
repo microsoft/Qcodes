@@ -93,7 +93,7 @@ def test_subscription_from_config(dataset, basic_subscriber):
                 "test_subscriber":{
                     "factory": "qcodes.tests.dataset.test_subscribing.TestSubscriber",
                     "factory_kwargs":{
-                        "l": false
+                        "lg": false
                     },
                     "subscription_kwargs":{
                         "min_wait": 0,
