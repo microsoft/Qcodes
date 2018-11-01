@@ -250,7 +250,6 @@ class AlazarTech_ATS(Instrument):
     def __init__(self, name: str, system_id: int=1, board_id: int=1,
                  dll_path: str=None, **kwargs) -> None:
         super().__init__(name, **kwargs)
-        self._ATS_dll = None
 
         if os.name == 'nt':
             self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path or self.dll_path)
@@ -886,7 +885,10 @@ class AlazarTech_ATS(Instrument):
         update_params: List[Parameter] = []
         for arg in args:
             if isinstance(arg, Parameter):
-                args_out.append(arg.raw_value)
+                if arg.raw_value is not None:
+                    args_out.append(arg.raw_value)
+                else:
+                    raise RuntimeError(f"{arg} has value None")
                 update_params.append(arg)
             else:
                 args_out.append(arg)
