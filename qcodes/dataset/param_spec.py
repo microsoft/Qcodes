@@ -105,6 +105,26 @@ class ParamSpec:
                 return False
         return True
 
+    def __hash__(self) -> int:
+        """Allow ParamSpecs in data structures that use hashing (i.e. sets)"""
+        attrs_with_strings = ['name', 'type', 'label', 'unit']
+        attrs_with_lists = ['_inferred_from', '_depends_on']
+
+        # First, get the hash of the tuple with all the relevant attributes
+        all_attr_tuple_hash = hash(
+            tuple(getattr(self, attr) for attr in attrs_with_strings)
+            + tuple(tuple(getattr(self, attr)) for attr in attrs_with_lists)
+        )
+        hash_value = all_attr_tuple_hash
+
+        # Then, XOR it with the individual hashes of all relevant attributes
+        for attr in attrs_with_strings:
+            hash_value = hash_value ^ hash(getattr(self, attr))
+        for attr in attrs_with_lists:
+            hash_value = hash_value ^ hash(tuple(getattr(self, attr)))
+
+        return hash_value
+
     def serialize(self) -> Dict[str, Any]:
         """
         Write the ParamSpec as a dictionary
