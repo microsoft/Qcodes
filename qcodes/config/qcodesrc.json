@@ -22,7 +22,6 @@
                 "subscription_kwargs":{
                     "min_wait": 0,
                     "min_count": 1,
-                    "state": [],
                     "callback_kwargs": {}
                 }
             },
@@ -34,7 +33,6 @@
                 "subscription_kwargs":{
                     "min_wait": 0,
                     "min_count": 1,
-                    "state": [],
                     "callback_kwargs": {}
                 }
             }

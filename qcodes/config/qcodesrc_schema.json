@@ -128,9 +128,6 @@
                                         "type": "integer",
                                         "default": 1
                                     },
-                                    "state":{
-                                        "default": []
-                                    },
                                     "callback_kwargs": {
                                         "description": "kwargs passed to the callback.",
                                         "type": "object",

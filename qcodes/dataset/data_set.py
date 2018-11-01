@@ -776,7 +776,8 @@ class DataSet(Sized):
 
         kwargs = {k: v for k, v in subscriber_info.subscription_kwargs.items()}
         kwargs['callback'] = factory(self, **subscriber_info.factory_kwargs)
-        self.subscribe(**kwargs)
+        kwargs['state'] = {}
+        return self.subscribe(**kwargs)
 
     def unsubscribe(self, uuid: str) -> None:
         """
