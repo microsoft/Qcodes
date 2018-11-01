@@ -168,7 +168,12 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
             cmd (str)
         """
         str_len = len(cmd)
-        pad_len = self.packet_size - str_len
+
+        # "-1" is here because we need to compensate for the first byte in
+        # the packet which is always the usb interrupt code of the command
+        # (in this case the command tell the device that we are querying a
+        # SCPI command)
+        pad_len = self.packet_size - str_len - 1
 
         if pad_len < 0:
             raise ValueError(f"Length of data exceeds {self.packet_size} B")
