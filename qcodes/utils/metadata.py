@@ -1,13 +1,17 @@
-import json
-
 from typing import Sequence
 from .helpers import deep_update
 from functools import partial
 
-from typing import Dict, Tuple, Any, NamedTuple, Generic, TypeVar
+from typing import Dict, Tuple, Any, NamedTuple, Generic, TypeVar, Union
 T = TypeVar('T')
 Snapshot = Dict[str, T] # TODO: represent known keys in typing
-ParameterDict = Dict[Tuple[str, str], T]
+ParameterKey = Union[
+    # Unbound parameters
+    str,
+    # Instrument parameters
+    Tuple[str, str]
+]
+ParameterDict = Dict[ParameterKey, T]
 
 class Metadatable:
     def __init__(self, metadata=None):
@@ -60,12 +64,14 @@ class ParameterDiff(NamedTuple):
 
 ## FUNCTIONS ##
 
-def extract_param_values(snapshot: Dict[str, Any]) -> Dict[Tuple[str, str], Any]:
+def extract_param_values(snapshot: Dict[str, Any]) -> Dict[ParameterKey, Any]:
     """
     Given a snapshot, returns a dictionary from
     instrument and parameter names onto parameter values.
     """
     parameters = {}
+    for param_name, param in snapshot['station']['parameters'].items():
+        parameters[param_name] = param['value']
     for instrument_name, instrument in snapshot['station']['instruments'].items():
         for param_name, param in instrument['parameters'].items():
             if 'value' in param:
@@ -75,7 +81,7 @@ def extract_param_values(snapshot: Dict[str, Any]) -> Dict[Tuple[str, str], Any]
 
 def diff_param_values(left_snapshot: Dict[str, Any],
                       right_snapshot: Dict[str, Any]
-                     ) -> Dict[str, Dict[Tuple[str, str], Any]]:
+                     ) -> Dict[str, Dict[ParameterKey, Any]]:
     """
     Given two snapshots, returns the differences between parameter values
     in each.
@@ -101,15 +107,15 @@ def diff_param_values(left_snapshot: Dict[str, Any],
     )
 
 def diff_param_values_by_id(left_id, right_id):
-    # Local import to reduce load time and
-    # avoid circular references.
-    from qcodes.dataset.data_set import load_by_id
     """
     Given the IDs of two datasets, returns the differences between
     parameter values in each of their snapshots.
     """
+    # Local import to reduce load time and
+    # avoid circular references.
+    from qcodes.dataset.data_set import load_by_id
     return diff_param_values(
-        json.loads(load_by_id(left_id).get_metadata('snapshot')),
-        json.loads(load_by_id(right_id).get_metadata('snapshot'))
+        load_by_id(left_id).snapshot(),
+        load_by_id(right_id).snapshot()
     )
 
