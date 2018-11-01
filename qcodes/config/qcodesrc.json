@@ -3,7 +3,9 @@
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
         "register_magic": true,
         "db_location": "~/experiments.db",
-        "db_debug": false
+        "db_debug": false,
+        "loglevel": "WARNING",	
+        "file_loglevel": "INFO"
     },
     "logger":{
         "console_level": "WARNING",
