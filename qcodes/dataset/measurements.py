@@ -533,7 +533,7 @@ class Measurement:
         self.name = ''
 
     @property
-    def write_period(self) -> float:
+    def write_period(self) -> Optional[float]:
         return self._write_period
 
     @write_period.setter
@@ -650,10 +650,10 @@ class Measurement:
         return self
 
     def _register_parameter(self : T, name: str,
-                            label: str,
-                            unit: str,
-                            setpoints: setpoints_type,
-                            basis: setpoints_type,
+                            label: Optional[str],
+                            unit: Optional[str],
+                            setpoints: Optional[setpoints_type],
+                            basis: Optional[setpoints_type],
                             paramtype: str) -> T:
         """
         Generate ParamSpecs and register them for an individual parameter
@@ -688,8 +688,8 @@ class Measurement:
 
     def _register_arrayparameter(self,
                                  parameter: ArrayParameter,
-                                 setpoints: setpoints_type,
-                                 basis: setpoints_type,
+                                 setpoints: Optional[setpoints_type],
+                                 basis: Optional[setpoints_type],
                                  paramtype: str, ) -> None:
         """
         Register an Array paramter and the setpoints belonging to the
@@ -728,8 +728,8 @@ class Measurement:
 
     def _register_multiparameter(self,
                                  multiparameter: MultiParameter,
-                                 setpoints: setpoints_type,
-                                 basis: setpoints_type,
+                                 setpoints: Optional[setpoints_type],
+                                 basis: Optional[setpoints_type],
                                  paramtype: str) -> None:
         """
         Find the individual multiparameter components and their setpoints
