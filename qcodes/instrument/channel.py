@@ -722,7 +722,7 @@ class AutoLoadableChannelList(ChannelList):
             self,
             parent: Instrument,
             name: str,
-            chan_type: type,
+            chan_type: 'type',
             chan_list: Optional[Sequence['AutoLoadableInstrumentChannel']]=None,
             snapshotable: bool=True,
             multichan_paramclass: type=MultiChannelInstrumentParameter,
@@ -733,8 +733,7 @@ class AutoLoadableChannelList(ChannelList):
             parent, name, chan_type, chan_list, snapshotable,
             multichan_paramclass
         )
-
-        new_channels = self._chan_type.load_from_instrument(
+        new_channels = self._chan_type.load_from_instrument(  # type: ignore
             self._parent, channel_list=self, **kwargs)
 
         for channel in new_channels:
@@ -745,7 +744,7 @@ class AutoLoadableChannelList(ChannelList):
         """
         Add a channel to the list
         """
-        new_channel = self._chan_type.new_instance(
+        new_channel = self._chan_type.new_instance(  # type: ignore
             self._parent,
             create_on_instrument=True,
             channel_list=self,

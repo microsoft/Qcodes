@@ -22,7 +22,7 @@ class MockBackendBase:
     expressions and on match the corresponding callable is called.
     """
     def __init__(self)->None:
-        self._command_dict = {}
+        self._command_dict: dict = {}
 
     def send(self, cmd: str)->Any:
         """
@@ -84,8 +84,8 @@ class MockBackend(MockBackendBase):
         """
         Add a channel on the mock instrument
         """
-        self._channel_catalog.append(chn)
-        self._greetings[chn] = greeting
+        self._channel_catalog.append(str(chn))
+        self._greetings[chr(chn)] = greeting
 
 
 class SimpleTestChannel(AutoLoadableInstrumentChannel):
