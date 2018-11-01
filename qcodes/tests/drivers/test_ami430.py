@@ -253,6 +253,8 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
             continue
 
         g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
+        if g is None:
+            raise RuntimeError("No match is found")
         name = g.groups()[0]
         order.append(name)
 
