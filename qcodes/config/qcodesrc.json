@@ -14,8 +14,8 @@
     },
     "subscription":{
         "subscribers":{
-            "XXXXX":{
-                "factory": "xxxxx.qcodes_dataset.xxxxxDatasetSubscriber",
+            "QCPlot":{
+                "factory": "qcplotutils.qcodes_dataset.QCPlotDatasetSubscriber",
                 "factory_kwargs":{
                     "log": false
                 },
