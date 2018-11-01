@@ -23,7 +23,7 @@ class MercuryiPSArray(MultiParameter):
         self._instrument = instrument
         self.units = units
 
-    def get(self):
+    def get_raw(self):
         try:
             value = self._get()
             self._save_val(value)
@@ -32,7 +32,7 @@ class MercuryiPSArray(MultiParameter):
             e.args = e.args + ('getting {}'.format(self.full_name),)
             raise e
 
-    def set(self, setpoint):
+    def set_raw(self, setpoint):
         return self._set(setpoint)
 
 

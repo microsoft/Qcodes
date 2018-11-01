@@ -16,6 +16,7 @@ from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 T = TypeVar('T')
 log = logging.getLogger(__name__)
@@ -33,8 +34,10 @@ class ParameterTypeError(Exception):
 
 def is_number(thing: Any) -> bool:
     """
-    Test if an object can be converted to a number
+    Test if an object can be converted to a number UNLESS it is a string
     """
+    if isinstance(thing, str):
+        return False
     try:
         float(thing)
         return True
@@ -44,8 +47,8 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used byt the Runner context manager to handle the
-    datasaving to the database
+    The class used by the Runner context manager to handle the datasaving to
+    the database.
     """
 
     default_callback: Optional[dict] = None
@@ -53,7 +56,9 @@ class DataSaver:
     def __init__(self, dataset: DataSet, write_period: numeric_types,
                  parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
-        if DataSaver.default_callback is not None and 'run_tables_subscription_callback' in DataSaver.default_callback:
+        if DataSaver.default_callback is not None \
+                and 'run_tables_subscription_callback' \
+                    in DataSaver.default_callback:
             callback = DataSaver.default_callback[
                 'run_tables_subscription_callback']
             min_wait = DataSaver.default_callback[
@@ -61,7 +66,8 @@ class DataSaver:
             min_count = DataSaver.default_callback[
                 'run_tables_subscription_min_count']
             snapshot = dataset.get_metadata('snapshot')
-            self._dataset.subscribe(callback, min_wait=min_wait,
+            self._dataset.subscribe(callback,
+                                    min_wait=min_wait,
                                     min_count=min_count,
                                     state={},
                                     callback_kwargs={'run_id':
@@ -79,8 +85,7 @@ class DataSaver:
                 self._known_dependencies.update(
                     {str(param): parspec.depends_on.split(', ')})
 
-    def add_result(self,
-                   *res_tuple: res_type) -> None:
+    def add_result(self, *res_tuple: res_type) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -229,7 +234,7 @@ class DataSaver:
         Args:
             res: A sequence of the data to be added
             input_size: The length of the data to be added. 1 if its
-             to be inserted as arrays.
+                to be inserted as arrays.
         """
         for index in range(input_size):
             res_dict = {}
@@ -273,18 +278,12 @@ class DataSaver:
             found_parameters: The list of all parameters that we know of by now
               Note that this is modified in place.
         """
-        # TODO (WilliamHPNielsen): The following code block is ugly and
-        # brittle and should be enough to convince us to abandon the
-        # design of ArrayParameters (possibly) containing (some of) their
-        # setpoints
-
         sp_names = parameter.setpoint_full_names
         fallback_sp_name = f"{parameter.full_name}_setpoint"
         self._unbundle_setpoints_from_param(parameter, sp_names,
                                             fallback_sp_name,
                                             parameter.setpoints,
                                             res, found_parameters)
-
 
     def _unbundle_setpoints_from_param(self, parameter: _BaseParameter,
                                        sp_names: Sequence[str],
@@ -294,12 +293,12 @@ class DataSaver:
                                        found_parameters: List[str]):
         """
         Private function to unbundle setpoints from an ArrayParameter or
-         a subset of a MultiParameter.
+        a subset of a MultiParameter.
 
         Args:
             parameter:
             sp_names: Names of the setpoint axes
-            fallback_sp_name:  Fallback name for setpoints in case sp_names
+            fallback_sp_name: Fallback name for setpoints in case sp_names
               is None. The axis num is appended to this name to ensure all
               setpoint axes names are unique.
             setpoints: The actual setpoints i.e. `parameter.setpoints` for an
@@ -309,12 +308,12 @@ class DataSaver:
             found_parameters: The list of all parameters that we know of by now
               This is modified in place with new parameters found here.
         """
-
         setpoint_axes = []
         setpoint_meta = []
         if setpoints is None:
             raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
                                f"without setpoints. Cannot handle this.")
+
         for i, sps in enumerate(setpoints):
             if sp_names is not None:
                 spname = sp_names[i]
@@ -334,6 +333,7 @@ class DataSaver:
             setpoint_meta.append(spname)
             found_parameters.append(spname)
             setpoint_axes.append(sps)
+
         output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
         for grid, meta in zip(output_grids, setpoint_meta):
             res.append((meta, grid))
@@ -343,10 +343,9 @@ class DataSaver:
                                  data: Union[tuple, list, np.ndarray],
                                  res: List[res_type],
                                  found_parameters: List[str]) -> None:
-
         """
         Extract the subarrays and setpoints from an MultiParameter and
-         add them to res as a regular parameter tuple.
+        add them to res as a regular parameter tuple.
 
         Args:
             parameter: The MultiParameter to extract from
@@ -405,6 +404,7 @@ class DataSaver:
 class Runner:
     """
     Context manager for the measurement.
+
     Lives inside a Measurement and should never be instantiated
     outside a Measurement.
 
@@ -463,7 +463,9 @@ class Runner:
 
         if station:
             self.ds.add_metadata('snapshot',
-                                 json.dumps({'station': station.snapshot()}))
+                                 json.dumps({'station': station.snapshot()},
+                                            cls=NumpyJSONEncoder)
+                                 )
 
         if self.parameters is not None:
             for paramspec in self.parameters.values():
@@ -506,22 +508,15 @@ class Measurement:
     """
     Measurement procedure container
 
-    Attributes:
-        name (str): The name of this measurement/run. Is used by the dataset
-            to give a name to the results_table.
+    Args:
+        exp: Specify the experiment to use. If not given
+            the default one is used.
+        station: The QCoDeS station to snapshot. If not given, the
+            default one is used.
     """
 
     def __init__(self, exp: Optional[Experiment] = None,
                  station: Optional[qc.Station] = None) -> None:
-        """
-        Init
-
-        Args:
-            exp: Specify the experiment to use. If not given
-                the default one is used.
-            station: The QCoDeS station to snapshot. If not given, the
-                default one is used.
-        """
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
@@ -601,8 +596,6 @@ class Measurement:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
-
-        TODO: Does not handle metadata yet
 
         Args:
             parameter: The parameter to add

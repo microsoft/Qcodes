@@ -14,7 +14,7 @@
                 },
                 "loglevel" :{
                     "type" : "string",
-                    "description": "control logging  level",
+                    "description": "deprecated - use logger.console_level",
                     "default": "DEBUG",
                     "enum" : [
                         "CRITICAL",
@@ -26,7 +26,7 @@
                 },
                 "file_loglevel" :{
                     "type" : "string",
-                    "description": "control file logging  level",
+                    "description": "deprecated - use logger.file_level",
                     "default": "INFO",
                     "enum" : [
                         "CRITICAL",
@@ -55,7 +55,47 @@
                     "default": "./experiments.db"
                 }
             },
-            "required":["loglevel", "db_location"]
+            "required":["db_location"]
+        },
+        "logger" : {
+            "description": "controls all settings related to the logging module `qcodes.utils.logger`.",
+            "type" : "object",
+            "properties" : {
+                "console_level" :{
+                    "type" : "string",
+                    "description": "control logging level of console output",
+                    "default": "DEBUG",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
+                "file_level" :{
+                    "type" : "string",
+                    "description": "control logging level of file output.",
+                    "default": "INFO",
+                    "enum" : [
+                        "CRITICAL",
+                        "ERROR",
+                        "WARNING",
+                        "INFO",
+                        "DEBUG"
+                    ]
+                },
+                "logger_levels":{
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "default":{
+                        "pyvisa": "INFO"
+                    }
+                }
+            },
+            "required":["console_level", "file_level"]
         },
         "gui" : {
             "type" : "object",

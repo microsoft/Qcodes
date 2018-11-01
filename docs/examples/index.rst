@@ -11,8 +11,7 @@ Basic examples
 .. toctree::
     :glob:
 
-    ../_notebooks/*
-
+    *
 
 
 DataSet
@@ -21,8 +20,8 @@ DataSet
 .. toctree::
     :glob:
 
-    ../_notebooks/DataSet/*
-    ../_notebooks/DataSet/Real_instruments/*
+    DataSet/*
+    DataSet/Real_instruments/*
 
 Plotting
 --------
@@ -30,7 +29,7 @@ Plotting
 .. toctree::
     :glob:
 
-    ../_notebooks/plotting/*
+    plotting/*
 
 Drivers
 -------
@@ -38,13 +37,14 @@ Drivers
 .. toctree::
     :glob:
 
-    ../_notebooks/driver_examples/*
+    driver_examples/*
 
-
-Benchmarking
-------------
+Logging
+--------
 
 .. toctree::
     :glob:
 
-    ../_notebooks/benchmarking/*
+    logging/*
+
+

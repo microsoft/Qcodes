@@ -3,11 +3,15 @@ from contextlib import contextmanager
 from copy import deepcopy
 import logging
 import tempfile
+import json
+from typing import TYPE_CHECKING
 
 import pytest
 
 import qcodes as qc
 from qcodes import new_experiment, new_data_set, ParamSpec
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 # pylint: disable=unused-import
@@ -15,17 +19,38 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
 from qcodes.dataset.sqlite_base import (connect,
+                                        one,
                                         update_GUIDs,
                                         get_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
-                                        perform_db_upgrade_1_to_2)
+                                        perform_db_upgrade_1_to_2,
+                                        perform_db_upgrade_2_to_3)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
+if TYPE_CHECKING:
+    from _pytest._code.code import ExceptionInfo
+
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
+
+
+def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
+    """
+    Helper function to figure out whether an exception was caused by another
+    exception with the message provided.
+
+    Args:
+        excinfo: the output of with pytest.raises() as excinfo
+        cause: the error message or a substring of it
+    """
+    chain = excinfo.getrepr().chain
+    cause_found = False
+    for link in chain:
+        cause_found = cause_found or cause in str(link[1])
+    return cause_found
 
 
 @contextmanager
@@ -111,8 +136,10 @@ def test_perform_actual_upgrade_0_to_1():
 
         guid_table_query = "SELECT guid FROM runs"
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError) as excinfo:
             atomic_transaction(conn, guid_table_query)
+
+        assert error_caused_by(excinfo, 'no such column: guid')
 
         perform_db_upgrade_0_to_1(conn)
         assert get_user_version(conn) == 1
@@ -149,6 +176,102 @@ def test_perform_actual_upgrade_1_to_2():
 
         c = atomic_transaction(conn, index_query)
         assert len(c.fetchall()) == 2
+
+
+def test_perform_actual_upgrade_2_to_3_empty():
+
+    v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
+
+    if not os.path.exists(v2fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    dbname_old = os.path.join(v2fixpath, 'empty.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+
+        assert get_user_version(conn) == 2
+
+        desc_query = 'SELECT run_description FROM runs'
+
+        with pytest.raises(RuntimeError) as excinfo:
+            atomic_transaction(conn, desc_query)
+
+        assert error_caused_by(excinfo, 'no such column: run_description')
+
+        perform_db_upgrade_2_to_3(conn)
+
+        assert get_user_version(conn) == 3
+
+        c = atomic_transaction(conn, desc_query)
+        assert len(c.fetchall()) == 0
+
+
+def test_perform_actual_upgrade_2_to_3_empty_runs():
+
+    v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
+
+    if not os.path.exists(v2fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    dbname_old = os.path.join(v2fixpath, 'empty_runs.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+
+        perform_db_upgrade_2_to_3(conn)
+
+
+def test_perform_actual_upgrade_2_to_3_some_runs():
+
+    v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
+
+    if not os.path.exists(v2fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    dbname_old = os.path.join(v2fixpath, 'some_runs.db')
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
+
+        assert get_user_version(conn) == 2
+
+        perform_db_upgrade_2_to_3(conn)
+
+        desc_query = 'SELECT run_description FROM runs'
+
+        c = atomic_transaction(conn, desc_query)
+        assert len(c.fetchall()) == 10
+
+        # retrieve the json string and recreate the object
+
+        sql = f"""
+              SELECT run_description
+              FROM runs
+              WHERE run_id == 1
+              """
+        c = atomic_transaction(conn, sql)
+        json_str = one(c, 'run_description')
+
+        desc = RunDescriber.from_json(json_str)
+        idp = desc.interdeps
+        assert isinstance(idp, InterDependencies)
+
+        # here we verify that the dependencies encoded in
+        # tests/dataset/legacy_DB_generation/generate_version_2.py
+        # are recovered
+
+        p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
+        assert p0.depends_on == ''
+        assert p0.inferred_from == ''
+        assert p0.label == "Parameter 0"
+        assert p0.unit == "unit 0"
+
+        p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
+        assert p4.depends_on == 'p2, p3'
+        assert p4.inferred_from == ''
+        assert p4.label == "Parameter 4"
+        assert p4.unit == "unit 4"
 
 
 @pytest.mark.usefixtures("empty_temp_db")
