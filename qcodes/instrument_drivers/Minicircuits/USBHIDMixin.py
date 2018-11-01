@@ -33,7 +33,7 @@ class USBHIDMixin(Instrument):
     def _check_hid_import():
 
         if os.name != 'nt':
-            raise ImportError("""This driver only works in Windows.""")
+            raise ImportError("This driver only works on Windows.")
 
         if hid is None:
 
@@ -152,8 +152,9 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
     """
 
     def __init__(self, name: str, instance_id: str=None, timeout: float=2,
-                 **kwargs) ->None:
-
+                 **kwargs):
+        # USB interrupt code for sending SCPI commands
+        self._sending_scpi_cmds_code = 1
         self._usb_endpoint = 0
         self._end_of_message = b"\x00"
         self.packet_size = 64
@@ -179,10 +180,11 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
         if pad_len < 0:
             raise ValueError(f"Length of data exceeds {self.packet_size} B")
 
-        command_number = 1
         packed_data = struct.pack(
             f"BB{str_len}s{pad_len}x",
-            self._usb_endpoint, command_number, cmd.encode("ascii")
+            self._usb_endpoint,
+            self._sending_scpi_cmds_code,
+            cmd.encode("ascii")
         )
 
         return packed_data
