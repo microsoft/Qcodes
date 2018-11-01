@@ -94,7 +94,8 @@ class USBHIDMixin(Instrument):
 
         result = self._device.send_output_report(data)
         if not result:
-            raise RuntimeError("Communication with device failed")
+            raise RuntimeError(f"Communication with device failed for command "
+                               f"{cmd}")
 
     def ask_raw(self, cmd: str) ->str:
         """
@@ -115,7 +116,7 @@ class USBHIDMixin(Instrument):
                 break
 
         if response is None:
-            raise TimeoutError("")
+            raise TimeoutError(f"Timed out for command {cmd}")
 
         return self._unpack_string(response)
 
