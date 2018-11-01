@@ -136,6 +136,7 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   Config.schema_default_file_name: SCHEMA,
                   }
 
+
 @contextmanager
 def default_config(user_config: Optional[str]=None):
     """
@@ -145,6 +146,9 @@ def default_config(user_config: Optional[str]=None):
     config file in the qcodes repository.
     Additionally the current config object `qcodes.config` gets copied and
     reestablished.
+
+    Args:
+        user_config: represents the user config file content.
     """
     home_file_name = qcodes.Config.home_file_name
     schema_home_file_name = qcodes.Config.schema_home_file_name

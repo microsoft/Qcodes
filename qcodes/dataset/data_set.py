@@ -759,6 +759,15 @@ class DataSet(Sized):
         return subscriber_id
 
     def subscribe_from_config(self, name: str) -> str:
+        """
+        Subscribe a subscriber defined in the `qcodesrc.json` config file to
+        the data of this `DataSet`. The definition can be found at
+        `subscription.subscribers`.
+
+        Args:
+            name: identifier of the subscriber. Equal to the key of the entry
+                in 'qcodesrc.json::subscription.subscribers'.
+        """
         subscribers = qcodes.config.subscription.subscribers
         try:
             subscriber_info = getattr(subscribers, name)

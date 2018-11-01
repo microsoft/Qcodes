@@ -86,6 +86,11 @@ def test_basic_subscription(dataset, basic_subscriber):
 
 
 def test_subscription_from_config(dataset, basic_subscriber):
+    """
+    This test is similar to `test_basic_subscription`, with the only
+    difference that another subscriber from a config file is added.
+    """
+    # This string represents the config file in the home directory:
     config = """
     {
         "subscription":{
@@ -105,6 +110,10 @@ def test_subscription_from_config(dataset, basic_subscriber):
         }
     }
     """
+    # This little dance around the db_location is due to the fact that the
+    # dataset fixture creates a dataset in a db in a temporary directory.
+    # Therefore we need to 'backup' the path to the db when using the
+    # default configuration.
     db_location = qcodes.config.core.db_location
     with default_config(user_config=config):
         qcodes.config.core.db_location = db_location
@@ -131,7 +140,6 @@ def test_subscription_from_config(dataset, basic_subscriber):
         for x in range(10):
             y = -x**2
             dataset.add_result({'x': x, 'y': y})
-            from time import sleep
             expected_state[x+1] = [(x, y)]
             assert dataset.subscribers[sub_id].state == expected_state
             assert dataset.subscribers[sub_id_c].state == expected_state
