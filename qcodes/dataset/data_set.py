@@ -771,7 +771,9 @@ class DataSet(Sized):
         subscribers = qcodes.config.subscription.subscribers
         try:
             subscriber_info = getattr(subscribers, name)
-        except AttributeError:
+        # the dot dict behind the config does not convert the error and
+        # actually raises a `KeyError`
+        except (AttributeError, KeyError):
             keys = ','.join(subscribers.keys())
             raise RuntimeError(
                 f'subscribe_from_config: failed to subscribe "{name}" DataSet '

@@ -141,3 +141,37 @@ def test_subscription_from_config(dataset, basic_subscriber):
             expected_state[x+1] = [(x, y)]
             assert dataset.subscribers[sub_id].state == expected_state
             assert dataset.subscribers[sub_id_c].state == expected_state
+
+def test_subscription_from_config_wrong_name(dataset):
+    """
+    This test checks that an exception is thrown if a wrong name for a
+    subscriber is passed
+    """
+    # This string represents the config file in the home directory:
+    config = """
+    {
+        "subscription":{
+            "subscribers":{
+                "test_subscriber_wrong":{
+                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory_kwargs":{
+                        "lg": false
+                    },
+                    "subscription_kwargs":{
+                        "min_wait": 0,
+                        "min_count": 1,
+                        "callback_kwargs": {}
+                    }
+                }
+            }
+        }
+    }
+    """
+    db_location = qcodes.config.core.db_location
+    with default_config(user_config=config):
+        qcodes.config.core.db_location = db_location
+
+        assert 'test_subscriber' not in qcodes.config.subscription.subscribers
+        with pytest.raises(RuntimeError):
+            sub_id_c = dataset.subscribe_from_config('test_subscriber')
+
