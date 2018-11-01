@@ -18,7 +18,6 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-T = TypeVar('T')
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
@@ -504,6 +503,8 @@ class Runner:
         self.ds.unsubscribe_all()
 
 
+
+T = TypeVar('T', bound='Measurement')
 class Measurement:
     """
     Measurement procedure container
