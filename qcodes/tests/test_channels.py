@@ -122,6 +122,8 @@ class TestChannels(TestCase):
         self.assertEqual(len(self.instrument.channels), n_channels + len(names))
         last_channel = self.instrument.channels[-1]
         self.instrument.channels.remove(last_channel)
+        assert last_channel not in self.instrument.channels
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names) - 1)
 
     def test_insert_channel(self):
         n_channels = len(self.instrument.channels)
