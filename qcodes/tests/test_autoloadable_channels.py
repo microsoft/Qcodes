@@ -226,22 +226,24 @@ def test_sanity(dummy_instrument):
     new_channel = SimpleTestChannel(dummy_instrument, **new_channel_kwargs)
     # Instrument IO through the newly instantiated channel should raise an
     # exception before actually creating the channel on the instrument
-    with pytest.raises(RuntimeError) as e1:
+    with pytest.raises(
+            RuntimeError,
+            message="Object does not exist (anymore) on the instrument"):
+
         new_channel.hello()
-    assert e1.value.args[0] == "Object does not exist (anymore) on the " \
-                               "instrument"
+
     # After creating the channel we should be able to talk to the instrument.
     new_channel.create()
     assert new_channel.hello() == "Hello from channel 3"
     # Once we remove the channel we should no longer be able to talk to the
     # instrument
     new_channel.remove()
-    with pytest.raises(RuntimeError) as e2:
+    with pytest.raises(
+            RuntimeError,
+            message="Object does not exist (anymore) on the instrument"):
+
         new_channel.hello()  # We have deleted the channel and it should no
-        # longer be
-        # available
-    assert e2.value.args[0] == "Object does not exist (anymore) on the " \
-                               "instrument"
+        # longer be available
 
 
 def test_channels_list(dummy_instrument):
@@ -262,10 +264,11 @@ def test_channels_list(dummy_instrument):
     assert len(dummy_instrument.channels) == 3
     assert new_channel not in dummy_instrument.channels
     # Once removed we should no longer be able to talk to the channel
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(
+            RuntimeError,
+            message="Object does not exist (anymore) on the instrument"):
+
         new_channel.hello()
-    assert e.value.args[0] == "Object does not exist (anymore) on the " \
-                              "instrument"
     # Remove a channel that was pre-existing on the instrument.
     dummy_instrument.channels[-1].remove()
     assert len(dummy_instrument.channels) == 2
