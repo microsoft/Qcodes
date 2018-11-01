@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence, Optional, TypeVar)
+                    MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
 from numbers import Number
 
