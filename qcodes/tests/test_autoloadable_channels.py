@@ -67,7 +67,7 @@ class MockBackend(MockBackendBase):
     """
     def __init__(self)->None:
         super().__init__()
-        self._channel_catalog = ["1", "2", "4", "5"]  # Pre-existing channels
+        self._channel_catalog: List[str] = ["1", "2", "4", "5"]  # Pre-existing channels
         self._greetings = {chn: "Hello" for chn in self._channel_catalog}
 
         self._command_dict = {
@@ -85,7 +85,7 @@ class MockBackend(MockBackendBase):
         Add a channel on the mock instrument
         """
         self._channel_catalog.append(str(chn))
-        self._greetings[chr(chn)] = greeting
+        self._greetings[str(chn)] = greeting
 
 
 class SimpleTestChannel(AutoLoadableInstrumentChannel):

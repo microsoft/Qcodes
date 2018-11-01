@@ -330,6 +330,10 @@ class ChannelList(Metadatable):
                             "type.")
         channels = cast(List[InstrumentChannel], self._channels)
         channels.extend(objects_tuple)
+
+        self._channel_mapping.update({
+            obj.short_name: obj for obj in objects
+        })
         self._channels = channels
 
     def index(self, obj: InstrumentChannel):
@@ -736,9 +740,7 @@ class AutoLoadableChannelList(ChannelList):
         new_channels = self._chan_type.load_from_instrument(  # type: ignore
             self._parent, channel_list=self, **kwargs)
 
-        for channel in new_channels:
-            # NB: There is a bug in `extend`. TODO: Make a PR!
-            self.append(channel)
+        self.extend(new_channels)
 
     def add(self, **kwargs) ->'AutoLoadableInstrumentChannel':
         """
