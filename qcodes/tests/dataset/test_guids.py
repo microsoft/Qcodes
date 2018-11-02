@@ -75,7 +75,7 @@ def test_set_guid_location_code(loc, monkeypatch):
             assert cfg['GUID_components']['location'] == original_loc
 
 
-@settings(max_examples=50, deadline=500)
+@settings(max_examples=50, deadline=1000)
 @given(ws=hst.integers(-10, 17000000))
 def test_set_guid_workstatio_code(ws, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(ws))

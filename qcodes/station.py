@@ -72,6 +72,10 @@ class Station(Metadatable, DelegateAttributes):
         """
         State of the station as a JSON-compatible dict.
 
+        Note: in the station contains an instrument that has already been
+        closed, not only will it not be snapshotted, it will also be removed
+        from the station during the execution of this function.
+
         Args:
             update (bool): If True, update the state by querying the
              all the children: f.ex. instruments, parameters, components, etc.
@@ -88,9 +92,17 @@ class Station(Metadatable, DelegateAttributes):
                 self.default_measurement, update)
         }
 
+        components_to_remove = []
+
         for name, itm in self.components.items():
-            if isinstance(itm, (Instrument)):
-                snap['instruments'][name] = itm.snapshot(update=update)
+            if isinstance(itm, Instrument):
+                # instruments can be closed during the lifetime of the
+                # station object, hence this 'if' allows to avoid
+                # snapshotting instruments that are already closed
+                if Instrument.is_valid(itm):
+                    snap['instruments'][name] = itm.snapshot(update=update)
+                else:
+                    components_to_remove.append(name)
             elif isinstance(itm, (Parameter,
                                   ManualParameter,
                                   StandardParameter
@@ -98,6 +110,9 @@ class Station(Metadatable, DelegateAttributes):
                 snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)
+
+        for c in components_to_remove:
+            self.remove_component(c)
 
         return snap
 
@@ -127,6 +142,29 @@ class Station(Metadatable, DelegateAttributes):
         namestr = make_unique(str(name), self.components)
         self.components[namestr] = component
         return namestr
+
+    def remove_component(self, name: str) -> Optional[Metadatable]:
+        """
+        Remove a component with a given name from this Station.
+
+        Args:
+            name: name of the component
+
+        Returns:
+            the component that has been removed (this behavior is the same as
+            for python dictionaries)
+
+        Raises:
+            KeyError if a component with the given name is not part of this
+            station
+        """
+        try:
+            return self.components.pop(name)
+        except KeyError as e:
+            if name in str(e):
+                raise KeyError(f'Component {name} is not part of the station')
+            else:
+                raise e
 
     def set_measurement(self, *actions):
         """
