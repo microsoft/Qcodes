@@ -15,11 +15,7 @@ except ImportError as e:
     raise ImportError(message)
 
 
-# Variable types
-_variants = {'double': win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
-             'long': win32com.client.VARIANT(VT_BYREF | VT_I4, 0)}
 CmdArgs = namedtuple('cmd_and_args', 'cmd args')
-
 
 class CommandHandler:
     """
@@ -30,6 +26,11 @@ class CommandHandler:
     server, e.g. 'TEMP?' or 'TEMP 300, 10, 1' and then makes the corresponding
     MultiVu API call (or returns an error message to the server).
     """
+
+    # Variable types
+    _variants = {'double': win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
+                 'long': win32com.client.VARIANT(VT_BYREF | VT_I4, 0)}
+
 
     def __init__(self, inst_type: str='dynacool') -> None:
         self.inst_type = inst_type
@@ -42,6 +43,8 @@ class CommandHandler:
                           'make sure that the MultiVu Application is running.')
             log.exception(error_mssg)
             raise ValueError(error_mssg)
+
+        _variants = CommandHandler._variants
 
         # Hard-code what we know about the MultiVu API
         self._gets = {'TEMP': CmdArgs(cmd=self._mvu.GetTemperature,
