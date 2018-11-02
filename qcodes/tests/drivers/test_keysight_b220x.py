@@ -147,6 +147,13 @@ def test_ground_enabled_inputs(uut):
     assert [5, 6, 7, 8] == uut.gnd_enabled_inputs()
 
 
+def test_couple_mode(uut):
+    assert not uut.couple_mode()
+    uut.couple_mode(True)
+    assert uut.couple_mode()
+    assert 0 == uut.get_status()
+
+
 def test_couple_ports(uut):
     assert not uut.couple_ports()
     assert 0 == uut.get_status()

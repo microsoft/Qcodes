@@ -124,6 +124,13 @@ class KeysightB220X(VisaInstrument):
         self.add_function(name='couple_port_autodetect',
                           call_cmd=':COUP:PORT:DET')
 
+        self.add_parameter(name='couple_mode',
+                           get_cmd=':COUP? 0',
+                           set_cmd=':COUP 0,{}',
+                           val_mapping={True: 1,
+                                        False: 0}
+                           )
+
 
     def _connect(self, channel1, channel2):
         self.write(":CLOS (@{card:01d}{ch1:02d}{ch2:02d})".format(card=0,

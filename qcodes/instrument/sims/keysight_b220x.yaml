@@ -101,6 +101,16 @@ devices:
             specs:
               valid: ["''", "'1, 3, 5'", "'1'"]
               type: str
+          couple_mode:
+            default: 0
+            setter:
+              q: ":COUP {ch_id},{}"
+            getter:
+              q: ":COUP? {ch_id}"
+              r: "{}"
+            specs:
+              valid: [0, 1]
+              type: int
 
         dialogues:
           - q: ":BIAS:CHAN:DIS:CARD {ch_id}"
