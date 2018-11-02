@@ -45,7 +45,6 @@ class GroupParameter(Parameter):
         self.group: Union[Group, None] = None
         super().__init__(name, instrument=instrument, **kwargs)
 
-        self.set_raw = lambda value: self.group.set(self, value)
         self.set = self._wrap_set(self.set_raw)
 
         self.get_raw = lambda result=None: result if result is not None \
@@ -59,6 +58,13 @@ class GroupParameter(Parameter):
                                "group defined")
         self.group.update()
         return self.raw_value
+
+    def set_raw(self, value: Any) -> None:
+        if self.group is None:
+            raise RuntimeError("Trying to get Group value but no "
+                               "group defined")
+        self.group.set(self, value)
+
 
 class Group:
     """
