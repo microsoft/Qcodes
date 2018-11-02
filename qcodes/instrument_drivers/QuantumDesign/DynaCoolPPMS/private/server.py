@@ -49,8 +49,6 @@ while keep_going:
             socket_dict[sock_fd] = address
             print('Client ({0}, {1}) connected.'.format(*address))
             log.info('Client ({0}, {1}) connected.'.format(*address))
-            mssg = f'Connected to socket server.{LINE_TERM}'
-            sock_fd.send(bytes(mssg, 'utf-8'))
 
         # Incoming message from existing connection
         else:
@@ -82,5 +80,6 @@ while keep_going:
             else:
                 response = command_handler(command)
                 sock.send(bytes(f'{response}{LINE_TERM}', 'utf-8'))
+                print(f'Sending: {response}')
 
 server_socket.close()
