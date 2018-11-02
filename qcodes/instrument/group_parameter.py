@@ -54,9 +54,11 @@ class GroupParameter(Parameter):
         self.get = self._wrap_get(self.get_raw)
 
     def _get_raw_value(self) -> Any:
+        if self.group is None:
+            raise RuntimeError("Trying to get Group value but no "
+                               "group defined")
         self.group.update()
         return self.raw_value
-
 
 class Group:
     """
@@ -190,7 +192,12 @@ class Group:
         calling_dict = {name: p.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
+        if self.set_cmd is None:
+            raise RuntimeError("Calling set but no `set_cmd` defined")
         command_str = self.set_cmd.format(**calling_dict)
+        if self.instrument is None:
+            raise RuntimeError("Trying to set GroupParameter not attached "
+                               "to any instrument.")
         self.instrument.write(command_str)
 
     def update(self):
