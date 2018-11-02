@@ -1,4 +1,6 @@
 language: python
+sudo: required
+dist: xenial
 notifications:
   email: false
     # send all notifcations to slack
@@ -12,18 +14,21 @@ addons:
 
 python:
   - "3.6"
+  - "3.7"
   # whitelist
 branches:
   only:
     - master
 
-# command to install dependencies
+# command to install dependencies and qcodes
+# We want to fail early if there is an installation problem, so
+# we install here, although we uninstall below
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
-    - pip install -e .
+    - pip install .
 
 before_script: # configure a headless display to test plot generation
     - "export DISPLAY=:99.0"
@@ -31,9 +36,21 @@ before_script: # configure a headless display to test plot generation
     - sleep 3 # give xvfb some time to start
 
 script:
+    # The legacy dataset generation only works with an EDITABLE installation,
+    # but we want to run the test suite with a normal installation, hence
+    # this install dance
     - |
-      cd qcodes
-      py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+      pip uninstall -y qcodes
+      pip install -e .
+      cd qcodes/tests/dataset/legacy_DB_generation
+      python generate_version_0.py
+      python generate_version_1.py
+      python generate_version_2.py
+      cd ../../../..
+      pip uninstall -y qcodes
+      pip install .
+    - cd qcodes
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
     # run benchmarks to make sure they are correct
@@ -45,7 +62,7 @@ script:
     # build docs with warnings as errors
     - |
       cd docs
-      make SPHINXOPTS="-W" html-api
+      make SPHINXOPTS="-W -v" htmlapi
     - cd ..
 
 after_success:
@@ -54,6 +71,6 @@ after_success:
     - codecov
     # upload the docs
     - |
-      if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
+      if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" && $TRAVIS_PYTHON_VERSION  == "3.6" ]]; then
         make -f docs/Makefile gh-pages
       fi
