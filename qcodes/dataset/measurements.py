@@ -283,6 +283,9 @@ class DataSaver:
         """
         sp_names = parameter.setpoint_full_names
         fallback_sp_name = f"{parameter.full_name}_setpoint"
+        if parameter.setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
         self._unbundle_setpoints_from_param(parameter, sp_names,
                                             fallback_sp_name,
                                             parameter.setpoints,
@@ -358,6 +361,9 @@ class DataSaver:
             found_parameters: The list of all parameters that we know of by now
               This is modified in place with new parameters found here.
         """
+        if parameter.setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
         for i in range(len(parameter.shapes)):
             shape = parameter.shapes[i]
             res.append((parameter.names[i], data[i]))
