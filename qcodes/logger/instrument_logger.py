@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import logging
-from typing import Optional, Sequence, Union, TYPE_CHECKING
+from typing import Optional, Sequence, Union, TYPE_CHECKING, cast
 import collections.abc
 from .logger import get_console_handler, LevelType, handler_level
 if TYPE_CHECKING:
@@ -103,20 +103,27 @@ def filter_instrument(instrument: Union['InstrumentBase',
         level: level to set the handlers to
         handler: single or sequence of handlers which to change
     """
+    handler_int: Sequence[logging.Handler]
     if handler is None:
-        handler = (get_console_handler(),)
-    if not isinstance(handler, collections.abc.Sequence):
-        handler = (handler,)
+        myhandler = get_console_handler()
+        if myhandler is None:
+            raise RuntimeError("Trying to filter instrument but no handler "
+                               "defined. Did you call `start_logger`")
+        handler_int = (myhandler,)
+    elif not isinstance(handler, collections.abc.Sequence):
+        handler_int = (handler,)
+    else:
+        handler_int = handler
 
     instrument_filter = InstrumentFilter(instrument)
-    for h in handler:
+    for h in handler_int:
         h.addFilter(instrument_filter)
     try:
         if level is not None:
-            with handler_level(level, handler):
+            with handler_level(level, handler_int):
                 yield
         else:
             yield
     finally:
-        for h in handler:
+        for h in handler_int:
             h.removeFilter(instrument_filter)
