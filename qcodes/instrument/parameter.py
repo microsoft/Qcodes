@@ -65,7 +65,7 @@ from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
     Dict, Any, Sized, Iterable, cast, Type
 from functools import partial, wraps
 import numpy
-
+from qcodes.utils.helpers import abstractmethod
 
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
@@ -182,8 +182,6 @@ class _BaseParameter(Metadatable):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    get_raw = None  # type: Optional[Callable]
-    set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
@@ -242,14 +240,14 @@ class _BaseParameter(Metadatable):
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw') and self.get_raw is not None:
+        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodesisabstractmethod__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw') and self.set_raw is not None:
+        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodesisabstractmethod__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
@@ -265,6 +263,14 @@ class _BaseParameter(Metadatable):
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
+
+    @abstractmethod
+    def get_raw(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_raw(self, value):
+        raise NotImplementedError
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
