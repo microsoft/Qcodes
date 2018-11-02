@@ -251,5 +251,5 @@ class ZIHDAWG8(Instrument):
         elif param_type == "String":
             return self.daq.getString(name)
         elif param_type == "ZIVectorData":
-            return self.daq.vectorRead(name)
+            return self.daq.getAsEvent(name)
 
