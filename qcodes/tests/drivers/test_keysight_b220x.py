@@ -181,38 +181,3 @@ def test_get_error(uut):
     uut.get_error()
     assert 0 == uut.get_status()
 
-
-def test_notebook():
-    import qcodes as qc
-
-    from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
-    from pyvisa.errors import VisaIOError
-
-    # Create a station to hold all the instruments
-
-    station = qc.Station()
-
-    # instantiate the Switch Matrix and add it to the station
-    try:
-        switch_matrix = KeysightB220X('switch_matrix',
-                                      address='GPIB::22::INSTR')
-        print("using physical instrument")
-    except (ValueError, VisaIOError):
-        # Either there is no VISA lib installed or there was no real instrument found at the
-        # specified address => use simulated instrument
-        import qcodes.instrument.sims as sims
-        path_to_yaml = sims.__file__.replace('__init__.py', 'keysight_b220x.yaml')
-
-        switch_matrix = KeysightB220X('switch_matrix',
-                                      address='GPIB::1::INSTR',
-                                      visalib=path_to_yaml + '@sim'
-                                      )
-        print("using simulated instrument")
-
-    station.add_component(switch_matrix)
-
-    switch_matrix.connect(2, 48)  # connect input 2 to output 48
-    switch_matrix.connect(14, 3)  # connect input 14 to output 3
-    switch_matrix.disconnect(14, 3)  # disconnect input 14 from output 3
-
-
