@@ -139,17 +139,17 @@ def test_gnd_mode(uut):
     assert 0 == uut.get_status()
 
 
-def test_ground_enabled_inputs(uut):
-    uut.set_unused_inputs()
+def test_unused_inputs(uut):
+    uut.unused_inputs()
     assert 0 == uut.get_status()
 
-    uut.set_unused_inputs([3])
+    uut.unused_inputs([3])
     assert 0 == uut.get_status()
-    assert [3] == uut.set_unused_inputs()
+    assert [3] == uut.unused_inputs()
 
-    uut.set_unused_inputs([5, 6, 7, 8])
+    uut.unused_inputs([5, 6, 7, 8])
     assert 0 == uut.get_status()
-    assert [5, 6, 7, 8] == uut.set_unused_inputs()
+    assert [5, 6, 7, 8] == uut.unused_inputs()
 
 
 def test_couple_mode(uut):
