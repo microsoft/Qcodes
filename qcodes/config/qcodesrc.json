@@ -1,17 +1,62 @@
 {
     "core":{
-        "loglevel": "WARNING",
-        "file_loglevel": "INFO",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
         "register_magic": true,
         "db_location": "~/experiments.db",
-        "db_debug": false
+        "db_debug": false,
+        "loglevel": "WARNING",	
+        "file_loglevel": "INFO"
+    },
+    "logger":{
+        "console_level": "WARNING",
+        "file_level": "INFO",
+        "logger_levels":{
+            "pyvisa": "INFO"
+        }
+    },
+    "subscription":{
+        "subscribers":{
+            "QCPlot":{
+                "factory": "qcplotutils.qcodes_dataset.QCPlotDatasetSubscriber",
+                "factory_kwargs":{
+                    "log": false
+                },
+                "subscription_kwargs":{
+                    "min_wait": 0,
+                    "min_count": 1,
+                    "callback_kwargs": {}
+                }
+            },
+            "Plottr":{
+                "factory": "plottr.qcodes_dataset.QcodesDatasetSubscriber",
+                "factory_kwargs":{
+                    "log": false
+                },
+                "subscription_kwargs":{
+                    "min_wait": 0,
+                    "min_count": 1,
+                    "callback_kwargs": {}
+                }
+            }
+
+        },
+        "default_subscribers": []
     },
     "gui" :{
         "notebook": true,
         "plotlib": "all",
         "pyqtmaxplots": 100,
         "defaultcolormap": "hot"
+    },
+    "plotting":{
+        "default_color_map": "viridis",
+        "rasterize_threshold": 5000,
+        "auto_color_scale":{
+            "enabled": false,
+            "cutoff_percentile": [0.5, 0.5],
+            "color_over": "#a1c4fc",
+            "color_under": "#017000"
+        }
     },
     "user": {
         "scriptfolder": ".",
@@ -21,5 +66,10 @@
         "enable_forced_reconnect": false,
         "default_folder": ".",
         "default_file": "instrument_config.yml"
+    },
+    "GUID_components": {
+        "location": 0,
+        "work_station": 0,
+        "sample": 0
     }
 }

@@ -1,0 +1,190 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\r\n"
+        r: "\r\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, m0d3l, 336, 0.0.01"
+
+    properties:
+      temperature_A:
+        default: 100.0
+        getter:
+          q: "KRDG? A"
+          r: "{}"
+
+      sensor_raw_A:
+        default: 101.0
+        getter:
+          q: "SRDG? A"
+          r: "{}"
+
+      sensor_status_A:
+        default: 0
+        getter:
+          q: "RDGST? A"
+          r: "{}"
+
+      sensor_name_A:
+        default: "my name is boring"
+        getter:
+          q: "INNAME? A"
+          r: "{}"
+        setter:
+          q: "INNAME A,\"{}\""
+
+      sensor_setpoint_A:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_A:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
+      temperature_B:
+        default: 100.0
+        getter:
+          q: "KRDG? B"
+          r: "{}"
+
+      sensor_raw_B:
+        default: 101.0
+        getter:
+          q: "SRDG? B"
+          r: "{}"
+
+      sensor_status_B:
+        default: 0
+        getter:
+          q: "RDGST? B"
+          r: "{}"
+
+      sensor_name_B:
+        default: "my name is boring"
+        getter:
+          q: "INNAME? B"
+          r: "{}"
+        setter:
+          q: "INNAME B,\"{}\""
+
+      sensor_setpoint_B:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_B:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
+
+      temperature_C:
+        default: 100.0
+        getter:
+          q: "KRDG? C"
+          r: "{}"
+
+      sensor_raw_C:
+        default: 101.0
+        getter:
+          q: "SRDG? C"
+          r: "{}"
+
+      sensor_status_C:
+        default: 0
+        getter:
+          q: "RDGST? C"
+          r: "{}"
+
+      sensor_name_C:
+        default: "my name is boring"
+        getter:
+          q: "INNAME? C"
+          r: "{}"
+        setter:
+          q: "INNAME C,\"{}\""
+
+      sensor_setpoint_C:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_C:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
+
+      temperature_D:
+        default: 100.0
+        getter:
+          q: "KRDG? D"
+          r: "{}"
+
+      sensor_raw_D:
+        default: 101.0
+        getter:
+          q: "SRDG? D"
+          r: "{}"
+
+      sensor_status_D:
+        default: 0
+        getter:
+          q: "RDGST? D"
+          r: "{}"
+
+      sensor_name_D:
+        default: "my name is boring"
+        getter:
+          q: "INNAME? D"
+          r: "{}"
+        setter:
+          q: "INNAME D,\"{}\""
+
+      sensor_setpoint_D:
+        default: "100"
+        getter:
+          q: "setp? A"
+          r: "{}"
+        setter:
+          q: "setp A,\"{}\""
+
+      sensor_range_D:
+        default: "1"
+        getter:
+          q: "range? A"
+          r: "{}"
+        setter:
+          q: "range A,\"{}\""
+
+
+resources:
+  GPIB::2::INSTR:
+    device: device 1

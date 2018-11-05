@@ -110,7 +110,7 @@ class IVVI(VisaInstrument):
                                       'value. Change to a lower value for '
                                       'a shorter minimum time to wait.'))
 
-        self.add_parameter('dac voltages',
+        self.add_parameter('dac_voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
@@ -121,9 +121,6 @@ class IVVI(VisaInstrument):
 
         # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
-        for i in range(int(self._numdacs / 4)):
-            self.set_pol_dacrack(polarity[i], np.arange(1 + i * 4, 1 + (i + 1) * 4),
-                                 get_all=False)
 
         for i in range(1, numdacs + 1):
             self.add_parameter(
@@ -137,6 +134,10 @@ class IVVI(VisaInstrument):
                 step=dac_step,
                 inter_delay=dac_delay,
                 max_val_age=10)
+
+        for i in range(int(self._numdacs / 4)):
+            self.set_pol_dacrack(polarity[i], np.arange(1 + i * 4, 1 + (i + 1) * 4),
+                                 get_all=False)
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
@@ -433,8 +434,9 @@ class IVVI(VisaInstrument):
         val = flagmap[flag.upper()]
         for ch in channels:
             self.pol_num[ch - 1] = val
-            # self.set_parameter_bounds('dac%d' % (i+1), val, val +
-            # self.Fullrange.0)
+            name = "dac" + str(ch)
+            self.set_parameter_bounds(name, val,
+                                      val + self.Fullrange)
 
         if get_all:
             self.get_all()
@@ -459,6 +461,13 @@ class IVVI(VisaInstrument):
             return 'POS'
         else:
             return 'Invalid polarity in memory'
+
+    def set_parameter_bounds(self, name, min_value, max_value):
+        parameter = self.parameters[name]
+        if not isinstance(parameter.vals, Numbers):
+            raise Exception('Only the Numbers validator is supported.')
+        parameter.vals._min_value = min_value
+        parameter.vals._max_value = max_value
 
     def _gen_ch_set_func(self, fun, ch):
         def set_func(val):

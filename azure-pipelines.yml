@@ -1,0 +1,50 @@
+name: "QCoDeS CI"
+
+trigger:
+  branches:
+    include:
+      - master
+
+jobs:
+  - job: "run_the_tests"
+    pool:
+      vmImage: "vs2017-win2016"
+
+    steps:
+      # Conda Environment
+      # Create and activate a Conda environment.
+      - task: CondaEnvironment@1
+        inputs:
+          createCustomEnvironment: true
+          environmentName: qcodes
+          packageSpecs: 'python=3.6'
+          updateConda: true
+      - script: |
+          conda env update -n qcodes -f environment.yml
+          pip install -r test_requirements.txt
+          pip install -r docs_requirements.txt
+          pip install -e .
+        displayName: "Installation"
+      - script: |
+          mypy qcodes
+        displayName: "mypy"
+      - script: |
+          cd qcodes
+          python tests\dataset\legacy_DB_generation\generate_version_0.py
+          python tests\dataset\legacy_DB_generation\generate_version_1.py
+          python tests\dataset\legacy_DB_generation\generate_version_2.py
+        displayName: "Generate db fixtures"
+      - script: |
+          cd qcodes
+          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+        displayName: "Pytest"
+      - script: |
+          cd docs
+          REM Turn warnings into errors
+          set SPHINXOPTS=-W -v
+          make.bat htmlapi
+        displayName: "docsbuild"
+      - task: PublishTestResults@1
+        inputs:
+          testResultsFiles: 'qcodes\test-*.xml'
+          testRunTitle: 'Publish test results'
