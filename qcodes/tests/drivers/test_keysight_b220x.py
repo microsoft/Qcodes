@@ -2,7 +2,6 @@ import pytest
 from pyvisa.errors import VisaIOError
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
 
-
 @pytest.fixture
 def uut() -> KeysightB220X:
     try:
@@ -36,6 +35,12 @@ def test_idn_command(uut):
 def test_connect(uut):
     uut.connect(2, 48)
     assert 0 == uut.get_status()
+
+
+def test_connections(uut):
+    uut.connect(2, 48)
+    uut.connect(10, 12)
+    assert {(2, 48), (10, 12)} == uut.connections()
 
 
 def test_disconnect_all(uut):
@@ -181,3 +186,31 @@ def test_get_error(uut):
     uut.get_error()
     assert 0 == uut.get_status()
 
+
+class Test_parse_channel_list:
+    def test_parse_channel_list(self):
+        channel_list = '(@10101,10202)'
+        assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(channel_list)
+
+    def test_all_combinations_zero_padded(self):
+        import itertools
+        cards = range(5)
+        inputs = range(1, 15)
+        outputs = range(1, 49)
+
+        for card, in_port, out_port in itertools.product(cards, inputs, outputs):
+            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card, in_port=in_port, out_port=out_port)
+
+            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(padded)
+
+    def test_all_combinations_unpadded(self):
+        import itertools
+        cards = range(5)
+        inputs = range(1, 15)
+        outputs = range(1, 49)
+
+        for card, in_port, out_port in itertools.product(cards, inputs, outputs):
+            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card, in_port=in_port, out_port=out_port)
+            unpadded = str(int(padded))
+
+            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(unpadded)

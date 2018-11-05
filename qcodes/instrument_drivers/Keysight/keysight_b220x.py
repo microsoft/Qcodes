@@ -1,6 +1,8 @@
 from qcodes import VisaInstrument
 from qcodes.utils.validators import MultiType, Ints, Enum, Lists
 
+import re
+
 
 class KeysightB220X(VisaInstrument):
     """
@@ -22,6 +24,11 @@ class KeysightB220X(VisaInstrument):
 
         self.add_parameter(name='get_error',
                            get_cmd=':SYST:ERR?')
+
+        self.add_parameter(name='connections',
+                           get_cmd=':CLOS:CARD? 0',
+                           get_parser=KeysightB220X.parse_channel_list
+                           )
 
         self.add_function(name='connect',
                           call_cmd=self._connect,
@@ -141,3 +148,8 @@ class KeysightB220X(VisaInstrument):
         self.write(":OPEN (@{card:01d}{ch1:02d}{ch2:02d})".format(card=0,
                                                                   ch1=channel1,
                                                                   ch2=channel2))
+
+    @staticmethod
+    def parse_channel_list(channel_list_str):
+        pattern = r'(?P<card>\d{0,1}?)(?P<input>\d{1,2})(?P<output>\d{2})(?=(?:[,\)\r\n]|$))'
+        return {(int(match['input']), int(match['output'])) for match in re.finditer(pattern, channel_list_str)}
