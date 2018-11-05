@@ -14,7 +14,8 @@ from qcodes.dataset.sqlite_base import (atomic,
 
 def sql_placeholder_string(n: int) -> str:
     """
-    Return an SQL placeholder string of length n.
+    Return an SQL value placeholder string of length n.
+    Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
     """
     return '(' + ','.join('?'*n) + ')'
 
@@ -29,7 +30,8 @@ def copy_runs_into_db(source_db_path: str,
 
     Args:
         source_db_path: Path to the source DB file
-        target_db_path: Path to the target DB file
+        target_db_path: Path to the target DB file. The target DB file will be
+          created if it does not exist.
         run_ids: The run_ids of the runs to copy into the target DB file
     """
 
