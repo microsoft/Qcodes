@@ -10,6 +10,7 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       dataset)
+from qcodes.tests.common import retry_until_does_not_throw
 
 VALUE = Union[str, Number, List, ndarray, bool]
 
@@ -45,8 +46,15 @@ def test_basic_subscription(dataset, basic_subscriber):
 
     expected_state = {}
 
-    for x in range(10):
+    # Here we are only testing 2 to reduce the CI time
+    for x in range(2):
         y = -x**2
         dataset.add_result({'x': x, 'y': y})
         expected_state[x+1] = [(x, y)]
-        assert dataset.subscribers[sub_id].state == expected_state
+
+        @retry_until_does_not_throw(
+            exception_class_to_expect=AssertionError, delay=0, tries=10)
+        def assert_expected_state():
+            assert dataset.subscribers[sub_id].state == expected_state
+
+        assert_expected_state()
