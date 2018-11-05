@@ -113,6 +113,18 @@ class TestChannels(TestCase):
 
         self.assertEqual(len(self.instrument.channels), n_channels + len(names))
 
+    def test_extend_then_remove(self):
+        n_channels = len(self.instrument.channels)
+        names = ('foo', 'bar', 'foobar')
+        channels = [DummyChannel(self.instrument, 'Chan' + name, name) for name in names]
+        self.instrument.channels.extend(channels)
+
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names))
+        last_channel = self.instrument.channels[-1]
+        self.instrument.channels.remove(last_channel)
+        assert last_channel not in self.instrument.channels
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names) - 1)
+
     def test_insert_channel(self):
         n_channels = len(self.instrument.channels)
         name = 'foo'

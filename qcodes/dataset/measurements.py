@@ -17,6 +17,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.helpers import NumpyJSONEncoder
+import qcodes.config
 
 log = logging.getLogger(__name__)
 
@@ -72,6 +73,9 @@ class DataSaver:
                                     callback_kwargs={'run_id':
                                                          self._dataset.run_id,
                                                      'snapshot': snapshot})
+        default_subscribers = qcodes.config.subscription.default_subscribers
+        for subscriber in default_subscribers:
+            self._dataset.subscribe_from_config(subscriber)
 
         self.write_period = float(write_period)
         self.parameters = parameters
