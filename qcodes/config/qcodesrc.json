@@ -14,6 +14,34 @@
             "pyvisa": "INFO"
         }
     },
+    "subscription":{
+        "subscribers":{
+            "QCPlot":{
+                "factory": "qcplotutils.qcodes_dataset.QCPlotDatasetSubscriber",
+                "factory_kwargs":{
+                    "log": false
+                },
+                "subscription_kwargs":{
+                    "min_wait": 0,
+                    "min_count": 1,
+                    "callback_kwargs": {}
+                }
+            },
+            "Plottr":{
+                "factory": "plottr.qcodes_dataset.QcodesDatasetSubscriber",
+                "factory_kwargs":{
+                    "log": false
+                },
+                "subscription_kwargs":{
+                    "min_wait": 0,
+                    "min_count": 1,
+                    "callback_kwargs": {}
+                }
+            }
+
+        },
+        "default_subscribers": []
+    },
     "gui" :{
         "notebook": true,
         "plotlib": "all",

@@ -327,6 +327,9 @@ class ChannelList(Metadatable):
                             "type.")
         channels = cast(List[InstrumentChannel], self._channels)
         channels.extend(objects_tuple)
+        self._channel_mapping.update({
+            obj.short_name: obj for obj in objects
+        })
         self._channels = channels
 
     def index(self, obj: InstrumentChannel):
