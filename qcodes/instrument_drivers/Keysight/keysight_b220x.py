@@ -112,7 +112,7 @@ class KeysightB220X(VisaInstrument):
                                         False: 0}
                            )
 
-        self.add_parameter(name='gnd_enabled_inputs',
+        self.add_parameter(name='set_unused_inputs',
                            get_cmd=':AGND:UNUSED? 0',
                            set_cmd=":AGND:UNUSED 0,'{}'",
                            get_parser=lambda response: [int(x) for x in response.strip("'").split(',') if x.strip().isdigit()],
