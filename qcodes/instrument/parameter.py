@@ -72,7 +72,7 @@ from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Ints, Strings, Enum
+from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -112,16 +112,16 @@ class _BaseParameter(Metadatable):
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
-        name (str): the local name of the parameter. Must be a valid
+        name: the local name of the parameter. Must be a valid
             identifier, ie no spaces or special characters or starting with a
             number. If this parameter is part of an Instrument or Station,
             this should match how it will be referenced from that parent,
             ie ``instrument.name`` or ``instrument.parameters[name]``
 
-        instrument (Optional[Instrument]): the instrument this parameter
+        instrument: the instrument this parameter
             belongs to, if any
 
-        snapshot_get (Optional[bool]): False prevents any update to the
+        snapshot_get: False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
@@ -189,11 +189,11 @@ class _BaseParameter(Metadatable):
                  instrument: Optional['Instrument'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
-                 step: Optional[Union[int, float]]=None,
+                 step: Optional[Number]=None,
                  scale: Optional[Union[Number, Iterable[Number]]]=None,
                  offset: Optional[Union[Number, Iterable[Number]]]=None,
-                 inter_delay: Union[int, float]=0,
-                 post_delay: Union[int, float]=0,
+                 inter_delay: Number=0,
+                 post_delay: Number=0,
                  val_mapping: Optional[dict]=None,
                  get_parser: Optional[Callable]=None,
                  set_parser: Optional[Callable]=None,
@@ -950,7 +950,7 @@ class Parameter(_BaseParameter):
 class ParameterWithSetpoints(Parameter):
     """
     A parameter that has associated setpoints. The setpoints is nothing
-    more than a list of other paramameters that descripe the values, names
+    more than a list of other parameters that describe the values, names
     and units of the setpoint axis for this parameter.
 
     In most cases this will probably be a parameter that returns an array.
@@ -962,9 +962,10 @@ class ParameterWithSetpoints(Parameter):
     documentation of :class:`Parameter` for more details.
     """
     def __init__(self, *args,
-                 setpoints: Sequence[Parameter]=None, **kwargs) -> None:
+                 setpoints: Optional[Sequence[_BaseParameter]]=None,
+                 **kwargs) -> None:
         if setpoints is None:
-            self._setpoints = ()
+            self._setpoints = []
         else:
             self.setpoints = setpoints
         super().__init__(*args, **kwargs)
@@ -974,11 +975,44 @@ class ParameterWithSetpoints(Parameter):
         return self._setpoints
 
     @setpoints.setter
-    def setpoints(self, setpoints):
+    def setpoints(self, setpoints: Sequence[_BaseParameter]):
         for setpointarray in setpoints:
-            if not isinstance(setpointarray, Parameter):
+            if not isinstance(setpointarray, _BaseParameter):
                 raise RuntimeError
         self._setpoints = setpoints
+
+    def validate_consistent_shape(self) -> bool:
+        """
+        Verifies that the shape of the Array Validator of the parameter
+        is consistent with the Validator of the Setpoints. This requires that
+        both the setpoints and the actual parameters have validators
+        of type Arrays with a defined shape.
+        """
+        output_shape = self.vals.shape
+
+        if not isinstance(self.vals, Arrays):
+            raise RuntimeError("Can only validate shapes for Array "
+                               "Parameters")
+
+        setpoints_shape_list = []
+        for sp in self.setpoints:
+            if not isinstance(self.vals, Arrays):
+                raise RuntimeError("Can only validate shapes for Array "
+                                   "Parameters")
+            setpoints_shape_list.extend(sp.vals.shape)
+        setpoints_shape = tuple(setpoints_shape_list)
+
+        if output_shape is None:
+            raise RuntimeError("Trying to verify shape but output "
+                               "does not have any shape")
+        if None in output_shape or None in setpoints_shape:
+            raise RuntimeError(f"One or more dimensions have unknown shape"
+                               f"when comparing output: {output_shape} to "
+                               f"setpoints: {setpoints_shape}")
+
+        if output_shape != setpoints_shape:
+            return False
+        return True
 
 
 class GeneratedSetPoints(Parameter):
@@ -1352,8 +1386,8 @@ class MultiParameter(_BaseParameter):
     @property
     def short_names(self):
         """
-        short_names is indentical to names i.e. the names of the paramter parts
-        but does not add the intrument name.
+        short_names is identical to names i.e. the names of the parameter
+        parts but does not add the instrument name.
 
         It exists for consistency with instruments and other parameters.
         """
