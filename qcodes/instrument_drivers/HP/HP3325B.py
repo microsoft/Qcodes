@@ -1,5 +1,5 @@
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum
+from qcodes.utils.validators import Numbers, Enum
 from functools import partial
 
 def boolean_parser(command, instrument_response):
