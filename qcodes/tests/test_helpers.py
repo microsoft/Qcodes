@@ -11,10 +11,11 @@ import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
-                                  LogCapture, strip_attrs, full_class,
+                                  strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
                                   compare_dictionaries, NumpyJSONEncoder,
                                   partial_with_docstring)
+from qcodes.logger.logger import LogCapture
 from qcodes.utils.helpers import is_function, attribute_set_to
 
 
