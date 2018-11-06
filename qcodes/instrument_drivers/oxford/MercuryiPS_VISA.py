@@ -1,3 +1,4 @@
+import asyncio
 import time
 from functools import partial
 from typing import Dict, Union, Optional, Callable, List, cast
@@ -375,16 +376,18 @@ class MercuryiPS(VisaInstrument):
 
         return idn_dict
 
-    def _ramp_simultaneously(self) -> None:
+    async def _ramp_simultaneously(self) -> None:
         """
         Ramp all three fields to their target simultaneously at their given
         ramp rates. NOTE: there is NO guarantee that this does not take you
         out of your safe region. Use with care.
         """
+        # NB: this method is trivially async, as ramp_to_target
+        #     is completely syncrhonous.
         for slave in self.submodules.values():
             slave.ramp_to_target()
 
-    def _ramp_safely(self) -> None:
+    async def _ramp_safely(self, polling_interval : float = 0.1) -> None:
         """
         Ramp all three fields to their target using the 'first-down-then-up'
         sequential ramping procedure. This function is BLOCKING.
@@ -400,8 +403,11 @@ class MercuryiPS(VisaInstrument):
             if self.visabackend == 'sim':
                 pass
             else:
+                # This is why we did all the juggling of async/await earlier:
+                # we want other code to run while we're waiting for the
+                # magnet to finish ramping.
                 while slave.ramp_status() == 'TO SET':
-                    time.sleep(0.1)
+                    await asyncio.sleep(polling_interval)
 
     def set_new_field_limits(self, limit_func: Callable) -> None:
         """
@@ -420,7 +426,7 @@ class MercuryiPS(VisaInstrument):
 
         self._field_limits = limit_func
 
-    def ramp(self, mode: str = "safe") -> None:
+    def ramp(self, mode : str = "safe") -> None:
         """
         Ramp the fields to their present target value
 
@@ -432,6 +438,11 @@ class MercuryiPS(VisaInstrument):
               that ensures that the total field stays within the safe region
               (provided that this region is convex).
         """
+        return asyncio.get_event_loop().run_until_complete(
+            self.ramp_async(mode=mode)
+        )
+
+    async def ramp_async(self, mode: str = "safe") -> None:
         if mode not in ['simul', 'safe']:
             raise ValueError('Invalid ramp mode. Please provide either "simul"'
                              ' or "safe".')
@@ -447,8 +458,10 @@ class MercuryiPS(VisaInstrument):
                                      ' zero!')
 
         # then the actual ramp
-        {'simul': self._ramp_simultaneously,
-         'safe': self._ramp_safely}[mode]()
+        await {
+            'simul': self._ramp_simultaneously,
+            'safe': self._ramp_safely
+        }[mode]()
 
     def ask(self, cmd: str) -> str:
         """
