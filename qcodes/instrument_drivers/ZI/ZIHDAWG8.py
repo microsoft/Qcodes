@@ -6,6 +6,7 @@ import time
 from functools import partial
 
 import zhinst
+import zhinst.utils
 
 from qcodes import Instrument
 from qcodes.utils import validators as validators
