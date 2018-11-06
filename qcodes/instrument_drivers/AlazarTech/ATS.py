@@ -9,7 +9,7 @@ import asyncio
 import concurrent
 
 from threading import Lock
-from functools import partial
+from functools import partial, wraps
 from typing import List, Dict, Union, Tuple, cast, Sequence, Awaitable
 from contextlib import contextmanager
 
@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 # TODO (natalie) make logging vs print vs nothing decisions
 
-
 class AlazarTech_ATS(Instrument):
     """
     This is the qcodes driver for Alazar data acquisition cards
@@ -48,7 +47,11 @@ class AlazarTech_ATS(Instrument):
         dll_path: string containing the path of the ATS driver dll
 
     """
-    _dll_lock = Lock()
+    
+    #: The ATS API DLL is not guaranteed to be thread-safe
+    #: This lock guards API calls.
+    _dll_lock : Lock = Lock()
+    
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
     dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
@@ -617,7 +620,7 @@ class AlazarTech_ATS(Instrument):
                 alloc_buffers=None, fifo_only_streaming=None,
                 interleave_samples=None, get_processed_data=None,
                 allocated_buffers=None, buffer_timeout=None,
-                acquisition_controller=None):
+                acquisition_controller=None) -> np.ndarray:
         """
         perform a single acquisition with the Alazar board, and set certain
         parameters to the appropriate values
@@ -670,7 +673,8 @@ class AlazarTech_ATS(Instrument):
                 alloc_buffers=None, fifo_only_streaming=None,
                 interleave_samples=None, get_processed_data=None,
                 allocated_buffers=None, buffer_timeout=None,
-                acquisition_controller=None):
+                acquisition_controller=None) -> np.ndarray:
+
         # region set parameters from args
         start_func = time.perf_counter()
         if self._parameters_synced == False:
@@ -913,7 +917,22 @@ class AlazarTech_ATS(Instrument):
                 parameter.set(v)
 
     def _async_call_dll(self, executor, func_name: str, *args) -> None:
-        # TODO(py37): change to async with.
+        """
+        Asynchronously executes a dll function `func_name` using the given executor,
+        passing it the given arguments. Typically, the executor will be used
+        to place the DLL call into a background thread; in such cases, it is
+        critical to ensure that the DLL function is a CLL or WinDLL function,
+        and *not* a PyDLL function, since the latter will maintain a GIL acquisition.
+
+        For each argument in the list
+        - If an arg is a TraceParameter of this instrument, the parameter
+          value from `.raw_value` is used. If the call succeeds, these
+          parameters will be marked as updated using their `._set_updated()`
+          method
+        - If a regular parameter the raw_value is used and uptodate is tracked
+          outside this function
+        - Otherwise the arg is used directly
+        """
         return asyncio.get_event_loop().run_in_executor(
             executor,
             partial(self._call_dll, func_name, *args)
