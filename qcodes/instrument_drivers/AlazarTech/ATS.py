@@ -916,7 +916,7 @@ class AlazarTech_ATS(Instrument):
                 parameter = self.parameters[param_base + str(i + 1)]
                 parameter.set(v)
 
-    def _async_call_dll(self, executor, func_name: str, *args) -> None:
+    def _async_call_dll(self, executor, func_name: str, *args) -> Awaitable[None]:
         """
         Asynchronously executes a dll function `func_name` using the given executor,
         passing it the given arguments. Typically, the executor will be used
