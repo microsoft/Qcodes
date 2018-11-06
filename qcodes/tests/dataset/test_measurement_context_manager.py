@@ -640,7 +640,7 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_arrays_lists_tuples(N):
+def test_datasaver_arrays_lists_tuples(N: int) -> None:
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -974,6 +974,49 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     assert len(datadicts) == len(meas.parameters)
     for datadict in datadicts:
         assert datadict['data'].shape == (N * M,)
+
+
+@settings(max_examples=5, deadline=None)
+@given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints(channel_array_instrument,
+                                            DAC, n):
+
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(n)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    assert meas.parameters[str(param)].depends_on == dependency_name
+    assert meas.parameters[str(param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+    with meas.run() as datasaver:
+        datasaver.add_result((param, param()))
+    assert datasaver.points_written == n
+
+    expected_params = ('dummy_channel_inst_ChanA_dummy_sp_axis',
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
+    ds = load_by_id(datasaver.run_id)
+    for param in expected_params:
+        data = ds.get_data(param)
+        assert len(data) == n
+        assert len(data[0]) == 1
+    datadicts = get_data_by_id(datasaver.run_id)
+    # one dependent parameter
+    assert len(datadicts) == 1
+    datadicts = datadicts[0]
+    assert len(datadicts) == len(meas.parameters)
+    for datadict in datadicts:
+        assert datadict['data'].shape == (n,)
+
 
 
 @settings(max_examples=5, deadline=None)
