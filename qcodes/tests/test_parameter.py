@@ -48,7 +48,7 @@ blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
     namedtuple('blank', 'name')('')  # blank .name
-) # type: Tuple
+)
 named_instrument = namedtuple('yesname', 'name')('astro')
 
 
