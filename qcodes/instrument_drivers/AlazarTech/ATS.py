@@ -877,9 +877,9 @@ class AlazarTech_ATS(Instrument):
         abort_time = time_done_abort - done_capture
         handling_time = time_done_handling - time_done_abort
         free_mem_time = time_done_free_mem - time_done_handling
-        buffers_per_sec = 0
-        bytes_per_sec = 0
-        records_per_sec = 0
+        buffers_per_sec : float = 0
+        bytes_per_sec : float = 0
+        records_per_sec : float = 0
         if transfer_time_sec > 0:
             buffers_per_sec = buffers_completed / transfer_time_sec
             bytes_per_sec = bytes_transferred / transfer_time_sec
