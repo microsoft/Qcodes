@@ -965,7 +965,7 @@ class ParameterWithSetpoints(Parameter):
                  setpoints: Optional[Sequence[_BaseParameter]]=None,
                  **kwargs) -> None:
         if setpoints is None:
-            self._setpoints = []
+            self._setpoints: Sequence[_BaseParameter] = []
         else:
             self.setpoints = setpoints
         super().__init__(*args, **kwargs)
@@ -988,13 +988,11 @@ class ParameterWithSetpoints(Parameter):
         both the setpoints and the actual parameters have validators
         of type Arrays with a defined shape.
         """
-        output_shape = self.vals.shape
-
         if not isinstance(self.vals, Arrays):
             raise RuntimeError("Can only validate shapes for Array "
                                "Parameters")
-
-        setpoints_shape_list = []
+        output_shape = self.vals.shape
+        setpoints_shape_list: List[int] = []
         for sp in self.setpoints:
             if not isinstance(self.vals, Arrays):
                 raise RuntimeError("Can only validate shapes for Array "
