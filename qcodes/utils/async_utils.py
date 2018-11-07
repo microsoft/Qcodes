@@ -1,4 +1,4 @@
-from typing import TypeVar, Awaitable
+from typing import TypeVar, Awaitable, Generator
 import asyncio
 from threading import Thread
 from contextlib import contextmanager
@@ -6,7 +6,7 @@ from contextlib import contextmanager
 T = TypeVar('T')
 
 def sync(task : Awaitable[T]) -> T:
-    loop : asyncio.BaseEventLoop = asyncio.get_event_loop()
+    loop : asyncio.AbstractEventLoop = asyncio.get_event_loop()
     if loop.is_running():
         # We can't run in the same event loop that's already
         # running, so spawn a new thread.
@@ -21,7 +21,7 @@ def sync(task : Awaitable[T]) -> T:
         return loop.run_until_complete(task)
 
 @contextmanager
-def cancelling(*tasks : asyncio.Future) -> None:
+def cancelling(*tasks : asyncio.Future) -> Generator[None]:
     try:
         yield
     finally:

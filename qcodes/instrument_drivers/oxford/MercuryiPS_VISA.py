@@ -457,10 +457,12 @@ class MercuryiPS(VisaInstrument):
                                      ' zero!')
 
         # then the actual ramp
-        await {
+        ramp_fn : Callable[None, Awaitable[None]] = {
             'simul': self._ramp_simultaneously,
             'safe': self._ramp_safely
-        }[mode]()
+        }[mode]
+
+        await ramp_fn()
 
     def ask(self, cmd: str) -> str:
         """

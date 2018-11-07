@@ -10,7 +10,7 @@ import numpy as np
 
 from typing import Tuple, Union, Type, TypeVar
 NormOrder = Union[str, float]
-T = TypeVar('T')
+T = TypeVar('T', bound='FieldVector')
 
 
 class FieldVector(object):
@@ -153,7 +153,7 @@ class FieldVector(object):
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self : Type[T], other : T):
+    def copy(self : T, other : T):
         """Copy the properties of other vector to yourself"""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
