@@ -6,7 +6,6 @@ import time
 from functools import partial
 from typing import Optional, Any
 
-import zhinst
 import zhinst.utils
 
 from qcodes import Instrument
@@ -17,7 +16,7 @@ class ZIHDAWG8(Instrument):
     """
     QCoDeS driver for ZI HDAWG8.
     Requires ZI LabOne software to be installed on the computer running QCoDeS
-    (tested using LabOne (18.05.54618) and firmware (53866).
+    (tested using LabOne 18.05.54618 and firmware 53866).
     Furthermore, the Data Server and Web Server must be running and a connection
     between the two must be made.
     """
@@ -232,13 +231,13 @@ class ZIHDAWG8(Instrument):
     def download_device_node_tree(self, flags: int = 0) -> dict:
         """
         Args:
-            flags: ziPython.ziListEnum.settingsonly -> 0x08:
+            flags: ziPython.ziListEnum.settingsonly -> 0x08
                         Returns only nodes which are marked as setting
-                   ziPython.ziListEnum.streamingonly -> 0x10:
+                   ziPython.ziListEnum.streamingonly -> 0x10
                         Returns only streaming nodes
-                   ziPython.ziListEnum.subscribedonly -> 0x20:
+                   ziPython.ziListEnum.subscribedonly -> 0x20
                         Returns only subscribed nodes
-                   ziPython.ziListEnum.basechannel -> 0x40:
+                   ziPython.ziListEnum.basechannel -> 0x40
                         Return only one instance of a node in case of multiple
                         channels
                    Or any combination of flags can be used.

@@ -3,8 +3,9 @@ import textwrap
 import unittest
 from unittest.mock import patch, MagicMock
 
+sys.modules['zhinst.utils'] = MagicMock(name='zhinst.utils')
 sys.modules['zhinst'] = MagicMock(name='zhinst')
-import zhinst
+import zhinst.utils
 
 from qcodes.instrument_drivers.ZI.ZIHDAWG8 import ZIHDAWG8
 from qcodes.utils import validators
