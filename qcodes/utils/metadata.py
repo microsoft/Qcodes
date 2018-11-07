@@ -1,8 +1,16 @@
 from .helpers import deep_update
 
 from typing import Dict, Tuple, Any, NewType, NamedTuple, TypeVar, Union, Sequence
-T = TypeVar('T')
-Snapshot = Dict[str, T] # TODO: represent known keys in typing
+# NB: At the moment, the Snapshot type is a bit weak, as the Any
+#     for the value type doesn't tell us anything about the schema
+#     followed by snapshots.
+#     This is needed, however, since snapshots are Dict instances with
+#     homogeneous keys and heterogeneous values, something that
+#     recent Python versions largely replace with features like
+#     typing.NamedTuple and @dataclass.
+#     As those become more widely available, the weakness of this
+#     type constraint will become less of an issue.
+Snapshot = Dict[str, Any]
 ParameterKey = Union[
     # Unbound parameters
     str,
@@ -63,7 +71,7 @@ class ParameterDiff(NamedTuple):
 
 ## FUNCTIONS ##
 
-def extract_param_values(snapshot: Dict[str, Any]) -> Dict[ParameterKey, Any]:
+def extract_param_values(snapshot: Snapshot) -> Dict[ParameterKey, Any]:
     """
     Given a snapshot, returns a dictionary from
     instrument and parameter names onto parameter values.
@@ -78,8 +86,8 @@ def extract_param_values(snapshot: Dict[str, Any]) -> Dict[ParameterKey, Any]:
 
     return parameters
 
-def diff_param_values(left_snapshot: Dict[str, Any],
-                      right_snapshot: Dict[str, Any]
+def diff_param_values(left_snapshot: Snapshot,
+                      right_snapshot: Snapshot
                      ) -> ParameterDiff:
     """
     Given two snapshots, returns the differences between parameter values
