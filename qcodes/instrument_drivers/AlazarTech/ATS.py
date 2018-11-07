@@ -9,8 +9,8 @@ import asyncio
 import concurrent
 
 from threading import Lock
-from functools import partial, wraps
-from typing import List, Dict, Union, Tuple, cast, Sequence, Awaitable
+from functools import partial
+from typing import List, Dict, Union, Tuple, Sequence, Awaitable
 from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
@@ -47,7 +47,7 @@ class AlazarTech_ATS(Instrument):
         dll_path: string containing the path of the ATS driver dll
 
     """
-    
+
     #: The ATS API DLL is not guaranteed to be thread-safe
     #: This lock guards API calls.
     _dll_lock : Lock = Lock()
@@ -761,7 +761,7 @@ class AlazarTech_ATS(Instrument):
                             acquire_flags)
 
             # bytes per sample
-            max_s, bps = self._get_channel_info(self._handle)
+            _, bps = self._get_channel_info(self._handle)
             # TODO(JHN) Why +7 I guess its to do ceil division?
             bytes_per_sample = (bps + 7) // 8
             # bytes per record
@@ -791,7 +791,7 @@ class AlazarTech_ATS(Instrument):
 
             allocated_buffers = self.allocated_buffers.raw_value
             buffer_recycling = buffers_per_acquisition > allocated_buffers
-            for k in range(allocated_buffers):
+            for _ in range(allocated_buffers):
                 try:
                     self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
                 except:
