@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from qcodes.utils.metadata import Metadatable
+from qcodes.utils.metadata import Metadatable, diff_param_values
 
 
 class TestMetadatable(TestCase):
@@ -47,3 +47,53 @@ class TestMetadatable(TestCase):
         self.assertEqual(s.snapshot(), {'fruit': 'kiwi'})
         self.assertEqual(s.snapshot_base(), {})
         self.assertEqual(s.metadata, {8: 9})
+
+    def test_diff(self):
+        left = {
+            "station": {
+                "parameters": {
+                    "apple": "orange"
+                },
+                "instruments": {
+                    "correct": {
+                        "parameters": {
+                            "horse": "battery",
+                            "left": "only"
+                        }
+                    }
+                }
+            }
+        }
+        right = {
+            "station": {
+                "parameters": {
+                    "apple": "grape"
+                },
+                "instruments": {
+                    "correct": {
+                        "parameters": {
+                            "horse": "staple",
+                            "right": "only"
+                        }
+                    }
+                }
+            }
+        }
+
+        diff = diff_param_values(left, right)
+        self.assertEqual(
+            diff.changed, {
+                "apple": ("orange", "grape"),
+                ("correct", "horse"): ("battery", "staple")
+            }
+        )
+        self.assertEqual(
+            diff.left_only, {
+                ("correct", "left"): "only"
+            }
+        )
+        self.assertEqual(
+            diff.right_only, {
+                ("correct", "right"): "only"
+            }
+        )

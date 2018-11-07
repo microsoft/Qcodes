@@ -1,6 +1,6 @@
 from .helpers import deep_update
 
-from typing import Dict, Tuple, Any, NamedTuple, TypeVar, Union, Sequence
+from typing import Dict, Tuple, Any, RunId, NamedTuple, TypeVar, Union, Sequence
 T = TypeVar('T')
 Snapshot = Dict[str, T] # TODO: represent known keys in typing
 ParameterKey = Union[
@@ -10,6 +10,7 @@ ParameterKey = Union[
     Tuple[str, str]
 ]
 ParameterDict = Dict[ParameterKey, T]
+RunId = NewType(int)
 
 class Metadatable:
     def __init__(self, metadata=None):
@@ -87,7 +88,7 @@ def diff_param_values(left_snapshot: Dict[str, Any],
     left_params, right_params = map(extract_param_values, (left_snapshot, right_snapshot))
     left_keys, right_keys = [set(params.keys()) for params in (left_params, right_params)]
     common_keys = left_keys.intersection(right_keys)
-    
+
     return ParameterDiff(
         left_only={
             key: left_params[key]
@@ -104,7 +105,7 @@ def diff_param_values(left_snapshot: Dict[str, Any],
         }
     )
 
-def diff_param_values_by_id(left_id, right_id):
+def diff_param_values_by_id(left_id : RunId, right_id : RunId):
     """
     Given the IDs of two datasets, returns the differences between
     parameter values in each of their snapshots.
