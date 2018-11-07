@@ -200,6 +200,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             if val.parent is None:  # Attach self as parent if not already set
                 val.parent = self
 
+            if hasattr(self, 'multiple_senders'):
+                val.multiple_senders = self.multiple_senders
+
             if attr in self._parameter_decorators:
                 # Some methods have been defined in the ParameterNode as methods
                 # Using the @parameter decorator.
@@ -250,6 +253,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         for parameter_name, parameter in self.parameters.items():
             parameter_copy = copy(parameter)
             self_copy.parameters[parameter_name] = parameter_copy
+            parameter_copy.parent = self_copy
 
         # Attach parameter decorators, done in a second loop because the
         # decorators may call parameters, and so all parameters must exist
@@ -261,6 +265,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         for node_name, parameter_node in self_copy.parameter_nodes.items():
             parameter_node_copy = copy(parameter_node)
             self_copy.parameter_nodes[node_name] = parameter_node_copy
+            parameter_node_copy.parent = self_copy
 
         return self_copy
 
