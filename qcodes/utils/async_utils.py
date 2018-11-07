@@ -21,7 +21,7 @@ def sync(task : Awaitable[T]) -> T:
         return loop.run_until_complete(task)
 
 @contextmanager
-def cancelling(*tasks : asyncio.Future) -> Generator[None]:
+def cancelling(*tasks : asyncio.Future) -> Generator[None, None, None]:
     try:
         yield
     finally:
