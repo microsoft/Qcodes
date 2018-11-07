@@ -7,9 +7,8 @@ representation immediately.
 """
 
 import numpy as np
-import numpy.linalg
 
-from typing import Any, Tuple, Union, Type, TypeVar
+from typing import Tuple, Union, Type, TypeVar
 NormOrder = Union[str, float]
 T = TypeVar('T')
 
@@ -17,7 +16,7 @@ T = TypeVar('T')
 class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
- 
+
     def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
                  rho=None):
         """
@@ -302,13 +301,16 @@ class FieldVector(object):
             for component in 'xyz'
         })
 
-    def norm(self, ord=2) -> float:
+    # NB: we disable the pylint warning here so that we can match
+    #     NumPy's naming convention for the norm method.
+    def norm(self, ord : NormOrder = 2) -> float: # pylint: disable=redefined-builtin
         """
-        Returns the norm of 
+        Returns the norm of this field vector. See np.norm
+        for the definition of the ord keyword argument.
         """
         return np.linalg.norm([self.x, self.y, self.z], ord=ord)
 
-    def distance(self, other, ord=2) -> float:
+    def distance(self, other, ord : NormOrder = 2) -> float: # pylint: disable=redefined-builtin
         return (self - other).norm(ord=ord)
 
     @property
