@@ -1,8 +1,6 @@
-from typing import Sequence
 from .helpers import deep_update
-from functools import partial
 
-from typing import Dict, Tuple, Any, NamedTuple, Generic, TypeVar, Union
+from typing import Dict, Tuple, Any, NamedTuple, TypeVar, Union, Sequence
 T = TypeVar('T')
 Snapshot = Dict[str, T] # TODO: represent known keys in typing
 ParameterKey = Union[
@@ -76,7 +74,7 @@ def extract_param_values(snapshot: Dict[str, Any]) -> Dict[ParameterKey, Any]:
         for param_name, param in instrument['parameters'].items():
             if 'value' in param:
                 parameters[instrument_name, param_name] = param['value']
-        
+
     return parameters
 
 def diff_param_values(left_snapshot: Dict[str, Any],
@@ -115,7 +113,6 @@ def diff_param_values_by_id(left_id, right_id):
     # avoid circular references.
     from qcodes.dataset.data_set import load_by_id
     return diff_param_values(
-        load_by_id(left_id).snapshot(),
-        load_by_id(right_id).snapshot()
+        load_by_id(left_id).snapshot,
+        load_by_id(right_id).snapshot
     )
-
