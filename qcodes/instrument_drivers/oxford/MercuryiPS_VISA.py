@@ -457,10 +457,10 @@ class MercuryiPS(VisaInstrument):
                                      ' zero!')
 
         # then the actual ramp
-        ramp_fn : Callable[[], Awaitable[None]] = {
+        ramp_fn = cast(Callable[[], Awaitable[None]], {
             'simul': self._ramp_simultaneously,
             'safe': self._ramp_safely
-        }[mode]
+        }[mode])
 
         await ramp_fn()
 
