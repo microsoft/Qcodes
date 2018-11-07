@@ -267,7 +267,7 @@ class FieldVector(object):
     def __mul__(self, other):
         if not isinstance(other, (float, int)):
             return NotImplemented
-        
+
         return FieldVector(**{
             component: self[component] * other
             for component in 'xyz'
@@ -279,23 +279,22 @@ class FieldVector(object):
 
         return self * other
 
-    
     def __neg__(self):
         return -1 * self
 
     def __add__(self, other):
         if not isinstance(other, FieldVector):
             return NotImplemented
-        
+
         return FieldVector(**{
             component: self[component] + other[component]
             for component in 'xyz'
         })
-    
+
     def __sub__(self, other):
         if not isinstance(other, FieldVector):
             return NotImplemented
-        
+
         return FieldVector(**{
             component: self[component] - other[component]
             for component in 'xyz'
@@ -342,7 +341,7 @@ class FieldVector(object):
         return np.degrees(self._phi)
 
     ## Representation Methods ##
-    
+
     def repr_cartesian(self) -> str:
         return f"FieldVector(x={self.x}, y={self.y}, z={self.z})"
 
