@@ -238,6 +238,7 @@ def test_sanity(dummy_instrument):
     # After creating the channel we should be able to talk to the instrument.
     new_channel.create()
     assert new_channel.hello() == "Hello from channel 3"
+
     # Once we remove the channel we should no longer be able to talk to the
     # instrument
     new_channel.remove()
