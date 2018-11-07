@@ -823,6 +823,9 @@ class AutoLoadableChannelList(ChannelList):
         Args:
             kwargs: Keyword arguments passed to the `new_instance` method of
                 the channel class
+
+        Returns:
+            Newly created instance of the channel class
         """
         new_channel = self._chan_type.new_instance(  # type: ignore
             self._parent,
