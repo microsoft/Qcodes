@@ -81,7 +81,7 @@ def extract_param_values(snapshot: Dict[str, Any]) -> Dict[ParameterKey, Any]:
 
 def diff_param_values(left_snapshot: Dict[str, Any],
                       right_snapshot: Dict[str, Any]
-                     ) -> Dict[str, Dict[ParameterKey, Any]]:
+                     ) -> ParameterDiff:
     """
     Given two snapshots, returns the differences between parameter values
     in each.

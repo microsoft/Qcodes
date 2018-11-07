@@ -649,12 +649,12 @@ class Measurement:
 
         return self
 
-    def _register_parameter(self, name: str,
+    def _register_parameter(self : T, name: str,
                             label: str,
                             unit: str,
                             setpoints: setpoints_type,
                             basis: setpoints_type,
-                            paramtype: str) -> None:
+                            paramtype: str) -> T:
         """
         Generate ParamSpecs and register them for an individual parameter
         """
@@ -799,12 +799,12 @@ class Measurement:
                 are the setpoints of this parameter
             paramtype: type of the parameter, i.e. the SQL storage class
         """
-        self._register_parameter(name,
-                                 label,
-                                 unit,
-                                 setpoints,
-                                 basis,
-                                 paramtype)
+        return self._register_parameter(name,
+                                        label,
+                                        unit,
+                                        setpoints,
+                                        basis,
+                                        paramtype)
 
     def unregister_parameter(self,
                              parameter: setpoints_type) -> None:
@@ -852,7 +852,9 @@ class Measurement:
 
         self.enteractions.append((func, args))
 
-    def add_after_run(self, func: Callable, args: tuple) -> None:
+        return self
+
+    def add_after_run(self : T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -872,7 +874,7 @@ class Measurement:
 
     def add_subscriber(self : T,
                        func: Callable,
-                       state: Union[MutableSequence, MutableMapping]) -> None:
+                       state: Union[MutableSequence, MutableMapping]) -> T:
         """
         Add a subscriber to the dataset of the measurement.
 
