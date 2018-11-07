@@ -895,8 +895,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
         self._inter_delay = inter_delay
 
     @wraps(SignalEmitter.connect)
-    def connect(self, callable, update=True, **kwargs):
-        SignalEmitter.connect(self, callable, update=update, **kwargs)
+    def connect(self, receiver, update=True, **kwargs):
+        SignalEmitter.connect(self, receiver, update=update, **kwargs)
 
     def set_config_link(self, config_link: str):
         if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):

@@ -206,7 +206,7 @@ class TestCopyParameterNode(TestCase):
         self.assertEqual(node['p'].parent, node)
 
         node2 = copy(node)
-        self.assertEqual(node2['p'].parent, None)
+        self.assertEqual(node2['p'].parent, node2)
         self.assertIsNot(node['p'], node2['p'])
         self.assertEqual(node.p, 123)
         self.assertEqual(node2.p, 123)
@@ -266,8 +266,8 @@ class TestCopyParameterNode(TestCase):
 
         node2 = copy(node)
         node3 = copy(node2)
-        self.assertEqual(node2['p'].parent, None)
-        self.assertEqual(node3['p'].parent, None)
+        self.assertEqual(node2['p'].parent, node2)
+        self.assertEqual(node3['p'].parent, node3)
 
         self.assertIsNot(node['p'], node2['p'])
         self.assertIsNot(node2['p'], node3['p'])
@@ -300,7 +300,7 @@ class TestCopyParameterNode(TestCase):
         node_copy = copy(node)
         self.assertEqual(node.p, 123)
         self.assertEqual(node['p']._instrument, node)
-        self.assertEqual(node_copy['p']._instrument, None)
+        self.assertEqual(node_copy['p']._instrument, node_copy)
 
     def test_deepcopy_parameter_node_add_parameter(self):
         node = ParameterNode(use_as_attributes=True)

@@ -4,7 +4,6 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
 
 from collections import Iterator, Sequence, Mapping
@@ -587,6 +586,9 @@ class SignalEmitter:
         initialize_signal: instantiate a blnker.Signal object. If set to False,
             self.Signal needs to be set later on. This could be useful when you
             want a single Signal that is shared by all class instances.
+        multiple_senders: Allow to be connected to multiple senders.
+            If False, when connected to a second SignalEmitter, the connection
+            to the previous SignalEmitter is disconnected
 
     Note:
         The SignalEmitter has protection against infinite recursions resulting
@@ -597,7 +599,8 @@ class SignalEmitter:
     # Signal used for connecting to parameter via SignalEmitter.connect method
     signal = None
 
-    def __init__(self, initialize_signal: bool=True):
+    def __init__(self, initialize_signal: bool=True,
+                 multiple_senders: bool = True):
         self._signal_chain = []
         if initialize_signal:
             self.signal = Signal()
@@ -607,14 +610,19 @@ class SignalEmitter:
             'scale': None
         }
 
-    def connect(self, callable, update=False, offset: float = None,
+        # By default self is not connected to any other SignalEmitter
+        self.sender = None
+
+        self.multiple_senders = multiple_senders
+
+    def connect(self, receiver, update=False, offset: float = None,
                 scale: float = None):
-        """Connect a callable, which can be another SignalEmitter.
+        """Connect a receiver, which can be another SignalEmitter.
 
         If a SignalEmitter is passed, the __call__ method is invoked.
 
         Args:
-            Callable: Callable to be connected to this SignalEmitter's signal.
+            receiver: Receiver to be connected to this SignalEmitter's signal.
             offset: Optional offset to apply to emitted value
             scale: Optional scale to apply to emitted value
 
@@ -626,22 +634,32 @@ class SignalEmitter:
         if self.signal is None:
             self.signal = Signal()
 
-        if not isinstance(callable, SignalEmitter):
-            self.signal.connect(callable)
+        if isinstance(receiver, SignalEmitter):
+            # Remove any previous sender if multiple_senders is False
+            if not receiver.multiple_senders and receiver.sender is not None:
+                receiver.sender.disconnect(receiver)
+
+            receiver._signal_modifiers['offset'] = offset
+            receiver._signal_modifiers['scale'] = scale
+            self.signal.connect(receiver._signal_call)
+            receiver.sender = self
+
         else:
-            callable._signal_modifiers['offset'] = offset
-            callable._signal_modifiers['scale'] = scale
-            self.signal.connect(callable._signal_call)
+            self.signal.connect(receiver)
 
         if update:
             # Update callable with current value
             value = self()
             if scale is not None:
+                if callable(scale):
+                    scale = scale(self)
                 value *= scale
             if offset is not None:
+                if callable(offset):
+                    offset = offset(self)
                 value += offset
 
-            callable(value)
+            receiver(value)
 
     def disconnect(self, callable):
         """disconnect a callable from a SignalEmitter.
@@ -664,17 +682,23 @@ class SignalEmitter:
         not previously been done during the signal chain.
         """
         if self not in self._signal_chain:
+            value = kwargs.get('value', sender)
 
             # If any modifier is set,
             if self._signal_modifiers['scale'] is not None:
-                if 'value' in kwargs:
-                    kwargs['value'] *= self._signal_modifiers['scale']
-                else:
-                    sender *= self._signal_modifiers['scale']
-            if self._signal_modifiers['offset'] is not None:
-                if 'value' in kwargs:
-                    kwargs['value'] += self._signal_modifiers['offset']
-                else:
-                    sender += self._signal_modifiers['offset']
+                scale = self._signal_modifiers['scale']
+                if callable(scale):
+                    scale = scale(self.sender)
+                value *= scale
 
+            if self._signal_modifiers['offset'] is not None:
+                offset = self._signal_modifiers['offset']
+                if callable(offset):
+                    offset = offset(self.sender)
+                value += offset
+
+            if 'value' in kwargs:
+                kwargs['value'] = value
+            else:
+                sender = value
             return self(sender, *args, signal_chain=self._signal_chain, **kwargs)
