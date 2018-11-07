@@ -3,10 +3,14 @@
 # Please refer to Cryogenic's Magnet Power Supply SMS120C manual for further details and functionality.
 # This magnet PS model is not SCPI compliant.
 # Note: Some commands return more than one line in the output,
-        some are unidirectional, with no return (eg. 'write' rathern than 'ask').
+        some are unidirectional, with no return (eg. 'write' rather than 'ask').
 
 This magnet PS driver has been tested with:
     FTDI chip drivers (USB to serial), D2XX version installed.
+    Cryogenic SMS120C and SMS60C (though the default init arguments are not correct for the latter)
+    Both the coil_constant and current_rating should be based on calibration data accompanying the magnet.
+    The SMS60C current_rating should be slightly below 60, as indicated by its name.
+    Examples of values for a 2T magnet using SMS60C are: coil_constant=0.0380136, current_rating=52.61
 
 """
 
@@ -54,10 +58,15 @@ class CryogenicSMS120C(VisaInstrument):
     _re_float_exp = r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
-                 current_ramp_limit=0.0506, reset=False, timeout=5, terminator='\r\n', **kwargs):
+                 current_ramp_limit=0.0506, reset=False, timeout=5, **kwargs):
 
         log.debug('Initializing instrument')
-        super().__init__(name, address, terminator=terminator, **kwargs)
+
+        if 'terminator' in kwargs.keys():
+            kwargs.pop('terminator')
+            log.warning('Passing terminator to CryogenicSMS is no longer supported and has no effect')
+
+        super().__init__(name, address, terminator='\r\n', **kwargs)
 
         self.visa_handle.baud_rate = 9600
         self.visa_handle.parity = visa.constants.Parity.none
@@ -136,9 +145,9 @@ class CryogenicSMS120C(VisaInstrument):
 
 
     def get_idn(self):
-        r"""
+        """
         Overwrites the get_idn function using constants as the hardware
-        does not have a proper \*IDN function.
+        does not have a proper ``*IDN`` function.
         """
         idparts = ['Cryogenic', 'Magnet PS SMS120C', 'None', '1.0']
 
@@ -154,6 +163,9 @@ class CryogenicSMS120C(VisaInstrument):
             value : parsed value extracted from output message
         """
         value = self.ask(msg)
+
+        #BUG: The SMS60C sometimes returns an incorrect \x13 at the beginning of the string
+        value = value.strip('\x13')
         m = re.match(r'((\S{8})\s)+(([^:]+)(:([^:]+))?)', value)
         if m:
             if m[2] == '------->':
@@ -254,8 +266,11 @@ class CryogenicSMS120C(VisaInstrument):
         maxField = float(m[1])
         return maxField
 
-    # Get current magnetic field, returns a float (assume in Tesla)
+    # Get current magnetic field, returns a float (if unit is Tesla, otherwise raises an exception)
     def _get_field(self):
+        if self._get_unit() != 1:
+            raise Exception('Controller is not in TESLA mode, switch to TESLA to get the field')
+
         _, value = self.query('GET OUTPUT')
         m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,CryogenicSMS120C._re_float_exp), value)
         field = float(m[1])

@@ -8,7 +8,9 @@ import hypothesis.strategies as hst
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -27,11 +29,12 @@ def test_has_attributes_after_init():
     (run_id is None / run_id is not None)
     """
 
-    attrs = ['path_to_db', 'conn', 'run_id', '_debug', 'subscribers',
-             '_completed', 'name', 'table_name', 'guid', 'number_of_results',
-             'counter', 'parameters', 'paramspecs', 'exp_id', 'exp_name',
-             'sample_name', 'run_timestamp_raw', 'completed_timestamp_raw',
-             'completed', 'snapshot', 'snapshot_raw']
+    attrs = ['path_to_db', '_path_to_db', 'conn', '_run_id', 'run_id',
+             '_debug', 'subscribers', '_completed', 'name', 'table_name',
+             'guid', 'number_of_results', 'counter', 'parameters',
+             'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+             'run_timestamp_raw', 'completed_timestamp_raw', 'completed',
+             'snapshot', 'snapshot_raw']
 
     path_to_db = get_DB_location()
     ds = DataSet(path_to_db, run_id=None)
@@ -47,13 +50,58 @@ def test_has_attributes_after_init():
         getattr(ds, attr)
 
 
+def test_dataset_read_only_properties(dataset):
+    read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
+                       'number_of_results', 'counter', 'parameters',
+                       'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+                       'run_timestamp_raw', 'completed_timestamp_raw',
+                       'snapshot', 'snapshot_raw']
+
+    for prop in read_only_props:
+        with pytest.raises(AttributeError, match="can't set attribute",
+                           message=f"It is not expected to be possible to set "
+                                   f"property {prop!r}"):
+            setattr(dataset, prop, True)
+
+
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize("non_existing_run_id", (1, 'number#42'))
+@pytest.mark.parametrize("non_existing_run_id", (1, 0, -1, 'number#42'))
 def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
     with pytest.raises(ValueError, match=f"Run with run_id "
                                          f"{non_existing_run_id} does not "
                                          f"exist in the database"):
         _ = DataSet(run_id=non_existing_run_id)
+
+
+def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
+    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
+                                         "arguments have been passed together "
+                                         "with non-None values. This is not "
+                                         "allowed."):
+        some_valid_connection = experiment.conn
+        _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
+
+
+def test_load_by_id(dataset):
+    ds = load_by_id(dataset.run_id)
+    assert dataset.run_id == ds.run_id
+    assert dataset.path_to_db == ds.path_to_db
+
+
+@pytest.mark.usefixtures('experiment')
+@pytest.mark.parametrize('non_existing_run_id', (1, 0, -1))
+def test_load_by_id_for_nonexisting_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f'Run with run_id '
+                                         f'{non_existing_run_id} does not '
+                                         f'exist in the database'):
+        _ = load_by_id(non_existing_run_id)
+
+
+@pytest.mark.usefixtures('experiment')
+def test_load_by_id_for_none():
+    with pytest.raises(ValueError, match='run_id has to be a positive integer, '
+                                         'not None.'):
+        _ = load_by_id(None)
 
 
 @settings(deadline=None)
@@ -107,7 +155,9 @@ def test_add_paramspec(dataset):
     parameter_b = ParamSpec("b_param", "NUMERIC", key="value", number=1)
     parameter_c = ParamSpec("c_param", "array", inferred_from=[parameter_a,
                                                                parameter_b])
-    dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+    dataset.add_parameter(parameter_a)
+    dataset.add_parameter(parameter_b)
+    dataset.add_parameter(parameter_c)
 
     # Now retrieve the paramspecs
 
@@ -143,8 +193,11 @@ def test_add_paramspec_one_by_one(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
-    with pytest.raises(ValueError):
+    # Test that is not possible to add the same parameter again to the dataset
+    with pytest.raises(ValueError, match=f'Duplicate parameter name: '
+                                         f'{parameters[0].name}'):
         dataset.add_parameter(parameters[0])
+
     assert len(dataset.paramspecs.keys()) == 3
 
 
@@ -291,7 +344,6 @@ def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
-    xparam.type = 'number'
     mydataset.add_parameter(xparam)
 
     x_results = [{'x': x} for x in range(N)]
@@ -310,14 +362,33 @@ def test_add_parameter_values(N, M):
 
 @pytest.mark.usefixtures("dataset")
 def test_load_by_counter():
-    dataset = load_by_counter(1, 1)
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
-    assert dataset.name == "test-dataset"
     assert exp.name == "test-experiment"
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
+
+    dataset = load_by_counter(1, 1)
+
+    assert "test-dataset" == dataset.name
+    assert exp.sample_name == dataset.sample_name
+    assert exp.name == dataset.exp_name
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize('nonexisting_counter', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_counter(nonexisting_counter):
+    exp_id = 1
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(exp_id, nonexisting_counter)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.parametrize('nonexisting_exp_id', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_experiment(nonexisting_exp_id):
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(nonexisting_exp_id, 1)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -339,7 +410,7 @@ def test_numpy_ints(dataset):
      Test that we can insert numpy integers in the data set
     """
     xparam = ParamSpec('x', 'numeric')
-    dataset.add_parameters([xparam])
+    dataset.add_parameter(xparam)
 
     numpy_ints = [
         np.int, np.int8, np.int16, np.int32, np.int64,
@@ -357,7 +428,7 @@ def test_numpy_floats(dataset):
     Test that we can insert numpy floats in the data set
     """
     float_param = ParamSpec('y', 'numeric')
-    dataset.add_parameters([float_param])
+    dataset.add_parameter(float_param)
 
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
@@ -369,7 +440,7 @@ def test_numpy_floats(dataset):
 
 def test_numpy_nan(dataset):
     parameter_m = ParamSpec("m", "numeric")
-    dataset.add_parameters([parameter_m])
+    dataset.add_parameter(parameter_m)
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
@@ -423,3 +494,35 @@ def test_missing_keys(dataset):
     assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
     assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
 
+
+@pytest.mark.usefixtures('experiment')
+def test_get_description(some_paramspecs):
+
+    paramspecs = some_paramspecs[2]
+
+    ds = DataSet()
+
+    assert ds.run_id == 1
+
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies())
+
+    ds.add_parameter(paramspecs['ps1'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1']))
+
+    ds.add_parameter(paramspecs['ps2'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
+                                                  paramspecs['ps2']))
+
+    # the run description gets written as the first data point is added,
+    # so now no description should be stored in the database
+    prematurely_loaded_ds = DataSet(run_id=1)
+    assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
+
+    ds.add_result({'ps1': 1, 'ps2': 2})
+
+    loaded_ds = DataSet(run_id=1)
+
+    assert loaded_ds.description == desc
