@@ -9,6 +9,7 @@ import numpy as np
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.async_utils import sync
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -438,9 +439,7 @@ class MercuryiPS(VisaInstrument):
               that ensures that the total field stays within the safe region
               (provided that this region is convex).
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.ramp_async(mode=mode)
-        )
+        return sync(self.ramp_async(mode=mode))
 
     async def ramp_async(self, mode: str = "safe") -> None:
         if mode not in ['simul', 'safe']:
