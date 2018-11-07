@@ -1,4 +1,4 @@
-from typing import TypeVar, Awaitable, Generator
+from typing import TypeVar, Awaitable, Generator, List
 import asyncio
 from contextlib import contextmanager
 
@@ -24,7 +24,7 @@ def cancelling(*tasks : asyncio.Future) -> Generator[None, None, None]:
     try:
         yield
     finally:
-        exceptions = []
+        exceptions : List[Exception] = []
         for task in tasks:
             try:
                 task.cancel()
