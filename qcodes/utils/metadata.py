@@ -1,6 +1,6 @@
 from .helpers import deep_update
 
-from typing import Dict, Tuple, Any, RunId, NamedTuple, TypeVar, Union, Sequence
+from typing import Dict, Tuple, Any, NewType, NamedTuple, TypeVar, Union, Sequence
 T = TypeVar('T')
 Snapshot = Dict[str, T] # TODO: represent known keys in typing
 ParameterKey = Union[
@@ -10,7 +10,7 @@ ParameterKey = Union[
     Tuple[str, str]
 ]
 ParameterDict = Dict[ParameterKey, T]
-RunId = NewType(int)
+RunId = NewType('RunId', int)
 
 class Metadatable:
     def __init__(self, metadata=None):
