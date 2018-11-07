@@ -3,6 +3,7 @@ import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
 import time
+import importlib
 import logging
 import uuid
 from queue import Queue, Empty
@@ -37,6 +38,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
+import qcodes.config
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -99,7 +101,7 @@ class _Subscriber(Thread):
         self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
         self.min_queue_length = min_queue_length
 
-        if callback_kwargs is None:
+        if callback_kwargs is None or len(callback_kwargs) == 0:
             self.callback = callback
         else:
             self.callback = functools.partial(callback, **callback_kwargs)
@@ -449,7 +451,7 @@ class DataSet(Sized):
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
-    @deprecate(reason=None, alternative="DataSet.add_parameter")  # type: ignore
+    @deprecate(reason=None, alternative="DataSet.add_parameter")
     def add_parameters(self, specs: SPECS) -> None:
         add_parameter(self.conn, self.table_name, *specs)
 
@@ -755,6 +757,38 @@ class DataSet(Sized):
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
         return subscriber_id
+
+    def subscribe_from_config(self, name: str) -> str:
+        """
+        Subscribe a subscriber defined in the `qcodesrc.json` config file to
+        the data of this `DataSet`. The definition can be found at
+        `subscription.subscribers`.
+
+        Args:
+            name: identifier of the subscriber. Equal to the key of the entry
+                in 'qcodesrc.json::subscription.subscribers'.
+        """
+        subscribers = qcodes.config.subscription.subscribers
+        try:
+            subscriber_info = getattr(subscribers, name)
+        # the dot dict behind the config does not convert the error and
+        # actually raises a `KeyError`
+        except (AttributeError, KeyError):
+            keys = ','.join(subscribers.keys())
+            raise RuntimeError(
+                f'subscribe_from_config: failed to subscribe "{name}" to DataSet '
+                f'from list of subscribers in `qcodesrc.json` (subscriptions.'
+                f'subscribers). Chose one of: {keys}')
+        # get callback from string
+        parts = subscriber_info.factory.split('.')
+        import_path, type_name = '.'.join(parts[:-1]), parts[-1]
+        module = importlib.import_module(import_path)
+        factory = getattr(module, type_name)
+
+        kwargs = {k: v for k, v in subscriber_info.subscription_kwargs.items()}
+        kwargs['callback'] = factory(self, **subscriber_info.factory_kwargs)
+        kwargs['state'] = {}
+        return self.subscribe(**kwargs)
 
     def unsubscribe(self, uuid: str) -> None:
         """
