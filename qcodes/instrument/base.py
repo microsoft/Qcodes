@@ -1,10 +1,11 @@
 """Instrument base class."""
-import logging
 import time
 import warnings
 import weakref
+import logging
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
+
 
 import numpy as np
 if TYPE_CHECKING:
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
+from qcodes.logger.instrument_logger import get_instrument_logger
 from .parameter import Parameter, _BaseParameter
 from .function import Function
 
@@ -56,6 +58,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
+
+        self.log = get_instrument_logger(self, __name__)
 
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
@@ -183,10 +187,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                log.warning(f"Snapshot: Could not update parameter: "
-                            f"{name} on {self.full_name}")
-                log.info(f"Details for Snapshot of {name}:",
-                         exc_info=True)
+                self.log.warning(f"Snapshot: Could not update parameter: "
+                                 f"{name}")
+                self.log.info(f"Details for Snapshot:",
+                              exc_info=True)
 
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
@@ -263,6 +267,18 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Any SubInstrument should subclass this to return the parent instrument.
         """
         return None
+
+    @property
+    def ancestors(self) -> Optional[List['InstrumentBase']]:
+        """
+        Returns a list of instruments, starting from the current instrument
+        and following to the parent instrument and the parents parent
+        instrument until the root instrument is reached.
+        """
+        if self.parent is not None:
+            return [self] + self.parent.ancestors
+        else:
+            return [self]
 
     @property
     def root_instrument(self) -> 'InstrumentBase':
@@ -434,7 +450,7 @@ class Instrument(InstrumentBase):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            log.debug('Error getting or interpreting *IDN?: '
+            self.log.debug('Error getting or interpreting *IDN?: '
                       + repr(idstr))
             idparts = [None, self.name, None, None]
 
@@ -641,6 +657,24 @@ class Instrument(InstrumentBase):
                 raise exception
 
         return instrument_exists
+
+    @staticmethod
+    def is_valid(instr_instance: 'Instrument') -> bool:
+        """
+        Check if a given instance of an instrument is valid: if an instrument
+        has been closed, its instance is not longer a "valid" instrument.
+
+        Args:
+            instr_instance: instance of an Instrument class or its subclass
+        """
+        if isinstance(instr_instance, Instrument) \
+                and instr_instance in instr_instance.instances():
+            # note that it is important to call `instances` on the instance
+            # object instead of `Instrument` class, because instances of
+            # Instrument subclasses are recorded inside their subclasses; see
+            # `instances` for more information
+            return True
+        return False
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
