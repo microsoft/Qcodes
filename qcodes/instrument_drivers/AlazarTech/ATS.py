@@ -775,7 +775,7 @@ class AlazarTech_ATS(Instrument):
             bytes_per_buffer = (bytes_per_record *
                                 records_per_buffer * number_of_channels)
 
-            sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else types.c_uint8
+            sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
 
             self.clear_buffers()
 
