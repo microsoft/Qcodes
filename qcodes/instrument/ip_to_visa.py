@@ -1,9 +1,14 @@
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
-from qcodes.instrument.visa import VisaInstrument
+# previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument
+# was logging in the name of the `VisaInstrument`. To maintain that behaviour
+# import the `instrument.visa.log` and log to this one.
+from qcodes.instrument.visa import VisaInstrument, VISA_LOGGER
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
 from qcodes.utils.helpers import strip_attrs
+from qcodes.logger.instrument_logger import get_instrument_logger
 import qcodes.utils.validators as vals
+
 
 # This module provides a class to make an IPInstrument behave like a
 # VisaInstrument. This is only meant for use with the PyVISA-sim backend
@@ -14,11 +19,11 @@ import qcodes.utils.validators as vals
 # Such a driver is just a two-line class definition.
 
 
-class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
+class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore
     """
     Class to inject an VisaInstrument like behaviour in an
     IPInstrument that we'd like to use as a VISAInstrument with the
-    simulation backend.
+    simulation back-end.
     The idea is to inject this class just before the IPInstrument in
     the MRO. To avoid IPInstrument to ever take any effect, we sidestep
     it during the __init__ by calling directly to Instrument (which then
@@ -41,6 +46,7 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
                      if kw not in ipkwargs}
 
         Instrument.__init__(self, name, metadata=metadata, **newkwargs)
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         ##################################################
         # __init__ of VisaInstrument
@@ -76,6 +82,7 @@ class IPToVisa(VisaInstrument, IPInstrument): # type: ignore
 
         strip_attrs(self, whitelist=['name'])
         self.remove_instance(self)
+
 
 
 class AMI430_VISA(AMI430, IPToVisa): # type: ignore
