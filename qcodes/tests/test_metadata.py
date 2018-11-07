@@ -52,13 +52,19 @@ class TestMetadatable(TestCase):
         left = {
             "station": {
                 "parameters": {
-                    "apple": "orange"
+                    "apple": {
+                        "value": "orange"
+                    }
                 },
                 "instruments": {
                     "correct": {
                         "parameters": {
-                            "horse": "battery",
-                            "left": "only"
+                            "horse": {
+                                "value": "battery"
+                            },
+                            "left": {
+                                "value": "only"
+                            }
                         }
                     }
                 }
@@ -67,13 +73,19 @@ class TestMetadatable(TestCase):
         right = {
             "station": {
                 "parameters": {
-                    "apple": "grape"
+                    "apple": {
+                        "value": "grape"
+                    }
                 },
                 "instruments": {
                     "correct": {
                         "parameters": {
-                            "horse": "staple",
-                            "right": "only"
+                            "horse": {
+                                "value": "staple"
+                            },
+                            "right": {
+                                "value": "only"
+                            }
                         }
                     }
                 }
