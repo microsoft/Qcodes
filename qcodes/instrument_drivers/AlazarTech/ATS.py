@@ -857,7 +857,7 @@ class AlazarTech_ATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for name, p in self.parameters.items():
+        for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
                 if p.synced_to_card == False:
                     raise RuntimeError(f"TraceParameter {p} not synced to "
@@ -1172,7 +1172,7 @@ class Buffer:
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
         self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
         self.ctypes_buffer = ctypes_array
-        pointer, read_only_flag = self.buffer.__array_interface__['data']
+        pointer, _ = self.buffer.__array_interface__['data']
 
     def free_mem(self):
         """
