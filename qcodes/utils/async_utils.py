@@ -1,6 +1,5 @@
 from typing import TypeVar, Awaitable, Generator
 import asyncio
-from threading import Thread
 from contextlib import contextmanager
 
 T = TypeVar('T')
@@ -25,8 +24,20 @@ def cancelling(*tasks : asyncio.Future) -> Generator[None, None, None]:
     try:
         yield
     finally:
+        exceptions = []
         for task in tasks:
             try:
                 task.cancel()
-            except:
+            except Exception as ex:
                 pass
+        if exceptions:
+            if len(exceptions) == 1:
+                raise exceptions[0]
+            else:
+                raise RuntimeError(
+                    "Multiple exceptions occured cancelling tasks:\n" +
+                    "\n".join(
+                        f"- {}" for ex in exceptions
+                    )
+                )
+

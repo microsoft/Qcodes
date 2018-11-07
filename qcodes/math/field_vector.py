@@ -8,7 +8,7 @@ representation immediately.
 
 import numpy as np
 
-from typing import Tuple, Union, Type, TypeVar
+from typing import Union, Type, TypeVar
 NormOrder = Union[str, float]
 T = TypeVar('T', bound='FieldVector')
 
