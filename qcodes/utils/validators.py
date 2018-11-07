@@ -56,7 +56,7 @@ class Validator:
     each validator should implement:
 
     __init__: here a private attribute, _valid_values, should be set.
-        _valid_values must be a list of at least one valid value.
+        _valid_values must be a tuple of at least one valid value.
         If possible, it should include all valid values. The purpose of
         this attribute is to make it possible to find a valid value for
         a Parameter, given its validator.
@@ -71,23 +71,23 @@ class Validator:
 
     The base class implements:
 
-    valid_values: a property exposing _valid_values, which is a list
+    valid_values: a property exposing _valid_values, which is a tuple
         of examples of valid values. For very simple validators, like
-        Bool or Enum, the list contains all valid values, but in general
+        Bool or Enum, the tuple contains all valid values, but in general
         it just holds SOME valid values. These example values are intended
         to be useful when simulating instruments.
 
     Alternatively you may override valid_values and provide your own
     implementation of getting valid values.
     """
-    _valid_values: Any = None
+    _valid_values: Tuple = ()
     is_numeric = False  # is this a numeric type (so it can be swept)?
 
     def validate(self, value, context: str=''):
         raise NotImplementedError
 
     @property
-    def valid_values(self) -> TList[Any]:
+    def valid_values(self) -> Tuple:
         return self._valid_values
 
 
@@ -95,7 +95,7 @@ class Anything(Validator):
     """allow any value to pass"""
 
     def __init__(self) -> None:
-        self._valid_values = [0]
+        self._valid_values = (0,)
 
     def validate(self, value: Any, context: str=''):
         pass
@@ -130,7 +130,7 @@ class Bool(Validator):
     """
 
     def __init__(self) -> None:
-        self._valid_values = [True, False]
+        self._valid_values = (True, False)
 
     def validate(self, value: bool, context: str='') -> None:
         if not isinstance(value, bool) and not isinstance(value, np.bool8):
@@ -158,7 +158,7 @@ class Strings(Validator):
         else:
             raise TypeError('max_length must be a positive integer '
                             'no smaller than min_length')
-        self._valid_values = ['.'*min_length]
+        self._valid_values = ('.'*min_length,)
 
     def validate(self, value: str, context: str=''):
         if not isinstance(value, str):
@@ -207,7 +207,7 @@ class Numbers(Validator):
         else:
             raise TypeError('max_value must be a number bigger than min_value')
 
-        self._valid_values = [min_value, max_value]
+        self._valid_values = (min_value, max_value)
 
     def validate(self, value: numbertypes, context: str='') -> None:
         if not isinstance(value, self.validtypes):
@@ -253,7 +253,7 @@ class Ints(Validator):
             raise TypeError(
                 'max_value must be an integer bigger than min_value')
 
-        self._valid_values = [min_value, max_value]
+        self._valid_values = (min_value, max_value)
 
     def validate(self, value: inttypes, context: str='') -> None:
         if not isinstance(value, self.validtypes):
@@ -308,7 +308,7 @@ class Enum(Validator):
             raise TypeError('Enum needs at least one value')
 
         self._values = set(values)
-        self._valid_values = list(values)
+        self._valid_values = tuple(values)
 
     def validate(self, value, context: str='') -> None:
         try:
@@ -358,7 +358,7 @@ class Multiples(Ints):
         if not isinstance(divisor, int) or divisor <= 0:
             raise TypeError('divisor must be a positive integer')
         self._divisor = divisor
-        self._valid_values = [divisor]
+        self._valid_values = (divisor,)
 
     def validate(self, value: int, context: str='') -> None:
         super().validate(value=value, context=context)
@@ -401,7 +401,7 @@ class PermissiveMultiples(Validator):
             self._mulval: Optional[Multiples] = Multiples(divisor=abs(divisor))
         else:
             self._mulval = None
-        self._valid_values = [divisor]
+        self._valid_values = (divisor,)
 
     def validate(self, value: numbertypes,
                  context: str='') -> None:
@@ -461,10 +461,8 @@ class MultiType(Validator):
                 self.is_numeric = True
 
         self._validators = tuple(validators)
-        self._valid_values = []
-        for val in self._validators:
-            self._valid_values += val._valid_values
-        self._valid_values = list(set(self._valid_values))
+        self._valid_values = tuple(vval for v in self._validators
+                                   for vval in v._valid_values)
 
     def validate(self, value: Any, context: str='') -> None:
         args: TList[str] = []
@@ -487,11 +485,12 @@ class MultiType(Validator):
 class Arrays(Validator):
     """
     Validator for numerical numpy arrays
+
     Args:
         min_value:  Min value allowed, default inf.
         max_value: Max value allowed, default inf.
         shape: The shape of the array, tuple of either ints or Callables taking
-          no arguments that return the size along that dim as an int.
+            no arguments that return the size along that dim as an int.
     """
 
     validtypes = (int, float, np.integer, np.floating)
@@ -514,14 +513,14 @@ class Arrays(Validator):
         self._shape = shape
 
     @property
-    def valid_values(self) -> TList[np.ndarray]:
+    def valid_values(self) -> Tuple[np.ndarray]:
         shape = self.shape
         if shape is None:
-            return [np.array([self._min_value])]
+            return (np.array([self._min_value]),)
         else:
             val_arr = np.empty(shape)
             val_arr.fill(self._min_value)
-            return [val_arr]
+            return (val_arr,)
 
     @property
     def shape(self) -> Optional[Tuple[int, ...]]:
@@ -588,7 +587,7 @@ class Lists(Validator):
 
     def __init__(self, elt_validator: Validator=Anything()) -> None:
         self._elt_validator = elt_validator
-        self._valid_values = [elt_validator._valid_values]
+        self._valid_values = ([vval for vval in elt_validator._valid_values],)
 
     def __repr__(self) -> str:
         msg = '<Lists : '
@@ -617,7 +616,7 @@ class Sequence(Validator):
         self._elt_validator = elt_validator
         self._length = length
         self._require_sorted = require_sorted
-        self._valid_values = [elt_validator._valid_values]
+        self._valid_values = ([vval for vval in elt_validator._valid_values],)
 
     def __repr__(self) -> str:
         msg = '<Sequence : '
@@ -647,7 +646,7 @@ class Callable(Validator):
     Validator for callables such as functions.
     """
     def __init__(self) -> None:
-        self._valid_values = [lambda: 0]
+        self._valid_values = (lambda: 0,)
 
     def validate(self, value: TCallable, context: str='') -> None:
         if not callable(value):
@@ -670,7 +669,7 @@ class Dict(Validator):
             allowed_keys (List): if set, all keys must be in allowed_keys
         """
         self.allowed_keys = allowed_keys
-        self._valid_values = [{0: 1}]
+        self._valid_values =({0: 1},)
 
     def validate(self, value: dict, context: str='') -> None:
         if not isinstance(value, dict):

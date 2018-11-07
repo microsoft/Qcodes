@@ -35,6 +35,17 @@ Drivers
 -------
 
 .. toctree::
+    :maxdepth: 1
     :glob:
 
     driver_examples/*
+
+Logging
+--------
+
+.. toctree::
+    :glob:
+
+    logging/*
+
+
