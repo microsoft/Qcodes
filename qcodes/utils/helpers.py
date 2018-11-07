@@ -74,10 +74,10 @@ class NumpyJSONEncoder(json.JSONEncoder):
             except TypeError:
                 # See if the object supports the pickle protocol.
                 # If so, we should be able to use that to serialize.
-                if hasattr(o, '__getnewargs__'):
+                if hasattr(obj, '__getnewargs__'):
                     return {
-                        '__class__': type(o).__class__.__name__,
-                        '__args__': o.__getnewargs__()
+                        '__class__': type(obj).__class__.__name__,
+                        '__args__': obj.__getnewargs__()
                     }
                 else:
                     # we cannot convert the object to JSON, just take a string
