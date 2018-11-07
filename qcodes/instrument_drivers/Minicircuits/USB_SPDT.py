@@ -33,7 +33,7 @@ class USB_SPDT(SPDT_Base):
             driver_path: path to the dll
             serial_number: the serial number of the device
                (printed on the sticker on the back side, without s/n)
-            kwargs (dict): kwargs to be passed to Instrument class.
+            kwargs: kwargs to be passed to Instrument class.
     """
 
     CHANNEL_CLASS = SwitchChannelUSB
