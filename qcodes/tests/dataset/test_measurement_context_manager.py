@@ -369,7 +369,6 @@ def test_method_chaining(DAC):
                                        unit='Hz')
             .add_before_run((lambda: None), ())
             .add_after_run((lambda: None), ())
-            .unregister_parameter(DAC.ch1)
             .add_subscriber(lambda values, idx, state: None)
     )
 
