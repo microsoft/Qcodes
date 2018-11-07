@@ -662,7 +662,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             A keyword argument dictionary with at least a `name` key which is
             unique on the instrument. The parent instrument is passed as an
             argument in this function so we can query if the generated name is
-            indeed unique, if this is needed.
+            indeed unique.
 
         Notes:
             The init arguments `parent` and `channel_list` are automatically
