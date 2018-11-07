@@ -1,6 +1,7 @@
 from .helpers import deep_update
 
 from typing import Dict, Tuple, Any, NewType, NamedTuple, TypeVar, Union, Sequence
+T = TypeVar('T')
 # NB: At the moment, the Snapshot type is a bit weak, as the Any
 #     for the value type doesn't tell us anything about the schema
 #     followed by snapshots.
