@@ -620,7 +620,7 @@ class AlazarTech_ATS(Instrument):
                 alloc_buffers=None, fifo_only_streaming=None,
                 interleave_samples=None, get_processed_data=None,
                 allocated_buffers=None, buffer_timeout=None,
-                acquisition_controller=None) -> np.ndarray:
+                acquisition_controller=None):
         """
         perform a single acquisition with the Alazar board, and set certain
         parameters to the appropriate values
