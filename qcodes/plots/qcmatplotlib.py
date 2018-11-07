@@ -356,6 +356,8 @@ class MatPlot(BasePlot):
                          nticks=None,
                          colorbar=True,
                          **kwargs):
+
+        assert z.ndim == 2, f"z array must be 2D, not {z.ndim}D"
         # Remove all kwargs that are meant for line plots
         for lineplot_kwarg in ['marker', 'linestyle', 'ms', 'xerr', 'yerr']:
             kwargs.pop(lineplot_kwarg, None)
