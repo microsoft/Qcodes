@@ -35,7 +35,7 @@ def cancelling(*tasks : asyncio.Future) -> Generator[None, None, None]:
                 raise exceptions[0]
             else:
                 raise RuntimeError(
-                    "Multiple exceptions occurred cancelling tasks:\n" +
+                    "Multiple exceptions occurred when cancelling tasks:\n" +
                     "\n".join(
                         f"- {ex}" for ex in exceptions
                     )
