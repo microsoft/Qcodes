@@ -647,7 +647,7 @@ class AlazarTech_ATS(Instrument):
         Returns:
             Whatever is given by acquisition_controller.post_acquire method
         """
-        loop : asyncio.BaseEventLoop = asyncio.get_event_loop()
+        loop : asyncio.AbstractEventLoop = asyncio.get_event_loop()
         return loop.run_until_complete(self.async_acquire(
             mode=mode,
             samples_per_record=samples_per_record,
@@ -775,9 +775,7 @@ class AlazarTech_ATS(Instrument):
             bytes_per_buffer = (bytes_per_record *
                                 records_per_buffer * number_of_channels)
 
-            sample_type = ctypes.c_uint8
-            if bytes_per_sample > 1:
-                sample_type = ctypes.c_uint16
+            sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else types.c_uint8
 
             self.clear_buffers()
 
