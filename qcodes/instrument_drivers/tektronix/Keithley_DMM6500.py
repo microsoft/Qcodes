@@ -2,7 +2,7 @@ from qcodes import VisaInstrument
 from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Bool
 
 from functools import partial
-from numpy import array, float32, float64
+from numpy import array, float64
 
 
 def parse_output_string(s):

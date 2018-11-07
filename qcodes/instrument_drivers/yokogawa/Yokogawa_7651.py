@@ -38,22 +38,22 @@ class Yokogawa_7651(VisaInstrument):
 
         self.add_function('enable_output', call_cmd='O1E')
         self.add_function('disable_output', call_cmd='O0E')
-            
+
     def _get_panel_settings(self):
         """Read the panel settings.
         
         Notes:
             The instrument sends five lines:
                 1 : MDL7651REV1.05
-                2 : 
-                3 : 
+                2 :
+                3 :
                 4 : limit settings
                 5 : END
         """
         settings = []
         response = self.ask('OS')
         settings.append(response)
-        for i in range(4):
+        for _ in range(4):
             response = self.visa_handle.read()
             settings.append(response)
         if response != 'END':

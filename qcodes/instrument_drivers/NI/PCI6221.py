@@ -2,7 +2,6 @@
 from .daq import NI_DAQ, DAQReadAnalog, DAQWriteAnalog
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import ManualParameter
-from functools import partial
 
 class NI_PCI6221(NI_DAQ):
     '''

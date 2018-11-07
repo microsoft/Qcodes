@@ -1,13 +1,10 @@
 import numpy as np
-import time, re, logging, warnings
+import re, logging, warnings
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.validators import Ints, Bool
+from qcodes.utils.validators import Ints
 from qcodes import ArrayParameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-
-from collections import namedtuple
-
 from distutils.version import LooseVersion
 
 log = logging.getLogger(__name__)
@@ -33,13 +30,12 @@ class ScopeArray(ArrayParameter):
         self._instrument = instrument
         self.raw = raw
         self.max_read_step = 50
-        self.trace_ready = False    
+        self.trace_ready = False
 
     def get_raw(self):
         """Get the waveform data from the oscilloscope."""
         self._instrument.write(':WAV:DATA? {0}'.format(self.chan_str))
         wvf_data = self._instrument._parent.visa_handle.read_raw()
-        header = wvf_data[:10]
         data_raw = np.frombuffer(wvf_data[10:], dtype=np.uint8).astype(float)
         if self.chan_str in ['CHAN1', 'CHAN2']:
             data = -1*((data_raw - data_raw[0] + self.instrument.vertical_offset())*self.instrument.vertical_scale())
@@ -129,7 +125,6 @@ class RigolDS1000(VisaInstrument):
             address (string) Visa address for the instrument
             timeout (float) visa timeout
         """
-
         super().__init__(name, address, device_clear=False, timeout=timeout, **kwargs)
         self.connect_message()
 
@@ -224,7 +219,7 @@ class RigolDS1000(VisaInstrument):
             channels.append(channel)
 
         channels.lock()
-        self.add_submodule('channels', channels)            
+        self.add_submodule('channels', channels)
 
         #timebase parameters
         self.add_parameter("time_base_mode",
@@ -257,7 +252,7 @@ class RigolDS1000(VisaInstrument):
                 label="sets and queries the trigger mode",
                 get_cmd=":TRIG:MODE?",
                 set_cmd=":TRIG:MODE {}",
-                vals = vals.Enum('EDGE', 'PULSE', 'VIDEO', 'SLOPE', 
+                vals = vals.Enum('EDGE', 'PULSE', 'VIDEO', 'SLOPE',
                     'PATTERN','DURATION', 'ALTERNATION')
                 )
         self.add_parameter("trigger_source",
@@ -307,86 +302,3 @@ class RigolDS1000(VisaInstrument):
                    vals = vals.Enum("NORM","MAX","RAW"),
                    get_parser=str,
                   )
-        
-    #trigger functions - to implement: level,sweep,coupling,         
-#    def trigger_cmd_concatenator(self):
-#        """sub function used to append the correct mode to the trigger commands.
-#         higher order function then appends the specific command
-#        """
-#        cmd = ":TRIG:"
-#        if (self.trigger_mode() == 'EDGE'):
-#            mode = "EDGE"
-#        elif (self.trigger_mode() == 'PULSE'):
-#            mode = "PULSE"
-#        elif (self.trigger_mode() == 'SLOPE'):
-#            mode = "SLOPE"
-#        elif (self.trigger_mode() == 'VIDEO'):
-#            mode = "VIDEO"
-#        else:
-#            mode = "dummy variable" #replace with a proper error message
-#            
-#        cmd += mode
-#        return cmd
-#
-#    def trigger_cmd_function(self, append ='?', operator = 'NULL'):
-#        """general purpose function to append and operate the get or set command for
-#        commands using the format :TRIG:MODE<command>
-#        Args:
-#            operator: a string which is used as a value, changing this from NULL makes the function
-#            activate as the set cmd for a parameter
-#            append: the specific command to be appended, should be specified in the parameters call. will
-#            default to returning the current trigger mode
-#        """
-#        operator = str(operator)
-#        cmd = self.trigger_cmd_concatenator()
-#        cmd += append
-#        if (operator == 'NULL'):
-#            return self.visa_handle.query(cmd)
-#        else:
-#            cmd += operator
-#            self.visa_handle.write(cmd)
-#        return
-#    def source_get_cmd(self):
-#        """
-#        calls the trigger_cmd_function with appropriate arguments
-#        """
-#        return self.trigger_cmd_function(append = ":SOUR?")
-#
-#    def source_set_cmd(self, value):
-#        """calls the trigger_cmd_function with appropriate arguments
-#        Args:
-#            value
-#        """
-#        return self.trigger_cmd_function(append = ":SOUR ", operator = value)
-#    def level_get_cmd(self):
-#        """
-#            calls the trigger_cmd_function with appropriate arguments
-#        """
-#        return self.trigger_cmd_function(append = ":LEV?")
-#    def level_set_cmd(self, value):
-#        """ calls the trigger_cmd_function with appropriate arugments
-#        Args
-#            value
-#        """
-#        return self.trigger_cmd_function(append = ":LEV ", operator = value)
-#    
-#    def sweep_get_cmd(self):
-#        """calls the trigger_cmd_function with appropriate arguments
-#        """
-#        return self.trigger_cmd_function(append = ":SWE?")
-#
-#    def sweep_set_cmd(self, value):
-#        """calls the trigger_cmd_function with appropriate arguments
-#        """
-#       return self.trigger_cmd_function(append = ":SWE ", operator = value)
-
-#    def coupling_get_cmd(self):
-#        """calls the trigger_cmd_function with appropriate arguments
-#        """
-#        return self.trigger_cmd_function(append = ":COUP?")
-#
-#    def coupling_set_cmd(self, value):
-#        """calls the trigger_cmd_function with appropriate arguments
-#        """
-#        return self.trigger_cmd_function(append = ":COUP ", operator = value);
-

@@ -1,9 +1,7 @@
 import ctypes
 import logging
-#import types
 import os
-import sys
-from numpy import zeros, mean, float64, float32
+from numpy import zeros, mean, float64
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.base import Parameter
@@ -52,7 +50,7 @@ DAQmx_Val_ExtControlled     = 10326
 NIDAQ_dll.DAQmxGetErrorString.restype         = int32
 NIDAQ_dll.DAQmxGetDevProductType.restype      = int32
 
-NIDAQ_dll.DAQmxCreateAIVoltageChan.restype    = int32 
+NIDAQ_dll.DAQmxCreateAIVoltageChan.restype    = int32
 NIDAQ_dll.DAQmxCreateAIVoltageChan.argtype = [
             TaskHandle,
             ctypes.c_char_p, #const char physicalChannel[],
@@ -64,20 +62,18 @@ NIDAQ_dll.DAQmxCreateAIVoltageChan.argtype = [
             ctypes.c_char_p, #const char customScaleName[]
             ]
 
-def CHK(err): 
+def CHK(err):
     """Error checking routine"""
     if err < 0:
         buf_size = 100
         buf = ctypes.create_string_buffer(buf_size)
-        NIDAQ_dll.DAQmxGetErrorString(err, 
+        NIDAQ_dll.DAQmxGetErrorString(err,
             ctypes.byref(buf), buf_size)
         raise RuntimeError('Nidaq call failed with error %d: %s' % \
             (err, repr(buf.value)))
 
 def buf_to_list(buf):
     """Convert a string buffer to a list of contents"""
-    name = ''
-    namelist = []
     buf_stripped = buf.raw.decode().rstrip('\x00')
 #    for ch in buf_stripped:
 #        if (ch == '0') or (ch == '\t') or (ch == '\n'):
@@ -127,7 +123,7 @@ class NI_DAQ(Instrument):
         bufsize = 1024
         buf = ctypes.create_string_buffer(bufsize)
         NIDAQ_dll.DAQmxGetDevProductType(
-            self.dev_id.encode('ascii'), ctypes.byref(buf), bufsize) 
+            self.dev_id.encode('ascii'), ctypes.byref(buf), bufsize)
         return buf_to_list(buf)[0]
 
     def get_physical_input_channels(self):
@@ -135,7 +131,7 @@ class NI_DAQ(Instrument):
         bufsize = 1024
         buf = ctypes.create_string_buffer(bufsize)
         CHK(NIDAQ_dll.DAQmxGetDevAIPhysicalChans(
-            self.dev_id.encode('ascii'), 
+            self.dev_id.encode('ascii'),
             ctypes.byref(buf), bufsize))
         channel_list = buf_to_list(buf)
         channel_list = [channel.lstrip(self.dev_id+'/') for channel in channel_list]
@@ -145,7 +141,7 @@ class NI_DAQ(Instrument):
         """Return a list of physical output channels on a device."""
         bufsize = 1024
         buf = ctypes.create_string_buffer(bufsize)
-        NIDAQ_dll.DAQmxGetDevAOPhysicalChans(self.dev_id.encode('ascii'), 
+        NIDAQ_dll.DAQmxGetDevAOPhysicalChans(self.dev_id.encode('ascii'),
             ctypes.byref(buf), bufsize)
         channel_list = buf_to_list(buf)
         channel_list = [channel.lstrip(self.dev_id+'/') for channel in channel_list]
@@ -156,7 +152,7 @@ class NI_DAQ(Instrument):
         bufsize = 32
         range_list_type = cfloat64 * bufsize
         range_list = range_list_type()
-        NIDAQ_dll.DAQmxGetDevAIVoltageRngs(self.dev_id.encode('ascii'), 
+        NIDAQ_dll.DAQmxGetDevAIVoltageRngs(self.dev_id.encode('ascii'),
             ctypes.byref(range_list), uInt32(bufsize))
         range_list = list(range_list)
         range_values_n = range_list.index(0.0)
@@ -164,23 +160,29 @@ class NI_DAQ(Instrument):
         return_list = []
         for idx in range(range_n):
             return_list.append([range_list[2*idx],
-                                range_list[(2*idx)+1]])        
+                                range_list[(2*idx)+1]])       
         return return_list
 
     def get_maximum_input_channel_rate(self):
         """Get the highest sample rate for a single input channel"""
         sample_rate = cfloat64()
-        NIDAQ_dll.DAQmxGetDevAIMaxSingleChanRate(self.dev_id.encode('ascii'), 
+        NIDAQ_dll.DAQmxGetDevAIMaxSingleChanRate(self.dev_id.encode('ascii'),
                                                  ctypes.byref(sample_rate))
         return sample_rate.value
 
-    def read_analog(self, devchan, samples, sample_rate, timeout, chan_config, 
+    def read_analog(self, devchan, samples, sample_rate, timeout, chan_config,
                     minv=-10.0, maxv=10.0, triggered=False, averaging=True):
         """
-        Input:
-            samples
+        Args:
+            devchan (str):
+            samples (int):
+            sample_rate
+            timeout
+            chan_config
+            minv (float): Lowest expected voltage
+            maxv (float): Largest expected voltage
             
-        Output:
+        Returns:
             A numpy.array with the data on success, None on error
 
         """
@@ -203,20 +205,20 @@ class NI_DAQ(Instrument):
 
             CHK(NIDAQ_dll.DAQmxCreateTask("", ctypes.byref(taskHandle)))
             CHK(NIDAQ_dll.DAQmxCreateAIVoltageChan(
-                taskHandle, 
-                devchan, 
+                taskHandle,
+                devchan,
                 b"",
                 config,
-                cfloat64(minv), 
+                cfloat64(minv),
                 cfloat64(maxv),
-                int32(DAQmx_Val_Volts), 
+                int32(DAQmx_Val_Volts),
                 b""))
 
             if samples > 1:
                 CHK(NIDAQ_dll.DAQmxCfgSampClkTiming(
-                    taskHandle, "", 
+                    taskHandle, "",
                     cfloat64(sample_rate),
-                    int32(DAQmx_Val_Rising), 
+                    int32(DAQmx_Val_Rising),
                     int32(DAQmx_Val_FiniteSamps),
                     uInt64(samples)));
                 
@@ -235,12 +237,12 @@ class NI_DAQ(Instrument):
                     
                 CHK(NIDAQ_dll.DAQmxStartTask(taskHandle))
                 CHK(NIDAQ_dll.DAQmxReadAnalogF64(
-                    taskHandle, 
-                    samples, 
+                    taskHandle,
+                    samples,
                     cfloat64(timeout),
-                    DAQmx_Val_GroupByChannel, 
+                    DAQmx_Val_GroupByChannel,
                     data.ctypes.data,
-                    samples, 
+                    samples,
                     ctypes.byref(read), None))
             else:
                 CHK(NIDAQ_dll.DAQmxReadAnalogScalarF64(
@@ -265,7 +267,7 @@ class DAQReadAnalog(Parameter):
     """
     This class represents the analog acquisition
 
-        Input:
+        Args:
             devchan (string): device/channel specifier, such as Dev1/ai0
             minv (float): the minimum voltage
             maxv (float): the maximum voltage
@@ -290,7 +292,7 @@ class DAQReadAnalog(Parameter):
         self.trigger_slope='POS'
         self.pre_trig_samples=0
 
-    def get(self):
+    def get_raw(self):
         """Get an analog input value.
 
         Must return a single value, so either averaging is True or samples=1
