@@ -2,6 +2,7 @@
 
 from os.path import expanduser
 
+from qcodes.dataset.sqlite_base import SomeConnection
 from qcodes.dataset.sqlite_base import connect as _connect
 from qcodes.dataset.sqlite_base import init_db as _init_db
 import qcodes.config
@@ -43,3 +44,14 @@ def initialise_or_create_database_at(db_file_with_abs_path: str) -> None:
     """
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database()
+
+
+def path_to_dbfile(conn: SomeConnection) -> str:
+    """
+    Return the path of the database file that the conn object is connected to
+    """
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA database_list")
+    row = cursor.fetchall()[0]
+
+    return row[2]

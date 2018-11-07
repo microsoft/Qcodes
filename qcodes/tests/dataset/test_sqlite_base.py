@@ -1,6 +1,9 @@
 # Since all other tests of data_set and measurements will inevitably also
-# test the sqlite_base module, we mainly test exceptions here
+# test the sqlite_base module, we mainly test exceptions and small helper
+# functions here
 from sqlite3 import OperationalError
+import tempfile
+import os
 
 import pytest
 import hypothesis.strategies as hst
@@ -10,7 +13,7 @@ import unicodedata
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
@@ -21,6 +24,16 @@ from qcodes.tests.dataset.test_database_creation_and_upgrading import \
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
+
+def test_path_to_dbfile():
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdb = os.path.join(tempdir, 'database.db')
+        conn = mut.connect(tempdb)
+        try:
+            assert path_to_dbfile(conn) == tempdb
+        finally:
+            conn.close()
 
 
 def test_one_raises(experiment):
