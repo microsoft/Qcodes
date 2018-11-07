@@ -51,7 +51,7 @@ class AlazarTech_ATS(Instrument):
     #: The ATS API DLL is not guaranteed to be thread-safe
     #: This lock guards API calls.
     _dll_lock : Lock = Lock()
-    
+
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
     dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
@@ -1172,7 +1172,6 @@ class Buffer:
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
         self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
         self.ctypes_buffer = ctypes_array
-        pointer, _ = self.buffer.__array_interface__['data']
 
     def free_mem(self):
         """
