@@ -6,6 +6,8 @@ from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
 
 try:
     import clr
+    clr.AddReference('System.IO')
+    from System.IO import FileNotFoundException
 except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
                          running 'pip install pythonnet'
@@ -45,11 +47,11 @@ class USB_SPDT(SPDT_Base):
             else:
                 clr.AddReference(driver_path)
 
-        except ImportError:
+        except (ImportError, FileNotFoundException):
             raise ImportError(
                 """Load of mcl_RF_Switch_Controller64.dll not possible. Make sure
                 the dll file is not blocked by Windows. To unblock right-click
-                the dll to open proporties and check the 'unblock' checkmark
+                the dll to open properties and check the 'unblock' checkmark
                 in the bottom. Check that your python installation is 64bit."""
             )
         import mcl_RF_Switch_Controller64
