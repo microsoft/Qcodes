@@ -5,7 +5,7 @@ instrument. Please note that `channel` in this context does not necessarily
 mean a physical instrument channel, but rather an instrument sub-module.
 """
 
-from typing import List, Union, Any
+from typing import List, Union, Any, Dict, Callable
 import pytest
 import re
 
@@ -22,7 +22,7 @@ class MockBackendBase:
     expressions and on match the corresponding callable is called.
     """
     def __init__(self)->None:
-        self._command_dict: dict = {}
+        self._command_dict: Dict[str, Callable] = {}
 
     def send(self, cmd: str)->Any:
         """
@@ -209,7 +209,10 @@ def dummy_instrument():
 def test_sanity(dummy_instrument):
     """
     Test the basic functionality of the auto-loadable channels, without using
-    the auto-loadable channels list
+    the auto-loadable channels list. Please note that the `channels_to_skip`
+    argument in the dummy instrument applies when accessing channels
+    from the channels list. Since we are calling `load_from_instrument` directly
+    in this test without this keyword argument, we will see all channels.
     """
     # Test that we are able to discover instruments automatically
     channels = SimpleTestChannel.load_from_instrument(dummy_instrument)
@@ -228,7 +231,7 @@ def test_sanity(dummy_instrument):
     # exception before actually creating the channel on the instrument
     with pytest.raises(
             RuntimeError,
-            message="Object does not exist (anymore) on the instrument"):
+            match=r"Object does not exist \(anymore\) on the instrument"):
 
         new_channel.hello()
 
@@ -240,7 +243,7 @@ def test_sanity(dummy_instrument):
     new_channel.remove()
     with pytest.raises(
             RuntimeError,
-            message="Object does not exist (anymore) on the instrument"):
+            match=r"Object does not exist \(anymore\) on the instrument"):
 
         new_channel.hello()  # We have deleted the channel and it should no
         # longer be available
@@ -266,7 +269,7 @@ def test_channels_list(dummy_instrument):
     # Once removed we should no longer be able to talk to the channel
     with pytest.raises(
             RuntimeError,
-            message="Object does not exist (anymore) on the instrument"):
+            match=r"Object does not exist \(anymore\) on the instrument"):
 
         new_channel.hello()
     # Remove a channel that was pre-existing on the instrument.

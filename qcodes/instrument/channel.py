@@ -549,20 +549,23 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def load_from_instrument(
-            cls, parent: Instrument, channel_list=None, **kwargs
+            cls, parent: Instrument,
+            channel_list: 'AutoLoadableChannelList'=None,
+            **kwargs
     )->List['AutoLoadableInstrumentChannel']:
         """
         Load channels that already exist on the instrument
 
         Args:
-            parent (Instrument): The instrument through which the instrument
+            parent: The instrument through which the instrument
                 channel is accessible
-            channel_list (AutoLoadableChannelList): The channel list this
+            channel_list: The channel list this
                 channel is a part of
-            **kwargs (dict): Keyword arguments needed to create the channels
+            **kwargs: Keyword arguments needed to create the channels
 
         Returns:
-            obj_list (list): List of instrument channels
+            List of instrument channel instances created for channels
+            that already exist on the instrument
         """
 
         obj_list = []
@@ -583,14 +586,16 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         these channels in memory
 
         Args:
-            parent (Instrument): The instrument through which the instrument
+            parent: The instrument through which the instrument
                 channel is accessible
-            **kwargs (dict): Keyword arguments needed to discover the channels
+            **kwargs: Keyword arguments needed to discover the channels
 
         Returns:
-              list: List of keyword arguments to initialize channels.
+              List of keyword arguments for channel instance initialization
+              for each channel that already exists on the physical instrument
         """
-        raise NotImplementedError("Please subclass")
+        raise NotImplementedError(
+            "Please subclass and implement this method in the subclass")
 
     @classmethod
     def new_instance(
@@ -598,19 +603,43 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             channel_list: 'AutoLoadableChannelList'=None, **kwargs
     )->'AutoLoadableInstrumentChannel':
         """
-        Create a new instance of the channel
+        Create a new instance of the channel on the instrument: This involves
+        finding initialization arguments which will create a channel with a
+        unique name and create the channel on the instrument.
 
         Args:
-            parent (Instrument): The instrument through which the instrument
+            parent: The instrument through which the instrument
                 channel is accessible
-            create_on_instrument (bool): When True, the channel is immediately
+            create_on_instrument: When True, the channel is immediately
                 created on the instrument
-            channel_list (AutoLoadableChannelList): The channel list this
+            channel_list: The channel list this
                 channel is going to belong to
-            **kwargs (dict): Keyword arguments needed to create a new instance.
+            **kwargs: Keyword arguments needed to create a new instance.
         """
         new_kwargs = cls._get_new_instance_kwargs(parent=parent, **kwargs)
-        new_instance = cls(parent, channel_list=channel_list, **new_kwargs)
+
+        try:
+            new_instance = cls(parent, channel_list=channel_list, **new_kwargs)
+        except TypeError as err:
+            # The 'new_kwargs' dict is malformed. Investigate more precisely
+            # why and give the user a more helpful hint how this can be
+            # solved.
+            if "name" not in new_kwargs:
+                raise TypeError(
+                    "A 'name' argument should be supplied by the "
+                    "'_get_new_instance_kwargs' method"
+                ) from err
+            if "parent" in new_kwargs:
+                raise TypeError(
+                    "A 'parent' argument should *not* be supplied by the "
+                    "'_get_new_instance_kwargs' method"
+                ) from err
+            # Something else has gone wrong. Probably, not all mandatory keyword
+            # arguments are supplied
+            raise TypeError(
+                "Probably, the '_get_new_instance_kwargs' method does not "
+                "return all of the required keyword arguments") from err
+
         if create_on_instrument:
             new_instance.create()
 
@@ -625,40 +654,50 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         Args:
             parent: The instrument the new channel will belong to. Not all
                 instruments need this so it is an optional argument
-            **kwargs (dict): Additional arguments which are needed to
+            **kwargs: Additional arguments which are needed to
                 instantiate a channel can be given directly by the calling
                 function.
 
         Returns:
-            new_kwargs (dict): A keyword argument dictionary with at least a
-            `name` key
+            A keyword argument dictionary with at least a `name` key which is
+            unique on the instrument. The parent instrument is passed as an
+            argument in this function so we can query if the generated name is
+            indeed unique, if this is needed.
+
+        Notes:
+            The init arguments `parent` and `channel_list` are automatically
+            added by the `new_instance` method and should not be added in the
+            kwarg dictionary returned here. Additionally, the argument
+            `existence` either needs to be omitted or be False.
         """
-        raise NotImplementedError("Please subclass")
+        raise NotImplementedError(
+            "Please subclass and implement this method in the subclass")
 
     def __init__(
             self,
             parent: Union[Instrument, 'InstrumentChannel'],
             name: str,
-            existence: bool=False,
+            exists_on_instrument: bool=False,
             channel_list: 'AutoLoadableChannelList'=None,
             **kwargs
     ) ->None:
         """
         Instantiate a channel object. Note that this is not the same as actually
         creating the channel on the instrument. Parameters defined on this
-        channels will note be able to query/write to the instrument until it
-        has been created
+        channels will not be able to query/write to the instrument until it
+        has been created on the instrument
 
         Args:
-            parent (Instrument): The instrument through which the instrument
+            parent: The instrument through which the instrument
                 channel is accessible
             name: channel name
-            existence (bool): True if the channel exists on the instrument
-            channel_list (N52xxChannelList): If the channel is deleted,
-                delete `self` from the channel list
+            exists_on_instrument: True if the channel exists on the instrument
+            channel_list: Reference to the list that this channel is a member
+                of; this is used when deleting the channel so that it can remove
+                itself from the list
         """
         super().__init__(parent, name=name, **kwargs)
-        self._exists_on_instrument = existence
+        self._exists_on_instrument = exists_on_instrument
         self._channel_list = channel_list
 
     def create(self) ->None:
@@ -671,7 +710,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     def _create(self)->None:
         """
-        (SCPI) commands needed to create the instrument. Note that we
+        (SCPI) commands needed to create the channel. Note that we
         need to use `self.root_instrument.write` to send commands,
         because self.write will cause _assert_existence to raise a
         runtime error.
@@ -689,6 +728,9 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         self._exists_on_instrument = False
 
     def _remove(self) ->None:
+        """
+        (SCPI) commands needed to delete the channel from the instrument
+        """
         raise NotImplementedError("Please subclass")
 
     def _assert_existence(self)->None:
@@ -698,14 +740,14 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     def write(self, cmd: str)->Any:
         """
-        Only write to the instrument if the channel is present on the instrument
+        Write to the instrument only if the channel is present on the instrument
         """
         self._assert_existence()
         return super().write(cmd)
 
     def ask(self, cmd: str)->None:
         """
-        Only query to the instrument if the channel is present on the instrument
+        Ask the instrument only if the channel is present on the instrument
         """
         self._assert_existence()
         return super().ask(cmd)
@@ -720,6 +762,39 @@ class AutoLoadableChannelList(ChannelList):
     Extends the QCoDeS ChannelList class to add the following features:
     - Automatically create channel objects on initialization
     - Make a `add` method to create channel objects
+
+    Args:
+        parent: the instrument to which this channel
+            should be attached
+
+        name: the name of the channel list
+
+        chan_type: the type of channel contained
+            within this list
+
+        chan_list: An optional iterable of
+            channels of type chan_type.  This will create a list and
+            immediately lock the ChannelList.
+
+        snapshotable: Optionally disables taking of snapshots
+            for a given channel list.  This is used when objects
+            stored inside a channel list are accessible in multiple
+            ways and should not be repeated in an instrument snapshot.
+
+        multichan_paramclass: The class of
+            the object to be returned by the ChanneList's __getattr__ method.
+            Should be a subclass of MultiChannelInstrumentParameter.
+
+        **kwargs: Keyword arguments to be passed to the `load_from_instrument`
+            method of the channel class. Note that the kwargs are *NOT* passed
+            to the `__init__` of the super class.
+
+    Raises:
+        ValueError: If chan_type is not a subclass of InstrumentChannel
+        ValueError: If multichan_paramclass if not a subclass of
+            MultiChannelInstrumentParameter (note that a class is a subclass
+            of itself).
+
     """
     def __init__(
             self,
@@ -744,6 +819,10 @@ class AutoLoadableChannelList(ChannelList):
     def add(self, **kwargs) ->'AutoLoadableInstrumentChannel':
         """
         Add a channel to the list
+
+        Args:
+            kwargs: Keyword arguments passed to the `new_instance` method of
+                the channel class
         """
         new_channel = self._chan_type.new_instance(  # type: ignore
             self._parent,
