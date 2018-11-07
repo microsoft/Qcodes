@@ -1,7 +1,7 @@
 import asyncio
 import time
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast
+from typing import Dict, Union, Optional, Callable, List, cast, Awaitable
 import logging
 
 import numpy as np
@@ -457,7 +457,7 @@ class MercuryiPS(VisaInstrument):
                                      ' zero!')
 
         # then the actual ramp
-        ramp_fn : Callable[[None], Awaitable[None]] = {
+        ramp_fn : Callable[[], Awaitable[None]] = {
             'simul': self._ramp_simultaneously,
             'safe': self._ramp_safely
         }[mode]
