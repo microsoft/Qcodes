@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
@@ -28,8 +29,9 @@ class USB_SPDT(SPDT_Base):
     Mini-Circuits SPDT RF switch
 
     Args:
-            name (str): the name of the instrument
-            serial_number (str, optional): the serial number of the device
+            name: the name of the instrument
+            driver_path: path to the dll
+            serial_number: the serial number of the device
                (printed on the sticker on the back side, without s/n)
             kwargs (dict): kwargs to be passed to Instrument class.
     """
@@ -37,7 +39,12 @@ class USB_SPDT(SPDT_Base):
     CHANNEL_CLASS = SwitchChannelUSB
     PATH_TO_DRIVER = r'mcl_RF_Switch_Controller64'
 
-    def __init__(self, name, driver_path=None, serial_number=None, **kwargs):
+    def __init__(self, name: str, driver_path: Optional[str]=None,
+                 serial_number: Optional[str]=None, **kwargs):
+        # we are eventually overwriting this but since it's called
+        # in __getattr__ of `SPDT_Base` it's important that it's
+        # always set to something to avoid infinite recursion
+        self._deprecated_attributes = None
         super().__init__(name, **kwargs)
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
