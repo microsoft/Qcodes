@@ -42,6 +42,8 @@ from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
 
+log = logging.getLogger(__name__)
+
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
@@ -883,8 +885,6 @@ class DataSet(Sized):
 
         return "\n".join(out)
 
-
-log = logging.getLogger(__name__)
 
 # public api
 def load_by_id(run_id: int, conn: Optional[SomeConnection]=None) -> DataSet:
