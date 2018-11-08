@@ -390,7 +390,7 @@ class MercuryiPS(VisaInstrument):
     async def _ramp_safely(self, polling_interval : float = 0.1) -> None:
         """
         Ramp all three fields to their target using the 'first-down-then-up'
-        sequential ramping procedure. This function is BLOCKING.
+        sequential ramping procedure.
         """
         meas_vals = self._get_measured(['x', 'y', 'z'])
         targ_vals = self._target_vector.get_components('x', 'y', 'z')
