@@ -56,15 +56,15 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
     # Now make the interesting comparisons: are the target objects the same as
     # the source objects?
 
-    exp_attrs = ['name', 'sample_name', 'format_string', 'started_at',
-                 'finished_at']
-
     assert source_dataset.the_same_dataset_as(target_dataset)
 
     source_data = source_dataset.get_data(*source_dataset.parameters.split(','))
     target_data = target_dataset.get_data(*target_dataset.parameters.split(','))
 
     assert source_data == target_data
+
+    exp_attrs = ['name', 'sample_name', 'format_string', 'started_at',
+                 'finished_at']
 
     for exp_attr in exp_attrs:
         assert getattr(source_exp, exp_attr) == getattr(target_exp, exp_attr)
