@@ -33,7 +33,9 @@ class Experiment(Sized):
         created. If exp_id is not None, an experiment is loaded.
 
         Args:
-            path_to_db: The path of the database file to create in/load from
+            path_to_db: The path of the database file to create in/load from.
+              If a conn is passed together with path_to_db, an exception is
+              raised
             exp_id: The id of the experiment to load
             name: The name of the experiment to create. Ignored if exp_id is
               not None
@@ -41,9 +43,16 @@ class Experiment(Sized):
               is not None
             format_string: The format string used to name result-tables.
               Ignored if exp_id is not None.
-            conn: connection to the database. If not supplied, a new connection
+            conn: connection to the database. If not supplied, the constructor
+              first tries to use path_to_db to figure out where to connect to.
+              If path_to_db is not supplied either, a new connection
               to the DB file specified in the config is made
         """
+
+        if path_to_db is not None and conn is not None:
+            raise ValueError('Received BOTH conn and path_to_db. Please '
+                             'provide only one or the other.')
+
         self._path_to_db = path_to_db or get_DB_location()
         self.conn = conn or connect(self.path_to_db, get_DB_debug())
 
