@@ -7,7 +7,7 @@ import hypothesis as hst
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 from qcodes.utils.async_utils import sync
 import qcodes.instrument.sims as sims
-
+from qcodes.math.field_vector import FieldVector
 
 visalib = sims.__file__.replace('__init__.py', 'MercuryiPS.yaml@sim')
 
@@ -134,10 +134,8 @@ def test_ramp_safely(driver, x, y, z, caplog):
     driver.GRPZ.ramp_status('HOLD')
 
     # the current field values are always zero for the sim. instr.
-
-    driver.x_target(x)
-    driver.y_target(y)
-    driver.z_target(z)
+    # Use the FieldVector interface here to increase coverage.
+    driver.field_target(FieldVector(x=x, y=y, z=z))
 
     exp_order = np.array(['x', 'y', 'z'])[np.argsort(np.abs(np.array([x, y, z])))]
 
