@@ -1,4 +1,5 @@
 from typing import Union
+from warnings import warn
 
 import numpy as np
 
@@ -127,6 +128,13 @@ def _create_exp_if_needed(target_conn: SomeConnection,
 
     rows = cursor.fetchall()
 
+    if len(rows) > 1:
+
+        exp_id = rows[0]['exp_id']
+        warn(f'{len(rows)} experiments found in target DB that match name, '
+             'sample_name, fmt_str, start_time, and end_time. '
+             f'Inserting into the experiment with exp_id={exp_id}.')
+        return exp_id
     if len(rows) > 0:
         return rows[0]['exp_id']
     else:
