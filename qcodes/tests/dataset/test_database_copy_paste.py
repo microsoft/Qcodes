@@ -139,23 +139,23 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     # now copy 2 runs
     copy_runs_into_db(source_path, target_path, *exp_1_run_ids[:2])
 
-    test_exp1 = Experiment(conn=target_conn, exp_id=1)
+    target_exp1 = Experiment(conn=target_conn, exp_id=1)
 
-    assert len(test_exp1) == 2
+    assert len(target_exp1) == 2
 
     # copy two other runs, one of them already in
     copy_runs_into_db(source_path, target_path, *exp_1_run_ids[1:3])
 
-    assert len(test_exp1) == 3
+    assert len(target_exp1) == 3
 
     # insert run from different experiment
     copy_runs_into_db(source_path, target_path, ds.run_id)
 
-    assert len(test_exp1) == 3
+    assert len(target_exp1) == 3
 
-    test_exp2 = Experiment(conn=target_conn, exp_id=2)
+    target_exp2 = Experiment(conn=target_conn, exp_id=2)
 
-    assert len(test_exp2) == 1
+    assert len(target_exp2) == 1
 
     # finally insert every single run from experiment 1
 
@@ -169,7 +169,8 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     target_exps = get_experiments(target_conn)
 
     assert len(target_exps) == 2
-    assert len(test_exp1) == 5
+    assert len(target_exp1) == 5
+    assert len(target_exp2) == 1
 
     # check that all the datasets match up
     for run_id in exp_1_run_ids + exp_2_run_ids:
