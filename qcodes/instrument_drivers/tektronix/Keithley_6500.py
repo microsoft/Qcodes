@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Union
 
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -25,7 +26,7 @@ def _parse_output_string(string_value: str):
     return s
 
 
-def parse_output_bool(numeric_value: Union[int, float]):
+def _parse_output_bool(numeric_value: Union[int, float]):
     """ Parses and converts the value to boolean type. True is 1.
 
     Args:
@@ -34,7 +35,7 @@ def parse_output_bool(numeric_value: Union[int, float]):
     Returns:
         The boolean representation of the numeric value.
     """
-    return int(numeric_value) == 1
+    return bool(numeric_value)
 
 
 class Keithley_6500(VisaInstrument):
@@ -80,7 +81,7 @@ class Keithley_6500(VisaInstrument):
 
         self.add_parameter('auto_range_enabled',
                            get_cmd=partial(self._get_mode_param,
-                                           'RANG:AUTO', parse_output_bool),
+                                           'RANG:AUTO', _parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            vals=Bool())
 
@@ -103,13 +104,13 @@ class Keithley_6500(VisaInstrument):
 
         self.add_parameter('averaging_enabled',
                            get_cmd=partial(self._get_mode_param,
-                                           'AVER:STAT', parse_output_bool),
+                                           'AVER:STAT', _parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'AVER:STAT'),
                            vals=Bool())
 
         # Global parameters
         self.add_parameter('display_enabled',
-                           get_parser=parse_output_bool,
+                           get_parser=_parse_output_bool,
                            get_cmd='DISP:ENAB?',
                            set_cmd='DISP:ENAB {}', set_parser=int, vals=Bool())
 
@@ -151,7 +152,7 @@ class Keithley_6500(VisaInstrument):
     def reset(self):
         """ Reset the device """
         self.write('*RST')
-        
+
     def _read_next_value(self):
         return float(self.ask('READ?'))
 
