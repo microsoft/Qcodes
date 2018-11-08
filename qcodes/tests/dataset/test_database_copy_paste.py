@@ -46,7 +46,8 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
     with pytest.raises(RuntimeError) as excinfo:
         copy_runs_into_db(source_path, target_path, source_dataset.run_id)
 
-    assert error_caused_by(excinfo, 'Dataset not completed')
+    assert error_caused_by(excinfo, ('Dataset not completed. An incomplete '
+                                     'dataset can not be copied.'))
 
     for ps in some_paramspecs[1].values():
         source_dataset.add_parameter(ps)
