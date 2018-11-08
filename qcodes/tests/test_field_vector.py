@@ -93,7 +93,7 @@ def test_triangle_inequality(cylindrical0, spherical0):
     spherical0 = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
 
     assert (cylindrical0 + spherical0).norm() <= (cylindrical0.norm() + spherical0.norm())
-    assert cylindrical0.distance(spherical0)) <= (cylindrical0.norm() + spherical0.norm())
+    assert cylindrical0.distance(spherical0) <= (cylindrical0.norm() + spherical0.norm())
 
 @given(random_coordinates["cartesian"])
 @settings(max_examples=10)
