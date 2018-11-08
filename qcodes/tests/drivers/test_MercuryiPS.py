@@ -68,6 +68,21 @@ def test_simple_setting(driver):
     driver.GRPX.field_target(0.1)
     assert driver.GRPX.field_target() == 0.1
 
+def test_vector_setting(driver):
+    assert driver.field_target().distance(FieldVector(0, 0, 0)) <= 1e-8
+    driver.field_target(FieldVector(r=0.1, theta=0, phi=0))
+    assert driver.field_target().distance(
+        FieldVector(r=0.1, theta=0, phi=0)
+    ) <= 1e-8
+
+
+def test_vector_ramp_rate(driver):
+    driver.field_ramp_rate(FieldVector(0.1, 0.1, 0.1))
+    assert driver.field_ramp_rate().distance(
+        FieldVector(0.1, 0.1, 0.1)
+    ) <= 1e-8
+
+
 
 def test_wrong_field_limit_raises():
 
@@ -145,3 +160,4 @@ def test_ramp_safely(driver, x, y, z, caplog):
         ramp_order = get_ramp_order(caplog.records)
 
     assert ramp_order == list(exp_order)
+

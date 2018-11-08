@@ -3,11 +3,13 @@ Test properties of the coordinate transforms in the field vector module to test 
 implemented.
 """
 import numpy as np
+import json
 from hypothesis import given, settings
 from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
 
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 random_coordinates = {
     "cartesian": tuples(
@@ -105,3 +107,14 @@ def test_homogeneous_roundtrip(cartesian0):
         vec.get_components(*"xyz"),
         FieldVector.from_homogeneous(h_vec).get_components(*"xyz")
     )
+
+@given(random_coordinates["spherical"])
+@settings(max_examples=10)
+def test_json_dump(spherical0):
+    vec = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
+    dump = json.dumps(vec, cls=NumpyJSONEncoder)
+
+    assert json.loads(dump) == {
+        '__class__': FieldVector.__name__,
+        '__args__': [vec.x, vec.y, vec.z]
+    }

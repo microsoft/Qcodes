@@ -76,7 +76,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 # If so, we should be able to use that to serialize.
                 if hasattr(obj, '__getnewargs__'):
                     return {
-                        '__class__': type(obj).__class__.__name__,
+                        '__class__': type(obj).__name__,
                         '__args__': obj.__getnewargs__()
                     }
                 else:
