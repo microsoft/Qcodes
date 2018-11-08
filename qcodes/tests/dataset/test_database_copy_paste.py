@@ -177,9 +177,6 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
         source_ds = DataSet(conn=source_conn, run_id=run_id)
         target_ds = load_by_guid(guid=source_ds.guid, conn=target_conn)
 
-        print(source_ds.paramspecs)
-        print(target_ds.paramspecs)
-
         assert source_ds.the_same_dataset_as(target_ds)
 
         source_data = source_ds.get_data(*source_ds.parameters.split(','))
