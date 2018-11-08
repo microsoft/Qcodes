@@ -32,7 +32,7 @@ def parse_output_bool(numeric_value: Union[int, float]):
         numeric_value: The numerical value to convert.
 
     Returns:
-        Bool: The cleanup output data.
+        The boolean representation of the numeric value.
     """
     return int(numeric_value) == 1
 
