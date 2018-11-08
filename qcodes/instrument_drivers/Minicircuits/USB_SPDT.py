@@ -7,8 +7,6 @@ from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
 
 try:
     import clr
-    clr.AddReference('System.IO')
-    from System.IO import FileNotFoundException
 except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
                          running 'pip install pythonnet'
@@ -45,6 +43,11 @@ class USB_SPDT(SPDT_Base):
         # in __getattr__ of `SPDT_Base` it's important that it's
         # always set to something to avoid infinite recursion
         self._deprecated_attributes = None
+        # import .net exception so we can catch it below
+        # we keep this import local so that the module can be imported
+        # without a working .net install
+        clr.AddReference('System.IO')
+        from System.IO import FileNotFoundException
         super().__init__(name, **kwargs)
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
