@@ -5,6 +5,13 @@ from contextlib import contextmanager
 T = TypeVar('T')
 
 def sync(task : Awaitable[T]) -> T:
+    """
+    Given an awaitable task, runs that task synchronously
+    in the default event loop. This function cannot be
+    called from a thread that is already running an event loop.
+    As a result, an async function called using sync may not
+    call sync at any point in its call stack.
+    """
     loop : asyncio.AbstractEventLoop = asyncio.get_event_loop()
     if loop.is_running():
         # We can't run in the same event loop that's already
@@ -21,6 +28,11 @@ def sync(task : Awaitable[T]) -> T:
 
 @contextmanager
 def cancelling(*tasks : asyncio.Future) -> Generator[None, None, None]:
+    """
+    Given a sequence of cancellable futures, ensures that all
+    futures are cancelled at the end of the context manager.
+    Any exceptions raised during cancellation are aggregated.
+    """
     try:
         yield
     finally:
@@ -29,7 +41,7 @@ def cancelling(*tasks : asyncio.Future) -> Generator[None, None, None]:
             try:
                 task.cancel()
             except Exception as ex:
-                pass
+                exceptions.append(ex)
         if exceptions:
             if len(exceptions) == 1:
                 raise exceptions[0]
