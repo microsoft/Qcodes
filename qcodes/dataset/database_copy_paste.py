@@ -100,7 +100,8 @@ def copy_runs_into_db(source_db_path: str,
 
 
 def _create_exp_if_needed(target_conn: SomeConnection,
-                          exp_name: str, sample_name: str,
+                          exp_name: str,
+                          sample_name: str,
                           fmt_str: str,
                           start_time: float,
                           end_time: Union[float, None]) -> int:
