@@ -1,3 +1,6 @@
+from os.path import getmtime
+from contextlib import contextmanager
+
 import pytest
 import numpy as np
 
@@ -9,6 +12,21 @@ from qcodes.dataset.database_copy_paste import copy_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_database_creation_and_upgrading import error_caused_by
+
+
+@contextmanager
+def raise_if_file_changed(path_to_file: str):
+    """
+    Context manager that raises if a file is modified.
+    On Windows, the OS modification time resolution is 100 ns
+    """
+    pre_operation_time = getmtime(path_to_file)
+    # we don't want to catch and re-raise anything, since there is no clean-up
+    # that we need to perform. Hence no try-except here
+    yield
+    post_operation_time = getmtime(path_to_file)
+    if pre_operation_time != post_operation_time:
+        raise RuntimeError(f'File {path_to_file} was modified.')
 
 
 def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
@@ -47,7 +65,8 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
     length1 = len(target_exp)
 
     # trying to insert the same run again should be a NOOP
-    copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+    with raise_if_file_changed(target_path):
+        copy_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     assert len(target_exp) == length1
 
@@ -68,6 +87,10 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
 
     for exp_attr in exp_attrs:
         assert getattr(source_exp, exp_attr) == getattr(target_exp, exp_attr)
+
+    # trying to insert the same run again should be a NOOP
+    with raise_if_file_changed(target_path):
+        copy_runs_into_db(source_path, target_path, source_dataset.run_id)
 
 
 def test_correct_experiment_routing(two_empty_temp_db_connections,
@@ -126,7 +149,6 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     assert len(test_exp1) == 3
 
     # insert run from different experiment
-
     copy_runs_into_db(source_path, target_path, ds.run_id)
 
     assert len(test_exp1) == 3
@@ -138,6 +160,11 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     # finally insert every single run from experiment 1
 
     copy_runs_into_db(source_path, target_path, *exp_1_run_ids)
+
+    # check for idempotency once more by inserting all the runs but in another
+    # order
+    with raise_if_file_changed(target_path):
+        copy_runs_into_db(source_path, target_path, *exp_1_run_ids[::-1])
 
     target_exps = get_experiments(target_conn)
 
