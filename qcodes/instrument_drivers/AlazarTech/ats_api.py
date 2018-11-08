@@ -21,7 +21,7 @@ ReturnCode = NewType('ReturnCode', ctypes.c_uint)
 
 from qcodes.instrument.parameter import Parameter
 from .utils import TraceParameter
-from qcodes.utils.dll_wrapper import DllWrapperMeta, Signature
+from .dll_wrapper import DllWrapperMeta, Signature
 
 ## CONSTANTS ##
 

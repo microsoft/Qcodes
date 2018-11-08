@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.utils.async_utils import sync
 from .utils import TraceParameter
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,18 @@ class AlazarTech_ATS(Instrument):
     # override channels in a subclass if needed
     channels = 2
 
+    @classmethod
+    async def find_boards_async(cls, dll_path : str = None) -> List[dict]:
+        api = AlazarATSAPI(dll_path or cls.dll_path)
 
+        system_count = await api.num_of_systems_async()
+        boards = []
+        for system_id in range(1, system_count + 1):
+            board_count = await api.boards_in_system_by_system_id_async(system_id)
+            for board_id in range(1, board_count + 1):
+                boards.append(cls.get_board_info_async(api, system_id, board_id))
+        return boards
+        
     @classmethod
     def find_boards(cls, dll_path: str=None) -> List[dict]:
         """
@@ -70,19 +82,34 @@ class AlazarTech_ATS(Instrument):
         Returns:
             list: list of board info for each connected board
         """
-        api = AlazarATSAPI(dll_path or cls.dll_path)
+        return sync(cls.find_boards_async(dll_path))
 
-        system_count = api.num_of_systems()
-        boards = []
-        for system_id in range(1, system_count + 1):
-            board_count = api.boards_in_system_by_system_id(system_id)
-            for board_id in range(1, board_count + 1):
-                boards.append(cls.get_board_info(api, system_id, board_id))
-        return boards
-
-        # TODO(nataliejpg) this needs fixing..., dll can't be a string
+    # TODO(nataliejpg) this needs fixing..., dll can't be a string
     @classmethod
     def get_board_info(cls, api: AlazarATSAPI, system_id: int,
+                       board_id: int) -> Dict[str,Union[str,int]]:
+        """
+        Get the information from a connected Alazar board
+
+        Args:
+            dll (CDLL): CTypes CDLL
+            system_id: id of the Alazar system
+            board_id: id of the board within the alazar system
+
+        Return:
+
+            Dictionary containing
+
+                - system_id
+                - board_id
+                - board_kind (as string)
+                - max_samples
+                - bits_per_sample
+        """
+        return sync(cls.get_board_info_async(api, board_id))
+    
+    @classmethod
+    async def get_board_info_async(cls, api: AlazarATSAPI, system_id: int,
                        board_id: int) -> Dict[str,Union[str,int]]:
         """
         Get the information from a connected Alazar board
@@ -110,7 +137,7 @@ class AlazarTech_ATS(Instrument):
         handle = board._handle
         board_kind = api._board_names[api.get_board_kind(handle)]
 
-        max_s, bps = board._get_channel_info(handle)
+        max_s, bps = await board._get_channel_info_async(handle)
         return {
             'system_id': system_id,
             'board_id': board_id,
@@ -427,10 +454,10 @@ class AlazarTech_ATS(Instrument):
                        self.aux_io_param)
         self._parameters_synced = True
 
-    def _get_channel_info(self, handle: int) -> Tuple[int,int]:
+    async def _get_channel_info(self, handle: int) -> Tuple[int,int]:
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        self.api.get_channel_info(
+        await self.api.get_channel_info(
             handle,
             ctypes.byref(max_s),
             ctypes.byref(bps)
