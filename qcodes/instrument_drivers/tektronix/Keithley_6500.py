@@ -25,7 +25,7 @@ def _parse_output_string(string_value: str):
     return s
 
 
-def parse_output_bool(numeric_value):
+def parse_output_bool(numeric_value: Union[int, float]):
     """ Parses and converts the value to boolean type. True is 1.
 
     Args:
