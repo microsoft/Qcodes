@@ -4,7 +4,7 @@ from qcodes import VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
 
 
-def _parse_output_string(string_value):
+def _parse_output_string(string_value: str):
     """ Parses and cleans string output of the multimeter. Removes the surrounding
         whitespace, newline characters and quotes from the parsed data. Some results
         are converted for readablitity (e.g. mov changes to moving).
