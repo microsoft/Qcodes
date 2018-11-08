@@ -67,7 +67,8 @@ class MockBackend(MockBackendBase):
     """
     def __init__(self)->None:
         super().__init__()
-        self._channel_catalog: List[str] = ["1", "2", "4", "5"]  # Pre-existing channels
+        self._channel_catalog: List[str] = ["1", "2", "4", "5"]  # Pre-existing
+        # channels
         self._greetings = {chn: "Hello" for chn in self._channel_catalog}
 
         self._command_dict = {
@@ -145,12 +146,12 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     def __init__(
             self,
-            parent: Union[Instrument, 'InstrumentChannel'],
+            parent: Union[Instrument, InstrumentChannel],
             name: str,
             channel: int,
             greeting: str,
             existence: bool = False,
-            channel_list: 'AutoLoadableChannelList' = None,
+            channel_list: AutoLoadableChannelList = None,
     ) -> None:
 
         super().__init__(parent, name, existence, channel_list)
