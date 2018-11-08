@@ -464,6 +464,13 @@ class AlazarTech_ATS(Instrument):
         )
         return max_s.value, bps.value
 
+    async def allocate_and_post_buffer(sample_type, n_bytes) -> Buffer:
+        buffer = Buffer(sample_type, n_bytes)
+        await self.api.post_async_buffer_async(
+            self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes
+        )
+        return buffer
+
     def acquire(self, mode=None, samples_per_record=None,
                 records_per_buffer=None, buffers_per_acquisition=None,
                 channel_selection=None, transfer_offset=None,
@@ -564,7 +571,7 @@ class AlazarTech_ATS(Instrument):
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = samples_per_record
-            await self.api.set_record_size(
+            await self.api.set_record_size_async(
                 self._handle, pretriggersize,
                 post_trigger_size
             )
@@ -610,89 +617,95 @@ class AlazarTech_ATS(Instrument):
                 acquire_flags
             )
 
-            # bytes per sample
-            _, bps = self._get_channel_info(self._handle)
-            # TODO(JHN) Why +7 I guess its to do ceil division?
-            bytes_per_sample = (bps + 7) // 8
-            # bytes per record
-            bytes_per_record = bytes_per_sample * samples_per_record
+        # bytes per sample
+        _, bps = self._get_channel_info(self._handle)
+        # TODO(JHN) Why +7 I guess its to do ceil division?
+        bytes_per_sample = (bps + 7) // 8
+        # bytes per record
+        bytes_per_record = bytes_per_sample * samples_per_record
 
-            # channels
-            channels_binrep = self.channel_selection.raw_value
-            number_of_channels = self.get_num_channels(channels_binrep)
+        # channels
+        channels_binrep = self.channel_selection.raw_value
+        number_of_channels = self.get_num_channels(channels_binrep)
 
-            # bytes per buffer
-            bytes_per_buffer = (bytes_per_record *
-                                records_per_buffer * number_of_channels)
+        # bytes per buffer
+        bytes_per_buffer = (bytes_per_record *
+                            records_per_buffer * number_of_channels)
 
-            sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
+        sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
 
-            self.clear_buffers()
+        self.clear_buffers()
 
-            # make sure that allocated_buffers <= buffers_per_acquisition
-            allocated_buffers = self.allocated_buffers.raw_value
-            buffers_per_acquisition = self.buffers_per_acquisition.raw_value
+        # make sure that allocated_buffers <= buffers_per_acquisition
+        allocated_buffers = self.allocated_buffers.raw_value
+        buffers_per_acquisition = self.buffers_per_acquisition.raw_value
 
-            if allocated_buffers > buffers_per_acquisition:
-                logger.warning("'allocated_buffers' should be <= "
-                                "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                                f" to {buffers_per_acquisition}")
-                self.allocated_buffers.set(buffers_per_acquisition)
+        if allocated_buffers > buffers_per_acquisition:
+            logger.warning("'allocated_buffers' should be <= "
+                            "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
+                            f" to {buffers_per_acquisition}")
+            self.allocated_buffers.set(buffers_per_acquisition)
 
-            allocated_buffers = self.allocated_buffers.raw_value
-            buffer_recycling = buffers_per_acquisition > allocated_buffers
-            for _ in range(allocated_buffers):
-                try:
-                    self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
-                except:
-                    self.clear_buffers()
-                    raise
+        allocated_buffers = self.allocated_buffers.raw_value
+        buffer_recycling = buffers_per_acquisition > allocated_buffers
+        recycle_task : Optional[Awaitable[None]] = None
 
-            # post buffers to Alazar
-            try:
-                for buf in self.buffer_list:
-                    await self.api.post_async_buffer_async(
+        # post buffers to Alazar
+        try:
+            # NB: gather does not ensure that the tasks complete in the same order,
+            #     but it does guarantee that the sequence of results is in the same
+            #     order as the sequence of tasks, irrespective of when each task
+            #     completes.
+            #     We use this to make sure that we can begin allocating the next
+            #     buffer while each buffer is being posted.
+            for buf in await asyncio.gather(*(
+                self.allocate_and_post_buffer(sample_type, bytes_per_buffer)
+                for _ in range(allocated_buffers)
+            )):
+                self.buffer_list.append(buf)
+
+            # -----start capture here-----
+            acquisition_controller.pre_start_capture()
+            start = time.perf_counter()  # Keep track of when acquisition started
+            # call the startcapture method
+            await self.api.start_capture(self._handle)
+            acquisition_controller.pre_acquire()
+
+            # buffer handling from acquisition
+            buffers_completed = 0
+            bytes_transferred = 0
+            buffer_timeout = self.buffer_timeout.raw_value
+
+            done_setup = time.perf_counter()
+            print(f"[{time.time()}] Entering buffer wait loop.")
+            while (buffers_completed < self.buffers_per_acquisition.get()):
+                # Wait for the buffer at the head of the list of available
+                # buffers to be filled by the board.
+                buf = self.buffer_list[buffers_completed % allocated_buffers]
+                # We need to make sure that any buffers which needed recycled have
+                # been successfully posted.
+                if recycle_task:
+                    await recycle_task
+                await self.api.wait_async_buffer_complete_async(
+                    self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout
+                )
+
+                acquisition_controller.buffer_done_callback(buffers_completed)
+
+                # if buffers must be recycled, extract data and repost them
+                # otherwise continue to next buffer
+                if buffer_recycling:
+                    acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
+                    recycle_task = asyncio.ensure_future(self.api.post_async_buffer_async(
                         self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes
-                    )
-
-                # -----start capture here-----
-                acquisition_controller.pre_start_capture()
-                start = time.perf_counter()  # Keep track of when acquisition started
-                # call the startcapture method
-                await self.api.start_capture(self._handle)
-                acquisition_controller.pre_acquire()
-
-                # buffer handling from acquisition
-                buffers_completed = 0
-                bytes_transferred = 0
-                buffer_timeout = self.buffer_timeout.raw_value
-
-                done_setup = time.perf_counter()
-                print(f"[{time.time()}] Entering buffer wait loop.")
-                while (buffers_completed < self.buffers_per_acquisition.get()):
-                    # Wait for the buffer at the head of the list of available
-                    # buffers to be filled by the board.
-                    buf = self.buffer_list[buffers_completed % allocated_buffers]
-                    await self.api.wait_async_buffer_complete_async(
-                        self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout
-                    )
-
-                    acquisition_controller.buffer_done_callback(buffers_completed)
-
-                    # if buffers must be recycled, extract data and repost them
-                    # otherwise continue to next buffer
-                    if buffer_recycling:
-                        acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
-                        await self.api.post_async_buffer_async(
-                            self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes
-                        )
-                    buffers_completed += 1
-                    bytes_transferred += buf.size_bytes
-                print(f"[{time.time()}] Exited buffer wait loop.")
-            finally:
-                # stop measurement here
-                done_capture = time.perf_counter()
-                await self.api.abort_async_read_async(self._handle)
+                    ))
+                buffers_completed += 1
+                bytes_transferred += buf.size_bytes
+            print(f"[{time.time()}] Exited buffer wait loop.")
+        finally:
+            # stop measurement here
+            done_capture = time.perf_counter()
+            await self.api.abort_async_read_async(self._handle)
         time_done_abort = time.perf_counter()
         # -----cleanup here-----
         # extract data if not yet done
