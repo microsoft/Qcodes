@@ -1008,7 +1008,6 @@ def modify_values(conn: SomeConnection,
     c = atomic_transaction(conn, query, *values)
     return c.rowcount
 
-
 def modify_many_values(conn: SomeConnection,
                        formatted_name: str,
                        start_index: int,
@@ -1203,6 +1202,39 @@ def get_setpoints(conn: SomeConnection,
         output[sp_name] = sps
 
     return output
+
+
+def get_runid_from_guid(conn: SomeConnection, guid: str) -> Union[int, None]:
+    """
+    Get the run_id of a run based on the guid
+
+    Args:
+      conn: connection to the database
+      guid: the guid to look up
+
+    Raises:
+      RunTimeError if more than one run with the given GUID exists
+    """
+    query = """
+            SELECT run_id
+            FROM runs
+            WHERE guid = ?
+            """
+    cursor = conn.cursor()
+    cursor.execute(query, (guid,))
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        run_id = None
+    elif len(rows) > 1:
+        errormssg = ('Critical consistency error: multiple runs with'
+                     f' the same GUID found! {len(rows)} runs have GUID '
+                     f'{guid}')
+        log.critical(errormssg)
+        raise RuntimeError(errormssg)
+    else:
+        run_id = int(rows[0]['run_id'])
+
+    return run_id
 
 
 def get_layout(conn: SomeConnection,

@@ -30,6 +30,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
+                                        get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
@@ -925,29 +926,16 @@ def load_by_guid(guid: str, conn: Optional[SomeConnection]=None) -> DataSet:
         dataset with the given guid
 
     Raises:
-        NameError if no run with the specified GUID exists in the database
-        RuntimeError if several runs with the same GUID are found
+        NameError if no run with the given GUID exists in the database
+        RuntimeError if several runs with the given GUID are found
     """
     conn = conn or connect(get_DB_location())
 
-    query = """
-            SELECT run_id
-            FROM runs
-            WHERE guid = ?
-            """
-    cursor = conn.cursor()
-    cursor.execute(query, (guid,))
-    rows = cursor.fetchall()
-    if len(rows) == 0:
-        raise NameError(f'No run with guid {guid} found in database.')
-    elif len(rows) > 1:
-        errormssg = ('Critical consistency error: multiple runs with'
-                     f' the same GUID found! {len(rows)} runs have GUID '
-                     f'{guid}')
-        log.critical(errormssg)
-        raise RuntimeError(errormssg)
-    else:
-        run_id = int(rows[0]['run_id'])
+    # this function raises a RuntimeError if more than one run matches the GUID
+    run_id = get_runid_from_guid(conn, guid)
+
+    if run_id is None:
+        raise NameError(f'No run with GUID: {guid} found in database.')
 
     return DataSet(run_id=run_id, conn=conn)
 

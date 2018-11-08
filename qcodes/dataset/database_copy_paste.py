@@ -8,6 +8,7 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         connect,
                                         format_table_name,
                                         get_last_experiment,
+                                        get_runid_from_guid,
                                         insert_column,
                                         SomeConnection)
 
@@ -165,15 +166,9 @@ def _copy_single_dataset_into_db(dataset: DataSet,
 
     source_conn = dataset.conn
 
-    already_in_query = """
-                       SELECT run_id
-                       FROM runs
-                       WHERE guid = ?
-                       """
-    cursor = target_conn.cursor()
-    cursor.execute(already_in_query, (dataset.guid,))
-    res = cursor.fetchall()
-    if len(res) > 0:
+    run_id = get_runid_from_guid(target_conn, dataset.guid)
+
+    if run_id is not None:
         return
 
     parspecs = dataset.paramspecs.values()
