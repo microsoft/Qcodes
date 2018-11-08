@@ -68,7 +68,7 @@ class AlazarTech_ATS(Instrument):
         for system_id in range(1, system_count + 1):
             board_count = await api.boards_in_system_by_system_id_async(system_id)
             for board_id in range(1, board_count + 1):
-                boards.append(cls.get_board_info_async(api, system_id, board_id))
+                boards.append(await cls.get_board_info_async(api, system_id, board_id))
         return boards
         
     @classmethod
@@ -137,7 +137,7 @@ class AlazarTech_ATS(Instrument):
         handle = board._handle
         board_kind = api._board_names[api.get_board_kind(handle)]
 
-        max_s, bps = await board._get_channel_info_async(handle)
+        max_s, bps = await board._get_channel_info(handle)
         return {
             'system_id': system_id,
             'board_id': board_id,
@@ -457,7 +457,7 @@ class AlazarTech_ATS(Instrument):
     async def _get_channel_info(self, handle: int) -> Tuple[int,int]:
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        await self.api.get_channel_info(
+        await self.api.get_channel_info_async(
             handle,
             ctypes.byref(max_s),
             ctypes.byref(bps)
