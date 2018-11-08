@@ -13,7 +13,7 @@ def _parse_output_string(string_value: str):
         string_value: The data returned from the multimeter reading commands.
 
     Returns:
-        String: The cleanup output data.
+        The cleaned-up output of the multimeter.
     """
     s = string_value.strip().lower()
     if (s[0] == s[-1]) and s.startswith(("'", '"')):
