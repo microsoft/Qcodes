@@ -164,7 +164,7 @@ def _copy_single_dataset_into_db(dataset: DataSet,
 
     Args:
         dataset: A dataset representing the run to be copied
-        path_to_db: connection to the DB. Must be atomically guarded
+        target_conn: connection to the DB. Must be atomically guarded
         target_exp_id: The exp_id of the (target DB) experiment in which to
           insert the run
     """
