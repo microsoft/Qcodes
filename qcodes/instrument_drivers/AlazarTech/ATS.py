@@ -9,8 +9,8 @@ import asyncio
 import concurrent
 
 from threading import Lock
-from functools import partial, wraps
-from typing import List, Dict, Union, Tuple, cast, Sequence, Awaitable
+from functools import partial
+from typing import List, Dict, Union, Tuple, Sequence, Awaitable
 from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
@@ -471,7 +471,7 @@ class AlazarTech_ATS(Instrument):
                 alloc_buffers=None, fifo_only_streaming=None,
                 interleave_samples=None, get_processed_data=None,
                 allocated_buffers=None, buffer_timeout=None,
-                acquisition_controller=None) -> np.ndarray:
+                acquisition_controller=None):
         """
         perform a single acquisition with the Alazar board, and set certain
         parameters to the appropriate values
@@ -498,7 +498,7 @@ class AlazarTech_ATS(Instrument):
         Returns:
             Whatever is given by acquisition_controller.post_acquire method
         """
-        loop : asyncio.BaseEventLoop = asyncio.get_event_loop()
+        loop : asyncio.AbstractEventLoop = asyncio.get_event_loop()
         return loop.run_until_complete(self.async_acquire(
             mode=mode,
             samples_per_record=samples_per_record,
@@ -524,7 +524,7 @@ class AlazarTech_ATS(Instrument):
                 alloc_buffers=None, fifo_only_streaming=None,
                 interleave_samples=None, get_processed_data=None,
                 allocated_buffers=None, buffer_timeout=None,
-                acquisition_controller=None) -> np.ndarray:
+                acquisition_controller=None):
 
         # region set parameters from args
         start_func = time.perf_counter()
@@ -611,7 +611,7 @@ class AlazarTech_ATS(Instrument):
             )
 
             # bytes per sample
-            max_s, bps = self._get_channel_info(self._handle)
+            _, bps = self._get_channel_info(self._handle)
             # TODO(JHN) Why +7 I guess its to do ceil division?
             bytes_per_sample = (bps + 7) // 8
             # bytes per record
@@ -625,9 +625,7 @@ class AlazarTech_ATS(Instrument):
             bytes_per_buffer = (bytes_per_record *
                                 records_per_buffer * number_of_channels)
 
-            sample_type = ctypes.c_uint8
-            if bytes_per_sample > 1:
-                sample_type = ctypes.c_uint16
+            sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
 
             self.clear_buffers()
 
@@ -643,7 +641,7 @@ class AlazarTech_ATS(Instrument):
 
             allocated_buffers = self.allocated_buffers.raw_value
             buffer_recycling = buffers_per_acquisition > allocated_buffers
-            for k in range(allocated_buffers):
+            for _ in range(allocated_buffers):
                 try:
                     self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
                 except:
@@ -708,7 +706,7 @@ class AlazarTech_ATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for name, p in self.parameters.items():
+        for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
                 if p.synced_to_card == False:
                     raise RuntimeError(f"TraceParameter {p} not synced to "
@@ -945,7 +943,6 @@ class Buffer:
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
         self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
         self.ctypes_buffer = ctypes_array
-        pointer, read_only_flag = self.buffer.__array_interface__['data']
 
     def free_mem(self):
         """
