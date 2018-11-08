@@ -383,7 +383,7 @@ class MercuryiPS(VisaInstrument):
         out of your safe region. Use with care.
         """
         # NB: this method is trivially async, as ramp_to_target
-        #     is completely syncrhonous.
+        #     is completely synchronous.
         for slave in self.submodules.values():
             slave.ramp_to_target()
 
