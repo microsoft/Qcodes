@@ -1,6 +1,6 @@
-import time
+import asyncio
 from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast
+from typing import Dict, Union, Optional, Callable, List, cast, Awaitable
 import logging
 
 import numpy as np
@@ -8,6 +8,7 @@ import numpy as np
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.async_utils import sync
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -268,10 +269,47 @@ class MercuryiPS(VisaInstrument):
                                unit='T',
                                get_cmd=partial(self._get_measured, [coord]))
 
+        # FieldVector-valued parameters #
+        self.add_parameter(name="field_target",
+                           label="target field",
+                           unit="T",
+                           get_cmd=self._get_target_field,
+                           set_cmd=self._set_target_field)
+        self.add_parameter(name="field_measured",
+                           label="measured field",
+                           unit="T",
+                           get_cmd=self._get_field)
+
+        self.add_parameter(name="field_ramp_rate",
+                           label="ramp rate",
+                           unit="T/s",
+                           get_cmd=self._get_ramp_rate,
+                           set_cmd=self._set_ramp_rate)
+
         self.connect_message()
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
+
+    def _get_target_field(self) -> FieldVector:
+        return FieldVector(
+            **{
+                coord: self._get_component(coord)
+                for coord in 'xyz'
+            }
+        )
+
+    def _get_ramp_rate(self) -> FieldVector:
+        return FieldVector(
+            x=self.GRPX.field_ramp_rate(),
+            y=self.GRPY.field_ramp_rate(),
+            z=self.GRPZ.field_ramp_rate(),
+        )
+
+    def _set_ramp_rate(self, rate : FieldVector) -> None:
+        self.GRPX.field_ramp_rate(rate.x)
+        self.GRPY.field_ramp_rate(rate.y)
+        self.GRPZ.field_ramp_rate(rate.z)
 
     def _get_measured(self, coordinates: List[str]) -> Union[float,
                                                              List[float]]:
@@ -287,6 +325,13 @@ class MercuryiPS(VisaInstrument):
             return meas_field.get_components(*coordinates)[0]
         else:
             return meas_field.get_components(*coordinates)
+
+    def _get_field(self) -> FieldVector:
+        return FieldVector(
+            x=self.x_measured(),
+            y=self.y_measured(),
+            z=self.z_measured()
+        )
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
@@ -310,6 +355,10 @@ class MercuryiPS(VisaInstrument):
         for targ, slave in zip(cartesian_targ, self.submodules.values()):
             slave.field_target(targ)
 
+    def _set_target_field(self, field : FieldVector) -> None:
+        for coord in 'xyz':
+            self._set_target(coord, field[coord])
+
     def _idn_getter(self) -> Dict[str, str]:
         """
         Parse the raw non-SCPI compliant IDN string into an IDN dict
@@ -327,19 +376,21 @@ class MercuryiPS(VisaInstrument):
 
         return idn_dict
 
-    def _ramp_simultaneously(self) -> None:
+    async def _ramp_simultaneously(self) -> None:
         """
         Ramp all three fields to their target simultaneously at their given
         ramp rates. NOTE: there is NO guarantee that this does not take you
         out of your safe region. Use with care.
         """
+        # NB: this method is trivially async, as ramp_to_target
+        #     is completely synchronous.
         for slave in self.submodules.values():
             slave.ramp_to_target()
 
-    def _ramp_safely(self) -> None:
+    async def _ramp_safely(self, polling_interval : float = 0.1) -> None:
         """
         Ramp all three fields to their target using the 'first-down-then-up'
-        sequential ramping procedure. This function is BLOCKING.
+        sequential ramping procedure.
         """
         meas_vals = self._get_measured(['x', 'y', 'z'])
         targ_vals = self._target_vector.get_components('x', 'y', 'z')
@@ -352,8 +403,11 @@ class MercuryiPS(VisaInstrument):
             if self.visabackend == 'sim':
                 pass
             else:
+                # This is why we did all the juggling of async/await earlier:
+                # we want other code to run while we're waiting for the
+                # magnet to finish ramping.
                 while slave.ramp_status() == 'TO SET':
-                    time.sleep(0.1)
+                    await asyncio.sleep(polling_interval)
 
     def set_new_field_limits(self, limit_func: Callable) -> None:
         """
@@ -372,7 +426,7 @@ class MercuryiPS(VisaInstrument):
 
         self._field_limits = limit_func
 
-    def ramp(self, mode: str) -> None:
+    def ramp(self, mode : str = "safe") -> None:
         """
         Ramp the fields to their present target value
 
@@ -384,6 +438,9 @@ class MercuryiPS(VisaInstrument):
               that ensures that the total field stays within the safe region
               (provided that this region is convex).
         """
+        return sync(self.ramp_async(mode=mode))
+
+    async def ramp_async(self, mode: str = "safe") -> None:
         if mode not in ['simul', 'safe']:
             raise ValueError('Invalid ramp mode. Please provide either "simul"'
                              ' or "safe".')
@@ -399,8 +456,12 @@ class MercuryiPS(VisaInstrument):
                                      ' zero!')
 
         # then the actual ramp
-        {'simul': self._ramp_simultaneously,
-         'safe': self._ramp_safely}[mode]()
+        ramp_fn = cast(Callable[[], Awaitable[None]], {
+            'simul': self._ramp_simultaneously,
+            'safe': self._ramp_safely
+        }[mode])
+
+        await ramp_fn()
 
     def ask(self, cmd: str) -> str:
         """
