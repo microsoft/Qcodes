@@ -183,3 +183,58 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
         target_data = target_ds.get_data(*target_ds.parameters.split(','))
 
         assert source_data == target_data
+
+
+def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
+                                                some_paramspecs):
+    """
+    Test that inserting runs from multiple experiments raises
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    source_exp_1 = Experiment(conn=source_conn)
+    source_exp_2 = Experiment(conn=source_conn)
+
+    # make 5 runs in first experiment
+
+    exp_1_run_ids = []
+    for _ in range(5):
+
+        source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
+        exp_1_run_ids.append(source_dataset.run_id)
+
+        for ps in some_paramspecs[2].values():
+            source_dataset.add_parameter(ps)
+
+        for val in range(10):
+            source_dataset.add_result({ps.name: val
+                                       for ps in some_paramspecs[2].values()})
+        source_dataset.mark_complete()
+
+    # make 5 runs in second experiment
+
+    exp_2_run_ids = []
+    for _ in range(5):
+
+        source_dataset = DataSet(conn=source_conn, exp_id=source_exp_2.exp_id)
+        exp_2_run_ids.append(source_dataset.run_id)
+
+        for ps in some_paramspecs[2].values():
+            source_dataset.add_parameter(ps)
+
+        for val in range(10):
+            source_dataset.add_result({ps.name: val
+                                       for ps in some_paramspecs[2].values()})
+        source_dataset.mark_complete()
+
+    run_ids = exp_1_run_ids + exp_2_run_ids
+    source_exp_ids = np.unique([1, 2])
+    matchstring = ('Did not receive runs from a single experiment\\. '
+                   f'Got runs from experiments {source_exp_ids}')
+    # make the matchstring safe to use as a regexp
+    matchstring = matchstring.replace('[', '\\[').replace(']', '\\]')
+    with pytest.raises(ValueError, match=matchstring):
+        copy_runs_into_db(source_path, target_path, *run_ids)
