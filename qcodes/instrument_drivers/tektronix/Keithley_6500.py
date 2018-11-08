@@ -10,7 +10,7 @@ def _parse_output_string(string_value):
         are converted for readablitity (e.g. mov changes to moving).
 
     Args:
-        string_value (str): The data returned from the mulitmeter reading commands.
+        string_value: The data returned from the multimeter reading commands.
 
     Returns:
         String: The cleanup output data.
