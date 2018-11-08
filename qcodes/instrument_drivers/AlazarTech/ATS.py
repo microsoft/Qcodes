@@ -10,7 +10,7 @@ import concurrent
 
 from threading import Lock
 from functools import partial
-from typing import List, Dict, Union, Tuple, Sequence, Awaitable
+from typing import List, Dict, Union, Tuple, Sequence, Awaitable, Optional
 from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
@@ -224,16 +224,11 @@ class AlazarTech_ATS(Instrument):
         )
         sdk_ver = str(major.value)+"."+str(minor.value)+"."+str(revision.value)
 
-        value = ctypes.c_uint32(0)
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000024, 0, ctypes.byref(value))
-        serial = str(value.value)
-        self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000026, 0, ctypes.byref(value))
-        Capabilitystring = str(value.value)
-        latest_cal_date = (Capabilitystring[0:2] + "-" +
-                           Capabilitystring[2:4] + "-" +
-                           Capabilitystring[4:6])
+        serial = str(self.query_capability(0x10000024))
+        capability_str = str(self.query_capability(0x10000026))
+        latest_cal_date = (capability_str[0:2] + "-" +
+                           capability_str[2:4] + "-" +
+                           capability_str[4:6])
 
         memory_size = str(self.query_capability(0x1000002A))
         asopc_type = self.query_capability(0x1000002C)
@@ -417,41 +412,41 @@ class AlazarTech_ATS(Instrument):
             self.external_sample_rate._set_updated()
             sample_rate = self.sample_rate
 
-        self._call_dll('AlazarSetCaptureClock',
-                       self._handle, self.clock_source, sample_rate,
-                       self.clock_edge, self.decimation)
+        self.api.set_capture_clock(
+            self._handle, self.clock_source, sample_rate,
+            self.clock_edge, self.decimation
+        )
 
         for i in range(1, self.channels + 1):
-            self._call_dll('AlazarInputControl',
-                           self._handle, 2**(i-1),
-                           self.parameters['coupling' + str(i)],
-                           self.parameters['channel_range' + str(i)],
-                           self.parameters['impedance' + str(i)])
+            self.api.input_control(
+                self._handle, 2**(i-1),
+                self.parameters['coupling' + str(i)],
+                self.parameters['channel_range' + str(i)],
+                self.parameters['impedance' + str(i)]
+            )
             if self.parameters.get('bwlimit' + str(i), None) is not None:
-                self._call_dll('AlazarSetBWLimit',
-                               self._handle, 2**(i-1),
-                               self.parameters['bwlimit' + str(i)])
+                self.api.set_bw_limit(
+                    self._handle, 2**(i-1),
+                    self.parameters['bwlimit' + str(i)]
+                )
 
-        self._call_dll('AlazarSetTriggerOperation',
-                       self._handle, self.trigger_operation,
-                       self.trigger_engine1, self.trigger_source1,
-                       self.trigger_slope1, self.trigger_level1,
-                       self.trigger_engine2, self.trigger_source2,
-                       self.trigger_slope2, self.trigger_level2)
-
-        self._call_dll('AlazarSetExternalTrigger',
-                       self._handle, self.external_trigger_coupling,
-                       self.external_trigger_range)
-
-        self._call_dll('AlazarSetTriggerDelay',
-                       self._handle, self.trigger_delay)
-
-        self._call_dll('AlazarSetTriggerTimeOut',
-                       self._handle, self.timeout_ticks)
-
-        self._call_dll('AlazarConfigureAuxIO',
-                       self._handle, self.aux_io_mode,
-                       self.aux_io_param)
+        self.api.set_trigger_operation(
+            self._handle, self.trigger_operation,
+            self.trigger_engine1, self.trigger_source1,
+            self.trigger_slope1, self.trigger_level1,
+            self.trigger_engine2, self.trigger_source2,
+            self.trigger_slope2, self.trigger_level2
+        )
+        self.api.set_external_trigger(
+            self._handle, self.external_trigger_coupling,
+            self.external_trigger_range
+        )
+        self.api.set_trigger_delay(self._handle, self.trigger_delay)
+        self.api.set_trigger_time_out(self._handle, self.timeout_ticks)
+        self.api.configure_aux_io(
+            self._handle, self.aux_io_mode,
+            self.aux_io_param
+        )
         self._parameters_synced = True
 
     async def _get_channel_info(self, handle: int) -> Tuple[int,int]:
@@ -883,11 +878,12 @@ class AlazarTech_ATS(Instrument):
         """
         output = ctypes.c_uint32(0)
         pwd = ctypes.c_uint32(0x32145876)
-        self._call_dll('AlazarReadRegister',
-                       self._handle,
-                       offset,
-                       ctypes.byref(output),
-                       pwd)
+        self.api.read_register(
+            self._handle,
+            offset,
+            ctypes.byref(output),
+            pwd
+        )
         return output.value
 
     def _write_register(self, offset: int, value: int) -> None:
@@ -899,11 +895,12 @@ class AlazarTech_ATS(Instrument):
             value: The value to write
         """
         pwd = ctypes.c_uint32(0x32145876)
-        self._call_dll('AlazarWriteRegister',
-                       self._handle,
-                       offset,
-                       value,
-                       pwd)
+        self.api.write_register(
+            self._handle,
+            offset,
+            value,
+            pwd
+        )
 
 
 class Buffer:

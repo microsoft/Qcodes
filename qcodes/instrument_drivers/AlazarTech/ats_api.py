@@ -305,6 +305,48 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
             argument_types=[
                 HANDLE, ctypes.POINTER(U8), ctypes.POINTER(U8)
             ]
+        ),
+
+        "InputControl": Signature(
+            argument_types=[
+                HANDLE, U8, U32, U32, U32
+            ]
+        ),
+
+        "SetBWLimit": Signature(
+            argument_types=[
+                HANDLE, U32, U32
+            ]
+        ),
+
+        "SetTriggerOperation": Signature(
+            argument_types=[
+                HANDLE, U32, U32, U32, U32, U32, U32, U32, U32, U32
+            ]
+        ),
+
+        "SetExternalTrigger": Signature(
+            argument_types=[
+                HANDLE, U32, U32
+            ]
+        ),
+
+        "SetTriggerDelay": Signature(
+            argument_types=[
+                HANDLE, U32
+            ]
+        ),
+
+        "SetTriggerTimeOut": Signature(
+            argument_types=[
+                HANDLE, U32
+            ]
+        ),
+
+        "ConfigureAuxIO": Signature(
+            argument_types=[
+                HANDLE, U32, U32
+            ]
         )
     }
 
