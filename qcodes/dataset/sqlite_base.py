@@ -1024,7 +1024,7 @@ def modify_many_values(conn: SomeConnection,
     len_requested = start_index + len(list_of_values[0])
     available = _len - start_index
     if len_requested > _len:
-        reason = f""""Modify operation Out of bounds.
+        reason = f"""Modify operation Out of bounds.
         Trying to modify {len(list_of_values)} results,
         but therere are only {available} results.
         """
@@ -1213,7 +1213,7 @@ def get_runid_from_guid(conn: SomeConnection, guid: str) -> Union[int, None]:
       guid: the guid to look up
 
     Raises:
-      RunTimeError if more than one run with the given GUID exists
+      RuntimeError if more than one run with the given GUID exists
     """
     query = """
             SELECT run_id
