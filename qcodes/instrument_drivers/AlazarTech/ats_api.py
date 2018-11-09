@@ -1,31 +1,30 @@
+from .dll_wrapper import DllWrapperMeta, Signature
+from .utils import TraceParameter
+from qcodes.instrument.parameter import Parameter
+from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
+from functools import partial
+from threading import Lock
+import re
+import sys
+import concurrent
+import asyncio
+import logging
 import ctypes
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8
 U32 = ctypes.c_uint32
 HANDLE = U32
 
-import logging
-import asyncio
-import concurrent
-import sys
-import re
-
-from threading import Lock
-from functools import partial
 
 logger = logging.getLogger(__name__)
 
-from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
 TApi = TypeVar("TApi", bound="AlazarATSAPI")
 ReturnCode = NewType('ReturnCode', ctypes.c_uint)
 
-from qcodes.instrument.parameter import Parameter
-from .utils import TraceParameter
-from .dll_wrapper import DllWrapperMeta, Signature
 
 ## CONSTANTS ##
 
-ERROR_CODES : Dict[ReturnCode, str] = {
+ERROR_CODES: Dict[ReturnCode, str] = {
     513: 'ApiFailed',
     514: 'ApiAccessDenied',
     515: 'ApiDmaChannelUnavailable',
@@ -93,30 +92,30 @@ ERROR_CODES : Dict[ReturnCode, str] = {
     577: 'ApiPMNotSupported',
     578: 'ApiInvalidDriverVersion',
     579: ('ApiWaitTimeout: operation did not finish during '
-            'timeout interval. Check your trigger.'),
+          'timeout interval. Check your trigger.'),
     580: 'ApiWaitCanceled',
     581: 'ApiBufferTooSmall',
     582: ('ApiBufferOverflow:rate of acquiring data > rate of '
-            'transferring data to local memory. Try reducing sample rate, '
-            'reducing number of enabled channels, increasing size of each '
-            'DMA buffer or increase number of DMA buffers.'),
+          'transferring data to local memory. Try reducing sample rate, '
+          'reducing number of enabled channels, increasing size of each '
+          'DMA buffer or increase number of DMA buffers.'),
     583: 'ApiInvalidBuffer',
     584: 'ApiInvalidRecordsPerBuffer',
     585: ('ApiDmaPending:Async I/O operation was successfully started, '
-            'it will be completed when sufficient trigger events are '
-            'supplied to fill the buffer.'),
+          'it will be completed when sufficient trigger events are '
+          'supplied to fill the buffer.'),
     586: ('ApiLockAndProbePagesFailed:Driver or operating system was '
-            'unable to prepare the specified buffer for DMA transfer. '
-            'Try reducing buffer size or total number of buffers.'),
+          'unable to prepare the specified buffer for DMA transfer. '
+          'Try reducing buffer size or total number of buffers.'),
     587: 'ApiWaitAbandoned',
     588: 'ApiWaitFailed',
     589: ('ApiTransferComplete:This buffer is last in the current '
-            'acquisition.'),
+          'acquisition.'),
     590: 'ApiPllNotLocked:hardware error, contact AlazarTech',
     591: ('ApiNotSupportedInDualChannelMode:Requested number of samples '
-            'per channel is too large to fit in on-board memory. Try '
-            'reducing number of samples per channel, or switch to '
-            'single channel mode.')
+          'per channel is too large to fit in on-board memory. Try '
+          'reducing number of samples per channel, or switch to '
+          'single channel mode.')
 }
 
 BOARD_NAMES = {
@@ -161,7 +160,8 @@ BOARD_NAMES = {
 
 API_SUCCESS = 512
 
-def check_error_code(return_code : ReturnCode.__supertype__, func, arguments) -> None:
+
+def check_error_code(return_code: ReturnCode.__supertype__, func, arguments) -> None:
     if (return_code != API_SUCCESS) and (return_code != 518):
         # TODO(damazter) (C) log error
         argrepr = repr(arguments)
@@ -177,6 +177,7 @@ def check_error_code(return_code : ReturnCode.__supertype__, func, arguments) ->
                 return_code, ERROR_CODES[return_code], func.__name__,
                 argrepr))
 
+
 class AlazarATSAPI(object, metaclass=DllWrapperMeta):
     """
     Provides a thread-safe wrapper for the ATS API by
@@ -189,8 +190,8 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
 
     ## SIGNATURES ##
 
-    signature_prefix : str = 'Alazar'
-    signatures : Dict[str, Signature] = {
+    signature_prefix: str = 'Alazar'
+    signatures: Dict[str, Signature] = {
         'NumOfSystems': Signature(
             return_type=U32
         ),
@@ -223,7 +224,7 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
                 ctypes.POINTER(U8)
             ]
         ),
-        
+
         'GetSDKVersion': Signature(
             argument_types=[
                 ctypes.POINTER(U8),
@@ -371,34 +372,36 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
     ## CLASS MEMBERS ##
 
     # Only allow a single instance per DLL path.
-    __instances : Dict[str, TApi] = {}
+    __instances: Dict[str, TApi] = {}
 
-    def __new__(cls : Type[TApi], dll_path : str) -> TApi:
+    def __new__(cls: Type[TApi], dll_path: str) -> TApi:
         if dll_path in cls.__instances:
-            logger.debug(f"Found existing ATS API instance for DLL path {dll_path}.")
+            logger.debug(
+                f"Found existing ATS API instance for DLL path {dll_path}.")
             return cls.__instances[dll_path]
         else:
-            logger.debug(f"Loading new ATS API instance for DLL path {dll_path}.")
+            logger.debug(
+                f"Loading new ATS API instance for DLL path {dll_path}.")
             new_api = super().__new__(cls)
             new_api.__init__(dll_path)
             cls.__instances[dll_path] = new_api
             return new_api
-    
+
     ## INSTANCE MEMBERS ##
 
-    _dll : ctypes.CDLL
-    _executor : concurrent.futures.Executor
-    
+    _dll: ctypes.CDLL
+    _executor: concurrent.futures.Executor
+
     #: The ATS API DLL is not guaranteed to be thread-safe
     #: This lock guards API calls.
-    _lock : Lock
+    _lock: Lock
 
-    def __init__(self, dll_path : str):
+    def __init__(self, dll_path: str):
         self._dll = ctypes.cdll.LoadLibrary(dll_path)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._lock = Lock()
         self.__apply_signatures()
-    
+
     def __apply_signatures(self):
         """
         Adds ctypes signatures to all of the functions exposed by the ATS API
@@ -411,7 +414,7 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
             if ret_type is ReturnCode:
                 ret_type = ret_type.__supertype__
                 c_func.errcheck = check_error_code
-            
+
             c_func.restype = ret_type
 
         if sys.platform == 'win32':
@@ -426,4 +429,3 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
                 ctypes.c_long,
                 ctypes.c_long
             ]
-    
