@@ -262,3 +262,43 @@ def test_extracting_dataless_run(two_empty_temp_db_connections,
     loaded_ds = DataSet(conn=target_conn, run_id=1)
 
     assert loaded_ds.the_same_dataset_as(source_ds)
+
+
+def test_result_table_naming(two_empty_temp_db_connections,
+                             some_paramspecs):
+    """
+    Does this raise?
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    source_exp1 = Experiment(conn=source_conn)
+    source_ds_1_1 = DataSet(conn=source_conn, exp_id=source_exp1.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_1_1.add_parameter(ps)
+    source_ds_1_1.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds_1_1.mark_complete()
+
+    source_exp2 = Experiment(conn=source_conn)
+    source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_2_1.add_parameter(ps)
+    source_ds_2_1.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds_2_1.mark_complete()
+    source_ds_2_2 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_2_2.add_parameter(ps)
+    source_ds_2_2.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds_2_2.mark_complete()
+
+    copy_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
+
+    # The target ds ought to have a runs table "results-1-1"
+    target_ds = DataSet(conn=target_conn, run_id=1)
+
+    assert target_ds.table_name == "results-1-1"
