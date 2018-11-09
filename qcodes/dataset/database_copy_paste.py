@@ -191,11 +191,12 @@ def _copy_single_dataset_into_db(dataset: DataSet,
     _copy_layouts_and_dependencies(source_conn,
                                    target_conn,
                                    dataset.run_id)
-    _copy_results_table(source_conn,
-                        target_conn,
-                        dataset.run_id,
-                        target_run_id,
-                        data_column_names_and_types)
+    target_table_name = _copy_results_table(source_conn,
+                                            target_conn,
+                                            dataset.run_id,
+                                            target_run_id,
+                                            data_column_names_and_types)
+    _update_result_table_name(target_conn, target_table_name, target_run_id)
 
 
 def _copy_runs_table_entries(source_conn: SomeConnection,
@@ -330,10 +331,12 @@ def _copy_results_table(source_conn: SomeConnection,
                         target_conn: SomeConnection,
                         source_run_id: int,
                         target_run_id: int,
-                        column_names_and_types: str) -> None:
+                        column_names_and_types: str) -> str:
     """
     Copy the contents of the results table. Creates a new results_table with
     a name appropriate for the target DB and updates the rows of that table
+
+    Returns the name of the new results table
     """
     table_name_query = """
                        SELECT result_table_name, name
@@ -409,3 +412,17 @@ def _copy_results_table(source_conn: SomeConnection,
     for row in data_rows:
         # the first row entry is the ID, which is automatically inserted
         cursor.execute(insert_data, tuple(v for v in row[1:]))
+
+    return target_table_name
+
+
+def _update_result_table_name(target_conn: SomeConnection,
+                              target_table_name: str,
+                              target_run_id: int) -> None:
+    sql = """
+          UPDATE runs
+          SET result_table_name = ?
+          WHERE run_id = ?
+          """
+    cursor = target_conn.cursor()
+    cursor.execute(sql, (target_table_name, target_run_id))
