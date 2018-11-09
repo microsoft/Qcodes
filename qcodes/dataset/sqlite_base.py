@@ -1212,6 +1212,9 @@ def get_runid_from_guid(conn: SomeConnection, guid: str) -> Union[int, None]:
       conn: connection to the database
       guid: the guid to look up
 
+    Returns:
+        The run_id if found, else -1.
+
     Raises:
       RuntimeError if more than one run with the given GUID exists
     """
@@ -1224,7 +1227,7 @@ def get_runid_from_guid(conn: SomeConnection, guid: str) -> Union[int, None]:
     cursor.execute(query, (guid,))
     rows = cursor.fetchall()
     if len(rows) == 0:
-        run_id = None
+        run_id = -1
     elif len(rows) > 1:
         errormssg = ('Critical consistency error: multiple runs with'
                      f' the same GUID found! {len(rows)} runs have GUID '
@@ -1321,6 +1324,7 @@ def get_dependencies(conn: SomeConnection,
     c = atomic_transaction(conn, sql, layout_id)
     res = many_many(c, 'independent', 'axis_num')
     return res
+
 
 # Higher level Wrappers
 

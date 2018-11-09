@@ -177,7 +177,7 @@ def _copy_single_dataset_into_db(dataset: DataSet,
 
     run_id = get_runid_from_guid(target_conn, dataset.guid)
 
-    if run_id is not None:
+    if run_id != -1:
         return
 
     parspecs = dataset.paramspecs.values()
