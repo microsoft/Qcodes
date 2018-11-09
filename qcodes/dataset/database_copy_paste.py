@@ -367,20 +367,30 @@ def _copy_results_table(source_conn: SomeConnection,
     cursor = source_conn.cursor()
     cursor.execute(get_data_query)
     data_rows = cursor.fetchall()
-    data_columns = data_rows[0].keys()
-    data_columns.remove('id')
+    if len(data_rows) > 0:
+        data_columns = data_rows[0].keys()
+        data_columns.remove('id')
+    else:
+        data_columns = []
 
     target_table_name = format_table_name(format_string,
                                           run_name,
                                           exp_id,
                                           run_counter)
 
-    make_table = f"""
-                  CREATE TABLE "{target_table_name}" (
-                      id INTEGER PRIMARY KEY,
-                      {column_names_and_types}
-                  )
-                  """
+    if column_names_and_types != '':
+        make_table = f"""
+                    CREATE TABLE "{target_table_name}" (
+                        id INTEGER PRIMARY KEY,
+                        {column_names_and_types}
+                    )
+                    """
+    else:
+        make_table = f"""
+            CREATE TABLE "{target_table_name}" (
+                id INTEGER PRIMARY KEY
+            )
+            """
 
     cursor = target_conn.cursor()
     cursor.execute(make_table)
