@@ -382,7 +382,7 @@ class DataSet(Sized):
         for attr in DataSet.persistent_traits:
             if getattr(self, attr) != getattr(other, attr):
                 if guids_match:
-                    raise RuntimeError('Bad inconsistency detected! '
+                    raise RuntimeError('Critical inconsistency detected! '
                                        'The two datasets have the same GUID,'
                                        f' but their "{attr}" differ.')
                 else:
