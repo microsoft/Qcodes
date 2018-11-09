@@ -473,6 +473,41 @@ class SR830(VisaInstrument):
 
         self.connect_message()
 
+    def increment_sensitivity(self):
+        """
+        Increment the sensitivity setting of the lock-in. This is equivalent
+        to pushing the sensitivity up button on the front panel. This has no
+        effect if the sensitivity is already at the maximum.
+
+        Returns:
+            Whether or not the sensitivity was actually changed.
+        """
+        return self._change_sensitivity(1)
+
+    def decrement_sensitivity(self):
+        """
+        Decrement the sensitivity setting of the lock-in. This is equivalent
+        to pushing the sensitivity down button on the front panel. This has no
+        effect if the sensitivity is already at the minimum.
+
+        Returns:
+            Whether or not the sensitivity was actually changed.
+        """
+        return self._change_sensitivity(-1)
+
+    def _change_sensitivity(self, dn):
+        n = int(self.ask('SENS?'))
+        if self.input_config() in ['a', 'a-b']:
+            n_to = self._N_TO_VOLT
+        else:
+            n_to = self._N_TO_CURR
+
+        if n + dn > max(n_to.keys()) or n + dn < min(n_to.keys()):
+            return False
+
+        self.write(f'SENS {n + dn:d}')
+        return True
+
     def _set_buffer_SR(self, SR):
         self.write('SRAT {}'.format(SR))
         self._buffer1_ready = False
