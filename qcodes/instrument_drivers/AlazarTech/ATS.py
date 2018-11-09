@@ -654,7 +654,6 @@ class AlazarTech_ATS(Instrument):
 
         allocated_buffers = self.allocated_buffers.raw_value
         buffer_recycling = buffers_per_acquisition > allocated_buffers
-        recycle_task : Optional[Awaitable[None]] = None
 
         # post buffers to Alazar
         try:
@@ -688,10 +687,6 @@ class AlazarTech_ATS(Instrument):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
-                # We need to make sure that any buffers which needed recycled have
-                # been successfully posted.
-                if recycle_task:
-                    await recycle_task
                 await self.api.wait_async_buffer_complete_async(
                     self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout
                 )
@@ -702,9 +697,9 @@ class AlazarTech_ATS(Instrument):
                 # otherwise continue to next buffer
                 if buffer_recycling:
                     acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
-                    recycle_task = asyncio.ensure_future(self.api.post_async_buffer_async(
+                    await self.api.post_async_buffer_async(
                         self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes
-                    ))
+                    )
                 buffers_completed += 1
                 bytes_transferred += buf.size_bytes
             print(f"[{time.time()}] Exited buffer wait loop.")
@@ -712,6 +707,9 @@ class AlazarTech_ATS(Instrument):
             # stop measurement here
             done_capture = time.perf_counter()
             await self.api.abort_async_read_async(self._handle)
+
+        # If we made it here, we should have completed all buffers.
+        assert buffers_completed == self.buffers_per_acquisition.get()
         time_done_abort = time.perf_counter()
         # -----cleanup here-----
         # extract data if not yet done
@@ -1062,6 +1060,20 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
+
+    async def handle_buffer_async(self, buffer, buffer_number=None):
+        """
+        This method should store or process the information that is contained
+        in the buffers obtained during the acquisition.
+
+        Args:
+            buffer: np.array with the data from the Alazar card
+            buffer_number: counter for which buffer we are handling
+
+        Returns:
+            something, it is ignored in any case
+        """
+        return self.handle_buffer(buffer, buffer_number=buffer_number)
 
     def post_acquire(self):
         """
