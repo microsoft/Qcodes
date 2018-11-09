@@ -15,7 +15,7 @@ from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, BOARD_NAMES
 from qcodes.utils.async_utils import sync
 from .utils import TraceParameter
 
@@ -137,7 +137,7 @@ class AlazarTech_ATS(Instrument):
         handle = board._handle
         board_kind = api._board_names[api.get_board_kind(handle)]
 
-        max_s, bps = await board._get_channel_info(handle)
+        max_s, bps = await board._get_channel_info_async(handle)
         return {
             'system_id': system_id,
             'board_id': board_id,
@@ -197,7 +197,7 @@ class AlazarTech_ATS(Instrument):
                 - 'pcie_link_speed': the speed of a single pcie link (in GB/s),
                 - 'pcie_link_width': number of pcie links
         """
-        board_kind = self._board_names[self.api.get_board_kind(self._handle)]
+        board_kind = BOARD_NAMES[self.api.get_board_kind(self._handle)]
         max_s, bps = self._get_channel_info(self._handle)
 
         major = ctypes.c_uint8(0)
@@ -449,7 +449,18 @@ class AlazarTech_ATS(Instrument):
         )
         self._parameters_synced = True
 
-    async def _get_channel_info(self, handle: int) -> Tuple[int,int]:
+    def _get_channel_info(self, handle: int) -> Tuple[int,int]:
+        bps = ctypes.c_uint8(0)  # bps bits per sample
+        max_s = ctypes.c_uint32(0)  # max_s memory size in samples
+        self.api.get_channel_info(
+            handle,
+            ctypes.byref(max_s),
+            ctypes.byref(bps)
+        )
+        return max_s.value, bps.value
+
+
+    async def _get_channel_info_async(self, handle: int) -> Tuple[int,int]:
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
         await self.api.get_channel_info_async(
@@ -459,10 +470,10 @@ class AlazarTech_ATS(Instrument):
         )
         return max_s.value, bps.value
 
-    async def allocate_and_post_buffer(sample_type, n_bytes) -> Buffer:
+    async def allocate_and_post_buffer(self, sample_type, n_bytes) -> "Buffer":
         buffer = Buffer(sample_type, n_bytes)
         await self.api.post_async_buffer_async(
-            self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes
+            self._handle, ctypes.cast(buffer.addr, ctypes.c_void_p), buffer.size_bytes
         )
         return buffer
 
@@ -613,7 +624,7 @@ class AlazarTech_ATS(Instrument):
             )
 
         # bytes per sample
-        _, bps = self._get_channel_info(self._handle)
+        _, bps = await self._get_channel_info_async(self._handle)
         # TODO(JHN) Why +7 I guess its to do ceil division?
         bytes_per_sample = (bps + 7) // 8
         # bytes per record
@@ -663,7 +674,7 @@ class AlazarTech_ATS(Instrument):
             acquisition_controller.pre_start_capture()
             start = time.perf_counter()  # Keep track of when acquisition started
             # call the startcapture method
-            await self.api.start_capture(self._handle)
+            await self.api.start_capture_async(self._handle)
             acquisition_controller.pre_acquire()
 
             # buffer handling from acquisition

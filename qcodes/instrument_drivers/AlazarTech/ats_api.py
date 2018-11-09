@@ -293,11 +293,23 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
             ]
         ),
 
+        "SetRecordSize": Signature(
+            argument_types=[
+                HANDLE, U32, U32
+            ]
+        ),
+
         "PostAsyncBuffer": Signature(
             argument_types=[
                 U32,
                 ctypes.c_void_p,
                 U32
+            ]
+        ),
+
+        "AbortAsyncRead": Signature(
+            argument_types=[
+                HANDLE
             ]
         ),
 
@@ -346,6 +358,12 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
         "ConfigureAuxIO": Signature(
             argument_types=[
                 HANDLE, U32, U32
+            ]
+        ),
+
+        "StartCapture": Signature(
+            argument_types=[
+                HANDLE
             ]
         )
     }
