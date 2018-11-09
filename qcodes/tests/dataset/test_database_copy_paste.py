@@ -41,7 +41,7 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
                     'text': str}
 
     source_exp = Experiment(conn=source_conn)
-    source_dataset = DataSet(conn=source_conn)
+    source_dataset = DataSet(conn=source_conn, name="basic_copy_paste_name")
 
     with pytest.raises(RuntimeError) as excinfo:
         copy_runs_into_db(source_path, target_path, source_dataset.run_id)
@@ -123,7 +123,7 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     # make a new experiment with 1 run
 
     source_exp_2 = Experiment(conn=source_conn)
-    ds = DataSet(conn=source_conn, exp_id=source_exp_2.exp_id)
+    ds = DataSet(conn=source_conn, exp_id=source_exp_2.exp_id, name="lala")
     exp_2_run_ids = [ds.run_id]
 
     for ps in some_paramspecs[2].values():
@@ -289,7 +289,9 @@ def test_result_table_naming(two_empty_temp_db_connections,
     source_ds_2_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_2_1.mark_complete()
-    source_ds_2_2 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
+    source_ds_2_2 = DataSet(conn=source_conn,
+                            exp_id=source_exp2.exp_id,
+                            name="customname")
     for ps in some_paramspecs[2].values():
         source_ds_2_2.add_parameter(ps)
     source_ds_2_2.add_result({ps.name: 0.0
@@ -298,7 +300,7 @@ def test_result_table_naming(two_empty_temp_db_connections,
 
     copy_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
-    # The target ds ought to have a runs table "results-1-1"
+    # The target ds ought to have a runs table "customname-1-1"
     target_ds = DataSet(conn=target_conn, run_id=1)
 
-    assert target_ds.table_name == "results-1-1"
+    assert target_ds.table_name == "customname-1-1"
