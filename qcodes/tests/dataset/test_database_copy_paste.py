@@ -239,3 +239,26 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
     matchstring = matchstring.replace('[', '\\[').replace(']', '\\]')
     with pytest.raises(ValueError, match=matchstring):
         copy_runs_into_db(source_path, target_path, *run_ids)
+
+
+def test_extracting_dataless_run(two_empty_temp_db_connections,
+                                 some_paramspecs):
+    """
+    Although contrived, it could happen that a run with no data is extracted
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    Experiment(conn=source_conn)
+
+    source_ds = DataSet(conn=source_conn)
+
+    source_ds.mark_complete()
+
+    copy_runs_into_db(source_path, target_path, source_ds.run_id)
+
+    loaded_ds = DataSet(conn=target_conn, run_id=1)
+
+    assert loaded_ds.the_same_dataset_as(source_ds)
