@@ -496,7 +496,8 @@ class SR830(VisaInstrument):
         return self._change_sensitivity(-1)
 
     def _change_sensitivity(self, dn):
-        n = int(self.ask('SENS?'))
+        _ = self.sensitivity.get()
+        n = self.sensitivity.raw_value
         if self.input_config() in ['a', 'a-b']:
             n_to = self._N_TO_VOLT
         else:
@@ -505,7 +506,7 @@ class SR830(VisaInstrument):
         if n + dn > max(n_to.keys()) or n + dn < min(n_to.keys()):
             return False
 
-        self.write(f'SENS {n + dn:d}')
+        self.sensitivity.set(n_to[n + dn])
         return True
 
     def _set_buffer_SR(self, SR):
