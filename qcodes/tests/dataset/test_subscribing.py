@@ -1,43 +1,52 @@
 # Test some subscription scenarios
-import tempfile
-import os
 from typing import List, Tuple, Dict, Union
 from numbers import Number
 
 import pytest
 from numpy import ndarray
+import logging
 
-import qcodes as qc
-import qcodes.dataset.sqlite_base as mut
+import qcodes
 from qcodes.dataset.param_spec import ParamSpec
-from qcodes.dataset.database import initialise_database
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import (
+    empty_temp_db, experiment, dataset)
+# pylint: enable=unused-import
+
+from qcodes.tests.test_config import default_config
+from qcodes.tests.common import retry_until_does_not_throw
+
+
+log = logging.getLogger(__name__)
 
 VALUE = Union[str, Number, List, ndarray, bool]
 
 
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
+class MockSubscriber():
+    """
+    A basic subscriber factory that create a subscriber, that
+    just puts results and length into state.
+    *Important*
+    This class is extremely dangerous! Within the callback,
+    you cannot read or write to the database/dataset because it
+    is called from another thread as the connection of the
+    dataset!
+    """
+    def __init__(self, ds, lg):
+        self.lg = lg
+        self.ds = ds
+
+    def __call__(self, results: List[Tuple[VALUE]],
+                 length: int, state: Dict) -> None:
+        log.debug(f'got log {self.lg} and dataset {self.ds.completed}.')
+        state[length] = results
 
 
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = qc.new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
-
-
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = qc.new_data_set("test-dataset")
-    yield dataset
-    dataset.unsubscribe_all()
-    dataset.conn.close()
+def config_subscriber_factory(ds, l):
+    def config_subscriber(results, length, state):
+        state[length] = results
+        log.debug(f'got log {l} and dataset {ds.completed}.')
+    return config_subscriber
 
 
 @pytest.fixture(scope='function')
@@ -75,3 +84,103 @@ def test_basic_subscription(dataset, basic_subscriber):
         dataset.add_result({'x': x, 'y': y})
         expected_state[x+1] = [(x, y)]
         assert dataset.subscribers[sub_id].state == expected_state
+
+
+def test_subscription_from_config(dataset, basic_subscriber):
+    """
+    This test is similar to `test_basic_subscription`, with the only
+    difference that another subscriber from a config file is added.
+    """
+    # This string represents the config file in the home directory:
+    config = """
+    {
+        "subscription":{
+            "subscribers":{
+                "test_subscriber":{
+                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory_kwargs":{
+                        "lg": false
+                    },
+                    "subscription_kwargs":{
+                        "min_wait": 0,
+                        "min_count": 1,
+                        "callback_kwargs": {}
+                    }
+                }
+            }
+        }
+    }
+    """
+    # This little dance around the db_location is due to the fact that the
+    # dataset fixture creates a dataset in a db in a temporary directory.
+    # Therefore we need to 'backup' the path to the db when using the
+    # default configuration.
+    db_location = qcodes.config.core.db_location
+    with default_config(user_config=config):
+        qcodes.config.core.db_location = db_location
+
+        assert 'test_subscriber' in qcodes.config.subscription.subscribers
+
+        xparam = ParamSpec(name='x', paramtype='numeric', label='x parameter',
+                           unit='V')
+        yparam = ParamSpec(name='y', paramtype='numeric', label='y parameter',
+                           unit='Hz', depends_on=[xparam])
+        dataset.add_parameter(xparam)
+        dataset.add_parameter(yparam)
+
+        sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
+                                   state={})
+        sub_id_c = dataset.subscribe_from_config('test_subscriber')
+        assert len(dataset.subscribers) == 2
+        assert list(dataset.subscribers.keys()) == [sub_id, sub_id_c]
+
+        expected_state = {}
+
+        # Here we are only testing 2 to reduce the CI time
+        for x in range(2):
+            y = -x**2
+            dataset.add_result({'x': x, 'y': y})
+            expected_state[x+1] = [(x, y)]
+
+            @retry_until_does_not_throw(
+                exception_class_to_expect=AssertionError, delay=0, tries=10)
+            def assert_expected_state():
+                assert dataset.subscribers[sub_id].state == expected_state
+                assert dataset.subscribers[sub_id_c].state == expected_state
+
+        assert_expected_state()
+
+
+def test_subscription_from_config_wrong_name(dataset):
+    """
+    This test checks that an exception is thrown if a wrong name for a
+    subscriber is passed
+    """
+    # This string represents the config file in the home directory:
+    config = """
+    {
+        "subscription":{
+            "subscribers":{
+                "test_subscriber_wrong":{
+                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory_kwargs":{
+                        "lg": false
+                    },
+                    "subscription_kwargs":{
+                        "min_wait": 0,
+                        "min_count": 1,
+                        "callback_kwargs": {}
+                    }
+                }
+            }
+        }
+    }
+    """
+    db_location = qcodes.config.core.db_location
+    with default_config(user_config=config):
+        qcodes.config.core.db_location = db_location
+
+        assert 'test_subscriber' not in qcodes.config.subscription.subscribers
+        with pytest.raises(RuntimeError):
+            sub_id_c = dataset.subscribe_from_config('test_subscriber')
+

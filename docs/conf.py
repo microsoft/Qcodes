@@ -20,6 +20,16 @@
 import os
 import sys
 import re
+
+# Import matplotlib and set the backend
+# before qcodes imports pyplot and automatically
+# sets the backend
+import matplotlib
+matplotlib.use('Agg')
+import qcodes
+import sphinx_rtd_theme
+
+
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
@@ -32,10 +42,11 @@ sys.path.insert(0, os.path.abspath('..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+        'nbsphinx',
         'sphinx.ext.autodoc',
         'sphinx.ext.autosummary',
         'sphinx.ext.napoleon',
-        'sphinxcontrib.jsonschema',
+        'sphinx-jsonschema',
         'sphinx.ext.doctest',
         'sphinx.ext.intersphinx',
         'sphinx.ext.todo',
@@ -43,6 +54,7 @@ extensions = [
         'sphinx.ext.mathjax',
         'sphinx.ext.viewcode',
         'sphinx.ext.githubpages',
+        'sphinx.ext.todo'
         ]
 
 # include special __xxx__ that DO have a docstring
@@ -67,11 +79,7 @@ project = 'QCoDeS'
 copyright = '2016, Giulio Ungaretti, Alex Johnson'
 author = 'Giulio Ungaretti, Alex Johnson'
 
-# Import matplotlib before qcodes import pyplot to set the backend
-import matplotlib
-matplotlib.use('Agg')
 # auto versioning
-import qcodes
 version = '{}'.format(qcodes.__version__)
 # The full version, including alpha/beta/rc tags.
 release = version
@@ -95,7 +103,8 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_templates', '_auto']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_templates', '_auto',
+                    '**.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -134,7 +143,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -143,7 +152,7 @@ html_theme = 'alabaster'
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = []
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -349,48 +358,44 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'matplotlib': ('http://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.5', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('http://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None)
 }
-# theming
-import sphinx_rtd_theme
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-# add todo exteions
-extensions.append('sphinx.ext.todo')
-todo_include_todos=True
 
-# basically hack to avoid having __init__() when we want just
+# try to limit  auto summary and extensive auto doc only to the
+# api part of the docs
 autoclass_content = "init"
-# try to limit  auto sumamry and extensive auto doc only to the api part of the docs
+autosummary_generate = False
+autodoc_default_flags = []
+
 with open("index.rst") as f:
     index_rst_lines = f.readlines()
 
-autosummary_generate = False
-
-if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
-    autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
+if any([re.match("\s*api\s*", l) for l in index_rst_lines]):
+    autoclass_content = "both"
+    # classes should include both the
+    # class' and the __init__ method's docstring
     autosummary_generate = True
-    autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
+    autodoc_default_flags = ['members', 'undoc-members',
+                             'inherited-members', 'show-inheritance' ]
 
-autodoc_default_flags = []
-# we have to do this, do avoid sideeffects when importing matplotlib
-autodoc_mock_imports = []
-autodoc_mock_imports.append('pyspcm')
-autodoc_mock_imports.append('zhinst')
-autodoc_mock_imports.append('zhinst.utils')
-autodoc_mock_imports.append('keysightSD1')
-autodoc_mock_imports.append('cffi')
-autodoc_mock_imports.append('spirack')
-autodoc_mock_imports.append('clr')
+# we mock modules that for one reason or another is not
+# there when generating the docs
+autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils',
+                        'keysightSD1', 'cffi', 'spirack', 'clr']
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = []
+templates_path = ['_templates']
 
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
 
-numfig=True
+numfig = True
+
+# Use this kernel instead of the one stored in the notebook metadata:
+nbsphinx_kernel_name = 'python3'
+# always execute notebooks.
+nbsphinx_execute = 'always'

@@ -1,66 +1,116 @@
+import itertools
+
+import pytest
+import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
-import numpy as np
-import itertools
 
 import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
-from qcodes.dataset.sqlite_base import connect, init_db, _unicode_categories
-import qcodes.dataset.data_set
-from qcodes.dataset.sqlite_base import get_user_version, set_user_version, atomic_transaction
-from qcodes.dataset.data_set import CompletedError
-from qcodes.dataset.database import initialise_database
-
-import qcodes.dataset.experiment_container
-import pytest
-import tempfile
-import os
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
+from qcodes.dataset.sqlite_base import _unicode_categories
+from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.data_set import CompletedError, DataSet
+from qcodes.dataset.guids import parse_guid
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
+                                                      experiment, dataset)
 
 n_experiments = 0
 
 
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    global n_experiments
-    n_experiments = 0
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
+@pytest.mark.usefixtures("experiment")
+def test_has_attributes_after_init():
+    """
+    Ensure that all attributes are populated after __init__ in BOTH cases
+    (run_id is None / run_id is not None)
+    """
+
+    attrs = ['path_to_db', '_path_to_db', 'conn', '_run_id', 'run_id',
+             '_debug', 'subscribers', '_completed', 'name', 'table_name',
+             'guid', 'number_of_results', 'counter', 'parameters',
+             'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+             'run_timestamp_raw', 'completed_timestamp_raw', 'completed',
+             'snapshot', 'snapshot_raw']
+
+    path_to_db = get_DB_location()
+    ds = DataSet(path_to_db, run_id=None)
+
+    for attr in attrs:
+        assert hasattr(ds, attr)
+        getattr(ds, attr)
+
+    ds = DataSet(path_to_db, run_id=1)
+
+    for attr in attrs:
+        assert hasattr(ds, attr)
+        getattr(ds, attr)
 
 
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
+def test_dataset_read_only_properties(dataset):
+    read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
+                       'number_of_results', 'counter', 'parameters',
+                       'paramspecs', 'exp_id', 'exp_name', 'sample_name',
+                       'run_timestamp_raw', 'completed_timestamp_raw',
+                       'snapshot', 'snapshot_raw']
+
+    for prop in read_only_props:
+        with pytest.raises(AttributeError, match="can't set attribute",
+                           message=f"It is not expected to be possible to set "
+                                   f"property {prop!r}"):
+            setattr(dataset, prop, True)
 
 
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = new_data_set("test-dataset")
-    yield dataset
-    dataset.conn.close()
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("non_existing_run_id", (1, 0, -1, 'number#42'))
+def test_create_dataset_from_non_existing_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f"Run with run_id "
+                                         f"{non_existing_run_id} does not "
+                                         f"exist in the database"):
+        _ = DataSet(run_id=non_existing_run_id)
 
 
-def test_tabels_exists(empty_temp_db):
-    print(qc.config["core"]["db_location"])
-    conn = connect(qc.config["core"]["db_location"], qc.config["core"]["db_debug"])
-    cursor = conn.execute("select sql from sqlite_master where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
-    for row, expected_table in zip(cursor, expected_tables):
-        assert expected_table in row['sql']
-    conn.close()
+def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
+    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
+                                         "arguments have been passed together "
+                                         "with non-None values. This is not "
+                                         "allowed."):
+        some_valid_connection = experiment.conn
+        _ = DataSet(path_to_db="some valid path", conn=some_valid_connection)
 
 
+def test_load_by_id(dataset):
+    ds = load_by_id(dataset.run_id)
+    assert dataset.run_id == ds.run_id
+    assert dataset.path_to_db == ds.path_to_db
+
+
+@pytest.mark.usefixtures('experiment')
+@pytest.mark.parametrize('non_existing_run_id', (1, 0, -1))
+def test_load_by_id_for_nonexisting_run_id(non_existing_run_id):
+    with pytest.raises(ValueError, match=f'Run with run_id '
+                                         f'{non_existing_run_id} does not '
+                                         f'exist in the database'):
+        _ = load_by_id(non_existing_run_id)
+
+
+@pytest.mark.usefixtures('experiment')
+def test_load_by_id_for_none():
+    with pytest.raises(ValueError, match='run_id has to be a positive integer, '
+                                         'not None.'):
+        _ = load_by_id(None)
+
+
+@settings(deadline=None)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
                              min_size=1))
-def test_add_experiments(empty_temp_db, experiment_name,
+@pytest.mark.usefixtures("empty_temp_db")
+def test_add_experiments(experiment_name,
                          sample_name, dataset_name):
     global n_experiments
     n_experiments += 1
@@ -105,7 +155,9 @@ def test_add_paramspec(dataset):
     parameter_b = ParamSpec("b_param", "NUMERIC", key="value", number=1)
     parameter_c = ParamSpec("c_param", "array", inferred_from=[parameter_a,
                                                                parameter_b])
-    dataset.add_parameters([parameter_a, parameter_b, parameter_c])
+    dataset.add_parameter(parameter_a)
+    dataset.add_parameter(parameter_b)
+    dataset.add_parameter(parameter_c)
 
     # Now retrieve the paramspecs
 
@@ -141,12 +193,16 @@ def test_add_paramspec_one_by_one(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
-    with pytest.raises(ValueError):
+    # Test that is not possible to add the same parameter again to the dataset
+    with pytest.raises(ValueError, match=f'Duplicate parameter name: '
+                                         f'{parameters[0].name}'):
         dataset.add_parameter(parameters[0])
+
     assert len(dataset.paramspecs.keys()) == 3
 
 
-def test_add_data_1d(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_1d():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -183,7 +239,8 @@ def test_add_data_1d(experiment):
         mydataset.add_result({'x': 5})
 
 
-def test_add_data_array(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_add_data_array():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
@@ -206,7 +263,8 @@ def test_add_data_array(experiment):
     np.testing.assert_allclose(y_data, expected_y)
 
 
-def test_adding_too_many_results(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_adding_too_many_results():
     """
     This test really tests the "chunking" functionality of the
     insert_many_values function of the sqlite_base module
@@ -233,7 +291,8 @@ def test_adding_too_many_results(experiment):
     dataset.add_results(results)
 
 
-def test_modify_result(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_modify_result():
     dataset = new_data_set("test_modify_result")
     xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
@@ -277,14 +336,14 @@ def test_modify_result(experiment):
         dataset.modify_result(0, {'x': 2})
 
 
-@settings(max_examples=25)
+@settings(max_examples=25, deadline=None)
 @given(N=hst.integers(min_value=1, max_value=10000),
        M=hst.integers(min_value=1, max_value=10000))
-def test_add_parameter_values(experiment, N, M):
+@pytest.mark.usefixtures("experiment")
+def test_add_parameter_values(N, M):
 
     mydataset = new_data_set("test_add_parameter_values")
     xparam = ParamSpec('x', 'numeric')
-    xparam.type = 'number'
     mydataset.add_parameter(xparam)
 
     x_results = [{'x': x} for x in range(N)]
@@ -301,36 +360,49 @@ def test_add_parameter_values(experiment, N, M):
     mydataset.mark_complete()
 
 
-def test_load_by_counter(dataset):
-    dataset = load_by_counter(1, 1)
+@pytest.mark.usefixtures("dataset")
+def test_load_by_counter():
     exps = experiments()
     assert len(exps) == 1
     exp = exps[0]
-    assert dataset.name == "test-dataset"
     assert exp.name == "test-experiment"
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
+    dataset = load_by_counter(1, 1)
 
-def test_dataset_with_no_experiment_raises(empty_temp_db):
+    assert "test-dataset" == dataset.name
+    assert exp.sample_name == dataset.sample_name
+    assert exp.name == dataset.exp_name
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize('nonexisting_counter', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_counter(nonexisting_counter):
+    exp_id = 1
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(exp_id, nonexisting_counter)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.parametrize('nonexisting_exp_id', (-1, 0, 1, None))
+def test_load_by_counter_for_nonexisting_experiment(nonexisting_exp_id):
+    with pytest.raises(RuntimeError, match='Expected one row'):
+        _ = load_by_counter(nonexisting_exp_id, 1)
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_dataset_with_no_experiment_raises():
     with pytest.raises(ValueError):
         new_data_set("test-dataset",
                      specs=[ParamSpec("x", "numeric"),
                             ParamSpec("y", "numeric")])
 
 
-def test_database_upgrade(empty_temp_db):
-    connection = connect(qc.config["core"]["db_location"],
-                 qc.config["core"]["db_debug"])
-    userversion = get_user_version(connection)
-    if userversion != 0:
-        raise RuntimeError("trying to upgrade from version 0"
-                           " but your database is version"
-                           " {}".format(userversion))
-    sql = 'ALTER TABLE "runs" ADD COLUMN "quality"'
-
-    atomic_transaction(connection, sql)
-    set_user_version(connection, 1)
+def test_guid(dataset):
+    guid = dataset.guid
+    assert len(guid) == 36
+    parse_guid(guid)
 
 
 def test_numpy_ints(dataset):
@@ -338,7 +410,7 @@ def test_numpy_ints(dataset):
      Test that we can insert numpy integers in the data set
     """
     xparam = ParamSpec('x', 'numeric')
-    dataset.add_parameters([xparam])
+    dataset.add_parameter(xparam)
 
     numpy_ints = [
         np.int, np.int8, np.int16, np.int32, np.int64,
@@ -356,7 +428,7 @@ def test_numpy_floats(dataset):
     Test that we can insert numpy floats in the data set
     """
     float_param = ParamSpec('y', 'numeric')
-    dataset.add_parameters([float_param])
+    dataset.add_parameter(float_param)
 
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
@@ -365,9 +437,10 @@ def test_numpy_floats(dataset):
     assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
 
 
+
 def test_numpy_nan(dataset):
     parameter_m = ParamSpec("m", "numeric")
-    dataset.add_parameters([parameter_m])
+    dataset.add_parameter(parameter_m)
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
@@ -413,9 +486,43 @@ def test_missing_keys(dataset):
     assert dataset.get_values("a") == [[r["a"]] for r in results if "a" in r]
     assert dataset.get_values("b") == [[r["b"]] for r in results if "b" in r]
 
-    assert dataset.get_setpoints("a") == [[[xv] for xv in xvals]]
+    assert dataset.get_setpoints("a")['x'] == [[xv] for xv in xvals]
 
     tmp = [list(t) for t in zip(*(itertools.product(xvals, yvals)))]
     expected_setpoints = [[[v] for v in vals] for vals in tmp]
 
-    assert dataset.get_setpoints("b") == expected_setpoints
+    assert dataset.get_setpoints("b")['x'] == expected_setpoints[0]
+    assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
+
+
+@pytest.mark.usefixtures('experiment')
+def test_get_description(some_paramspecs):
+
+    paramspecs = some_paramspecs[2]
+
+    ds = DataSet()
+
+    assert ds.run_id == 1
+
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies())
+
+    ds.add_parameter(paramspecs['ps1'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1']))
+
+    ds.add_parameter(paramspecs['ps2'])
+    desc = ds.description
+    assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
+                                                  paramspecs['ps2']))
+
+    # the run description gets written as the first data point is added,
+    # so now no description should be stored in the database
+    prematurely_loaded_ds = DataSet(run_id=1)
+    assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
+
+    ds.add_result({'ps1': 1, 'ps2': 2})
+
+    loaded_ds = DataSet(run_id=1)
+
+    assert loaded_ds.description == desc

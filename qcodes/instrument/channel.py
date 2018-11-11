@@ -28,16 +28,24 @@ class InstrumentChannel(InstrumentBase):
           channel. Usually populated via ``add_function``
     """
 
-    def __init__(self, parent: Instrument, name: str, **kwargs) -> None:
-        # Initialize base classes of Instrument. We will overwrite what we
-        # want to do in the Instrument initializer
-        super().__init__(name=name, **kwargs)
-
-        self.name = "{}_{}".format(parent.name, str(name))
-        self.short_name = str(name)
-        self._meta_attrs = ['name']
-
+    def __init__(self,
+                 parent: Union[Instrument, 'InstrumentChannel'],
+                 name: str,
+                 **kwargs) -> None:
+        # need to specify parent before `super().__init__` so that the right
+        # `full_name` is available in that scope. `full_name` is used for
+        # registering the filter for the log messages. It is composed by
+        # iteratively concatenating the full names of the parent instruments
+        # scope of `Base`
         self._parent = parent
+        super().__init__(name=name, **kwargs)
+        # Naming insanity:
+        # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
+        # this has been a confusion about names. don't use name but
+        # full_name, or short_name. 
+        self.name = "{}_{}".format(parent.name, str(name))
+
+
 
     def __repr__(self):
         """Custom repr to give parent information"""
@@ -72,6 +80,7 @@ class InstrumentChannel(InstrumentBase):
         name_parts = self._parent.name_parts
         name_parts.append(self.short_name)
         return name_parts
+
 
 class MultiChannelInstrumentParameter(MultiParameter):
     """
@@ -121,6 +130,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         """
 
         return self.names
+
 
 class ChannelList(Metadatable):
     """
@@ -192,14 +202,11 @@ class ChannelList(Metadatable):
         else:
             self._locked = True
             self._channels = tuple(chan_list)
-            # At this stage mypy (0.610) is convinced that self._channels is
-            # None. Creating a local variable seems to resolve this
-            channels = cast(Tuple[InstrumentChannel, ...], self._channels)
-            if channels is None:
+            if self._channels is None:
                 raise RuntimeError("Empty channel list")
             self._channel_mapping = {channel.short_name: channel
-                                     for channel in channels}
-            if not all(isinstance(chan, chan_type) for chan in channels):
+                                     for channel in self._channels}
+            if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
@@ -280,6 +287,15 @@ class ChannelList(Metadatable):
         self._channels = cast(List[InstrumentChannel], self._channels)
         return self._channels.append(obj)
 
+    def clear(self):
+        """
+        Clear all items from the channel list.
+        """
+        if self._locked:
+            raise AttributeError("Cannot clear a locked channel list")
+        self._channels.clear()
+        self._channel_mapping.clear()
+
     def remove(self, obj: InstrumentChannel):
         """
         Removes obj from channellist if not locked.
@@ -311,6 +327,9 @@ class ChannelList(Metadatable):
                             "type.")
         channels = cast(List[InstrumentChannel], self._channels)
         channels.extend(objects_tuple)
+        self._channel_mapping.update({
+            obj.short_name: obj for obj in objects
+        })
         self._channels = channels
 
     def index(self, obj: InstrumentChannel):

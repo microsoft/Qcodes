@@ -102,100 +102,123 @@ class KeithleyChannel(InstrumentChannel):
         self.model = self._parent.model
         vranges = self._parent._vranges
         iranges = self._parent._iranges
+        vlimit_minmax = self.parent._vlimit_minmax
+        ilimit_minmax = self.parent._ilimit_minmax
 
         self.add_parameter('volt',
-                           get_cmd='{}.measure.v()'.format(channel),
+                           get_cmd=f'{channel}.measure.v()',
                            get_parser=float,
-                           set_cmd='{}.source.levelv={}'.format(channel,
-                                                                '{:.12f}'),
+                           set_cmd=f'{channel}.source.levelv={{:.12f}}',
                            label='Voltage',
                            unit='V')
 
         self.add_parameter('curr',
-                           get_cmd='{}.measure.i()'.format(channel),
+                           get_cmd=f'{channel}.measure.i()',
                            get_parser=float,
-                           set_cmd='{}.source.leveli={}'.format(channel,
-                                                                '{:.12f}'),
+                           set_cmd=f'{channel}.source.leveli={{:.12f}}',
                            label='Current',
                            unit='A')
 
         self.add_parameter('res',
-                           get_cmd='{}.measure.r()'.format(channel),
+                           get_cmd=f'{channel}.measure.r()',
                            get_parser=float,
                            set_cmd=False,
                            label='Resistance',
                            unit='Ohm')
 
         self.add_parameter('mode',
-                           get_cmd='{}.source.func'.format(channel),
+                           get_cmd=f'{channel}.source.func',
                            get_parser=float,
-                           set_cmd='{}.source.func={}'.format(channel, '{:d}'),
+                           set_cmd=f'{channel}.source.func={{:d}}',
                            val_mapping={'current': 0, 'voltage': 1},
-                           docstring='Selects the output source.')
+                           docstring='Selects the output source type. '
+                                     'Can be either voltage or current.')
 
         self.add_parameter('output',
-                           get_cmd='{}.source.output'.format(channel),
+                           get_cmd=f'{channel}.source.output',
                            get_parser=float,
-                           set_cmd='{}.source.output={}'.format(channel,
-                                                                '{:d}'),
+                           set_cmd=f'{channel}.source.output={{:d}}',
                            val_mapping={'on':  1, 'off': 0})
 
         self.add_parameter('nplc',
                            label='Number of power line cycles',
-                           set_cmd='{}.measure.nplc={}'.format(channel,
-                                                               '{:.4f}'),
-                           get_cmd='{}.measure.nplc'.format(channel),
+                           set_cmd=f'{channel}.measure.nplc={{}}',
+                           get_cmd=f'{channel}.measure.nplc',
                            get_parser=float,
+                           docstring='Number of power line cycles, used '
+                                     'to perform measurements',
                            vals=vals.Numbers(0.001, 25))
         # volt range
         # needs get after set (WilliamHPNielsen): why?
         self.add_parameter('sourcerange_v',
                            label='voltage source range',
-                           get_cmd='{}.source.rangev'.format(channel),
+                           get_cmd=f'{channel}.source.rangev',
                            get_parser=float,
-                           set_cmd='{}.source.rangev={}'.format(channel,
-                                                                '{:.4f}'),
+                           set_cmd=f'{channel}.source.rangev={{}}',
                            unit='V',
+                           docstring='The range used when sourcing voltage '
+                                     'This affects the range and the precision '
+                                     'of the source.',
                            vals=vals.Enum(*vranges[self.model]))
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
-                           get_cmd='{}.measure.rangev'.format(channel),
-                           set_cmd='{}.measure.rangev={}'.format(channel,
-                                                                 '{:.4f}'),
+                           get_cmd=f'{channel}.measure.rangev',
+                           set_cmd=f'{channel}.measure.rangev={{}}',
                            unit='V',
+                           docstring='The range to perform voltage '
+                                     'measurements in. This affects the range '
+                                     'and the precision of the measurement. '
+                                     'Note that if you both measure and '
+                                     'source current this will have no effect, '
+                                     'set `sourcerange_v` instead',
                            vals=vals.Enum(*vranges[self.model]))
         # current range
         # needs get after set
         self.add_parameter('sourcerange_i',
                            label='current source range',
-                           get_cmd='{}.source.rangei'.format(channel),
+                           get_cmd=f'{channel}.source.rangei',
                            get_parser=float,
-                           set_cmd='{}.source.rangei={}'.format(channel,
-                                                                '{:.4f}'),
+                           set_cmd=f'{channel}.source.rangei={{}}',
                            unit='A',
+                           docstring='The range used when sourcing current '
+                                     'This affects the range and the '
+                                     'precision of the source.',
                            vals=vals.Enum(*iranges[self.model]))
 
         self.add_parameter('measurerange_i',
                            label='current measure range',
-                           get_cmd='{}.measure.rangei'.format(channel),
+                           get_cmd=f'{channel}.measure.rangei',
                            get_parser=float,
-                           set_cmd='{}.measure.rangei={}'.format(channel,
-                                                                 '{:.4f}'),
+                           set_cmd=f'{channel}.measure.rangei={{}}',
                            unit='A',
+                           docstring='The range to perform current '
+                                     'measurements in. This affects the range '
+                                     'and the precision of the measurement. '
+                                     'Note that if you both measure and source '
+                                     'current this will have no effect, set '
+                                     '`sourcerange_i` instead',
                            vals=vals.Enum(*iranges[self.model]))
         # Compliance limit
         self.add_parameter('limitv',
-                           get_cmd='{}.source.limitv'.format(channel),
+                           get_cmd=f'{channel}.source.limitv',
                            get_parser=float,
-                           set_cmd='{}.source.limitv={}'.format(channel,
-                                                                '{:.4f}'),
+                           set_cmd=f'{channel}.source.limitv={{}}',
+                           docstring='Voltage limit e.g. the maximum voltage '
+                                     'allowed in current mode. If exceeded '
+                                     'the current will be clipped.',
+                           vals=vals.Numbers(vlimit_minmax[self.model][0],
+                                             vlimit_minmax[self.model][1]),
                            unit='V')
         # Compliance limit
         self.add_parameter('limiti',
-                           get_cmd='{}.source.limiti'.format(channel),
+                           get_cmd=f'{channel}.source.limiti',
                            get_parser=float,
-                           set_cmd='{}.source.limiti={}'.format(channel,
-                                                                '{:.4f}'),
+                           set_cmd=f'{channel}.source.limiti={{}}',
+                           docstring='Current limit e.g. the maximum current '
+                                     'allowed in voltage mode. If exceeded '
+                                     'the voltage will be clipped.',
+                           vals=vals.Numbers(ilimit_minmax[self.model][0],
+                                             ilimit_minmax[self.model][1]),
                            unit='A')
 
         self.add_parameter('fastsweep',
@@ -203,7 +226,7 @@ class KeithleyChannel(InstrumentChannel):
 
         self.channel = channel
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset instrument to factory defaults.
         This resets only the relevant channel.
@@ -372,6 +395,25 @@ class Keithley_2600(VisaInstrument):
                          '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
                                    1e-3, 10e-6, 100e-3, 1, 1.5]}
 
+        self._vlimit_minmax = {'2601B': [10e-3, 40],
+                               '2602B': [10e-3, 40],
+                               '2604B': [10e-3, 40],
+                               '2611B': [20e-3, 200],
+                               '2612B': [20e-3, 200],
+                               '2614B': [20e-3, 200],
+                               '2634B': [20e-3, 200],
+                               '2635B': [20e-3, 200],
+                               '2636B': [20e-3, 200],}
+
+        self._ilimit_minmax = {'2601B': [10e-9, 3],
+                               '2602B': [10e-9, 3],
+                               '2604B': [10e-9, 3],
+                               '2611B': [10e-9, 3],
+                               '2612B': [10e-9, 3],
+                               '2614B': [10e-9, 3],
+                               '2634B': [100e-12, 1.5],
+                               '2635B': [100e-12, 1.5],
+                               '2636B': [100e-12, 1.5],}
         # Add the channel to the instrument
         for ch in ['a', 'b']:
             ch_name = 'smu{}'.format(ch)
@@ -385,10 +427,10 @@ class Keithley_2600(VisaInstrument):
 
         self.connect_message()
 
-    def _display_settext(self, text):
+    def _display_settext(self, text: str) -> None:
         self.visa_handle.write('display.settext("{}")'.format(text))
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, str]:
         IDN = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         model = model[6:]
@@ -397,26 +439,26 @@ class Keithley_2600(VisaInstrument):
                'serial': serial, 'firmware': firmware}
         return IDN
 
-    def display_clear(self):
+    def display_clear(self) -> None:
         """
         This function clears the display, but also leaves it in user mode
         """
         self.visa_handle.write('display.clear()')
 
-    def display_normal(self):
+    def display_normal(self) -> None:
         """
         Set the display to the default mode
         """
         self.visa_handle.write('display.screen = display.SMUA_SMUB')
 
-    def exit_key(self):
+    def exit_key(self) -> None:
         """
         Get back the normal screen after an error:
         send an EXIT key press event
         """
         self.visa_handle.write('display.sendkey(75)')
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset instrument to factory defaults.
         This resets both channels.

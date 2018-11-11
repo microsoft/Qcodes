@@ -7,7 +7,7 @@ import logging
 from qcodes.data.data_array import DataArray
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataSet
-from qcodes.utils.helpers import LogCapture
+from qcodes.logger.logger import LogCapture
 
 from .data_mocks import (MockFormatter, MatchIO,
                          DataSet2D, DataSet1D,

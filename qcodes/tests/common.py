@@ -1,6 +1,7 @@
 from typing import Callable, Type
 from functools import wraps
 from time import sleep
+import cProfile
 
 
 def strip_qc(d, keys=('instrument', '__class__')):
@@ -67,3 +68,24 @@ def retry_until_does_not_throw(
         return func_retry
 
     return retry_until_passes_decorator
+
+
+def profile(func):
+    """
+    Decorator that profiles the wrapped function with cProfile.
+
+    It produces a '.prof' file in the current working directory
+    that has the name of the executed function.
+
+    Use the 'Stats' class from the 'pstats' module to read the file,
+    analyze the profile data (for example, 'p.sort_stats('tottime')'
+    where 'p' is an instance of the 'Stats' class), and print the data
+    (for example, 'p.print_stats()').
+    """
+    def wrapper(*args, **kwargs):
+        profile_filename = func.__name__ + '.prof'
+        profiler = cProfile.Profile()
+        result = profiler.runcall(func, *args, **kwargs)
+        profiler.dump_stats(profile_filename)
+        return result
+    return wrapper
