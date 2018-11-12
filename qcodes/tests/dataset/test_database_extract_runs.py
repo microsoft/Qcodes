@@ -1,5 +1,6 @@
 from os.path import getmtime
 from contextlib import contextmanager
+import re
 
 import pytest
 import numpy as np
@@ -28,6 +29,44 @@ def raise_if_file_changed(path_to_file: str):
     if pre_operation_time != post_operation_time:
         raise RuntimeError(f'File {path_to_file} was modified.')
 
+
+def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
+    """
+    Test that an error is raised if runs not present in the source DB are
+    attempted extracted
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_exp_1 = Experiment(conn=source_conn)
+
+    # make 5 runs in first experiment
+
+    exp_1_run_ids = []
+    for _ in range(5):
+
+        source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
+        exp_1_run_ids.append(source_dataset.run_id)
+
+        for ps in some_paramspecs[2].values():
+            source_dataset.add_parameter(ps)
+
+        for val in range(10):
+            source_dataset.add_result({ps.name: val
+                                       for ps in some_paramspecs[2].values()})
+        source_dataset.mark_complete()
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    run_ids = [1, 8, 5, 3, 2, 4, 4, 4, 7, 8]
+    wrong_ids = [8, 7, 8]
+
+    expected_err = ("Error: not all run_ids exist in the source database. "
+                    "The following run(s) is/are not present: "
+                    f"{wrong_ids}")
+
+    with pytest.raises(ValueError, match=re.escape(expected_err)):
+        extract_runs_into_db(source_path, target_path, *run_ids)
 
 def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     source_conn, target_conn = two_empty_temp_db_connections

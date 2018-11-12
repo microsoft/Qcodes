@@ -792,6 +792,36 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _dependencies_table_schema)
 
 
+def is_run_id_in_database(conn: SomeConnection,
+                          *run_ids: int) -> Dict[int, bool]:
+    """
+    Look up run_ids and return a dictionary with the answers to the question
+    "is this run_id in the database?"
+
+    Args:
+        conn: the connection to the database
+        run_ids: the run_ids to look up
+
+    Returns:
+        a dict with the run_ids as keys and bools as values. True means that
+        the run_id DOES exist in the database
+    """
+    run_ids = np.unique(run_ids)
+    placeholders = sql_placeholder_string(len(run_ids))
+
+    query = f"""
+             SELECT run_id
+             FROM runs
+             WHERE run_id in {placeholders}
+            """
+
+    cursor = conn.cursor()
+    cursor.execute(query, run_ids)
+    rows = cursor.fetchall()
+    existing_ids = [row[0] for row in rows]
+    return {run_id: (run_id in existing_ids) for run_id in run_ids}
+
+
 def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
     """
     A look-before-you-leap function to look up if a table has a certain column.

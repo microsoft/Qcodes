@@ -12,6 +12,7 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         get_last_experiment,
                                         get_runid_from_guid,
                                         insert_column,
+                                        is_run_id_in_database,
                                         SomeConnection,
                                         sql_placeholder_string)
 
@@ -30,9 +31,20 @@ def extract_runs_into_db(source_db_path: str,
           created if it does not exist.
         run_ids: The run_ids of the runs to copy into the target DB file
     """
+    source_conn = connect(source_db_path)
+
+    # Validate that all runs are in the source database
+    do_runs_exist = is_run_id_in_database(source_conn, run_ids)
+    if False in do_runs_exist.values():
+        source_conn.close()
+        non_existing_ids = [rid for rid in run_ids if not do_runs_exist[rid]]
+        err_mssg = ("Error: not all run_ids exist in the source database. "
+                    "The following run(s) is/are not present: "
+                    f"{non_existing_ids}")
+        raise ValueError(err_mssg)
 
     # Validate that all runs are from the same experiment
-    source_conn = connect(source_db_path)
+
     source_exp_ids = np.unique(get_exp_ids_from_run_ids(source_conn, run_ids))
     if len(source_exp_ids) != 1:
         source_conn.close()
