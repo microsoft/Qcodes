@@ -7,7 +7,8 @@ import numpy as np
 
 from qcodes.dataset.sqlite_base import connect, get_experiments
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.data_set import DataSet, load_by_guid
+from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
+                                     load_by_id)
 from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
@@ -348,3 +349,48 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     assert target_ds.table_name == "customname-1-1"
     assert target_ds.the_same_dataset_as(source_ds_2_2)
 
+
+def test_load_by_X_functions(two_empty_temp_db_connections,
+                             some_paramspecs):
+    """
+    Test some different loading functions
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    source_exp1 = Experiment(conn=source_conn)
+    source_ds_1_1 = DataSet(conn=source_conn, exp_id=source_exp1.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_1_1.add_parameter(ps)
+    source_ds_1_1.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds_1_1.mark_complete()
+
+    source_exp2 = Experiment(conn=source_conn)
+    source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_2_1.add_parameter(ps)
+    source_ds_2_1.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds_2_1.mark_complete()
+    source_ds_2_2 = DataSet(conn=source_conn,
+                            exp_id=source_exp2.exp_id,
+                            name="customname")
+    for ps in some_paramspecs[2].values():
+        source_ds_2_2.add_parameter(ps)
+    source_ds_2_2.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds_2_2.mark_complete()
+
+    extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
+
+    test_ds = load_by_guid(source_ds_2_2.guid, target_conn)
+    assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+    test_ds = load_by_id(1, target_conn)
+    assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+    test_ds = load_by_counter(1, 1, target_conn)
+    assert source_ds_2_2.the_same_dataset_as(test_ds)
