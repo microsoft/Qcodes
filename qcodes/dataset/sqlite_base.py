@@ -793,7 +793,7 @@ def init_db(conn: SomeConnection)->None:
 
 
 def is_run_id_in_database(conn: SomeConnection,
-                          *run_ids: int) -> Dict[int, bool]:
+                          *run_ids) -> Dict[int, bool]:
     """
     Look up run_ids and return a dictionary with the answers to the question
     "is this run_id in the database?"
