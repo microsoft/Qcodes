@@ -68,6 +68,7 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
     with pytest.raises(ValueError, match=re.escape(expected_err)):
         extract_runs_into_db(source_path, target_path, *run_ids)
 
+
 def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     source_conn, target_conn = two_empty_temp_db_connections
 
@@ -303,10 +304,11 @@ def test_extracting_dataless_run(two_empty_temp_db_connections,
     assert loaded_ds.the_same_dataset_as(source_ds)
 
 
-def test_result_table_naming(two_empty_temp_db_connections,
-                             some_paramspecs):
+def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
+                                        some_paramspecs):
     """
-    Does this raise?
+    Check that a correct result table name is given and that a correct run_id
+    is assigned
     """
     source_conn, target_conn = two_empty_temp_db_connections
 
@@ -340,6 +342,9 @@ def test_result_table_naming(two_empty_temp_db_connections,
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
     # The target ds ought to have a runs table "customname-1-1"
+    # and ough to be the same dataset as its "ancestor"
     target_ds = DataSet(conn=target_conn, run_id=1)
 
     assert target_ds.table_name == "customname-1-1"
+    assert target_ds.the_same_dataset_as(source_ds_2_2)
+
