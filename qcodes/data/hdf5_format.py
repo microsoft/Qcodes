@@ -276,6 +276,11 @@ class HDF5Format(Formatter):
             elif isinstance(item, list):
                 if len(item) > 0:
                     elt_type = type(item[0])
+
+                    # If elt_type is either int or float, allow both types
+                    if elt_type in [int, float]:
+                        elt_type = (int, float)
+
                     if all(isinstance(x, elt_type) for x in item):
                         if isinstance(item[0], (int, float,
                                                 np.int32, np.int64)):
