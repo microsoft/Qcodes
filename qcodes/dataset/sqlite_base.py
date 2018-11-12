@@ -1501,6 +1501,46 @@ def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
+def get_matching_exp_ids(conn: SomeConnection, **match_conditions) -> List:
+    """
+    Get exp_ids for experiments matching the match_conditions
+
+    Raises:
+        ValueError if a match_condition that is not "name", "sample_name",
+        "format_string", "run_counter", "start_time", or "end_time"
+    """
+    valid_conditions = ["name", "sample_name", "start_time", "end_time",
+                        "run_counter", "format_string"]
+
+    for mcond in match_conditions:
+        if mcond not in valid_conditions:
+            raise ValueError(f"{mcond} is not a valid match condition.")
+
+    end_time = match_conditions.get('end_time', None)
+    time_eq = "=" if end_time is not None else "IS"
+
+    query = "SELECT exp_id FROM experiments "
+    for n, mcond in enumerate(match_conditions):
+        if n == 0:
+            query += f"WHERE {mcond} = ? "
+        else:
+            query += f"AND {mcond} = ? "
+
+    # now some syntax clean-up
+    if "format_string" in match_conditions:
+        format_string = match_conditions["format_string"]
+        query = query.replace("format_string = ?",
+                              f'format_string = "{format_string}"')
+        match_conditions.pop("format_string")
+    query = query.replace("end_time = ?", f"end_time {time_eq} ?")
+
+    cursor = conn.cursor()
+    cursor.execute(query, tuple(match_conditions.values()))
+    rows = cursor.fetchall()
+
+    return [row[0] for row in rows]
+
+
 def get_exp_ids_from_run_ids(conn: SomeConnection,
                              run_ids: Sequence[int]) -> List[int]:
     """

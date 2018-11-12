@@ -10,6 +10,7 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         format_table_name,
                                         get_exp_ids_from_run_ids,
                                         get_last_experiment,
+                                        get_matching_exp_ids,
                                         get_runid_from_guid,
                                         insert_column,
                                         is_run_id_in_database,
@@ -107,31 +108,22 @@ def _create_exp_if_needed(target_conn: SomeConnection,
     is not guaranteed to work. Matching names and times is the best we can do.
     """
 
-    time_eq = "=" if end_time is not None else "IS"
+    matching_exp_ids = get_matching_exp_ids(target_conn,
+                                            name=exp_name,
+                                            sample_name=sample_name,
+                                            format_string=fmt_str,
+                                            start_time=start_time,
+                                            end_time=end_time)
 
-    exp_exists_query = f"""
-                       SELECT exp_id
-                       FROM experiments
-                       WHERE name = ?
-                       AND sample_name = ?
-                       AND format_string = "{fmt_str}"
-                       AND start_time = ?
-                       AND end_time {time_eq} ?
-                       """
-    values = (exp_name, sample_name, start_time, end_time)
-    cursor = target_conn.execute(exp_exists_query, values)
+    if len(matching_exp_ids) > 1:
 
-    rows = cursor.fetchall()
-
-    if len(rows) > 1:
-
-        exp_id = rows[0]['exp_id']
-        warn(f'{len(rows)} experiments found in target DB that match name, '
-             'sample_name, fmt_str, start_time, and end_time. '
+        exp_id = matching_exp_ids[0]
+        warn(f'{len(matching_exp_ids)} experiments found in target DB that '
+             'match name, sample_name, fmt_str, start_time, and end_time. '
              f'Inserting into the experiment with exp_id={exp_id}.')
         return exp_id
-    if len(rows) > 0:
-        return rows[0]['exp_id']
+    if len(matching_exp_ids) == 1:
+        return matching_exp_ids[0]
     else:
         create_exp = f"""
                      INSERT INTO experiments
@@ -140,6 +132,7 @@ def _create_exp_if_needed(target_conn: SomeConnection,
                      VALUES
                      (?,?,?,?,?,?)
                      """
+        cursor = target_conn.cursor()
         cursor.execute(create_exp, (exp_name, sample_name, fmt_str,
                                     0, start_time, end_time))
         return cursor.lastrowid
