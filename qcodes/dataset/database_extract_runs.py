@@ -11,15 +11,8 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         get_last_experiment,
                                         get_runid_from_guid,
                                         insert_column,
-                                        SomeConnection)
-
-
-def sql_placeholder_string(n: int) -> str:
-    """
-    Return an SQL value placeholder string of length n.
-    Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
-    """
-    return '(' + ','.join('?'*n) + ')'
+                                        SomeConnection,
+                                        sql_placeholder_string)
 
 
 def extract_runs_into_db(source_db_path: str,

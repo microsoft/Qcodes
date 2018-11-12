@@ -108,6 +108,14 @@ RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "run_description"]
 
 
+def sql_placeholder_string(n: int) -> str:
+    """
+    Return an SQL value placeholder string for n values.
+    Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
+    """
+    return '(' + ','.join('?'*n) + ')'
+
+
 class ConnectionPlus(wrapt.ObjectProxy):
     """
     A class to extend the sqlite3.Connection object with a single extra
