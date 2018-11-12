@@ -1471,6 +1471,31 @@ def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
+def get_exp_ids_from_run_ids(conn: SomeConnection,
+                             run_ids: Sequence[int]) -> List[int]:
+    """
+    Get the corresponding exp_id for a sequence of run_ids
+
+    Args:
+        conn: connection to the database
+        run_ids: a sequence of the run_ids to get the exp_id of
+
+    Returns:
+        A list of exp_ids matching the run_ids
+    """
+    sql_placeholders = sql_placeholder_string(len(run_ids))
+    exp_id_query = f"""
+                    SELECT exp_id
+                    FROM runs
+                    WHERE run_id IN {sql_placeholders}
+                    """
+    cursor = conn.cursor()
+    cursor.execute(exp_id_query, run_ids)
+    rows = cursor.fetchall()
+
+    return [exp_id for row in rows for exp_id in row]
+
+
 def get_last_experiment(conn: SomeConnection) -> Optional[int]:
     """
     Return last started experiment id

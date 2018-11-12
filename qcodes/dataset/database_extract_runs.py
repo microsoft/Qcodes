@@ -8,6 +8,7 @@ from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.sqlite_base import (atomic,
                                         connect,
                                         format_table_name,
+                                        get_exp_ids_from_run_ids,
                                         get_last_experiment,
                                         get_runid_from_guid,
                                         insert_column,
@@ -31,18 +32,8 @@ def extract_runs_into_db(source_db_path: str,
     """
 
     # Validate that all runs are from the same experiment
-
-    sql_placeholders = sql_placeholder_string(len(run_ids))
-    exp_id_query = f"""
-                    SELECT exp_id
-                    FROM runs
-                    WHERE run_id IN {sql_placeholders}
-                    """
     source_conn = connect(source_db_path)
-    cursor = source_conn.cursor()
-    cursor.execute(exp_id_query, run_ids)
-    rows = cursor.fetchall()
-    source_exp_ids = np.unique([exp_id for row in rows for exp_id in row])
+    source_exp_ids = np.unique(get_exp_ids_from_run_ids(source_conn, run_ids))
     if len(source_exp_ids) != 1:
         source_conn.close()
         raise ValueError('Did not receive runs from a single experiment. '
