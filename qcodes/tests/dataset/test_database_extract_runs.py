@@ -8,7 +8,7 @@ from qcodes.dataset.sqlite_base import connect, get_experiments
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import DataSet, load_by_guid
 from qcodes.dataset.database import path_to_dbfile
-from qcodes.dataset.database_copy_paste import copy_runs_into_db
+from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_database_creation_and_upgrading import error_caused_by
@@ -29,7 +29,7 @@ def raise_if_file_changed(path_to_file: str):
         raise RuntimeError(f'File {path_to_file} was modified.')
 
 
-def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
+def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -44,7 +44,7 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
     source_dataset = DataSet(conn=source_conn, name="basic_copy_paste_name")
 
     with pytest.raises(RuntimeError) as excinfo:
-        copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+        extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     assert error_caused_by(excinfo, ('Dataset not completed. An incomplete '
                                      'dataset can not be copied.'))
@@ -59,7 +59,7 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
 
     source_dataset.mark_complete()
 
-    copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+    extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     target_exp = Experiment(conn=target_conn, exp_id=1)
 
@@ -67,7 +67,7 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
 
     # trying to insert the same run again should be a NOOP
     with raise_if_file_changed(target_path):
-        copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+        extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     assert len(target_exp) == length1
 
@@ -91,7 +91,7 @@ def test_basic_copy_paste(two_empty_temp_db_connections, some_paramspecs):
 
     # trying to insert the same run again should be a NOOP
     with raise_if_file_changed(target_path):
-        copy_runs_into_db(source_path, target_path, source_dataset.run_id)
+        extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
 
 def test_correct_experiment_routing(two_empty_temp_db_connections,
@@ -138,19 +138,19 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     target_path = path_to_dbfile(target_conn)
 
     # now copy 2 runs
-    copy_runs_into_db(source_path, target_path, *exp_1_run_ids[:2])
+    extract_runs_into_db(source_path, target_path, *exp_1_run_ids[:2])
 
     target_exp1 = Experiment(conn=target_conn, exp_id=1)
 
     assert len(target_exp1) == 2
 
     # copy two other runs, one of them already in
-    copy_runs_into_db(source_path, target_path, *exp_1_run_ids[1:3])
+    extract_runs_into_db(source_path, target_path, *exp_1_run_ids[1:3])
 
     assert len(target_exp1) == 3
 
     # insert run from different experiment
-    copy_runs_into_db(source_path, target_path, ds.run_id)
+    extract_runs_into_db(source_path, target_path, ds.run_id)
 
     assert len(target_exp1) == 3
 
@@ -160,12 +160,12 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
     # finally insert every single run from experiment 1
 
-    copy_runs_into_db(source_path, target_path, *exp_1_run_ids)
+    extract_runs_into_db(source_path, target_path, *exp_1_run_ids)
 
     # check for idempotency once more by inserting all the runs but in another
     # order
     with raise_if_file_changed(target_path):
-        copy_runs_into_db(source_path, target_path, *exp_1_run_ids[::-1])
+        extract_runs_into_db(source_path, target_path, *exp_1_run_ids[::-1])
 
     target_exps = get_experiments(target_conn)
 
@@ -238,7 +238,7 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
     # make the matchstring safe to use as a regexp
     matchstring = matchstring.replace('[', '\\[').replace(']', '\\]')
     with pytest.raises(ValueError, match=matchstring):
-        copy_runs_into_db(source_path, target_path, *run_ids)
+        extract_runs_into_db(source_path, target_path, *run_ids)
 
 
 def test_extracting_dataless_run(two_empty_temp_db_connections,
@@ -257,7 +257,7 @@ def test_extracting_dataless_run(two_empty_temp_db_connections,
 
     source_ds.mark_complete()
 
-    copy_runs_into_db(source_path, target_path, source_ds.run_id)
+    extract_runs_into_db(source_path, target_path, source_ds.run_id)
 
     loaded_ds = DataSet(conn=target_conn, run_id=1)
 
@@ -298,7 +298,7 @@ def test_result_table_naming(two_empty_temp_db_connections,
                               for ps in some_paramspecs[2].values()})
     source_ds_2_2.mark_complete()
 
-    copy_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
+    extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
     # The target ds ought to have a runs table "customname-1-1"
     target_ds = DataSet(conn=target_conn, run_id=1)

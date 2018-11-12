@@ -22,13 +22,13 @@ def sql_placeholder_string(n: int) -> str:
     return '(' + ','.join('?'*n) + ')'
 
 
-def copy_runs_into_db(source_db_path: str,
-                      target_db_path: str, *run_ids) -> None:
+def extract_runs_into_db(source_db_path: str,
+                         target_db_path: str, *run_ids) -> None:
     """
-    Copy a selection of runs into another DB file. All runs must come from the
-    same experiment. They will be added to an experiment with the same name
-    and sample_name in the target db. If such an experiment does not exist,
-    it will be created.
+    Extract a selection of runs into another DB file. All runs must come from
+    the same experiment. They will be added to an experiment with the same name
+    and sample_name in the target db. If such an experiment does not exist, it
+    will be created.
 
     Args:
         source_db_path: Path to the source DB file
@@ -91,10 +91,10 @@ def copy_runs_into_db(source_db_path: str,
 
             # Finally insert the runs
             for run_id in run_ids:
-                _copy_single_dataset_into_db(DataSet(run_id=run_id,
-                                                     conn=source_conn),
-                                             target_conn,
-                                             target_exp_id)
+                _extract_single_dataset_into_db(DataSet(run_id=run_id,
+                                                        conn=source_conn),
+                                                target_conn,
+                                                target_exp_id)
     finally:
         source_conn.close()
         target_conn.close()
@@ -150,12 +150,12 @@ def _create_exp_if_needed(target_conn: SomeConnection,
         return cursor.lastrowid
 
 
-def _copy_single_dataset_into_db(dataset: DataSet,
-                                 target_conn: SomeConnection,
-                                 target_exp_id: int) -> None:
+def _extract_single_dataset_into_db(dataset: DataSet,
+                                    target_conn: SomeConnection,
+                                    target_exp_id: int) -> None:
     """
     NB: This function should only be called from within
-    :meth:copy_runs_into_db
+    :meth:extract_runs_into_db
 
     Insert the given dataset into the specified database file as the latest
     run.
