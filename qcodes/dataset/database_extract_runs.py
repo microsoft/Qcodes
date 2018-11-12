@@ -13,12 +13,13 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         get_runid_from_guid,
                                         insert_column,
                                         is_run_id_in_database,
+                                        select_many_where,
                                         SomeConnection,
                                         sql_placeholder_string)
 
 
 def extract_runs_into_db(source_db_path: str,
-                         target_db_path: str, *run_ids) -> None:
+                         target_db_path: str, *run_ids: int) -> None:
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name
@@ -57,15 +58,13 @@ def extract_runs_into_db(source_db_path: str,
     exp_attr_names = ['name', 'sample_name', 'start_time', 'end_time',
                       'format_string']
 
-    attrs_query = f"""
-                  SELECT {','.join(exp_attr_names)}
-                  FROM experiments
-                  WHERE exp_id = ?
-                  """
-    cursor = source_conn.cursor()
-    cursor.execute(attrs_query, (source_exp_ids[0],))
-    row = cursor.fetchall()[0]
-    exp_attrs = {attr: row[attr] for attr in exp_attr_names}
+    exp_attr_vals = select_many_where(source_conn,
+                                      'experiments',
+                                      *exp_attr_names,
+                                      where_column='exp_id',
+                                      where_value=source_exp_ids[0])
+
+    exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
 
     # Massage the target DB file to accomodate the runs
     # (create new experiment if needed)
