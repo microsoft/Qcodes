@@ -14,6 +14,7 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         get_runid_from_guid,
                                         insert_column,
                                         is_run_id_in_database,
+                                        new_experiment,
                                         select_many_where,
                                         SomeConnection,
                                         sql_placeholder_string)
@@ -124,17 +125,13 @@ def _create_exp_if_needed(target_conn: SomeConnection,
     if len(matching_exp_ids) == 1:
         return matching_exp_ids[0]
     else:
-        create_exp = f"""
-                     INSERT INTO experiments
-                     (name, sample_name, format_string,
-                      run_counter, start_time, end_time)
-                     VALUES
-                     (?,?,?,?,?,?)
-                     """
-        cursor = target_conn.cursor()
-        cursor.execute(create_exp, (exp_name, sample_name, fmt_str,
-                                    0, start_time, end_time))
-        return cursor.lastrowid
+        lastrowid = new_experiment(target_conn,
+                                   name=exp_name,
+                                   sample_name=sample_name,
+                                   format_string=fmt_str,
+                                   start_time=start_time,
+                                   end_time=end_time)
+        return lastrowid
 
 
 def _extract_single_dataset_into_db(dataset: DataSet,

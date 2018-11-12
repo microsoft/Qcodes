@@ -1370,27 +1370,39 @@ def get_dependencies(conn: SomeConnection,
 def new_experiment(conn: SomeConnection,
                    name: str,
                    sample_name: str,
-                   format_string: Optional[str] = "{}-{}-{}"
+                   format_string: Optional[str]="{}-{}-{}",
+                   start_time: Optional[float]=None,
+                   end_time: Optional[float]=None,
                    ) -> int:
-    """ Add new experiment to container
+    """
+    Add new experiment to container.
 
     Args:
         conn: database connection
         name: the name of the experiment
         sample_name: the name of the current sample
         format_string: basic format string for table-name
-            must contain 3 placeholders.
+          must contain 3 placeholders.
+        start_time: time when the experiment was started. Do not supply this
+          unless you have a very good reason to do so.
+        end_time: time when the experiment was completed. Do not supply this
+          unless you have a VERY good reason to do so
+
     Returns:
         id: row-id of the created experiment
     """
     query = """
-    INSERT INTO experiments
-        (name, sample_name, start_time, format_string, run_counter)
-    VALUES
-        (?,?,?,?,?)
-    """
-    curr = atomic_transaction(conn, query, name, sample_name,
-                              time.time(), format_string, 0)
+            INSERT INTO experiments
+            (name, sample_name, format_string,
+            run_counter, start_time, end_time)
+            VALUES
+            (?,?,?,?,?,?)
+            """
+
+    start_time = start_time or time.time()
+    values = (name, sample_name, format_string, 0, start_time, end_time)
+
+    curr = atomic_transaction(conn, query, *values)
     return curr.lastrowid
 
 
