@@ -116,7 +116,6 @@ def _create_exp_if_needed(target_conn: SomeConnection,
                                             end_time=end_time)
 
     if len(matching_exp_ids) > 1:
-
         exp_id = matching_exp_ids[0]
         warn(f'{len(matching_exp_ids)} experiments found in target DB that '
              'match name, sample_name, fmt_str, start_time, and end_time. '
@@ -178,7 +177,8 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     _update_run_counter(target_conn, target_exp_id)
     _copy_layouts_and_dependencies(source_conn,
                                    target_conn,
-                                   dataset.run_id)
+                                   dataset.run_id,
+                                   target_run_id)
     target_table_name = _copy_results_table(source_conn,
                                             target_conn,
                                             dataset.run_id,
@@ -252,7 +252,8 @@ def _update_run_counter(target_conn: SomeConnection, target_exp_id) -> None:
 
 def _copy_layouts_and_dependencies(source_conn: SomeConnection,
                                    target_conn: SomeConnection,
-                                   source_run_id: int) -> None:
+                                   source_run_id: int,
+                                   target_run_id: int) -> None:
     """
     Copy over the layouts and dependencies tables. Note that the layout_ids
     are not preserved in the target DB, but of course their relationships are
@@ -279,7 +280,8 @@ def _copy_layouts_and_dependencies(source_conn: SomeConnection,
     source_layout_ids = []
     target_layout_ids = []
     for row in rows:
-        values = tuple(row[colname] for colname in colnames)
+        values = ((target_run_id,) +
+                  tuple(row[colname] for colname in colnames[1:]))
         cursor.execute(layout_insert, values)
         source_layout_ids.append(row['layout_id'])
         target_layout_ids.append(cursor.lastrowid)
