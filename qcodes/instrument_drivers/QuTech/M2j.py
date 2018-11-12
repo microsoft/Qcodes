@@ -28,7 +28,7 @@ class M2j(Instrument):
         """
         super().__init__(name, **kwargs)
 
-        self.m2j = M2j_module.M2j_module(spi_rack, module)
+        self.m2j = M2j_module(spi_rack, module)
 
         self.add_parameter('gain',
                            label='gain',
