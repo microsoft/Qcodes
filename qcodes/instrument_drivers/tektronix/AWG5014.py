@@ -19,7 +19,12 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
 
-from broadbean.tools import is_subsequence, get_element_channel_ids
+# conditionally import legume for support of legume type sequences
+try:
+    from legume.tools import is_subsequence, get_element_channel_ids
+    USE_LEGUME = True
+except ImportError:
+    USE_LEGUME = False
 
 
 log = logging.getLogger(__name__)
@@ -1061,6 +1066,10 @@ class Tektronix_AWG5014(VisaInstrument):
             preservechannelsettings: see :meth:`~make_send_and_load_awg_file`
 
         """
+        if not USE_LEGUME:
+            raise RuntimeError(
+                'The method "make_send_and_load_awg_file_from_forged_sequence" is '
+                ' only available with the `legume` module installed')
         n_channels = 4
         self.available_waveform_channels = list(range(1, n_channels+1))
         self.available_marker_channels = [
