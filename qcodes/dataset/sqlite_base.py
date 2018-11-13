@@ -1915,7 +1915,33 @@ def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
     """
     Get all metadata associated with the specified run
     """
+    # TODO: promote snapshot to be present at creation time
+    non_metadata = RUNS_TABLE_COLUMNS + ['snapshot']
+
+    metadata = {}
+    possible_tags = []
+
     # first fetch all columns of the runs table
+    query = "PRAGMA table_info(runs)"
+    cursor = conn.cursor()
+    for row in cursor.execute(query):
+        if row['name'] not in non_metadata:
+            possible_tags.append(row['name'])
+
+    # and then fetch whatever metadata the run might have
+    for tag in possible_tags:
+        query = f"""
+                SELECT "{tag}"
+                FROM runs
+                WHERE run_id = ?
+                AND "{tag}" IS NOT NULL
+                """
+        cursor.execute(query, (run_id,))
+        row = cursor.fetchall()
+        if row != []:
+            metadata[tag] = row[0][tag]
+
+    return metadata
 
 
 def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
