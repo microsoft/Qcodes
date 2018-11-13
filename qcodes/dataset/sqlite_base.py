@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS dependencies (
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
+# in the current version, these are the standard columns of the "runs" table
+# Everything else is metadata
+RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
+                      "result_counter", "run_timestamp", "completed_timestamp",
+                      "is_completed", "parameters", "guid",
+                      "run_description"]
+
 
 class ConnectionPlus(wrapt.ObjectProxy):
     """
@@ -1902,6 +1909,13 @@ def get_metadata(conn: SomeConnection, tag: str, table_name: str):
     """
     return select_one_where(conn, "runs", tag,
                             "result_table_name", table_name)
+
+
+def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
+    """
+    Get all metadata associated with the specified run
+    """
+    # first fetch all columns of the runs table
 
 
 def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
