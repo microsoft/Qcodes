@@ -150,11 +150,12 @@ class ZIHDAWG8(Instrument):
 
         Returns:
             0: Compilation was successful with no warnings.
-            1: Compilation was successful but with warnings.
+            2: Compilation was successful but with warnings.
         """
         self.awg_module.set('awgModule/index', awg_number)
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)
-        while self.awg_module.getInt('awgModule/compiler/status') == -1:
+        while len(self.awg_module.get('awgModule/compiler/sourcestring')
+                      ['compiler']['sourcestring'][0]) > 0:
             time.sleep(0.1)
 
         if self.awg_module.getInt('awgModule/compiler/status') == 1:
