@@ -29,6 +29,10 @@ class M2j(Instrument):
         super().__init__(name, **kwargs)
 
         self.m2j = M2j_module(spi_rack, module)
+        self._max_gain_value = 4095
+        self._min_gain_value = 0
+        self._gain_parameters = {'slope': -1024.45, 'offset': 4450.63,
+                                 'db_offset': 32}
 
         self.add_parameter('gain',
                            label='gain',
@@ -50,15 +54,13 @@ class M2j(Instrument):
                           call_cmd=self.m2j.rf_clipped)
 
     def _set_gain(self, gain):
-        a = 1024.45
-        b = 32
-        c = 4450.63
-
-        ref_scale = int(-a * np.log(gain - b) + c)
-        if ref_scale < 0:
-            ref_scale = 0
-        if ref_scale > 4095:
-            ref_scale = 4095
+        ref_scale = int(self._gain_parameters['slope'] * np.log(
+            gain - self._gain_parameters['db_offset']) + self._gain_parameters[
+                            'offset'])
+        if ref_scale < self._min_gain_value:
+            ref_scale = self._min_gain_value
+        if ref_scale > self._max_gain_value:
+            ref_scale = self._max_gain_value
 
         self.m2j.set_gain(ref_scale)
 
