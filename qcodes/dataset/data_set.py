@@ -189,7 +189,7 @@ class DataSet(Sized):
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
     # database
-    persistent_traits = ('name', 'guid', 'number_of_results', 'counter',
+    persistent_traits = ('name', 'guid', 'number_of_results',
                          'parameters', 'paramspecs', 'exp_name', 'sample_name',
                          'completed', 'snapshot', 'run_timestamp_raw',
                          'description', 'completed_timestamp_raw')
@@ -940,7 +940,8 @@ def load_by_guid(guid: str, conn: Optional[SomeConnection]=None) -> DataSet:
     return DataSet(run_id=run_id, conn=conn)
 
 
-def load_by_counter(counter: int, exp_id: int) -> DataSet:
+def load_by_counter(counter: int, exp_id: int,
+                    conn: Optional[SomeConnection]=None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 
@@ -949,11 +950,13 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
+        conn: connection to the database to load from. If not provided, a
+          connection to the DB file specified in the config is made
 
     Returns:
         dataset of the given counter in the given experiment
     """
-    conn = connect(get_DB_location())
+    conn = conn or connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
