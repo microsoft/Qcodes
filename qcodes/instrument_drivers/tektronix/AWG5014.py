@@ -19,12 +19,12 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
 
-# conditionally import legume for support of legume type sequences
+# conditionally import lomentum for support of lomentum type sequences
 try:
-    from legume.tools import is_subsequence, get_element_channel_ids
-    USE_LEGUME = True
+    from lomentum.tools import is_subsequence, get_element_channel_ids
+    USE_LOMENTUM = True
 except ImportError:
-    USE_LEGUME = False
+    USE_LOMENTUM = False
 
 
 log = logging.getLogger(__name__)
@@ -1066,10 +1066,10 @@ class Tektronix_AWG5014(VisaInstrument):
             preservechannelsettings: see :meth:`~make_send_and_load_awg_file`
 
         """
-        if not USE_LEGUME:
+        if not USE_LOMENTUM:
             raise RuntimeError(
                 'The method "make_send_and_load_awg_file_from_forged_sequence" is '
-                ' only available with the `legume` module installed')
+                ' only available with the `lomentum` module installed')
         n_channels = 4
         self.available_waveform_channels = list(range(1, n_channels+1))
         self.available_marker_channels = [
