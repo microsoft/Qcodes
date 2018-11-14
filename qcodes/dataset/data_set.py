@@ -466,12 +466,13 @@ class DataSet(Sized):
     def add_metadata(self, tag: str, metadata: Any):
         """
         Adds metadata to the DataSet. The metadata is stored under the
-        provided tag.
+        provided tag. Note that None is not allowed as a metadata value.
 
         Args:
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
         """
+
         self._metadata[tag] = metadata
         add_meta_data(self.conn, self.run_id, {tag: metadata})
         # `add_meta_data` does not commit, hence we commit here:

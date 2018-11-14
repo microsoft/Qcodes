@@ -1947,7 +1947,8 @@ def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
 def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
                      metadata: Dict[str, Any]) -> None:
     """
-    Insert new metadata column and add values
+    Insert new metadata column and add values. Note that None is not a valid
+    metadata value
 
     Args:
         - conn: the connection to the sqlite database
@@ -1955,6 +1956,10 @@ def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
+    for tag, val in metadata.items():
+        if val is None:
+            raise ValueError(f'Tag {tag} has value None. '
+                             ' That is not a valid metadata value!')
     for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
@@ -1980,6 +1985,7 @@ def add_meta_data(conn: SomeConnection,
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
+    Note that None is not a valid metadata value.
 
     Args:
         - conn: the connection to the sqlite database

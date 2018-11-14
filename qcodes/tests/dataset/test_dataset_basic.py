@@ -546,3 +546,13 @@ def test_metadata():
     assert loaded_ds1.metadata == metadata1
     loaded_ds2 = DataSet(run_id=2)
     assert loaded_ds2.metadata == metadata2
+
+    badtag = 'lex luthor'
+    sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
+
+    match = (f'Tag {badtag} has value None. '
+             ' That is not a valid metadata value!')
+
+    with pytest.raises(ValueError, match=match):
+        for tag, value in sorry_metadata.items():
+            ds1.add_metadata(tag, value)
