@@ -192,7 +192,7 @@ class DataSet(Sized):
     persistent_traits = ('name', 'guid', 'number_of_results',
                          'parameters', 'paramspecs', 'exp_name', 'sample_name',
                          'completed', 'snapshot', 'run_timestamp_raw',
-                         'description', 'completed_timestamp_raw')
+                         'description', 'completed_timestamp_raw', 'metadata')
 
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
@@ -967,9 +967,8 @@ def load_by_counter(counter: int, exp_id: int,
     """
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
-    conn.close()
 
-    d = DataSet(get_DB_location(), run_id=run_id)
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 
