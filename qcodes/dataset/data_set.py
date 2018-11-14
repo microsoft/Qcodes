@@ -38,6 +38,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         make_connection_plus_from,
                                         ConnectionPlus)
 
+from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import get_DB_location
@@ -272,6 +274,8 @@ class DataSet(Sized):
             specs = specs or []
             self._description = RunDescriber(InterDependencies(*specs))
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
+
+        self.data_storage_interface = SqliteStorageInterface(self.guid)
 
     @property
     def run_id(self):
@@ -558,7 +562,7 @@ class DataSet(Sized):
         for sub in self.subscribers.values():
             sub.done_callback()
 
-    def add_result(self, results: Dict[str, VALUE]) -> int:
+    def add_result(self, results: Dict[str, VALUE]) -> None:
         """
         Add a logically single result to existing parameters
 
@@ -595,11 +599,8 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError
 
-        index = insert_values(self.conn, self.table_name,
-                              list(results.keys()),
-                              list(results.values())
-                              )
-        return index
+        self.data_storage_interface.store_results(
+            {k: [v] for k, v in results.items()})
 
     def add_results(self, results: List[Dict[str, VALUE]]) -> int:
         """
@@ -624,13 +625,15 @@ class DataSet(Sized):
             self._perform_start_actions()
             self._started = True
 
-        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        expected_keys = list[frozenset.union(*[frozenset(d) for d in results])]
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         len_before_add = length(self.conn, self.table_name)
 
-        insert_many_values(self.conn, self.table_name, list(expected_keys),
-                           values)
+
+        self.data_storage_interface.store_results(
+            {k: v for k, v in zip(expected_keys, values)})
+
         return len_before_add
 
     @deprecate(reason='it is an experimental functionality, and is likely '
