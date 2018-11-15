@@ -12,19 +12,19 @@ from qcodes.dataset.database import get_DB_location
 class SqliteStorageInterface(DataStorageInterface):
     """
     """
-    def __init__(self, guid: str, conn):
+    def __init__(self, guid: str, ds):
         super().__init__(guid)
-        self.conn = conn
-        self.table_name = select_one_where(self.conn, "runs", "result_table_name", "guid", self.guid)
+        self.ds = ds
+        self.table_name = select_one_where(self.ds.conn, "runs", "result_table_name", "guid", self.guid)
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
         if len(next(iter(results.values()))) == 1:
-            insert_values(self.conn, self.table_name,
+            insert_values(self.ds.conn, self.table_name,
                             list(results.keys()),
                             [v[0] for v in results.values()])
         else:
             values_transposed = list(map(list, zip(*results.values())))
-            insert_many_values(self.conn, self.table_name,
+            insert_many_values(self.ds.conn, self.table_name,
                             list(results.keys()),
                             list(values_transposed))
