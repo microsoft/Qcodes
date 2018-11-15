@@ -275,7 +275,7 @@ class DataSet(Sized):
             self._description = RunDescriber(InterDependencies(*specs))
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
-        self.data_storage_interface = SqliteStorageInterface(self.guid, self.conn)
+        self.data_storage_interface = SqliteStorageInterface(self.guid, self)
 
     @property
     def run_id(self):
