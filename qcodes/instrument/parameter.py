@@ -994,7 +994,7 @@ class ParameterWithSetpoints(Parameter):
         output_shape = self.vals.shape
         setpoints_shape_list: List[int] = []
         for sp in self.setpoints:
-            if not isinstance(self.vals, Arrays):
+            if not isinstance(sp.vals, Arrays):
                 raise RuntimeError("Can only validate shapes for Array "
                                    "Parameters")
             setpoints_shape_list.extend(sp.vals.shape)
