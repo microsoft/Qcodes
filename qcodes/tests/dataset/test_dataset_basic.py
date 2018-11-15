@@ -495,8 +495,7 @@ def test_missing_keys(dataset):
     assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
 
 
-@pytest.mark.usefixtures('experiment')
-def test_get_description(some_paramspecs):
+def test_get_description(experiment, some_paramspecs):
 
     paramspecs = some_paramspecs[2]
 
@@ -528,8 +527,7 @@ def test_get_description(some_paramspecs):
     assert loaded_ds.description == desc
 
 
-@pytest.mark.usefixtures('experiment')
-def test_metadata():
+def test_metadata(experiment):
 
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
@@ -558,7 +556,7 @@ def test_metadata():
             ds1.add_metadata(tag, value)
 
 
-def test_the_same_dataset_as(some_paramspecs):
+def test_the_same_dataset_as(some_paramspecs, experiment):
         paramspecs = some_paramspecs[2]
         ds = DataSet()
         ds.add_parameter(paramspecs['ps1'])
