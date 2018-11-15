@@ -67,16 +67,16 @@ class S5i(Instrument):
     @staticmethod
     def convert_ref_scale_to_dbm(ref_scale):
         # Made using a simple fit to measured data. This is temporarily and
-        # should be done in the module itselves.
-        a = -30.1271
-        b = 58.8666
+        # should be done in the module itselves. Also some of the parameters are redundant
+        offset = -30.1271
+        slope = 58.8666
         c = -7.29323
         d = -145.572
         x1 = 1.10351
         x2 = 0.52127
 
         x = ref_scale
-        return a + b * x + c * (x - x1)**2 + d * (x - x2)**3
+        return offset + slope * x + c * (x - x1)**2 + d * (x - x2)**3
 
     @staticmethod
     def convert_dbm_to_ref_scale(dBm):
@@ -86,6 +86,7 @@ class S5i(Instrument):
         if dBm > 15:
             print(
                 "notice, upper limit for the power is 15dBm. The limit will be the set value.")
+        # should be the inverse of convert_ref_scale_to_dbm, but currently only an approximation
         a = 0.563451
         b = 0.0182626
         c = -0.000556757
@@ -104,9 +105,6 @@ class S5i(Instrument):
             ref_scale = 1
 
         return ref_scale
-
-    def _use_external_reference(self):
-        return self.s5i.use_external
 
     def _get_stepsize(self):
         return self.s5i.stepsize
