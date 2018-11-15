@@ -64,7 +64,7 @@ log = logging.getLogger(__name__)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
 
-
+log = logging.getLogger(__name__)
 SPECS = List[ParamSpec]
 
 
@@ -275,7 +275,7 @@ class DataSet(Sized):
             self._description = RunDescriber(InterDependencies(*specs))
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
-        self.data_storage_interface = SqliteStorageInterface(self.guid)
+        self.data_storage_interface = SqliteStorageInterface(self.guid, self.conn)
 
     @property
     def run_id(self):
@@ -625,14 +625,14 @@ class DataSet(Sized):
             self._perform_start_actions()
             self._started = True
 
-        expected_keys = list[frozenset.union(*[frozenset(d) for d in results])]
+        expected_keys = tuple(frozenset.union(*[frozenset(d) for d in results]))
         values = [[d.get(k, None) for k in expected_keys] for d in results]
+        values_transposed = list(map(list, zip(*values)))
 
         len_before_add = length(self.conn, self.table_name)
 
-
         self.data_storage_interface.store_results(
-            {k: v for k, v in zip(expected_keys, values)})
+            {k: v for k, v in zip(expected_keys, values_transposed)})
 
         return len_before_add
 
@@ -740,6 +740,7 @@ class DataSet(Sized):
             add_parameter(conn, self.table_name, spec)
             # now add values!
             results = [{spec.name: value} for value in values]
+            log.info(f"add_parameter_values:add_result: {results}")
             self.add_results(results)
 
     def get_data(self,
