@@ -362,6 +362,18 @@ class MercuryiPS(VisaInstrument):
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
 
+    def is_ramping(self) -> bool:
+        """
+        Returns True if any axis has a ramp status that is either 'TO SET' or 
+        'TO ZERO'
+        """
+        ramping_statuus = ['TO SET', 'TO ZERO']
+        is_x_ramping = self.GRPX.ramp_status() in ramping_statuus
+        is_y_ramping = self.GRPY.ramp_status() in ramping_statuus
+        is_z_ramping = self.GRPZ.ramp_status() in ramping_statuus
+
+        return is_x_ramping or is_y_ramping or is_z_ramping
+
     def set_new_field_limits(self, limit_func: Callable) -> None:
         """
         Assign a new field limit function to the driver
