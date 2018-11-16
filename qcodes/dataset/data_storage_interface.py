@@ -17,9 +17,3 @@ class DataStorageInterface(ABC):
     @abstractmethod
     def store_results(self, results: Dict[str, VALUES]) -> None:
         pass
-
-    @staticmethod
-    def _validate_results_dict(results: Dict[str, VALUES]):
-        assert len(results) != 0
-        assert len(set(len(v) for k, v in results.items())) == 1
-        assert len(next(iter(results.values()))) != 0
