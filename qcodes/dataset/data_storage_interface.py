@@ -17,3 +17,13 @@ class DataStorageInterface(ABC):
     @abstractmethod
     def store_results(self, results: Dict[str, VALUES]) -> None:
         pass
+
+
+def rows_from_results(results: Dict[str, VALUES]):
+    """
+    Helper function returning an iterator yielding the rows as tuples.
+    Useful for file writing backends that are "row-centric", such as SQLite
+    and GNUPlot
+    """
+    for values in zip(*results.values()):
+        yield values
