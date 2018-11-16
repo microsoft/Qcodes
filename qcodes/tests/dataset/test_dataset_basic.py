@@ -1,6 +1,13 @@
 import itertools
+import os
+import tempfile
 
 import pytest
+from pytest import mark
+
+from qcodes.dataset.experiment_container import Experiment
+
+xfail = mark.xfail
 import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
@@ -556,3 +563,83 @@ def test_metadata():
     with pytest.raises(ValueError, match=match):
         for tag, value in sorry_metadata.items():
             ds1.add_metadata(tag, value)
+
+
+class TestGetData:
+    x = ParamSpec("x", paramtype='numeric')
+    n_vals = 5
+    xvals = list(range(n_vals))
+    # this is the format of how data is returned by DataSet.get_data
+    # which means "a list of table rows"
+    xdata = [[x] for x in xvals]
+
+    @pytest.fixture(scope='class', autouse=True)
+    def ds_with_vals(self):
+        """
+        This fixture creates a DataSet with value that is to be used by all
+        the tests in this class
+        """
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            db_path = os.path.join(tmpdirname, 'temp.db')
+
+            e = Experiment(exp_id=None, path_to_db=db_path)
+
+            try:
+                dataset = DataSet(run_id=None, conn=e.conn, exp_id=e.exp_id)
+
+                try:
+                    dataset.add_parameter(self.x)
+                    for xv in self.xvals:
+                        dataset.add_result({self.x.name: xv})
+
+                    yield dataset
+
+                finally:
+                    dataset.unsubscribe_all()
+            finally:
+                e.conn.close()
+
+    @pytest.mark.parametrize(
+        ("start", "end", "expected"),
+        [
+            # sanity check
+            (None, None, xdata),
+
+            # test for start only
+            (0, None, xdata),
+            (2, None, xdata[(2-1):]),
+            (-2, None, xdata),
+            (n_vals, None, xdata[(n_vals-1):]),
+            (n_vals + 1, None, []),
+            (n_vals + 2, None, []),
+
+            # test for end only
+            pytest.param(None, 0, [], marks=xfail(
+                reason="Now returns `xdata`, treats 0 as None")),
+            (None, 2, xdata[:2]),
+            (None, -2, []),
+            (None, n_vals, xdata),
+            (None, n_vals + 1, xdata),
+            (None, n_vals + 2, xdata),
+
+            # test for start and end
+            pytest.param(0, 0, [], marks=xfail(
+                reason="Now returns `xdata`, treats 0 as None")),
+            pytest.param(1, 1, xdata[1-1], marks=xfail(
+                reason="Now returns `[]`")),
+            (2, 1, []),
+            pytest.param(2, 0, [], marks=xfail(
+                reason="Now returns `xdata[(2-1):], treats 0 as None`")),
+            pytest.param(1, 0, [], marks=xfail(
+                reason="Now returns `xdata[(1-1):], treats 0 as None`")),
+            pytest.param(n_vals, n_vals, xdata[n_vals-1], marks=xfail(
+                reason="Should not exclude start, now returns `[]`")),
+            (n_vals, n_vals - 1, []),
+            pytest.param(2, 4, xdata[(2-1):4], marks=xfail(
+                reason="Should not exclude start, "
+                       "now returns `xdata[2:4]`")),  # wolfgang
+        ],
+    )
+    def test_get_data_with_start_and_end_args(self, ds_with_vals,
+                                              start, end, expected):
+        assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
