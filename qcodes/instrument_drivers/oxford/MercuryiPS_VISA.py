@@ -73,7 +73,7 @@ class MercurySlavePS(InstrumentChannel):
 
         # The firmware update from 2.5 -> 2.6 changed the command
         # syntax slightly
-        if LooseVersion(self.root_instrument.firmware) > LooseVersion('2.5'):
+        if LooseVersion(self.root_instrument.firmware) >= LooseVersion('2.6'):
             self.psu_string = "SPSU"
         else:
             self.psu_string = "PSU"
