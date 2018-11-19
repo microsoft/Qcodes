@@ -200,7 +200,7 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None) -> None:
+                 **kwargs) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
@@ -223,11 +223,7 @@ class _BaseParameter(Metadatable):
         self.scale = scale
         self.offset = offset
         self.raw_value = None
-        if delay is not None:
-            warnings.warn("Delay kwarg is deprecated. Replace with "
-                          "inter_delay or post_delay as needed")
-            if post_delay == 0:
-                post_delay = delay
+
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
