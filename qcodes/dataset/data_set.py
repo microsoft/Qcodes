@@ -34,7 +34,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
                                         run_exists)
-from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from qcodes.dataset.rabbitmq_storage_interface import RabbitMQStorageInterface
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -258,7 +258,7 @@ class DataSet(Sized):
             self._description = RunDescriber(InterDependencies(*specs))
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
-        self.data_storage_interface = SqliteStorageInterface(self.guid, self)
+        self.data_storage_interface = RabbitMQStorageInterface(self.guid, self)
 
     @property
     def run_id(self):
