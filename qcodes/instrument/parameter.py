@@ -580,18 +580,6 @@ class _BaseParameter(Metadatable):
         else:
             self._step = step
 
-    def set_step(self, value):
-        warnings.warn(
-            "set_step is deprecated use step property as in `inst.step = "
-            "stepvalue` instead")
-        self.step = value
-
-    def get_step(self):
-        warnings.warn(
-            "set_step is deprecated use step property as in `a = inst.step` "
-            "instead")
-        return self._step
-
     @property
     def post_delay(self):
         """Delay time after *start* of set operation, for each set"""
