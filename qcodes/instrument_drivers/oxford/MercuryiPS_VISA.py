@@ -265,7 +265,7 @@ class MercuryiPS(VisaInstrument):
                                           z=self.GRPZ.field())
 
         for coord, unit in zip(['x', 'y', 'z', 'r', 'theta', 'phi', 'rho'],
-                               ['T', 'T', 'T', 'T', 'degrees', 'degres', 'T']):
+                               ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
                                unit=unit,
