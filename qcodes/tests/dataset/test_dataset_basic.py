@@ -576,7 +576,7 @@ class TestGetData:
     @pytest.fixture(scope='class', autouse=True)
     def ds_with_vals(self):
         """
-        This fixture creates a DataSet with value that is to be used by all
+        This fixture creates a DataSet with values that is to be used by all
         the tests in this class
         """
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -602,7 +602,7 @@ class TestGetData:
     @pytest.mark.parametrize(
         ("start", "end", "expected"),
         [
-            # sanity check
+            # test without start and end
             (None, None, xdata),
 
             # test for start only
