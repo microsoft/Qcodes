@@ -1065,7 +1065,8 @@ def get_data(conn: SomeConnection,
              ) -> List[List[Any]]:
     """
     Get data from the columns of a table.
-    Allows to specfiy a range.
+    Allows to specify a range of rows (1-based indexing, both ends are
+    included).
 
     Args:
         conn: database connection
@@ -1083,7 +1084,7 @@ def get_data(conn: SomeConnection,
         SELECT {_columns}
         FROM "{table_name}"
         WHERE rowid
-            > {start} and
+            >= {start} and
               rowid
             <= {end}
         """
