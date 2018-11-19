@@ -606,6 +606,9 @@ class DataSet(Sized):
                           list(results.values())
                           )
 
+    @deprecate(reason='it is an experimental functionality, and it is not '
+                      'known whether it will remain or it will be removed.',
+               alternative='modify_result')
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
         """
