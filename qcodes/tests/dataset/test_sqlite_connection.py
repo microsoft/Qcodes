@@ -5,6 +5,16 @@ import pytest
 from qcodes.dataset.sqlite_base import ConnectionPlus, make_plus_connection_from
 
 
+def test_connection_plus():
+    sqlite_conn = sqlite3.connect(':memory:')
+    plus_conn = ConnectionPlus(sqlite_conn)
+
+    assert isinstance(plus_conn, ConnectionPlus)
+    assert isinstance(plus_conn, sqlite3.Connection)
+    # reason for the value of "True" here is unknown
+    assert True is plus_conn.atomic_in_progress
+
+
 @pytest.mark.parametrize(
     argnames='conn',
     argvalues=(sqlite3.connect(':memory:'),
