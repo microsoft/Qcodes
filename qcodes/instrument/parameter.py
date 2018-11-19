@@ -592,18 +592,6 @@ class _BaseParameter(Metadatable):
             "instead")
         return self._step
 
-    def set_delay(self, value):
-        warnings.warn(
-            "set_delay is deprecated use inter_delay or post_delay property "
-            "as in `inst.inter_delay = delayvalue` instead")
-        self.post_delay = value
-
-    def get_delay(self):
-        warnings.warn(
-            "get_delay is deprecated use inter_delay or post_delay property "
-            "as in `a = inst.inter_delay` instead")
-        return self._post_delay
-
     @property
     def post_delay(self):
         """Delay time after *start* of set operation, for each set"""
