@@ -35,7 +35,6 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         update_run_description,
                                         run_exists)
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
-from qcodes.dataset.data_storage_interface import DataStorageInterface
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -229,7 +228,7 @@ class DataSet(Sized):
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
 
-        if not isinstance(storageinterface, DataStorageInterface):
+        if not issubclass(storageinterface, DataStorageInterface):
             raise ValueError("The provided storage interface is not valid. "
                              "Must be a subclass of "
                              "qcodes.dataset.data_storage_interface."
