@@ -623,12 +623,12 @@ class TestGetData:
 
             # test for start and end
             (0, 0, []),
-            pytest.param(1, 1, xdata[1-1], marks=xfail(
+            pytest.param(1, 1, [xdata[1-1]], marks=xfail(
                 reason="Now returns `[]`")),
             (2, 1, []),
             (2, 0, []),
             (1, 0, []),
-            pytest.param(n_vals, n_vals, xdata[n_vals-1], marks=xfail(
+            pytest.param(n_vals, n_vals, [xdata[n_vals-1]], marks=xfail(
                 reason="Should not exclude start, now returns `[]`")),
             (n_vals, n_vals - 1, []),
             pytest.param(2, 4, xdata[(2-1):4], marks=xfail(
