@@ -462,7 +462,7 @@ class _BaseParameter(Metadatable):
                     t_elapsed = time.perf_counter() - self._t_last_set
                     if t_elapsed < self.inter_delay:
                         # Sleep until time since last set is larger than
-                        # self.post_delay
+                        # self.inter_delay
                         time.sleep(self.inter_delay - t_elapsed)
 
                     # Start timer to measure execution time of set_function
@@ -606,22 +606,26 @@ class _BaseParameter(Metadatable):
 
     @property
     def post_delay(self):
-        """Property that returns the delay time of this parameter"""
+        """Delay time after *start* of set operation, for each set"""
         return self._post_delay
 
     @post_delay.setter
     def post_delay(self, post_delay):
         """
-        Configure this parameter with a delay between set operations.
+        Configure this parameter with a delay after the *start* of every set
+        operation.
 
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        after every set.
+        Typically used in conjunction with `step` to create an effective
+        ramp rate, but can also be used without a `step` to enforce a delay
+        *after* every set. One might think of post_delay as how long a set
+        operation is supposed to take. For example, there might be an
+        instrument that needs extra time after setting a parameter although
+        the command for setting the parameter returns quickly.
 
         Args:
-            post_delay(Union[int, float]): the target time between set calls.
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
+            post_delay(Union[int, float]): the target time after the *start*
+                of a set operation. The actual time will not be shorter than
+                this, but may be longer if the underlying set call takes longer.
 
         Raises:
             TypeError: If delay is not int nor float
@@ -637,7 +641,7 @@ class _BaseParameter(Metadatable):
 
     @property
     def inter_delay(self):
-        """Property that returns the delay time of this parameter"""
+        """Delay time between consecutive set operations"""
         return self._inter_delay
 
     @inter_delay.setter
@@ -645,12 +649,12 @@ class _BaseParameter(Metadatable):
         """
         Configure this parameter with a delay between set operations.
 
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        between sets.
+        Typically used in conjunction with `step` to create an effective
+        ramp rate, but can also be used without a `step` to enforce a delay
+        *between* sets.
 
         Args:
-            inter_delay(Union[int, float]): the target time between set calls.
+            inter_delay(Union[int, float]): the minimum time between set calls.
                 The actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
