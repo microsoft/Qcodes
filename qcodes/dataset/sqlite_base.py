@@ -1079,34 +1079,22 @@ def get_data(conn: SomeConnection,
         the data requested in the format of list of rows of values
     """
     _columns = ",".join(columns)
-    if start is not None and end is not None:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            >= {start} and
-              rowid
-            <= {end}
-        """
-    elif start is not None:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            >= {start}
-        """
-    elif end is not None:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            <= {end}
-        """
-    else:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        """
+
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
