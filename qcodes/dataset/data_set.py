@@ -109,6 +109,7 @@ class _Subscriber(Thread):
             self.callback = functools.partial(callback, **callback_kwargs)
 
         self.callback_id = f"callback{self._id}"
+        self.trigger_id = f"sub{self._id}"
 
         conn = dataSet.conn
 
@@ -117,7 +118,7 @@ class _Subscriber(Thread):
         parameters = dataSet.get_parameters()
         sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
         sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER sub{self._id}
+        CREATE TRIGGER {self.trigger_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callback_id}({sql_param_list});
@@ -805,8 +806,8 @@ class DataSet(Sized):
         Remove subscriber with the provided uuid
         """
         with atomic(self.conn) as self.conn:
-            self._remove_trigger(uuid)
             sub = self.subscribers[uuid]
+            self._remove_trigger(sub.trigger_id)
             sub.schedule_stop()
             sub.join()
             del self.subscribers[uuid]
