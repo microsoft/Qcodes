@@ -364,7 +364,7 @@ class MercuryiPS(VisaInstrument):
 
     def is_ramping(self) -> bool:
         """
-        Returns True if any axis has a ramp status that is either 'TO SET' or 
+        Returns True if any axis has a ramp status that is either 'TO SET' or
         'TO ZERO'
         """
         ramping_statuus = ['TO SET', 'TO ZERO']
