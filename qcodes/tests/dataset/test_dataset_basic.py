@@ -1,9 +1,6 @@
 import itertools
 
 import pytest
-from pytest import mark
-
-xfail = mark.xfail
 import numpy as np
 from hypothesis import given, settings
 import hypothesis.strategies as hst
