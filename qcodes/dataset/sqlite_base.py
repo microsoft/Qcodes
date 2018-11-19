@@ -1072,11 +1072,11 @@ def get_data(conn: SomeConnection,
         conn: database connection
         table_name: name of the table
         columns: list of columns
-        start: start of range (1 indedex)
-        end: start of range (1 indedex)
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
 
     Returns:
-        the data requested
+        the data requested in the format of list of rows of values
     """
     _columns = ",".join(columns)
     if start is not None and end is not None:
