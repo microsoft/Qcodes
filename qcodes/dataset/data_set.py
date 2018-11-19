@@ -35,6 +35,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         update_run_description,
                                         run_exists)
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from qcodes.dataset.data_storage_interface import DataStorageInterface
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -190,7 +191,8 @@ class DataSet(Sized):
                  name: str=None,
                  specs: SPECS=None,
                  values=None,
-                 metadata=None) -> None:
+                 metadata=None,
+                 storageinterface: type=SqliteStorageInterface) -> None:
         """
         Create a new DataSet object. The object can either hold a new run or
         an already existing run. If a run_id is provided, then an old run is
@@ -227,6 +229,13 @@ class DataSet(Sized):
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
 
+        if not isinstance(storageinterface, DataStorageInterface):
+            raise ValueError("The provided storage interface is not valid. "
+                             "Must be a subclass of "
+                             "qcodes.dataset.data_storage_interface."
+                             "DataStorageInterface")
+        self.data_storage_interface = storageinterface(self.guid, self)
+
         if run_id is not None:
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
@@ -258,7 +267,6 @@ class DataSet(Sized):
             self._description = RunDescriber(InterDependencies(*specs))
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
-        self.data_storage_interface = SqliteStorageInterface(self.guid, self)
 
     @property
     def run_id(self):

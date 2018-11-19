@@ -3,7 +3,6 @@ from numbers import Number
 from numpy import ndarray
 from abc import ABC, abstractmethod
 
-
 VALUE = Union[str, Number, ndarray, bool, None]
 VALUES = Union[Sequence[VALUE], ndarray]
 
@@ -11,7 +10,7 @@ VALUES = Union[Sequence[VALUE], ndarray]
 class DataStorageInterface(ABC):
     """
     """
-    def __init__(self, guid: str):
+    def __init__(self, guid: str, ds: 'DataSet'):
         self.guid = guid
 
     @abstractmethod
