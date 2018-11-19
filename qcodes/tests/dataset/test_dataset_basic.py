@@ -1,11 +1,7 @@
 import itertools
-import os
-import tempfile
 
 import pytest
 from pytest import mark
-
-from qcodes.dataset.experiment_container import Experiment
 
 xfail = mark.xfail
 import numpy as np
@@ -17,7 +13,6 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -573,31 +568,17 @@ class TestGetData:
     # which means "a list of table rows"
     xdata = [[x] for x in xvals]
 
-    @pytest.fixture(scope='class', autouse=True)
-    def ds_with_vals(self):
+    @pytest.fixture(autouse=True)
+    def ds_with_vals(self, dataset):
         """
         This fixture creates a DataSet with values that is to be used by all
         the tests in this class
         """
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            db_path = os.path.join(tmpdirname, 'temp.db')
+        dataset.add_parameter(self.x)
+        for xv in self.xvals:
+            dataset.add_result({self.x.name: xv})
 
-            e = Experiment(exp_id=None, path_to_db=db_path)
-
-            try:
-                dataset = DataSet(run_id=None, conn=e.conn, exp_id=e.exp_id)
-
-                try:
-                    dataset.add_parameter(self.x)
-                    for xv in self.xvals:
-                        dataset.add_result({self.x.name: xv})
-
-                    yield dataset
-
-                finally:
-                    dataset.unsubscribe_all()
-            finally:
-                e.conn.close()
+        return dataset
 
     @pytest.mark.parametrize(
         ("start", "end", "expected"),
