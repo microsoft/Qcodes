@@ -614,8 +614,7 @@ class TestGetData:
             (n_vals + 2, None, []),
 
             # test for end only
-            pytest.param(None, 0, [], marks=xfail(
-                reason="Now returns `xdata`, treats 0 as None")),
+            (None, 0, []),
             (None, 2, xdata[:2]),
             (None, -2, []),
             (None, n_vals, xdata),
@@ -623,15 +622,12 @@ class TestGetData:
             (None, n_vals + 2, xdata),
 
             # test for start and end
-            pytest.param(0, 0, [], marks=xfail(
-                reason="Now returns `xdata`, treats 0 as None")),
+            (0, 0, []),
             pytest.param(1, 1, xdata[1-1], marks=xfail(
                 reason="Now returns `[]`")),
             (2, 1, []),
-            pytest.param(2, 0, [], marks=xfail(
-                reason="Now returns `xdata[(2-1):], treats 0 as None`")),
-            pytest.param(1, 0, [], marks=xfail(
-                reason="Now returns `xdata[(1-1):], treats 0 as None`")),
+            (2, 0, []),
+            (1, 0, []),
             pytest.param(n_vals, n_vals, xdata[n_vals-1], marks=xfail(
                 reason="Should not exclude start, now returns `[]`")),
             (n_vals, n_vals - 1, []),

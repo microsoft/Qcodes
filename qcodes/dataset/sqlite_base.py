@@ -1060,8 +1060,8 @@ def length(conn: SomeConnection,
 def get_data(conn: SomeConnection,
              table_name: str,
              columns: List[str],
-             start: int = None,
-             end: int = None,
+             start: Optional[int] = None,
+             end: Optional[int] = None,
              ) -> List[List[Any]]:
     """
     Get data from the columns of a table.
@@ -1078,7 +1078,7 @@ def get_data(conn: SomeConnection,
         the data requested
     """
     _columns = ",".join(columns)
-    if start and end:
+    if start is not None and end is not None:
         query = f"""
         SELECT {_columns}
         FROM "{table_name}"
@@ -1087,14 +1087,14 @@ def get_data(conn: SomeConnection,
               rowid
             <= {end}
         """
-    elif start:
+    elif start is not None:
         query = f"""
         SELECT {_columns}
         FROM "{table_name}"
         WHERE rowid
             >= {start}
         """
-    elif end:
+    elif end is not None:
         query = f"""
         SELECT {_columns}
         FROM "{table_name}"
