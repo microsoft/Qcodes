@@ -17,9 +17,10 @@ from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
+# pylint: disable=unused-import
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
 n_experiments = 0
-
 
 @pytest.mark.usefixtures("experiment")
 def test_has_attributes_after_init():
