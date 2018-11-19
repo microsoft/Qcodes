@@ -13,6 +13,7 @@ from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.tests.dataset.temporary_databases import (
     empty_temp_db, experiment, dataset)
 # pylint: enable=unused-import
+from qcodes.tests.dataset.test_dataset_basic import make_shadow_dataset
 
 from qcodes.tests.test_config import default_config
 from qcodes.tests.common import retry_until_does_not_throw
@@ -196,3 +197,48 @@ def test_subscription_from_config_wrong_name(dataset):
         with pytest.raises(RuntimeError):
             sub_id_c = dataset.subscribe_from_config('test_subscriber')
 
+
+def test_unsubscribe_all_makes_atomic_connections_never_commit(
+        dataset, basic_subscriber):
+    xparam = ParamSpec(name='x', paramtype='numeric')
+    dataset.add_parameter(xparam)
+
+    sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
+                               state={})
+
+    assert len(dataset.subscribers) == 1
+    assert list(dataset.subscribers.keys()) == [sub_id]
+
+    dataset.unsubscribe_all()
+
+    dataset.add_result({'x': 1})
+
+    shadow_ds = make_shadow_dataset(dataset)
+    try:
+        assert dataset.get_data('x') == [[1]]
+        assert shadow_ds.get_data('x') == [[1]]
+    finally:
+        shadow_ds.conn.close()
+
+
+def test_unsubscribe_makes_atomic_connections_never_commit(
+        dataset, basic_subscriber):
+    xparam = ParamSpec(name='x', paramtype='numeric')
+    dataset.add_parameter(xparam)
+
+    sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
+                               state={})
+
+    assert len(dataset.subscribers) == 1
+    assert list(dataset.subscribers.keys()) == [sub_id]
+
+    dataset.unsubscribe(sub_id)
+
+    dataset.add_result({'x': 1})
+
+    shadow_ds = make_shadow_dataset(dataset)
+    try:
+        assert dataset.get_data('x') == [[1]]
+        assert shadow_ds.get_data('x') == [[1]]
+    finally:
+        shadow_ds.conn.close()
