@@ -746,6 +746,7 @@ def atomic(conn: SomeConnection):
 
     conn = make_plus_connection_from(conn)
 
+    old_atomic_in_progress = conn.atomic_in_progress
     is_outmost = not(conn.atomic_in_progress)
     conn.atomic_in_progress = True
 
@@ -770,6 +771,7 @@ def atomic(conn: SomeConnection):
     finally:
         if is_outmost:
             conn.isolation_level = old_level
+        conn.atomic_in_progress = old_atomic_in_progress
 
 
 def make_plus_connection_from(conn: SomeConnection) -> ConnectionPlus:

@@ -30,13 +30,13 @@ def sqlite_conn_is_idle(conn: sqlite3.Connection, isolation=None):
 
 def plus_conn_is_idle(conn: ConnectionPlus, isolation=None):
     assert isinstance(conn, ConnectionPlus)
-    # assert False is conn.atomic_in_progress <-- should it be?
-    assert True is conn.atomic_in_progress
+    assert False is conn.atomic_in_progress
     assert isolation == conn.isolation_level
     assert False is conn.in_transaction
     return True
 
 
+@pytest.mark.xfail('this test showcases a weird behavior of `ConnectionPlus`')
 def test_connection_plus():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
@@ -81,6 +81,8 @@ def test_atomic_on_outmost_sqlite_connection():
     assert plus_conn_is_idle(atomic_conn, isolation_level)
 
 
+@pytest.mark.xfail('this test showcases a weird behavior of `atomic`, '
+                   'needs fixes, apparently also for `ConnectionPlus`')
 def test_atomic_on_outmost_plus_connection():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
@@ -137,6 +139,8 @@ def test_two_atomics_on_outmost_sqlite_connection():
     assert plus_conn_is_idle(atomic_conn_2, isolation_level)
 
 
+@pytest.mark.xfail('this test showcases a weird behavior of `atomic`, '
+                   'needs fixes, apparently also for `ConnectionPlus`')
 def test_two_atomics_on_outmost_plus_connection():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
@@ -146,29 +150,72 @@ def test_two_atomics_on_outmost_plus_connection():
     assert False is plus_conn.in_transaction
 
     with atomic(plus_conn) as atomic_conn_1:
-        # assert plus_conn_in_transaction(plus_conn)
-        assert plus_conn_is_idle(plus_conn, isolation_level)
-        # assert plus_conn_in_transaction(atomic_conn_1)
-        assert plus_conn_is_idle(atomic_conn_1, isolation_level)
+        # assert plus_conn_in_transaction(plus_conn) <-- should it be?
+        assert isinstance(plus_conn, ConnectionPlus)
+        assert True is plus_conn.atomic_in_progress
+        assert isolation_level == plus_conn.isolation_level
+        assert False is plus_conn.in_transaction # not True??
+
+        # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
+        assert isinstance(atomic_conn_1, ConnectionPlus)
+        assert True is atomic_conn_1.atomic_in_progress
+        assert isolation_level is atomic_conn_1.isolation_level
+        assert False is atomic_conn_1.in_transaction # not True??
 
         with atomic(atomic_conn_1) as atomic_conn_2:
-            # assert plus_conn_in_transaction(plus_conn) <-- should it be?
-            assert plus_conn_is_idle(plus_conn, isolation_level)
+            # assert plus_conn_in_transaction(plus_conn) # <-- should it be?
+            assert isinstance(plus_conn, ConnectionPlus)
+            assert True is plus_conn.atomic_in_progress
+            assert isolation_level is plus_conn.isolation_level
+            assert False is plus_conn.in_transaction  # not True??
+
             # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
-            assert plus_conn_is_idle(atomic_conn_1, isolation_level)
-            # assert plus_conn_in_transaction(atomic_conn_2) <-- should it be?
-            assert plus_conn_is_idle(atomic_conn_2, isolation_level)
+            assert isinstance(atomic_conn_1, ConnectionPlus)
+            assert True is atomic_conn_1.atomic_in_progress
+            assert isolation_level == atomic_conn_1.isolation_level  # not None??
+            assert False is atomic_conn_1.in_transaction  # not True???
+
+            # assert plus_conn_in_transaction(atomic_conn_2) # <-- should it be?
+            assert isinstance(atomic_conn_2, ConnectionPlus)
+            assert True is atomic_conn_2.atomic_in_progress
+            assert isolation_level == atomic_conn_2.isolation_level  # not None??
+            assert False is atomic_conn_2.in_transaction  # not True???
 
         # assert plus_conn_in_transaction(plus_conn) <-- should it be?
-        assert plus_conn_is_idle(plus_conn, isolation_level)
-        # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
-        assert plus_conn_is_idle(atomic_conn_1, isolation_level)
-        # assert plus_conn_in_transaction(atomic_conn_2) <-- should it be?
-        assert plus_conn_is_idle(atomic_conn_2, isolation_level)
+        assert isinstance(plus_conn, ConnectionPlus)
+        assert True is plus_conn.atomic_in_progress
+        assert isolation_level == plus_conn.isolation_level  # not None??
+        assert False is plus_conn.in_transaction # not True?
 
-    assert plus_conn_is_idle(plus_conn, isolation_level)
-    assert plus_conn_is_idle(atomic_conn_1, isolation_level)
-    assert plus_conn_is_idle(atomic_conn_2, isolation_level)
+        # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
+        assert isinstance(atomic_conn_1, ConnectionPlus)
+        assert True is atomic_conn_1.atomic_in_progress
+        assert isolation_level == atomic_conn_1.isolation_level  # not None??
+        assert False is atomic_conn_1.in_transaction  # not True?
+
+        # assert plus_conn_in_transaction(atomic_conn_2) <-- should it be?
+        assert isinstance(atomic_conn_2, ConnectionPlus)
+        assert True is atomic_conn_2.atomic_in_progress
+        assert isolation_level == atomic_conn_2.isolation_level # not None??
+        assert False is atomic_conn_2.in_transaction # not True?
+
+    # assert plus_conn_is_idle(plus_conn, isolation_level) <-- should it be?
+    assert isinstance(plus_conn, ConnectionPlus)
+    assert True is plus_conn.atomic_in_progress # not False??
+    assert isolation_level == plus_conn.isolation_level
+    assert False is plus_conn.in_transaction
+
+    # assert plus_conn_is_idle(atomic_conn_1, isolation_level) <-- should it be?
+    assert isinstance(atomic_conn_1, ConnectionPlus)
+    assert True is atomic_conn_1.atomic_in_progress # not False??
+    assert isolation_level == atomic_conn_1.isolation_level
+    assert False is atomic_conn_1.in_transaction
+
+    # assert plus_conn_is_idle(atomic_conn_2, isolation_level) <-- should it be?
+    assert isinstance(atomic_conn_2, ConnectionPlus)
+    assert True is atomic_conn_2.atomic_in_progress # not False??
+    assert isolation_level == atomic_conn_2.isolation_level
+    assert False is atomic_conn_2.in_transaction
 
     assert atomic_in_progress == plus_conn.atomic_in_progress
     assert atomic_in_progress == atomic_conn_1.atomic_in_progress
