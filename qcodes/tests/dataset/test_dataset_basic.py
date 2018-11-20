@@ -390,28 +390,29 @@ def test_modify_result():
         assert (shadow_ds.get_data('z')[0][0] == zdata).all()
 
         with pytest.raises(ValueError):
-            dataset.modify_result(0, {' x': 1})
+            pytest.deprecated_call(
+                dataset.modify_result, 0, {' x': 1})
 
         xdata = 1
         ydata = 12
         zdata = np.linspace(0, 1, 99)
 
-        dataset.modify_result(0, {'x': xdata})
+        pytest.deprecated_call(dataset.modify_result, 0, {'x': xdata})
         assert dataset.get_data('x')[0][0] == xdata
         assert shadow_ds.get_data('x')[0][0] == xdata
 
-        dataset.modify_result(0, {'y': ydata})
+        pytest.deprecated_call(dataset.modify_result, 0, {'y': ydata})
         assert dataset.get_data('y')[0][0] == ydata
         assert shadow_ds.get_data('y')[0][0] == ydata
 
-        dataset.modify_result(0, {'z': zdata})
+        pytest.deprecated_call(dataset.modify_result, 0, {'z': zdata})
         assert (dataset.get_data('z')[0][0] == zdata).all()
         assert (shadow_ds.get_data('z')[0][0] == zdata).all()
 
         dataset.mark_complete()
 
         with pytest.raises(CompletedError):
-            dataset.modify_result(0, {'x': 2})
+            pytest.deprecated_call(dataset.modify_result, 0, {'x': 2})
 
     finally:
         shadow_ds.conn.close()

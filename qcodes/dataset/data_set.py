@@ -576,6 +576,8 @@ class DataSet(Sized):
                            values)
         return len_before_add
 
+    @deprecate(reason='it is an experimental functionality, and is most '
+                      'probably will be removed soon.')
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
         """
         Modify a logically single result of existing parameters
