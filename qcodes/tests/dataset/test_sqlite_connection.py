@@ -3,7 +3,7 @@ import sqlite3
 import pytest
 
 from qcodes.dataset.sqlite_base import ConnectionPlus, \
-    make_plus_connection_from, atomic
+    make_plus_connection_from, atomic, connect
 
 
 def sqlite_conn_in_transaction(conn: sqlite3.Connection):
@@ -36,7 +36,8 @@ def plus_conn_is_idle(conn: ConnectionPlus, isolation=None):
     return True
 
 
-@pytest.mark.xfail('this test showcases a weird behavior of `ConnectionPlus`')
+@pytest.mark.xfail(reason='this test showcases a weird behavior of '
+                          '`ConnectionPlus`')
 def test_connection_plus():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
@@ -81,8 +82,8 @@ def test_atomic_on_outmost_sqlite_connection():
     assert plus_conn_is_idle(atomic_conn, isolation_level)
 
 
-@pytest.mark.xfail('this test showcases a weird behavior of `atomic`, '
-                   'needs fixes, apparently also for `ConnectionPlus`')
+@pytest.mark.xfail(reason='this test showcases a weird behavior of `atomic`, '
+                          'needs fixes, apparently also for `ConnectionPlus`')
 def test_atomic_on_outmost_plus_connection():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
@@ -139,8 +140,8 @@ def test_two_atomics_on_outmost_sqlite_connection():
     assert plus_conn_is_idle(atomic_conn_2, isolation_level)
 
 
-@pytest.mark.xfail('this test showcases a weird behavior of `atomic`, '
-                   'needs fixes, apparently also for `ConnectionPlus`')
+@pytest.mark.xfail(reason='this test showcases a weird behavior of `atomic`, '
+                          'needs fixes, apparently also for `ConnectionPlus`')
 def test_two_atomics_on_outmost_plus_connection():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
@@ -220,3 +221,98 @@ def test_two_atomics_on_outmost_plus_connection():
     assert atomic_in_progress == plus_conn.atomic_in_progress
     assert atomic_in_progress == atomic_conn_1.atomic_in_progress
     assert atomic_in_progress == atomic_conn_2.atomic_in_progress
+
+
+@pytest.mark.parametrize(argnames='create_conn_plus',
+                         argvalues=(
+                                 make_plus_connection_from,
+                                 pytest.param(ConnectionPlus,
+                                              marks=pytest.mark.xfail(
+                                                  strict=True))
+                         ),
+                         ids=(
+                                 'make_plus_connection_from',
+                                 'ConnectionPlus'
+                         ))
+def test_use_of_atomic_that_does_not_commit(tmp_path, create_conn_plus):
+    """
+    This test tests the behavior of `ConnectionPlus` that is created from
+    `sqlite3.Connection` with respect to `atomic` context manager and commits.
+    """
+    dbfile = str(tmp_path / 'temp.db')
+
+    sqlite_conn = connect(dbfile)
+    plus_conn = create_conn_plus(sqlite_conn)
+
+    # this connection is going to be used to test whether changes have been
+    # committed to the database file
+    control_conn = connect(dbfile)
+
+    get_all_runs = 'SELECT * FROM runs'
+    insert_run_with_name = 'INSERT INTO runs (name) VALUES (?)'
+
+    # assert that at the beginning of the test there are no runs in the
+    # table; we'll be adding new rows to the runs table below
+
+    assert 0 == len(plus_conn.execute(get_all_runs).fetchall())
+    assert 0 == len(control_conn.execute(get_all_runs).fetchall())
+
+    # add 1 new row, and assert the state of the runs table at every step
+    # note that control_conn will only detect the change after the `atomic`
+    # context manager is exited
+
+    with atomic(plus_conn) as atomic_conn:
+
+        assert 0 == len(plus_conn.execute(get_all_runs).fetchall())
+        assert 0 == len(atomic_conn.execute(get_all_runs).fetchall())
+        assert 0 == len(control_conn.execute(get_all_runs).fetchall())
+
+        atomic_conn.cursor().execute(insert_run_with_name, ['aaa'])
+
+        assert 1 == len(plus_conn.execute(get_all_runs).fetchall())
+        assert 1 == len(atomic_conn.execute(get_all_runs).fetchall())
+        assert 0 == len(control_conn.execute(get_all_runs).fetchall())
+
+    assert 1 == len(plus_conn.execute(get_all_runs).fetchall())
+    assert 1 == len(atomic_conn.execute(get_all_runs).fetchall())
+    assert 1 == len(control_conn.execute(get_all_runs).fetchall())
+
+    # let's add two new rows but each inside its own `atomic` context manager
+    # we expect to see the actual change in the database only after we exit
+    # the outermost context.
+
+    with atomic(plus_conn) as atomic_conn_1:
+
+        assert 1 == len(plus_conn.execute(get_all_runs).fetchall())
+        assert 1 == len(atomic_conn_1.execute(get_all_runs).fetchall())
+        assert 1 == len(control_conn.execute(get_all_runs).fetchall())
+
+        atomic_conn_1.cursor().execute(insert_run_with_name, ['bbb'])
+
+        assert 2 == len(plus_conn.execute(get_all_runs).fetchall())
+        assert 2 == len(atomic_conn_1.execute(get_all_runs).fetchall())
+        assert 1 == len(control_conn.execute(get_all_runs).fetchall())
+
+        with atomic(atomic_conn_1) as atomic_conn_2:
+
+            assert 2 == len(plus_conn.execute(get_all_runs).fetchall())
+            assert 2 == len(atomic_conn_1.execute(get_all_runs).fetchall())
+            assert 2 == len(atomic_conn_2.execute(get_all_runs).fetchall())
+            assert 1 == len(control_conn.execute(get_all_runs).fetchall())
+
+            atomic_conn_2.cursor().execute(insert_run_with_name, ['ccc'])
+
+            assert 3 == len(plus_conn.execute(get_all_runs).fetchall())
+            assert 3 == len(atomic_conn_1.execute(get_all_runs).fetchall())
+            assert 3 == len(atomic_conn_2.execute(get_all_runs).fetchall())
+            assert 1 == len(control_conn.execute(get_all_runs).fetchall())
+
+        assert 3 == len(plus_conn.execute(get_all_runs).fetchall())
+        assert 3 == len(atomic_conn_1.execute(get_all_runs).fetchall())
+        assert 3 == len(atomic_conn_2.execute(get_all_runs).fetchall())
+        assert 1 == len(control_conn.execute(get_all_runs).fetchall())
+
+    assert 3 == len(plus_conn.execute(get_all_runs).fetchall())
+    assert 3 == len(atomic_conn_1.execute(get_all_runs).fetchall())
+    assert 3 == len(atomic_conn_2.execute(get_all_runs).fetchall())
+    assert 3 == len(control_conn.execute(get_all_runs).fetchall())
