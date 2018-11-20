@@ -6,6 +6,7 @@ from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
 from numbers import Number
+from abc import ABCMeta
 
 import numpy as np
 
@@ -17,6 +18,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 import qcodes.config
 
 log = logging.getLogger(__name__)
@@ -387,7 +389,7 @@ class DataSaver:
                 log.debug(f'Successfully wrote from index {write_point}')
                 self._results = []
             except Exception as e:
-                log.warning(f'Could not commit to database; {e}')
+                log.warning(f'Could not add results to dataset; {e}')
         else:
             log.debug('No results to flush')
 
@@ -424,13 +426,16 @@ class Runner:
             name: str = '',
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]] = None) -> None:
+                                              MutableMapping]]] = None,
+            storageinterface: ABCMeta=SqliteStorageInterface) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
         self.subscribers: Sequence[Tuple[Callable,
                                          Union[MutableSequence,
                                                MutableMapping]]]
+        self.storage_interface = storageinterface
+
         if subscribers is None:
             self.subscribers = []
         else:
@@ -452,11 +457,16 @@ class Runner:
 
         # next set up the "datasaver"
         if self.experiment is not None:
-            self.ds = qc.new_data_set(
-                self.name, self.experiment.exp_id, conn=self.experiment.conn
-            )
+            exp_id = self.experiment.exp_id
+            conn = self.experiment.conn
         else:
-            self.ds = qc.new_data_set(self.name)
+            exp_id = None
+            conn = None
+
+        self.ds = DataSet(name=self.name,
+                          exp_id=exp_id,
+                          conn=conn,
+                          storageinterface=self.storage_interface)
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
@@ -507,8 +517,9 @@ class Runner:
         self.ds.unsubscribe_all()
 
 
-
 T = TypeVar('T', bound='Measurement')
+
+
 class Measurement:
     """
     Measurement procedure container
@@ -531,6 +542,7 @@ class Measurement:
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
         self._write_period: Optional[float] = None
         self.name = ''
+        self.storage_interface = SqliteStorageInterface
 
     @property
     def write_period(self) -> float:
@@ -649,7 +661,7 @@ class Measurement:
 
         return self
 
-    def _register_parameter(self : T, name: str,
+    def _register_parameter(self: T, name: str,
                             label: str,
                             unit: str,
                             setpoints: setpoints_type,
@@ -777,7 +789,7 @@ class Measurement:
                                      paramtype)
 
     def register_custom_parameter(
-            self : T, name: str,
+            self: T, name: str,
             label: str = None, unit: str = None,
             basis: setpoints_type = None,
             setpoints: setpoints_type = None,
@@ -836,7 +848,7 @@ class Measurement:
         self.parameters.pop(param)
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self : T, func: Callable, args: tuple) -> T:
+    def add_before_run(self: T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -854,7 +866,7 @@ class Measurement:
 
         return self
 
-    def add_after_run(self : T, func: Callable, args: tuple) -> T:
+    def add_after_run(self: T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -872,7 +884,7 @@ class Measurement:
 
         return self
 
-    def add_subscriber(self : T,
+    def add_subscriber(self: T,
                        func: Callable,
                        state: Union[MutableSequence, MutableMapping]) -> T:
         """
@@ -897,4 +909,5 @@ class Measurement:
                       write_period=self._write_period,
                       parameters=self.parameters,
                       name=self.name,
-                      subscribers=self.subscribers)
+                      subscribers=self.subscribers,
+                      storageinterface=self.storage_interface)
