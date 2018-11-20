@@ -108,7 +108,7 @@ def filter_instrument(instrument: Union['InstrumentBase',
         myhandler = get_console_handler()
         if myhandler is None:
             raise RuntimeError("Trying to filter instrument but no handler "
-                               "defined. Did you call `start_logger`")
+                               "defined. Did you forget to call `start_logger` before?")
         handler_int = (myhandler,)
     elif not isinstance(handler, collections.abc.Sequence):
         handler_int = (handler,)
