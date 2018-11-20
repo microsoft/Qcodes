@@ -240,19 +240,19 @@ class _BaseParameter(Metadatable):
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodesisabstractmethod__', False):
+        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
+                          'define get_raw in your subclass instead.')
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodesisabstractmethod__', False):
+        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
                           'be directly accessible. It is recommended to '
-                          'define set_raw in your subclass instead.' )
+                          'define set_raw in your subclass instead.')
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
