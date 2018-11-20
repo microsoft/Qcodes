@@ -36,7 +36,7 @@ class GroupParameter(Parameter):
                  name: str,
                  instrument: Optional['Instrument'] = None,
                  **kwargs
-                ) -> None:
+                 ) -> None:
 
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError("A GroupParameter does not use 'set_cmd' or "
@@ -61,7 +61,7 @@ class GroupParameter(Parameter):
 
     def set_raw(self, value: Any) -> None:
         if self.group is None:
-            raise RuntimeError("Trying to get Group value but no "
+            raise RuntimeError("Trying to set Group value but no "
                                "group defined")
         self.group.set(self, value)
 
