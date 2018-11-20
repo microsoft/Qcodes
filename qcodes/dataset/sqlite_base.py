@@ -118,7 +118,7 @@ class ConnectionPlus(wrapt.ObjectProxy):
     currently in the middle of an atomic block of transactions, thus allowing
     us to nest atomic context managers
     """
-    atomic_in_progress: bool = True
+    atomic_in_progress: bool = False
 
 
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
@@ -789,7 +789,6 @@ def make_plus_connection_from(conn: SomeConnection) -> ConnectionPlus:
     """
     if not (hasattr(conn, 'atomic_in_progress')):
         conn = ConnectionPlus(conn)
-        conn.atomic_in_progress = False
     else:
         conn = cast(ConnectionPlus, conn)
     return conn

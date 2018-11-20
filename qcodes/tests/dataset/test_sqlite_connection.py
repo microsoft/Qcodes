@@ -36,17 +36,13 @@ def plus_conn_is_idle(conn: ConnectionPlus, isolation=None):
     return True
 
 
-@pytest.mark.xfail(reason='this test showcases a weird behavior of '
-                          '`ConnectionPlus`')
 def test_connection_plus():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
 
     assert isinstance(plus_conn, ConnectionPlus)
     assert isinstance(plus_conn, sqlite3.Connection)
-    # reason for the value of "True" here is unknown
-    assert True is plus_conn.atomic_in_progress
-    # assert False is plus_conn.atomic_in_progress <-- should it be?
+    assert False is plus_conn.atomic_in_progress
 
 
 @pytest.mark.parametrize(
@@ -61,11 +57,8 @@ def test_make_plus_connection_from(conn):
     assert isinstance(plus_conn, ConnectionPlus)
 
     if isinstance(conn, ConnectionPlus):
-        # make_plus_connection_from does not change this, hence it should be
-        # equal to the value from `conn` (which is True, see ConnectionPlus)
         assert conn.atomic_in_progress is plus_conn.atomic_in_progress
     else:
-        # make_plus_connection_from explicitly sets this to False
         assert False is plus_conn.atomic_in_progress
 
 
@@ -82,38 +75,61 @@ def test_atomic_on_outmost_sqlite_connection():
     assert plus_conn_is_idle(atomic_conn, isolation_level)
 
 
-@pytest.mark.xfail(reason='this test showcases a weird behavior of `atomic`, '
-                          'needs fixes, apparently also for `ConnectionPlus`')
 def test_atomic_on_outmost_plus_connection():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
+    assert False is plus_conn.atomic_in_progress
 
     atomic_in_progress = plus_conn.atomic_in_progress
-
     isolation_level = plus_conn.isolation_level
+
     assert False is plus_conn.in_transaction
 
     with atomic(plus_conn) as atomic_conn:
-        assert isinstance(atomic_conn, ConnectionPlus)
-
-        assert True is atomic_conn.atomic_in_progress
-
-        # assert None is atomic_conn.isolation_level <-- should it be?
-        assert isolation_level == atomic_conn.isolation_level
-        # assert None is plus_conn.isolation_level <-- should it be?
-        assert isolation_level == plus_conn.isolation_level
-
-        # assert True is plus_conn.in_transaction <-- should it be?
-        assert False is plus_conn.in_transaction
-        # assert True is atomic_conn.in_transaction <-- should it be?
-        assert False is atomic_conn.in_transaction
+        assert plus_conn_in_transaction(atomic_conn)
+        assert plus_conn_in_transaction(plus_conn)
 
     assert isolation_level == plus_conn.isolation_level
     assert False is plus_conn.in_transaction
+    assert atomic_in_progress is plus_conn.atomic_in_progress
 
+    assert isolation_level == plus_conn.isolation_level
     assert False is atomic_conn.in_transaction
-
     assert atomic_in_progress is atomic_conn.atomic_in_progress
+
+
+@pytest.mark.parametrize('in_transaction', (True, False))
+def test_atomic_on_outmost_plus_connection_that_is_in_progress(in_transaction):
+    sqlite_conn = sqlite3.connect(':memory:')
+    plus_conn = ConnectionPlus(sqlite_conn)
+
+    # explicitly set to True for testing purposes
+    plus_conn.atomic_in_progress = True
+
+    # implement parametrizing over connection's `in_transaction` attribute
+    if in_transaction:
+        plus_conn.cursor().execute('BEGIN')
+    assert in_transaction is plus_conn.in_transaction
+
+    isolation_level = plus_conn.isolation_level
+    in_transaction = plus_conn.in_transaction
+
+    with atomic(plus_conn) as atomic_conn:
+        assert True is plus_conn.atomic_in_progress
+        assert isolation_level == plus_conn.isolation_level
+        assert in_transaction is plus_conn.in_transaction
+
+        assert True is atomic_conn.atomic_in_progress
+        assert isolation_level == atomic_conn.isolation_level
+        assert in_transaction is atomic_conn.in_transaction
+
+    assert True is plus_conn.atomic_in_progress
+    assert isolation_level == plus_conn.isolation_level
+    assert in_transaction is plus_conn.in_transaction
+
+    assert True is atomic_conn.atomic_in_progress
+    assert isolation_level == atomic_conn.isolation_level
+    assert in_transaction is atomic_conn.in_transaction
 
 
 def test_two_atomics_on_outmost_sqlite_connection():
@@ -140,83 +156,31 @@ def test_two_atomics_on_outmost_sqlite_connection():
     assert plus_conn_is_idle(atomic_conn_2, isolation_level)
 
 
-@pytest.mark.xfail(reason='this test showcases a weird behavior of `atomic`, '
-                          'needs fixes, apparently also for `ConnectionPlus`')
 def test_two_atomics_on_outmost_plus_connection():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
-    atomic_in_progress = plus_conn.atomic_in_progress
 
+    atomic_in_progress = plus_conn.atomic_in_progress
     isolation_level = plus_conn.isolation_level
+
     assert False is plus_conn.in_transaction
 
     with atomic(plus_conn) as atomic_conn_1:
-        # assert plus_conn_in_transaction(plus_conn) <-- should it be?
-        assert isinstance(plus_conn, ConnectionPlus)
-        assert True is plus_conn.atomic_in_progress
-        assert isolation_level == plus_conn.isolation_level
-        assert False is plus_conn.in_transaction # not True??
-
-        # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
-        assert isinstance(atomic_conn_1, ConnectionPlus)
-        assert True is atomic_conn_1.atomic_in_progress
-        assert isolation_level is atomic_conn_1.isolation_level
-        assert False is atomic_conn_1.in_transaction # not True??
+        assert plus_conn_in_transaction(plus_conn)
+        assert plus_conn_in_transaction(atomic_conn_1)
 
         with atomic(atomic_conn_1) as atomic_conn_2:
-            # assert plus_conn_in_transaction(plus_conn) # <-- should it be?
-            assert isinstance(plus_conn, ConnectionPlus)
-            assert True is plus_conn.atomic_in_progress
-            assert isolation_level is plus_conn.isolation_level
-            assert False is plus_conn.in_transaction  # not True??
+            assert plus_conn_in_transaction(plus_conn)
+            assert plus_conn_in_transaction(atomic_conn_1)
+            assert plus_conn_in_transaction(atomic_conn_2)
 
-            # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
-            assert isinstance(atomic_conn_1, ConnectionPlus)
-            assert True is atomic_conn_1.atomic_in_progress
-            assert isolation_level == atomic_conn_1.isolation_level  # not None??
-            assert False is atomic_conn_1.in_transaction  # not True???
+        assert plus_conn_in_transaction(plus_conn)
+        assert plus_conn_in_transaction(atomic_conn_1)
+        assert plus_conn_in_transaction(atomic_conn_2)
 
-            # assert plus_conn_in_transaction(atomic_conn_2) # <-- should it be?
-            assert isinstance(atomic_conn_2, ConnectionPlus)
-            assert True is atomic_conn_2.atomic_in_progress
-            assert isolation_level == atomic_conn_2.isolation_level  # not None??
-            assert False is atomic_conn_2.in_transaction  # not True???
-
-        # assert plus_conn_in_transaction(plus_conn) <-- should it be?
-        assert isinstance(plus_conn, ConnectionPlus)
-        assert True is plus_conn.atomic_in_progress
-        assert isolation_level == plus_conn.isolation_level  # not None??
-        assert False is plus_conn.in_transaction # not True?
-
-        # assert plus_conn_in_transaction(atomic_conn_1) <-- should it be?
-        assert isinstance(atomic_conn_1, ConnectionPlus)
-        assert True is atomic_conn_1.atomic_in_progress
-        assert isolation_level == atomic_conn_1.isolation_level  # not None??
-        assert False is atomic_conn_1.in_transaction  # not True?
-
-        # assert plus_conn_in_transaction(atomic_conn_2) <-- should it be?
-        assert isinstance(atomic_conn_2, ConnectionPlus)
-        assert True is atomic_conn_2.atomic_in_progress
-        assert isolation_level == atomic_conn_2.isolation_level # not None??
-        assert False is atomic_conn_2.in_transaction # not True?
-
-    # assert plus_conn_is_idle(plus_conn, isolation_level) <-- should it be?
-    assert isinstance(plus_conn, ConnectionPlus)
-    assert True is plus_conn.atomic_in_progress # not False??
-    assert isolation_level == plus_conn.isolation_level
-    assert False is plus_conn.in_transaction
-
-    # assert plus_conn_is_idle(atomic_conn_1, isolation_level) <-- should it be?
-    assert isinstance(atomic_conn_1, ConnectionPlus)
-    assert True is atomic_conn_1.atomic_in_progress # not False??
-    assert isolation_level == atomic_conn_1.isolation_level
-    assert False is atomic_conn_1.in_transaction
-
-    # assert plus_conn_is_idle(atomic_conn_2, isolation_level) <-- should it be?
-    assert isinstance(atomic_conn_2, ConnectionPlus)
-    assert True is atomic_conn_2.atomic_in_progress # not False??
-    assert isolation_level == atomic_conn_2.isolation_level
-    assert False is atomic_conn_2.in_transaction
+    assert plus_conn_is_idle(plus_conn, isolation_level)
+    assert plus_conn_is_idle(atomic_conn_1, isolation_level)
+    assert plus_conn_is_idle(atomic_conn_2, isolation_level)
 
     assert atomic_in_progress == plus_conn.atomic_in_progress
     assert atomic_in_progress == atomic_conn_1.atomic_in_progress
@@ -224,17 +188,10 @@ def test_two_atomics_on_outmost_plus_connection():
 
 
 @pytest.mark.parametrize(argnames='create_conn_plus',
-                         argvalues=(
-                                 make_plus_connection_from,
-                                 pytest.param(ConnectionPlus,
-                                              marks=pytest.mark.xfail(
-                                                  strict=True))
-                         ),
-                         ids=(
-                                 'make_plus_connection_from',
-                                 'ConnectionPlus'
-                         ))
-def test_use_of_atomic_that_does_not_commit(tmp_path, create_conn_plus):
+                         argvalues=(make_plus_connection_from, ConnectionPlus),
+                         ids=('make_plus_connection_from', 'ConnectionPlus'))
+def test_that_use_of_atomic_commits_only_at_outermost_context(
+        tmp_path, create_conn_plus):
     """
     This test tests the behavior of `ConnectionPlus` that is created from
     `sqlite3.Connection` with respect to `atomic` context manager and commits.
