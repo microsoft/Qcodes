@@ -185,7 +185,7 @@ def experiments()->List[Experiment]:
 
 
 def new_experiment(name: str,
-                   sample_name: str,
+                   sample_name: Optional[str],
                    format_string: str = "{}-{}-{}") -> Experiment:
     """
     Create a new experiment (in the database file from config)
@@ -306,7 +306,7 @@ def load_or_create_experiment(experiment_name: str,
     try:
         experiment = load_experiment_by_name(experiment_name, sample_name)
     except ValueError as exception:
-        if "Experiment not found" in str(exception) and sample_name is not None:
+        if "Experiment not found" in str(exception):
             experiment = new_experiment(experiment_name, sample_name)
         else:
             raise exception
