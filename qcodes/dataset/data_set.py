@@ -653,6 +653,9 @@ class DataSet(Sized):
                                flattened_keys,
                                flattened_values)
 
+    @deprecate(reason='it is an experimental functionality, and it is not '
+                      'known whether it will remain or it will be removed.',
+               alternative='add_parameter, add_result, add_results')
     def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
         Add a parameter to the DataSet and associates result values with the

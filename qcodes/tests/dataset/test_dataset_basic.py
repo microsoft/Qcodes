@@ -418,28 +418,61 @@ def test_modify_result():
         shadow_ds.conn.close()
 
 
-# @settings(max_examples=25, deadline=None)
-# @given(N=hst.integers(min_value=1, max_value=10000),
-#        M=hst.integers(min_value=1, max_value=10000))
-# def test_add_parameter_values(dataset, N, M):
-def test_add_parameter_values(dataset, N=2, M=3):
+@pytest.mark.xfail(reason='This function does not seem to work the way its '
+                          'docstring suggests. See the test body for more '
+                          'information.')
+def test_add_parameter_values(dataset):
+    n = 2
+    m = n + 1
+
     xparam = ParamSpec('x', 'numeric')
     dataset.add_parameter(xparam)
 
-    x_results = [{'x': x} for x in range(N)]
+    x_results = [{'x': x} for x in range(n)]
     dataset.add_results(x_results)
 
     yparam = ParamSpec("y", "numeric")
 
-    if N != M:
-        match_str = f'Need to have {N} values but got {M}.'
-        match_str = re.escape(match_str)
-        with pytest.raises(ValueError, match=match_str):
-            dataset.add_parameter_values(yparam, [y for y in range(M)])
+    match_str = f'Need to have {n} values but got {m}.'
+    match_str = re.escape(match_str)
+    with pytest.raises(ValueError, match=match_str):
+        pytest.deprecated_call(
+            dataset.add_parameter_values, yparam, [y for y in range(m)])
 
-    yvals = [y for y in range(N)]
-    y_expected = [[None]] * N + [[y] for y in yvals]  # <-- should it have None?
-    dataset.add_parameter_values(yparam, yvals)
+    yvals = [y for y in range(n)]
+
+    # Unlike what the docstring of the method suggests,
+    # `add_parameter_values` does NOT add a new parameter and values for it
+    # "NEXT TO the columns of values of existing parameters".
+    #
+    # In other words, if the initial state of the table is:
+    #
+    # |   x  |
+    # --------
+    # |   1  |
+    # |   2  |
+    #
+    # then the state of the table after calling `add_parameter_values` is
+    # going to be:
+    #
+    # |   x  |   y  |
+    # ---------------
+    # |   1  | NULL |
+    # |   2  | NULL |
+    # | NULL |  25  |
+    # | NULL |  42  |
+    #
+    # while the docstring suggests the following state:
+    #
+    # |   x  |   y  |
+    # ---------------
+    # |   1  |  25  |
+    # |   2  |  42  |
+    #
+
+    y_expected = [[None]] * n + [[y] for y in yvals]
+    pytest.deprecated_call(
+        dataset.add_parameter_values, yparam, yvals)
 
     shadow_ds = make_shadow_dataset(dataset)
 
