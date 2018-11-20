@@ -359,9 +359,7 @@ def test_modify_results(dataset):
                  'implemented and covered with tests.')
 
 
-@pytest.mark.usefixtures("experiment")
-def test_modify_result():
-    dataset = new_data_set("test_modify_result")
+def test_modify_result(dataset):
     xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
     yparam = ParamSpec("y", 'numeric', label='y parameter',
