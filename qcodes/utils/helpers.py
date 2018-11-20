@@ -665,5 +665,5 @@ def abstractmethod(funcobj):
     instantiated and we will use this property to detect if the
     method is abstract and should be overwritten.
     """
-    funcobj.__qcodesisabstractmethod__ = True
+    funcobj.__qcodes_is_abstract_method__ = True
     return funcobj
