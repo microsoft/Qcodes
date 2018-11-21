@@ -24,7 +24,7 @@ ReturnCode = NewType('ReturnCode', ctypes.c_uint)
 
 ## CONSTANTS ##
 
-ERROR_CODES: Dict[ReturnCode, str] = {
+ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(ctypes.c_uint(code)): msg for code, msg in {
     513: 'ApiFailed',
     514: 'ApiAccessDenied',
     515: 'ApiDmaChannelUnavailable',
@@ -116,7 +116,7 @@ ERROR_CODES: Dict[ReturnCode, str] = {
           'per channel is too large to fit in on-board memory. Try '
           'reducing number of samples per channel, or switch to '
           'single channel mode.')
-}
+}.items()}
 
 BOARD_NAMES = {
     0: 'ATS_NONE',
@@ -161,7 +161,7 @@ BOARD_NAMES = {
 API_SUCCESS = 512
 
 
-def check_error_code(return_code: ReturnCode.__supertype__, func, arguments) -> None:
+def check_error_code(return_code: ctypes.c_uint, func, arguments) -> None:
     if (return_code != API_SUCCESS) and (return_code != 518):
         # TODO(damazter) (C) log error
         argrepr = repr(arguments)
@@ -174,7 +174,8 @@ def check_error_code(return_code: ReturnCode.__supertype__, func, arguments) -> 
                     return_code, func.__name__, argrepr))
         raise RuntimeError(
             'error {}: {} from function {} with args: {}'.format(
-                return_code, ERROR_CODES[return_code], func.__name__,
+                return_code, ERROR_CODES[ReturnCode(
+                    return_code)], func.__name__,
                 argrepr))
 
 
