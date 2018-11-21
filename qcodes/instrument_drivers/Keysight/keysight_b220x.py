@@ -3,6 +3,23 @@ from qcodes.utils.validators import MultiType, Ints, Enum, Lists
 
 import re
 import warnings
+from functools import wraps
+
+
+def post_execution_status_poll(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        self.clear_status()
+        retval = func(self, *args, **kwargs)
+
+        if self.get_status():
+            warnings.warn("Instrument status byte indicates an error occured "
+                          "(value {stb})! Use `get_error` method to poll "
+                          "error message.")
+        return retval
+
+    return wrapper
+
 
 class KeysightB220X(VisaInstrument):
     """
@@ -158,7 +175,7 @@ class KeysightB220X(VisaInstrument):
                            docstring="Param: True for ON, False for OFF"
                            )
 
-
+    @post_execution_status_poll
     def connect(self, input, output):
         """Connect given input/output pair.
 
@@ -173,6 +190,7 @@ class KeysightB220X(VisaInstrument):
             ch1=input,
             ch2=output))
 
+    @post_execution_status_poll
     def disconnect(self, input, output):
         """Disconnect given Input/Output pair.
 
@@ -187,6 +205,7 @@ class KeysightB220X(VisaInstrument):
             ch1=input,
             ch2=output))
 
+    @post_execution_status_poll
     def disconnect_all(self):
         """
         opens all connections.
@@ -196,13 +215,16 @@ class KeysightB220X(VisaInstrument):
         """
         self.write(':OPEN:CARD {card}'.format(card=self._card))
 
+    @post_execution_status_poll
     def bias_disable_all_outputs(self):
         self.write(':BIAS:CHAN:DIS:CARD {card}'.format(card=self._card))
 
+    @post_execution_status_poll
     def bias_enable_all_outputs(self):
         self.write(':BIAS:CHAN:ENAB:CARD {card}'.format(
             card=self._card))
 
+    @post_execution_status_poll
     def bias_enable_output(self, output: int):
         KeysightB220X._available_output_ports.validate(output)
 
@@ -210,6 +232,7 @@ class KeysightB220X(VisaInstrument):
             card=self._card, output=output)
         )
 
+    @post_execution_status_poll
     def bias_disable_output(self, output: int):
         KeysightB220X._available_output_ports.validate(output)
 
@@ -217,6 +240,7 @@ class KeysightB220X(VisaInstrument):
             card=self._card, output=output)
         )
 
+    @post_execution_status_poll
     def gnd_enable_output(self, output: int):
         KeysightB220X._available_output_ports.validate(output)
 
@@ -224,6 +248,7 @@ class KeysightB220X(VisaInstrument):
             card=self._card, output=output)
         )
 
+    @post_execution_status_poll
     def gnd_disable_output(self, output: int):
         KeysightB220X._available_output_ports.validate(output)
 
@@ -231,15 +256,18 @@ class KeysightB220X(VisaInstrument):
             card=self._card, output=output)
         )
 
+    @post_execution_status_poll
     def gnd_enable_all_outputs(self):
         self.write(':AGND:CHAN:ENAB:CARD {card}'.format(
             card=self._card))
 
+    @post_execution_status_poll
     def gnd_disable_all_outputs(self):
         self.write(':AGND:CHAN:DIS:CARD {card}'.format(
             card=self._card)
         )
 
+    @post_execution_status_poll
     def couple_port_autodetect(self):
         """Autodetect Kelvin connections on Input ports
 
@@ -264,7 +292,7 @@ class KeysightB220X(VisaInstrument):
         """
         self.write('*RST')
 
-
+    @post_execution_status_poll
     def _set_connection_rule(self, mode: str):
         if 'free' == self.connection_rule() and 'SROU' == mode:
             warnings.warn('When going from *free* to *single* mode existing '
@@ -273,6 +301,7 @@ class KeysightB220X(VisaInstrument):
         self.write(':CONN:RULE {card},{mode}'.format(card=self._card,
                                                      mode=mode))
 
+    @post_execution_status_poll
     def _get_connection_rule(self):
         return self.ask(':CONN:RULE? {card}'.format(card=self._card))
 

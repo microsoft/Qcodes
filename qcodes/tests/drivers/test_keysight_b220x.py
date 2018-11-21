@@ -48,6 +48,27 @@ def test_connect_throws_at_invalid_channel_number(uut):
         uut.connect(15,10)
 
 
+def test_connect_emits_warning_on_statusbyte_not_null(uut):
+    # some tricks are used to trigger an instrument error both in the
+    # simulation as well as in the real instrument:
+    # 1. with gnd mode enabled, it is illegal to connect to input channel 12,
+    #  which will raise an instrument error in the physical instrument,
+    # but not in the simulated instrument.
+    # 2. The simulated instrument only accepts pre-defined channels in the
+    # connect command. here a channel is used that was not pre-defined which
+    # will cause an instrument error in the simulated instrument, but not in
+    # the physical instrument
+
+    uut.gnd_mode(True)
+    with pytest.warns(UserWarning):
+        uut.connect(12, 33)
+
+        # The simulated instrument does not reset the settings to default
+        # values, so gnd mode is explicitly disabled here:
+        uut.gnd_mode(False)
+
+
+
 def test_disconnect_throws_at_invalid_channel_number(uut):
     with pytest.raises(ValueError):
         uut.disconnect(2,49)
