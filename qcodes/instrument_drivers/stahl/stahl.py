@@ -1,3 +1,7 @@
+"""
+This is a driver for the Stahl power supplies
+"""
+
 from typing import Dict, Optional, Any, Callable
 import re
 import numpy as np
@@ -11,6 +15,14 @@ logger = logging.getLogger()
 
 
 class StahlChannel(InstrumentChannel):
+    """
+    A Stahl source channel
+
+    Args:
+        parent
+        name
+        channel_number
+    """
     def __init__(self, parent: VisaInstrument, name: str, channel_number: int):
         super().__init__(parent, name)
 
@@ -39,21 +51,37 @@ class StahlChannel(InstrumentChannel):
 
         self.add_parameter(
             "is_locked",
-            get_cmd=self._get_lock_status,
-            get_parser={"0": False, "1": True}.get,
+            get_cmd=self._get_lock_status
         )
 
     @staticmethod
     def _stahl_get_parser(unit: str) -> Callable:
-        regex = f"([\+\-][\d]?\d,\d{{3}} ){unit}$"
+        """
+        Upon querying the voltage and current, the response from the instrument
+        is `+/-yy,yyy V` or `+/-yy,yyy mA'. We strip the unit and replace the
+        comma with a dot.
 
-        def parser(response):
+        Args:
+            unit: The unit to strip
+
+        Return:
+            parser: Parse a response to a float
+        """
+        regex = f"([\+\-]\d+,\d{{3}} ){unit}$"
+
+        def parser(response: str) -> float:
             result = re.search(regex, response).groups()[0]
             return float(result.replace(",", "."))
 
         return parser
 
     def _set_voltage(self, voltage: float) -> None:
+        """
+        Args:
+            voltage
+        """
+        # Normalize the voltage in the range 0 to 1, where 0 is maximum negative
+        # voltage and 1 is maximum positive voltage
         voltage_normalized = np.interp(
             voltage,
             self.parent.voltage_range * np.array([-1, 1]),
@@ -61,12 +89,18 @@ class StahlChannel(InstrumentChannel):
         )
 
         send_string = f"{self.parent.identifier} CH{self._channel_string} {voltage_normalized:.5f}"
-        response = self.ask(send_string)  # This is not a bug. We are asking in a set
+        response = self.ask(send_string)
 
         if response != self._acknowledge_reply:
             logger.warning(f"Command {send_string} did not produce an acknowledge reply")
 
-    def _get_lock_status(self) -> chr:
+    def _get_lock_status(self) -> bool:
+        """
+        A lock occurs when an output is overloaded
+
+        Return:
+            lock_status: True when locked
+        """
         send_string = f"{self.parent.identifier} LOCK"
 
         response = self.parent.visa_handle.query_binary_values(
@@ -78,10 +112,17 @@ class StahlChannel(InstrumentChannel):
         chnr = self._channel_number - 1
         channel_group = chnr // 4
         lock_code_group = response[channel_group]
-        return format(lock_code_group, "b")[chnr % 4 + 1]
+        return format(lock_code_group, "b")[chnr % 4 + 1] == "1"
 
 
 class Stahl(VisaInstrument):
+    """
+    Stahl driver.
+
+    Args:
+        name
+        address: A serial port address
+    """
     def __init__(self, name: str, address: str):
         super().__init__(name, address, terminator="\r")
         self.visa_handle.baud_rate = 115200
@@ -118,29 +159,32 @@ class Stahl(VisaInstrument):
         self.connect_message()
 
     def _get_temperature(self) -> float:
-
+        """
+        When querying the temperature a non-ascii character to denote
+        the degree symbol '°' is present in the return string. For this
+        reason, we cannot use the `ask` method as it will attempt to
+        recode the response with utf-8, which will fail. We need to
+        manually set the decoding to latin-1
+        """
         send_string = f"{self.identifier} TEMP"
-        response_characters = self.visa_handle.query_binary_values(
-            send_string,
-            datatype='B',
-            header_fmt="empty"
-        )
-
-        response_string = "".join(map(chr, response_characters))
-        # The '°' is the reason why we cannot simply call 'ask'
-        # Stupid instrument :-(
-        groups = re.search("TEMP (.*)°C", response_string).groups()
+        self.write(send_string)
+        response = self.visa_handle.read(encoding="latin-1")
+        groups = re.search("TEMP (.*)°C", response).groups()
         return float(groups[0])
 
     @staticmethod
     def _parse_idn_string(ind_string) -> Dict[str, Any]:
-
+        """
+        Return:
+             dict with keys: "model", "serial_number", "voltage_range",
+             "n_channels", "output_type"
+        """
         groups = re.search(
             "(HV|BS)(\d{3}) (\d{3}) (\d{2}) [buqsm]",
             ind_string
         ).groups()
 
-        idparsers = {
+        id_parsers = {
             "model": str,
             "serial_number": str,
             "voltage_range": float,
@@ -155,12 +199,15 @@ class Stahl(VisaInstrument):
         }
 
         return {
-            name: idparsers[name](value)
-            for name, value in zip(idparsers.keys(), groups)
+            name: id_parsers[name](value)
+            for name, value in zip(id_parsers.keys(), groups)
         }
 
     def get_idn(self) -> Dict[str, Optional[str]]:
-
+        """
+        The Stahl sends a uncommon IDN string which does not include a
+        firmware version.
+        """
         return {
             "vendor": "Stahl",
             "model": self.model,
