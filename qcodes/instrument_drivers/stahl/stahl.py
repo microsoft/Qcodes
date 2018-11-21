@@ -67,10 +67,10 @@ class StahlChannel(InstrumentChannel):
         Return:
             parser: Parse a response to a float
         """
-        regex = f"([\+\-]\d+,\d{{3}} ){unit}$"
+        regex = f"([\+\-]\d+,\d+ ){unit}$"
 
         def parser(response: str) -> float:
-            result = re.search(regex, response).groups()[0]
+            result, = re.search(regex, response).groups()
             return float(result.replace(",", "."))
 
         return parser
@@ -163,14 +163,14 @@ class Stahl(VisaInstrument):
         When querying the temperature a non-ascii character to denote
         the degree symbol '°' is present in the return string. For this
         reason, we cannot use the `ask` method as it will attempt to
-        recode the response with utf-8, which will fail. We need to
+        decode the response with utf-8, which will fail. We need to
         manually set the decoding to latin-1
         """
         send_string = f"{self.identifier} TEMP"
         self.write(send_string)
         response = self.visa_handle.read(encoding="latin-1")
-        groups = re.search("TEMP (.*)°C", response).groups()
-        return float(groups[0])
+        temperature_string, = re.search("TEMP (.*)°C", response).groups()
+        return float(temperature_string)
 
     @staticmethod
     def _parse_idn_string(ind_string) -> Dict[str, Any]:
