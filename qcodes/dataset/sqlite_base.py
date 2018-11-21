@@ -1078,52 +1078,41 @@ def length(conn: SomeConnection,
 def get_data(conn: SomeConnection,
              table_name: str,
              columns: List[str],
-             start: int = None,
-             end: int = None,
+             start: Optional[int] = None,
+             end: Optional[int] = None,
              ) -> List[List[Any]]:
     """
     Get data from the columns of a table.
-    Allows to specfiy a range.
+    Allows to specify a range of rows (1-based indexing, both ends are
+    included).
 
     Args:
         conn: database connection
         table_name: name of the table
         columns: list of columns
-        start: start of range (1 indedex)
-        end: start of range (1 indedex)
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
 
     Returns:
-        the data requested
+        the data requested in the format of list of rows of values
     """
     _columns = ",".join(columns)
-    if start and end:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            > {start} and
-              rowid
-            <= {end}
-        """
-    elif start:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            >= {start}
-        """
-    elif end:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            <= {end}
-        """
-    else:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        """
+
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
