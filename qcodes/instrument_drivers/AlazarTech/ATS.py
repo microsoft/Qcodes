@@ -107,7 +107,7 @@ class AlazarTech_ATS(Instrument):
                 - max_samples
                 - bits_per_sample
         """
-        return sync(cls.get_board_info_async(api, board_id))
+        return sync(cls.get_board_info_async(api, system_id, board_id))
 
     @classmethod
     async def get_board_info_async(cls, api: AlazarATSAPI, system_id: int,
