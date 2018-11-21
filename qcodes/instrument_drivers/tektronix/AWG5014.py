@@ -1145,12 +1145,13 @@ class Tektronix_AWG5014(VisaInstrument):
             else:
                 for i in range(2):
                     if len(marker_keys[i]) != 0:
-                        n_samples = len(step_markers[marker_keys[i][0]])
+                        n_samples = len(step_markers[i][marker_keys[i][0]])
                         break
             if n_samples is None:
                 raise RuntimeError('It is not allowed to upload an element '
                                    'without markers nor waveforms')
             blank_trace = np.zeros(n_samples)
+
             # I think this does might add some traces dynamically if they are
             # not the same in all elements. Add check in the beginning
             step_waveforms_list = [step_waveforms.get(key, blank_trace)
