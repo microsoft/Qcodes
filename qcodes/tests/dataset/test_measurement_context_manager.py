@@ -359,6 +359,18 @@ def test_setting_write_period(wp):
         with meas.run() as datasaver:
             assert datasaver.write_period == float(wp)
 
+@pytest.mark.usefixtures("experiment")
+def test_method_chaining(DAC):
+    meas = (
+        Measurement()
+            .register_parameter(DAC.ch1)
+            .register_custom_parameter(name='freqax',
+                                       label='Frequency axis',
+                                       unit='Hz')
+            .add_before_run((lambda: None), ())
+            .add_after_run((lambda: None), ())
+            .add_subscriber((lambda values, idx, state: None), state=[])
+    )
 
 @pytest.mark.usefixtures("experiment")
 @settings(deadline=None)

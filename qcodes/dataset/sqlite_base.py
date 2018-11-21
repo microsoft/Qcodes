@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS dependencies (
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
+# in the current version, these are the standard columns of the "runs" table
+# Everything else is metadata
+RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
+                      "result_counter", "run_timestamp", "completed_timestamp",
+                      "is_completed", "parameters", "guid",
+                      "run_description"]
+
 
 class ConnectionPlus(wrapt.ObjectProxy):
     """
@@ -1053,52 +1060,41 @@ def length(conn: SomeConnection,
 def get_data(conn: SomeConnection,
              table_name: str,
              columns: List[str],
-             start: int = None,
-             end: int = None,
+             start: Optional[int] = None,
+             end: Optional[int] = None,
              ) -> List[List[Any]]:
     """
     Get data from the columns of a table.
-    Allows to specfiy a range.
+    Allows to specify a range of rows (1-based indexing, both ends are
+    included).
 
     Args:
         conn: database connection
         table_name: name of the table
         columns: list of columns
-        start: start of range (1 indedex)
-        end: start of range (1 indedex)
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
 
     Returns:
-        the data requested
+        the data requested in the format of list of rows of values
     """
     _columns = ",".join(columns)
-    if start and end:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            > {start} and
-              rowid
-            <= {end}
-        """
-    elif start:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            >= {start}
-        """
-    elif end:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            <= {end}
-        """
-    else:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        """
+
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
@@ -1904,10 +1900,44 @@ def get_metadata(conn: SomeConnection, tag: str, table_name: str):
                             "result_table_name", table_name)
 
 
+def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
+    """
+    Get all metadata associated with the specified run
+    """
+    # TODO: promote snapshot to be present at creation time
+    non_metadata = RUNS_TABLE_COLUMNS + ['snapshot']
+
+    metadata = {}
+    possible_tags = []
+
+    # first fetch all columns of the runs table
+    query = "PRAGMA table_info(runs)"
+    cursor = conn.cursor()
+    for row in cursor.execute(query):
+        if row['name'] not in non_metadata:
+            possible_tags.append(row['name'])
+
+    # and then fetch whatever metadata the run might have
+    for tag in possible_tags:
+        query = f"""
+                SELECT "{tag}"
+                FROM runs
+                WHERE run_id = ?
+                AND "{tag}" IS NOT NULL
+                """
+        cursor.execute(query, (run_id,))
+        row = cursor.fetchall()
+        if row != []:
+            metadata[tag] = row[0][tag]
+
+    return metadata
+
+
 def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
                      metadata: Dict[str, Any]) -> None:
     """
-    Insert new metadata column and add values
+    Insert new metadata column and add values. Note that None is not a valid
+    metadata value
 
     Args:
         - conn: the connection to the sqlite database
@@ -1915,6 +1945,10 @@ def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
+    for tag, val in metadata.items():
+        if val is None:
+            raise ValueError(f'Tag {tag} has value None. '
+                             ' That is not a valid metadata value!')
     for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
@@ -1940,6 +1974,7 @@ def add_meta_data(conn: SomeConnection,
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
+    Note that None is not a valid metadata value.
 
     Args:
         - conn: the connection to the sqlite database
