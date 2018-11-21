@@ -1,12 +1,13 @@
 import pytest
 from pyvisa.errors import VisaIOError
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
+import warnings
 
 @pytest.fixture
 def uut() -> KeysightB220X:
     try:
         uut = KeysightB220X('switch_matrix',
-                            address='GPIB::22::INSTR')
+                            address='insert_Keysight_B2200_VISA_resource_name_here')
     except (ValueError, VisaIOError):
         # Either there is no VISA lib installed or there was no real instrument found at the
         # specified address => use simulated instrument
@@ -36,6 +37,27 @@ def test_connect(uut):
     uut.connect(2, 48)
     assert 0 == uut.get_status()
 
+def test_connect_throws_at_invalid_channel_number(uut):
+    with pytest.raises(ValueError):
+        uut.connect(2,49)
+    with pytest.raises(ValueError):
+        uut.connect(2,0)
+    with pytest.raises(ValueError):
+        uut.connect(0,10)
+    with pytest.raises(ValueError):
+        uut.connect(15,10)
+
+
+def test_disconnect_throws_at_invalid_channel_number(uut):
+    with pytest.raises(ValueError):
+        uut.disconnect(2,49)
+    with pytest.raises(ValueError):
+        uut.disconnect(2,0)
+    with pytest.raises(ValueError):
+        uut.disconnect(0,10)
+    with pytest.raises(ValueError):
+        uut.disconnect(15,10)
+
 
 def test_connections(uut):
     uut.connect(2, 48)
@@ -58,11 +80,20 @@ def test_disconnect(uut):
     assert 0 == uut.get_status()
 
 
+@pytest.mark.filterwarnings("ignore:When going")
 def test_connection_rule(uut):
     uut.connection_rule('single')
     assert 0 == uut.get_status()
     assert 'single' == uut.connection_rule()
     assert 0 == uut.get_status()
+
+
+def test_connection_rule_emits_warning_when_going_from_free_to_single(uut):
+    uut.connection_rule('free') # uut should already be in free mode after reset
+
+    with pytest.warns(UserWarning):
+        uut.connection_rule('single')
+
 
 def test_connection_sequence(uut):
     assert 'bbm' == uut.connection_sequence()

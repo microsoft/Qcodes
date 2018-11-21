@@ -12,8 +12,8 @@ devices:
           query_error: 4
     eom:
       GPIB INSTR:
-        q: "\r"
-        r: "\r"
+        q: "\n"
+        r: "\n"
     channels:
       card:
         ids: [0, 1, 2, 3, 4]
