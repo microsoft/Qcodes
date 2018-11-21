@@ -24,7 +24,9 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         VALUE, VALUES, get_data,
                                         get_values,
                                         get_setpoints,
-                                        get_metadata, one,
+                                        get_metadata,
+                                        get_metadata_from_run_id,
+                                        one,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
@@ -231,6 +233,7 @@ class DataSet(Sized):
             self._completed = completed(self.conn, self.run_id)
             self._started = self.number_of_results > 0
             self._description = self._get_run_description_from_db()
+            self._metadata = get_metadata_from_run_id(self.conn, run_id)
 
         else:
             # Actually perform all the side effects needed for the creation
@@ -252,6 +255,7 @@ class DataSet(Sized):
             self._started = False
             specs = specs or []
             self._description = RunDescriber(InterDependencies(*specs))
+            self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
     @property
     def run_id(self):
@@ -341,6 +345,10 @@ class DataSet(Sized):
     @property
     def description(self) -> RunDescriber:
         return self._description
+
+    @property
+    def metadata(self) -> Dict:
+        return self._metadata
 
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
@@ -458,12 +466,14 @@ class DataSet(Sized):
     def add_metadata(self, tag: str, metadata: Any):
         """
         Adds metadata to the DataSet. The metadata is stored under the
-        provided tag.
+        provided tag. Note that None is not allowed as a metadata value.
 
         Args:
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
         """
+
+        self._metadata[tag] = metadata
         add_meta_data(self.conn, self.run_id, {tag: metadata})
         # `add_meta_data` does not commit, hence we commit here:
         self.conn.commit()

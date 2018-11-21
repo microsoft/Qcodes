@@ -171,3 +171,17 @@ def test_update_runs_description(dataset):
 
     desc = RunDescriber(InterDependencies()).to_json()
     mut.update_run_description(dataset.conn, dataset.run_id, desc)
+
+
+def test_runs_table_columns(empty_temp_db):
+    """
+    Ensure that the column names of a pristine runs table are what we expect
+    """
+    colnames = mut.RUNS_TABLE_COLUMNS.copy()
+    conn = mut.connect(get_DB_location())
+    query = "PRAGMA table_info(runs)"
+    cursor = conn.cursor()
+    for row in cursor.execute(query):
+        colnames.remove(row['name'])
+
+    assert colnames == []
