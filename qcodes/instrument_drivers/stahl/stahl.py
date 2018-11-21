@@ -184,7 +184,7 @@ class Stahl(VisaInstrument):
             ind_string
         ).groups()
 
-        id_parsers = {
+        id_parsers: Dict[str, Callable] = {
             "model": str,
             "serial_number": str,
             "voltage_range": float,
