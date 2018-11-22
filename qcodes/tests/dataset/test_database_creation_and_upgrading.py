@@ -25,7 +25,8 @@ from qcodes.dataset.sqlite_base import (connect,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
                                         perform_db_upgrade_1_to_2,
-                                        perform_db_upgrade_2_to_3)
+                                        perform_db_upgrade_2_to_3,
+                                        NEWEST_VERSION)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
@@ -69,7 +70,7 @@ def location_and_station_set_to(location: int, work_station: int):
         cfg.save_to_home()
 
 
-LATEST_VERSION = 3
+LATEST_VERSION = NEWEST_VERSION
 VERSIONS = tuple(range(LATEST_VERSION + 1))
 LATEST_VERSION_ARG = -1
 

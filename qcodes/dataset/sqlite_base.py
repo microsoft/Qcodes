@@ -364,19 +364,16 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
     upgrade and be a NOOP if the current version is higher than their target.
 
     Args:
+        conn: object for connection to the database
         version: Which version to upgrade to. We count from 0. -1 means
           'newest version'
     """
-
-    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
-                       perform_db_upgrade_2_to_3]
-    newest_version = len(upgrade_actions)
-    version = newest_version if version == -1 else version
+    version = NEWEST_VERSION if version == -1 else version
 
     current_version = get_user_version(conn)
-    if current_version < newest_version:
+    if current_version < NEWEST_VERSION:
         log.info("Commencing database upgrade")
-        for action in upgrade_actions[:version]:
+        for action in UPGRADE_ACTIONS[:version]:
             action(conn)
 
 
@@ -696,6 +693,11 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             cur = conn.cursor()
             cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
+
+
+UPGRADE_ACTIONS = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
+                   perform_db_upgrade_2_to_3]
+NEWEST_VERSION = len(UPGRADE_ACTIONS)
 
 
 def transaction(conn: SomeConnection,
