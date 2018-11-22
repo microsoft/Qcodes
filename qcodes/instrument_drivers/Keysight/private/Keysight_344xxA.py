@@ -38,7 +38,7 @@ class ArrayMeasurement(ArrayParameter):
         N = inst.sample_count()
 
         # ensure correct instrument settings
-        inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
+        #inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
         inst.trigger_count(1)
         inst.trigger_delay(0)
         inst.sample_count_pretrigger(0)
