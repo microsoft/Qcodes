@@ -110,13 +110,17 @@ RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
 
 class ConnectionPlus(wrapt.ObjectProxy):
     """
-    A class to extend the sqlite3.Connection object with a single extra
-    attribute. Since sqlite3.Connection has no __dict__, we can not directly
-    add the attribute to a normal instance.
+    A class to extend the sqlite3.Connection object. Since sqlite3.Connection
+    has no __dict__, we can not directly add attributes to its instance
+    directly.
 
-    The extra attribute is a bool describing whether the connection is
-    currently in the middle of an atomic block of transactions, thus allowing
-    us to nest atomic context managers
+    It is not allowed to instantiate a new `ConnectionPlus` object from a
+    `ConnectionPlus` object.
+
+    Attributes:
+        atomic_in_progress: a bool describing whether the connection is
+            currently in the middle of an atomic block of transactions, thus
+            allowing to nest `atomic` context managers
     """
     atomic_in_progress: bool = False
 
