@@ -12,10 +12,12 @@ def post_execution_status_poll(func):
         self.clear_status()
         retval = func(self, *args, **kwargs)
 
-        if self.get_status():
+        stb = self.get_status()
+        if stb:
             warnings.warn("Instrument status byte indicates an error occured "
-                          "(value {stb})! Use `get_error` method to poll "
-                          "error message.")
+                          "(value of STB was: {stb})! Use `get_error` method to poll "
+                          "error message.".format(stb=stb),
+                          stacklevel=2)
         return retval
 
     return wrapper
