@@ -98,6 +98,9 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
                   for ps in some_paramspecs[1].values()}
         source_dataset.add_result(result)
 
+    source_dataset.add_metadata('goodness', 'fair')
+    source_dataset.add_metadata('test', True)
+
     source_dataset.mark_complete()
 
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
