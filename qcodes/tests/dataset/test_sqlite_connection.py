@@ -1,3 +1,4 @@
+import re
 import sqlite3
 
 import pytest
@@ -43,6 +44,11 @@ def test_connection_plus():
     assert isinstance(plus_conn, ConnectionPlus)
     assert isinstance(plus_conn, sqlite3.Connection)
     assert False is plus_conn.atomic_in_progress
+
+    match_str = re.escape('Attempted to create `ConnectionPlus` from a '
+                          '`ConnectionPlus` object which is not allowed.')
+    with pytest.raises(ValueError, match=match_str):
+        ConnectionPlus(plus_conn)
 
 
 @pytest.mark.parametrize(
