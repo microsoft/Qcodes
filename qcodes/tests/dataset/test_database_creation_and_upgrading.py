@@ -74,28 +74,26 @@ VERSIONS = tuple(range(LATEST_VERSION + 1))
 LATEST_VERSION_ARG = -1
 
 
-@pytest.mark.parametrize('ver',
-                         VERSIONS + (LATEST_VERSION_ARG,))
+@pytest.mark.parametrize('ver', VERSIONS + (LATEST_VERSION_ARG,))
 def test_connect_upgrades_user_version(ver):
     expected_version = ver if ver != LATEST_VERSION_ARG else LATEST_VERSION
     conn = connect(':memory:', version=ver)
     assert expected_version == get_user_version(conn)
 
 
-@pytest.mark.usefixtures("empty_temp_db")
-def test_tables_exist():
-    for version in [-1, 0, 1]:
-        conn = connect(qc.config["core"]["db_location"],
-                       qc.config["core"]["db_debug"],
-                       version=version)
-        cursor = conn.execute("select sql from sqlite_master"
-                              " where type = 'table'")
-        expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
-        rows = [row for row in cursor]
-        assert len(rows) == len(expected_tables)
-        for row, expected_table in zip(rows, expected_tables):
-            assert expected_table in row['sql']
-        conn.close()
+@pytest.mark.parametrize('version', VERSIONS + (LATEST_VERSION_ARG,))
+def test_tables_exist(empty_temp_db, version):
+    conn = connect(qc.config["core"]["db_location"],
+                   qc.config["core"]["db_debug"],
+                   version=version)
+    cursor = conn.execute("select sql from sqlite_master"
+                          " where type = 'table'")
+    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+    rows = [row for row in cursor]
+    assert len(rows) == len(expected_tables)
+    for row, expected_table in zip(rows, expected_tables):
+        assert expected_table in row['sql']
+    conn.close()
 
 
 def test_initialise_database_at_for_nonexisting_db():
