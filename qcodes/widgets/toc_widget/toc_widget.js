@@ -21,6 +21,13 @@ define('toc', [
 
   var CodeCell = CodeCell.CodeCell;
 
+  function log(msg) {
+    if (typeof(msg) === 'string') {
+      console.log(`[Sidebar] ${msg}`)
+    } else {
+      console.log(msg)
+    }
+  }
 
   /** ****** **/
   /** Config **/
@@ -132,7 +139,7 @@ define('toc', [
   }
 
   function hide_cells_above(cell) {
-    console.log(`TOC: Hiding cells above ${Jupyter.notebook.find_cell_index(cell)}`);
+    log(`Hiding cells above ${Jupyter.notebook.find_cell_index(cell)}`);
     while (cell !== null) {
       cell = Jupyter.notebook.get_prev_cell(cell);
       if (cell !== null) {
@@ -142,7 +149,7 @@ define('toc', [
   }
 
   function hide_cells_below(cell) {
-    console.log(`TOC: Hiding cells below ${Jupyter.notebook.find_cell_index(cell)}`);
+    log(`Hiding cells below ${Jupyter.notebook.find_cell_index(cell)}`);
     while (cell !== null) {
       cell = Jupyter.notebook.get_next_cell(cell);
       if (cell !== null) {
@@ -152,7 +159,7 @@ define('toc', [
   }
 
   function show_all_cells() {
-    console.log('TOC: Showing all cells');
+    log('Showing all cells');
     for (let cell of Jupyter.notebook.get_cells()) {
       cell.element.slideDown(0)
     }
@@ -173,7 +180,7 @@ define('toc', [
   function show_cells_between(cell_begin, cell_end) {
     var cell_begin_index = Jupyter.notebook.find_cell_index(cell_begin);
     var cell_end_index = Jupyter.notebook.find_cell_index(cell_end);
-    console.log(`TOC: showing cells between ${cell_begin_index} and ${cell_end_index}`);
+    log(`showing cells between ${cell_begin_index} and ${cell_end_index}`);
 
     var cell = cell_begin;
     while (Jupyter.notebook.find_cell_index(cell) !== cell_end_index) {
@@ -233,7 +240,7 @@ define('toc', [
             .attr('title', 'Number text sections')
             .click( function(){
               cfg.number_sections=!(cfg.number_sections);
-              console.log(`number sections: ${cfg.number_sections}`);
+              log(`number sections: ${cfg.number_sections}`);
 
               IPython.notebook.set_dirty();
               // $('.toc-item-num').toggle();
@@ -279,7 +286,7 @@ define('toc', [
 
     // Restore toc display
     $('#toc').css('display','block');
-    $('#toc').css('height', $('#toc-wrapper').height()-$('#toc-header').height());
+    // $('#toc').css('height', $('#toc-wrapper').height()-$('#toc-header').height());
   }
 
   /** Create TOC links **/
@@ -381,7 +388,7 @@ define('toc', [
 
   /** Add TOC link **/
   function make_link(h, toc_mod_id) {
-    console.log('TOC: making TOC link (make_link)');
+    log('making TOC link (make_link)');
     var a = $('<a>')
       .attr({
         'href': window.location.href.split('#')[0] + h.find('.anchor-link').attr('href'),
@@ -403,7 +410,7 @@ define('toc', [
   /** **************** **/
   /** Highlight a TOC element, either as executing or selected **/
   function highlight_toc_item(evt, data) {
-    // console.log('TOC: Highlighting toc item (highlight_toc_item)');
+    // log('Highlighting toc item (highlight_toc_item)');
     var c = $(data.cell.element);
     if (c.length < 1) {
       return;
@@ -437,7 +444,7 @@ define('toc', [
 
     let current_toc_link = $(evt.currentTarget);
     let toc_id = current_toc_link.attr('toc-id');
-    console.log('TOC: clicked TOC link with id ' + toc_id);
+    log('clicked TOC link with id ' + toc_id);
 
     document.getElementById(toc_id).scrollIntoView(true);
 
@@ -457,7 +464,7 @@ define('toc', [
       let toc_id = $(toc_link).attr('toc-id')
       if (!toc_link_is_parent(toc_link, current_toc_link) && !(toc_link === current_toc_link)) {
         collapse_by_toc_id(toc_id, false);
-        console.log('collapsing toc link ' + $(toc_link).attr('toc-id'))
+        log('collapsing toc link ' + $(toc_link).attr('toc-id'))
       } else {
         collapse_by_toc_id(toc_id, true)
       }
@@ -590,7 +597,7 @@ define('toc', [
   }
 
   function patch_keyboard_actions() {
-    console.log('TOC: patching Jupyter up/down actions');
+    log('Patching Jupyter up/down actions');
 
     var kbm = Jupyter.keyboard_manager;
 

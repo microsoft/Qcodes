@@ -56,13 +56,13 @@ class SidebarWidget(DOMWidget):
 
         if remove_on_exit:
             atexit.register(self.remove_widget, widget_name)
-
         return widget
 
     def remove_widget(self, widget_name):
         try:
             self._widget_name = widget_name
             self._remove_widget = not self._remove_widget
+            self.widgets.pop(widget_name)
         except ValueError:
             pass
 

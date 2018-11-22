@@ -7,6 +7,14 @@ require.undef('sidebar');
 define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(widgets, CodeCell) {
   var CodeCell = CodeCell.CodeCell;
 
+  function log(msg) {
+    if (typeof(msg) === 'string') {
+      console.log(`[Sidebar] ${msg}`)
+    } else {
+      console.log(msg)
+    }
+  }
+
   var SidebarView = widgets.DOMWidgetView.extend({
     widgetCells:  {},
     position: 'left',
@@ -27,11 +35,16 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
 
       // Add periodic hiding of any additional output
       setInterval(function() {
-        let sidebar_outputs = $("[id='sidebar_widget']");
-        sidebar_outputs.each((k, sidebar_output) => {
-          $(sidebar_output).siblings('.output_area').hide()
+        let cells = $(".widget-cell");
+        cells.each(function(elem, cell) {
+          let output_areas = $(cell).find('.output_area');
+          output_areas.each(function(output_area_idx, output_area) {
+            if (output_area_idx > 0) {
+              $(output_area).hide()
+            }
+          })
         })
-      }, 2000);
+      }, 3000)
     },
 
     initialize_sidebar: function() {
@@ -52,7 +65,7 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
         handles: "all" ,
         autoHide:true,
         resize : function(event,ui){
-          console.log('resizing');
+          log('resizing');
           setNotebookWidth()
         },
       });
@@ -65,14 +78,14 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
 
       $(window).trigger('resize');
 
-      console.log(`${position} sidebar initialized`);
-      console.log(sidebar)
+      log(`${position} sidebar initialized`);
+      log(sidebar)
 
     },
 
     close_sidebar: function() {
       this.sidebar.remove();
-      console.log(`Closed ${this.position} sidebar`)
+      log(`Closed ${this.position} sidebar`)
 
     },
 
@@ -86,9 +99,9 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
       let widgetName = this.model.get('_widget_name');
 
       if (widgetName in this.widgetCells) {
-        console.log(`Widget ${widgetName} already exists, please remove it first`);
+        log(`Widget ${widgetName} already exists, please remove it first`);
       } else {
-        console.log('Adding widget: ' + widgetName);
+        log('Adding widget: ' + widgetName);
 
         let notebook = Jupyter.notebook;
         let cell = new CodeCell(notebook.kernel, {
@@ -99,10 +112,12 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
           tooltip: notebook.tooltip,
         });
         cell._handle_execute_reply = _cell_handle_execute_reply;
+        $(cell.element).addClass('widget-cell').attr('padding', 0);
 
         cell.set_text(
           `from IPython.display import display\n` +
           `_widget = ${this.name}.widgets['${widgetName}']\n` +
+          `_widget.sidebar_position = "${this.position}"\n` +
           `_widget.display() if hasattr(_widget, 'display') else display(_widget)`);
         this.sidebar
           .prepend($("<div/>")
@@ -117,14 +132,14 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
 
     removeWidget: function() {
       let widgetName = this.model.get('_widget_name');
-      console.log('Removing widget: ' + widgetName);
+      log('Removing widget: ' + widgetName);
       this.widgetCells[widgetName].element.parent('div').remove();
       delete this.widgetCells[widgetName];
 
     },
 
     clearAllWidgets: function() {
-      console.log('clearing all widgets');
+      log('clearing all widgets');
       for (var key in this.widgetCells) {
         this.widgetCells[key].element.parent('div').remove()
       }
@@ -161,8 +176,9 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
   function hideCellElements(cell) {
     cell.element.find('.input').hide();
     cell.element.find('div.out_prompt_overlay.prompt').remove();
-    cell.element.find('div.prompt.output_prompt').hide();
+    cell.element.find('div.prompt').hide();
     cell.element.find('div.output_area').find('div.prompt').remove();
+    cell.element.find('div.output_subarea').css('padding', 0)
     cell.element.find('div.output_subarea.jupyter-widgets-view').css('max-width', '100%')
   }
 
@@ -173,10 +189,7 @@ define('sidebar', ["@jupyter-widgets/base", "notebook/js/codecell"], function(wi
   function _cell_handle_execute_reply(msg) {
     this.element.removeClass("running");
     this.events.trigger('set_dirty.Notebook', {value: true});
-    hideCellElements(this);
-    this.element.find('.output_area').attr('id', 'sidebar_widget');
-    let output_elem = this.element.find('.output');
-    output_elem.children().not('#sidebar_widget').remove();
+    setTimeout(() => {hideCellElements(this)}, 500)
   }
 
   return {

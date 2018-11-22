@@ -7,11 +7,12 @@ require.undef('sidebar');
 define('sidebar', ["@jupyter-widgets/base"], function(widgets) {
 
     var SidebarView = widgets.DOMWidgetView.extend({
+        widgetCells:  {},
 
         // Render the view.
         render: function() {
-            this.model.on('change:_add_widget', this.addWidget, this);
-        },   
+            // this.model.on('change:_add_widget', this.addWidget, this);
+        },
 
         addWidget: function() {
             let widgetName = this.model.get('_widget_name');
@@ -27,7 +28,7 @@ define('sidebar', ["@jupyter-widgets/base"], function(widgets) {
             });
 
             cell.set_text(widgetName);
-            $('#sidebar-wrapper')
+            $(`#sidebar-wrapper-${`)
                 .prepend($("<div/>")
                          .append(cell.element));
             cell.execute();
@@ -40,15 +41,29 @@ define('sidebar', ["@jupyter-widgets/base"], function(widgets) {
                 setInterval(() => {
                     clearCellAdditionalOutput(this.cell)}, 1000);
             });
+
+            this.widgetCells[widgetName] = this.cell;
+        },
+
+        removeWidget: function() {
+            let widgetName = this.model.get('_widget_name');
+            console.log('Removing widget: ' + widgetName);
+            this.cell.element.remove()
+
+        },
+
+        clearAllWidgets: function() {
+            console.log('clearing all widgets')
+            $('[id=sidebar_widget]').closest('.cell').parent('div').remove()
         }
     });
-    
-        
+
+
     function clearCellAdditionalOutput(cell) {
             let output_elem = cell.element.find('.output');
             output_elem.children().not('#sidebar_widget').remove();
         }
-    
+
     function hideCellElements(cell) {
         cell.element.find('.input').hide();
         cell.element.find('div.out_prompt_overlay.prompt').remove();
@@ -56,7 +71,7 @@ define('sidebar', ["@jupyter-widgets/base"], function(widgets) {
         cell.element.find('div.output_area').find('div.prompt').remove();
         cell.element.find('div.output_subarea.jupyter-widgets-view').css('max-width', '100%')
     }
-    
+
     function sleep(s) {
       return new Promise(resolve => setTimeout(resolve, s * 1000));
     }
