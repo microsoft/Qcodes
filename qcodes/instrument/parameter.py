@@ -57,7 +57,7 @@ the primary parameter changes value.
 # if everyone is happy to use these classes.
 
 from datetime import datetime, timedelta
-from copy import copy, deepcopy
+from copy import copy, deepcopy, _reconstruct
 import time
 import logging
 import os
@@ -84,7 +84,9 @@ if TYPE_CHECKING:
 
 
 def __deepcopy__(self, memodict={}):
-    """Custom __deepcopy__ method, added to BaseParameter upon instantiation.
+    """_BaseParameter.__deepcopy__ method, Invoked via copy.deepcopy(param).
+
+    This method is added to BaseParameter upon instantiation.
     This workaround solves the following issues with (deep)copying a parameter:
 
     1. Certain attributes cannot be copied, such as `_BaseParameter.log`.
@@ -110,27 +112,82 @@ def __deepcopy__(self, memodict={}):
        by creating a method __copy__ which then invokes this __deepcopy__.
 
     If anyone finds a better solution, please do change this code.
+
+    Note:
+        For most simple cases, copy.copy(param) can be used instead, which
+        is faster and creates a shallow copy.
     """
-    deepcopy_method = self.__deepcopy__
-    log = self.log
-    signal = self.signal
+    restore_attrs = {}
+    for attr in ['__deepcopy__', '__getstate__','signal', 'get', 'set', 'parent']:
+        if attr in self.__dict__:
+            restore_attrs[attr] = getattr(self, attr)
+
+    node_decorator_methods = {}
+    for attr in ['get_raw', 'set_raw', 'vals', 'set_parser', 'get_parser']:
+        attr_partial = self.__dict__.get(attr, None)
+        if isinstance(attr_partial, partial) and \
+                attr_partial.func.__name__ == 'parameter_decorator':
+            node_decorator_methods[attr] = attr_partial
     try:
-        del self.__deepcopy__
-        del self.log
-        self.signal = None
+        for attr in {**restore_attrs, **node_decorator_methods}:
+            delattr(self, attr)
+
         self_copy = deepcopy(self)
-        self_copy.__deepcopy__ = deepcopy_method
-        self_copy.log = log
-        if self_copy.wrap_get and hasattr(self_copy, 'get_raw'):
-            self_copy.get = self_copy._wrap_get(self_copy.get_raw)
-        if self_copy.wrap_set and hasattr(self_copy, 'set_raw'):
-            self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+        self_copy.__getstate__ = partial(__getstate__, self_copy)
+
+        self_copy.parent = None
+        self_copy.signal = Signal()
+
+        # Detach and reattach all node decorator methods, now containing
+        # reference to the new parameter, but still old parameter node
+        for attr, attr_partial in node_decorator_methods.items():
+            attr_method = attr_partial.func
+            original_node = attr_partial.args[0]
+            attr_partial_copy = partial(attr_method, original_node, self_copy)
+            setattr(self_copy, attr, attr_partial_copy)
+
+        # Ensure all get/set methods work fine
+        if 'get' in restore_attrs:
+            if self.wrap_get:
+                self_copy.get = self_copy._wrap_get(self_copy.get_raw)
+            else:
+                self_copy.get = deepcopy(restore_attrs['get'])
+        if 'set' in restore_attrs:
+            if self_copy.wrap_set:
+                self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+            else:
+                self_copy.set = deepcopy(restore_attrs['set'])
+
         self_copy._signal_chain = []
         return self_copy
     finally:
-        self.__deepcopy__ = deepcopy_method
-        self.log = log
-        self.signal = signal
+        for attr_name, attr in {**restore_attrs, **node_decorator_methods}.items():
+            setattr(self, attr_name, attr)
+
+
+def __getstate__(self):
+    """Prepare parameter for pickling.
+
+    Any get/set related methods are removed if they are in Parameter.__dict,
+    i.e. they are not defined in the class but set for the object.
+    The reason is that these cannot be pickled.
+    This method is added to parameters during instantiation to ensure it's only
+    called during pickling and not during copy (see __copy__ code).
+
+    This is probably not the best way to handle this situation, but a better
+    solution was not found."""
+    # Remove methods that may have been set dynamically (e.g. wrapped)
+    d = copy(self.__dict__)
+    d['signal'] = Signal()
+    d['parent'] = None
+
+    for attr in ['get', 'get_raw', 'get_parser',
+                 'set', 'set_raw', 'set_parser']:
+        d.pop(attr, None)
+    if not isinstance(d.get('vals'), Validator):
+        d.pop('vals', None)
+    return d
 
 
 class _BaseParameter(Metadatable, SignalEmitter):
@@ -210,6 +267,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
             been set or measured more recently than this, perform an
             additional measurement.
 
+        log_changes: Log any set commands that change the parameter's value
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
 
@@ -218,9 +277,9 @@ class _BaseParameter(Metadatable, SignalEmitter):
             updated. Warning: SilQ only! See SilQ SubConfig for more info.
     """
 
-
-    def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+    def __init__(self, name: str = None,
+                 parent: Optional['ParameterNode'] = None,
+                 instrument: Optional['Instrument'] = None,
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  wrap_get: bool=True,
@@ -235,17 +294,20 @@ class _BaseParameter(Metadatable, SignalEmitter):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
+                 log_changes: bool = True,
                  delay: Optional[Union[int, float]]=None,
                  config_link: str = None):
         # Create __deepcopy__ in the object scope (see documentation for details)
         self.__deepcopy__ = partial(__deepcopy__, self)
+        self.__getstate__ = partial(__getstate__, self)
 
         Metadatable.__init__(self, metadata)
         SignalEmitter.__init__(self, initialize_signal=False)
         self.name = str(name)
-        self._instrument = instrument
+        self.parent = instrument if instrument is not None else parent
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
+        self.log_changes = log_changes
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError('vals must be None or a Validator')
@@ -307,28 +369,20 @@ class _BaseParameter(Metadatable, SignalEmitter):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale',
+        self._meta_attrs = ['name', 'full_name', 'instrument', 'step', 'scale',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
-        self.log = logging.getLogger(str(self))
-
-        if config_link is not None:
-            if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
-                config.user.silq_config.signal.connect(self._handle_config_signal,
-                                                       sender=config_link)
-
-    def __copy__(self):
-        return self.__deepcopy__()
+        if config_link:
+            self.set_config_link(config_link)
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
-        inst_name = getattr(self._instrument, 'name', '')
-        if inst_name:
-            return '{}_{}'.format(inst_name, self.name)
+        if getattr(self.parent, 'name', ''):
+            return f'{self.parent}_{self.name}'
         else:
             return self.name
 
@@ -349,11 +403,112 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
+    def __copy__(self):
+        """Create a copy of the Parameter, invoked by copy.copy(param)
+
+        Copying a parameter creates a shallow copy of the parameter, which
+        means that it does not create copies of any object attributes. For a
+        deep copy that also copies each of its attributes, use
+
+        >>> copy.deepcopy(param)
+
+        Note:
+            Since copying only creates a shallow copy, this may cause issues in
+            cases where on of its attributes is an object that references the
+            parameter, as the object is not copied, and so it will still
+            reference to the original parameter, and not the copied one.
+        """
+        # Perform underlying default behaviour of copy(obj)
+        # We need to call the underlying functions because we need to perform
+        # additional actions afterwards
+
+        # Temporarily remove __getstate__ so it is not called during copy
+        restore_attrs = {'__getstate__': self.__dict__.pop('__getstate__', None)}
+        try:
+            # Call the underlying functions for copying to avoid recursion error
+            rv = self.__reduce_ex__(4)
+            self_copy = _reconstruct(self, None, *rv)
+        finally:
+            # Restore __getstate__
+            if restore_attrs['__getstate__'] is not None:
+                self.__getstate__ = restore_attrs['__getstate__']
+
+        # Update copy/pickle-related methods
+        self_copy.__deepcopy__ = partial(__deepcopy__, self_copy)
+        self_copy.__getstate__ = partial(__getstate__, self_copy)
+
+        # Detach and reattach all node decorator methods, now containing
+        # reference to the new parameter, but still old parameter node
+        for attr in ['get_raw', 'set_raw', 'vals', 'set_parser', 'get_parser']:
+            attr_partial = self.__dict__.get(attr, None)
+            if isinstance(attr_partial, partial) and \
+                    attr_partial.func.__name__ == 'parameter_decorator':
+                attr_method = attr_partial.func
+                original_node = attr_partial.args[0]
+                attr_partial_copy = partial(attr_method, original_node, self_copy)
+                setattr(self_copy, attr, attr_partial_copy)
+
+        # Ensure Parameter's get_raw method points to the copied parameter's
+        # _get_raw_value when no get method defined and get_cmd=None
+        if ('get_raw' in self.__dict__
+                and self.get_raw == getattr(self, '_get_raw_value', None)):
+            self_copy.get_raw = self_copy._get_raw_value
+
+        # Ensure Parameter's set_raw method points to the copied parameter's
+        # save_val when no get method defined and get_cmd=None
+        if ('set_raw' in self.__dict__
+                and isinstance(self.set_raw, partial)
+                and self.set_raw.func == self._save_val):
+            self_copy.set_raw = partial(self_copy._save_val,
+                                        **self.set_raw.keywords)
+
+        # Wrap get and set methods
+        if 'get' in self.__dict__:
+            if self.wrap_get:
+                self_copy.get = self_copy._wrap_get(self_copy.get_raw)
+            else:
+                self_copy.get = self_copy.get_raw
+
+        if 'set' in self.__dict__:
+            if self_copy.wrap_set:
+                self_copy.set = self_copy._wrap_set(self_copy.set_raw)
+            else:
+                self_copy.set = self_copy.set_raw
+
+        self_copy.get_latest = GetLatest(self_copy,
+                                         max_val_age=self.get_latest.max_val_age)
+        self_copy.signal = Signal()
+        self_copy._signal_chain = []
+        self_copy.parent = None
+
+        # Perform deepcopy on latest value to ensure the original and copied
+        # parameters cannot affect each other (e.g. if the latest value is a
+        # list and list.clear() is called)
+        self_copy._latest = deepcopy(self._latest)
+
+        return self_copy
+
+    def __setstate__(self, state):
+        """Prepare parameter for unpickling"""
+        self.__dict__.update(state)
+
+        max_val_age = getattr(state['get_latest'], 'max_val_age', None)
+        self.__dict__['get_latest'] = GetLatest(self, max_val_age)
+
+        # Set default get to get the latest value
+        if not hasattr(self, 'get'):
+            self.__dict__['get'] = self.__dict__['get_latest']
+
+    @property
+    def log(self):
+        return logging.getLogger(str(self))
+
     def _handle_config_signal(self, sender, value):
         self(value)
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> dict:
+                      params_to_skip_update: Sequence[str]=None,
+                      simplify: bool = False) -> dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -371,9 +526,18 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 and self._snapshot_value and update:
             self.get()
 
+        if simplify:
+            state = {}
+            for attr in ['name', 'label', 'unit']:
+                val = getattr(self, attr, None)
+                if val:
+                    state[attr] = val
+            if self._snapshot_value:
+                state['value'] = self._latest['value']
+            return state
+
         state = copy(self._latest)
         state['__class__'] = full_class(self)
-        state['full_name'] = str(self)
 
         if not self._snapshot_value:
             state.pop('value')
@@ -383,14 +547,17 @@ class _BaseParameter(Metadatable, SignalEmitter):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            if attr == 'instrument' and self._instrument:
+            if attr == 'parent' and self.parent is not None:
+                # We also add instrument items for deprecation reasons
                 state.update({
-                    'instrument': full_class(self._instrument),
-                    'instrument_name': self._instrument.name
+                    'parent': full_class(self.parent),
+                    'parent_name': getattr(self.parent, 'name', 'no_name'),
+                    'instrument': full_class(self.parent),
+                    'instrument_name': getattr(self.parent, 'name', 'no_name')
                 })
             else:
                 val = getattr(self, attr, None)
-                if val is not None:
+                if val:
                     attr_strip = attr.lstrip('_')  # strip leading underscores
                     if isinstance(val, Validator):
                         state[attr_strip] = repr(val)
@@ -496,22 +663,11 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    if evaluate:
-                        set_function(parsed_scaled_mapped_value, **kwargs)
-
-                    # # Send a signal if anything is connected, unless
-                    if self.signal is not None:
-                        for receiver in self.signal.receivers.values():
-                            potential_emitter = getattr(receiver(), '__self__', None)
-                            if isinstance(potential_emitter, SignalEmitter):
-                                if not signal_chain:
-                                    potential_emitter._signal_chain = [self]
-                                else:
-                                    potential_emitter._signal_chain = signal_chain + [self]
-                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
-
                     # Register if value changed
                     val_changed = self.raw_value != parsed_scaled_mapped_value
+
+                    if evaluate:
+                        set_function(parsed_scaled_mapped_value, **kwargs)
 
                     self.raw_value = parsed_scaled_mapped_value
                     self._save_val(val_step,
@@ -519,8 +675,8 @@ class _BaseParameter(Metadatable, SignalEmitter):
                                              self.set_parser is None and
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
-
-                    if self._snapshot_value and val_changed:
+                    if self.log_changes and self._snapshot_value \
+                            and val_changed and self.name != 'None':
                         # Add to log
                         log_msg = f'parameter set to {val_step}'
                         if mapped_value != val_step:
@@ -539,6 +695,18 @@ class _BaseParameter(Metadatable, SignalEmitter):
                     if t_elapsed < self.post_delay:
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
+
+                    # Send a signal if anything is connected
+                    if self.signal is not None:
+                        for receiver in self.signal.receivers.values():
+                            potential_emitter = getattr(receiver(), '__self__', None)
+                            if isinstance(potential_emitter, SignalEmitter):
+                                # Update signal chain to avoid circular signalling
+                                if not signal_chain:
+                                    potential_emitter._signal_chain = [self]
+                                else:
+                                    potential_emitter._signal_chain = signal_chain + [self]
+                        self.signal.send(parsed_scaled_mapped_value, **kwargs)
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
@@ -590,13 +758,17 @@ class _BaseParameter(Metadatable, SignalEmitter):
             value (any): value to validate
 
         """
-        if self._instrument:
-            context = (getattr(self._instrument, 'name', '') or
-                       str(self._instrument.__class__)) + '.' + self.name
+        if self.parent is not None:
+            context = (getattr(self.parent, 'name', '') or
+                       str(self.parent.__class__)) + '.' + self.name
         else:
             context = self.name
         if self.vals is not None:
-            self.vals.validate(value, 'Parameter: ' + context)
+            if hasattr(self.vals, 'validate'):
+                self.vals.validate(value, 'Parameter: ' + context)
+            else:
+                if not self.vals(value):
+                    raise ValueError("Invalid set value")
 
     @property
     def step(self):
@@ -722,6 +894,19 @@ class _BaseParameter(Metadatable, SignalEmitter):
                 'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
 
+    @wraps(SignalEmitter.connect)
+    def connect(self, receiver, update=True, **kwargs):
+        SignalEmitter.connect(self, receiver, update=update, **kwargs)
+
+    def set_config_link(self, config_link: str):
+        if 'silq_config' in config.user and hasattr(config.user.silq_config, 'signal'):
+            config.user.silq_config.signal.connect(self._handle_config_signal,
+                                                   sender=config_link)
+            try:
+                return config.user.silq_config[config_link]
+            except KeyError:
+                pass
+
     # Deprecated
     @property
     def full_name(self):
@@ -745,6 +930,14 @@ class _BaseParameter(Metadatable, SignalEmitter):
             self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
+
+    @property
+    def _instrument(self):
+        return self.parent
+
+    @_instrument.setter
+    def _instrument(self, value):
+        self.parent = value
 
 
 class Parameter(_BaseParameter):
@@ -843,6 +1036,8 @@ class Parameter(_BaseParameter):
             been set or measured more recently than this, perform an
             additional measurement.
 
+        log_changes: Log any set commands that change the parameter's value
+
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
@@ -852,18 +1047,22 @@ class Parameter(_BaseParameter):
 
     """
 
-    def __init__(self, name: str,
+    def __init__(self, name: str = None,
                  instrument: Optional['Instrument']=None,
+                 parent: Optional['ParameterNode'] = None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  get_cmd: Optional[Union[str, Callable, bool]]=None,
                  set_cmd:  Optional[Union[str, Callable, bool]]=False,
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[str]=None,
+                 vals: Optional[Validator]=None,
+                 log_changes: bool = True,
                  docstring: Optional[str]=None,
                  **kwargs):
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
+        super().__init__(name=name, instrument=instrument,
+                         parent=parent, vals=vals,
+                         log_changes=log_changes, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
@@ -873,27 +1072,42 @@ class Parameter(_BaseParameter):
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
                 self.get_raw = self._get_raw_value
-            else:
-                exec_str = getattr(instrument, 'ask', None)
+            elif isinstance(get_cmd, str):
+                exec_str = getattr(self.parent, 'ask', None)
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
-            self.get = self._wrap_get(self.get_raw)
+            else:
+                self.get_raw = get_cmd
+            if self.wrap_get:
+                self.get = self._wrap_get(self.get_raw)
+            else:
+                self.get = self.get_raw
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                # self.set_raw = lambda val: self._save_val(val, validate=False)
                 self.set_raw = partial(self._save_val, validate=False)
-            else:
-                exec_str = getattr(instrument, 'write', None)
+            elif isinstance(set_cmd, str):
+                exec_str = getattr(self.parent, 'write', None)
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
-            self.set = self._wrap_set(self.set_raw)
+            else:
+                self.set_raw = set_cmd
+
+            if self.wrap_set:
+                self.set = self._wrap_set(self.set_raw)
+            else:
+                self.set = self.set_raw
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
-        self.label = name if label is None else label
+        if label is not None or name is None:
+            self.label = label
+        else:
+            # Make label capitalized name, replacing underscore with spaces
+            label = name.replace('_', ' ')
+            self.label = label[0].capitalize() + label[1:]
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None:
-            if hasattr(self, 'set'):
+            if hasattr(self, 'set') and self.wrap_set:
                 self.set(initial_value, evaluate=False)
             else:
                 # No set function defined, so create a wrapper function
@@ -921,7 +1135,10 @@ class Parameter(_BaseParameter):
         Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
         """
-        return SweepFixedValues(self, keys)
+        if isinstance(keys, (slice, list, tuple, numpy.ndarray)):
+            return SweepFixedValues(self, keys)
+        else:
+            return super().__getitem__(keys)
 
     def _get_raw_value(self):
         return self._latest['raw_value']
@@ -1040,6 +1257,7 @@ class ArrayParameter(_BaseParameter):
                  name: str,
                  shape: Sequence[int],
                  instrument: Optional['Instrument']=None,
+                 parent: Optional['ParameterNode'] = None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  wrap_get: bool=True,
@@ -1052,9 +1270,14 @@ class ArrayParameter(_BaseParameter):
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
                  metadata: bool=None, ):
-        super().__init__(name, instrument, snapshot_get, metadata,
+        super().__init__(name=name,
+                         instrument=instrument,
+                         parent=parent,
+                         snapshot_get=snapshot_get,
+                         metadata=metadata,
                          snapshot_value=snapshot_value,
-                         wrap_get=wrap_get, wrap_set=wrap_set)
+                         wrap_get=wrap_get,
+                         wrap_set=wrap_set)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1219,6 +1442,7 @@ class MultiParameter(_BaseParameter):
                  names: Sequence[str],
                  shapes: Sequence[Sequence[Optional[int]]],
                  instrument: Optional['Instrument']=None,
+                 parent: Optional['ParameterNode'] = None,
                  labels: Optional[Sequence[str]]=None,
                  units: Optional[Sequence[str]]=None,
                  wrap_get: bool=True,
@@ -1231,9 +1455,14 @@ class MultiParameter(_BaseParameter):
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
                  metadata: Optional[dict]=None):
-        super().__init__(name, instrument, snapshot_get, metadata,
+        super().__init__(name=name,
+                         instrument=instrument,
+                         snapshot_get=snapshot_get,
+                         metadata=metadata,
                          snapshot_value=snapshot_value,
-                         wrap_get=wrap_get, wrap_set=wrap_set)
+                         parent=parent,
+                         wrap_get=wrap_get,
+                         wrap_set=wrap_set)
 
         # if hasattr(self, 'set'):
         #     # TODO (alexcjohnson): can we support, ala Combine?
@@ -1300,14 +1529,10 @@ class MultiParameter(_BaseParameter):
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return [inst_name + '_' + name for name in self.names]
-        except AttributeError:
-            pass
-
-        return self.names
+        if getattr(self.parent, 'name', ''):
+            return [f'{self.parent}_{name}' for name in self.names]
+        else:
+            return self.names
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
@@ -1550,7 +1775,7 @@ class InstrumentRefParameter(Parameter):
         # note that _instrument refers to the instrument this parameter belongs
         # to, while the ref_instrument_name is the instrument that is the value
         # of this parameter.
-        return self._instrument.find_instrument(ref_instrument_name)
+        return self.parent.find_instrument(ref_instrument_name)
 
 
 # Deprecated parameters

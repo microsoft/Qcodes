@@ -25,7 +25,7 @@ class Measure(Metadatable):
 
     def __init__(self, *actions):
         super().__init__()
-        self._dummyLoop = Loop(self.dummy_parameter[0]).each(*actions)
+        self._dummyLoop = Loop(self.dummy_parameter[[0]]).each(*actions)
 
     def run_temp(self, **kwargs):
         """

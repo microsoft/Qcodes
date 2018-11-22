@@ -114,6 +114,7 @@ class Slack(threading.Thread):
         self.slack = Slacker(self.config['token'])
         self.bot_id = self.slack.users.get_user_id(self.config['bot_name'])
         self.users = self.get_users(self.config['names'])
+        self.default_user = list(self.users.values())[0]
         self.get_im_ids(self.users)
 
         self.commands = {'plot': self.upload_latest_plot,
@@ -352,7 +353,7 @@ class Slack(threading.Thread):
                             command),
                         channel=channel)
 
-    def add_task(self, command, *args, channel, **kwargs):
+    def add_task(self, command, *args, channel=None, **kwargs):
         """
         Add a task to self.tasks, which will be executed during each update
         Args:
@@ -364,6 +365,9 @@ class Slack(threading.Thread):
         Returns:
             None
         """
+        if channel is None:
+            channel = self.default_user['im_id']
+
         if command in self.task_commands:
             self.slack.chat.post_message(
                 text='Added task "{}"'.format(command),

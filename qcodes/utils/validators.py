@@ -119,8 +119,10 @@ class Bool(Validator):
     requires a boolean
     """
 
-    def __init__(self):
+    def __init__(self, allow_none=False):
         self._valid_values = [True, False]
+        if allow_none:
+            self._valid_values.append(None)
 
     def validate(self, value, context=''):
         if not isinstance(value, bool) and not isinstance(value, np.bool8):
@@ -138,7 +140,8 @@ class Strings(Validator):
     to min_length <= len(value) <= max_length
     """
 
-    def __init__(self, min_length=0, max_length=BIGSTRING):
+    def __init__(self, min_length=0, max_length=BIGSTRING,
+                 allow_none=False):
         if isinstance(min_length, int) and min_length >= 0:
             self._min_length = min_length
         else:
@@ -149,8 +152,11 @@ class Strings(Validator):
             raise TypeError('max_length must be a positive integer '
                             'no smaller than min_length')
         self._valid_values = ['.'*min_length]
+        self.allow_none = allow_none
 
     def validate(self, value, context=''):
+        if value is None and self.allow_none:
+            return True
         if not isinstance(value, str):
             raise TypeError(
                 '{} is not a string; {}'.format(repr(value), context))
@@ -183,7 +189,9 @@ class Numbers(Validator):
     validtypes = (float, int, np.integer, np.floating)
 
     def __init__(self, min_value: Union[int, float]=-float("inf"),
-                 max_value: Union[int, float]=float("inf")) -> None:
+                 max_value: Union[int, float]=float("inf"),
+                 allow_none: Bool = False,
+                 **kwargs) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
@@ -199,8 +207,11 @@ class Numbers(Validator):
             raise TypeError('max_value must be a number bigger than min_value')
 
         self._valid_values = [min_value, max_value]
+        self.allow_none = allow_none
 
     def validate(self, value, context=''):
+        if value is None and self.allow_none:
+            return True
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
@@ -228,7 +239,8 @@ class Ints(Validator):
 
     validtypes = (int, np.integer)
 
-    def __init__(self, min_value=-BIGINT, max_value=BIGINT):
+    def __init__(self, min_value=-BIGINT, max_value=BIGINT,
+                 allow_none=False):
         if isinstance(min_value, self.validtypes):
             self._min_value = int(min_value)
         else:
@@ -243,8 +255,11 @@ class Ints(Validator):
                 'max_value must be an integer bigger than min_value')
 
         self._valid_values = [min_value, max_value]
+        self.allow_none = allow_none
 
     def validate(self, value, context=''):
+        if value is None and self.allow_none:
+            return True
         if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int; {}'.format(repr(value), context))

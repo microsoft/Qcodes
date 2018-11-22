@@ -16,7 +16,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update=False):
+    def snapshot(self, update=False, **kwargs):
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -24,12 +24,13 @@ class Metadatable:
 
         Args:
             update (bool): Passed to snapshot_base
+            **kwargs: Optional additional class-dependent kwargs
 
         Returns:
             dict: base snapshot
         """
 
-        snap = self.snapshot_base(update=update)
+        snap = self.snapshot_base(update=update, **kwargs)
 
         if len(self.metadata):
             snap['metadata'] = self.metadata

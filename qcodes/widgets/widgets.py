@@ -69,5 +69,6 @@ class LoopManagerWidget(DOMWidget):
                 self.progress_bar.value = 0
             else:
                 self.progress_bar.value = qc.active_data_set().fraction_complete() * 100
+                self.progress_bar.description = f'{self.progress_bar.value:.0f}%'
         except:
             pass

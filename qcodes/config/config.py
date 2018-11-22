@@ -420,7 +420,7 @@ class DotDict(dict):
         return target[restOfKey]
 
     def __contains__(self, key):
-        if '.' not in key:
+        if not isinstance(key, str) or '.' not in key:
             return dict.__contains__(self, key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
@@ -442,6 +442,11 @@ class DotDict(dict):
         except KeyError:
             raise AttributeError(f'Attribute {key} not found')
 
+    def __dir__(self):
+        # Add keys to dir, used for auto-completion
+        items = super().__dir__()
+        items.extend(self.keys())
+        return items
 
 def update(d, u):
     for k, v in u.items():

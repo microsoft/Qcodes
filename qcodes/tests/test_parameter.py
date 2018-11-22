@@ -7,6 +7,8 @@ from time import sleep
 import weakref
 import gc
 from copy import copy, deepcopy
+import logging
+import pickle
 
 import numpy as np
 from hypothesis import given
@@ -74,16 +76,12 @@ class MemoryParameter(Parameter):
 
 
 class TestParameter(TestCase):
-    def test_no_name(self):
-        with self.assertRaises(TypeError):
-            Parameter()
-
     def test_default_attributes(self):
         # Test the default attributes, providing only a name
         name = 'repetitions'
         p = GettableParam(name, vals=vals.Numbers())
         self.assertEqual(p.name, name)
-        self.assertEqual(p.label, name)
+        self.assertEqual(p.label, name.capitalize())
         self.assertEqual(p.unit, '')
         self.assertEqual(str(p), name)
 
@@ -101,7 +99,7 @@ class TestParameter(TestCase):
         self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
-            'label': name,
+            'label': name.capitalize(),
             'unit': '',
             'value': 42,
             'vals': repr(vals.Numbers())
@@ -438,8 +436,7 @@ class TestArrayParameter(TestCase):
         self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
-            'label': name,
-            'unit': ''
+            'label': name
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -815,7 +812,6 @@ class TestManualParameterValMapping(TestCase):
         assert self.instrument.myparameter.raw_value == 0
 
 
-
 class TestInstrumentRefParameter(TestCase):
 
     def setUp(self):
@@ -842,23 +838,217 @@ class TestCopyParameter(TestCase):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
         p2 = copy(p1)
 
-        p2(41)
-
         self.assertEqual(p1.raw_value, 42)
         self.assertEqual(p1(), 42)
-        self.assertEqual(p2.raw_value, 41)
-        self.assertEqual(p2(), 41)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p1(43)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p2(44)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 44)
+        self.assertEqual(p2(), 44)
 
     def test_deepcopy_parameter(self):
         p1 = Parameter(name='p1', initial_value=42, set_cmd=None)
         p2 = deepcopy(p1)
 
-        p2(41)
-
         self.assertEqual(p1.raw_value, 42)
         self.assertEqual(p1(), 42)
-        self.assertEqual(p2.raw_value, 41)
-        self.assertEqual(p2(), 41)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p1(43)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 42)
+        self.assertEqual(p2(), 42)
+
+        p2(44)
+        self.assertEqual(p1.raw_value, 43)
+        self.assertEqual(p1(), 43)
+        self.assertEqual(p2.raw_value, 44)
+        self.assertEqual(p2(), 44)
+
+    def test_copy_parameter_change_name(self):
+        p = Parameter(name='parameter1')
+        p_copy = copy(p)
+
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p.name = 'changed_parameter_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p_copy.name = 'new_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'new_name')
+
+    def test_deepcopy_parameter_change_name(self):
+        p = Parameter(name='parameter1')
+        p_copy = deepcopy(p)
+
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p.name = 'changed_parameter_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'parameter1')
+
+        p_copy.name = 'new_name'
+        self.assertEqual(p.name, 'changed_parameter_name')
+        self.assertEqual(p_copy.name, 'new_name')
+
+    def test_parameter_copy_get_latest(self):
+        p = Parameter(name='p1', set_cmd=None)
+        p(42)
+        p_copy = copy(p)
+
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p(41)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p_copy(43)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 43)
+
+    def test_parameter_deepcopy_get_latest(self):
+        p = Parameter(name='p1', set_cmd=None)
+        p(42)
+        p_copy = deepcopy(p)
+
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p(41)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 42)
+
+        p_copy(43)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_copy.get_latest(), 43)
+
+    def test_copy_multi_parameter(self):
+        class CustomMultiParameter(MultiParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+            def set_raw(self, values):
+                self.values = values
+
+        custom_multi_parameter = CustomMultiParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      names=['arg1', 'arg2'],
+                                                      shapes=((),())
+                                                      )
+        self.assertListEqual(custom_multi_parameter(), [1,2])
+
+        copied_custom_multi_parameter = copy(custom_multi_parameter)
+        custom_multi_parameter([3,4])
+        self.assertListEqual(custom_multi_parameter(), [3, 4])
+        self.assertListEqual(copied_custom_multi_parameter.get_latest(), [1, 2])
+        self.assertListEqual(copied_custom_multi_parameter(), [1, 2])
+
+    def test_deepcopy_multi_parameter(self):
+        class CustomMultiParameter(MultiParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+            def set_raw(self, values):
+                self.values = values
+
+        custom_multi_parameter = CustomMultiParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      names=['arg1', 'arg2'],
+                                                      shapes=((),())
+                                                      )
+        self.assertListEqual(custom_multi_parameter(), [1,2])
+
+        copied_custom_multi_parameter = deepcopy(custom_multi_parameter)
+        custom_multi_parameter([3,4])
+        self.assertListEqual(custom_multi_parameter(), [3, 4])
+        self.assertListEqual(copied_custom_multi_parameter.get_latest(), [1, 2])
+        self.assertListEqual(copied_custom_multi_parameter(), [1, 2])
+
+    def test_copy_array_parameter(self):
+        class CustomArrayParameter(ArrayParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+        custom_array_parameter = CustomArrayParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      shape=(2,)
+                                                      )
+        self.assertListEqual(custom_array_parameter(), [1,2])
+
+        copied_custom_multi_parameter = copy(custom_array_parameter)
+
+    def test_deepcopy_array_parameter(self):
+        class CustomArrayParameter(ArrayParameter):
+            def __init__(self, values=None, **kwargs):
+                self.values = values
+                super().__init__(**kwargs)
+
+            def get_raw(self):
+                return self.values
+
+        custom_array_parameter = CustomArrayParameter(values=[1,2],
+                                                      name='custom_multi',
+                                                      shape=(2,)
+                                                      )
+        self.assertListEqual(custom_array_parameter(), [1,2])
+
+        copied_custom_multi_parameter = deepcopy(custom_array_parameter)
+
+    def test_copy_stateful_parameter(self):
+        p = Parameter(set_cmd=None)
+        p([])
+
+        p_copy = copy(p)
+        self.assertEqual(p(), [])
+        self.assertEqual(p_copy(), [])
+
+        p().append(1)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [])
+
+        p_copy().append(2)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [2])
+
+    def test_deepcopy_stateful_parameter(self):
+        p = Parameter(set_cmd=None)
+        p([])
+
+        p_copy = deepcopy(p)
+        self.assertEqual(p(), [])
+        self.assertEqual(p_copy(), [])
+
+        p().append(1)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [])
+
+        p_copy().append(2)
+        self.assertEqual(p(), [1])
+        self.assertEqual(p_copy(), [2])
 
 
 class TestParameterSignal(TestCase):
@@ -883,7 +1073,7 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.args_kwargs_dict['kwargs'], {})
 
     def test_parameter_connect_parameter(self):
-        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, update=False)
         self.assertEqual(self.target_parameter(), 43)
 
         self.source_parameter(41)
@@ -921,8 +1111,21 @@ class TestParameterSignal(TestCase):
         self.assertIsNone(target_ref())
         self.assertEqual(len(self.source_parameter.signal.receivers), 0)
 
+    def test_copied_source_parameter(self):
+        self.source_parameter.connect(self.target_parameter, update=False)
+        deepcopied_source_parameter = copy(self.source_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        deepcopied_source_parameter(41)
+        self.assertEqual(self.source_parameter(), 42)
+        self.assertEqual(self.target_parameter(), 43)
+
+        self.source_parameter(44)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(deepcopied_source_parameter(), 41)
+
     def test_deepcopied_source_parameter(self):
-        self.source_parameter.connect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, update=False)
         deepcopied_source_parameter = deepcopy(self.source_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
@@ -934,18 +1137,39 @@ class TestParameterSignal(TestCase):
         self.assertEqual(self.target_parameter(), 44)
         self.assertEqual(deepcopied_source_parameter(), 41)
 
-    def test_copied_source_parameter(self):
-        self.source_parameter.connect(self.target_parameter)
-        copied_source_parameter = copy(self.source_parameter)
+    def test_copied_target_parameter(self):
+        self.source_parameter.connect(self.target_parameter, update=False)
+        copied_target_parameter = copy(self.target_parameter)
 
         self.assertEqual(self.target_parameter(), 43)
-        copied_source_parameter(41)
-        self.assertEqual(self.source_parameter(), 42)
-        self.assertEqual(self.target_parameter(), 43)
+        self.assertEqual(copied_target_parameter(), 43)
 
-        self.source_parameter(44)
+        self.source_parameter(41)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 41)
+        self.assertEqual(copied_target_parameter(), 43)
+
+        self.target_parameter(44)
+        self.assertEqual(self.source_parameter(), 41)
         self.assertEqual(self.target_parameter(), 44)
-        self.assertEqual(copied_source_parameter(), 41)
+        self.assertEqual(copied_target_parameter(), 43)
+
+    def test_deepcopied_target_parameter(self):
+        self.source_parameter.connect(self.target_parameter, update=False)
+        copied_target_parameter = copy(self.target_parameter)
+
+        self.assertEqual(self.target_parameter(), 43)
+        self.assertEqual(copied_target_parameter(), 43)
+
+        self.source_parameter(41)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 41)
+        self.assertEqual(copied_target_parameter(), 43)
+
+        self.target_parameter(44)
+        self.assertEqual(self.source_parameter(), 41)
+        self.assertEqual(self.target_parameter(), 44)
+        self.assertEqual(copied_target_parameter(), 43)
 
     def test_connected_parameter(self):
         self.source_parameter.connect(self.target_parameter)
@@ -1042,3 +1266,184 @@ class TestParameterSignal(TestCase):
         # Note that config links only work in silq, since it relies on the
         # SubConfig, and so we only test here that it doesn't raise an error
         config_parameter = Parameter('config', config_link='pulses.duration')
+
+    def test_parameter_signal_modifiers(self):
+        self.source_parameter.connect(self.target_parameter, offset=1)
+        self.source_parameter(10)
+        self.assertEqual(self.source_parameter(), 10)
+        self.assertEqual(self.target_parameter(), 11)
+
+        self.source_parameter.disconnect(self.target_parameter)
+        self.source_parameter(12)
+        self.assertEqual(self.source_parameter(), 12)
+        self.assertEqual(self.target_parameter(), 11)
+
+        self.source_parameter.connect(self.target_parameter, scale=2)
+        self.source_parameter(13)
+        self.assertEqual(self.source_parameter(), 13)
+        self.assertEqual(self.target_parameter(), 26)
+
+        self.source_parameter.disconnect(self.target_parameter)
+        self.source_parameter.connect(self.target_parameter, scale=2,
+                                      offset=10)
+        self.source_parameter(14)
+        self.assertEqual(self.source_parameter(), 14)
+        self.assertEqual(self.target_parameter(), 38)
+
+    def test_copied_parameter_signal(self):
+        values = []
+        def fun(value):
+            values.append(value)
+
+        p = Parameter(set_cmd=None)
+        p_copy = copy(p)
+
+        self.assertIsNotNone(p_copy.signal)
+        p_copy.connect(fun, update=False)
+        p_copy(42)
+        self.assertListEqual(values, [42])
+
+    def test_deepcopied_parameter_signal(self):
+        values = []
+        def fun(value):
+            values.append(value)
+
+        p = Parameter(set_cmd=None)
+        p_copy = deepcopy(p)
+
+        self.assertIsNotNone(p_copy.signal)
+        p_copy.connect(fun, update=False)
+        p_copy(42)
+        self.assertListEqual(values, [42])
+
+
+class ListHandler(logging.Handler):  # Inherit from logging.Handler
+    def __init__(self, log_list):
+        # run the regular Handler __init__
+        logging.Handler.__init__(self)
+        # Our custom argument
+        self.log_list = log_list
+
+    def emit(self, record):
+        # record.message is the log message
+        self.log_list.append(record.msg)
+
+
+class TestParameterLogging(TestCase):
+    def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
+        self.log_list = []
+        self.handler = ListHandler(self.log_list)
+        logging.getLogger().addHandler(self.handler)
+        print('Started logging')
+
+    def tearDown(self):
+        logging.getLogger().removeHandler(self.handler)
+        print('Stopped logging')
+
+    def test_logging(self):
+        p = Parameter('p', initial_value=41, set_cmd=None)
+        self.assertEqual(len(self.log_list), 1)
+        p(42)
+        self.assertEqual(len(self.log_list), 2)
+
+        p.log_changes = False
+        p(43)
+        self.assertEqual(len(self.log_list), 2)
+
+        p.log_changes = True
+        p(44)
+        self.assertEqual(len(self.log_list), 3)
+
+        # Set to same value, no log should be emitted
+        p(44)
+        self.assertEqual(len(self.log_list), 3)
+
+
+class TestParameterSnapshotting(TestCase):
+    def test_empty_parameter_snapshot(self):
+        param = Parameter()
+        snapshot = param.snapshot()
+        self.assertEqual(snapshot['name'], 'None')
+        self.assertEqual(snapshot['value'], None)
+        self.assertEqual(snapshot['raw_value'], None)
+
+    def test_empty_parameter_simplified_snapshot(self):
+        param = Parameter()
+        snapshot = param.snapshot(simplify=True)
+        self.assertEqual(snapshot, {'name': 'None', 'value': None})
+
+    def test_named_parameter_simplified_snapshot(self):
+        param = Parameter('param_1')
+        snapshot = param.snapshot(simplify=True)
+        self.assertEqual(snapshot, {'name': 'param_1',
+                                    'label': 'Param 1',
+                                    'value': None})
+        param.unit = 'V'
+        snapshot = param.snapshot(simplify=True)
+        self.assertEqual(snapshot, {'name': 'param_1',
+                                    'label': 'Param 1',
+                                    'unit': 'V',
+                                    'value': None})
+
+
+class TestParameterPickling(TestCase):
+    def test_pickle_empty_parameter(self):
+        p = Parameter(name='param1')
+        pickle_dump = pickle.dumps(p)
+        p_pickled = pickle._loads(pickle_dump)
+        self.assertEqual(p_pickled.name, 'param1')
+
+    def test_pickle_empty_parameter_with_set(self):
+        p = Parameter(name='param1', set_cmd=lambda x: 'bla')
+        pickle_dump = pickle.dumps(p)
+        p_pickled = pickle._loads(pickle_dump)
+        self.assertEqual(p.name, 'param1')
+        self.assertEqual(p_pickled.name, 'param1')
+
+    def test_pickle_empty_parameter_with_get(self):
+        p = Parameter(name='param1', get_cmd=lambda: 123)
+        p.get()  # Set value to 123
+        pickle_dump = pickle.dumps(p)
+
+        p_pickled = pickle._loads(pickle_dump)
+        self.assertEqual(p_pickled.name, 'param1')
+        self.assertEqual(p_pickled.get_latest(), 123)
+        self.assertEqual(p_pickled(), 123)
+
+    def test_pickle_get_latest(self):
+        p = Parameter('p1', set_cmd=None)
+        p(42)
+
+        pickle_dump = pickle.dumps(p)
+        p_pickled = pickle.loads(pickle_dump)
+
+        self.assertEqual(p.get_latest(), 42)
+        self.assertEqual(p_pickled.get_latest(), 42)
+
+        p(41)
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_pickled.get_latest(), 42)
+
+        p_pickled._latest['value'] = 43
+        self.assertEqual(p.get_latest(), 41)
+        self.assertEqual(p_pickled.get_latest(), 43)
+
+    def test_pickle_connected_parameter(self):
+        values = []
+        def fun(value):
+            values.append(value)
+
+        p = Parameter(set_cmd=None)
+        p.connect(fun, update=False)
+
+        p(42)
+        self.assertListEqual(values, [42])
+
+        pickle_dump = pickle.dumps(p)
+        pickled_parameter = pickle.loads(pickle_dump)
+
+        self.assertListEqual(values, [42])
+        p(41)
+        self.assertListEqual(values, [42, 41])
+        self.assertEqual(pickled_parameter(), 42)

@@ -409,7 +409,10 @@ class DataArray(DelegateAttributes):
 
     def mean(self, axis=None, dtype=None, out=None,
              min_filter=None, max_filter=None, **kwargs):
-        arr = self.ndarray.copy()
+        if isinstance(self, np.ndarray): # Mean called with DataArray.mean
+            arr = self
+        else:
+            arr = self.ndarray.copy()
 
         # Catch runtime warnings as we may compare NaN or take mean of all Nan's
         with warnings.catch_warnings():
@@ -431,6 +434,8 @@ class DataArray(DelegateAttributes):
         if axis is None:
             return np.nanmean(arr)
         elif not isinstance(sub_array, np.ndarray):
+            return sub_array
+        elif isinstance(self, np.ndarray):
             return sub_array
         else:
             sub_set_arrays = []

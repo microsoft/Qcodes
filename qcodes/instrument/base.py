@@ -5,328 +5,22 @@ import warnings
 import weakref
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List
 
-import numpy as np
-
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
-from qcodes.utils.metadata import Metadatable
+from qcodes.instrument.parameter_node import ParameterNode
+from qcodes.utils.helpers import strip_attrs
 from qcodes.utils.validators import Anything
 from .parameter import Parameter
-from .function import Function
-
-log = logging.getLogger(__name__)
 
 
 log = logging.getLogger(__name__)
 
 
-class InstrumentBase(Metadatable, DelegateAttributes):
-    """
-    Base class for all QCodes instruments and instrument channels
-
-    Args:
-        name: an identifier for this instrument, particularly for
-            attaching it to a Station.
-        metadata: additional static metadata to add to this
-            instrument's JSON snapshot.
+class InstrumentBase(ParameterNode):
+    def __init__(self, *args, **kwargs):
+        warnings.warn('InstrumentBase is deprecated, please use ParameterNode')
+        super().__init__(*args, **kwargs)
 
 
-    Attributes:
-        name (str): an identifier for this instrument, particularly for
-            attaching it to a Station.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-            instrument. Usually populated via ``add_parameter``
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``
-        submodules (Dict[Metadatable]): All the submodules of this instrument
-            such as channel lists or logical groupings of parameters.
-            Usually populated via ``add_submodule``
-    """
-
-    def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
-        self.name = str(name)
-
-        self.parameters = {}
-        self.functions = {}
-        self.submodules = {}
-        super().__init__(**kwargs)
-
-    def add_parameter(self, name: str,
-                      parameter_class: type=Parameter, **kwargs) -> None:
-        """
-        Bind one Parameter to this instrument.
-
-        Instrument subclasses can call this repeatedly in their ``__init__``
-        for every real parameter of the instrument.
-
-        In this sense, parameters are the state variables of the instrument,
-        anything the user can set and/or get
-
-        Args:
-            name: How the parameter will be stored within
-                ``instrument.parameters`` and also how you address it using the
-                shortcut methods: ``instrument.set(param_name, value)`` etc.
-
-            parameter_class: You can construct the parameter
-                out of any class. Default ``StandardParameter``.
-
-            **kwargs: constructor arguments for ``parameter_class``.
-
-        Raises:
-            KeyError: if this instrument already has a parameter with this
-                name.
-        """
-        if name in self.parameters:
-            raise KeyError('Duplicate parameter name {}'.format(name))
-        param = parameter_class(name=name, instrument=self, **kwargs)
-        self.parameters[name] = param
-
-    def add_function(self, name: str, **kwargs) -> None:
-        """
-        Bind one Function to this instrument.
-
-        Instrument subclasses can call this repeatedly in their ``__init__``
-        for every real function of the instrument.
-
-        This functionality is meant for simple cases, principally things that
-        map to simple commands like '\*RST' (reset) or those with just a few
-        arguments. It requires a fixed argument count, and positional args
-        only. If your case is more complicated, you're probably better off
-        simply making a new method in your ``Instrument`` subclass definition.
-
-        Args:
-            name (str): how the Function will be stored within
-            ``instrument.Functions`` and also how you  address it using the
-            shortcut methods: ``instrument.call(func_name, *args)`` etc.
-
-            **kwargs: constructor kwargs for ``Function``
-
-        Raises:
-            KeyError: if this instrument already has a function with this
-                name.
-        """
-        if name in self.functions:
-            raise KeyError('Duplicate function name {}'.format(name))
-        func = Function(name=name, instrument=self, **kwargs)
-        self.functions[name] = func
-
-    def add_submodule(self, name: str, submodule: Metadatable) -> None:
-        """
-        Bind one submodule to this instrument.
-
-        Instrument subclasses can call this repeatedly in their ``__init__``
-        method for every submodule of the instrument.
-
-        Submodules can effectively be considered as instruments within
-        the main instrument, and should at minimum be
-        snapshottable. For example, they can be used to either store
-        logical groupings of parameters, which may or may not be
-        repeated, or channel lists.
-
-        Args:
-            name: how the submodule will be stored within
-                ``instrument.submodules`` and also how it can be
-            addressed.
-
-            submodule: The submodule to be stored.
-
-        Raises:
-            KeyError: if this instrument already contains a submodule with this
-                name.
-            TypeError: if the submodule that we are trying to add is
-                not an instance of an Metadatable object.
-        """
-        if name in self.submodules:
-            raise KeyError('Duplicate submodule name {}'.format(name))
-        if not isinstance(submodule, Metadatable):
-            raise TypeError('Submodules must be metadatable.')
-        self.submodules[name] = submodule
-
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict:
-        """
-        State of the instrument as a JSON-compatible dict.
-
-        Args:
-            update: If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
-            params_to_skip_update: List of parameter names that will be skipped
-                in update even if update is True. This is useful if you have
-                parameters that are slow to update but can be updated in a
-                different way (as in the qdac)
-
-        Returns:
-            dict: base snapshot
-        """
-
-        snap = {
-            "functions": {name: func.snapshot(update=update)
-                          for name, func in self.functions.items()},
-            "submodules": {name: subm.snapshot(update=update)
-                           for name, subm in self.submodules.items()},
-            "__class__": full_class(self)
-        }
-
-        snap['parameters'] = {}
-        for name, param in self.parameters.items():
-            update = update
-            if params_to_skip_update and name in params_to_skip_update:
-                update = False
-            try:
-                snap['parameters'][name] = param.snapshot(update=update)
-            except:
-                log.debug("Snapshot: Could not update parameter:"
-                          "{}".format(name))
-                snap['parameters'][name] = param.snapshot(update=False)
-        for attr in set(self._meta_attrs):
-            if hasattr(self, attr):
-                snap[attr] = getattr(self, attr)
-        return snap
-
-    def print_readable_snapshot(self, update: bool=False,
-                                max_chars: int=80) -> None:
-        """
-        Prints a readable version of the snapshot.
-        The readable snapshot includes the name, value and unit of each
-        parameter.
-        A convenience function to quickly get an overview of the
-        status of an instrument.
-
-        Args:
-            update: If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
-                This argument gets passed to the snapshot function.
-            max_chars: the maximum number of characters per line. The
-                readable snapshot will be cropped if this value is exceeded.
-                Defaults to 80 to be consistent with default terminal width.
-        """
-        floating_types = (float, np.integer, np.floating)
-        snapshot = self.snapshot(update=update)
-
-        par_lengths = [len(p) for p in snapshot['parameters']]
-
-        # Min of 50 is to prevent a super long parameter name to break this
-        # function
-        par_field_len = min(max(par_lengths)+1, 50)
-
-        print(self.name + ':')
-        print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
-        print('-'*max_chars)
-        for par in sorted(snapshot['parameters']):
-            name = snapshot['parameters'][par]['name']
-            msg = '{0:<{1}}:'.format(name, par_field_len)
-
-            # in case of e.g. ArrayParameters, that usually have
-            # snapshot_value == False, the parameter may not have
-            # a value in the snapshot
-            val = snapshot['parameters'][par].get('value', 'Not available')
-
-            unit = snapshot['parameters'][par].get('unit', None)
-            if unit is None:
-                # this may be a multi parameter
-                unit = snapshot['parameters'][par].get('units', None)
-            if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)
-            else:
-                msg += '\t{} '.format(val)
-            if unit is not '':  # corresponds to no unit
-                msg += '({})'.format(unit)
-            # Truncate the message if it is longer than max length
-            if len(msg) > max_chars and not max_chars == -1:
-                msg = msg[0:max_chars-3] + '...'
-            print(msg)
-
-        for submodule in self.submodules.values():
-            if hasattr(submodule, '_channels'):
-                if submodule._snapshotable:
-                    for channel in submodule._channels:
-                        channel.print_readable_snapshot()
-            else:
-                submodule.print_readable_snapshot(update, max_chars)
-
-    #
-    # shortcuts to parameters & setters & getters                           #
-    #
-    # instrument['someparam'] === instrument.parameters['someparam']        #
-    # instrument.someparam === instrument.parameters['someparam']           #
-    # instrument.get('someparam') === instrument['someparam'].get()         #
-    # etc...                                                                #
-    #
-    delegate_attr_dicts = ['parameters', 'functions', 'submodules']
-
-    def __getitem__(self, key: str) -> Union[Callable, Parameter]:
-        """Delegate instrument['name'] to parameter or function 'name'."""
-        try:
-            return self.parameters[key]
-        except KeyError:
-            return self.functions[key]
-
-    def set(self, param_name: str, value: Any) -> None:
-        """
-        Shortcut for setting a parameter from its name and new value.
-
-        Args:
-            param_name: The name of a parameter of this instrument.
-            value: The new value to set.
-        """
-        self.parameters[param_name].set(value)
-
-    def get(self, param_name: str) -> Any:
-        """
-        Shortcut for getting a parameter from its name.
-
-        Args:
-            param_name: The name of a parameter of this instrument.
-
-        Returns:
-            The current value of the parameter.
-        """
-        return self.parameters[param_name].get()
-
-    def call(self, func_name: str, *args) -> Any:
-        """
-        Shortcut for calling a function from its name.
-
-        Args:
-            func_name: The name of a function of this instrument.
-            *args: any arguments to the function.
-
-        Returns:
-            The return value of the function.
-        """
-        return self.functions[func_name].call(*args)
-
-    def __getstate__(self):
-        """Prevent pickling instruments, and give a nice error message."""
-        raise RuntimeError(
-            'Pickling {}. qcodes Instruments should not.'.format(self.name) +
-            ' be pickled. Likely this means you '
-            'were trying to use a local instrument (defined with '
-            'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
-
-    def validate_status(self, verbose: bool=False) -> None:
-        """ Validate the values of all gettable parameters
-
-        The validation is done for all parameters that have both a get and
-        set method.
-
-        Arguments:
-            verbose: If True, then information about the
-                parameters that are being check is printed.
-
-        """
-        for k, p in self.parameters.items():
-            if hasattr(p, 'get') and hasattr(p, 'set'):
-                value = p.get()
-                if verbose:
-                    print('validate_status: param %s: %s' % (k, value))
-                p.validate(value)
-
-
-class Instrument(InstrumentBase):
+class Instrument(ParameterNode):
 
     """
     Base class for all QCodes instruments.
@@ -365,10 +59,8 @@ class Instrument(InstrumentBase):
                           stacklevel=0)
         super().__init__(name, **kwargs)
 
-        self.add_parameter('IDN', get_cmd=self.get_idn,
-                           vals=Anything())
-
-        self._meta_attrs = ['name']
+        self.IDN = Parameter(get_cmd=self.get_idn,
+                             vals=Anything())
 
         self.record_instance(self)
 
@@ -412,6 +104,21 @@ class Instrument(InstrumentBase):
             idparts[1] = str(idparts[1])[5:].strip()
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
+    def is_testing(self):
+        """Return True if we are testing"""
+        return self._testing
+
+    def get_mock_messages(self):
+        """
+        For testing purposes we might want to get log messages from the mocker.
+
+        Returns:
+            mocker_messages: list, str
+        """
+        if not self._testing:
+            raise ValueError("Cannot get mock messages if not in testing mode")
+        return self.mocker.get_log_messages()
 
     def connect_message(self, idn_param: str='IDN',
                         begin_time: float=None) -> None:
