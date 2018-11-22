@@ -39,19 +39,20 @@ class ArrayMeasurement(ArrayParameter):
 
         # ensure correct instrument settings
         #inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
-        inst.trigger_count(1)
-        inst.trigger_delay(0)
-        inst.sample_count_pretrigger(0)
-        inst.sample_source('TIM')
-        inst.autorange('OFF')
+        #inst.trigger_count(1)
+        #inst.trigger_delay(0)
+        #inst.sample_count_pretrigger(0)
+        #inst.sample_source('TIM')
+        #inst.autorange('OFF')
 
         if inst.trigger_source() is None:
             raise ValueError('Trigger source unspecified! Please set '
                              "trigger_source to 'INT' or 'EXT'.")
 
         # Final step
-        self.time_per_point = inst.sample_timer_minimum()
-        inst.sample_timer(self.time_per_point)
+        #self.time_per_point = inst.sample_timer_minimum()
+        self.time_per_point = inst.sample_timer()
+        #inst.sample_timer(self.time_per_point)
 
         self.setpoints = (tuple(np.linspace(0, N*self.time_per_point, N)),)
         self.shape = (N,)
@@ -69,9 +70,9 @@ class ArrayMeasurement(ArrayParameter):
 
         # Ensure that the measurement doesn't time out
         # TODO (WilliamHPNielsen): What if we wait really long for a trigger?
-        old_timeout = self._instrument.visa_handle.timeout
-        self._instrument.visa_handle.timeout = N*1000*1.2*self.time_per_point
-        self._instrument.visa_handle.timeout += old_timeout
+        #old_timeout = self._instrument.visa_handle.timeout
+        #self._instrument.visa_handle.timeout = N*1000*1.2*self.time_per_point
+        #self._instrument.visa_handle.timeout += old_timeout
 
         # Turn off the display to increase measurement speed
         self._instrument.display_text('Acquiring {} samples'.format(N))
@@ -83,7 +84,7 @@ class ArrayMeasurement(ArrayParameter):
             rawvals = None
             log.error('Could not pull data from DMM. Perhaps no trigger?')
 
-        self._instrument.visa_handle.timeout = old_timeout
+        #self._instrument.visa_handle.timeout = old_timeout
 
         # parse the acquired values
         try:
