@@ -47,14 +47,14 @@ class S5i(Instrument):
                            set_cmd=self.s5i.set_frequency,
                            units='Hz',
                            vals=Numbers(40e6, 4e9),
-                           docstring='Set RF frequency, range 40MHz - 4GHz')
+                           docstring='Set RF frequency, range 40MHz to 4GHz')
 
         self.add_parameter('power',
                            label='Output Power',
                            set_cmd=self.s5i.set_output_power,
                            unit='dBm',
                            vals=Numbers(-14, 20),
-                           docstring='Set power in dBm, range -20 to + 15 dBm')
+                           docstring='Set power in dBm, range -14 to +20 dBm')
 
         self.add_function('optimize_for_frequency', call_cmd=self._optimize)
 
