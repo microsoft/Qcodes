@@ -18,10 +18,13 @@ class S5i(Instrument):
             the spirack package. This class manages communication with the
             individual modules.
         module (int): module number as set on the hardware.
+        frequency (float): RF frequency at startup, default is 41 MHz.
+        enable_output (bool): Switch device output on or off, default is True.
+        output_level (int): RF output level in dBm, default is 0 dBm.
     """
 
-    def __init__(self, name, spi_rack, module, frequency=41e6, enable_output=1,
-                 output_level=0, **kwargs):
+    def __init__(self, name, spi_rack, module, frequency=41e6,
+                 enable_output=True, output_level=0, **kwargs):
         super().__init__(name, **kwargs)
 
         self.s5i = S5i_module(spi_rack, module, frequency=frequency,
