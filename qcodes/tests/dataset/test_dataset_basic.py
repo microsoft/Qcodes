@@ -10,7 +10,6 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -18,9 +17,10 @@ from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
+# pylint: disable=unused-import
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
 n_experiments = 0
-
 
 @pytest.mark.usefixtures("experiment")
 def test_has_attributes_after_init():
@@ -568,3 +568,61 @@ def test_the_same_dataset_as(some_paramspecs, experiment):
 
         new_ds = DataSet()
         assert not ds.the_same_dataset_as(new_ds)
+
+
+class TestGetData:
+    x = ParamSpec("x", paramtype='numeric')
+    n_vals = 5
+    xvals = list(range(n_vals))
+    # this is the format of how data is returned by DataSet.get_data
+    # which means "a list of table rows"
+    xdata = [[x] for x in xvals]
+
+    @pytest.fixture(autouse=True)
+    def ds_with_vals(self, dataset):
+        """
+        This fixture creates a DataSet with values that is to be used by all
+        the tests in this class
+        """
+        dataset.add_parameter(self.x)
+        for xv in self.xvals:
+            dataset.add_result({self.x.name: xv})
+
+        return dataset
+
+    @pytest.mark.parametrize(
+        ("start", "end", "expected"),
+        [
+            # test without start and end
+            (None, None, xdata),
+
+            # test for start only
+            (0, None, xdata),
+            (2, None, xdata[(2-1):]),
+            (-2, None, xdata),
+            (n_vals, None, xdata[(n_vals-1):]),
+            (n_vals + 1, None, []),
+            (n_vals + 2, None, []),
+
+            # test for end only
+            (None, 0, []),
+            (None, 2, xdata[:2]),
+            (None, -2, []),
+            (None, n_vals, xdata),
+            (None, n_vals + 1, xdata),
+            (None, n_vals + 2, xdata),
+
+            # test for start and end
+            (0, 0, []),
+            (1, 1, [xdata[1-1]]),
+            (2, 1, []),
+            (2, 0, []),
+            (1, 0, []),
+            (n_vals, n_vals, [xdata[n_vals-1]]),
+            (n_vals, n_vals - 1, []),
+            (2, 4, xdata[(2-1):4]),
+        ],
+    )
+    def test_get_data_with_start_and_end_args(self, ds_with_vals,
+                                              start, end, expected):
+        assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
