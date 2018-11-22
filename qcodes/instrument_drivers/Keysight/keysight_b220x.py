@@ -219,15 +219,29 @@ class KeysightB220X(VisaInstrument):
 
     @post_execution_status_poll
     def bias_disable_all_outputs(self):
+        """
+        Removes all outputs from list of ports that will be connected to GND
+        input if port is unused and bias mode is enabled.
+        """
         self.write(':BIAS:CHAN:DIS:CARD {card}'.format(card=self._card))
 
     @post_execution_status_poll
     def bias_enable_all_outputs(self):
+        """
+        Adds all outputs to list of ports that will be connected to bias input
+        if port is unused and bias mode is enabled.
+        """
         self.write(':BIAS:CHAN:ENAB:CARD {card}'.format(
             card=self._card))
 
     @post_execution_status_poll
-    def bias_enable_output(self, output: int):
+    def bias_enable_output(self, output):
+        """
+        Adds `output` to list of ports that will be connected to bias input
+        if port is unused and bias mode is enabled.
+
+        :param output: int 1-48
+        """
         KeysightB220X._available_output_ports.validate(output)
 
         self.write(':BIAS:CHAN:ENAB (@{card}01{output:02d})'.format(
@@ -235,7 +249,13 @@ class KeysightB220X(VisaInstrument):
         )
 
     @post_execution_status_poll
-    def bias_disable_output(self, output: int):
+    def bias_disable_output(self, output):
+        """
+        Removes `output` from list of ports that will be connected to bias
+        input if port is unused and bias mode is enabled.
+
+        :param output: int 1-48
+        """
         KeysightB220X._available_output_ports.validate(output)
 
         self.write(':BIAS:CHAN:DIS (@{card}01{output:02d})'.format(
@@ -243,7 +263,13 @@ class KeysightB220X(VisaInstrument):
         )
 
     @post_execution_status_poll
-    def gnd_enable_output(self, output: int):
+    def gnd_enable_output(self, output):
+        """
+        Adds `output` to list of ports that will be connected to GND input
+        if port is unused and bias mode is enabled.
+
+        :param output: int 1-48
+        """
         KeysightB220X._available_output_ports.validate(output)
 
         self.write(':AGND:CHAN:ENAB (@{card}01{output:02d})'.format(
@@ -251,7 +277,13 @@ class KeysightB220X(VisaInstrument):
         )
 
     @post_execution_status_poll
-    def gnd_disable_output(self, output: int):
+    def gnd_disable_output(self, output):
+        """
+        Removes `output` from list of ports that will be connected to GND
+        input if port is unused and bias mode is enabled.
+
+        :param output: int 1-48
+        """
         KeysightB220X._available_output_ports.validate(output)
 
         self.write(':AGND:CHAN:DIS (@{card}01{output:02d})'.format(
@@ -260,11 +292,19 @@ class KeysightB220X(VisaInstrument):
 
     @post_execution_status_poll
     def gnd_enable_all_outputs(self):
+        """
+        Adds all outputs to list of ports that will be connected to GND input
+        if port is unused and bias mode is enabled.
+        """
         self.write(':AGND:CHAN:ENAB:CARD {card}'.format(
             card=self._card))
 
     @post_execution_status_poll
     def gnd_disable_all_outputs(self):
+        """
+        Removes all outputs from list of ports that will be connected to GND
+        input if port is unused and bias mode is enabled.
+        """
         self.write(':AGND:CHAN:DIS:CARD {card}'.format(
             card=self._card)
         )
@@ -295,7 +335,7 @@ class KeysightB220X(VisaInstrument):
         self.write('*RST')
 
     @post_execution_status_poll
-    def _set_connection_rule(self, mode: str):
+    def _set_connection_rule(self, mode):
         if 'free' == self.connection_rule() and 'SROU' == mode:
             warnings.warn('When going from *free* to *single* mode existing '
                           'connections are not released.')

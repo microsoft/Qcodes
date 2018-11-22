@@ -3,8 +3,9 @@ from pyvisa.errors import VisaIOError
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
 import warnings
 
+
 @pytest.fixture
-def uut() -> KeysightB220X:
+def uut():
     try:
         uut = KeysightB220X('switch_matrix',
                             address='insert_Keysight_B2200_VISA_resource_name_here')
@@ -12,7 +13,8 @@ def uut() -> KeysightB220X:
         # Either there is no VISA lib installed or there was no real instrument found at the
         # specified address => use simulated instrument
         import qcodes.instrument.sims as sims
-        path_to_yaml = sims.__file__.replace('__init__.py', 'keysight_b220x.yaml')
+        path_to_yaml = sims.__file__.replace('__init__.py',
+                                             'keysight_b220x.yaml')
 
         uut = KeysightB220X('switch_matrix',
                             address='GPIB::1::INSTR',
@@ -37,15 +39,16 @@ def test_connect(uut):
     uut.connect(2, 48)
     assert 0 == uut.get_status()
 
+
 def test_connect_throws_at_invalid_channel_number(uut):
     with pytest.raises(ValueError):
-        uut.connect(2,49)
+        uut.connect(2, 49)
     with pytest.raises(ValueError):
-        uut.connect(2,0)
+        uut.connect(2, 0)
     with pytest.raises(ValueError):
-        uut.connect(0,10)
+        uut.connect(0, 10)
     with pytest.raises(ValueError):
-        uut.connect(15,10)
+        uut.connect(15, 10)
 
 
 def test_connect_emits_warning_on_statusbyte_not_null(uut):
@@ -68,16 +71,15 @@ def test_connect_emits_warning_on_statusbyte_not_null(uut):
         uut.gnd_mode(False)
 
 
-
 def test_disconnect_throws_at_invalid_channel_number(uut):
     with pytest.raises(ValueError):
-        uut.disconnect(2,49)
+        uut.disconnect(2, 49)
     with pytest.raises(ValueError):
-        uut.disconnect(2,0)
+        uut.disconnect(2, 0)
     with pytest.raises(ValueError):
-        uut.disconnect(0,10)
+        uut.disconnect(0, 10)
     with pytest.raises(ValueError):
-        uut.disconnect(15,10)
+        uut.disconnect(15, 10)
 
 
 def test_connections(uut):
@@ -110,7 +112,8 @@ def test_connection_rule(uut):
 
 
 def test_connection_rule_emits_warning_when_going_from_free_to_single(uut):
-    uut.connection_rule('free') # uut should already be in free mode after reset
+    uut.connection_rule(
+        'free')  # uut should already be in free mode after reset
 
     with pytest.warns(UserWarning):
         uut.connection_rule('single')
@@ -221,7 +224,7 @@ def test_couple_ports(uut):
 
     uut.couple_ports([1, 3, 5])
     assert 0 == uut.get_status()
-    assert [1,3,5] == uut.couple_ports()
+    assert [1, 3, 5] == uut.couple_ports()
 
     with pytest.raises(ValueError):
         uut.couple_ports([2])
@@ -242,7 +245,8 @@ def test_get_error(uut):
 class Test_parse_channel_list:
     def test_parse_channel_list(self):
         channel_list = '(@10101,10202)'
-        assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(channel_list)
+        assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(
+            channel_list)
 
     def test_all_combinations_zero_padded(self):
         import itertools
@@ -250,10 +254,14 @@ class Test_parse_channel_list:
         inputs = range(1, 15)
         outputs = range(1, 49)
 
-        for card, in_port, out_port in itertools.product(cards, inputs, outputs):
-            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card, in_port=in_port, out_port=out_port)
+        for card, in_port, out_port in itertools.product(cards, inputs,
+                                                         outputs):
+            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card,
+                                                                    in_port=in_port,
+                                                                    out_port=out_port)
 
-            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(padded)
+            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
+                padded)
 
     def test_all_combinations_unpadded(self):
         import itertools
@@ -261,8 +269,12 @@ class Test_parse_channel_list:
         inputs = range(1, 15)
         outputs = range(1, 49)
 
-        for card, in_port, out_port in itertools.product(cards, inputs, outputs):
-            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card, in_port=in_port, out_port=out_port)
+        for card, in_port, out_port in itertools.product(cards, inputs,
+                                                         outputs):
+            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card,
+                                                                    in_port=in_port,
+                                                                    out_port=out_port)
             unpadded = str(int(padded))
 
-            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(unpadded)
+            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
+                unpadded)
