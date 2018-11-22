@@ -42,7 +42,7 @@ class S5i(Instrument):
                            label='Frequency stepsize',
                            get_cmd=self._get_stepsize,
                            set_cmd=self.s5i.set_stepsize,
-                           units='Hz',
+                           unit='Hz',
                            vals=Numbers(),
                            docstring='Set the optimal frequency stepsize for '
                                      'a minimal phase noise')
@@ -52,7 +52,7 @@ class S5i(Instrument):
                            initial_value=frequency,
                            get_cmd=self._get_rf_frequency,
                            set_cmd=self.s5i.set_frequency,
-                           units='Hz',
+                           unit='Hz',
                            vals=Numbers(40e6, 4e9),
                            docstring='Set RF frequency')
 
@@ -69,7 +69,7 @@ class S5i(Instrument):
         This method finds the optimum stepsize for the set frequency.
 
         The stepsize affects the phase noise of the instrument. The smaller the
-        stepsize, the greater is the pahse noise. So this method sets the
+        stepsize, the greater is the phase noise. So this method sets the
         stepsize as large as possible for the current reference frequency.
 
         """
