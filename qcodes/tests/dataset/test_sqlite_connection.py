@@ -203,8 +203,11 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     `sqlite3.Connection` with respect to `atomic` context manager and commits.
     """
     dbfile = str(tmp_path / 'temp.db')
+    # just initialize the database file, connection objects needed for
+    # testing in this test function are created separately, see below
+    connect(dbfile)
 
-    sqlite_conn = connect(dbfile)
+    sqlite_conn = sqlite3.connect(dbfile)
     plus_conn = create_conn_plus(sqlite_conn)
 
     # this connection is going to be used to test whether changes have been
@@ -279,3 +282,13 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     assert 3 == len(atomic_conn_1.execute(get_all_runs).fetchall())
     assert 3 == len(atomic_conn_2.execute(get_all_runs).fetchall())
     assert 3 == len(control_conn.execute(get_all_runs).fetchall())
+
+
+def test_connect():
+    conn = connect(':memory:')
+
+    assert isinstance(conn, sqlite3.Connection)
+    assert isinstance(conn, ConnectionPlus)
+    assert False is conn.atomic_in_progress
+
+    assert sqlite3.Row is conn.row_factory

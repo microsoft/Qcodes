@@ -132,8 +132,6 @@ class ConnectionPlus(wrapt.ObjectProxy):
                              '`ConnectionPlus` object which is not allowed.')
 
 
-
-
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
@@ -307,21 +305,21 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def connect(name: str, debug: bool = False,
-            version: int=-1) -> sqlite3.Connection:
+            version: int=-1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
     converters that we need.
 
-
     Args:
         name: name or path to the sqlite file
         debug: whether or not to turn on tracing
-        version: which version to create. We count from 0. -1 means 'latest'
-          Should always be left at -1 except when testing.
+        version: which version to create. We count from 0. -1 means 'latest'.
+            Should always be left at -1 except when testing.
 
     Returns:
-        conn: connection object to the database
+        conn: connection object to the database (note, it is
+            `ConnectionPlus`, not `sqlite3.Connection`
 
     """
     # register numpy->binary(TEXT) adapter
@@ -331,7 +329,10 @@ def connect(name: str, debug: bool = False,
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
-    conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
+
+    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = ConnectionPlus(sqlite3_conn)
+
     # sqlite3 options
     conn.row_factory = sqlite3.Row
 
