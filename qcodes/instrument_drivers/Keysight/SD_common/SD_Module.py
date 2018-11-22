@@ -106,8 +106,6 @@ class SignadyneParameter(Parameter):
                  set_args: List[str] = None,
                  initial_value=None,
                  **kwargs):
-        self.parent = parent
-
         self.get_cmd = get_cmd
         self.get_function = get_function
 
@@ -115,7 +113,7 @@ class SignadyneParameter(Parameter):
         self.set_function = set_function
         self.set_args = set_args
 
-        super().__init__(name=name, **kwargs)
+        super().__init__(name=name, parent=parent, **kwargs)
 
         if initial_value is not None:
             # We set the initial value here to ensure that it does not call
