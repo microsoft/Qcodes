@@ -69,6 +69,19 @@ def location_and_station_set_to(location: int, work_station: int):
         cfg.save_to_home()
 
 
+LATEST_VERSION = 3
+VERSIONS = tuple(range(LATEST_VERSION + 1))
+LATEST_VERSION_ARG = -1
+
+
+@pytest.mark.parametrize('ver',
+                         VERSIONS + (LATEST_VERSION_ARG,))
+def test_connect_upgrades_user_version(ver):
+    expected_version = ver if ver != LATEST_VERSION_ARG else LATEST_VERSION
+    conn = connect(':memory:', version=ver)
+    assert expected_version == get_user_version(conn)
+
+
 @pytest.mark.usefixtures("empty_temp_db")
 def test_tables_exist():
     for version in [-1, 0, 1]:
