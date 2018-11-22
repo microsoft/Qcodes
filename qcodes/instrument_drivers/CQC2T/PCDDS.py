@@ -155,7 +155,8 @@ class PCDDSChannel(InstrumentChannel):
             pulse: The location where the zeros are to be written
         """
         self.write_pulse(pulse=pulse, phase=0, frequency=0,
-                         frequency_accumulation=0, amplitude=0, next_pulse=0)
+                         frequency_accumulation=0, amplitude=0, offset=0,
+                         next_pulse=0)
 
     def clear_memory(self):
         """
@@ -192,6 +193,7 @@ class PCDDSChannel(InstrumentChannel):
                                   phase=instr['phase'],
                                   frequency=instr['freq'],
                                   amplitude=instr['amp'],
+                                  offset=instr['offset'],
                                   next_pulse=instr['next_pulse'])
         elif instr['instr'] == 'chirp':
             self.write_chirp_pulse(pulse=instr['pulse_idx'],
@@ -199,6 +201,7 @@ class PCDDSChannel(InstrumentChannel):
                                    frequency=instr['freq'],
                                    frequency_accumulation=instr['accum'],
                                    amplitude=instr['amp'],
+                                   offset=instr['offset'],
                                    next_pulse=instr['next_pulse'])
         else:
             raise ValueError(f'Unknown instruction type: {instr["instr"]}')
@@ -206,7 +209,7 @@ class PCDDSChannel(InstrumentChannel):
         self.instruction_sequence().append(instr)
 
     def write_sine_pulse(self, pulse: int, phase: float, frequency: float,
-                         amplitude: float, next_pulse: int):
+                         amplitude: float, offset: float, next_pulse: int):
         """
         Write a normal sinusoidal pulse with the desired properties to the
         pulse memory.
@@ -215,6 +218,7 @@ class PCDDSChannel(InstrumentChannel):
             phase: The phase of the signal in degrees
             frequency: The frequency of the signal in Hz
             amplitude: The desired output maximum amplitude in V
+            offset: The desired pulse offset in V
             next_pulse: The next pulse that the system is to go to after this
                         one
         """
@@ -224,13 +228,17 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. It '
                             'should be an int')
+        assert np.abs(offset) + np.abs(amplitude) <= self.v_max + 1e-10, \
+            'The combined output will be larger than the maximum output voltage'
+
         # Convert all the pulse parameters to the correct register values
         phase_val = self.phase2val(phase)
         freq_val = self.freq2val(frequency)
         accum_val = 0
         amplitude_val = self.amp2val(amplitude)
+        offset_val = self.offset2val(offset)
         self.write_pulse(pulse, phase_val, freq_val, accum_val,
-                         amplitude_val, next_pulse)
+                         amplitude_val, offset_val, next_pulse)
 
     def write_dc_pulse(self, pulse: int, voltage: float, next_pulse: int):
         """
@@ -250,19 +258,17 @@ class PCDDSChannel(InstrumentChannel):
             raise TypeError('Incorrect type for function input next_pulse. '
                             'It should be an int')
         # Convert the voltage to the correct register value
-        amplitude_val = self.amp2val(np.abs(voltage))
-        if voltage < 0:
-            phase_val = self.phase2val(270.0)
-        else:
-            phase_val = self.phase2val(90.0)
+        offset_val = self.offset2val(voltage)
+        amplitude_val = 0
+        phase_val = 0
         accum_val = 0
         freq_val = 0
         self.write_pulse(pulse, phase_val, freq_val, accum_val,
-                         amplitude_val, next_pulse)
+                         amplitude_val, offset_val, next_pulse)
 
     def write_chirp_pulse(self, pulse: int, phase: float, frequency: float,
                           frequency_accumulation: float, amplitude: float,
-                          next_pulse: int):
+                          offset: float, next_pulse: int):
         """
         Write a pulse to pulse memory which contains a frequency sweep
         Args:
@@ -272,6 +278,7 @@ class PCDDSChannel(InstrumentChannel):
             frequency_accumulation: The frequency accumulation for this pulse
                                     in Hz/s
             amplitude: The amplitude for this pulse in V
+            offset: The offset for this pulse in V
             next_pulse: The pulse that the system is to go to after this one
         """
         if not isinstance(pulse, int):
@@ -280,15 +287,19 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(next_pulse, int):
             raise TypeError('Incorrect type for function input next_pulse. '
                             'It should be an int')
+        assert np.abs(offset) + np.abs(amplitude) <= self.v_max + 1e-10, \
+            'The combined output will be larger than the maximum output voltage'
+
         phase_val = self.phase2val(phase)
         freq_val = self.freq2val(frequency)
         accum_val = self.accum2val(frequency_accumulation)
         amplitude_val = self.amp2val(amplitude)
+        offset_val = self.offset2val(offset)
         self.write_pulse(pulse, phase_val, freq_val, accum_val,
-                         amplitude_val, next_pulse)
+                         amplitude_val, offset_val, next_pulse)
 
     def write_pulse(self, pulse: int, phase: int, frequency: int,
-                    frequency_accumulation: int, amplitude: int,
+                    frequency_accumulation: int, amplitude: int, offset: int,
                     next_pulse: int):
         """
         Function to write a pulse with given register values to a given
@@ -300,6 +311,7 @@ class PCDDSChannel(InstrumentChannel):
             frequency_accumulation: The frequency accumulation register for
                                     this pulse
             amplitude: The amplitude register for this pulse
+            offset: The offset register value for this pulse
             next_pulse: The pulse that the system is to go to after this one
         """
         if pulse < 0 or pulse > 2**self.n_pointer_bits:
@@ -317,11 +329,16 @@ class PCDDSChannel(InstrumentChannel):
         pulse_data = phase
         pulse_data += (frequency << self.n_phase_bits)
         pulse_data += (frequency_accumulation << 2 * self.n_phase_bits)
-        pulse_data += (amplitude << 2 * self.n_phase_bits + self.n_accum_bits)
-        pulse_data += (next_pulse << 2 * self.n_phase_bits + self.n_accum_bits
-                       + self.n_amp_bits)
+        pulse_data += (amplitude << (2 * self.n_phase_bits + self.n_accum_bits))
+        pulse_data += (offset << (2 * self.n_phase_bits + self.n_accum_bits
+                       + self.n_amp_bits))
+        pulse_data += (next_pulse << (2 * self.n_phase_bits + self.n_accum_bits
+                       + 2*self.n_amp_bits))
         pulse_data = self.split_value(pulse_data)
         self.fpga.set_fpga_pc_port(self.fpga_port, [instr], self.id, 0, 1)
+        # self.fpga.set_fpga_pc_port(self.fpga_port, pulse_data, self.id, 0, 1)
+        self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[5]],
+                                   self.id, 0, 1)
         self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[4]],
                                    self.id, 0, 1)
         self.fpga.set_fpga_pc_port(self.fpga_port, [pulse_data[3]],
@@ -336,7 +353,7 @@ class PCDDSChannel(InstrumentChannel):
     @staticmethod
     def split_value(value: int) -> List[int]:
         """
-        Splits a 20 byte message up into 5x 32 bit messages
+        Splits a 24 byte message up into 6x 32 bit messages
         Args:
             value: The message that is to be split
 
@@ -345,10 +362,11 @@ class PCDDSChannel(InstrumentChannel):
         if not isinstance(value, int):
             raise TypeError('Incorrect type passed to split_value')
         return [int(value & 0xFFFFFFFF),
-                int((value >> 32) & 0xFFFFFFFF),
-                int((value >> 64) & 0xFFFFFFFF),
-                int((value >> 96) & 0xFFFFFFFF),
-                int((value >> 128) & 0xFFFFFFFF)]
+                int((value >> 1*32) & 0xFFFFFFFF),
+                int((value >> 2*32) & 0xFFFFFFFF),
+                int((value >> 3*32) & 0xFFFFFFFF),
+                int((value >> 4*32) & 0xFFFFFFFF),
+                int((value >> 5*32) & 0xFFFFFFFF)]
 
     def set_next_pulse(self, pulse: int, update: bool):
         """
@@ -431,10 +449,37 @@ class PCDDSChannel(InstrumentChannel):
 
         Returns: The register value for the desired amplitude
         """
-        if amp < 0 or amp > self.v_max:
+        if amp < 0 - 1e-10 or amp > self.v_max + 1e-10:
             raise ValueError(f'Amplitude of {amp} is outside of allowed values '
                              f'[0, {self.v_max}V')
-        return int(np.round((2**self.n_amp_bits-1) * amp/self.v_max))
+        value = int(np.round((2**self.n_amp_bits-1) * amp/self.v_max))
+        # Limit offset
+        value = min(value, 2 ** self.n_amp_bits - 1)
+        value = max(value, 0)
+        return value
+
+    # Limit offset
+    def offset2val(self, offset: float) -> int:
+        """
+        Function to calculate the correct offset register value for a given
+        offset
+        Args:
+            offset: The desired offset in V
+
+        Returns: The register value for the desired offset
+
+        """
+        assert -self.v_max -1e-10 <= offset <= self.v_max + 1e-10, \
+            f'Offset value is not within allowed bounds of [-{self.v_max}, ' \
+            f'{self.v_max}]'
+
+        value = int(np.round(offset/self.v_max * 2**(self.n_amp_bits-1)))
+        value = min(value, 2 ** (self.n_amp_bits - 1) - 1)
+        value = max(value, -2 ** (self.n_amp_bits - 1))
+        # Tricking python into not thinking it's a negative number
+        value += 1 << 17
+        value &= 0xFFFF
+        return value
 
 
 class PCDDS(Instrument):
