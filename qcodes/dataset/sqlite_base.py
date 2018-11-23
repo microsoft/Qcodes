@@ -741,8 +741,8 @@ def atomic_transaction(conn: SomeConnection,
         sqlite cursor
 
     """
-    plus_conn = make_plus_connection_from(conn)
-    with atomic(plus_conn) as atomic_conn:
+    conn_plus = make_connection_plus_from(conn)
+    with atomic(conn_plus) as atomic_conn:
         c = transaction(atomic_conn, sql, *args)
     return c
 
@@ -792,7 +792,7 @@ def atomic(conn: ConnectionPlus):
         conn.atomic_in_progress = old_atomic_in_progress
 
 
-def make_plus_connection_from(conn: SomeConnection) -> ConnectionPlus:
+def make_connection_plus_from(conn: SomeConnection) -> ConnectionPlus:
     """
     Makes a ConnectionPlus connection object out of a given argument.
 
