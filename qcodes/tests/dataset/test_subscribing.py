@@ -14,6 +14,7 @@ from qcodes.tests.dataset.temporary_databases import (
 # pylint: enable=unused-import
 
 from qcodes.tests.test_config import default_config
+from qcodes.tests.common import retry_until_does_not_throw
 
 
 log = logging.getLogger(__name__)
@@ -135,12 +136,20 @@ def test_subscription_from_config(dataset, basic_subscriber):
 
         expected_state = {}
 
-        for x in range(10):
+        # Here we are only testing 2 to reduce the CI time
+        for x in range(2):
             y = -x**2
             dataset.add_result({'x': x, 'y': y})
             expected_state[x+1] = [(x, y)]
-            assert dataset.subscribers[sub_id].state == expected_state
-            assert dataset.subscribers[sub_id_c].state == expected_state
+
+            @retry_until_does_not_throw(
+                exception_class_to_expect=AssertionError, delay=0, tries=10)
+            def assert_expected_state():
+                assert dataset.subscribers[sub_id].state == expected_state
+                assert dataset.subscribers[sub_id_c].state == expected_state
+
+        assert_expected_state()
+
 
 def test_subscription_from_config_wrong_name(dataset):
     """

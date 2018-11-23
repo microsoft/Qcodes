@@ -3,8 +3,6 @@ sudo: required
 dist: xenial
 notifications:
   email: false
-    # send all notifcations to slack
-  slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
 cache: pip
 
