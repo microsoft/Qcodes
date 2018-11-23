@@ -4,7 +4,7 @@ import sqlite3
 import pytest
 
 from qcodes.dataset.sqlite_base import ConnectionPlus, \
-    make_plus_connection_from, atomic, connect
+    make_plus_connection_from, atomic, connect, atomic_transaction
 
 
 def sqlite_conn_in_transaction(conn: sqlite3.Connection):
@@ -68,21 +68,15 @@ def test_make_plus_connection_from(conn):
         assert False is plus_conn.atomic_in_progress
 
 
-def test_atomic_on_outmost_sqlite_connection():
+def test_atomic():
     sqlite_conn = sqlite3.connect(':memory:')
-    isolation_level = sqlite_conn.isolation_level
-    assert False is sqlite_conn.in_transaction
 
-    with atomic(sqlite_conn) as atomic_conn:
-        assert sqlite_conn_in_transaction(sqlite_conn)
-        assert plus_conn_in_transaction(atomic_conn)
+    match_str = re.escape('atomic context manager only accepts ConnectionPlus '
+                          'database connection objects.')
+    with pytest.raises(ValueError, match=match_str):
+        with atomic(sqlite_conn):  # type: ignore
+            pass
 
-    assert sqlite_conn_is_idle(sqlite_conn, isolation_level)
-    assert plus_conn_is_idle(atomic_conn, isolation_level)
-
-
-def test_atomic_on_outmost_plus_connection():
-    sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
     assert False is plus_conn.atomic_in_progress
 
@@ -105,7 +99,7 @@ def test_atomic_on_outmost_plus_connection():
 
 
 @pytest.mark.parametrize('in_transaction', (True, False))
-def test_atomic_on_outmost_plus_connection_that_is_in_progress(in_transaction):
+def test_atomic_on_plus_connection_that_is_in_progress(in_transaction):
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
 
@@ -138,31 +132,7 @@ def test_atomic_on_outmost_plus_connection_that_is_in_progress(in_transaction):
     assert in_transaction is atomic_conn.in_transaction
 
 
-def test_two_atomics_on_outmost_sqlite_connection():
-    sqlite_conn = sqlite3.connect(':memory:')
-
-    isolation_level = sqlite_conn.isolation_level
-    assert False is sqlite_conn.in_transaction
-
-    with atomic(sqlite_conn) as atomic_conn_1:
-        assert sqlite_conn_in_transaction(sqlite_conn)
-        assert plus_conn_in_transaction(atomic_conn_1)
-
-        with atomic(atomic_conn_1) as atomic_conn_2:
-            assert sqlite_conn_in_transaction(sqlite_conn)
-            assert plus_conn_in_transaction(atomic_conn_2)
-            assert plus_conn_in_transaction(atomic_conn_1)
-
-        assert sqlite_conn_in_transaction(sqlite_conn)
-        assert plus_conn_in_transaction(atomic_conn_1)
-        assert plus_conn_in_transaction(atomic_conn_2)
-
-    assert sqlite_conn_is_idle(sqlite_conn, isolation_level)
-    assert plus_conn_is_idle(atomic_conn_1, isolation_level)
-    assert plus_conn_is_idle(atomic_conn_2, isolation_level)
-
-
-def test_two_atomics_on_outmost_plus_connection():
+def test_two_nested_atomics():
     sqlite_conn = sqlite3.connect(':memory:')
     plus_conn = ConnectionPlus(sqlite_conn)
 
@@ -282,6 +252,29 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     assert 3 == len(atomic_conn_1.execute(get_all_runs).fetchall())
     assert 3 == len(atomic_conn_2.execute(get_all_runs).fetchall())
     assert 3 == len(control_conn.execute(get_all_runs).fetchall())
+
+
+@pytest.mark.parametrize(argnames='create_connection',
+                         argvalues=(
+                                 sqlite3.connect,
+                                 lambda x: ConnectionPlus(sqlite3.connect(x))),
+                         ids=(
+                                 'sqlite3.Connection',
+                                 'ConnectionPlus'))
+def test_atomic_transaction(create_connection, tmp_path):
+    """Test that atomic_transaction works for both types of connection"""
+    dbfile = str(tmp_path / 'temp.db')
+
+    conn = create_connection(dbfile)
+
+    ctrl_conn = sqlite3.connect(dbfile)
+
+    sql_create_table = 'CREATE TABLE smth (name TEXT)'
+    sql_table_exists = 'SELECT sql FROM sqlite_master WHERE TYPE = "table"'
+
+    atomic_transaction(conn, sql_create_table)
+
+    assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
 
 
 def test_connect():

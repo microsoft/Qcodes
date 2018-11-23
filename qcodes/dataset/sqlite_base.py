@@ -741,13 +741,14 @@ def atomic_transaction(conn: SomeConnection,
         sqlite cursor
 
     """
-    with atomic(conn) as conn:
-        c = transaction(conn, sql, *args)
+    plus_conn = make_plus_connection_from(conn)
+    with atomic(plus_conn) as atomic_conn:
+        c = transaction(atomic_conn, sql, *args)
     return c
 
 
 @contextmanager
-def atomic(conn: SomeConnection):
+def atomic(conn: ConnectionPlus):
     """
     Guard a series of transactions as atomic.
     If one fails the transaction is rolled back and no more transactions
@@ -759,8 +760,9 @@ def atomic(conn: SomeConnection):
     Args:
         - conn: connection to guard
     """
-
-    conn = make_plus_connection_from(conn)
+    if not isinstance(conn, ConnectionPlus):
+        raise ValueError('atomic context manager only accepts ConnectionPlus '
+                         'database connection objects.')
 
     old_atomic_in_progress = conn.atomic_in_progress
     is_outmost = not(conn.atomic_in_progress)
