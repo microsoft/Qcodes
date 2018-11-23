@@ -751,27 +751,30 @@ def atomic_transaction(conn: SomeConnection,
 def atomic(conn: ConnectionPlus):
     """
     Guard a series of transactions as atomic.
-    If one fails the transaction is rolled back and no more transactions
-    are performed.
+
+    If one transaction fails, all the previous transactions are rolled back
+    and no more transactions are performed.
+
     NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
     but we want to guard any transaction that modifies the database (e.g. also
     ALTER)
 
     Args:
-        - conn: connection to guard
+        conn: connection to guard
     """
     if not isinstance(conn, ConnectionPlus):
         raise ValueError('atomic context manager only accepts ConnectionPlus '
                          'database connection objects.')
 
-    old_atomic_in_progress = conn.atomic_in_progress
     is_outmost = not(conn.atomic_in_progress)
-    conn.atomic_in_progress = True
 
     if conn.in_transaction and is_outmost:
         raise RuntimeError('SQLite connection has uncommited transactions. '
                            'Please commit those before starting an atomic '
                            'transaction.')
+
+    old_atomic_in_progress = conn.atomic_in_progress
+    conn.atomic_in_progress = True
 
     try:
         if is_outmost:
