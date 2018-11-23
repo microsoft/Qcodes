@@ -1,33 +1,33 @@
 import pytest
 from pyvisa.errors import VisaIOError
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
-import warnings
 
 
 @pytest.fixture
 def uut():
     try:
-        uut = KeysightB220X('switch_matrix',
-                            address='insert_Keysight_B2200_VISA_resource_name_here')
+        resource_name = 'insert_Keysight_B2200_VISA_resource_name_here'
+        instance = KeysightB220X('switch_matrix',
+                                 address=resource_name)
     except (ValueError, VisaIOError):
-        # Either there is no VISA lib installed or there was no real instrument found at the
-        # specified address => use simulated instrument
+        # Either there is no VISA lib installed or there was no real
+        # instrument found at the specified address => use simulated instrument
         import qcodes.instrument.sims as sims
         path_to_yaml = sims.__file__.replace('__init__.py',
                                              'keysight_b220x.yaml')
 
-        uut = KeysightB220X('switch_matrix',
-                            address='GPIB::1::INSTR',
-                            visalib=path_to_yaml + '@sim'
-                            )
+        instance = KeysightB220X('switch_matrix',
+                                 address='GPIB::1::INSTR',
+                                 visalib=path_to_yaml + '@sim'
+                                 )
 
-    uut.get_status()
-    uut.clear_status()
-    uut.reset()
+    instance.get_status()
+    instance.clear_status()
+    instance.reset()
 
-    yield uut
+    yield instance
 
-    uut.close()
+    instance.close()
 
 
 def test_idn_command(uut):
@@ -242,13 +242,15 @@ def test_get_error(uut):
     assert 0 == uut.get_status()
 
 
-class Test_parse_channel_list:
-    def test_parse_channel_list(self):
+class TestParseChannelList:
+    @staticmethod
+    def test_parse_channel_list():
         channel_list = '(@10101,10202)'
         assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(
             channel_list)
 
-    def test_all_combinations_zero_padded(self):
+    @staticmethod
+    def test_all_combinations_zero_padded():
         import itertools
         cards = range(5)
         inputs = range(1, 15)
@@ -256,14 +258,13 @@ class Test_parse_channel_list:
 
         for card, in_port, out_port in itertools.product(cards, inputs,
                                                          outputs):
-            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card,
-                                                                    in_port=in_port,
-                                                                    out_port=out_port)
+            padded = f'{card:01d}{in_port:02d}{out_port:02d}'
 
             assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
                 padded)
 
-    def test_all_combinations_unpadded(self):
+    @staticmethod
+    def test_all_combinations_unpadded():
         import itertools
         cards = range(5)
         inputs = range(1, 15)
@@ -271,9 +272,7 @@ class Test_parse_channel_list:
 
         for card, in_port, out_port in itertools.product(cards, inputs,
                                                          outputs):
-            padded = '{card:01d}{in_port:02d}{out_port:02d}'.format(card=card,
-                                                                    in_port=in_port,
-                                                                    out_port=out_port)
+            padded = f'{card:01d}{in_port:02d}{out_port:02d}'
             unpadded = str(int(padded))
 
             assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
