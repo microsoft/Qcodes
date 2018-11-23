@@ -769,7 +769,7 @@ def atomic(conn: ConnectionPlus):
     is_outmost = not(conn.atomic_in_progress)
 
     if conn.in_transaction and is_outmost:
-        raise RuntimeError('SQLite connection has uncommited transactions. '
+        raise RuntimeError('SQLite connection has uncommitted transactions. '
                            'Please commit those before starting an atomic '
                            'transaction.')
 

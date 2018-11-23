@@ -120,6 +120,20 @@ def test_atomic_with_exception():
     assert 25 == sqlite_conn.execute('PRAGMA user_version').fetchall()[0][0]
 
 
+def test_atomic_on_outmost_connection_that_is_in_transaction():
+    conn = ConnectionPlus(sqlite3.connect(':memory:'))
+
+    conn.execute('BEGIN')
+    assert True is conn.in_transaction
+
+    match_str = re.escape('SQLite connection has uncommitted transactions. '
+                          'Please commit those before starting an atomic '
+                          'transaction.')
+    with pytest.raises(RuntimeError, match=match_str):
+        with atomic(conn):
+            pass
+
+
 @pytest.mark.parametrize('in_transaction', (True, False))
 def test_atomic_on_connection_plus_that_is_in_progress(in_transaction):
     sqlite_conn = sqlite3.connect(':memory:')
