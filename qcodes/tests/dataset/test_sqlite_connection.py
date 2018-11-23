@@ -5,6 +5,8 @@ import pytest
 
 from qcodes.dataset.sqlite_base import ConnectionPlus, \
     make_connection_plus_from, atomic, connect, atomic_transaction
+from qcodes.tests.dataset.test_database_creation_and_upgrading import \
+    error_caused_by
 
 
 def sqlite_conn_in_transaction(conn: sqlite3.Connection):
@@ -97,6 +99,25 @@ def test_atomic():
     assert isolation_level == conn_plus.isolation_level
     assert False is atomic_conn.in_transaction
     assert atomic_in_progress is atomic_conn.atomic_in_progress
+
+
+def test_atomic_with_exception():
+    sqlite_conn = sqlite3.connect(':memory:')
+    conn_plus = ConnectionPlus(sqlite_conn)
+
+    sqlite_conn.execute('PRAGMA user_version(25)')
+    sqlite_conn.commit()
+
+    assert 25 == sqlite_conn.execute('PRAGMA user_version').fetchall()[0][0]
+
+    with pytest.raises(RuntimeError,
+                       match="Rolling back due to unhandled exception") as e:
+        with atomic(conn_plus) as atomic_conn:
+            atomic_conn.execute('PRAGMA user_version(42)')
+            raise Exception('intended exception')
+    assert error_caused_by(e, 'intended exception')
+
+    assert 25 == sqlite_conn.execute('PRAGMA user_version').fetchall()[0][0]
 
 
 @pytest.mark.parametrize('in_transaction', (True, False))
