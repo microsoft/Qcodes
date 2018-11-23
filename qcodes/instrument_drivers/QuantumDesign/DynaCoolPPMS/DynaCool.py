@@ -8,9 +8,6 @@ from visa import VisaIOError
 
 import qcodes.utils.validators as vals
 
-log = logging.getLogger(__name__)
-
-
 class DynaCool(VisaInstrument):
     """
     Class to represent the DynaCoolPPMS
@@ -256,6 +253,7 @@ class DynaCool(VisaInstrument):
         super().write(cmd)
         self._error_code = int(self.visa_handle.read())
         self._errors[self._error_code]()
+        self.visa_log.debug(f'Error code: {self._error_code}')
 
     def ask(self, cmd: str) -> str:
         """
@@ -271,11 +269,11 @@ class DynaCool(VisaInstrument):
         Make sure to nicely close the server connection
         """
         try:
-            log.debug('Closing server connection.')
+            self.log.debug('Closing server connection.')
             self.write('CLOSE')
         except VisaIOError as e:
-            log.info('Could not close connection to server, perhaps the '
-                     'server is down?')
-            log.info(f'Got the following error from PyVISA: {e.abbreviation}'
-                     f': {e.description}')
+            self.log.info('Could not close connection to server, perhaps the '
+                          'server is down?')
+            self.log.info(f'Got the following error from PyVISA: '
+                          f'{e.abbreviation}: {e.description}')
         super().close()
