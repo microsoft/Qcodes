@@ -51,21 +51,22 @@ def test_connection_plus():
         ConnectionPlus(plus_conn)
 
 
-@pytest.mark.parametrize(
-    argnames='conn',
-    argvalues=(sqlite3.connect(':memory:'),
-               ConnectionPlus(sqlite3.connect(':memory:'))),
-    ids=('sqlite3.Connection', 'ConnectionPlus')
-)
-def test_make_plus_connection_from(conn):
+def test_make_plus_connection_from_sqlite3_connection():
+    conn = sqlite3.connect(':memory:')
     plus_conn = make_plus_connection_from(conn)
 
     assert isinstance(plus_conn, ConnectionPlus)
+    assert False is plus_conn.atomic_in_progress
+    assert plus_conn is not conn
 
-    if isinstance(conn, ConnectionPlus):
-        assert conn.atomic_in_progress is plus_conn.atomic_in_progress
-    else:
-        assert False is plus_conn.atomic_in_progress
+
+def test_make_plus_connection_from_connecton_plus():
+    conn = ConnectionPlus(sqlite3.connect(':memory:'))
+    plus_conn = make_plus_connection_from(conn)
+
+    assert isinstance(plus_conn, ConnectionPlus)
+    assert conn.atomic_in_progress is plus_conn.atomic_in_progress
+    assert plus_conn is conn
 
 
 def test_atomic():

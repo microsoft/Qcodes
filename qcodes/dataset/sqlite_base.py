@@ -803,13 +803,13 @@ def make_plus_connection_from(conn: SomeConnection) -> ConnectionPlus:
         conn: an sqlite connection object as defined by SomeConnection type
 
     Returns:
-        the same connection as ConnectionPlus object
+        the "same" connection but as ConnectionPlus object
     """
-    if not (hasattr(conn, 'atomic_in_progress')):
-        conn = ConnectionPlus(conn)
+    if not isinstance(conn, ConnectionPlus):
+        conn_plus = ConnectionPlus(conn)
     else:
-        conn = cast(ConnectionPlus, conn)
-    return conn
+        conn_plus = cast(ConnectionPlus, conn)
+    return conn_plus
 
 
 def init_db(conn: SomeConnection)->None:
