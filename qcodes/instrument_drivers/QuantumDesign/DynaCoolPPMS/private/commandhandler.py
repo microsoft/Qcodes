@@ -1,6 +1,7 @@
 from typing import Any, Tuple, List
 import logging
 from collections import namedtuple
+from itertools import chain
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +17,12 @@ except ImportError as e:
 
 
 CmdArgs = namedtuple('cmd_and_args', 'cmd args')
+
+# The length of a command header, aka a command keyword
+# Every command sent from the driver via the server must have a
+# keyword of exactly this length ('?' NOT included)
+CMD_HEADER_LENGTH = 4
+
 
 class CommandHandler:
     """
@@ -72,6 +79,12 @@ class CommandHandler:
         self._sets = {'TEMP': self._mvu.SetTemperature,
                       'FELD': self._mvu.SetField}
 
+        # validate the commands
+        for cmd in chain(self._gets, self._sets):
+            if len(cmd) != CMD_HEADER_LENGTH:
+                raise ValueError(f'Invalid command length: {cmd}.'
+                                 f' Must have length {CMD_HEADER_LENGTH}')
+
     def make_idn_string(self) -> str:
         return f'0, QuantumDesign, {self.inst_type}, N/A, N/A'
 
@@ -91,7 +104,7 @@ class CommandHandler:
         def err_func() -> int:
             return -2
 
-        cmd_head = cmd_str[:4]
+        cmd_head = cmd_str[:CMD_HEADER_LENGTH]
 
         if cmd_head not in set(self._gets.keys()).union(set(self._sets.keys())):
             cmd = err_func
