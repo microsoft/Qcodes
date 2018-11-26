@@ -103,7 +103,7 @@ def generate_DB_file_with_some_runs_having_not_run_descriptions():
 
     # Make run_description of run #2 NULL
 
-    conn.execute(set_run_description_sql, ('', run_ids[1]))
+    conn.execute(set_run_description_sql, (None, run_ids[1]))
     conn.commit()  # just to be sure
 
     # Make run_description of run #3 equivalent to an empty RunDescriber
@@ -126,7 +126,7 @@ def generate_DB_file_with_some_runs_having_not_run_descriptions():
 
     # Make run_description of run #4 NULL
 
-    conn.execute(set_run_description_sql, ('', run_ids[3]))
+    conn.execute(set_run_description_sql, (None, run_ids[3]))
     conn.commit()  # just to be sure
 
 
