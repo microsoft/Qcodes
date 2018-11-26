@@ -692,6 +692,25 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 
+def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
+                                                                          int]:
+    """
+    Connect to a DB without performing any upgrades and get the version of
+    that database file along with the newest available version (the one that
+    a normal "connect" will automatically upgrade to)
+
+    Args:
+        path_to_db: the absolute path to the DB file
+
+    Returns:
+        A tuple of (db_version, latest_available_version)
+    """
+    conn = connect(path_to_db, version=0)
+    db_version = get_user_version(conn)
+
+    return (db_version, len(_UPGRADE_ACTIONS))
+
+
 def transaction(conn: SomeConnection,
                 sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
