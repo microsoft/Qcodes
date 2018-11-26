@@ -49,7 +49,7 @@ class DataStorageInterface(ABC):
     @abstractmethod
     def retrieve_results(self, params,
                          start=None,
-                         stop=None) -> Dict[ndarray]:
+                         stop=None) -> Dict[str, ndarray]:
         pass
 
     @abstractmethod
