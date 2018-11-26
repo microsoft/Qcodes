@@ -33,7 +33,9 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
-                                        run_exists, remove_trigger)
+                                        run_exists, remove_trigger,
+                                        make_connection_plus_from,
+                                        SomeConnection)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -185,7 +187,7 @@ class _Subscriber(Thread):
 class DataSet(Sized):
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
-                 conn=None,
+                 conn: Optional[SomeConnection]=None,
                  exp_id=None,
                  name: str=None,
                  specs: SPECS=None,
@@ -221,7 +223,8 @@ class DataSet(Sized):
                              "This is not allowed.")
         self._path_to_db = path_to_db or get_DB_location()
 
-        self.conn = conn or connect(self.path_to_db)
+        self.conn = make_connection_plus_from(conn) if conn is not None else \
+            connect(self.path_to_db)
 
         self._run_id = run_id
         self._debug = False
