@@ -17,6 +17,9 @@ from git import Repo
 # Version 3: run_description column is added to the runs table
 #
 
+# NOTE that each hash is supposed to be representing a commit JUST before the
+# "next" version is being introduced.
+#
 
 GIT_HASHES: Dict[int, str] = {0: '78d42620fc245a975b5a615ed5e33061baac7846',
                               1: '056d59627e22fa3ca7aad4c265e9897c343f79cf',
