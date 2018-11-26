@@ -32,7 +32,13 @@ def generate_empty_DB_file():
 def generate_DB_file_with_some_runs_having_not_run_descriptions():
     """
     Generate a .db-file with a handful of runs some of which lack run
-    description or have it as empty object (based on a real case)
+    description or have it as empty object (based on a real case).
+
+    Generated runs:
+        #1: run with parameters and correct run description
+        #2: run with parameters but run description is NULL
+        #3: run with parameters but run description is empty RunDescriber
+        #4: run without parameters but run description is NULL
     """
     v3fixturepath = os.path.join(fixturepath, 'version3')
     os.makedirs(v3fixturepath, exist_ok=True)
@@ -84,6 +90,9 @@ def generate_DB_file_with_some_runs_having_not_run_descriptions():
 
         run_ids.append(datasaver.run_id)
 
+    assert [1, 2, 3] == run_ids, 'Run ids of generated runs are not as ' \
+                                 'expected after generating runs #1-3'
+
     # Formulate SQL query for adjusting run_description column
 
     set_run_description_sql = f"""
@@ -103,7 +112,22 @@ def generate_DB_file_with_some_runs_having_not_run_descriptions():
     conn.execute(set_run_description_sql, (empty_run_description, run_ids[2]))
     conn.commit()  # just to be sure
 
-    conn.close()
+    # Set up a measurement without parameters, and create run #4 out of it
+
+    meas_no_params = Measurement(exp)
+
+    with meas_no_params.run() as datasaver:
+        pass
+
+    run_ids.append(datasaver.run_id)
+
+    assert [1, 2, 3, 4] == run_ids, 'Run ids of generated runs are not as ' \
+                                    'expected after generating run #4'
+
+    # Make run_description of run #4 NULL
+
+    conn.execute(set_run_description_sql, ('', run_ids[3]))
+    conn.commit()  # just to be sure
 
 
 if __name__ == '__main__':
