@@ -112,4 +112,4 @@ if __name__ == '__main__':
             generate_DB_file_with_some_runs_having_not_run_descriptions)
 
     # pylint: disable=E1101
-    utils.checkout_to_old_version_and_run_generators(version=2, gens=gens)
+    utils.checkout_to_old_version_and_run_generators(version=3, gens=gens)
