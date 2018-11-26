@@ -77,7 +77,7 @@ def test_atomic():
     match_str = re.escape('atomic context manager only accepts ConnectionPlus '
                           'database connection objects.')
     with pytest.raises(ValueError, match=match_str):
-        with atomic(sqlite_conn):  # type: ignore
+        with atomic(sqlite_conn):
             pass
 
     conn_plus = ConnectionPlus(sqlite_conn)

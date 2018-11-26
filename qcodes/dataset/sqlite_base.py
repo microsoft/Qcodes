@@ -135,14 +135,15 @@ class ConnectionPlus(wrapt.ObjectProxy):
 SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
 
 
-def upgrader(func: Callable[[SomeConnection], None]):
+def upgrader(func: Callable[[ConnectionPlus], None]):
     """
     Decorator for database version upgrade functions. An upgrade function
-    must have the name `perform_db_upgrade_N_to_M` where N = M-1.
-    The upgrade function must either perform the upgrade and return (no return
-    values allowed) or fail to perform the upgrade, in which case it must raise
-    a RuntimeError. A failed upgrade must be completely rolled back before the
-    RuntimeError is raises.
+    must have the name `perform_db_upgrade_N_to_M` where N = M-1. For
+    simplicity, an upgrade function must take a single argument of type
+    `ConnectionPlus`. The upgrade function must either perform the upgrade
+    and return (no return values allowed) or fail to perform the upgrade,
+    in which case it must raise a RuntimeError. A failed upgrade must be
+    completely rolled back before the RuntimeError is raises.
 
     The decorator takes care of logging about the upgrade and managing the
     database versioning.
@@ -165,7 +166,7 @@ def upgrader(func: Callable[[SomeConnection], None]):
                          ' to version N+1')
 
     @wraps(func)
-    def do_upgrade(conn: SomeConnection) -> None:
+    def do_upgrade(conn: ConnectionPlus) -> None:
 
         log.info(f'Starting database upgrade version {from_version} '
                  f'to {to_version}')
@@ -378,7 +379,7 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
 
 
 @upgrader
-def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
+def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 0 to version 1
 
@@ -419,7 +420,7 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
 
 
 @upgrader
-def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
+def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 1 to version 2
 
@@ -623,7 +624,7 @@ def _2to3_get_paramspecs(conn: SomeConnection,
 
 
 @upgrader
-def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
+def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 2 to version 3
 
@@ -811,11 +812,11 @@ def make_connection_plus_from(conn: SomeConnection) -> ConnectionPlus:
     if not isinstance(conn, ConnectionPlus):
         conn_plus = ConnectionPlus(conn)
     else:
-        conn_plus = cast(ConnectionPlus, conn)
+        conn_plus = conn
     return conn_plus
 
 
-def init_db(conn: SomeConnection)->None:
+def init_db(conn: ConnectionPlus)->None:
     with atomic(conn) as conn:
         transaction(conn, _experiment_table_schema)
         transaction(conn, _runs_table_schema)
@@ -842,7 +843,7 @@ def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
     return False
 
 
-def insert_column(conn: SomeConnection, table: str, name: str,
+def insert_column(conn: ConnectionPlus, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
 
@@ -947,7 +948,7 @@ def insert_values(conn: SomeConnection,
     return c.lastrowid
 
 
-def insert_many_values(conn: SomeConnection,
+def insert_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        columns: List[str],
                        values: List[VALUES],
@@ -1466,7 +1467,7 @@ def get_last_experiment(conn: SomeConnection) -> Optional[int]:
     return c.fetchall()[0][0]
 
 
-def get_runs(conn: SomeConnection,
+def get_runs(conn: ConnectionPlus,
              exp_id: Optional[int] = None)->List[sqlite3.Row]:
     """ Get a list of runs.
 
@@ -1543,7 +1544,7 @@ def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def _insert_run(conn: SomeConnection, exp_id: int, name: str,
+def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
                 ):
@@ -1725,7 +1726,7 @@ def get_paramspec(conn: SomeConnection,
     return parspec
 
 
-def update_run_description(conn: SomeConnection, run_id: int,
+def update_run_description(conn: ConnectionPlus, run_id: int,
                            description: str) -> None:
     """
     Update the run_description field for the given run_id. The description
@@ -1746,7 +1747,7 @@ def update_run_description(conn: SomeConnection, run_id: int,
         conn.cursor().execute(sql, (description, run_id))
 
 
-def add_parameter(conn: SomeConnection,
+def add_parameter(conn: ConnectionPlus,
                   formatted_name: str,
                   *parameter: ParamSpec):
     """
@@ -1787,7 +1788,7 @@ def add_parameter(conn: SomeConnection,
                                                *parameter)
 
 
-def _add_parameters_to_layout_and_deps(conn: SomeConnection,
+def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
                                        formatted_name: str,
                                        *parameter: ParamSpec) -> sqlite3.Cursor:
     # get the run_id
@@ -1848,7 +1849,7 @@ def _validate_table_name(table_name: str) -> bool:
     return valid
 
 
-def _create_run_table(conn: SomeConnection,
+def _create_run_table(conn: ConnectionPlus,
                       formatted_name: str,
                       parameters: Optional[List[ParamSpec]] = None,
                       values: Optional[VALUES] = None
@@ -1893,7 +1894,7 @@ def _create_run_table(conn: SomeConnection,
             transaction(conn, query)
 
 
-def create_run(conn: SomeConnection, exp_id: int, name: str,
+def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
                parameters: Optional[List[ParamSpec]]=None,
                values:  List[Any] = None,
@@ -1972,7 +1973,7 @@ def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
     return metadata
 
 
-def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
+def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Dict[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
@@ -2007,7 +2008,7 @@ def update_meta_data(conn: SomeConnection, row_id: int, table_name: str,
     update_where(conn, table_name, 'rowid', row_id, **metadata)
 
 
-def add_meta_data(conn: SomeConnection,
+def add_meta_data(conn: ConnectionPlus,
                   row_id: int,
                   metadata: Dict[str, Any],
                   table_name: str = "runs") -> None:
