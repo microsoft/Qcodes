@@ -2135,3 +2135,16 @@ def update_GUIDs(conn: SomeConnection) -> None:
 
         log.info(f'Updating run number {run_id}...')
         actions[(loc == 0, ws == 0)](run_id, conn, guid_comps)
+
+
+def remove_trigger(conn: SomeConnection, trigger_id: str) -> None:
+    """
+    Removes a trigger with a given id if it exists.
+
+    Note that this transaction is not atomic!
+
+    Args:
+        conn: database connection object
+        name: id of the trigger
+    """
+    transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
