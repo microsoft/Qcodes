@@ -2148,3 +2148,37 @@ def remove_trigger(conn: SomeConnection, trigger_id: str) -> None:
         name: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def _fix_wrong_run_descriptions(conn: SomeConnection,
+                                run_ids: Sequence[int]) -> None:
+    """
+    NB: This is a FIX function. Do not use it unless your database has been
+    diagnosed with the problem that this function fixes.
+
+    Overwrite faulty run_descriptions by using information from the layouts and
+    dependencies tables. If a correct description is found for a run, that
+    run is left untouched.
+
+    Args:
+        conn: The connection to the database
+        run_ids: The runs to (potentially) fix
+    """
+
+    log.info('[*] Fixing run descriptions...')
+    for run_id in run_ids:
+        trusted_paramspecs = get_parameters(conn, run_id)
+        trusted_desc = RunDescriber(
+                           interdeps=InterDependencies(*trusted_paramspecs))
+
+        actual_desc_str = select_one_where(conn, "runs",
+                                           "run_description",
+                                           "run_id", run_id)
+
+        if actual_desc_str == trusted_desc.to_json():
+            log.info(f'[+] Run id: {run_id} had an OK description')
+        else:
+            log.info(f'[-] Run id: {run_id} had a broken description. '
+                     f'Description found: {actual_desc_str}')
+            update_run_description(conn, run_id, trusted_desc.to_json())
+            log.info(f'    Run id: {run_id} has been updated.')
