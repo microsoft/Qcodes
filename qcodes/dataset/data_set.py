@@ -576,8 +576,8 @@ class DataSet(Sized):
                            values)
         return len_before_add
 
-    @deprecate(reason='it is an experimental functionality, and is most '
-                      'probably will be removed soon.')
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.')
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
         """
         Modify a logically single result of existing parameters
@@ -608,8 +608,8 @@ class DataSet(Sized):
                           list(results.values())
                           )
 
-    @deprecate(reason='it is an experimental functionality, and it is not '
-                      'known whether it will remain or it will be removed.',
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
                alternative='modify_result')
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
@@ -653,8 +653,8 @@ class DataSet(Sized):
                                flattened_keys,
                                flattened_values)
 
-    @deprecate(reason='it is an experimental functionality, and it is not '
-                      'known whether it will remain or it will be removed.',
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
                alternative='add_parameter, add_result, add_results')
     def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
