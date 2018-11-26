@@ -44,6 +44,7 @@ script:
       python generate_version_0.py
       python generate_version_1.py
       python generate_version_2.py
+      python generate_version_3.py
       cd ../../../..
       pip uninstall -y qcodes
       pip install .
