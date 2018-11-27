@@ -12,6 +12,7 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         connect, transaction,
                                         get_last_experiment, get_experiments,
                                         get_experiment_name_from_experiment_id,
+                                        get_runid_from_expid_and_counter,
                                         get_sample_name_from_experiment_id,
                                         SomeConnection)
 from qcodes.dataset.sqlite_base import new_experiment as ne
@@ -126,7 +127,8 @@ class Experiment(Sized):
             values: the values to associate with the parameters
             metadata: the metadata to associate with the dataset
         """
-        return new_data_set(name, self.exp_id, specs, values, metadata)
+        return new_data_set(name, self.exp_id, specs, values, metadata,
+                            conn=self.conn)
 
     def data_set(self, counter: int) -> DataSet:
         """
@@ -138,7 +140,9 @@ class Experiment(Sized):
         Returns:
             the dataset
         """
-        return load_by_counter(counter, self.exp_id)
+        run_id = get_runid_from_expid_and_counter(self.conn, self.exp_id,
+                                                  counter)
+        return DataSet(run_id=run_id, conn=self.conn)
 
     def data_sets(self) -> List[DataSet]:
         """Get all the datasets of this experiment"""
@@ -305,7 +309,7 @@ def load_experiment_by_name(name: str,
         raise ValueError(f"Many experiments matching your request"
                          f" found:\n{_repr_str}")
     else:
-        e = Experiment(exp_id=rows[0]['exp_id'])
+        e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
     return e
 
 

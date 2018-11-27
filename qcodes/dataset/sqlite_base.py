@@ -1258,6 +1258,28 @@ def get_setpoints(conn: SomeConnection,
     return output
 
 
+def get_runid_from_expid_and_counter(conn: SomeConnection, exp_id: int,
+                                     counter: int) -> int:
+    """
+    Get the run_id of a run in the specified experiment with the specified
+    counter
+
+    Args:
+        conn: connection to the database
+        exp_id: the exp_id of the experiment containing the run
+        counter: the intra-experiment run counter of that run
+    """
+    sql = """
+          SELECT run_id
+          FROM runs
+          WHERE result_counter= ? AND
+          exp_id = ?
+          """
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, 'run_id')
+    return run_id
+
+
 def get_runid_from_guid(conn: SomeConnection, guid: str) -> Union[int, None]:
     """
     Get the run_id of a run based on the guid
