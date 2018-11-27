@@ -2,7 +2,7 @@
 This is a driver for the Stahl power supplies
 """
 
-from typing import Dict, Optional, Any, Callable
+from typing import Dict, Optional, Any, Callable, Union, Sequence
 import re
 import numpy as np
 import logging
@@ -107,7 +107,7 @@ class StahlChannel(InstrumentChannel):
     ) -> Callable:
         """
         Querying the voltage and current gives back strings containing a
-        comma denoting a decimal symbol (e.g. 1,4 = 1.4). Correct this
+        comma denoting a decimal separator (e.g. 1,4 = 1.4). Correct this
         madness (and send an angry email to Stahl)
         """
         def converter(string):
@@ -219,7 +219,7 @@ class Stahl(VisaInstrument):
 
         regex = re.compile(match_string)
 
-        def parser(input_string):
+        def parser(input_string: str) -> Union[str, Sequence[str]]:
             result = regex.search(input_string)
             if result is None:
                 raise UnexpectedInstrumentResponse()
@@ -243,7 +243,7 @@ class Stahl(VisaInstrument):
         )
         parsed_idn = idn_parser(ind_string)
 
-        id_parsers: Dict[str, Callable] = OrderedDict({
+        converters: Dict[str, Callable] = OrderedDict({
             "model": str,
             "serial_number": str,
             "voltage_range": float,
@@ -258,8 +258,8 @@ class Stahl(VisaInstrument):
         })
 
         return {
-            name: id_parsers[name](value)
-            for name, value in zip(id_parsers.keys(), parsed_idn)
+            name: converter(value)
+            for (name, converter), value in zip(converters.items(), parsed_idn)
         }
 
     def get_idn(self) -> Dict[str, Optional[str]]:
