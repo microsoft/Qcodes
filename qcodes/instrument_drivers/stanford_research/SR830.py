@@ -5,6 +5,8 @@ from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings
 
+from typing import Tuple
+
 
 class ChannelBuffer(ArrayParameter):
     """
@@ -492,42 +494,44 @@ class SR830(VisaInstrument):
     
     def snap(self, *parameters: str) -> Tuple[float, ...]:
         """
-Get between 2 and 6 parameters at a single instant. This provides a coherent
-snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, the aux
-inputs 1-4, frequency, or what is currently displayed on channels 1 and 2.
-Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
-Snap is important when the time constant is very short, a time constant less
-than 100 ms.
+        Get between 2 and 6 parameters at a single instant. This provides a 
+        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, 
+        the aux inputs 1-4, frequency, or what is currently displayed on 
+        channels 1 and 2.
 
-Args:
-    *parameters
-        From 2 to 6 strings of names of parameters for which the values are
-        requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
-        'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
-    
-Returns:
-    A tuple of floating point values in the same order as requested.
- 
-Units:
-    Volts for x, y, r, and aux 1-4
-    Degrees for θ
-    Hertz for freq
-    Unknown for ch1 and ch2. It will depend on what was set.
+        Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
+        Snap is important when the time constant is very short, a time constant
+        less than 100 ms.
 
-Examples:
-    lockin.snap('x','y') -> tuple(x,y)
-    
-    lockin.snap('aux1','aux2','freq','phase') 
-        -> tuple(aux1,aux2,freq,phase)
+        Args:
+            *parameters
+                From 2 to 6 strings of names of parameters for which the values
+                are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
+                'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
+            
+        Returns:
+            A tuple of floating point values in the same order as requested.
 
-Limitations:
-     - If X,Y,R and θ are all read, then the values of X,Y are recorded
-       approximately 10 µs apart from R,θ. Thus, the values of X and Y may not
-       yield the exact values of R and θ from a single snap.
-     - The values of the Aux Inputs may have an uncertainty of up to 32 µs.
-     - The frequency is computed only every other period or 40 ms, whichever is
-       longer.  
-            """
+        Examples:
+            lockin.snap('x','y') -> tuple(x,y)
+            
+            lockin.snap('aux1','aux2','freq','phase') 
+                -> tuple(aux1,aux2,freq,phase)
+
+        Note:
+            Volts for x, y, r, and aux 1-4
+            Degrees for θ
+            Hertz for freq
+            Unknown for ch1 and ch2. It will depend on what was set.
+
+             - If X,Y,R and θ are all read, then the values of X,Y are recorded
+               approximately 10 µs apart from R,θ. Thus, the values of X and Y 
+               may not yield the exact values of R and θ from a single snap.
+             - The values of the Aux Inputs may have an uncertainty of 
+               up to 32 µs.
+             - The frequency is computed only every other period or 40 ms, 
+               whichever is longer.  
+        """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
                 'It is only possible to request values of 2 to 6 parameters'
@@ -541,6 +545,7 @@ Limitations:
 
         p_ids = [self.SNAP_PARAMETERS[name.lower()] for name in parameters]
         output = self.ask(f'SNAP? {",".join(p_ids)}')
+
         return tuple(float(val) for val in output.split(','))
 
     def _set_buffer_SR(self, SR):
