@@ -2150,7 +2150,7 @@ def remove_trigger(conn: SomeConnection, trigger_id: str) -> None:
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
 
 
-def _fix_wrong_run_descriptions(conn: SomeConnection,
+def _fix_wrong_run_descriptions(conn: ConnectionPlus,
                                 run_ids: Sequence[int]) -> None:
     """
     NB: This is a FIX function. Do not use it unless your database has been
