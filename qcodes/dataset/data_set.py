@@ -35,7 +35,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         update_run_description,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
-                                        SomeConnection)
+                                        ConnectionPlus)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -187,7 +187,7 @@ class _Subscriber(Thread):
 class DataSet(Sized):
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
-                 conn: Optional[SomeConnection]=None,
+                 conn: Optional[ConnectionPlus]=None,
                  exp_id=None,
                  name: str=None,
                  specs: SPECS=None,

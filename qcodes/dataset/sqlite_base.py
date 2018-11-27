@@ -132,9 +132,6 @@ class ConnectionPlus(wrapt.ObjectProxy):
                              '`ConnectionPlus` object which is not allowed.')
 
 
-SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
-
-
 def upgrader(func: Callable[[ConnectionPlus], None]):
     """
     Decorator for database version upgrade functions. An upgrade function
@@ -357,7 +354,7 @@ def connect(name: str, debug: bool = False,
     return conn
 
 
-def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
+def perform_db_upgrade(conn: ConnectionPlus, version: int=-1) -> None:
     """
     This is intended to perform all upgrades as needed to bring the
     db from version 0 to the most current version (or the version specified).
@@ -449,7 +446,7 @@ def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
 
-def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
+def _2to3_get_result_tables(conn: ConnectionPlus) -> Dict[int, str]:
     rst_query = "SELECT run_id, result_table_name FROM runs"
     cur = conn.cursor()
     cur.execute(rst_query)
@@ -462,7 +459,7 @@ def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
     return results
 
 
-def _2to3_get_layout_ids(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_layout_ids(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             select runs.run_id, layouts.layout_id
             FROM layouts
@@ -483,7 +480,7 @@ def _2to3_get_layout_ids(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_indeps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_indeps(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -504,7 +501,7 @@ def _2to3_get_indeps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_deps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -525,7 +522,7 @@ def _2to3_get_deps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_dependencies(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -548,7 +545,7 @@ def _2to3_get_dependencies(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_layouts(conn: SomeConnection) -> Dict[int,
+def _2to3_get_layouts(conn: ConnectionPlus) -> Dict[int,
                                                     Tuple[str, str, str, str]]:
     query = """
             SELECT layout_id, parameter, label, unit, inferred_from
@@ -566,7 +563,7 @@ def _2to3_get_layouts(conn: SomeConnection) -> Dict[int,
     return results
 
 
-def _2to3_get_paramspecs(conn: SomeConnection,
+def _2to3_get_paramspecs(conn: ConnectionPlus,
                          layout_ids: List[int],
                          layouts: Dict[int, Tuple[str, str, str, str]],
                          dependencies: Dict[int, List[int]],
@@ -701,7 +698,7 @@ UPGRADE_ACTIONS = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
 NEWEST_VERSION = len(UPGRADE_ACTIONS)
 
 
-def transaction(conn: SomeConnection,
+def transaction(conn: ConnectionPlus,
                 sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
     The transaction needs to be committed or rolled back.
@@ -724,7 +721,7 @@ def transaction(conn: SomeConnection,
     return c
 
 
-def atomic_transaction(conn: SomeConnection,
+def atomic_transaction(conn: ConnectionPlus,
                        sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
@@ -796,7 +793,8 @@ def atomic(conn: ConnectionPlus):
         conn.atomic_in_progress = old_atomic_in_progress
 
 
-def make_connection_plus_from(conn: SomeConnection) -> ConnectionPlus:
+def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
+                              ) -> ConnectionPlus:
     """
     Makes a ConnectionPlus connection object out of a given argument.
 
@@ -804,7 +802,7 @@ def make_connection_plus_from(conn: SomeConnection) -> ConnectionPlus:
     without any changes.
 
     Args:
-        conn: an sqlite connection object as defined by SomeConnection type
+        conn: an sqlite database connection object
 
     Returns:
         the "same" connection but as ConnectionPlus object
@@ -824,7 +822,7 @@ def init_db(conn: ConnectionPlus)->None:
         transaction(conn, _dependencies_table_schema)
 
 
-def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
+def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
     """
     A look-before-you-leap function to look up if a table has a certain column.
 
@@ -871,7 +869,7 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
-def select_one_where(conn: SomeConnection, table: str, column: str,
+def select_one_where(conn: ConnectionPlus, table: str, column: str,
                      where_column: str, where_value: Any) -> Any:
     query = f"""
     SELECT {column}
@@ -885,7 +883,7 @@ def select_one_where(conn: SomeConnection, table: str, column: str,
     return res
 
 
-def select_many_where(conn: SomeConnection, table: str, *columns: str,
+def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
                       where_column: str, where_value: Any) -> Any:
     _columns = ",".join(columns)
     query = f"""
@@ -912,7 +910,7 @@ def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     return ','.join(template), values
 
 
-def update_where(conn: SomeConnection, table: str,
+def update_where(conn: ConnectionPlus, table: str,
                  where_column: str, where_value: Any, **updates) -> None:
     _updates, values = _massage_dict(updates)
     query = f"""
@@ -926,7 +924,7 @@ def update_where(conn: SomeConnection, table: str,
     atomic_transaction(conn, query, *values, where_value)
 
 
-def insert_values(conn: SomeConnection,
+def insert_values(conn: ConnectionPlus,
                   formatted_name: str,
                   columns: List[str],
                   values: VALUES,
@@ -1022,7 +1020,7 @@ def insert_many_values(conn: ConnectionPlus,
     return return_value
 
 
-def modify_values(conn: SomeConnection,
+def modify_values(conn: ConnectionPlus,
                   formatted_name: str,
                   index: int,
                   columns: List[str],
@@ -1049,7 +1047,7 @@ def modify_values(conn: SomeConnection,
     return c.rowcount
 
 
-def modify_many_values(conn: SomeConnection,
+def modify_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        start_index: int,
                        columns: List[str],
@@ -1075,7 +1073,7 @@ def modify_many_values(conn: SomeConnection,
         start_index += 1
 
 
-def length(conn: SomeConnection,
+def length(conn: ConnectionPlus,
            formatted_name: str
            ) -> int:
     """
@@ -1097,7 +1095,7 @@ def length(conn: SomeConnection,
         return _len
 
 
-def get_data(conn: SomeConnection,
+def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
              start: Optional[int] = None,
@@ -1141,7 +1139,7 @@ def get_data(conn: SomeConnection,
     return res
 
 
-def get_values(conn: SomeConnection,
+def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
     """
@@ -1165,7 +1163,7 @@ def get_values(conn: SomeConnection,
     return res
 
 
-def get_setpoints(conn: SomeConnection,
+def get_setpoints(conn: ConnectionPlus,
                   table_name: str,
                   param_name: str) -> Dict[str, List[List[Any]]]:
     """
@@ -1234,7 +1232,7 @@ def get_setpoints(conn: SomeConnection,
     return output
 
 
-def get_layout(conn: SomeConnection,
+def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
     """
     Get the layout of a single parameter for plotting it
@@ -1255,7 +1253,7 @@ def get_layout(conn: SomeConnection,
     return res
 
 
-def get_layout_id(conn: SomeConnection,
+def get_layout_id(conn: ConnectionPlus,
                   parameter: Union[ParamSpec, str],
                   run_id: int) -> int:
     """
@@ -1287,7 +1285,7 @@ def get_layout_id(conn: SomeConnection,
     return res
 
 
-def get_dependents(conn: SomeConnection,
+def get_dependents(conn: ConnectionPlus,
                    run_id: int) -> List[int]:
     """
     Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
@@ -1302,7 +1300,7 @@ def get_dependents(conn: SomeConnection,
     return res
 
 
-def get_dependencies(conn: SomeConnection,
+def get_dependencies(conn: ConnectionPlus,
                      layout_id: int) -> List[List[int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
@@ -1322,7 +1320,7 @@ def get_dependencies(conn: SomeConnection,
 # Higher level Wrappers
 
 
-def new_experiment(conn: SomeConnection,
+def new_experiment(conn: ConnectionPlus,
                    name: str,
                    sample_name: str,
                    format_string: Optional[str] = "{}-{}-{}"
@@ -1351,7 +1349,7 @@ def new_experiment(conn: SomeConnection,
 
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
-def mark_run_complete(conn: SomeConnection, run_id: int):
+def mark_run_complete(conn: ConnectionPlus, run_id: int):
     """ Mark run complete
 
     Args:
@@ -1370,7 +1368,7 @@ def mark_run_complete(conn: SomeConnection, run_id: int):
     atomic_transaction(conn, query, time.time(), True, run_id)
 
 
-def completed(conn: SomeConnection, run_id)->bool:
+def completed(conn: ConnectionPlus, run_id)->bool:
     """ Check if the run scomplete
 
     Args:
@@ -1382,7 +1380,7 @@ def completed(conn: SomeConnection, run_id)->bool:
 
 
 def get_completed_timestamp_from_run_id(
-        conn: SomeConnection, run_id: int) -> float:
+        conn: ConnectionPlus, run_id: int) -> float:
     """
     Retrieve the timestamp when the given measurement run was completed
 
@@ -1400,7 +1398,7 @@ def get_completed_timestamp_from_run_id(
                             "run_id", run_id)
 
 
-def get_guid_from_run_id(conn: SomeConnection, run_id: int) -> str:
+def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     """
     Get the guid of the given run
 
@@ -1411,7 +1409,7 @@ def get_guid_from_run_id(conn: SomeConnection, run_id: int) -> str:
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
 
-def finish_experiment(conn: SomeConnection, exp_id: int):
+def finish_experiment(conn: ConnectionPlus, exp_id: int):
     """ Finish experiment
 
     Args:
@@ -1424,7 +1422,7 @@ def finish_experiment(conn: SomeConnection, exp_id: int):
     atomic_transaction(conn, query, time.time(), exp_id)
 
 
-def get_run_counter(conn: SomeConnection, exp_id: int) -> int:
+def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
     """ Get the experiment run counter
 
     Args:
@@ -1440,7 +1438,7 @@ def get_run_counter(conn: SomeConnection, exp_id: int) -> int:
                             where_value=exp_id)
 
 
-def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
+def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
     """ Get a list of experiments
      Args:
          conn: database connection
@@ -1456,7 +1454,7 @@ def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def get_last_experiment(conn: SomeConnection) -> Optional[int]:
+def get_last_experiment(conn: ConnectionPlus) -> Optional[int]:
     """
     Return last started experiment id
 
@@ -1493,7 +1491,7 @@ def get_runs(conn: ConnectionPlus,
     return c.fetchall()
 
 
-def get_last_run(conn: SomeConnection, exp_id: int) -> Optional[int]:
+def get_last_run(conn: ConnectionPlus, exp_id: int) -> Optional[int]:
     """
     Get run_id of the last run in experiment with exp_id
 
@@ -1514,7 +1512,7 @@ def get_last_run(conn: SomeConnection, exp_id: int) -> Optional[int]:
     return one(c, 'run_id')
 
 
-def run_exists(conn: SomeConnection, run_id: int) -> bool:
+def run_exists(conn: ConnectionPlus, run_id: int) -> bool:
     # the following query always returns a single sqlite3.Row with an integer
     # value of `1` or `0` for existing and non-existing run_id in the database
     query = """
@@ -1529,7 +1527,7 @@ def run_exists(conn: SomeConnection, run_id: int) -> bool:
     return bool(res[0])
 
 
-def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
+def data_sets(conn: ConnectionPlus) -> List[sqlite3.Row]:
     """ Get a list of datasets
     Args:
         conn: database connection
@@ -1620,7 +1618,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
     return run_counter, formatted_name, run_id
 
 
-def _update_experiment_run_counter(conn: SomeConnection, exp_id: int,
+def _update_experiment_run_counter(conn: ConnectionPlus, exp_id: int,
                                    run_counter: int) -> None:
     query = """
     UPDATE experiments
@@ -1630,7 +1628,7 @@ def _update_experiment_run_counter(conn: SomeConnection, exp_id: int,
     atomic_transaction(conn, query, run_counter, exp_id)
 
 
-def get_parameters(conn: SomeConnection,
+def get_parameters(conn: ConnectionPlus,
                    run_id: int) -> List[ParamSpec]:
     """
     Get the list of param specs for run
@@ -1659,7 +1657,7 @@ def get_parameters(conn: SomeConnection,
     return parspecs
 
 
-def get_paramspec(conn: SomeConnection,
+def get_paramspec(conn: ConnectionPlus,
                   run_id: int,
                   param_name: str) -> ParamSpec:
     """
@@ -1933,14 +1931,14 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
     return run_counter, run_id, formatted_name
 
 
-def get_metadata(conn: SomeConnection, tag: str, table_name: str):
+def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
     return select_one_where(conn, "runs", tag,
                             "result_table_name", table_name)
 
 
-def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
+def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
     """
     Get all metadata associated with the specified run
     """
@@ -1994,7 +1992,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
     update_meta_data(conn, row_id, table_name, metadata)
 
 
-def update_meta_data(conn: SomeConnection, row_id: int, table_name: str,
+def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Dict[str, Any]) -> None:
     """
     Updates metadata (they must exist already)
@@ -2033,36 +2031,36 @@ def add_meta_data(conn: ConnectionPlus,
             raise e
 
 
-def get_user_version(conn: SomeConnection) -> int:
+def get_user_version(conn: ConnectionPlus) -> int:
 
     curr = atomic_transaction(conn, 'PRAGMA user_version')
     res = one(curr, 0)
     return res
 
 
-def set_user_version(conn: SomeConnection, version: int) -> None:
+def set_user_version(conn: ConnectionPlus, version: int) -> None:
 
     atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
 
 
 def get_experiment_name_from_experiment_id(
-        conn: SomeConnection, exp_id: int) -> str:
+        conn: ConnectionPlus, exp_id: int) -> str:
     return select_one_where(
         conn, "experiments", "name", "exp_id", exp_id)
 
 
 def get_sample_name_from_experiment_id(
-        conn: SomeConnection, exp_id: int) -> str:
+        conn: ConnectionPlus, exp_id: int) -> str:
     return select_one_where(
         conn, "experiments", "sample_name", "exp_id", exp_id)
 
 
-def get_run_timestamp_from_run_id(conn: SomeConnection,
+def get_run_timestamp_from_run_id(conn: ConnectionPlus,
                                   run_id: int) -> float:
     return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
 
 
-def update_GUIDs(conn: SomeConnection) -> None:
+def update_GUIDs(conn: ConnectionPlus) -> None:
     """
     Update all GUIDs in this database where either the location code or the
     work_station code is zero to use the location and work_station code from
@@ -2137,7 +2135,7 @@ def update_GUIDs(conn: SomeConnection) -> None:
         actions[(loc == 0, ws == 0)](run_id, conn, guid_comps)
 
 
-def remove_trigger(conn: SomeConnection, trigger_id: str) -> None:
+def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
     """
     Removes a trigger with a given id if it exists.
 
