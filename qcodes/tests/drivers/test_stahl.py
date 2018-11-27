@@ -145,5 +145,3 @@ def test_get_temperature(stahl_instrument):
     "return response.encode('latin-1')" for this to work.
     """
     pass
-
-

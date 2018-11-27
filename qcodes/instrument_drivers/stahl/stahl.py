@@ -199,7 +199,7 @@ class Stahl(VisaInstrument):
             >>> result = parser("QCoDeS is Cool")  # Will return ('Cool',)
 
         Raises:
-            UnexpectedInstrumentResponse if a match could not be found with
+            RuntimeError if a match could not be found with
             regular expressions
         """
         regex = re.compile(match_string)
