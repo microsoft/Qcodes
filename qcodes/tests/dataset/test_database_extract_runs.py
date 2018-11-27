@@ -423,3 +423,55 @@ def test_old_versions_not_touched(two_empty_temp_db_connections):
                              'upgrade_source_db=True to auto-upgrade '
                              'the source DB file.')
             assert warning[0].message.args[0] == expected_mssg
+
+
+def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
+                                           some_paramspecs):
+    """
+    In older API versions (corresponding to DB version 3),
+    users could get away with setting the sample name to None
+
+    This test checks that such an experiment gets correctly recognised and
+    is thus not ever re-inserted into the target DB
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+    source_exp_1 = Experiment(conn=source_conn, name='null_sample_name')
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    # make 5 runs in experiment
+
+    exp_1_run_ids = []
+    for _ in range(5):
+
+        source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
+        exp_1_run_ids.append(source_dataset.run_id)
+
+        for ps in some_paramspecs[2].values():
+            source_dataset.add_parameter(ps)
+
+        for val in range(10):
+            source_dataset.add_result({ps.name: val
+                                       for ps in some_paramspecs[2].values()})
+        source_dataset.mark_complete()
+
+    sql = """
+          UPDATE experiments
+          SET sample_name = NULL
+          WHERE exp_id = 1
+          """
+    source_conn.execute(sql)
+    source_conn.commit()
+
+    assert source_exp_1.sample_name is None
+
+    extract_runs_into_db(source_path, target_path, 1, 2, 3, 4, 5)
+
+    assert len(get_experiments(target_conn)) == 1
+
+    extract_runs_into_db(source_path, target_path, 1, 2, 3, 4, 5)
+
+    assert len(get_experiments(target_conn)) == 1
+
+    assert len(Experiment(exp_id=1, conn=target_conn)) == 5
