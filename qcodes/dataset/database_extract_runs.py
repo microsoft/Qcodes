@@ -9,6 +9,7 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         connect,
                                         create_run,
                                         format_table_name,
+                                        get_db_version_and_newest_available_version,
                                         get_exp_ids_from_run_ids,
                                         get_last_experiment,
                                         get_matching_exp_ids,
@@ -23,7 +24,8 @@ from qcodes.dataset.sqlite_base import (atomic,
 
 
 def extract_runs_into_db(source_db_path: str,
-                         target_db_path: str, *run_ids: int) -> None:
+                         target_db_path: str, *run_ids: int,
+                         upgrade_source_db: bool=False) -> None:
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name
@@ -35,7 +37,17 @@ def extract_runs_into_db(source_db_path: str,
         target_db_path: Path to the target DB file. The target DB file will be
           created if it does not exist.
         run_ids: The run_ids of the runs to copy into the target DB file
+        upgrade_source_db: If the source DB is found to be in a version that is
+          not the newest, should it be upgraded?
     """
+    # Check for versions
+    (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
+    if s_v < new_v and not upgrade_source_db:
+        warn(f'Source DB version is {s_v}, but this function needs it to be'
+             f' in version {new_v}. Run this function again with '
+             'upgrade_source_db=True to auto-upgrade the source DB file.')
+        return
+
     source_conn = connect(source_db_path)
 
     # Validate that all runs are in the source database

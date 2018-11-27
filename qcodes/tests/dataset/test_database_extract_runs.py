@@ -1,11 +1,13 @@
 from os.path import getmtime
 from contextlib import contextmanager
 import re
+import os
 
 import pytest
 import numpy as np
 
-from qcodes.dataset.sqlite_base import connect, get_experiments
+import qcodes.tests.dataset
+from qcodes.dataset.sqlite_base import get_experiments
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
                                      load_by_id)
@@ -397,3 +399,27 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
 
     test_ds = load_by_counter(1, 1, target_conn)
     assert source_ds_2_2.the_same_dataset_as(test_ds)
+
+
+def test_old_versions_not_touched(two_empty_temp_db_connections):
+
+    _, target_conn = two_empty_temp_db_connections
+
+    target_path = path_to_dbfile(target_conn)
+
+    fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
+    fixturepath = os.path.join(fixturepath,
+                               'fixtures', 'db_files', 'version2',
+                               'some_runs.db')
+    if not os.path.exists(fixturepath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+    with raise_if_file_changed(fixturepath):
+        with pytest.warns(UserWarning) as warning:
+            extract_runs_into_db(fixturepath, target_path, 1)
+            expected_mssg = ('Source DB version is 2, but this '
+                             'function needs it to be in version 3. '
+                             'Run this function again with '
+                             'upgrade_source_db=True to auto-upgrade '
+                             'the source DB file.')
+            assert warning[0].message.args[0] == expected_mssg
