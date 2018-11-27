@@ -2,11 +2,12 @@
 This is a driver for the Stahl power supplies
 """
 
-from typing import Dict, Optional, Any, Callable, Union, Sequence
+from typing import Dict, Optional, Any, Callable, Sequence
 import re
 import numpy as np
 import logging
 from collections import OrderedDict
+from functools import partial
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers
@@ -31,7 +32,7 @@ def chain(*functions: Callable) -> Callable:
 
     Example:
         >>> def f():
-        >>>>   return "1.2"
+        >>>   return "1.2"
         >>> chain(f, float)()  # return 1.2 as float
     """
     def make_tuple(args):
@@ -73,7 +74,8 @@ class StahlChannel(InstrumentChannel):
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
                 self.parent.regex_parser(r"([+\-]\d+,\d+) V$"),
-                self._string_to_float()
+                partial(re.sub, ",", "."),
+                float
             ),
             set_cmd=self._set_voltage,
             unit="V",
@@ -88,9 +90,8 @@ class StahlChannel(InstrumentChannel):
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
                 self.parent.regex_parser(r"([+\-]\d+,\d+) mA$"),
-                self._string_to_float(
-                    scale_factor=1/1000  # We want results in Ampere
-                )
+                partial(re.sub, ",", "."),
+                lambda ma: float(ma) / 1000  # Convert mA to A
             ),
             unit="A",
         )
@@ -99,22 +100,6 @@ class StahlChannel(InstrumentChannel):
             "is_locked",
             get_cmd=self._get_lock_status
         )
-
-    @staticmethod
-    def _string_to_float(
-            decimal_separator: str=",",
-            scale_factor: float=1
-    ) -> Callable:
-        """
-        Querying the voltage and current gives back strings containing a
-        comma denoting a decimal separator (e.g. 1,4 = 1.4). Correct this
-        madness (and send an angry email to Stahl)
-        """
-        def converter(string):
-            sane_str = string.replace(decimal_separator, ".")
-            return float(sane_str) * scale_factor
-
-        return converter
 
     def _set_voltage(self, voltage: float) -> None:
         """
@@ -129,11 +114,13 @@ class StahlChannel(InstrumentChannel):
             [0, 1]
         )
 
-        send_string = f"{self.parent.identifier} CH{self._channel_string} {voltage_normalized:.5f}"
+        send_string = f"{self.parent.identifier} CH{self._channel_string} " \
+                      f"{voltage_normalized:.5f}"
         response = self.ask(send_string)
 
         if response != self.acknowledge_reply:
-            self.log.warning(f"Command {send_string} did not produce an acknowledge reply")
+            self.log.warning(
+                f"Command {send_string} did not produce an acknowledge reply")
 
     def _get_lock_status(self) -> bool:
         """
@@ -168,7 +155,7 @@ class Stahl(VisaInstrument):
         super().__init__(name, address, terminator="\r")
         self.visa_handle.baud_rate = 115200
 
-        instrument_info = self._parse_idn_string(
+        instrument_info = self.parse_idn_string(
             self.ask("IDN")
         )
 
@@ -205,8 +192,8 @@ class Stahl(VisaInstrument):
 
     def ask_raw(self, cmd: str) -> str:
         """
-        Sometimes the instrument returns non-ascii characters in response strings
-        Manually adjust the encoding to latin-1
+        Sometimes the instrument returns non-ascii characters in response
+        strings manually adjust the encoding to latin-1
         """
         self.visa_log.debug(f"Querying: {cmd}")
         self.visa_handle.write(cmd)
@@ -219,7 +206,7 @@ class Stahl(VisaInstrument):
         """
         Example:
             >>> parser = Stahl.regex_parser("^QCoDeS is (.*)$")
-            >>> result = parser("QCoDeS is Cool")  # Will return 'Cool'
+            >>> result = parser("QCoDeS is Cool")  # Will return ('Cool',)
 
         Raises:
             UnexpectedInstrumentResponse if a match could not be found with
@@ -227,26 +214,22 @@ class Stahl(VisaInstrument):
         """
         regex = re.compile(match_string)
 
-        def parser(input_string: str) -> Union[str, Sequence[str]]:
+        def parser(input_string: str) -> Sequence[str]:
             result = regex.search(input_string)
             if result is None:
                 raise UnexpectedInstrumentResponse()
 
-            result_groups = result.groups()
-            if len(result_groups) == 1:
-                return result_groups[0]
-            else:
-                return result_groups
-
+            return result.groups()
         return parser
 
-    def _parse_idn_string(self, idn_string) -> Dict[str, Any]:
+    @staticmethod
+    def parse_idn_string(idn_string) -> Dict[str, Any]:
         """
         Return:
              dict with keys: "model", "serial_number", "voltage_range",
              "n_channels", "output_type"
         """
-        idn_parser = self.regex_parser(
+        idn_parser = Stahl.regex_parser(
             r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])"
         )
         parsed_idn = idn_parser(idn_string)
