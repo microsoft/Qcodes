@@ -4,7 +4,7 @@ import os
 import textwrap
 import time
 from functools import partial
-from typing import Optional, Any, List, Tuple, Union
+from typing import Optional, Any, List, Tuple, Union, Sequence, Dict
 import zhinst.utils
 
 from qcodes import Instrument
@@ -38,6 +38,12 @@ class ZIHDAWG8(Instrument):
         self.awg_module.execute()
         node_tree = self.download_device_node_tree()
         self.create_parameters_from_node_tree(node_tree)
+
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Sequence[str] = None) -> Dict:
+        """ Override the base method to ensure all values are up-to-date"""
+        return super(ZIHDAWG8, self).snapshot_base(update=True,
+                                                   params_to_skip_update=None)
 
     def enable_channel(self, channel_number: int) -> None:
         """
