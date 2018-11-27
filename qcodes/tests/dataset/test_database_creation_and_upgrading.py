@@ -21,6 +21,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 from qcodes.dataset.sqlite_base import (connect,
                                         one,
                                         update_GUIDs,
+                                        get_db_version_and_newest_available_version,
                                         get_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
@@ -358,3 +359,20 @@ def test_update_existing_guids(caplog):
         guid_comps_5 = parse_guid(ds5.guid)
         assert guid_comps_5['location'] == old_loc
         assert guid_comps_5['work_station'] == old_ws
+
+
+@pytest.mark.parametrize('version', [0, 1, 2])
+def test_getting_db_version(version):
+
+    fixpath = os.path.join(fixturepath, 'db_files', f'version{version}')
+
+    if not os.path.exists(fixpath):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    dbname = os.path.join(fixpath, 'empty.db')
+
+    (db_v, new_v) = get_db_version_and_newest_available_version(dbname)
+
+    assert db_v == version
+    assert new_v == 3
