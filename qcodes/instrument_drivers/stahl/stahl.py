@@ -72,7 +72,7 @@ class StahlChannel(InstrumentChannel):
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
-                self.parent.regex_parser("([+\-]\d+,\d+) V$"),
+                self.parent.regex_parser(r"([+\-]\d+,\d+) V$"),
                 self._string_to_float()
             ),
             set_cmd=self._set_voltage,
@@ -87,7 +87,7 @@ class StahlChannel(InstrumentChannel):
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
-                self.parent.regex_parser("([+\-]\d+,\d+) mA$"),
+                self.parent.regex_parser(r"([+\-]\d+,\d+) mA$"),
                 self._string_to_float(
                     scale_factor=1/1000  # We want results in Ampere
                 )
@@ -216,7 +216,15 @@ class Stahl(VisaInstrument):
 
     @staticmethod
     def regex_parser(match_string: str) -> Callable:
+        """
+        Example:
+            >>> parser = Stahl.regex_parser("^QCoDeS is (.*)$")
+            >>> result = parser("QCoDeS is Cool")  # Will return 'Cool'
 
+        Raises:
+            UnexpectedInstrumentResponse if a match could not be found with
+            regular expressions
+        """
         regex = re.compile(match_string)
 
         def parser(input_string: str) -> Union[str, Sequence[str]]:
@@ -232,16 +240,16 @@ class Stahl(VisaInstrument):
 
         return parser
 
-    def _parse_idn_string(self, ind_string) -> Dict[str, Any]:
+    def _parse_idn_string(self, idn_string) -> Dict[str, Any]:
         """
         Return:
              dict with keys: "model", "serial_number", "voltage_range",
              "n_channels", "output_type"
         """
         idn_parser = self.regex_parser(
-            "(HV|BS)(\d{3}) (\d{3}) (\d{2}) [buqsm]"
+            r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) [buqsm]"
         )
-        parsed_idn = idn_parser(ind_string)
+        parsed_idn = idn_parser(idn_string)
 
         converters: Dict[str, Callable] = OrderedDict({
             "model": str,
