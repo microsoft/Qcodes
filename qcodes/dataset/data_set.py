@@ -478,9 +478,9 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        add_meta_data(self.conn, self.run_id, {tag: metadata})
-        # `add_meta_data` does not commit, hence we commit here:
-        self.conn.commit()
+        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        with atomic(self.conn) as conn:
+            add_meta_data(conn, self.run_id, {tag: metadata})
 
     @property
     def started(self) -> bool:
