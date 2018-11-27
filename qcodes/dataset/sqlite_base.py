@@ -1569,6 +1569,9 @@ def get_matching_exp_ids(conn: SomeConnection, **match_conditions) -> List:
     end_time = match_conditions.get('end_time', None)
     time_eq = "=" if end_time is not None else "IS"
 
+    sample_name = match_conditions.get('sample_name', None)
+    sample_name_eq = "=" if sample_name is not None else "IS"
+
     query = "SELECT exp_id FROM experiments "
     for n, mcond in enumerate(match_conditions):
         if n == 0:
@@ -1583,6 +1586,7 @@ def get_matching_exp_ids(conn: SomeConnection, **match_conditions) -> List:
                               f'format_string = "{format_string}"')
         match_conditions.pop("format_string")
     query = query.replace("end_time = ?", f"end_time {time_eq} ?")
+    query = query.replace("sample_name = ?", f"sample_name {sample_name_eq} ?")
 
     cursor = conn.cursor()
     cursor.execute(query, tuple(match_conditions.values()))
