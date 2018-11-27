@@ -21,12 +21,13 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 from qcodes.dataset.sqlite_base import (connect,
                                         one,
                                         update_GUIDs,
+                                        get_db_version_and_newest_available_version,
                                         get_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
                                         perform_db_upgrade_1_to_2,
                                         perform_db_upgrade_2_to_3,
-                                        NEWEST_VERSION)
+                                        _latest_available_version)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
@@ -70,7 +71,7 @@ def location_and_station_set_to(location: int, work_station: int):
         cfg.save_to_home()
 
 
-LATEST_VERSION = NEWEST_VERSION
+LATEST_VERSION = _latest_available_version()
 VERSIONS = tuple(range(LATEST_VERSION + 1))
 LATEST_VERSION_ARG = -1
 
@@ -370,3 +371,24 @@ def test_update_existing_guids(caplog):
         guid_comps_5 = parse_guid(ds5.guid)
         assert guid_comps_5['location'] == old_loc
         assert guid_comps_5['work_station'] == old_ws
+
+
+def test_latest_available_version():
+    assert 3 == _latest_available_version()
+
+
+@pytest.mark.parametrize('version', VERSIONS)
+def test_getting_db_version(version):
+
+    fixpath = os.path.join(fixturepath, 'db_files', f'version{version}')
+
+    dbname = os.path.join(fixpath, 'empty.db')
+
+    if not os.path.exists(dbname):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    (db_v, new_v) = get_db_version_and_newest_available_version(dbname)
+
+    assert db_v == version
+    assert new_v == LATEST_VERSION

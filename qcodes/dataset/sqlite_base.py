@@ -30,6 +30,14 @@ log = logging.getLogger(__name__)
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
 
+
+# Functions decorated as 'upgrader' are inserted into this dict
+# The newest database version is thus determined by the number of upgrades
+# in this module
+# The key is the TARGET VERSION of the upgrade, i.e. the first key is 1
+_UPGRADE_ACTIONS: Dict[int, Callable] = {}
+
+
 _experiment_table_schema = """
 CREATE  TABLE IF NOT EXISTS experiments (
     -- this will autoncrement by default if
@@ -180,6 +188,8 @@ def upgrader(func: Callable[[ConnectionPlus], None]):
         set_user_version(conn, to_version)
         log.info(f'Succesfully performed upgrade {from_version} '
                  f'-> {to_version}')
+
+    _UPGRADE_ACTIONS[to_version] = do_upgrade
 
     return do_upgrade
 
@@ -366,13 +376,13 @@ def perform_db_upgrade(conn: ConnectionPlus, version: int=-1) -> None:
         version: Which version to upgrade to. We count from 0. -1 means
           'newest version'
     """
-    version = NEWEST_VERSION if version == -1 else version
+    version = _latest_available_version() if version == -1 else version
 
     current_version = get_user_version(conn)
-    if current_version < NEWEST_VERSION:
+    if current_version < version:
         log.info("Commencing database upgrade")
-        for action in UPGRADE_ACTIONS[:version]:
-            action(conn)
+        for target_version in sorted(_UPGRADE_ACTIONS)[:version]:
+            _UPGRADE_ACTIONS[target_version](conn)
 
 
 @upgrader
@@ -693,9 +703,28 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 
-UPGRADE_ACTIONS = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
-                   perform_db_upgrade_2_to_3]
-NEWEST_VERSION = len(UPGRADE_ACTIONS)
+def _latest_available_version() -> int:
+    """Return latest available database schema version"""
+    return len(_UPGRADE_ACTIONS)
+
+
+def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
+                                                                          int]:
+    """
+    Connect to a DB without performing any upgrades and get the version of
+    that database file along with the newest available version (the one that
+    a normal "connect" will automatically upgrade to)
+
+    Args:
+        path_to_db: the absolute path to the DB file
+
+    Returns:
+        A tuple of (db_version, latest_available_version)
+    """
+    conn = connect(path_to_db, version=0)
+    db_version = get_user_version(conn)
+
+    return db_version, _latest_available_version()
 
 
 def transaction(conn: ConnectionPlus,
