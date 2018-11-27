@@ -247,7 +247,7 @@ class Stahl(VisaInstrument):
              "n_channels", "output_type"
         """
         idn_parser = self.regex_parser(
-            r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) [buqsm]"
+            r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])"
         )
         parsed_idn = idn_parser(idn_string)
 
