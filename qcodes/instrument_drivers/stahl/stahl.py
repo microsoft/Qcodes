@@ -16,16 +16,6 @@ from qcodes.utils.validators import Numbers
 logger = logging.getLogger()
 
 
-class UnexpectedInstrumentResponse(Exception):
-    def __init__(self):
-        super().__init__(
-            "Unexpected instrument response. Perhaps the model of the "
-            "instrument does not match the drivers expectation or a "
-            "firmware upgrade has taken place. Please get in touch "
-            "with a QCoDeS core developer"
-        )
-
-
 def chain(*functions: Callable) -> Callable:
     """
     The output of the first callable is piped to the input of the second, etc.
@@ -151,8 +141,8 @@ class Stahl(VisaInstrument):
         name
         address: A serial port address
     """
-    def __init__(self, name: str, address: str):
-        super().__init__(name, address, terminator="\r")
+    def __init__(self, name: str, address: str, **kwargs):
+        super().__init__(name, address, terminator="\r", **kwargs)
         self.visa_handle.baud_rate = 115200
 
         instrument_info = self.parse_idn_string(
@@ -217,7 +207,12 @@ class Stahl(VisaInstrument):
         def parser(input_string: str) -> Sequence[str]:
             result = regex.search(input_string)
             if result is None:
-                raise UnexpectedInstrumentResponse()
+                raise RuntimeError(
+                    "Unexpected instrument response. Perhaps the model of the "
+                    "instrument does not match the drivers expectation or a "
+                    "firmware upgrade has taken place. Please get in touch "
+                    "with a QCoDeS core developer"
+                )
 
             return result.groups()
         return parser
