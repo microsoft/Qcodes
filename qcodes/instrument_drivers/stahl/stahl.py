@@ -6,12 +6,48 @@ from typing import Dict, Optional, Any, Callable
 import re
 import numpy as np
 import logging
+from collections import OrderedDict
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers
 
 
 logger = logging.getLogger()
+
+
+class UnexpectedInstrumentResponse(Exception):
+    def __init__(self):
+        super().__init__(
+            "Unexpected instrument response. Perhaps the model of the "
+            "instrument does not match the drivers expectation or a "
+            "firmware upgrade has taken place. Please get in touch "
+            "with a QCoDeS core developer"
+        )
+
+
+def chain(*functions: Callable) -> Callable:
+    """
+    The output of the first callable is piped to the input of the second, etc.
+
+    Example:
+        >>> def f():
+        >>>>   return "1.2"
+        >>> chain(f, float)()  # return 1.2 as float
+    """
+    def make_tuple(args):
+        if not isinstance(args, tuple):
+            return args,
+        return args
+
+    def inner(*args):
+        result = args
+        for fun in functions:
+            new_args = make_tuple(result)
+            result = fun(*new_args)
+
+        return result
+
+    return inner
 
 
 class StahlChannel(InstrumentChannel):
@@ -23,17 +59,22 @@ class StahlChannel(InstrumentChannel):
         name
         channel_number
     """
+
+    acknowledge_reply = chr(6)
+
     def __init__(self, parent: VisaInstrument, name: str, channel_number: int):
         super().__init__(parent, name)
 
         self._channel_string = f"{channel_number:02d}"
         self._channel_number = channel_number
-        self._acknowledge_reply = chr(6)
 
         self.add_parameter(
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
-            get_parser=self._stahl_get_parser("V"),
+            get_parser=chain(
+                self.parent.regex_parser("([+\-]\d+,\d+) V$"),
+                self._string_to_float()
+            ),
             set_cmd=self._set_voltage,
             unit="V",
             vals=Numbers(
@@ -45,8 +86,13 @@ class StahlChannel(InstrumentChannel):
         self.add_parameter(
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
-            get_parser=self._stahl_get_parser("mA"),
-            unit="mA",
+            get_parser=chain(
+                self.parent.regex_parser("([+\-]\d+,\d+) mA$"),
+                self._string_to_float(
+                    scale_factor=1/1000  # We want results in Ampere
+                )
+            ),
+            unit="A",
         )
 
         self.add_parameter(
@@ -55,25 +101,20 @@ class StahlChannel(InstrumentChannel):
         )
 
     @staticmethod
-    def _stahl_get_parser(unit: str) -> Callable:
+    def _string_to_float(
+            decimal_separator: str=",",
+            scale_factor: float=1
+    ) -> Callable:
         """
-        Upon querying the voltage and current, the response from the instrument
-        is `+/-yy,yyy V` or `+/-yy,yyy mA'. We strip the unit and replace the
-        comma with a dot.
-
-        Args:
-            unit: The unit to strip
-
-        Return:
-            parser: Parse a response to a float
+        Querying the voltage and current gives back strings containing a
+        comma denoting a decimal symbol (e.g. 1,4 = 1.4). Correct this
+        madness (and send an angry email to Stahl)
         """
-        regex = f"([\+\-]\d+,\d+ ){unit}$"
+        def converter(string):
+            sane_str = string.replace(decimal_separator, ".")
+            return float(sane_str) * scale_factor
 
-        def parser(response: str) -> float:
-            result, = re.search(regex, response).groups()
-            return float(result.replace(",", "."))
-
-        return parser
+        return converter
 
     def _set_voltage(self, voltage: float) -> None:
         """
@@ -91,8 +132,8 @@ class StahlChannel(InstrumentChannel):
         send_string = f"{self.parent.identifier} CH{self._channel_string} {voltage_normalized:.5f}"
         response = self.ask(send_string)
 
-        if response != self._acknowledge_reply:
-            logger.warning(f"Command {send_string} did not produce an acknowledge reply")
+        if response != self.acknowledge_reply:
+            self.log.warning(f"Command {send_string} did not produce an acknowledge reply")
 
     def _get_lock_status(self) -> bool:
         """
@@ -109,10 +150,10 @@ class StahlChannel(InstrumentChannel):
             header_fmt="empty"
         )
 
-        chnr = self._channel_number - 1
-        channel_group = chnr // 4
+        channel_index = self._channel_number - 1
+        channel_group = channel_index // 4
         lock_code_group = response[channel_group]
-        return format(lock_code_group, "b")[chnr % 4 + 1] == "1"
+        return format(lock_code_group, "b")[channel_index % 4 + 1] == "1"
 
 
 class Stahl(VisaInstrument):
@@ -152,39 +193,57 @@ class Stahl(VisaInstrument):
 
         self.add_parameter(
             "temperature",
-            get_cmd=self._get_temperature,
+            get_cmd=f"{self.identifier} TEMP",
+            get_parser=chain(
+                self.regex_parser("TEMP (.*)°C"),
+                float
+            ),
             unit="C"
         )
 
         self.connect_message()
 
-    def _get_temperature(self) -> float:
+    def ask_raw(self, cmd: str) -> str:
         """
-        When querying the temperature a non-ascii character to denote
-        the degree symbol '°' is present in the return string. For this
-        reason, we cannot use the `ask` method as it will attempt to
-        decode the response with utf-8, which will fail. We need to
-        manually set the decoding to latin-1
+        Sometimes the instrument returns non-ascii characters in response strings
+        Manually adjust the encoding to latin-1
         """
-        send_string = f"{self.identifier} TEMP"
-        self.write(send_string)
+        self.visa_log.debug(f"Querying: {cmd}")
+        self.visa_handle.write(cmd)
         response = self.visa_handle.read(encoding="latin-1")
-        temperature_string, = re.search("TEMP (.*)°C", response).groups()
-        return float(temperature_string)
+        self.visa_log.debug(f"Response: {response}")
+        return response
 
     @staticmethod
-    def _parse_idn_string(ind_string) -> Dict[str, Any]:
+    def regex_parser(match_string: str) -> Callable:
+
+        regex = re.compile(match_string)
+
+        def parser(input_string):
+            result = regex.search(input_string)
+            if result is None:
+                raise UnexpectedInstrumentResponse()
+
+            result_groups = result.groups()
+            if len(result_groups) == 1:
+                return result_groups[0]
+            else:
+                return result_groups
+
+        return parser
+
+    def _parse_idn_string(self, ind_string) -> Dict[str, Any]:
         """
         Return:
              dict with keys: "model", "serial_number", "voltage_range",
              "n_channels", "output_type"
         """
-        groups = re.search(
-            "(HV|BS)(\d{3}) (\d{3}) (\d{2}) [buqsm]",
-            ind_string
-        ).groups()
+        idn_parser = self.regex_parser(
+            "(HV|BS)(\d{3}) (\d{3}) (\d{2}) [buqsm]"
+        )
+        parsed_idn = idn_parser(ind_string)
 
-        id_parsers: Dict[str, Callable] = {
+        id_parsers: Dict[str, Callable] = OrderedDict({
             "model": str,
             "serial_number": str,
             "voltage_range": float,
@@ -196,11 +255,11 @@ class Stahl(VisaInstrument):
                 "s": "steerer",
                 "m": "bipolar milivolt"
             }.get
-        }
+        })
 
         return {
             name: id_parsers[name](value)
-            for name, value in zip(id_parsers.keys(), groups)
+            for name, value in zip(id_parsers.keys(), parsed_idn)
         }
 
     def get_idn(self) -> Dict[str, Optional[str]]:
