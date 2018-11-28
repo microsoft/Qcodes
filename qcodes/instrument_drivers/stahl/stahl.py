@@ -2,7 +2,7 @@
 This is a driver for the Stahl power supplies
 """
 
-from typing import Dict, Optional, Any, Callable, Sequence, Iterable
+from typing import Dict, Optional, Any, Callable, Iterable
 import re
 import numpy as np
 import logging
