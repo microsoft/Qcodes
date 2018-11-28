@@ -8,9 +8,14 @@ representation immediately.
 
 import numpy as np
 
+from typing import Union, Type, TypeVar
+NormOrder = Union[str, float]
+T = TypeVar('T', bound='FieldVector')
+
 
 class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
+    repr_format = "cartesian"
 
     def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
                  rho=None):
@@ -73,6 +78,9 @@ class FieldVector(object):
 
         for attr_name, value in zip(attr_names, values):
             self._set_attribute_value(attr_name, value)
+
+    def __getnewargs__(self):
+        return (self.x, self.y, self.z)
 
     @staticmethod
     def _cartesian_to_other(x, y, z):
@@ -145,7 +153,7 @@ class FieldVector(object):
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self, other):
+    def copy(self : T, other : T):
         """Copy the properties of other vector to yourself"""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
@@ -250,30 +258,127 @@ class FieldVector(object):
 
         return True
 
+    def __getitem__(self, component):
+        return self.get_components(component)[0]
+
+    def __setitem__(self, component, value):
+        self.set_component(**{component: value})
+
+    def __mul__(self, other):
+        if not isinstance(other, (float, int)):
+            return NotImplemented
+
+        return FieldVector(**{
+            component: self[component] * other
+            for component in 'xyz'
+        })
+
+    def __rmul__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+
+        return self * other
+
+    def __neg__(self):
+        return -1 * self
+
+    def __add__(self, other):
+        if not isinstance(other, FieldVector):
+            return NotImplemented
+
+        return FieldVector(**{
+            component: self[component] + other[component]
+            for component in 'xyz'
+        })
+
+    def __sub__(self, other):
+        if not isinstance(other, FieldVector):
+            return NotImplemented
+
+        return FieldVector(**{
+            component: self[component] - other[component]
+            for component in 'xyz'
+        })
+
+    # NB: we disable the pylint warning here so that we can match
+    #     NumPy's naming convention for the norm method.
+    def norm(self, ord : NormOrder = 2) -> float: # pylint: disable=redefined-builtin
+        """
+        Returns the norm of this field vector. See np.norm
+        for the definition of the ord keyword argument.
+        """
+        return np.linalg.norm([self.x, self.y, self.z], ord=ord)
+
+    def distance(self, other, ord : NormOrder = 2) -> float: # pylint: disable=redefined-builtin
+        return (self - other).norm(ord=ord)
+
     @property
-    def x(self):
+    def x(self) -> float:
         return self._x
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self._y
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self._z
 
     @property
-    def rho(self):
+    def rho(self) -> float:
         return self._rho
 
     @property
-    def theta(self):
+    def theta(self) -> float:
         return np.degrees(self._theta)
 
     @property
-    def r(self):
+    def r(self) -> float:
         return self._r
 
     @property
-    def phi(self):
+    def phi(self) -> float:
         return np.degrees(self._phi)
+
+    ## Representation Methods ##
+
+    def repr_cartesian(self) -> str:
+        return f"FieldVector(x={self.x}, y={self.y}, z={self.z})"
+
+    def repr_spherical(self) -> str:
+        return f"FieldVector(r={self.r}, phi={self.phi}, theta={self.theta})"
+
+    def repr_cylindrical(self) -> str:
+        return f"FieldVector(rho={self.rho}, phi={self.phi}, z={self.z})"
+
+    def __repr__(self) -> str:
+        if self.repr_format == "cartesian":
+            return self.repr_cartesian()
+        elif self.repr_format == "spherical":
+            return self.repr_spherical()
+        elif self.repr_format == "cylindrical":
+            return self.repr_cylindrical()
+        else:
+            return super().__repr__()
+
+    ## Homogenous Coordinates ##
+
+    def as_homogeneous(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z, 1])
+
+    @classmethod
+    def from_homogeneous(cls : Type[T], hvec : np.ndarray) -> T:
+        # Homogenous coordinates define an equivalence relation
+        #     [x / s, y / s, z / s, 1] == [x, y, z, s].
+        # More generally,
+        #     [x, y, z, s] == [x', y', z', s']
+        #     iff x / s == x' / s',
+        #         y / s == y' / s', and
+        #         z / s == z' / s'.
+        # This definition has the consequence that for any
+        # w, w * [x, y, z, s] == [x, y, z, s].
+        # Thus, we start by rescaling such that s == 1.
+        hvec /= hvec[-1]
+        return cls(
+            x=hvec[0], y=hvec[1], z=hvec[2]
+        )

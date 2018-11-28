@@ -6,7 +6,7 @@ import hypothesis as hst
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 import qcodes.instrument.sims as sims
-
+from qcodes.math.field_vector import FieldVector
 
 visalib = sims.__file__.replace('__init__.py', 'MercuryiPS.yaml@sim')
 
@@ -66,6 +66,21 @@ def test_simple_setting(driver):
     assert driver.GRPX.field_target() == 0
     driver.GRPX.field_target(0.1)
     assert driver.GRPX.field_target() == 0.1
+
+
+def test_vector_setting(driver):
+    assert driver.field_target().distance(FieldVector(0, 0, 0)) <= 1e-8
+    driver.field_target(FieldVector(r=0.1, theta=0, phi=0))
+    assert driver.field_target().distance(
+        FieldVector(r=0.1, theta=0, phi=0)
+    ) <= 1e-8
+
+
+def test_vector_ramp_rate(driver):
+    driver.field_ramp_rate(FieldVector(0.1, 0.1, 0.1))
+    assert driver.field_ramp_rate().distance(
+        FieldVector(0.1, 0.1, 0.1)
+    ) <= 1e-8
 
 
 def test_wrong_field_limit_raises():
@@ -133,10 +148,8 @@ def test_ramp_safely(driver, x, y, z, caplog):
     driver.GRPZ.ramp_status('HOLD')
 
     # the current field values are always zero for the sim. instr.
-
-    driver.x_target(x)
-    driver.y_target(y)
-    driver.z_target(z)
+    # Use the FieldVector interface here to increase coverage.
+    driver.field_target(FieldVector(x=x, y=y, z=z))
 
     exp_order = np.array(['x', 'y', 'z'])[np.argsort(np.abs(np.array([x, y, z])))]
 
