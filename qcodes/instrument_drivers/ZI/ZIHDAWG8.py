@@ -4,7 +4,8 @@ import os
 import textwrap
 import time
 from functools import partial
-from typing import Optional, Any, List, Tuple, Union, Sequence, Dict
+from typing import Any, List, Tuple, Union, Sequence, Dict
+
 import zhinst.utils
 
 from qcodes import Instrument
