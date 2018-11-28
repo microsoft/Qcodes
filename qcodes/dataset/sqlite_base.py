@@ -1084,6 +1084,30 @@ def length(conn: SomeConnection,
         return _len
 
 
+def _build_data_query( table_name: str,
+             columns: List[str],
+             start: Optional[int] = None,
+             end: Optional[int] = None,
+             ) -> str:
+
+    _columns = ",".join(columns)
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+    return query
+
+
 def get_data(conn: SomeConnection,
              table_name: str,
              columns: List[str],
@@ -1105,23 +1129,8 @@ def get_data(conn: SomeConnection,
     Returns:
         the data requested in the format of list of rows of values
     """
-    _columns = ",".join(columns)
 
-    query = f"""
-            SELECT {_columns}
-            FROM "{table_name}"
-            """
-
-    start_specified = start is not None
-    end_specified = end is not None
-
-    where = ' WHERE' if start_specified or end_specified else ''
-    start_condition = f' rowid >= {start}' if start_specified else ''
-    end_condition = f' rowid <= {end}' if end_specified else ''
-    and_ = ' AND' if start_specified and end_specified else ''
-
-    query += where + start_condition + and_ + end_condition
-
+    query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
@@ -1151,13 +1160,11 @@ def get_columns(conn: SomeConnection,
     # than transposing the data using np.array.transpose
     # This method is going to form the entry point for a compiled version
 
-    query = _get_data_query(table_name, columns, start, end)
-    c = atomic_transaction(conn, query)
-    res = many_many(c, *columns)
+    res = get_data(conn, table_name, columns, start, end)
     res_t = list(map(list, zip(*res)))
-    return {name: np.array(column)
-            for name, column
-            in zip(res_t, columns)}
+    return {name: np.array(column_data)
+            for name, column_data
+            in zip(columns, res_t)}
 
 
 def get_values(conn: SomeConnection,
