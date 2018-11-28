@@ -1,4 +1,5 @@
 import itertools
+from copy import copy
 
 import pytest
 import numpy as np
@@ -17,6 +18,7 @@ from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -614,3 +616,27 @@ class TestGetData:
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
+
+def test_get_parameter_data(scalar_dataset):
+    ds = scalar_dataset
+    params = ds.parameters.split(',')
+    # delete some random parameter to test it with an incomplete list
+    del params[-2]
+    # replace first list entry by paramspec
+    param_names = copy(params)
+    params[0] = ds.paramspecs[params[0]]
+
+    ref = ds.get_data(*params)
+    dut = ds.get_parameter_data(*params)
+
+    for i_row, row in enumerate(ref):
+        for i_param, param_name in enumerate(param_names):
+            v_ref = row[i_param]
+            v_test = dut[param_name][i_row]
+            if type(v_ref) == float:
+                assert type(v_test) == np.float64
+            elif type(v_ref) == int:
+                assert type(v_test) == np.int
+            else:
+                raise RuntimeError('Unsupported data type')
+            assert np.isclose(v_test, v_ref)
