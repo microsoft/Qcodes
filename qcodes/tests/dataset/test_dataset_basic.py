@@ -662,8 +662,7 @@ def test_get_description(some_paramspecs):
     assert loaded_ds.description == desc
 
 
-@pytest.mark.usefixtures('experiment')
-def test_metadata():
+def test_metadata(experiment):
 
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
