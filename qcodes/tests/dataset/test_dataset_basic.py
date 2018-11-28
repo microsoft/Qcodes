@@ -684,12 +684,15 @@ def test_metadata():
     badtag = 'lex luthor'
     sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
 
-    match = (f'Tag {badtag} has value None. '
-             ' That is not a valid metadata value!')
+    bad_tag_msg = (f'Tag {badtag} has value None. '
+                    ' That is not a valid metadata value!')
 
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(RuntimeError,
+                       match='Rolling back due to unhandled exception') as e:
         for tag, value in sorry_metadata.items():
             ds1.add_metadata(tag, value)
+
+    assert error_caused_by(e, bad_tag_msg)
 
 
 class TestGetData:
