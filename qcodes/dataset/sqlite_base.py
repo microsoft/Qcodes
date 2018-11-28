@@ -768,8 +768,7 @@ def atomic_transaction(conn: ConnectionPlus,
         sqlite cursor
 
     """
-    conn_plus = make_connection_plus_from(conn)
-    with atomic(conn_plus) as atomic_conn:
+    with atomic(conn) as atomic_conn:
         c = transaction(atomic_conn, sql, *args)
     return c
 
