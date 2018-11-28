@@ -673,6 +673,29 @@ class DataSet(Sized):
             results = [{spec.name: value} for value in values]
             self.add_results(results)
 
+    @staticmethod
+    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
+        ) -> List[str]:
+        """
+        validate the provided parameters have a name and return them as a list. 
+        names. The Parameters may be a mix of strings, ParamSpecs or ordinary
+        QCoDeS parameters.
+        """
+
+        valid_param_names = []
+        for maybeParam in params:
+            if isinstance(maybeParam, str):
+                valid_param_names.append(maybeParam)
+                continue
+            else:
+                try:
+                    maybeParam = maybeParam.name
+                except Exception as e:
+                    raise ValueError(
+                        "This parameter does not have  a name") from e
+                valid_param_names.append(maybeParam)
+        return valid_param_names
+
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
@@ -708,21 +731,41 @@ class DataSet(Sized):
             be of the datatypes stored in the database (numeric, array or
             string)
         """
-        valid_param_names = []
-        for maybeParam in params:
-            if isinstance(maybeParam, str):
-                valid_param_names.append(maybeParam)
-                continue
-            else:
-                try:
-                    maybeParam = maybeParam.name
-                except Exception as e:
-                    raise ValueError(
-                        "This parameter does not have  a name") from e
-            valid_param_names.append(maybeParam)
-        data = get_data(self.conn, self.table_name, valid_param_names,
+        valid_param_names = self._validate_parameters(*params)
+        return get_data(self.conn, self.table_name, valid_param_names,
                         start, end)
-        return data
+
+    def get_parameter_data(
+            self,
+            *params: Union[str, ParamSpec, _BaseParameter],
+            start: Optional[int] = None,
+            end: Optional[int] = None) -> Dict[str, numpy.ndarray]:
+        """
+        Returns the values stored in the DataSet for the specified parameters.
+        The values are returned as a dictionary of numpy arrays where the key,
+        is given by the respective parameter name and the value arrays represent
+        the data points. This method returns the transpose of `get_data`.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a list of empty arrays is returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary of numpy arrays containing the data points of type
+            numeric, array or string.
+        """
+        valid_param_names = self._validate_parameters(*params)
+        return get_parameter_data(self.conn, self.table_name, valid_param_names,
+                        start, end)
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
