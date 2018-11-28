@@ -5,6 +5,10 @@ from collections import defaultdict
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 
 
+class ChannelNotPresentError(Exception):
+    pass
+
+
 class RelayLock:
     def __init__(self):
         self.acquired = False
@@ -13,8 +17,7 @@ class RelayLock:
     def acquire(self, requester_id):
         if self.acquired and self.acquired_by != requester_id:
             raise RuntimeError(
-                "Relay {self.name} already in use by another channel on the "
-                "same relay"
+                f"Relay already in use by channel {self.acquired_by}"
             )
 
         self.acquired = True
@@ -23,14 +26,12 @@ class RelayLock:
     def release(self, requester_id):
         if self.acquired_by != requester_id:
             raise RuntimeError(
-                "Relay can only be freed by the channel that acquired the lock")
+                f"Relay can only be freed by channel {self.acquired_by} "
+                f"that acquired the lock"
+            )
 
         self.acquired = False
         self.acquired_by = None
-
-
-class ChannelNotPresentError(Exception):
-    pass
 
 
 class RFSwitchChannel(InstrumentChannel):
@@ -38,17 +39,20 @@ class RFSwitchChannel(InstrumentChannel):
         super().__init__(parent, name)
         self._channel_number = channel_number
 
-        relay_id = self._get_relay()
-        self._relay_lock = relay_locks[relay_id]
+        self._relay_id = self._get_relay()
+        self._relay_lock = relay_locks[self._relay_id]
 
         self.add_parameter(
-            "is_closed",
-            get_cmd=lambda: self._channel_number in
-                            self.parent.query_closed_channels()
+            "close",
+            get_cmd=lambda: str(self._channel_number) in self.ask(":CONF:CPOL?"),
+            set_cmd=lambda state: {
+                True: self._close_channel,
+                False: self._open_channel
+            }[state]()
         )
 
     def _get_relay(self):
-        relay_layout = self.parent.get_relay_layout()
+        relay_layout = self.parent.relay_layout()
         found = False
 
         count = 0
@@ -60,21 +64,28 @@ class RFSwitchChannel(InstrumentChannel):
         if not found:
             raise ChannelNotPresentError()
 
-        return ["A", "B", "C", "D", "1", "2", "3", "4", "5", "6", "7", "8"][
-            count]
+        return (["A", "B", "C", "D"] + [chr(i) for i in range(1, 9)])[count]
 
-    def close_channel(self):
+    def _close_channel(self):
         self._relay_lock.acquire(self._channel_number)
         self.write(f":CLOSE (@{self._channel_number})")
 
-    def open_channel(self):
+    def _open_channel(self):
         self._relay_lock.release(self._channel_number)
         self.write(f":OPEN (@{self._channel_number})")
+
+    @property
+    def relay_id(self):
+        return self._relay_id
 
 
 class S46(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\n", **kwargs)
+
+        self._relay_layout = [
+            int(i) for i in self.ask(":CONF:CPOL?").split(",")
+        ]
 
         channels = ChannelList(
             self, "channel", RFSwitchChannel, snapshotable=False
@@ -96,10 +107,6 @@ class S46(VisaInstrument):
         self.add_submodule("channels", channels)
         self.connect_message()
 
-    def query_closed_channels(self):
-        response = self.ask(":CLOS?")
-        channels_list_string = response.lstrip("(@").rstrip(")")
-        return [int(i) for i in channels_list_string.split(",")]
-
-    def get_relay_layout(self):
-        return [int(i) for i in self.ask(":CONF:CPOL?").split(",")]
+    @property
+    def relay_layout(self):
+        return self._relay_layout
