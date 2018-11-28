@@ -290,18 +290,11 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     assert 3 == len(control_conn.execute(get_all_runs).fetchall())
 
 
-@pytest.mark.parametrize(argnames='create_connection',
-                         argvalues=(
-                                 sqlite3.connect,
-                                 lambda x: ConnectionPlus(sqlite3.connect(x))),
-                         ids=(
-                                 'sqlite3.Connection',
-                                 'ConnectionPlus'))
-def test_atomic_transaction(create_connection, tmp_path):
-    """Test that atomic_transaction works for both types of connection"""
+def test_atomic_transaction(tmp_path):
+    """Test that atomic_transaction works for ConnectionPlus"""
     dbfile = str(tmp_path / 'temp.db')
 
-    conn = create_connection(dbfile)
+    conn = ConnectionPlus(sqlite3.connect(dbfile))
 
     ctrl_conn = sqlite3.connect(dbfile)
 
@@ -311,6 +304,19 @@ def test_atomic_transaction(create_connection, tmp_path):
     atomic_transaction(conn, sql_create_table)
 
     assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
+
+
+def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path):
+    """Test that atomic_transaction does not work for sqlite3.Connection"""
+    dbfile = str(tmp_path / 'temp.db')
+
+    conn = sqlite3.connect(dbfile)
+
+    match_str = re.escape('atomic context manager only accepts ConnectionPlus '
+                          'database connection objects.')
+
+    with pytest.raises(ValueError, match=match_str):
+        atomic_transaction(conn, 'whatever sql query')
 
 
 def test_connect():
