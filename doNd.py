@@ -21,14 +21,17 @@ AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
 number = Union[float, int]
 
 
-def do0d(*param_meas: _BaseParameter,
+def do0d(*param_meas:  Union[_BaseParameter, Callable[[], None]],
          do_plot: bool = True) -> AxesTupleListWithRunId:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParamter that already returns an array of data points
 
     Args:
-        *param_meas: QCoDeS parameters to measure
+        *param_meas: Parameter(s) to measure at each step or functions that
+          will be called at each step. The function should take no arguments.
+          The parameters and functions are called in the order they are
+          supplied.
         do_plot: should png and pdf versions of the images be saved after the
             run.
 
@@ -43,9 +46,13 @@ def do0d(*param_meas: _BaseParameter,
         output.append([parameter, None])
 
     with meas.run() as datasaver:
+
         for i, parameter in enumerate(param_meas):
-            output[i][1] = parameter.get()
-            datasaver.add_result(*output)
+            if isinstance(parameter, _BaseParameter):
+                output[i][1] = parameter.get()
+            elif callable(parameter):
+                parameter()
+        datasaver.add_result(*output)
     dataid = datasaver.run_id
 
     if do_plot is True:
@@ -59,7 +66,7 @@ def do0d(*param_meas: _BaseParameter,
 
 def do1d(param_set: _BaseParameter, start: number, stop: number,
          num_points: int, delay: number,
-         *param_meas: _BaseParameter,
+         *param_meas: Union[_BaseParameter, Callable[[], None]],
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
          do_plot: bool = True) \
@@ -118,7 +125,7 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
             for set_point in np.linspace(start, stop, num_points):
                 param_set.set(set_point)
                 output = []
-                for i, parameter in enumerate(param_meas):
+                for parameter in param_meas:
                     if isinstance(parameter, _BaseParameter):
                         output.append((parameter, parameter.get()))
                     elif callable(parameter):
@@ -145,7 +152,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
          num_points1: int, delay1: number,
          param_set2: _BaseParameter, start2: number, stop2: number,
          num_points2: int, delay2: number,
-         *param_meas: _BaseParameter,
+         *param_meas: Union[_BaseParameter, Callable[[], None]],
          enter_actions: Sequence[Callable[[], None]] = (),
          exit_actions: Sequence[Callable[[], None]] = (),
          before_inner_actions: Sequence[Callable[[], None]] = (),
@@ -190,7 +197,7 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
     param_set1.post_delay = delay1
     meas.register_parameter(param_set2)
     param_set1.post_delay = delay2
-
+    interrupted = False
     for action in enter_actions:
         # this omits the possibility of passing
         # argument to enter and exit actions.
@@ -204,33 +211,38 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
         if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter,
                                     setpoints=(param_set1, param_set2))
-    with meas.run() as datasaver:
+    try:
+        with meas.run() as datasaver:
 
-        for set_point1 in np.linspace(start1, stop1, num_points1):
-            param_set1.set(set_point1)
-            for action in before_inner_actions:
-                action()
-            for set_point2 in np.linspace(start2, stop2, num_points2):
-                param_set2.set(set_point2)
-                output = []
-                for i, parameter in enumerate(param_meas):
-                    if isinstance(parameter, _BaseParameter):
-                        output.append((parameter, parameter.get()))
-                    elif callable(parameter):
-                        parameter()
-                datasaver.add_result((param_set1, set_point1),
-                                     (param_set2, set_point2),
-                                     *output)
-            for action in after_inner_actions:
-                action()
+            for set_point1 in np.linspace(start1, stop1, num_points1):
+                param_set1.set(set_point1)
+                for action in before_inner_actions:
+                    action()
+                for set_point2 in np.linspace(start2, stop2, num_points2):
+                    param_set2.set(set_point2)
+                    output = []
+                    for parameter in param_meas:
+                        if isinstance(parameter, _BaseParameter):
+                            output.append((parameter, parameter.get()))
+                        elif callable(parameter):
+                            parameter()
+                    datasaver.add_result((param_set1, set_point1),
+                                         (param_set2, set_point2),
+                                         *output)
+                for action in after_inner_actions:
+                    action()
+    except KeyboardInterrupt:
+        interrupted = True
 
-        dataid = datasaver.run_id
+    dataid = datasaver.run_id
 
     if do_plot is True:
         ax, cbs = _save_image(datasaver)
     else:
         ax = None,
         cbs = None
+    if interrupted:
+        raise KeyboardInterrupt
 
     return dataid, ax, cbs
 
