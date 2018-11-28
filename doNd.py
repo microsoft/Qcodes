@@ -21,13 +21,16 @@ AxesTupleListWithRunId = Tuple[int, List[matplotlib.axes.Axes],
 number = Union[float, int]
 
 
-def do0d(*param_meas: _BaseParameter) -> int:
+def do0d(*param_meas: _BaseParameter,
+         do_plot: bool = True) -> AxesTupleListWithRunId:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParamter that already returns an array of data points
 
     Args:
         *param_meas: QCoDeS parameters to measure
+        do_plot: should png and pdf versions of the images be saved after the
+            run.
 
     Returns:
         The run_id of the DataSet created
@@ -44,15 +47,22 @@ def do0d(*param_meas: _BaseParameter) -> int:
             output[i][1] = parameter.get()
             datasaver.add_result(*output)
     dataid = datasaver.run_id
-    _save_image(datasaver)
-    return dataid
+
+    if do_plot is True:
+        ax, cbs = _save_image(datasaver)
+    else:
+        ax = None,
+        cbs = None
+
+    return dataid, ax, cbs
 
 
 def do1d(param_set: _BaseParameter, start: number, stop: number,
          num_points: int, delay: number,
          *param_meas: _BaseParameter,
          enter_actions: Sequence[Callable[[], None]] = (),
-         exit_actions: Sequence[Callable[[], None]] = ()) \
+         exit_actions: Sequence[Callable[[], None]] = (),
+         do_plot: bool = True) \
         -> AxesTupleListWithRunId:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -73,6 +83,8 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
             called before the measurements start
         exit_actions: A list of functions taking no arguments that will be
             called after the measurements ends
+        do_plot: should png and pdf versions of the images be saved after the
+            run.
 
     Returns:
         The run_id of the DataSet created
@@ -102,11 +114,6 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
 
     try:
         with meas.run() as datasaver:
-            # Add live plotting functionality
-            datasaver.dataset.subscribe(
-                LivePlotSubscriber(datasaver.dataset),
-                state=[], min_wait=0, min_count=1
-            )
 
             for set_point in np.linspace(start, stop, num_points):
                 param_set.set(set_point)
@@ -123,7 +130,11 @@ def do1d(param_set: _BaseParameter, start: number, stop: number,
 
     dataid = datasaver.run_id  # convenient to have for plotting
 
-    ax, cbs = _save_image(datasaver)
+    if do_plot is True:
+        ax, cbs = _save_image(datasaver)
+    else:
+        ax = None,
+        cbs = None
 
     if interrupted:
         raise KeyboardInterrupt
@@ -194,11 +205,6 @@ def do2d(param_set1: _BaseParameter, start1: number, stop1: number,
             meas.register_parameter(parameter,
                                     setpoints=(param_set1, param_set2))
     with meas.run() as datasaver:
-
-        datasaver.dataset.subscribe(
-            LivePlotSubscriber(datasaver.dataset),
-            state=[], min_wait=0, min_count=1
-        )
 
         for set_point1 in np.linspace(start1, stop1, num_points1):
             param_set1.set(set_point1)
