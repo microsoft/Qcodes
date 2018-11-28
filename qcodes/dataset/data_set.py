@@ -7,6 +7,7 @@ import importlib
 import logging
 import uuid
 from queue import Queue, Empty
+import numpy
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -22,6 +23,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         modify_many_values, insert_values,
                                         insert_many_values,
                                         VALUE, VALUES, get_data,
+                                        get_parameter_data,
                                         get_values,
                                         get_setpoints,
                                         get_metadata,
