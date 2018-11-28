@@ -190,14 +190,14 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
-def test_get_columns(scalar_dataset):
+def test_get_parameter_data(scalar_dataset):
     ds = scalar_dataset
     params = ds.parameters.split(',')
     # delete some random parameter to test it with an incomplete list
     del params[-2]
 
     ref = mut.get_data(ds.conn, ds.table_name, params)
-    dut = mut.get_columns(ds.conn, ds.table_name, params)
+    dut = mut.get_parameter_data(ds.conn, ds.table_name, params)
     for i_row, row in enumerate(ref):
         for i_param, param_name in enumerate(params):
             v_ref = row[i_param]

@@ -1137,11 +1137,11 @@ def get_data(conn: SomeConnection,
     return res
 
 
-def get_columns(conn: SomeConnection,
-                table_name: str,
-                columns: List[str],
-                start: int = None,
-                end: int = None) -> Dict[str, np.ndarray]:
+def get_parameter_data(conn: SomeConnection,
+                       table_name: str,
+                       columns: List[str],
+                       start: int = None,
+                       end: int = None) -> Dict[str, np.ndarray]:
     """
     Get data from the columns of a table.
     Allows to specfiy a range.
