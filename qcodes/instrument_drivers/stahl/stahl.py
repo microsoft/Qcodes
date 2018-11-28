@@ -2,7 +2,7 @@
 This is a driver for the Stahl power supplies
 """
 
-from typing import Dict, Optional, Any, Callable, Sequence
+from typing import Dict, Optional, Any, Callable, Sequence, Iterable
 import re
 import numpy as np
 import logging
@@ -11,7 +11,6 @@ from functools import partial
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Numbers
-
 
 logger = logging.getLogger()
 
@@ -25,15 +24,16 @@ def chain(*functions: Callable) -> Callable:
         >>>   return "1.2"
         >>> chain(f, float)()  # return 1.2 as float
     """
-    def make_tuple(args):
-        if not isinstance(args, tuple):
+
+    def make_iter(args):
+        if not isinstance(args, Iterable) or isinstance(args, str):
             return args,
         return args
 
     def inner(*args):
         result = args
         for fun in functions:
-            new_args = make_tuple(result)
+            new_args = make_iter(result)
             result = fun(*new_args)
 
         return result
@@ -63,7 +63,7 @@ class StahlChannel(InstrumentChannel):
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
-                self.parent.regex_parser(r"([+\-]\d+,\d+) V$"),
+                re.compile(r"^([+\-]\d+,\d+) V$").findall,
                 partial(re.sub, ",", "."),
                 float
             ),
@@ -79,7 +79,7 @@ class StahlChannel(InstrumentChannel):
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
-                self.parent.regex_parser(r"([+\-]\d+,\d+) mA$"),
+                re.compile(r"^([+\-]\d+,\d+) mA$").findall,
                 partial(re.sub, ",", "."),
                 lambda ma: float(ma) / 1000  # Convert mA to A
             ),
@@ -105,7 +105,7 @@ class StahlChannel(InstrumentChannel):
         )
 
         send_string = f"{self.parent.identifier} CH{self._channel_string} " \
-                      f"{voltage_normalized:.5f}"
+            f"{voltage_normalized:.5f}"
         response = self.ask(send_string)
 
         if response != self.acknowledge_reply:
@@ -141,6 +141,7 @@ class Stahl(VisaInstrument):
         name
         address: A serial port address
     """
+
     def __init__(self, name: str, address: str, **kwargs):
         super().__init__(name, address, terminator="\r", **kwargs)
         self.visa_handle.baud_rate = 115200
@@ -172,7 +173,7 @@ class Stahl(VisaInstrument):
             "temperature",
             get_cmd=f"{self.identifier} TEMP",
             get_parser=chain(
-                self.regex_parser("TEMP (.*)°C"),
+                re.compile("^TEMP (.*)°C$").findall,
                 float
             ),
             unit="C"
@@ -192,42 +193,24 @@ class Stahl(VisaInstrument):
         return response
 
     @staticmethod
-    def regex_parser(match_string: str) -> Callable:
-        """
-        Example:
-            >>> parser = Stahl.regex_parser("^QCoDeS is (.*)$")
-            >>> result = parser("QCoDeS is Cool")  # Will return ('Cool',)
-
-        Raises:
-            RuntimeError if a match could not be found with
-            regular expressions
-        """
-        regex = re.compile(match_string)
-
-        def parser(input_string: str) -> Sequence[str]:
-            result = regex.search(input_string)
-            if result is None:
-                raise RuntimeError(
-                    "Unexpected instrument response. Perhaps the model of the "
-                    "instrument does not match the drivers expectation or a "
-                    "firmware upgrade has taken place. Please get in touch "
-                    "with a QCoDeS core developer"
-                )
-
-            return result.groups()
-        return parser
-
-    @staticmethod
     def parse_idn_string(idn_string) -> Dict[str, Any]:
         """
         Return:
              dict with keys: "model", "serial_number", "voltage_range",
              "n_channels", "output_type"
         """
-        idn_parser = Stahl.regex_parser(
-            r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])"
+        result = re.search(
+            r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])",
+            idn_string
         )
-        parsed_idn = idn_parser(idn_string)
+
+        if result is None:
+            raise RuntimeError(
+                "Unexpected instrument response. Perhaps the model of the "
+                "instrument does not match the drivers expectation or a "
+                "firmware upgrade has taken place. Please get in touch "
+                "with a QCoDeS core developer"
+            )
 
         converters: Dict[str, Callable] = OrderedDict({
             "model": str,
@@ -245,7 +228,7 @@ class Stahl(VisaInstrument):
 
         return {
             name: converter(value)
-            for (name, converter), value in zip(converters.items(), parsed_idn)
+            for (name, converter), value in zip(converters.items(), result.groups())
         }
 
     def get_idn(self) -> Dict[str, Optional[str]]:
