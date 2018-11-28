@@ -1128,6 +1128,38 @@ def get_data(conn: SomeConnection,
     return res
 
 
+def get_columns(conn: SomeConnection,
+                table_name: str,
+                columns: List[str],
+                start: int = None,
+                end: int = None) -> Dict[str, np.ndarray]:
+    """
+    Get data from the columns of a table.
+    Allows to specfiy a range.
+
+    Args:
+        conn: database connection
+        table_name: name of the table
+        columns: list of columns
+        start: start of range (1 indedex)
+        end: start of range (1 indedex)
+
+    Returns:
+        the data requested
+    """
+    # Benchmarking shows that transposing the data with python types is faster
+    # than transposing the data using np.array.transpose
+    # This method is going to form the entry point for a compiled version
+
+    query = _get_data_query(table_name, columns, start, end)
+    c = atomic_transaction(conn, query)
+    res = many_many(c, *columns)
+    res_t = list(map(list, zip(*res)))
+    return {name: np.array(column)
+            for name, column
+            in zip(res_t, columns)}
+
+
 def get_values(conn: SomeConnection,
                table_name: str,
                param_name: str) -> List[List[Any]]:
