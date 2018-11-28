@@ -9,6 +9,7 @@ import pytest
 import hypothesis.strategies as hst
 from hypothesis import given
 import unicodedata
+import numpy as np
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -19,8 +20,10 @@ from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset
 from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
+# pylint: enable=unused-import
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -185,3 +188,26 @@ def test_runs_table_columns(empty_temp_db):
         colnames.remove(row['name'])
 
     assert colnames == []
+
+
+def test_get_columns(scalar_dataset):
+    ds = scalar_dataset
+    params = ds.parameters.split(',')
+    # delete some random parameter to test it with an incomplete list
+    del params[-2]
+
+    ref = mut.get_data(ds.conn, ds.table_name, params)
+    dut = mut.get_columns(ds.conn, ds.table_name, params)
+    for i_row, row in enumerate(ref):
+        for i_param, param_name in enumerate(params):
+            v_ref = row[i_param]
+            v_test = dut[param_name][i_row]
+            if type(v_ref) == float:
+                assert type(v_test) == np.float64
+            elif type(v_ref) == int:
+                assert type(v_test) == np.int
+            else:
+                raise RuntimeError('Unsupported data type')
+            assert np.isclose(v_test, v_ref)
+            
+
