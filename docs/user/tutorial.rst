@@ -309,6 +309,6 @@ then setting two things will take 10 seconds, not 20 seconds.
 For a complete working example see :download:`this example script <./meta.py>`.
 
 Advanced
--------
+--------
 
 .. todo::  missing
