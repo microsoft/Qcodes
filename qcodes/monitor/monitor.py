@@ -20,11 +20,11 @@ import socketserver
 import webbrowser
 import datetime
 from copy import deepcopy
+from contextlib import suppress
 
 from threading import Thread
-from typing import Dict
-from concurrent.futures import Future
-from concurrent.futures import CancelledError
+from typing import Dict, Any
+from asyncio import CancelledError
 import functools
 
 import websockets
@@ -34,14 +34,14 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters) -> Dict[float, list]:
+def _get_metadata(*parameters) -> Dict[str, Any]:
     """
     Return a dict that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     ts = time.time()
     # group meta data by instrument if any
-    metas = {}
+    metas = {} # type: Dict
     for parameter in parameters:
         _meta = getattr(parameter, "_latest", None)
         if _meta:
@@ -61,11 +61,11 @@ def _get_metadata(*parameters) -> Dict[float, list]:
         accumulator = metas.get(str(baseinst), [])
         accumulator.append(meta)
         metas[str(baseinst)] = accumulator
-    parameters = []
+    parameters_out = []
     for instrument in metas:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
-        parameters.append(temp)
-    state = {"ts": ts, "parameters": parameters}
+        parameters_out.append(temp)
+    state = {"ts": ts, "parameters": parameters_out}
     return state
 
 
@@ -79,16 +79,18 @@ def _handler(parameters, interval: int):
                 except ValueError as e:
                     log.exception(e)
                     break
-                log.debug("sending..")
+                log.debug(f"sending.. to {websocket}")
                 try:
                     await websocket.send(json.dumps(meta))
-                # mute browser discconects
+                # mute browser disconnects
                 except websockets.exceptions.ConnectionClosed as e:
                     log.debug(e)
                 await asyncio.sleep(interval)
             except CancelledError:
+                log.debug("Got CancelledError")
                 break
-        log.debug("closing sever")
+
+        log.debug("Stopping Websocket handler")
 
     return serverFunc
 
@@ -109,29 +111,78 @@ class Monitor(Thread):
         time.sleep(0.01)
         super().__init__()
         self.loop = None
-        self._monitor(*parameters, interval=1)
+        self._parameters = parameters
+        self._monitor(*parameters, interval=interval)
+        Monitor.running = self
 
     def run(self):
         """
         Start the event loop and run forever
         """
+        log.debug("Running Websocket server")
         self.loop = asyncio.new_event_loop()
+        self.loop_is_closed = False
         asyncio.set_event_loop(self.loop)
-        Monitor.running = self
-        self.loop.run_forever()
+        try:
+            server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
+            self.server = self.loop.run_until_complete(server_start)
+            self.loop.run_forever()
+        except OSError as e:
+            # The code above may throw an OSError
+            # if the socket cannot be bound
+            log.exception(e)
+        finally:
+            log.debug("loop stopped")
+            log.debug("Pending tasks at close: {}".format(
+                asyncio.Task.all_tasks(self.loop)))
+            self.loop.close()
+            while not self.loop.is_closed():
+                log.debug("waiting for loop to stop and close")
+                time.sleep(0.01)
+            self.loop_is_closed = True
+            log.debug("loop closed")
 
-    def stop(self):
+    def update_all(self):
+        for p in self._parameters:
+            # call get if it can be called without arguments
+            with suppress(TypeError):
+                p.get()
+
+    def stop(self) -> None:
         """
-        Shutdown the server, close the event loop and join the thread
+        Shutdown the server, close the event loop and join the thread.
+        Setting active Monitor to None
         """
-        # this contains the server
-        # or any exception
-        server = self.future_restult.result()
-        # server.close()
-        self.loop.call_soon_threadsafe(server.close)
-        self.loop.call_soon_threadsafe(self.loop.stop)
         self.join()
         Monitor.running = None
+
+    async def __stop_server(self):
+        log.debug("asking server to close")
+        self.server.close()
+        log.debug("waiting for server to close")
+        await self.loop.create_task(self.server.wait_closed())
+        log.debug("stopping loop")
+        log.debug("Pending tasks at stop: {}".format(asyncio.Task.all_tasks(self.loop)))
+        self.loop.stop()
+
+    def join(self, timeout=None) -> None:
+        """
+        Overwrite Thread.join to make sure server is stopped before
+        joining avoiding a potential deadlock.
+        """
+        log.debug("Shutting down server")
+        try:
+            asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
+        except RuntimeError as e:
+            # the above may throw a runtime error if the loop is already
+            # stopped in which case there is nothing more to do
+            log.exception("Could not close loop")
+        while not self.loop_is_closed:
+            log.debug("waiting for loop to stop and close")
+            time.sleep(0.01)
+        log.debug("Loop reported closed")
+        super().join(timeout=timeout)
+        log.debug("Monitor Thread has joined")
 
     @staticmethod
     def show():
@@ -150,45 +201,21 @@ class Monitor(Thread):
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
     def _monitor(self, *parameters, interval=1):
-        handler = _handler(parameters, interval=interval)
+        self.handler = _handler(parameters, interval=interval)
         # TODO (giulioungaretti) read from config
-        server = websockets.serve(handler, '127.0.0.1', 5678)
 
         log.debug("Start monitoring thread")
 
         if Monitor.running:
             # stop the old server
-            log.debug("Stoppging and restarting server")
+            log.debug("Stopping and restarting server")
             Monitor.running.stop()
 
         self.start()
 
         # let the thread start
         time.sleep(0.01)
-
         log.debug("Start monitoring server")
-        self._add_task(server)
-
-    def _create_task(self, future, coro):
-        task = self.loop.create_task(coro)
-        future.set_result(task)
-
-    def _add_task(self, coro):
-        future = Future()
-        self.task = coro
-        p = functools.partial(self._create_task, future, coro)
-        self.loop.call_soon_threadsafe(p)
-        # this stores the result of the future
-        self.future_restult = future.result()
-        self.future_restult.add_done_callback(_log_result)
-
-
-def _log_result(future):
-    try:
-        future.result()
-        log.debug("Started server loop")
-    except:
-        log.exception("Could not start server loop")
 
 
 class Server():
@@ -202,17 +229,16 @@ class Server():
     def run(self):
         os.chdir(self.static_dir)
         log.debug("serving directory %s", self.static_dir)
-        log.info("Open broswer at http://localhost::{}".format(self.port))
+        log.info("Open browser at http://localhost::{}".format(self.port))
         self.httpd.serve_forever()
 
     def stop(self):
         self.httpd.shutdown()
-        self.join()
 
 
 if __name__ == "__main__":
     server = Server(SERVER_PORT)
-    print("Open broswer at http://localhost:{}".format(server.port))
+    print("Open browser at http://localhost:{}".format(server.port))
     try:
         webbrowser.open("http://localhost:{}".format(server.port))
         server.run()

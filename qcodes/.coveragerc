@@ -35,7 +35,6 @@ omit =
     instrument_drivers/Keysight/Infiniium.py
     instrument_drivers/Keysight/Keysight_33500B.py
     instrument_drivers/Keysight/Keysight_33500B_channels.py
-    instrument_drivers/Keysight/Keysight_34465A.py
     instrument_drivers/Keysight/Keysight_E8267D.py
     instrument_drivers/Keysight/M3201A.py
     instrument_drivers/Keysight/M3300A.py

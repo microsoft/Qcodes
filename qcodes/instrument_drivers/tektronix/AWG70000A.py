@@ -1,20 +1,79 @@
-import xml.etree.ElementTree as ET
 import datetime as dt
-import numpy as np
+import time
 import struct
 import io
 import zipfile as zf
 import logging
 from functools import partial
+from typing import List, Sequence, Dict, Union, Optional
+import time
 
-from dateutil.tz import time
-from typing import List, Sequence
+import xml.etree.ElementTree as ET
+import numpy as np
 
 from qcodes import Instrument, VisaInstrument, validators as vals
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils.validators import Validator
+from broadbean.sequence import fs_schema, InvalidForgedSequenceError
 
 log = logging.getLogger(__name__)
+
+##################################################
+#
+# SMALL HELPER FUNCTIONS
+#
+
+
+def _parse_string_response(input_str: str) -> str:
+    """
+    Remove quotation marks from string and return 'N/A'
+    if the input is empty
+    """
+    output = input_str.replace('"', '')
+    output = output if output else 'N/A'
+
+    return output
+
+
+##################################################
+#
+# MODEL DEPENDENT SETTINGS
+#
+# TODO: it seems that a lot of settings differ between models
+# perhaps these dicts should be merged to one
+
+_fg_path_val_map = {'5208': {'DC High BW': "DCHB",
+                             'DC High Voltage': "DCHV",
+                             'AC Direct': "ACD"},
+                    '70001A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002A': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'}}
+
+# number of markers per channel
+_num_of_markers_map = {'5208': 4,
+                       '70001A': 2,
+                       '70002A': 2}
+
+# channel resolution
+_chan_resolutions = {'5208': [12, 13, 14, 15, 16],
+                     '70001A': [8, 9, 10],
+                     '70002A': [8, 9, 10]}
+
+# channel amplitudes
+_chan_amps = {'70001A': 0.5,
+              '70002A': 0.5,
+              '5208': 1.5}
+
+# marker ranges
+_marker_high = {'70001A': (-1.4, 1.4),
+                '70002A': (-1.4, 1.4),
+                '5208': (-0.5, 1.75)}
+_marker_low = {'70001A': (-1.4, 1.4),
+               '70002A': (-1.4, 1.4),
+               '5208': (-0.3, 1.55)}
 
 
 class SRValidator(Validator):
@@ -35,6 +94,8 @@ class SRValidator(Validator):
         elif self.awg.model == '70002A':
             self._internal_validator = vals.Numbers(1.49e3, 25e9)
             self._freq_multiplier = 2
+        elif self.awg.model == '5208':
+            self._internal_validator = vals.Numbers(1.49e3, 2.5e9)
         # no other models are possible, since the __init__ of
         # the AWG70000A raises an error if anything else is given
 
@@ -67,7 +128,8 @@ class AWGChannel(InstrumentChannel):
 
         self.channel = channel
 
-        num_channels = self._parent.num_channels
+        num_channels = self.root_instrument.num_channels
+        self.model = self.root_instrument.model
 
         fg = 'function generator'
 
@@ -90,7 +152,7 @@ class AWGChannel(InstrumentChannel):
                            get_cmd='FGEN:CHANnel{}:AMPLitude?'.format(channel),
                            set_cmd='FGEN:CHANnel{}:AMPLitude {{}}'.format(channel),
                            unit='V',
-                           vals=vals.Numbers(0, 0.5),
+                           vals=vals.Numbers(0, _chan_amps[self.model]),
                            get_parser=float)
 
         self.add_parameter('fgen_offset',
@@ -120,10 +182,7 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} {} signal path'.format(channel, fg),
                            set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
                            get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
-                           val_mapping={'direct': 'DIR',
-                                        'DCamplified': 'DCAM',
-                                        'AC': 'AC'}
-                           )
+                           val_mapping=_fg_path_val_map[self.root_instrument.model])
 
         self.add_parameter('fgen_period',
                            label='Channel {} {} period'.format(channel, fg),
@@ -175,29 +234,33 @@ class AWGChannel(InstrumentChannel):
             get_cmd='SOURce{}:VOLTage?'.format(channel),
             unit='V',
             get_parser=float,
-            vals=vals.Numbers(0.250, 0.500))
+            vals=vals.Numbers(0.250, _chan_amps[self.model]))
+
+        self.add_parameter('assigned_asset',
+                           label=('Waveform/sequence assigned to '
+                                  f' channel {self.channel}'),
+                           get_cmd=f"SOURCE{self.channel}:CASSet?",
+                           get_parser=_parse_string_response)
 
         # markers
-        for mrk in range(1, 3):
+        for mrk in range(1, _num_of_markers_map[self.model]+1):
 
             self.add_parameter(
                 'marker{}_high'.format(mrk),
                 label='Channel {} marker {} high level'.format(channel, mrk),
-                set_cmd='SOURce{}:MARKer{}:VOLTage:HIGH {{}}'.format(channel,
-                                                                     mrk),
+                set_cmd=partial(self._set_marker, channel, mrk, True),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:HIGH?'.format(channel, mrk),
                 unit='V',
-                vals=vals.Numbers(-1.4, 1.4),
+                vals=vals.Numbers(*_marker_high[self.model]),
                 get_parser=float)
 
             self.add_parameter(
                 'marker{}_low'.format(mrk),
                 label='Channel {} marker {} low level'.format(channel, mrk),
-                set_cmd='SOURce{}:MARKer{}:VOLTage:LOW {{}}'.format(channel,
-                                                                    mrk),
+                set_cmd=partial(self._set_marker, channel, mrk, False),
                 get_cmd='SOURce{}:MARKer{}:VOLTage:LOW?'.format(channel, mrk),
                 unit='V',
-                vals=vals.Numbers(-1.4, 1.4),
+                vals=vals.Numbers(*_marker_low[self.model]),
                 get_parser=float)
 
             self.add_parameter(
@@ -207,6 +270,13 @@ class AWGChannel(InstrumentChannel):
                 get_cmd='OUTPut{}:WVALue:MARKer{}?'.format(channel, mrk),
                 vals=vals.Enum('FIRST', 'LOW', 'HIGH'))
 
+            self.add_parameter(
+                name=f'marker{mrk}_stoppedvalue',
+                label=f'Channel {channel} marker {mrk} stopped value',
+                set_cmd=f'OUTPut{channel}:SVALue:MARKer{mrk} {{}}',
+                get_cmd=f'OUTPut{channel}:SVALue:MARKer{mrk}?',
+                vals=vals.Enum('OFF', 'LOW'))
+
         ##################################################
         # MISC.
 
@@ -214,13 +284,28 @@ class AWGChannel(InstrumentChannel):
                            label='Channel {} bit resolution'.format(channel),
                            get_cmd='SOURce{}:DAC:RESolution?'.format(channel),
                            set_cmd='SOURce{}:DAC:RESolution {{}}'.format(channel),
-                           vals=vals.Enum(8, 9, 10),
+                           vals=vals.Enum(*_chan_resolutions[self.model]),
                            get_parser=int,
                            docstring=("""
                                       8 bit resolution allows for two
                                       markers, 9 bit resolution
                                       allows for one, and 10 bit
                                       does NOT allow for markers"""))
+
+    def _set_marker(self, channel: int, marker: int,
+                    high: bool, voltage: float) -> None:
+        """
+        Set the marker high/low value and update the low/high value
+        """
+        if high:
+            this = 'HIGH'
+            other = 'low'
+        else:
+            this = 'LOW'
+            other = 'high'
+
+        self.write(f'SOURce{channel}:MARKer{marker}:VOLTage:{this} {voltage}')
+        self.parameters[f'marker{marker}_{other}'].get()
 
     def _set_fgfreq(self, channel: int, frequency: float) -> None:
         """
@@ -239,8 +324,8 @@ class AWGChannel(InstrumentChannel):
                              'Hz, minimum is 1 Hz'.format(channel, frequency,
                                                           functype, max_freq))
         else:
-            self._parent.write('FGEN:CHANnel{}:FREQuency {}'.format(channel,
-                                                                    frequency))
+            self.root_instrument.write(f'FGEN:CHANnel{channel}:'
+                                       f'FREQuency {frequency}')
 
     def setWaveform(self, name: str) -> None:
         """
@@ -249,11 +334,10 @@ class AWGChannel(InstrumentChannel):
         Args:
             name: The name of the waveform
         """
-        if name not in self._parent.waveformList:
+        if name not in self.root_instrument.waveformList:
             raise ValueError('No such waveform in the waveform list')
 
-        self._parent.write('SOURce{}:CASSet:WAVeform "{}"'.format(self.channel,
-                                                                  name))
+        self.root_instrument.write(f'SOURce{self.channel}:CASSet:WAVeform "{name}"')
 
     def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
         """
@@ -263,8 +347,10 @@ class AWGChannel(InstrumentChannel):
             seqname: Name of the sequence in the sequence list
             tracknr: Which track to use (1 or 2)
         """
-        args = (self.channel, seqname, tracknr)
-        self._parent.write('SOURCE{}:CASSet:SEQuence "{}", {}'.format(*args))
+
+        self.root_instrument.write(f'SOURCE{self.channel}:'
+                                   f'CASSet:SEQuence "{seqname}"'
+                                   f', {tracknr}')
 
 
 class AWG70000A(VisaInstrument):
@@ -293,7 +379,7 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A']:
+        if self.model not in ['70001A', '70002A', '5208']:
             raise ValueError('Unknown model type: {}. Are you using '
                              'the right driver for your instrument?'
                              ''.format(self.model))
@@ -338,14 +424,32 @@ class AWG70000A(VisaInstrument):
                            unit='Hz',
                            vals=vals.Numbers(6.25e9, 12.5e9))
 
+        self.add_parameter('run_state',
+                           label='Run state',
+                           get_cmd='AWGControl:RSTATe?',
+                           val_mapping={'Stopped': '0',
+                                        'Waiting for trigger': '1',
+                                        'Running': '2'})
+
+        # We deem 2 channels too few for a channel list
+        if self.num_channels > 2:
+            chanlist = ChannelList(self, 'Channels', AWGChannel,
+                                   snapshotable=False)
+
         for ch_num in range(1, num_channels+1):
             ch_name = 'ch{}'.format(ch_num)
             channel = AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
+            if self.num_channels > 2:
+                chanlist.append(channel)
+
+        if self.num_channels > 2:
+            chanlist.lock()
+            self.add_submodule('channels', chanlist)
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
-        self.seqxFileFolder = "\\Users\\OEM\Documents"
+        self.seqxFileFolder = "\\Users\\OEM\\Documents"
 
         self.current_directory(self.wfmxFileFolder)
 
@@ -363,12 +467,37 @@ class AWG70000A(VisaInstrument):
         """
         self.write('TRIGger:IMMediate BTRigger')
 
-    def play(self) -> None:
+    def wait_for_operation_to_complete(self):
+        """
+        Waits for the latest issued overlapping command to finish
+        """
+        self.ask('*OPC?')
+
+    def play(self, wait_for_running: bool=True, timeout: float=10) -> None:
         """
         Run the AWG/Func. Gen. This command is equivalent to pressing the
         play button on the front panel.
+
+        Args:
+            wait_for_running: If True, this command is blocking while the
+                instrument is getting ready to play
+            timeout: The maximal time to wait for the instrument to play.
+                Raises an exception is this time is reached.
         """
         self.write('AWGControl:RUN')
+        if wait_for_running:
+            start_time = time.perf_counter()
+            running = False
+            while not running:
+                time.sleep(0.1)
+                running = self.run_state() in ('Running',
+                                               'Waiting for trigger')
+                waited_for = start_time - time.perf_counter()
+                if waited_for > timeout:
+                    raise RuntimeError(f'Reached timeout ({timeout} s) '
+                                       'while waiting for instrument to play.'
+                                       ' Perhaps some waveform or sequence is'
+                                       ' corrupt?')
 
     def stop(self) -> None:
         """
@@ -398,12 +527,22 @@ class AWG70000A(VisaInstrument):
         """
         Return the waveform list as a list of strings
         """
-        resp = self.ask("WLISt:LIST?")
-        resp = resp.strip()
-        resp = resp.replace('"', '')
-        resp = resp.split(',')
+        respstr = self.ask("WLISt:LIST?")
+        respstr = respstr.strip()
+        respstr = respstr.replace('"', '')
+        resp = respstr.split(',')
 
         return resp
+
+    def delete_sequence_from_list(self, seqname: str) -> None:
+        """
+        Delete the specified sequence from the sequence list
+
+        Args:
+            seqname: The name of the sequence (as it appears in the sequence
+                list, not the file name) to delete
+        """
+        self.write(f'SLISt:SEQuence:DELete "{seqname}"')
 
     def clearSequenceList(self):
         """
@@ -438,7 +577,7 @@ class AWG70000A(VisaInstrument):
         if len(shape) == 1:
             N = shape[0]
             markers_included = False
-        elif len(shape) == 2:
+        elif len(shape) in [2, 3, 4]:
             N = shape[1]
             markers_included = True
         else:
@@ -492,7 +631,7 @@ class AWG70000A(VisaInstrument):
         self._sendBinaryFile(wfmx, filename, path)
 
     def _sendBinaryFile(self, binfile: bytes, filename: str,
-                        path: str) -> None:
+                        path: str, overwrite: bool=True) -> None:
         """
         Send a binary file to the AWG's mass memory (disk).
 
@@ -501,6 +640,7 @@ class AWG70000A(VisaInstrument):
             filename: The name of the file on the AWG disk, including the
                 extension.
             path: The path to the directory where the file should be saved.
+            overwite: If true, the file on disk gets overwritten
         """
 
         name_str = 'MMEMory:DATA "{}"'.format(filename).encode('ascii')
@@ -516,6 +656,14 @@ class AWG70000A(VisaInstrument):
             raise ValueError('File too large to transfer')
 
         self.current_directory(path)
+
+        if overwrite:
+            log.debug(f'Pre-deleting file {filename} at {path}')
+            self.visa_handle.write(f'MMEMory:DELete "{filename}"')
+            # if the file does not exist,
+            # an error code -256 is put in the error queue
+            resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
+            log.debug(f'Pre-deletion finished with return code {resp}')
 
         self.visa_handle.write_raw(msg)
 
@@ -545,7 +693,7 @@ class AWG70000A(VisaInstrument):
         are loaded into the sequence list.
 
         Args:
-            filename: The name of the sequence file
+            filename: The name of the sequence file INCLUDING the extension
             path: Path to load from. If omitted, the default path
                 (self.seqxFileFolder) is used.
         """
@@ -660,8 +808,8 @@ class AWG70000A(VisaInstrument):
 
         Args:
             data: Either a shape (N,) array with only a waveform or
-                a shape (3, N) array with waveform, marker1, marker2, i.e.
-                data = np.array([wfm, m1, m2]). The waveform data is assumed
+                a shape (M, N) array with waveform, marker1, marker2, marker3, i.e.
+                data = np.array([wfm, m1, ...]). The waveform data is assumed
                 to be in V.
             amplitude: The peak-to-peak amplitude (V) assumed to be set on the
                 channel that will play this waveform. This information is
@@ -683,13 +831,10 @@ class AWG70000A(VisaInstrument):
             N = shape[1]
             M = shape[0]
             wfm = data[0, :]
-            if M == 2:
-                markers = data[1, :]
-            elif M == 3:
-                m1 = data[1, :]
-                m2 = data[2, :]
-                markers = m1+2*m2  # This is how one byte encodes both markers
-                markers = markers.astype(int)
+            markers = data[1, :]
+            for i in range(1, M-1):
+                markers += data[i+1, :] * (2**i)
+            markers = markers.astype(int)
             fmt = N*'B'  # endian-ness doesn't matter for one byte
             binary_marker = struct.pack(fmt, *markers)
 
@@ -712,6 +857,202 @@ class AWG70000A(VisaInstrument):
         binary_out = binary_wfm + binary_marker
 
         return binary_out
+
+    @staticmethod
+    def make_SEQX_from_forged_sequence(
+            seq: Dict[int, Dict],
+            amplitudes: List[float],
+            seqname: str,
+            channel_mapping: Optional[Dict[Union[str, int],
+                                           int]]=None) -> bytes:
+        """
+        Make a .seqx from a forged broadbean sequence.
+        Supports subsequences.
+
+        Args:
+            seq: The output of broadbean's Sequence.forge()
+            amplitudes: A list of the AWG channels' voltage amplitudes.
+                The first entry is ch1 etc.
+            channel_mapping: A mapping from what the channel is called
+                in the broadbean sequence to the integer describing the
+                physical channel it should be assigned to.
+            seqname: The name that the sequence will have in the AWG's
+                sequence list. Used for loading the sequence.
+
+        Returns:
+            The binary .seqx file contents. Can be sent directly to the
+                instrument or saved on disk.
+        """
+
+        try:
+            fs_schema.validate(seq)
+        except Exception as e:
+            raise InvalidForgedSequenceError(e)
+
+        chan_list: List[Union[str, int]] = []
+        for pos1 in seq.keys():
+            for pos2 in seq[pos1]['content'].keys():
+                for ch in seq[pos1]['content'][pos2]['data'].keys():
+                    if ch not in chan_list:
+                        chan_list.append(ch)
+
+        if channel_mapping is None:
+            channel_mapping = {ch: ch_ind+1
+                               for ch_ind, ch in enumerate(chan_list)}
+
+        if len(set(chan_list)) != len(amplitudes):
+            raise ValueError('Incorrect number of amplitudes provided.')
+
+        if set(chan_list) != set(channel_mapping.keys()):
+            raise ValueError(f'Invalid channel_mapping. The sequence has '
+                             f'channels {set(chan_list)}, but the '
+                             'channel_mapping maps from the channels '
+                             f'{set(channel_mapping.keys())}')
+
+        if set(channel_mapping.values()) != set(range(1, 1+len(chan_list))):
+            raise ValueError('Invalid channel_mapping. Must map onto '
+                             f'{list(range(1, 1+len(chan_list)))}')
+
+        ##########
+        # STEP 1:
+        # Make all .wfmx files
+
+        wfmx_files: List[bytes] = []
+        wfmx_filenames: List[str] = []
+
+        for pos1 in seq.keys():
+            for pos2 in seq[pos1]['content'].keys():
+                for ch, data in seq[pos1]['content'][pos2]['data'].items():
+                    wfm = data['wfm']
+
+                    markerdata = []
+                    for mkey in ['m1', 'm2', 'm3', 'm4']:
+                        if mkey in data.keys():
+                            markerdata.append(data.get(mkey))
+                    wfm_data = np.stack((wfm, *markerdata))
+
+                    awgchan = channel_mapping[ch]
+                    wfmx = AWG70000A.makeWFMXFile(wfm_data,
+                                                  amplitudes[awgchan-1])
+                    wfmx_files.append(wfmx)
+                    wfmx_filenames.append(f'wfm_{pos1}_{pos2}_{awgchan}')
+
+        ##########
+        # STEP 2:
+        # Make all subsequence .sml files
+
+        print('Waveforms done')
+        print(wfmx_filenames)
+
+        subseqsml_files: List[str] = []
+        subseqsml_filenames: List[str] = []
+
+        for pos1 in seq.keys():
+            if seq[pos1]['type'] == 'subsequence':
+
+                ss_wfm_names: List[List[str]] = []
+
+                # we need to "flatten" all the individual dicts of element
+                # sequence options into one dict of lists of sequencing options
+                # and we must also provide default values if nothing
+                # is specified
+                seqings: List[Dict[str, int]] = []
+                for pos2 in (seq[pos1]['content'].keys()):
+                    pos_seqs = seq[pos1]['content'][pos2]['sequencing']
+                    pos_seqs['twait'] = pos_seqs.get('twait', 0)
+                    pos_seqs['nrep'] = pos_seqs.get('nrep', 1)
+                    pos_seqs['jump_input'] = pos_seqs.get('jump_input', 0)
+                    pos_seqs['jump_target'] = pos_seqs.get('jump_target', 0)
+                    pos_seqs['goto'] = pos_seqs.get('goto', 0)
+                    seqings.append(pos_seqs)
+
+                    ss_wfm_names.append([n for n in wfmx_filenames
+                                         if f'wfm_{pos1}_{pos2}' in n])
+
+                seqing = {k: [d[k] for d in seqings]
+                          for k in seqings[0].keys()}
+
+                subseqname = f'subsequence_{pos1}'
+
+                print(ss_wfm_names)
+
+                subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
+                                                   nreps=seqing['nrep'],
+                                                   event_jumps=seqing['jump_input'],
+                                                   event_jump_to=seqing['jump_target'],
+                                                   go_to=seqing['goto'],
+                                                   elem_names=ss_wfm_names,
+                                                   seqname=subseqname,
+                                                   chans=len(channel_mapping))
+
+                subseqsml_files.append(subseqsml)
+                subseqsml_filenames.append(f'{subseqname}')
+
+        ##########
+        # STEP 3:
+        # Make the main .sml file
+
+        asset_names: List[List[str]] = []
+        seqings = []
+        subseq_positions: List[int] = []
+        for pos1 in seq.keys():
+            pos_seqs = seq[pos1]['sequencing']
+
+            pos_seqs['twait'] = pos_seqs.get('twait', 0)
+            pos_seqs['nrep'] = pos_seqs.get('nrep', 1)
+            pos_seqs['jump_input'] = pos_seqs.get('jump_input', 0)
+            pos_seqs['jump_target'] = pos_seqs.get('jump_target', 0)
+            pos_seqs['goto'] = pos_seqs.get('goto', 0)
+            seqings.append(pos_seqs)
+            if seq[pos1]['type'] == 'subsequence':
+                subseq_positions.append(pos1)
+                asset_names.append([sn for sn in subseqsml_filenames
+                                    if f'_{pos1}' in sn])
+            else:
+                asset_names.append([wn for wn in wfmx_filenames
+                                    if f'wfm_{pos1}' in wn])
+        seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
+
+        print('True debug')
+        print(asset_names)
+
+        mainseqname = seqname
+        mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
+                                            nreps=seqing['nrep'],
+                                            event_jumps=seqing['jump_input'],
+                                            event_jump_to=seqing['jump_target'],
+                                            go_to=seqing['goto'],
+                                            elem_names=asset_names,
+                                            seqname=mainseqname,
+                                            chans=len(channel_mapping),
+                                            subseq_positions=subseq_positions)
+
+        ##########
+        # STEP 4:
+        # Build the .seqx file
+
+        user_file = b''
+        setup_file = AWG70000A._makeSetupFile(mainseqname)
+
+        buffer = io.BytesIO()
+
+        zipfile = zf.ZipFile(buffer, mode='a')
+        for ssn, ssf in zip(subseqsml_filenames, subseqsml_files):
+            zipfile.writestr(f'Sequences/{ssn}.sml', ssf)
+        zipfile.writestr(f'Sequences/{mainseqname}.sml', mainseqsml)
+
+        for (name, wfile) in zip(wfmx_filenames, wfmx_files):
+            zipfile.writestr('Waveforms/{}.wfmx'.format(name), wfile)
+
+        zipfile.writestr('setup.xml', setup_file)
+        zipfile.writestr('userNotes.txt', user_file)
+        zipfile.close()
+
+        buffer.seek(0)
+        seqx = buffer.getvalue()
+        buffer.close()
+
+        return seqx
 
     @staticmethod
     def makeSEQXFile(trig_waits: Sequence[int],
@@ -768,24 +1109,25 @@ class AWG70000A(VisaInstrument):
         # input sanitising to avoid spaces in filenames
         seqname = seqname.replace(' ', '_')
 
-        # np.shape(wfms) returns
-        # (no_of_chans, no_of_elms, no_of_arrays, no_of_points)
-        # where no_of_arrays is 3 if both markers are included
-        (chans, elms) = np.shape(wfms)[0: 2]
-        wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
-                     for ch in range(1, chans+1)]
+        (chans, elms) = (len(wfms), len(wfms[0]))
+        wfm_names = [[f'wfmch{ch}pos{el}' for ch in range(1, chans+1)]
+                     for el in range(1, elms+1)]
 
         # generate wfmx files for the waveforms
-        flat_wfmxs = []
+        flat_wfmxs = [] # type: List[bytes]
         for amplitude, wfm_lst in zip(amplitudes, wfms):
             flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
                            for wfm in wfm_lst]
 
-        flat_wfm_names = [name for lst in wfm_names for name in lst]
+        # This unfortunately assumes no subsequences
+        flat_wfm_names = list(np.reshape(np.array(wfm_names).transpose(),
+                                         (chans*elms,)))
 
         sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
                                           event_jumps, event_jump_to,
-                                          go_to, wfm_names, seqname)
+                                          go_to, wfm_names,
+                                          seqname,
+                                          chans)
 
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seqname)
@@ -845,8 +1187,10 @@ class AWG70000A(VisaInstrument):
                      event_jumps: Sequence[int],
                      event_jump_to: Sequence[int],
                      go_to: Sequence[int],
-                     wfm_names: Sequence[Sequence[str]],
-                     seqname: str) -> str:
+                     elem_names: Sequence[Sequence[str]],
+                     seqname: str,
+                     chans: int,
+                     subseq_positions: List[int]=[]) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -861,14 +1205,23 @@ class AWG70000A(VisaInstrument):
             event_jump_to: Jump target in case of event. 1-indexed,
                 0 means next. Must be specified for all elements.
             go_to: Which element to play next. 1-indexed, 0 means next.
-            wfm_names: The waveforms to use. Should be packed like
-                [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+            elem_names: The waveforms/subsequences to use. Should be packed
+                like:
+                [[wfmpos1ch1, wfmpos1ch2, ...],
+                 [subseqpos2],
+                 [wfmpos3ch1, wfmpos3ch2, ...], ...]
             seqname: The name of the sequence. This name will appear in
                 the sequence list of the instrument.
+            chans: The number of channels. Can not be inferred in the case
+                of a sequence containing only subsequences, so must be provided
+                up front.
+            subseq_positions: The positions (step numbers) occupied by
+                subsequences
 
         Returns:
             A str containing the file contents, to be saved as an .sml file
         """
+
         offsetdigits = 9
 
         waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
@@ -882,19 +1235,11 @@ class AWG70000A(VisaInstrument):
         if lstlens[0] == 0:
             raise ValueError('Received empty sequence option lengths!')
 
-        # hackish check of wmfs dimensions
-        if len(np.shape(wfm_names)) != 2:
-            raise ValueError('Wrong shape of wfm_names input argument.')
-
-        if lstlens[0] != np.shape(wfm_names)[1]:
+        if lstlens[0] != np.shape(elem_names)[0]:
             raise ValueError('Mismatch between number of waveforms and'
                              ' number of sequencing steps.')
 
         N = lstlens[0]
-        chans = np.shape(wfm_names)[0]
-
-        # for easy indexing later
-        wfm_names_arr = np.array(wfm_names)
 
         # form the timestamp string
         timezone = time.timezone
@@ -981,12 +1326,15 @@ class AWG70000A(VisaInstrument):
                 gotostep.text = '{:d}'.format(go_to[n-1])
 
             assets = ET.SubElement(step, 'Assets')
-            for wfm in wfm_names_arr[:, n-1]:
+            for assetname in elem_names[n-1]:
                 asset = ET.SubElement(assets, 'Asset')
                 temp_elem = ET.SubElement(asset, 'AssetName')
-                temp_elem.text = wfm
+                temp_elem.text = assetname
                 temp_elem = ET.SubElement(asset, 'AssetType')
-                temp_elem.text = 'Waveform'
+                if n in subseq_positions:
+                    temp_elem.text = 'Sequence'
+                else:
+                    temp_elem.text = 'Waveform'
 
             flags = ET.SubElement(step, 'Flags')
             for _ in range(chans):
@@ -1000,6 +1348,9 @@ class AWG70000A(VisaInstrument):
         temp_elem.set('name', '')
         temp_elem = ET.SubElement(datafile, 'Setup')
 
+        # the tostring() call takes roughly 75% of the total
+        # time spent in this function. Can we speed up things?
+        # perhaps we should use lxml?
         xmlstr = ET.tostring(datafile, encoding='unicode')
         xmlstr = xmlstr.replace('><', '>\r\n<')
 

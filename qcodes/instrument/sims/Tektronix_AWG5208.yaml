@@ -1,0 +1,25 @@
+# SIMULATED INSTRUMENT FOR TEKTRONIX AWG 5208
+spec: "1.0"
+
+devices:
+  device 1:  # AWG5208
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, AWG5208, 1000, 0.1"
+    properties:
+      current_directory:
+        default: "\\Users\\OEM\\Documents"
+        getter:
+          q: "MMEMory:CDIRectory?"
+          r: "{}"
+        setter:
+          q: "MMEMory:CDIRectory {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
