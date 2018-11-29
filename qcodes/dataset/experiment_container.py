@@ -14,7 +14,7 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         get_experiment_name_from_experiment_id,
                                         get_runid_from_expid_and_counter,
                                         get_sample_name_from_experiment_id,
-                                        SomeConnection)
+                                        ConnectionPlus)
 from qcodes.dataset.sqlite_base import new_experiment as ne
 from qcodes.dataset.database import get_DB_location, get_DB_debug
 
@@ -28,7 +28,7 @@ class Experiment(Sized):
                  name: Optional[str]=None,
                  sample_name: Optional[str]=None,
                  format_string: str="{}-{}-{}",
-                 conn: Optional[SomeConnection]=None) -> None:
+                 conn: Optional[ConnectionPlus]=None) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -204,7 +204,7 @@ def experiments()->List[Experiment]:
 def new_experiment(name: str,
                    sample_name: str,
                    format_string: Optional[str]="{}-{}-{}",
-                   conn: Optional[SomeConnection]=None) -> Experiment:
+                   conn: Optional[ConnectionPlus]=None) -> Experiment:
     """
     Create a new experiment (in the database file from config)
 
@@ -254,7 +254,7 @@ def load_last_experiment() -> Experiment:
 
 def load_experiment_by_name(name: str,
                             sample: Optional[str] = None,
-                            conn: Optional[SomeConnection]=None) -> Experiment:
+                            conn: Optional[ConnectionPlus]=None) -> Experiment:
     """
     Try to load experiment with the specified name.
 
@@ -315,7 +315,7 @@ def load_experiment_by_name(name: str,
 
 def load_or_create_experiment(experiment_name: str,
                               sample_name: Optional[str] = None,
-                              conn: Optional[SomeConnection]=None)->Experiment:
+                              conn: Optional[ConnectionPlus]=None)->Experiment:
     """
     Find and return an experiment with the given name and sample name,
     or create one if not found.

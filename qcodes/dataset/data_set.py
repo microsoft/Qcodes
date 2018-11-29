@@ -911,7 +911,7 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int, conn: Optional[SomeConnection]=None) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load dataset by run id
 
@@ -934,7 +934,7 @@ def load_by_id(run_id: int, conn: Optional[SomeConnection]=None) -> DataSet:
     return d
 
 
-def load_by_guid(guid: str, conn: Optional[SomeConnection]=None) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load a dataset by its GUID
 
@@ -964,7 +964,7 @@ def load_by_guid(guid: str, conn: Optional[SomeConnection]=None) -> DataSet:
 
 
 def load_by_counter(counter: int, exp_id: int,
-                    conn: Optional[SomeConnection]=None) -> DataSet:
+                    conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 

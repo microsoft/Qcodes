@@ -21,7 +21,7 @@ from qcodes.dataset.sqlite_base import (add_meta_data,
                                         mark_run_complete,
                                         new_experiment,
                                         select_many_where,
-                                        SomeConnection,
+                                        ConnectionPlus,
                                         sql_placeholder_string)
 
 
@@ -123,7 +123,7 @@ def extract_runs_into_db(source_db_path: str,
         target_conn.close()
 
 
-def _create_exp_if_needed(target_conn: SomeConnection,
+def _create_exp_if_needed(target_conn: ConnectionPlus,
                           exp_name: str,
                           sample_name: str,
                           fmt_str: str,
@@ -161,7 +161,7 @@ def _create_exp_if_needed(target_conn: SomeConnection,
 
 
 def _extract_single_dataset_into_db(dataset: DataSet,
-                                    target_conn: SomeConnection,
+                                    target_conn: ConnectionPlus,
                                     target_exp_id: int) -> None:
     """
     NB: This function should only be called from within
@@ -215,8 +215,8 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
 
 
-def _populate_results_table(source_conn: SomeConnection,
-                            target_conn: SomeConnection,
+def _populate_results_table(source_conn: ConnectionPlus,
+                            target_conn: ConnectionPlus,
                             source_table_name: str,
                             target_table_name: str) -> None:
     """
@@ -242,7 +242,7 @@ def _populate_results_table(source_conn: SomeConnection,
         target_cursor.execute(insert_data_query, values)
 
 
-def _rewrite_timestamps(target_conn: SomeConnection, target_run_id: int,
+def _rewrite_timestamps(target_conn: ConnectionPlus, target_run_id: int,
                         correct_run_timestamp: float,
                         correct_completed_timestamp: float) -> None:
     """
