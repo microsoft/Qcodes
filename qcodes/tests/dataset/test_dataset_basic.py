@@ -633,10 +633,10 @@ def test_get_parameter_data(scalar_dataset):
         for i_param, param_name in enumerate(param_names):
             v_ref = row[i_param]
             v_test = dut[param_name][i_row]
-            if type(v_ref) == float:
-                assert type(v_test) == np.float64
-            elif type(v_ref) == int:
-                assert type(v_test) == np.int
+            if isinstance(v_ref, float):
+                assert isinstance(v_test, np.float64)
+            elif isinstance(v_ref, int):
+                assert isinstance(v_test, np.int)
             else:
                 raise RuntimeError('Unsupported data type')
             assert np.isclose(v_test, v_ref)

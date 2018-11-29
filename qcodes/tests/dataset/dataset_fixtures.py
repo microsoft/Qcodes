@@ -3,7 +3,7 @@ import numpy as np
 from qcodes.dataset.param_spec import ParamSpec
 
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import dataset 
+from qcodes.tests.dataset.temporary_databases import dataset
 # pylint: enable=unused-import
 
 
