@@ -518,6 +518,20 @@ class DataSet(Sized):
         # `add_meta_data` does not commit, hence we commit here:
         self.conn.commit()
 
+    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+        """
+        Adds a snapshot to this run
+
+        Args:
+            snapshot: the raw JSON dump of the snapshot
+            overwrite: force overwrite an existing snapshot
+        """
+        if self.snapshot is None or overwrite:
+            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+        elif self.snapshot is not None and not overwrite:
+            log.warning('This dataset already has a snapshot. Use overwrite'
+                        '=True to overwrite that')
+
     @property
     def started(self) -> bool:
         return self._started
