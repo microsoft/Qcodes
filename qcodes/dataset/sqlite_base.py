@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import time
 import io
+import warnings
 from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
                     Sequence, DefaultDict)
 import itertools
@@ -1129,7 +1130,12 @@ def get_data(conn: SomeConnection,
     Returns:
         the data requested in the format of list of rows of values
     """
-
+    if len(columns) == 0:
+        warnings.warn(
+            'get_data: requested data without specifying parameters/columns.'
+            'Returning empyt list.'
+        )
+        return [[]]
     query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
