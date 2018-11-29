@@ -408,11 +408,13 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
 
-def test_old_versions_not_touched(two_empty_temp_db_connections):
+def test_old_versions_not_touched(two_empty_temp_db_connections,
+                                  some_paramspecs):
 
-    _, target_conn = two_empty_temp_db_connections
+    source_conn, target_conn = two_empty_temp_db_connections
 
     target_path = path_to_dbfile(target_conn)
+    source_path = path_to_dbfile(source_conn)
 
     fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
     fixturepath = os.path.join(fixturepath,
@@ -421,6 +423,9 @@ def test_old_versions_not_touched(two_empty_temp_db_connections):
     if not os.path.exists(fixturepath):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
+
+    # First test that we can not use an old version as source
+
     with raise_if_file_changed(fixturepath):
         with pytest.warns(UserWarning) as warning:
             extract_runs_into_db(fixturepath, target_path, 1)
@@ -431,6 +436,27 @@ def test_old_versions_not_touched(two_empty_temp_db_connections):
                              'the source DB file.')
             assert warning[0].message.args[0] == expected_mssg
 
+    # Then test that we can not use an old version as target
+
+    # first create a run in the new version source
+    source_exp = Experiment(conn=source_conn)
+    source_ds = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
+
+    for ps in some_paramspecs[2].values():
+        source_ds.add_parameter(ps)
+    source_ds.add_result({ps.name: 0.0
+                              for ps in some_paramspecs[2].values()})
+    source_ds.mark_complete()
+
+    with raise_if_file_changed(fixturepath):
+        with pytest.warns(UserWarning) as warning:
+            extract_runs_into_db(source_path, fixturepath, 1)
+            expected_mssg = ('Target DB version is 2, but this '
+                             'function needs it to be in version 3. '
+                             'Run this function again with '
+                             'upgrade_target_db=True to auto-upgrade '
+                             'the target DB file.')
+            assert warning[0].message.args[0] == expected_mssg
 
 def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
                                            some_paramspecs):
