@@ -190,6 +190,12 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
+def test_get_data_no_columns(scalar_dataset):
+    ds = scalar_dataset
+    ref = mut.get_data(ds.conn, ds.table_name, [])
+    assert ref == [[]]
+
+
 def test_get_parameter_data(scalar_dataset):
     ds = scalar_dataset
     params = ds.parameters.split(',')
