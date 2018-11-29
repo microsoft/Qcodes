@@ -867,11 +867,9 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
-            'CLOCK_SOURCE': (1 if self.ask('AWGControl:CLOCk:' +
-                                           'SOURce?').startswith('INT')
+            'CLOCK_SOURCE': (1 if self.clock_source().startswith('INT')
                              else 2),  # Internal | External
-            'REFERENCE_SOURCE': (1 if self.ask('SOURce1:ROSCillator:' +
-                                               'SOURce?').startswith('INT')
+            'REFERENCE_SOURCE': (1 if self.ref_source().startswith('INT')
                                  else 2),  # Internal | External
             'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
             'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,
@@ -1025,12 +1023,11 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return AWG_channel_cfg
 
-
     def _generate_awg_file(self,
-                          packed_waveforms, wfname_l, nrep, trig_wait,
-                          goto_state, jump_to, channel_cfg,
-                          sequence_cfg=None,
-                          preservechannelsettings=False):
+                           packed_waveforms, wfname_l, nrep, trig_wait,
+                           goto_state, jump_to, channel_cfg,
+                           sequence_cfg=None,
+                           preservechannelsettings=False):
         """
         This function generates an .awg-file for uploading to the AWG.
         The .awg-file contains a waveform list, full sequencing information
@@ -1170,7 +1167,7 @@ class Tektronix_AWG5014(VisaInstrument):
     @deprecate(alternative='make_awg_file, _generate_awg_file')
     @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
     def generate_awg_file(self, *args, **kwargs):
-        self._generate_awg_file(*args, **kwargs)
+        return self._generate_awg_file(*args, **kwargs)
 
     def send_awg_file(self, filename, awg_file, verbose=False):
         """
@@ -1187,7 +1184,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         if verbose:
             print('Writing to:',
-                  self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
+                  self.ask('MMEMory:CDIRectory?').replace('\n', '\\ '),
                   filename)
         # Header indicating the name and size of the file being send
         name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')
@@ -1273,9 +1270,11 @@ class Tektronix_AWG5014(VisaInstrument):
                 else:
                     thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
                 namelist.append(thisname)
-                package = self.pack_waveform(waveforms[ii][jj],
-                                             m1s[ii][jj],
-                                             m2s[ii][jj])
+
+                package = self._pack_waveform(waveforms[ii][jj],
+                                              m1s[ii][jj],
+                                              m2s[ii][jj])
+
                 packed_wfs[thisname] = package
             waveform_names.append(namelist)
 
@@ -1485,7 +1484,7 @@ class Tektronix_AWG5014(VisaInstrument):
     @deprecate(reason='this function is for private use only.')
     @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
     def pack_waveform(self, *args, **kwargs):
-        self._pack_waveform(*args, **kwargs)
+        return self._pack_waveform(*args, **kwargs)
 
     ###########################
     # Waveform file functions #

@@ -1,0 +1,90 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:  # It seems that pyvisa-sim cannot find a TCPIP instrument unless it's actually there..?
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "IDN:OXFORD INSTRUMENTS:SIMULATED MERCURY iPS:000:000"
+
+    properties:
+
+      x field target:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPX:PSU:SIG:FSET"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPX:PSU:SIG:FSET:{}"
+          r: ""  # response is needed, since the instrument actually responds to sets
+
+      x field:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPX:PSU:SIG:FLD"
+          r: "{}"
+
+      y field target:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPY:PSU:SIG:FSET"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPY:PSU:SIG:FSET:{}"
+          r: ""  # response is needed, since the instrument actually responds to sets
+
+      y field:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPY:PSU:SIG:FLD"
+          r: "{}"
+
+      z field target:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPZ:PSU:SIG:FSET"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPZ:PSU:SIG:FSET:{}"
+          r: ""  # response is needed, since the instrument actually responds to sets
+
+      z field:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPZ:PSU:SIG:FLD"
+          r: "{}"
+
+      x ramp status:
+        default: "HOLD"
+        getter:
+          q: "READ:DEV:GRPX:PSU:ACTN"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPX:PSU:ACTN:{}"
+          r: ""
+
+      y ramp status:
+        default: "HOLD"
+        getter:
+          q: "READ:DEV:GRPY:PSU:ACTN"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPY:PSU:ACTN:{}"
+          r: ""
+
+      z ramp status:
+        default: "HOLD"
+        getter:
+          q: "READ:DEV:GRPZ:PSU:ACTN"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPZ:PSU:ACTN:{}"
+          r: ""
+
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

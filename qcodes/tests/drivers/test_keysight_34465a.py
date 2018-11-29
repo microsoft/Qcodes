@@ -8,7 +8,7 @@ visalib = sims.__file__.replace('__init__.py', 'Keysight_34465A.yaml@sim')
 @pytest.fixture(scope='function')
 def driver():
     keysight_sim = Keysight_34465A('keysight_34465A_sim',
-                                   address='GPIB::1::65535::INSTR',
+                                   address='GPIB::1::INSTR',
                                    visalib=visalib)
 
     yield keysight_sim
