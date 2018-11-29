@@ -581,3 +581,48 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
         # RuntimeError from SQLite
         with pytest.raises(RuntimeError):
             extract_runs_into_db(source_path, target_path, 1, 2)
+
+
+def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs):
+    """
+    Test insertion of runs with no metadata and no snapshot into a DB already
+    containing a run that has both
+    """
+
+    source_conn, target_conn = two_empty_temp_db_connections
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    target_exp = Experiment(conn=target_conn)
+
+    # Set up measurement scenario
+    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
+    station = Station(inst)
+
+    meas = Measurement(exp=target_exp, station=station)
+    meas.register_parameter(inst.back)
+    meas.register_parameter(inst.plunger)
+    meas.register_parameter(inst.cutter, setpoints=(inst.back, inst.plunger))
+
+    with meas.run() as datasaver:
+        for back_v in [1, 2, 3]:
+            for plung_v in [-3, -2.5, 0]:
+                datasaver.add_result((inst.back, back_v),
+                                     (inst.plunger, plung_v),
+                                     (inst.cutter, back_v+plung_v))
+    datasaver.dataset.add_metadata('meta_tag', 'meta_value')
+
+    Experiment(conn=source_conn)
+    source_ds = DataSet(conn=source_conn)
+    for ps in some_paramspecs[2].values():
+        source_ds.add_parameter(ps)
+    source_ds.add_result({ps.name: 2.1
+                          for ps in some_paramspecs[2].values()})
+    source_ds.mark_complete()
+
+    extract_runs_into_db(source_path, target_path, 1)
+
+    # compare
+    target_copied_ds = DataSet(conn=target_conn, run_id=2)
+
+    assert target_copied_ds.the_same_dataset_as(source_ds)
