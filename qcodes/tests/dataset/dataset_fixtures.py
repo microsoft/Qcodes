@@ -79,3 +79,22 @@ def array_in_scalar_dataset(experiment):
         yield datasaver.dataset
     finally:
         datasaver.dataset.conn.close()
+
+
+@pytest.fixture
+def array_in_str_dataset(experiment):
+    meas = Measurement()
+    scalar_param = Parameter('scalarparam', set_cmd=None)
+    param = ArraySetPointParam()
+    meas.register_parameter(scalar_param, paramtype='text')
+    meas.register_parameter(param, setpoints=(scalar_param,))
+
+    with meas.run() as datasaver:
+        for i in ['A', 'B', 'C']:
+            scalar_param.set(i)
+            datasaver.add_result((scalar_param, scalar_param.get()),
+                                 (param, param.get()))
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
