@@ -355,12 +355,13 @@ class Config:
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
-    def describe(self, name):
+    def describe(self, name: str) -> str:
         """
         Describe a configuration entry
 
         Args:
-            name (str): name of entry to describe
+            name: name of entry to describe in 'dotdict' notation,
+              e.g. name="user.scriptfolder"
         """
         val = self.current_config
         sch = self.current_schema["properties"]
