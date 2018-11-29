@@ -1,5 +1,6 @@
 from typing import Union
 from warnings import warn
+import os
 
 import numpy as np
 
@@ -26,7 +27,8 @@ from qcodes.dataset.sqlite_base import (add_meta_data,
 
 def extract_runs_into_db(source_db_path: str,
                          target_db_path: str, *run_ids: int,
-                         upgrade_source_db: bool=False) -> None:
+                         upgrade_source_db: bool=False,
+                         upgrade_target_db: bool=False) -> None:
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name
@@ -48,6 +50,15 @@ def extract_runs_into_db(source_db_path: str,
              f' in version {new_v}. Run this function again with '
              'upgrade_source_db=True to auto-upgrade the source DB file.')
         return
+
+    if os.path.exists(target_db_path):
+        (t_v, new_v) = get_db_version_and_newest_available_version(target_db_path)
+        if t_v < new_v and not upgrade_target_db:
+            warn(f'Target DB version is {t_v}, but this function needs it to '
+                 f'be in version {new_v}. Run this function again with '
+                 'upgrade_target_db=True to auto-upgrade the target DB file.')
+            return
+
 
     source_conn = connect(source_db_path)
 
