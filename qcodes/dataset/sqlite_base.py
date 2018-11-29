@@ -1285,14 +1285,14 @@ def get_runid_from_guid(conn: SomeConnection, guid: str) -> Union[int, None]:
     Get the run_id of a run based on the guid
 
     Args:
-      conn: connection to the database
-      guid: the guid to look up
+        conn: connection to the database
+        guid: the guid to look up
 
     Returns:
         The run_id if found, else -1.
 
     Raises:
-      RuntimeError if more than one run with the given GUID exists
+        RuntimeError if more than one run with the given    GUID exists
     """
     query = """
             SELECT run_id
