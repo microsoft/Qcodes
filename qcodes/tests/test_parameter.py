@@ -1,7 +1,8 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple, Iterable
+from collections import namedtuple
+from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
@@ -182,7 +183,7 @@ class TestParameter(TestCase):
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
-        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
         self.assertTrue(hasattr(gettable_parameter, 'get'))
         self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
@@ -191,14 +192,14 @@ class TestParameter(TestCase):
         self.assertIsNone(gettable_parameter())
 
         # Create parameter that saves value during set, and has no get_cmd
-        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
         self.assertFalse(hasattr(settable_parameter, 'get'))
         self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
             settable_parameter()
         settable_parameter(42)
 
-        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
         self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
         self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
         self.assertIsNone(settable_gettable_parameter())
@@ -220,6 +221,15 @@ class TestParameter(TestCase):
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
+
+    def test_bad_name(self):
+        with self.assertRaises(ValueError):
+            Parameter('p with space')
+        with self.assertRaises(ValueError):
+            Parameter('⛄')
+        with self.assertRaises(ValueError):
+            Parameter('1')
+
 
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
@@ -564,6 +574,7 @@ class TestArrayParameter(TestCase):
         self.assertEqual(p.unit, unit)
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_full_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
         self.assertEqual(p._get_count, 0)
@@ -601,14 +612,25 @@ class TestArrayParameter(TestCase):
     def test_full_name(self):
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
-            p = SimpleArrayParam([6, 7], 'fred', (2,))
+            p = SimpleArrayParam([6, 7], 'fred', (2,),
+                                 setpoint_names=('barney',))
             p._instrument = instrument
             self.assertEqual(str(p), 'fred')
+            self.assertEqual(p.setpoint_full_names, ('barney',))
 
-        # and finally an instrument that really has a name
-        p = SimpleArrayParam([6, 7], 'wilma', (2,))
+        # and then an instrument that really has a name
+        p = SimpleArrayParam([6, 7], 'wilma', (2,),
+                             setpoint_names=('betty',))
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_wilma')
+        self.assertEqual(p.setpoint_full_names, ('astro_betty',))
+
+        # and with a 2d parameter to test mixed setpoint_names
+        p = SimpleArrayParam([[6, 7, 8], [1, 2, 3]], 'wilma', (3, 2),
+                             setpoint_names=('betty', None))
+        p._instrument = named_instrument
+        self.assertEqual(p.setpoint_full_names, ('astro_betty', None))
+
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -709,6 +731,9 @@ class TestMultiParameter(TestCase):
         self.assertEqual(p.units, units)
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
+        # as the parameter is not attached to an instrument the full names are
+        # equivalent to the setpoint_names
+        self.assertEqual(p.setpoint_full_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
         self.assertEqual(p._get_count, 0)
@@ -751,24 +776,33 @@ class TestMultiParameter(TestCase):
     def test_full_name_s(self):
         name = 'mixed_dimensions'
         names = ['0D', '1D', '2D']
+        setpoint_names = ((),
+                          ('setpoints_1D',),
+                          ('setpoints_2D_1',
+                           None))
         shapes = ((), (3,), (2, 2))
 
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
             p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                                 name, names, shapes)
+                                 name, names, shapes,
+                                 setpoint_names=setpoint_names)
             p._instrument = instrument
             self.assertEqual(str(p), name)
-
             self.assertEqual(p.full_names, names)
+            self.assertEqual(p.setpoint_full_names,
+                             ((), ('setpoints_1D',), ('setpoints_2D_1', None)))
 
         # and finally an instrument that really has a name
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                             name, names, shapes)
+                             name, names, shapes, setpoint_names=setpoint_names)
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_mixed_dimensions')
 
         self.assertEqual(p.full_names, ['astro_0D', 'astro_1D', 'astro_2D'])
+        self.assertEqual(p.setpoint_full_names,
+                         ((), ('astro_setpoints_1D',),
+                          ('astro_setpoints_2D_1', None)))
 
     def test_constructor_errors(self):
         bad_constructors = [

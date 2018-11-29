@@ -129,25 +129,29 @@ class MatPlot(BasePlot):
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
-    def add_to_plot(self, use_offset=False, **kwargs):
+    def add_to_plot(self, use_offset: bool=False, **kwargs):
         """
         adds one trace to this MatPlot.
 
         Args:
-            use_offset (bool, Optional): Whether or not ticks can have an offset
-
-            kwargs: with the following exceptions (mostly the data!), these are
-                passed directly to the matplotlib plotting routine.
-                `subplot`: the 1-based axes number to append to (default 1)
-                if kwargs include `z`, we will draw a heatmap (ax.pcolormesh):
-                    `x`, `y`, and `z` are passed as positional args to
-                     pcolormesh
-                without `z` we draw a scatter/lines plot (ax.plot):
-                    `x`, `y`, and `fmt` (if present) are passed as positional
-                    args
+            use_offset: Whether or not ticks can have an offset
+            **kwargs: with the exceptions given in the notes below
+                (mostly the data!), these are passed directly to
+                the matplotlib plotting routine.
 
         Returns:
             Plot handle for trace
+
+        Notes:
+            The following special cases apply for kwargs that are
+            not passed directly to the plotting routine.
+
+            * `subplot`: the 1-based axes number to append to (default 1)
+            * if kwargs include `z`, we will draw a heatmap (ax.pcolormesh)
+              `x`, `y`, and `z` are passed as positional args to pcolormesh
+            * without `z` we draw a scatter/lines plot (ax.plot)
+              `x`, `y`, and `fmt` (if present) are passed as positional
+              args
         """
         # TODO some way to specify overlaid axes?
         # Note that there is a conversion from subplot kwarg, which is

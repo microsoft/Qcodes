@@ -1,9 +1,11 @@
 """Instrument base class."""
-import logging
 import time
 import warnings
 import weakref
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, TYPE_CHECKING, cast
+import logging
+from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
+    TYPE_CHECKING, cast, Type
+
 
 import numpy as np
 if TYPE_CHECKING:
@@ -11,6 +13,7 @@ if TYPE_CHECKING:
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
+from qcodes.logger.instrument_logger import get_instrument_logger
 from .parameter import Parameter, _BaseParameter
 from .function import Function
 
@@ -56,6 +59,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
 
+        self.log = get_instrument_logger(self, __name__)
+
     def add_parameter(self, name: str,
                       parameter_class: type=Parameter, **kwargs) -> None:
         """
@@ -94,7 +99,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         for every real function of the instrument.
 
         This functionality is meant for simple cases, principally things that
-        map to simple commands like '\*RST' (reset) or those with just a few
+        map to simple commands like ``*RST`` (reset) or those with just a few
         arguments. It requires a fixed argument count, and positional args
         only. If your case is more complicated, you're probably better off
         simply making a new method in your ``Instrument`` subclass definition.
@@ -182,10 +187,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                log.warning(f"Snapshot: Could not update parameter: "
-                            f"{name} on {self.full_name}")
-                log.info(f"Details for Snapshot of {name}:",
-                         exec_info=True)
+                self.log.warning(f"Snapshot: Could not update parameter: "
+                                 f"{name}")
+                self.log.info(f"Details for Snapshot:",
+                              exc_info=True)
 
                 snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
@@ -262,6 +267,18 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Any SubInstrument should subclass this to return the parent instrument.
         """
         return None
+
+    @property
+    def ancestors(self) -> Optional[List['InstrumentBase']]:
+        """
+        Returns a list of instruments, starting from the current instrument
+        and following to the parent instrument and the parents parent
+        instrument until the root instrument is reached.
+        """
+        if self.parent is not None:
+            return [self] + self.parent.ancestors
+        else:
+            return [self]
 
     @property
     def root_instrument(self) -> 'InstrumentBase':
@@ -403,13 +420,13 @@ class Instrument(InstrumentBase):
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
-        Parse a standard VISA '\*IDN?' response into an ID dict.
+        Parse a standard VISA ``*IDN?`` response into an ID dict.
 
         Even though this is the VISA standard, it applies to various other
         types as well, such as IPInstruments, so it is included here in the
         Instrument base class.
 
-        Override this if your instrument does not support '\*IDN?' or
+        Override this if your instrument does not support ``*IDN?`` or
         returns a nonstandard IDN string. This string is supposed to be a
         comma-separated list of vendor, model, serial, and firmware, but
         semicolon and colon are also common separators so we accept them here
@@ -433,7 +450,7 @@ class Instrument(InstrumentBase):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            log.debug('Error getting or interpreting *IDN?: '
+            self.log.debug('Error getting or interpreting *IDN?: '
                       + repr(idstr))
             idparts = [None, self.name, None, None]
 
@@ -613,6 +630,52 @@ class Instrument(InstrumentBase):
 
         return ins
 
+    @staticmethod
+    def exist(name: str, instrument_class: Optional[type]=None) -> bool:
+        """
+        Check if an instrument with a given names exists (i.e. is already
+        instantiated).
+
+        Args:
+            name: name of the instrument
+            instrument_class: The type of instrument you are looking for.
+        """
+        instrument_exists = True
+
+        try:
+            _ = Instrument.find_instrument(
+                name, instrument_class=instrument_class)
+
+        except KeyError as exception:
+            instrument_is_not_found = \
+                any(str_ in str(exception)
+                    for str_ in [name, 'has been removed'])
+
+            if instrument_is_not_found:
+                instrument_exists = False
+            else:
+                raise exception
+
+        return instrument_exists
+
+    @staticmethod
+    def is_valid(instr_instance: 'Instrument') -> bool:
+        """
+        Check if a given instance of an instrument is valid: if an instrument
+        has been closed, its instance is not longer a "valid" instrument.
+
+        Args:
+            instr_instance: instance of an Instrument class or its subclass
+        """
+        if isinstance(instr_instance, Instrument) \
+                and instr_instance in instr_instance.instances():
+            # note that it is important to call `instances` on the instance
+            # object instead of `Instrument` class, because instances of
+            # Instrument subclasses are recorded inside their subclasses; see
+            # `instances` for more information
+            return True
+        return False
+
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
@@ -696,3 +759,50 @@ class Instrument(InstrumentBase):
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
+
+
+def find_or_create_instrument(instrument_class: Type[Instrument],
+                              name: str,
+                              *args,
+                              recreate: bool=False,
+                              **kwargs
+                              ) -> Instrument:
+    """
+    Find an instrument with the given name of a given class, or create one if
+    it is not found. In case the instrument was found, and `recreate` is True,
+    the instrument will be re-instantiated.
+
+    Note that the class of the existing instrument has to be equal to the
+    instrument class of interest. For example, if an instrument with the same
+    name but of a different class exists, the function will raise an exception.
+
+    This function is very convenient because it allows not to bother about
+    which instruments are already instantiated and which are not.
+
+    If an instrument is found, a connection message is printed, as if the
+    instrument has just been instantiated.
+
+    Args:
+        instrument_class
+            Class of the instrument to find or create
+        name
+            Name of the instrument to find or create
+        recreate
+            When True, the instruments gets recreated if it is found
+
+    Returns:
+        The found or created instrument
+    """
+    if not Instrument.exist(name, instrument_class=instrument_class):
+        instrument = instrument_class(name, *args, **kwargs)
+    else:
+        instrument = Instrument.find_instrument(
+            name, instrument_class=instrument_class)
+
+        if recreate:
+            instrument.close()
+            instrument = instrument_class(name, *args, **kwargs)
+        else:
+            instrument.connect_message()  # prints the message
+
+    return instrument

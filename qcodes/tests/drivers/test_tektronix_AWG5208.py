@@ -8,7 +8,7 @@ visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG5208.yaml@sim')
 @pytest.fixture(scope='function')
 def awg():
     awg_sim = AWG5208('awg_sim',
-                      address='GPIB0::1::65535::INSTR',
+                      address='GPIB0::1::INSTR',
                       visalib=visalib)
     yield awg_sim
 

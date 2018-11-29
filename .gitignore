@@ -80,6 +80,7 @@ target/
 *.py~
 tmp/
 .#*
+.mypy_cache/*
 
 docs/examples/data/*
 
@@ -98,3 +99,6 @@ experiments.db
 benchmarking/env/
 benchmarking/html/
 benchmarking/results/
+
+# Ignore .db files that are generated for some tests
+qcodes/tests/dataset/fixtures/db_files/*

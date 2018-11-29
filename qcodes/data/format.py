@@ -13,7 +13,7 @@ class Formatter:
 
     Each Formatter is expected to implement writing methods:
 
-    - ``write``: to write the ``DataArray``\s
+    - ``write``: to write the ``DataArrays``
     - ``write_metadata``: to write the metadata structure
 
     Optionally, if this Formatter keeps the data file(s) open
@@ -24,7 +24,7 @@ class Formatter:
 
     and reading methods:
 
-    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``\s, either
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArrays``, either
       all at once (``read``) or one file at a time, supplied by the base class
       ``read`` method that loops over all data files at the correct location.
 
@@ -150,7 +150,7 @@ class Formatter:
             f (file-like): a file-like object to read from, as provided by
                 ``io_manager.open``.
 
-            ids_read (set): ``array_id``\s that we have already read.
+            ids_read (set): ``array_ids`` that we have already read.
                 When you read an array, check that it's not in this set (except
                 setpoints, which can be in several files with different inner
                 loops) then add it to the set so other files know it should not

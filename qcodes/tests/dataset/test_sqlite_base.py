@@ -1,38 +1,39 @@
 # Since all other tests of data_set and measurements will inevitably also
-# test the sqlite_base module, we mainly test exceptions here
-
+# test the sqlite_base module, we mainly test exceptions and small helper
+# functions here
+from sqlite3 import OperationalError
 import tempfile
 import os
-from sqlite3 import OperationalError
 
 import pytest
 import hypothesis.strategies as hst
 from hypothesis import given
 import unicodedata
 
-import qcodes as qc
+from qcodes.dataset.descriptions import RunDescriber
+from qcodes.dataset.dependencies import InterDependencies
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
-from qcodes.dataset.database import initialise_database
+from qcodes.dataset.database import get_DB_location, path_to_dbfile
+from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.param_spec import ParamSpec
+# pylint: disable=unused-import
+from qcodes.tests.dataset.temporary_databases import \
+    empty_temp_db, experiment, dataset
+from qcodes.tests.dataset.test_database_creation_and_upgrading import \
+    error_caused_by
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 
-@pytest.fixture(scope="function")
-def empty_temp_db():
-    # create a temp database for testing
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
-        initialise_database()
-        yield
+def test_path_to_dbfile():
 
-
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
-    e = qc.new_experiment("test-experiment", sample_name="test-sample")
-    yield e
-    e.conn.close()
+    with tempfile.TemporaryDirectory() as tempdir:
+        tempdb = os.path.join(tempdir, 'database.db')
+        conn = mut.connect(tempdb)
+        try:
+            assert path_to_dbfile(conn) == tempdb
+        finally:
+            conn.close()
 
 
 def test_one_raises(experiment):
@@ -47,7 +48,7 @@ def test_atomic_transaction_raises(experiment):
 
     bad_sql = '""'
 
-    with pytest.raises(OperationalError):
+    with pytest.raises(RuntimeError):
         mut.atomic_transaction(conn, bad_sql)
 
 
@@ -70,6 +71,12 @@ def test_insert_many_values_raises(experiment):
     with pytest.raises(ValueError):
         mut.insert_many_values(conn, 'some_string', ['column1'],
                                values=[[1], [1, 3]])
+
+
+def test_get_metadata_raises(experiment):
+    with pytest.raises(RuntimeError) as excinfo:
+        mut.get_metadata(experiment.conn, 'something', 'results')
+    assert error_caused_by(excinfo, "no such column: something")
 
 
 @given(table_name=hst.text(max_size=50))
@@ -96,6 +103,7 @@ def test_get_dependents(experiment):
     (_, run_id, _) = mut.create_run(experiment.conn,
                                     experiment.exp_id,
                                     name='testrun',
+                                    guid=generate_guid(),
                                     parameters=[x, t, y])
 
     deps = mut.get_dependents(experiment.conn, run_id)
@@ -114,6 +122,7 @@ def test_get_dependents(experiment):
     (_, run_id, _) = mut.create_run(experiment.conn,
                                     experiment.exp_id,
                                     name='testrun',
+                                    guid=generate_guid(),
                                     parameters=[x, t, x_raw,
                                                 x_cooked, y, z])
 
@@ -123,3 +132,56 @@ def test_get_dependents(experiment):
                      mut.get_layout_id(experiment.conn, 'z', run_id)]
 
     assert deps == expected_deps
+
+
+def test_column_in_table(dataset):
+    assert mut.is_column_in_table(dataset.conn, "runs", "run_id")
+    assert not mut.is_column_in_table(dataset.conn, "runs", "non-existing-column")
+
+
+def test_run_exist(dataset):
+    assert mut.run_exists(dataset.conn, dataset.run_id)
+    assert not mut.run_exists(dataset.conn, dataset.run_id + 1)
+
+
+def test_get_last_run(dataset):
+    assert dataset.run_id == mut.get_last_run(dataset.conn, dataset.exp_id)
+
+
+def test_get_last_run_no_runs(experiment):
+    assert None is mut.get_last_run(experiment.conn, experiment.exp_id)
+
+
+def test_get_last_experiment(experiment):
+    assert experiment.exp_id == mut.get_last_experiment(experiment.conn)
+
+
+def test_get_last_experiment_no_experiments(empty_temp_db):
+    conn = mut.connect(get_DB_location())
+    assert None is mut.get_last_experiment(conn)
+
+
+def test_update_runs_description(dataset):
+
+    invalid_descs = ['{}', 'description']
+
+    for idesc in invalid_descs:
+        with pytest.raises(ValueError):
+            mut.update_run_description(dataset.conn, dataset.run_id, idesc)
+
+    desc = RunDescriber(InterDependencies()).to_json()
+    mut.update_run_description(dataset.conn, dataset.run_id, desc)
+
+
+def test_runs_table_columns(empty_temp_db):
+    """
+    Ensure that the column names of a pristine runs table are what we expect
+    """
+    colnames = mut.RUNS_TABLE_COLUMNS.copy()
+    conn = mut.connect(get_DB_location())
+    query = "PRAGMA table_info(runs)"
+    cursor = conn.cursor()
+    for row in cursor.execute(query):
+        colnames.remove(row['name'])
+
+    assert colnames == []

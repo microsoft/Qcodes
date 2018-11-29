@@ -449,7 +449,7 @@ class AWG70000A(VisaInstrument):
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
-        self.seqxFileFolder = "\\Users\\OEM\Documents"
+        self.seqxFileFolder = "\\Users\\OEM\\Documents"
 
         self.current_directory(self.wfmxFileFolder)
 
@@ -490,7 +490,8 @@ class AWG70000A(VisaInstrument):
             running = False
             while not running:
                 time.sleep(0.1)
-                running = self.run_state() == 'Running'
+                running = self.run_state() in ('Running',
+                                               'Waiting for trigger')
                 waited_for = start_time - time.perf_counter()
                 if waited_for > timeout:
                     raise RuntimeError(f'Reached timeout ({timeout} s) '

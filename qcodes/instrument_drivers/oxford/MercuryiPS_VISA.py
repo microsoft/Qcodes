@@ -2,6 +2,7 @@ import time
 from functools import partial
 from typing import Dict, Union, Optional, Callable, List, cast
 import logging
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -69,6 +70,13 @@ class MercurySlavePS(InstrumentChannel):
 
         super().__init__(parent, name)
         self.uid = UID
+
+        # The firmware update from 2.5 -> 2.6 changed the command
+        # syntax slightly
+        if LooseVersion(self.root_instrument.firmware) >= LooseVersion('2.6'):
+            self.psu_string = "SPSU"
+        else:
+            self.psu_string = "PSU"
 
         self.add_parameter('voltage',
                            label='Output voltage',
@@ -175,9 +183,8 @@ class MercurySlavePS(InstrumentChannel):
         Returns:
             The response. Cf. MercuryiPS.ask for how much is returned
         """
+        dressed_cmd = f"READ:DEV:{self.uid}:{self.psu_string}:{get_cmd}"
 
-        dressed_cmd = '{}:{}:{}:{}:{}'.format('READ', 'DEV', self.uid, 'PSU',
-                                              get_cmd)
         resp = self._parent.ask(dressed_cmd)
 
         return resp
@@ -189,8 +196,7 @@ class MercurySlavePS(InstrumentChannel):
         Args:
             set_cmd: raw string for the command, e.g. 'SIG:FSET'
         """
-        dressed_cmd = '{}:{}:{}:{}:{}:{}'.format('SET', 'DEV', self.uid, 'PSU',
-                                                 set_cmd, value)
+        dressed_cmd = f"SET:DEV:{self.uid}:{self.psu_string}:{set_cmd}:{value}"
         # the instrument always very verbosely responds
         # the return value of `ask`
         # holds the value reported back by the instrument
@@ -243,6 +249,8 @@ class MercuryiPS(VisaInstrument):
         # to ensure a correct snapshot, we must wrap the get function
         self.IDN.get = self.IDN._wrap_get(self._idn_getter)
 
+        self.firmware = self.IDN()['firmware']
+
         # TODO: Query instrument to ensure which PSUs are actually present
         for grp in ['GRPX', 'GRPY', 'GRPZ']:
             psu_name = grp
@@ -256,10 +264,11 @@ class MercuryiPS(VisaInstrument):
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
 
-        for coord in ['x', 'y', 'z', 'r', 'theta', 'phi', 'rho']:
+        for coord, unit in zip(['x', 'y', 'z', 'r', 'theta', 'phi', 'rho'],
+                               ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
-                               unit='T',
+                               unit=unit,
                                get_cmd=partial(self._get_component, coord),
                                set_cmd=partial(self._set_target, coord))
 
@@ -323,8 +332,6 @@ class MercuryiPS(VisaInstrument):
         idn_dict = {'model': resps[2], 'vendor': resps[1],
                     'serial': resps[3], 'firmware': resps[4]}
 
-        # idn_string = ','.join([resps[2], resps[1], resps[3], resps[4]])
-
         return idn_dict
 
     def _ramp_simultaneously(self) -> None:
@@ -354,6 +361,18 @@ class MercuryiPS(VisaInstrument):
             else:
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
+
+    def is_ramping(self) -> bool:
+        """
+        Returns True if any axis has a ramp status that is either 'TO SET' or
+        'TO ZERO'
+        """
+        ramping_statuus = ['TO SET', 'TO ZERO']
+        is_x_ramping = self.GRPX.ramp_status() in ramping_statuus
+        is_y_ramping = self.GRPY.ramp_status() in ramping_statuus
+        is_z_ramping = self.GRPZ.ramp_status() in ramping_statuus
+
+        return is_x_ramping or is_y_ramping or is_z_ramping
 
     def set_new_field_limits(self, limit_func: Callable) -> None:
         """
@@ -413,7 +432,7 @@ class MercuryiPS(VisaInstrument):
         """
 
         visalog.debug(f"Writing to instrument {self.name}: {cmd}")
-        resp = self.visa_handle.ask(cmd)
+        resp = self.visa_handle.query(cmd)
         visalog.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:
