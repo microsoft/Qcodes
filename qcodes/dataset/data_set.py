@@ -677,10 +677,11 @@ class DataSet(Sized):
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
-        ) -> List[str]:
+                             ) -> List[str]:
         """
-        validate the provided parameters have a name and return them as a list. 
-        names. The Parameters may be a mix of strings, ParamSpecs or ordinary
+        Validate that the provided parameters have a name and return those
+        names as a list.
+        The Parameters may be a mix of strings, ParamSpecs or ordinary
         QCoDeS parameters.
         """
 
