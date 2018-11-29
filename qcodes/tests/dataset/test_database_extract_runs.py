@@ -116,6 +116,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     target_exp = Experiment(conn=target_conn, exp_id=1)
 
     length1 = len(target_exp)
+    assert length1 == 1
 
     # trying to insert the same run again should be a NOOP
     with raise_if_file_changed(target_path):
