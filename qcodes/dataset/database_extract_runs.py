@@ -180,8 +180,6 @@ def _extract_single_dataset_into_db(dataset: DataSet,
 
     parspecs = dataset.paramspecs.values()
 
-    #metadata = dataset.get_metadata()
-
     _, target_run_id, target_table_name = create_run(target_conn,
                                                      target_exp_id,
                                                      name=dataset.name,
@@ -196,8 +194,6 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                         target_run_id,
                         dataset.run_timestamp_raw,
                         dataset.completed_timestamp_raw)
-
-
 
 
 def _populate_results_table(source_conn: SomeConnection,
