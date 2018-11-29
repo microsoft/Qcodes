@@ -770,8 +770,10 @@ def test_get_array_parameter_data(array_dataset):
 def test_get_multi_parameter_data(multi_dataset):
     parameter_test_helper(multi_dataset)
 
+
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
     parameter_test_helper(array_in_scalar_dataset)
+
 
 def parameter_test_helper(ds):
     params = ds.parameters.split(',')
@@ -784,9 +786,11 @@ def parameter_test_helper(ds):
     ref = ds.get_data(*params)
     dut = ds.get_parameter_data(*params)
 
-    column_lenghts = []
-    for i_col, col in enumerate(dut):
-        column_lenghts.append(len(col))
+    column_lengths = []
+    for col in dut.values():
+        column_lengths.append(col.size)
+    column_lenghts = np.array(column_lengths)
+    assert np.all(column_lenghts == column_lenghts[0])
 
     for i_row, row in enumerate(ref):
         for i_param, param_name in enumerate(param_names):
