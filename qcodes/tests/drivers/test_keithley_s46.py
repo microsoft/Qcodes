@@ -46,7 +46,6 @@ def test_open_close(s46):
 
     s46.channels[0].state("open")
     s46.channels[1].state("close")
-
     s46.channels[18].state("close")
 
     with pytest.raises(
