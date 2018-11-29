@@ -30,6 +30,14 @@ log = logging.getLogger(__name__)
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
 
+
+# Functions decorated as 'upgrader' are inserted into this dict
+# The newest database version is thus determined by the number of upgrades
+# in this module
+# The key is the TARGET VERSION of the upgrade, i.e. the first key is 1
+_UPGRADE_ACTIONS: Dict[int, Callable] = {}
+
+
 _experiment_table_schema = """
 CREATE  TABLE IF NOT EXISTS experiments (
     -- this will autoncrement by default if
@@ -110,28 +118,37 @@ RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
 
 class ConnectionPlus(wrapt.ObjectProxy):
     """
-    A class to extend the sqlite3.Connection object with a single extra
-    attribute. Since sqlite3.Connection has no __dict__, we can not directly
-    add the attribute to a normal instance.
+    A class to extend the sqlite3.Connection object. Since sqlite3.Connection
+    has no __dict__, we can not directly add attributes to its instance
+    directly.
 
-    The extra attribute is a bool describing whether the connection is
-    currently in the middle of an atomic block of transactions, thus allowing
-    us to nest atomic context managers
+    It is not allowed to instantiate a new `ConnectionPlus` object from a
+    `ConnectionPlus` object.
+
+    Attributes:
+        atomic_in_progress: a bool describing whether the connection is
+            currently in the middle of an atomic block of transactions, thus
+            allowing to nest `atomic` context managers
     """
-    atomic_in_progress: bool = True
+    atomic_in_progress: bool = False
+
+    def __init__(self, sqlite3_connection: sqlite3.Connection):
+        super(ConnectionPlus, self).__init__(sqlite3_connection)
+
+        if isinstance(sqlite3_connection, ConnectionPlus):
+            raise ValueError('Attempted to create `ConnectionPlus` from a '
+                             '`ConnectionPlus` object which is not allowed.')
 
 
-SomeConnection = Union[sqlite3.Connection, ConnectionPlus]
-
-
-def upgrader(func: Callable[[SomeConnection], None]):
+def upgrader(func: Callable[[ConnectionPlus], None]):
     """
     Decorator for database version upgrade functions. An upgrade function
-    must have the name `perform_db_upgrade_N_to_M` where N = M-1.
-    The upgrade function must either perform the upgrade and return (no return
-    values allowed) or fail to perform the upgrade, in which case it must raise
-    a RuntimeError. A failed upgrade must be completely rolled back before the
-    RuntimeError is raises.
+    must have the name `perform_db_upgrade_N_to_M` where N = M-1. For
+    simplicity, an upgrade function must take a single argument of type
+    `ConnectionPlus`. The upgrade function must either perform the upgrade
+    and return (no return values allowed) or fail to perform the upgrade,
+    in which case it must raise a RuntimeError. A failed upgrade must be
+    completely rolled back before the RuntimeError is raises.
 
     The decorator takes care of logging about the upgrade and managing the
     database versioning.
@@ -154,7 +171,7 @@ def upgrader(func: Callable[[SomeConnection], None]):
                          ' to version N+1')
 
     @wraps(func)
-    def do_upgrade(conn: SomeConnection) -> None:
+    def do_upgrade(conn: ConnectionPlus) -> None:
 
         log.info(f'Starting database upgrade version {from_version} '
                  f'to {to_version}')
@@ -171,6 +188,8 @@ def upgrader(func: Callable[[SomeConnection], None]):
         set_user_version(conn, to_version)
         log.info(f'Succesfully performed upgrade {from_version} '
                  f'-> {to_version}')
+
+    _UPGRADE_ACTIONS[to_version] = do_upgrade
 
     return do_upgrade
 
@@ -294,21 +313,21 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def connect(name: str, debug: bool = False,
-            version: int=-1) -> sqlite3.Connection:
+            version: int=-1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
     converters that we need.
 
-
     Args:
         name: name or path to the sqlite file
         debug: whether or not to turn on tracing
-        version: which version to create. We count from 0. -1 means 'latest'
-          Should always be left at -1 except when testing.
+        version: which version to create. We count from 0. -1 means 'latest'.
+            Should always be left at -1 except when testing.
 
     Returns:
-        conn: connection object to the database
+        conn: connection object to the database (note, it is
+            `ConnectionPlus`, not `sqlite3.Connection`
 
     """
     # register numpy->binary(TEXT) adapter
@@ -318,7 +337,10 @@ def connect(name: str, debug: bool = False,
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
-    conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
+
+    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = ConnectionPlus(sqlite3_conn)
+
     # sqlite3 options
     conn.row_factory = sqlite3.Row
 
@@ -342,7 +364,7 @@ def connect(name: str, debug: bool = False,
     return conn
 
 
-def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
+def perform_db_upgrade(conn: ConnectionPlus, version: int=-1) -> None:
     """
     This is intended to perform all upgrades as needed to bring the
     db from version 0 to the most current version (or the version specified).
@@ -350,24 +372,21 @@ def perform_db_upgrade(conn: SomeConnection, version: int=-1) -> None:
     upgrade and be a NOOP if the current version is higher than their target.
 
     Args:
+        conn: object for connection to the database
         version: Which version to upgrade to. We count from 0. -1 means
           'newest version'
     """
-
-    upgrade_actions = [perform_db_upgrade_0_to_1, perform_db_upgrade_1_to_2,
-                       perform_db_upgrade_2_to_3]
-    newest_version = len(upgrade_actions)
-    version = newest_version if version == -1 else version
+    version = _latest_available_version() if version == -1 else version
 
     current_version = get_user_version(conn)
-    if current_version < newest_version:
+    if current_version < version:
         log.info("Commencing database upgrade")
-        for action in upgrade_actions[:version]:
-            action(conn)
+        for target_version in sorted(_UPGRADE_ACTIONS)[:version]:
+            _UPGRADE_ACTIONS[target_version](conn)
 
 
 @upgrader
-def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
+def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 0 to version 1
 
@@ -408,7 +427,7 @@ def perform_db_upgrade_0_to_1(conn: SomeConnection) -> None:
 
 
 @upgrader
-def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
+def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 1 to version 2
 
@@ -437,7 +456,7 @@ def perform_db_upgrade_1_to_2(conn: SomeConnection) -> None:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
 
-def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
+def _2to3_get_result_tables(conn: ConnectionPlus) -> Dict[int, str]:
     rst_query = "SELECT run_id, result_table_name FROM runs"
     cur = conn.cursor()
     cur.execute(rst_query)
@@ -450,7 +469,7 @@ def _2to3_get_result_tables(conn: SomeConnection) -> Dict[int, str]:
     return results
 
 
-def _2to3_get_layout_ids(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_layout_ids(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             select runs.run_id, layouts.layout_id
             FROM layouts
@@ -471,7 +490,7 @@ def _2to3_get_layout_ids(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_indeps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_indeps(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -492,7 +511,7 @@ def _2to3_get_indeps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_deps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -513,7 +532,7 @@ def _2to3_get_deps(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_dependencies(conn: SomeConnection) -> DefaultDict[int, List[int]]:
+def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, List[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -536,7 +555,7 @@ def _2to3_get_dependencies(conn: SomeConnection) -> DefaultDict[int, List[int]]:
     return results
 
 
-def _2to3_get_layouts(conn: SomeConnection) -> Dict[int,
+def _2to3_get_layouts(conn: ConnectionPlus) -> Dict[int,
                                                     Tuple[str, str, str, str]]:
     query = """
             SELECT layout_id, parameter, label, unit, inferred_from
@@ -554,7 +573,7 @@ def _2to3_get_layouts(conn: SomeConnection) -> Dict[int,
     return results
 
 
-def _2to3_get_paramspecs(conn: SomeConnection,
+def _2to3_get_paramspecs(conn: ConnectionPlus,
                          layout_ids: List[int],
                          layouts: Dict[int, Tuple[str, str, str, str]],
                          dependencies: Dict[int, List[int]],
@@ -612,7 +631,7 @@ def _2to3_get_paramspecs(conn: SomeConnection,
 
 
 @upgrader
-def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
+def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 2 to version 3
 
@@ -684,7 +703,31 @@ def perform_db_upgrade_2_to_3(conn: SomeConnection) -> None:
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 
-def transaction(conn: SomeConnection,
+def _latest_available_version() -> int:
+    """Return latest available database schema version"""
+    return len(_UPGRADE_ACTIONS)
+
+
+def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
+                                                                          int]:
+    """
+    Connect to a DB without performing any upgrades and get the version of
+    that database file along with the newest available version (the one that
+    a normal "connect" will automatically upgrade to)
+
+    Args:
+        path_to_db: the absolute path to the DB file
+
+    Returns:
+        A tuple of (db_version, latest_available_version)
+    """
+    conn = connect(path_to_db, version=0)
+    db_version = get_user_version(conn)
+
+    return db_version, _latest_available_version()
+
+
+def transaction(conn: ConnectionPlus,
                 sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
     The transaction needs to be committed or rolled back.
@@ -707,7 +750,7 @@ def transaction(conn: SomeConnection,
     return c
 
 
-def atomic_transaction(conn: SomeConnection,
+def atomic_transaction(conn: ConnectionPlus,
                        sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
@@ -725,38 +768,39 @@ def atomic_transaction(conn: SomeConnection,
         sqlite cursor
 
     """
-    with atomic(conn) as conn:
-        c = transaction(conn, sql, *args)
+    with atomic(conn) as atomic_conn:
+        c = transaction(atomic_conn, sql, *args)
     return c
 
 
 @contextmanager
-def atomic(conn: SomeConnection):
+def atomic(conn: ConnectionPlus):
     """
     Guard a series of transactions as atomic.
-    If one fails the transaction is rolled back and no more transactions
-    are performed.
+
+    If one transaction fails, all the previous transactions are rolled back
+    and no more transactions are performed.
+
     NB: 'BEGIN' is by default only inserted before INSERT/UPDATE/DELETE/REPLACE
     but we want to guard any transaction that modifies the database (e.g. also
     ALTER)
 
     Args:
-        - conn: connection to guard
+        conn: connection to guard
     """
-
-    if not(hasattr(conn, 'atomic_in_progress')):
-        conn = ConnectionPlus(conn)
-        conn.atomic_in_progress = False
-    else:
-        conn = cast(ConnectionPlus, conn)
+    if not isinstance(conn, ConnectionPlus):
+        raise ValueError('atomic context manager only accepts ConnectionPlus '
+                         'database connection objects.')
 
     is_outmost = not(conn.atomic_in_progress)
-    conn.atomic_in_progress = True
 
     if conn.in_transaction and is_outmost:
-        raise RuntimeError('SQLite connection has uncommited transactions. '
+        raise RuntimeError('SQLite connection has uncommitted transactions. '
                            'Please commit those before starting an atomic '
                            'transaction.')
+
+    old_atomic_in_progress = conn.atomic_in_progress
+    conn.atomic_in_progress = True
 
     try:
         if is_outmost:
@@ -774,9 +818,31 @@ def atomic(conn: SomeConnection):
     finally:
         if is_outmost:
             conn.isolation_level = old_level
+        conn.atomic_in_progress = old_atomic_in_progress
 
 
-def init_db(conn: SomeConnection)->None:
+def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
+                              ) -> ConnectionPlus:
+    """
+    Makes a ConnectionPlus connection object out of a given argument.
+
+    If the given connection is already a ConnectionPlus, then it is returned
+    without any changes.
+
+    Args:
+        conn: an sqlite database connection object
+
+    Returns:
+        the "same" connection but as ConnectionPlus object
+    """
+    if not isinstance(conn, ConnectionPlus):
+        conn_plus = ConnectionPlus(conn)
+    else:
+        conn_plus = conn
+    return conn_plus
+
+
+def init_db(conn: ConnectionPlus)->None:
     with atomic(conn) as conn:
         transaction(conn, _experiment_table_schema)
         transaction(conn, _runs_table_schema)
@@ -784,7 +850,7 @@ def init_db(conn: SomeConnection)->None:
         transaction(conn, _dependencies_table_schema)
 
 
-def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
+def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
     """
     A look-before-you-leap function to look up if a table has a certain column.
 
@@ -803,7 +869,7 @@ def is_column_in_table(conn: SomeConnection, table: str, column: str) -> bool:
     return False
 
 
-def insert_column(conn: SomeConnection, table: str, name: str,
+def insert_column(conn: ConnectionPlus, table: str, name: str,
                   paramtype: Optional[str] = None) -> None:
     """Insert new column to a table
 
@@ -831,7 +897,7 @@ def insert_column(conn: SomeConnection, table: str, name: str,
                         f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
-def select_one_where(conn: SomeConnection, table: str, column: str,
+def select_one_where(conn: ConnectionPlus, table: str, column: str,
                      where_column: str, where_value: Any) -> Any:
     query = f"""
     SELECT {column}
@@ -845,7 +911,7 @@ def select_one_where(conn: SomeConnection, table: str, column: str,
     return res
 
 
-def select_many_where(conn: SomeConnection, table: str, *columns: str,
+def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
                       where_column: str, where_value: Any) -> Any:
     _columns = ",".join(columns)
     query = f"""
@@ -872,7 +938,7 @@ def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     return ','.join(template), values
 
 
-def update_where(conn: SomeConnection, table: str,
+def update_where(conn: ConnectionPlus, table: str,
                  where_column: str, where_value: Any, **updates) -> None:
     _updates, values = _massage_dict(updates)
     query = f"""
@@ -886,7 +952,7 @@ def update_where(conn: SomeConnection, table: str,
     atomic_transaction(conn, query, *values, where_value)
 
 
-def insert_values(conn: SomeConnection,
+def insert_values(conn: ConnectionPlus,
                   formatted_name: str,
                   columns: List[str],
                   values: VALUES,
@@ -908,7 +974,7 @@ def insert_values(conn: SomeConnection,
     return c.lastrowid
 
 
-def insert_many_values(conn: SomeConnection,
+def insert_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        columns: List[str],
                        values: List[VALUES],
@@ -982,7 +1048,7 @@ def insert_many_values(conn: SomeConnection,
     return return_value
 
 
-def modify_values(conn: SomeConnection,
+def modify_values(conn: ConnectionPlus,
                   formatted_name: str,
                   index: int,
                   columns: List[str],
@@ -1009,7 +1075,7 @@ def modify_values(conn: SomeConnection,
     return c.rowcount
 
 
-def modify_many_values(conn: SomeConnection,
+def modify_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        start_index: int,
                        columns: List[str],
@@ -1035,7 +1101,7 @@ def modify_many_values(conn: SomeConnection,
         start_index += 1
 
 
-def length(conn: SomeConnection,
+def length(conn: ConnectionPlus,
            formatted_name: str
            ) -> int:
     """
@@ -1057,62 +1123,51 @@ def length(conn: SomeConnection,
         return _len
 
 
-def get_data(conn: SomeConnection,
+def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
-             start: int = None,
-             end: int = None,
+             start: Optional[int] = None,
+             end: Optional[int] = None,
              ) -> List[List[Any]]:
     """
     Get data from the columns of a table.
-    Allows to specfiy a range.
+    Allows to specify a range of rows (1-based indexing, both ends are
+    included).
 
     Args:
         conn: database connection
         table_name: name of the table
         columns: list of columns
-        start: start of range (1 indedex)
-        end: start of range (1 indedex)
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
 
     Returns:
-        the data requested
+        the data requested in the format of list of rows of values
     """
     _columns = ",".join(columns)
-    if start and end:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            > {start} and
-              rowid
-            <= {end}
-        """
-    elif start:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            >= {start}
-        """
-    elif end:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        WHERE rowid
-            <= {end}
-        """
-    else:
-        query = f"""
-        SELECT {_columns}
-        FROM "{table_name}"
-        """
+
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
     return res
 
 
-def get_values(conn: SomeConnection,
+def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
     """
@@ -1136,7 +1191,7 @@ def get_values(conn: SomeConnection,
     return res
 
 
-def get_setpoints(conn: SomeConnection,
+def get_setpoints(conn: ConnectionPlus,
                   table_name: str,
                   param_name: str) -> Dict[str, List[List[Any]]]:
     """
@@ -1205,7 +1260,7 @@ def get_setpoints(conn: SomeConnection,
     return output
 
 
-def get_layout(conn: SomeConnection,
+def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
     """
     Get the layout of a single parameter for plotting it
@@ -1226,7 +1281,7 @@ def get_layout(conn: SomeConnection,
     return res
 
 
-def get_layout_id(conn: SomeConnection,
+def get_layout_id(conn: ConnectionPlus,
                   parameter: Union[ParamSpec, str],
                   run_id: int) -> int:
     """
@@ -1258,7 +1313,7 @@ def get_layout_id(conn: SomeConnection,
     return res
 
 
-def get_dependents(conn: SomeConnection,
+def get_dependents(conn: ConnectionPlus,
                    run_id: int) -> List[int]:
     """
     Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
@@ -1273,7 +1328,7 @@ def get_dependents(conn: SomeConnection,
     return res
 
 
-def get_dependencies(conn: SomeConnection,
+def get_dependencies(conn: ConnectionPlus,
                      layout_id: int) -> List[List[int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
@@ -1293,7 +1348,7 @@ def get_dependencies(conn: SomeConnection,
 # Higher level Wrappers
 
 
-def new_experiment(conn: SomeConnection,
+def new_experiment(conn: ConnectionPlus,
                    name: str,
                    sample_name: str,
                    format_string: Optional[str] = "{}-{}-{}"
@@ -1322,7 +1377,7 @@ def new_experiment(conn: SomeConnection,
 
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
-def mark_run_complete(conn: SomeConnection, run_id: int):
+def mark_run_complete(conn: ConnectionPlus, run_id: int):
     """ Mark run complete
 
     Args:
@@ -1341,7 +1396,7 @@ def mark_run_complete(conn: SomeConnection, run_id: int):
     atomic_transaction(conn, query, time.time(), True, run_id)
 
 
-def completed(conn: SomeConnection, run_id)->bool:
+def completed(conn: ConnectionPlus, run_id)->bool:
     """ Check if the run scomplete
 
     Args:
@@ -1353,7 +1408,7 @@ def completed(conn: SomeConnection, run_id)->bool:
 
 
 def get_completed_timestamp_from_run_id(
-        conn: SomeConnection, run_id: int) -> float:
+        conn: ConnectionPlus, run_id: int) -> float:
     """
     Retrieve the timestamp when the given measurement run was completed
 
@@ -1371,7 +1426,7 @@ def get_completed_timestamp_from_run_id(
                             "run_id", run_id)
 
 
-def get_guid_from_run_id(conn: SomeConnection, run_id: int) -> str:
+def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     """
     Get the guid of the given run
 
@@ -1382,7 +1437,7 @@ def get_guid_from_run_id(conn: SomeConnection, run_id: int) -> str:
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
 
-def finish_experiment(conn: SomeConnection, exp_id: int):
+def finish_experiment(conn: ConnectionPlus, exp_id: int):
     """ Finish experiment
 
     Args:
@@ -1395,7 +1450,7 @@ def finish_experiment(conn: SomeConnection, exp_id: int):
     atomic_transaction(conn, query, time.time(), exp_id)
 
 
-def get_run_counter(conn: SomeConnection, exp_id: int) -> int:
+def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
     """ Get the experiment run counter
 
     Args:
@@ -1411,7 +1466,7 @@ def get_run_counter(conn: SomeConnection, exp_id: int) -> int:
                             where_value=exp_id)
 
 
-def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
+def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
     """ Get a list of experiments
      Args:
          conn: database connection
@@ -1427,7 +1482,7 @@ def get_experiments(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def get_last_experiment(conn: SomeConnection) -> Optional[int]:
+def get_last_experiment(conn: ConnectionPlus) -> Optional[int]:
     """
     Return last started experiment id
 
@@ -1438,7 +1493,7 @@ def get_last_experiment(conn: SomeConnection) -> Optional[int]:
     return c.fetchall()[0][0]
 
 
-def get_runs(conn: SomeConnection,
+def get_runs(conn: ConnectionPlus,
              exp_id: Optional[int] = None)->List[sqlite3.Row]:
     """ Get a list of runs.
 
@@ -1464,7 +1519,7 @@ def get_runs(conn: SomeConnection,
     return c.fetchall()
 
 
-def get_last_run(conn: SomeConnection, exp_id: int) -> Optional[int]:
+def get_last_run(conn: ConnectionPlus, exp_id: int) -> Optional[int]:
     """
     Get run_id of the last run in experiment with exp_id
 
@@ -1485,7 +1540,7 @@ def get_last_run(conn: SomeConnection, exp_id: int) -> Optional[int]:
     return one(c, 'run_id')
 
 
-def run_exists(conn: SomeConnection, run_id: int) -> bool:
+def run_exists(conn: ConnectionPlus, run_id: int) -> bool:
     # the following query always returns a single sqlite3.Row with an integer
     # value of `1` or `0` for existing and non-existing run_id in the database
     query = """
@@ -1500,7 +1555,7 @@ def run_exists(conn: SomeConnection, run_id: int) -> bool:
     return bool(res[0])
 
 
-def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
+def data_sets(conn: ConnectionPlus) -> List[sqlite3.Row]:
     """ Get a list of datasets
     Args:
         conn: database connection
@@ -1515,7 +1570,7 @@ def data_sets(conn: SomeConnection) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
-def _insert_run(conn: SomeConnection, exp_id: int, name: str,
+def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
                 ):
@@ -1591,7 +1646,7 @@ def _insert_run(conn: SomeConnection, exp_id: int, name: str,
     return run_counter, formatted_name, run_id
 
 
-def _update_experiment_run_counter(conn: SomeConnection, exp_id: int,
+def _update_experiment_run_counter(conn: ConnectionPlus, exp_id: int,
                                    run_counter: int) -> None:
     query = """
     UPDATE experiments
@@ -1601,7 +1656,7 @@ def _update_experiment_run_counter(conn: SomeConnection, exp_id: int,
     atomic_transaction(conn, query, run_counter, exp_id)
 
 
-def get_parameters(conn: SomeConnection,
+def get_parameters(conn: ConnectionPlus,
                    run_id: int) -> List[ParamSpec]:
     """
     Get the list of param specs for run
@@ -1630,7 +1685,7 @@ def get_parameters(conn: SomeConnection,
     return parspecs
 
 
-def get_paramspec(conn: SomeConnection,
+def get_paramspec(conn: ConnectionPlus,
                   run_id: int,
                   param_name: str) -> ParamSpec:
     """
@@ -1697,7 +1752,7 @@ def get_paramspec(conn: SomeConnection,
     return parspec
 
 
-def update_run_description(conn: SomeConnection, run_id: int,
+def update_run_description(conn: ConnectionPlus, run_id: int,
                            description: str) -> None:
     """
     Update the run_description field for the given run_id. The description
@@ -1718,7 +1773,7 @@ def update_run_description(conn: SomeConnection, run_id: int,
         conn.cursor().execute(sql, (description, run_id))
 
 
-def add_parameter(conn: SomeConnection,
+def add_parameter(conn: ConnectionPlus,
                   formatted_name: str,
                   *parameter: ParamSpec):
     """
@@ -1759,7 +1814,7 @@ def add_parameter(conn: SomeConnection,
                                                *parameter)
 
 
-def _add_parameters_to_layout_and_deps(conn: SomeConnection,
+def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
                                        formatted_name: str,
                                        *parameter: ParamSpec) -> sqlite3.Cursor:
     # get the run_id
@@ -1820,7 +1875,7 @@ def _validate_table_name(table_name: str) -> bool:
     return valid
 
 
-def _create_run_table(conn: SomeConnection,
+def _create_run_table(conn: ConnectionPlus,
                       formatted_name: str,
                       parameters: Optional[List[ParamSpec]] = None,
                       values: Optional[VALUES] = None
@@ -1865,7 +1920,7 @@ def _create_run_table(conn: SomeConnection,
             transaction(conn, query)
 
 
-def create_run(conn: SomeConnection, exp_id: int, name: str,
+def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                guid: str,
                parameters: Optional[List[ParamSpec]]=None,
                values:  List[Any] = None,
@@ -1904,14 +1959,14 @@ def create_run(conn: SomeConnection, exp_id: int, name: str,
     return run_counter, run_id, formatted_name
 
 
-def get_metadata(conn: SomeConnection, tag: str, table_name: str):
+def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
     return select_one_where(conn, "runs", tag,
                             "result_table_name", table_name)
 
 
-def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
+def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
     """
     Get all metadata associated with the specified run
     """
@@ -1944,7 +1999,7 @@ def get_metadata_from_run_id(conn: SomeConnection, run_id: int) -> Dict:
     return metadata
 
 
-def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
+def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Dict[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
@@ -1965,7 +2020,7 @@ def insert_meta_data(conn: SomeConnection, row_id: int, table_name: str,
     update_meta_data(conn, row_id, table_name, metadata)
 
 
-def update_meta_data(conn: SomeConnection, row_id: int, table_name: str,
+def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Dict[str, Any]) -> None:
     """
     Updates metadata (they must exist already)
@@ -1979,7 +2034,7 @@ def update_meta_data(conn: SomeConnection, row_id: int, table_name: str,
     update_where(conn, table_name, 'rowid', row_id, **metadata)
 
 
-def add_meta_data(conn: SomeConnection,
+def add_meta_data(conn: ConnectionPlus,
                   row_id: int,
                   metadata: Dict[str, Any],
                   table_name: str = "runs") -> None:
@@ -2004,36 +2059,36 @@ def add_meta_data(conn: SomeConnection,
             raise e
 
 
-def get_user_version(conn: SomeConnection) -> int:
+def get_user_version(conn: ConnectionPlus) -> int:
 
     curr = atomic_transaction(conn, 'PRAGMA user_version')
     res = one(curr, 0)
     return res
 
 
-def set_user_version(conn: SomeConnection, version: int) -> None:
+def set_user_version(conn: ConnectionPlus, version: int) -> None:
 
     atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
 
 
 def get_experiment_name_from_experiment_id(
-        conn: SomeConnection, exp_id: int) -> str:
+        conn: ConnectionPlus, exp_id: int) -> str:
     return select_one_where(
         conn, "experiments", "name", "exp_id", exp_id)
 
 
 def get_sample_name_from_experiment_id(
-        conn: SomeConnection, exp_id: int) -> str:
+        conn: ConnectionPlus, exp_id: int) -> str:
     return select_one_where(
         conn, "experiments", "sample_name", "exp_id", exp_id)
 
 
-def get_run_timestamp_from_run_id(conn: SomeConnection,
+def get_run_timestamp_from_run_id(conn: ConnectionPlus,
                                   run_id: int) -> float:
     return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
 
 
-def update_GUIDs(conn: SomeConnection) -> None:
+def update_GUIDs(conn: ConnectionPlus) -> None:
     """
     Update all GUIDs in this database where either the location code or the
     work_station code is zero to use the location and work_station code from
@@ -2106,3 +2161,50 @@ def update_GUIDs(conn: SomeConnection) -> None:
 
         log.info(f'Updating run number {run_id}...')
         actions[(loc == 0, ws == 0)](run_id, conn, guid_comps)
+
+
+def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
+    """
+    Removes a trigger with a given id if it exists.
+
+    Note that this transaction is not atomic!
+
+    Args:
+        conn: database connection object
+        name: id of the trigger
+    """
+    transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def _fix_wrong_run_descriptions(conn: ConnectionPlus,
+                                run_ids: Sequence[int]) -> None:
+    """
+    NB: This is a FIX function. Do not use it unless your database has been
+    diagnosed with the problem that this function fixes.
+
+    Overwrite faulty run_descriptions by using information from the layouts and
+    dependencies tables. If a correct description is found for a run, that
+    run is left untouched.
+
+    Args:
+        conn: The connection to the database
+        run_ids: The runs to (potentially) fix
+    """
+
+    log.info('[*] Fixing run descriptions...')
+    for run_id in run_ids:
+        trusted_paramspecs = get_parameters(conn, run_id)
+        trusted_desc = RunDescriber(
+                           interdeps=InterDependencies(*trusted_paramspecs))
+
+        actual_desc_str = select_one_where(conn, "runs",
+                                           "run_description",
+                                           "run_id", run_id)
+
+        if actual_desc_str == trusted_desc.to_json():
+            log.info(f'[+] Run id: {run_id} had an OK description')
+        else:
+            log.info(f'[-] Run id: {run_id} had a broken description. '
+                     f'Description found: {actual_desc_str}')
+            update_run_description(conn, run_id, trusted_desc.to_json())
+            log.info(f'    Run id: {run_id} has been updated.')

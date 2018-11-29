@@ -28,6 +28,9 @@ install:
 test_script:
   - cd qcodes
   - python tests\dataset\legacy_DB_generation\generate_version_0.py
+  - python tests\dataset\legacy_DB_generation\generate_version_1.py
+  - python tests\dataset\legacy_DB_generation\generate_version_2.py
+  - python tests\dataset\legacy_DB_generation\generate_version_3.py
   - cd tests
   - pytest
   - cd ..\..
