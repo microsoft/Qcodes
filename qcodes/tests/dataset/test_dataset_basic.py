@@ -557,17 +557,17 @@ def test_metadata(experiment):
 
 
 def test_the_same_dataset_as(some_paramspecs, experiment):
-        paramspecs = some_paramspecs[2]
-        ds = DataSet()
-        ds.add_parameter(paramspecs['ps1'])
-        ds.add_parameter(paramspecs['ps2'])
-        ds.add_result({'ps1': 1, 'ps2': 2})
+    paramspecs = some_paramspecs[2]
+    ds = DataSet()
+    ds.add_parameter(paramspecs['ps1'])
+    ds.add_parameter(paramspecs['ps2'])
+    ds.add_result({'ps1': 1, 'ps2': 2})
 
-        same_ds_from_load = DataSet(run_id=ds.run_id)
-        assert ds.the_same_dataset_as(same_ds_from_load)
+    same_ds_from_load = DataSet(run_id=ds.run_id)
+    assert ds.the_same_dataset_as(same_ds_from_load)
 
-        new_ds = DataSet()
-        assert not ds.the_same_dataset_as(new_ds)
+    new_ds = DataSet()
+    assert not ds.the_same_dataset_as(new_ds)
 
 
 class TestGetData:
