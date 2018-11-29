@@ -2,6 +2,7 @@ from os.path import getmtime
 from contextlib import contextmanager
 import re
 import os
+from pathlib import Path
 
 import pytest
 import numpy as np
@@ -543,3 +544,40 @@ def test_integration_station_and_measurement(two_empty_temp_db_connections):
 
     assert datasaver.dataset.the_same_dataset_as(target_ds)
 
+
+def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
+    """
+    Test the atomicity of the transaction by extracting and inserting two
+    runs where the second one is not completed. The not completed error must
+    roll back any changes to the target
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    # The target file must exist for us to be able to see whether it has
+    # changed
+    Path(target_path).touch()
+
+    source_exp = Experiment(conn=source_conn)
+    source_ds_1 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_1.add_parameter(ps)
+    source_ds_1.add_result({ps.name: 2.1
+                            for ps in some_paramspecs[2].values()})
+    source_ds_1.mark_complete()
+
+    source_ds_2 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
+    for ps in some_paramspecs[2].values():
+        source_ds_2.add_parameter(ps)
+    source_ds_2.add_result({ps.name: 2.1
+                            for ps in some_paramspecs[2].values()})
+    # This dataset is NOT marked as completed
+
+    # now check that the target file is untouched
+    with raise_if_file_changed(target_path):
+        # although the not completed error is a ValueError, we get the
+        # RuntimeError from SQLite
+        with pytest.raises(RuntimeError):
+            extract_runs_into_db(source_path, target_path, 1, 2)
