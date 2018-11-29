@@ -1184,7 +1184,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         if verbose:
             print('Writing to:',
-                  self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
+                  self.ask('MMEMory:CDIRectory?').replace('\n', '\\ '),
                   filename)
         # Header indicating the name and size of the file being send
         name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')

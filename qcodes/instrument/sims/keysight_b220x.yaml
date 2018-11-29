@@ -1,0 +1,142 @@
+spec: 1.1
+devices:
+  KeysightB2200:
+    error:
+      error_queue:
+        - q: ':SYST:ERR?'
+          default: '0, No Error'
+          command_error: '1, Command error'
+      status_register:
+        - q: "*ESR?"
+          command_error: 32
+          query_error: 4
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    channels:
+      card:
+        ids: [0, 1, 2, 3, 4]
+        can_select: True
+        properties:
+          bias_port:
+            default: 10
+            getter:
+              q: ":BIAS:PORT? {ch_id}"
+              r: "{}"
+            setter:
+              q: ":BIAS:PORT {ch_id},{}"
+            specs:
+              min: -1
+              max: 14
+              type: int
+          connection_rule:
+            default: "FREE"
+            setter:
+              q: ":CONN:RULE {ch_id},{}"
+            getter:
+              q: ":CONN:RULE? {ch_id}"
+              r: "{}"
+            specs:
+              valid: ['SROU', 'FREE']
+              type: str
+          connection_sequence:
+            default: "BBM"
+            setter:
+              q: ":CONN:SEQ {ch_id},{}"
+            getter:
+              q: ":CONN:SEQ? {ch_id}"
+              r: "{}"
+            specs:
+              valid: ['NSEQ', 'BBM', 'MBBR']
+              type: str
+          bias_mode:
+            default: 0
+            setter:
+              q: ":BIAS {ch_id},{}"
+            getter:
+              q: ":BIAS? {ch_id}"
+              r: "{}"
+            specs:
+              valid: ['0', '1']
+              type: str
+          gnd_port:
+            default: 12
+            getter:
+              q: ":AGND:PORT? {ch_id}"
+              r: "{}"
+            setter:
+              q: ":AGND:PORT {ch_id},{}"
+            specs:
+              min: -1
+              max: 14
+              type: int
+          gnd_mode:
+            default: 0
+            setter:
+              q: ":AGND {ch_id},{}"
+            getter:
+              q: ":AGND? {ch_id}"
+              r: "{}"
+            specs:
+              valid: [0, 1]
+              type: int
+          gnd_enabled_inputs:
+            default: "''"
+            setter:
+              q: ":AGND:UNUSED {ch_id},{}"
+            getter:
+              q: ":AGND:UNUSED? {ch_id}"
+              r: "{}"
+            specs:
+              valid: ["''", "'5, 6, 7, 8'", "'3'"]
+              type: str
+          couple_ports:
+            default: "''"
+            setter:
+              q: ":COUP:PORT {ch_id},{}"
+            getter:
+              q: ":COUP:PORT? {ch_id}"
+              r: "{}"
+            specs:
+              valid: ["''", "'1, 3, 5'", "'1'"]
+              type: str
+          couple_mode:
+            default: 0
+            setter:
+              q: ":COUP {ch_id},{}"
+            getter:
+              q: ":COUP? {ch_id}"
+              r: "{}"
+            specs:
+              valid: [0, 1]
+              type: int
+
+        dialogues:
+          - q: ":BIAS:CHAN:DIS:CARD {ch_id}"
+          - q: ":BIAS:CHAN:ENAB:CARD {ch_id}"
+          - q: ":BIAS:CHAN:DIS (@{ch_id}0101)"
+          - q: ":BIAS:CHAN:ENAB (@{ch_id}0101)"
+          - q: ":AGND:CHAN:DIS:CARD {ch_id}"
+          - q: ":AGND:CHAN:DIS (@{ch_id}0101)"
+          - q: ":AGND:CHAN:ENAB:CARD {ch_id}"
+          - q: ":AGND:CHAN:ENAB (@{ch_id}0101)"
+          - q: ":COUP:PORT:DET"
+          - q: ":CLOS (@00248)"
+          - q: ":CLOS (@01012)"
+          - q: ":OPEN (@00248)"
+          - q: ":OPEN (@00322)"
+          - q: ":OPEN:CARD 0"
+          - q: ":CLOS:CARD? 0"
+            r: "(@00248,01012)"
+
+
+    dialogues:
+      - q: "*RST"
+      - q: "*CLS"
+      - q: "*IDN?"
+        r: "AGILENT TECHNOLOGIES,B2200A,0,A.01.00"
+
+resources:
+  GPIB::1::INSTR:
+    device: KeysightB2200

@@ -1,20 +1,22 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple, Iterable
+from collections import namedtuple
+from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
+import pytest
 
 import numpy as np
 from hypothesis import given, event, settings
 import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
-    Parameter, ArrayParameter, MultiParameter,
-    InstrumentRefParameter)
+    Parameter, ArrayParameter, MultiParameter, ManualParameter,
+    InstrumentRefParameter, ScaledParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
-
+from qcodes.utils.validators import Numbers
 
 
 class GettableParam(Parameter):
@@ -156,14 +158,16 @@ class TestParameter(TestCase):
 
         p = Parameter('p', set_cmd=None, initial_value=0,
                       vals=BookkeepingValidator())
-
-        self.assertEqual(p.vals.values_validated, [0])
+        # in the set wrapper the final value is validated
+        # and then subsequently each step is validated.
+        # in this case there is one step so the final value
+        # is validated twice.
+        self.assertEqual(p.vals.values_validated, [0, 0])
 
         p.step = 1
         p.set(10)
-
         self.assertEqual(p.vals.values_validated,
-                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+                         [0, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
@@ -179,7 +183,7 @@ class TestParameter(TestCase):
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
-        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
         self.assertTrue(hasattr(gettable_parameter, 'get'))
         self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
@@ -188,14 +192,14 @@ class TestParameter(TestCase):
         self.assertIsNone(gettable_parameter())
 
         # Create parameter that saves value during set, and has no get_cmd
-        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
         self.assertFalse(hasattr(settable_parameter, 'get'))
         self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
             settable_parameter()
         settable_parameter(42)
 
-        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
         self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
         self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
         self.assertIsNone(settable_gettable_parameter())
@@ -217,6 +221,15 @@ class TestParameter(TestCase):
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
+
+    def test_bad_name(self):
+        with self.assertRaises(ValueError):
+            Parameter('p with space')
+        with self.assertRaises(ValueError):
+            Parameter('⛄')
+        with self.assertRaises(ValueError):
+            Parameter('1')
+
 
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
@@ -436,6 +449,31 @@ class TestParameter(TestCase):
         np.testing.assert_allclose(p.get(), value)
         assert p.raw_value == -scale * value
 
+    def test_steppeing_from_invalid_starting_point(self):
+
+        the_value = -10
+
+        def set_function(value):
+            nonlocal the_value
+            the_value = value
+
+        def get_function():
+            return the_value
+
+        a = Parameter('test', set_cmd=set_function, get_cmd=get_function,
+                      vals=Numbers(0, 100), step=5)
+        # We start out by setting the parameter to an
+        # invalid value. This is not possible using initial_value
+        # as the validator will catch that but perhaps this may happen
+        # if the instrument can return out of range values.
+        assert a.get() == -10
+        with pytest.raises(ValueError):
+            # trying to set to 10 should raise even with 10 valid
+            # as the steps demand that we first step to -5 which is not
+            a.set(10)
+        # afterwards the value should still be the same
+        assert a.get() == -10
+
 
 class TestValsandParseParameter(TestCase):
 
@@ -536,6 +574,7 @@ class TestArrayParameter(TestCase):
         self.assertEqual(p.unit, unit)
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_full_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
         self.assertEqual(p._get_count, 0)
@@ -573,14 +612,25 @@ class TestArrayParameter(TestCase):
     def test_full_name(self):
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
-            p = SimpleArrayParam([6, 7], 'fred', (2,))
+            p = SimpleArrayParam([6, 7], 'fred', (2,),
+                                 setpoint_names=('barney',))
             p._instrument = instrument
             self.assertEqual(str(p), 'fred')
+            self.assertEqual(p.setpoint_full_names, ('barney',))
 
-        # and finally an instrument that really has a name
-        p = SimpleArrayParam([6, 7], 'wilma', (2,))
+        # and then an instrument that really has a name
+        p = SimpleArrayParam([6, 7], 'wilma', (2,),
+                             setpoint_names=('betty',))
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_wilma')
+        self.assertEqual(p.setpoint_full_names, ('astro_betty',))
+
+        # and with a 2d parameter to test mixed setpoint_names
+        p = SimpleArrayParam([[6, 7, 8], [1, 2, 3]], 'wilma', (3, 2),
+                             setpoint_names=('betty', None))
+        p._instrument = named_instrument
+        self.assertEqual(p.setpoint_full_names, ('astro_betty', None))
+
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -681,6 +731,9 @@ class TestMultiParameter(TestCase):
         self.assertEqual(p.units, units)
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
+        # as the parameter is not attached to an instrument the full names are
+        # equivalent to the setpoint_names
+        self.assertEqual(p.setpoint_full_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
         self.assertEqual(p._get_count, 0)
@@ -723,24 +776,33 @@ class TestMultiParameter(TestCase):
     def test_full_name_s(self):
         name = 'mixed_dimensions'
         names = ['0D', '1D', '2D']
+        setpoint_names = ((),
+                          ('setpoints_1D',),
+                          ('setpoints_2D_1',
+                           None))
         shapes = ((), (3,), (2, 2))
 
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
             p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                                 name, names, shapes)
+                                 name, names, shapes,
+                                 setpoint_names=setpoint_names)
             p._instrument = instrument
             self.assertEqual(str(p), name)
-
             self.assertEqual(p.full_names, names)
+            self.assertEqual(p.setpoint_full_names,
+                             ((), ('setpoints_1D',), ('setpoints_2D_1', None)))
 
         # and finally an instrument that really has a name
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                             name, names, shapes)
+                             name, names, shapes, setpoint_names=setpoint_names)
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_mixed_dimensions')
 
         self.assertEqual(p.full_names, ['astro_0D', 'astro_1D', 'astro_2D'])
+        self.assertEqual(p.setpoint_full_names,
+                         ((), ('astro_setpoints_1D',),
+                          ('astro_setpoints_2D_1', None)))
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -902,6 +964,147 @@ class TestInstrumentRefParameter(TestCase):
         self.d.close()
         del self.a
         del self.d
+
+
+class TestScaledParameter(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.parent_instrument = DummyInstrument('dummy')
+
+    def setUp(self):
+        self.target_name = 'target_parameter'
+        self.target_label = 'Target Parameter'
+        self.target_unit = 'V'
+
+        self.target = ManualParameter(name=self.target_name, label=self.target_label,
+                                      unit=self.target_unit, initial_value=1.0,
+                                      instrument=self.parent_instrument)
+        self.parent_instrument.add_parameter(self.target)
+        self.scaler = ScaledParameter(self.target, division=1)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.parent_instrument.close()
+        del cls.parent_instrument
+
+    def test_constructor(self):
+        #Test the behaviour of the constructor
+
+        # Require a wrapped parameter
+        with self.assertRaises(TypeError):
+            ScaledParameter()
+
+        # Require a scaling factor
+        with self.assertRaises(ValueError):
+            ScaledParameter(self.target)
+
+        # Require only one scaling factor
+        with self.assertRaises(ValueError):
+            ScaledParameter(self.target, division=1, gain=1)
+
+    def test_namelabel(self):
+        #Test handling of name and label
+
+        # Test correct inheritance
+        assert self.scaler.name == self.target_name + '_scaled'
+        assert self.scaler.label == self.target_label + '_scaled'
+
+        # Test correct name/label handling by the constructor
+        scaled_name = 'scaled'
+        scaled_label = "Scaled parameter"
+        scaler2 = ScaledParameter(self.target, division=1, name=scaled_name, label=scaled_label)
+        assert scaler2.name == scaled_name
+        assert scaler2.label == scaled_label
+
+    def test_unit(self):
+        # Test handling of the units
+
+        # Check if the unit is correctly inherited
+        assert self.scaler.unit == 'V'
+
+        # Check if we can change succesfully the unit
+        self.scaler.unit = 'A'
+        assert self.scaler.unit == 'A'
+
+        # Check if unit is correctly set in the constructor
+        scaler2 = ScaledParameter(self.target, name='scaled_value', division=1, unit='K')
+        assert scaler2.unit == 'K'
+
+    def test_metadata(self):
+        #Test the metadata
+
+        test_gain = 3
+        test_unit = 'V'
+        self.scaler.gain = test_gain
+        self.scaler.unit = test_unit
+
+        # Check if relevant fields are present in the snapshot
+        snap = self.scaler.snapshot()
+        snap_keys = snap.keys()
+        metadata_keys = snap['metadata'].keys()
+        assert 'division' in snap_keys
+        assert 'gain' in snap_keys
+        assert 'role' in snap_keys
+        assert 'unit' in snap_keys
+        assert 'variable_multiplier' in metadata_keys
+        assert 'wrapped_parameter' in metadata_keys
+        assert 'wrapped_instrument' in metadata_keys
+
+        # Check if the fields are correct
+        assert snap['gain'] == test_gain
+        assert snap['division'] == 1/test_gain
+        assert snap['role'] == ScaledParameter.Role.GAIN
+        assert snap['unit'] == test_unit
+        assert snap['metadata']['variable_multiplier'] == False
+        assert snap['metadata']['wrapped_parameter'] == self.target.name
+
+    def test_wrapped_parameter(self):
+        #Test if the target parameter is correctly inherited
+        assert self.scaler.wrapped_parameter == self.target
+
+    def test_divider(self):
+        test_division = 10
+        test_value = 5
+
+        self.scaler.division = test_division
+        self.scaler(test_value)
+        assert self.scaler() == test_value
+        assert self.target() == test_division * test_value
+        assert self.scaler.gain == 1/test_division
+        assert self.scaler.role == ScaledParameter.Role.DIVISION
+
+    def test_multiplier(self):
+        test_multiplier= 10
+        test_value = 5
+
+        self.scaler.gain = test_multiplier
+        self.scaler(test_value)
+        assert self.scaler() == test_value
+        assert self.target() == test_value / test_multiplier
+        assert self.scaler.division == 1/test_multiplier
+        assert self.scaler.role == ScaledParameter.Role.GAIN
+
+    def test_variable_gain(self):
+        test_value = 5
+
+        initial_gain = 2
+        variable_gain_name = 'gain'
+        gain = ManualParameter(name=variable_gain_name, initial_value=initial_gain)
+        self.scaler.gain = gain
+        self.scaler(test_value)
+
+        assert self.scaler() == test_value
+        assert self.target() == test_value / initial_gain
+        assert self.scaler.division == 1/initial_gain
+
+        second_gain = 7
+        gain(second_gain)
+        assert self.target() == test_value / initial_gain   #target value must change on scaler value change, not on gain/division
+        self.scaler(test_value)
+        assert self.target() == test_value / second_gain
+        assert self.scaler.division == 1 / second_gain
+
+        assert self.scaler.metadata['variable_multiplier'] == variable_gain_name
 
 
 class TestSetContextManager(TestCase):

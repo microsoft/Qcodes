@@ -268,7 +268,7 @@ class DataArray(DelegateAttributes):
         """
         if data is not None:
             if not isinstance(data, np.ndarray):
-                if isinstance(data, collections.Iterator):
+                if isinstance(data, collections.abc.Iterator):
                     # faster than np.array(tuple(data)) (or via list)
                     # but requires us to assume float
                     data = np.fromiter(data, float)
@@ -320,7 +320,7 @@ class DataArray(DelegateAttributes):
         Also update the record of modifications to the array. If you don't
         want this overhead, you can access ``self.ndarray`` directly.
         """
-        if isinstance(loop_indices, collections.Iterable):
+        if isinstance(loop_indices, collections.abc.Iterable):
             min_indices = list(loop_indices)
             max_indices = list(loop_indices)
         else:
