@@ -325,3 +325,14 @@ def test_update_from_path(path_to_config_file_on_disk):
         expected_path = os.path.join(path_to_config_file_on_disk,
                                      'qcodesrc.json')
         assert cfg.current_config_path == expected_path
+
+
+def test_repr():
+    cfg = Config()
+    rep = cfg.__repr__()
+
+    expected_rep = (f"Current values: \n {cfg.current_config} \n"
+                    f"Current paths: \n {cfg._loaded_config_files} \n"
+                    f"{super(Config, cfg).__repr__()}")
+
+    assert rep == expected_rep

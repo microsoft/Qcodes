@@ -392,9 +392,9 @@ class Config:
 
     def __repr__(self):
         old = super().__repr__()
-        output = f"""Current values: \n {current_config} \n
-                     Current paths: \n {self._loaded_config_files} \n
-                     {old}"""
+        output = (f"Current values: \n {self.current_config} \n"
+                  f"Current paths: \n {self._loaded_config_files} \n"
+                  f"{old}")
         return output
 
 
