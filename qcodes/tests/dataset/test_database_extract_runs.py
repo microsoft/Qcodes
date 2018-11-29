@@ -120,7 +120,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
 
     assert len(target_exp) == length1
 
-    target_dataset = DataSet(conn=source_conn, run_id=1)
+    target_dataset = DataSet(conn=target_conn, run_id=1)
 
     # Now make the interesting comparisons: are the target objects the same as
     # the source objects?
