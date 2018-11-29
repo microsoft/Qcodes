@@ -336,3 +336,27 @@ def test_repr():
                     f"{super(Config, cfg).__repr__()}")
 
     assert rep == expected_rep
+
+
+def test_add_and_describe():
+    """
+    Test that a key an be added and described
+    """
+    with default_config():
+
+        key = 'newkey'
+        value ='testvalue'
+        value_type ='string'
+        description ='A test'
+        default = 'testdefault'
+
+        cfg = Config()
+        cfg.add(key=key, value=value, value_type=value_type,
+                description=description, default=default)
+
+
+        desc = cfg.describe(f'user.{key}')
+        expected_desc = (f"{description}.\nCurrent value: {value}. "
+                         f"Type: {value_type}. Default: {default}.")
+
+        assert desc == expected_desc
