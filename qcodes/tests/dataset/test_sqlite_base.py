@@ -195,7 +195,6 @@ def test_is_run_id_in_db(empty_temp_db):
 
     for _ in range(5):
         ds = DataSet(conn=conn, run_id=None)
-        print(ds.run_id)
 
     # there should now be run_ids 1, 2, 3, 4, 5 in the database
     good_ids = [1, 2, 3, 4, 5]
