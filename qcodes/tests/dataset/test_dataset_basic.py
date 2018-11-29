@@ -23,7 +23,7 @@ from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, array_dataset, multi_dataset
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, array_dataset, multi_dataset, array_in_scalar_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -770,6 +770,8 @@ def test_get_array_parameter_data(array_dataset):
 def test_get_multi_parameter_data(multi_dataset):
     parameter_test_helper(multi_dataset)
 
+def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
+    parameter_test_helper(array_in_scalar_dataset)
 
 def parameter_test_helper(ds):
     params = ds.parameters.split(',')
@@ -782,6 +784,10 @@ def parameter_test_helper(ds):
     ref = ds.get_data(*params)
     dut = ds.get_parameter_data(*params)
 
+    column_lenghts = []
+    for i_col, col in enumerate(dut):
+        column_lenghts.append(len(col))
+
     for i_row, row in enumerate(ref):
         for i_param, param_name in enumerate(param_names):
             v_ref = row[i_param]
@@ -789,7 +795,10 @@ def parameter_test_helper(ds):
             if isinstance(v_ref, float):
                 assert isinstance(v_test, np.float64)
             elif isinstance(v_ref, int):
-                assert isinstance(v_test, np.int32)
+                # default datatype for int is c_long which is 32 bit on
+                # windows and 64bit on linux
+                assert isinstance(v_test, np.int32) or \
+                       isinstance(v_test, np.int64)
             else:
                 raise RuntimeError('Unsupported data type')
             assert np.isclose(v_test, v_ref)
