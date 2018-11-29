@@ -16,6 +16,9 @@ from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_database_creation_and_upgrading import error_caused_by
+from qcodes.dataset.measurements import Measurement
+from qcodes import Station
+from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 @contextmanager
@@ -475,3 +478,38 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
     assert len(get_experiments(target_conn)) == 1
 
     assert len(Experiment(exp_id=1, conn=target_conn)) == 5
+
+
+def test_integration_station_and_measurement(two_empty_temp_db_connections):
+    """
+    An integration test where the runs in the source DB file are produced
+    with the Measurement object and there is a Station as well
+    """
+    source_conn, target_conn = two_empty_temp_db_connections
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    source_exp = Experiment(conn=source_conn)
+
+    # Set up measurement scenario
+    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
+    station = Station(inst)
+
+    meas = Measurement(exp=source_exp, station=station)
+    meas.register_parameter(inst.back)
+    meas.register_parameter(inst.plunger)
+    meas.register_parameter(inst.cutter, setpoints=(inst.back, inst.plunger))
+
+    with meas.run() as datasaver:
+        for back_v in [1, 2, 3]:
+            for plung_v in [-3, -2.5, 0]:
+                datasaver.add_result((inst.back, back_v),
+                                     (inst.plunger, plung_v),
+                                     (inst.cutter, back_v+plung_v))
+
+    extract_runs_into_db(source_path, target_path, 1)
+
+    target_ds = DataSet(conn=target_conn, run_id=1)
+
+    assert datasaver.dataset.the_same_dataset_as(target_ds)
+
