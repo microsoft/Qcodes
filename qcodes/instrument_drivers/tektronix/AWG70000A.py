@@ -941,8 +941,7 @@ class AWG70000A(VisaInstrument):
         # STEP 2:
         # Make all subsequence .sml files
 
-        print('Waveforms done')
-        print(wfmx_filenames)
+        log.debug(f'Waveforms done: {wfmx_filenames}')
 
         subseqsml_files: List[str] = []
         subseqsml_filenames: List[str] = []
@@ -974,7 +973,7 @@ class AWG70000A(VisaInstrument):
 
                 subseqname = f'subsequence_{pos1}'
 
-                print(ss_wfm_names)
+                log.debug(f'Subsequence waveform names: {ss_wfm_names}')
 
                 subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                                    nreps=seqing['nrep'],
@@ -1013,8 +1012,7 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
-        print('True debug')
-        print(asset_names)
+        log.debug(f'Assets for SML file: {asset_names}')
 
         mainseqname = seqname
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
