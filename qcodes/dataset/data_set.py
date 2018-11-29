@@ -35,7 +35,9 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
-                                        run_exists)
+                                        run_exists, remove_trigger,
+                                        make_connection_plus_from,
+                                        ConnectionPlus)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -111,6 +113,7 @@ class _Subscriber(Thread):
             self.callback = functools.partial(callback, **callback_kwargs)
 
         self.callback_id = f"callback{self._id}"
+        self.trigger_id = f"sub{self._id}"
 
         conn = dataSet.conn
 
@@ -119,7 +122,7 @@ class _Subscriber(Thread):
         parameters = dataSet.get_parameters()
         sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
         sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER sub{self._id}
+        CREATE TRIGGER {self.trigger_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callback_id}({sql_param_list});
@@ -186,7 +189,7 @@ class _Subscriber(Thread):
 class DataSet(Sized):
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
-                 conn=None,
+                 conn: Optional[ConnectionPlus]=None,
                  exp_id=None,
                  name: str=None,
                  specs: SPECS=None,
@@ -222,7 +225,8 @@ class DataSet(Sized):
                              "This is not allowed.")
         self._path_to_db = path_to_db or get_DB_location()
 
-        self.conn = conn or connect(self.path_to_db)
+        self.conn = make_connection_plus_from(conn) if conn is not None else \
+            connect(self.path_to_db)
 
         self._run_id = run_id
         self._debug = False
@@ -476,9 +480,9 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        add_meta_data(self.conn, self.run_id, {tag: metadata})
-        # `add_meta_data` does not commit, hence we commit here:
-        self.conn.commit()
+        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        with atomic(self.conn) as conn:
+            add_meta_data(conn, self.run_id, {tag: metadata})
 
     @property
     def started(self) -> bool:
@@ -577,6 +581,8 @@ class DataSet(Sized):
                            values)
         return len_before_add
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.')
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
         """
         Modify a logically single result of existing parameters
@@ -601,12 +607,15 @@ class DataSet(Sized):
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
 
-        with atomic(self.conn) as self.conn:
-            modify_values(self.conn, self.table_name, index,
+        with atomic(self.conn) as conn:
+            modify_values(conn, self.table_name, index,
                           list(results.keys()),
                           list(results.values())
                           )
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
+               alternative='modify_result')
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
         """
@@ -642,13 +651,16 @@ class DataSet(Sized):
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
 
-        with atomic(self.conn) as self.conn:
-            modify_many_values(self.conn,
+        with atomic(self.conn) as conn:
+            modify_many_values(conn,
                                self.table_name,
                                start_index,
                                flattened_keys,
                                flattened_values)
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
+               alternative='add_parameter, add_result, add_results')
     def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
         Add a parameter to the DataSet and associates result values with the
@@ -669,8 +681,8 @@ class DataSet(Sized):
                     len(values)
                 ))
 
-        with atomic(self.conn) as self.conn:
-            add_parameter(self.conn, self.table_name, spec)
+        with atomic(self.conn) as conn:
+            add_parameter(conn, self.table_name, spec)
             # now add values!
             results = [{spec.name: value} for value in values]
             self.add_results(results)
@@ -850,15 +862,12 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn) as self.conn:
-            self._remove_trigger(uuid)
+        with atomic(self.conn) as conn:
             sub = self.subscribers[uuid]
+            remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
             sub.join()
             del self.subscribers[uuid]
-
-    def _remove_trigger(self, name):
-        transaction(self.conn, f"DROP TRIGGER IF EXISTS {name};")
 
     def unsubscribe_all(self):
         """
@@ -866,9 +875,9 @@ class DataSet(Sized):
         """
         sql = "select * from sqlite_master where type = 'trigger';"
         triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as self.conn:
+        with atomic(self.conn) as conn:
             for trigger in triggers:
-                self._remove_trigger(trigger['name'])
+                remove_trigger(conn, trigger['name'])
             for sub in self.subscribers.values():
                 sub.schedule_stop()
                 sub.join()

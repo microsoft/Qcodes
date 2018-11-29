@@ -1,5 +1,7 @@
 import itertools
 from copy import copy
+import re
+
 
 import pytest
 import numpy as np
@@ -11,6 +13,9 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
+from qcodes.tests.dataset.test_database_creation_and_upgrading import \
+    error_caused_by
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -23,6 +28,20 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, array_dataset,
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
 n_experiments = 0
+
+
+def make_shadow_dataset(dataset: DataSet):
+    """
+    Creates a new DataSet object that points to the same run_id in the same
+    database file as the given dataset object.
+
+    Note that in order to achieve it `path_to_db` because this will create a
+    new sqlite3 connection object behind the scenes. This is very useful for
+    situations where one needs to assert the underlying modifications to the
+    database file.
+    """
+    return DataSet(path_to_db=dataset.path_to_db, run_id=dataset.run_id)
+
 
 @pytest.mark.usefixtures("experiment")
 def test_has_attributes_after_init():
@@ -163,7 +182,10 @@ def test_add_paramspec(dataset):
 
     # Now retrieve the paramspecs
 
-    paramspecs = dataset.paramspecs
+    shadow_ds = make_shadow_dataset(dataset)
+
+    paramspecs = shadow_ds.paramspecs
+
     expected_keys = ['a_param', 'b_param', 'c_param']
     keys = sorted(list(paramspecs.keys()))
     assert keys == expected_keys
@@ -172,6 +194,8 @@ def test_add_paramspec(dataset):
         assert ps.name == expected_param_name
 
     assert paramspecs['c_param'].inferred_from == 'a_param, b_param'
+
+    assert paramspecs == dataset.paramspecs
 
 
 def test_add_paramspec_one_by_one(dataset):
@@ -187,7 +211,11 @@ def test_add_paramspec_one_by_one(dataset):
                   ParamSpec("c", "array")]
     for parameter in parameters:
         dataset.add_parameter(parameter)
-    paramspecs = dataset.paramspecs
+
+    shadow_ds = make_shadow_dataset(dataset)
+
+    paramspecs = shadow_ds.paramspecs
+
     expected_keys = ['a', 'b', 'c']
     keys = sorted(list(paramspecs.keys()))
     assert keys == expected_keys
@@ -195,12 +223,15 @@ def test_add_paramspec_one_by_one(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
+    assert paramspecs == dataset.paramspecs
+
     # Test that is not possible to add the same parameter again to the dataset
     with pytest.raises(ValueError, match=f'Duplicate parameter name: '
                                          f'{parameters[0].name}'):
         dataset.add_parameter(parameters[0])
 
     assert len(dataset.paramspecs.keys()) == 3
+    assert len(shadow_ds.paramspecs.keys()) == 3
 
 
 @pytest.mark.usefixtures("experiment")
@@ -224,8 +255,13 @@ def test_add_data_1d():
         y = 3 * x + 10
         expected_y.append([y])
         mydataset.add_result({"x": x, "y": y})
+
+    shadow_ds = make_shadow_dataset(mydataset)
+
     assert mydataset.get_data('x') == expected_x
     assert mydataset.get_data('y') == expected_y
+    assert shadow_ds.get_data('x') == expected_x
+    assert shadow_ds.get_data('y') == expected_y
 
     with pytest.raises(ValueError):
         mydataset.add_result({'y': 500})
@@ -260,8 +296,15 @@ def test_add_data_array():
         y = np.random.random_sample(10)
         expected_y.append([y])
         mydataset.add_result({"x": x, "y": y})
+
+    shadow_ds = make_shadow_dataset(mydataset)
+
     assert mydataset.get_data('x') == expected_x
+    assert shadow_ds.get_data('x') == expected_x
+
     y_data = mydataset.get_data('y')
+    np.testing.assert_allclose(y_data, expected_y)
+    y_data = shadow_ds.get_data('y')
     np.testing.assert_allclose(y_data, expected_y)
 
 
@@ -293,9 +336,35 @@ def test_adding_too_many_results():
     dataset.add_results(results)
 
 
-@pytest.mark.usefixtures("experiment")
-def test_modify_result():
-    dataset = new_data_set("test_modify_result")
+def test_modify_results(dataset):
+    xparam = ParamSpec("x", "numeric")
+    dataset.add_parameter(xparam)
+    dataset.add_result({'x': 0})
+    dataset.add_result({'x': 1})
+
+    pytest.deprecated_call(dataset.modify_results, 0, [{'x': [10]}])
+    assert [[10], [1]] == dataset.get_data(xparam)
+
+    pytest.deprecated_call(dataset.modify_results, 1, [{'x': [14]}])
+    assert [[10], [14]] == dataset.get_data(xparam)
+
+    with pytest.raises(RuntimeError,
+                       match='Rolling back due to unhandled exception'):
+        # not sure calling `modify_results` like this is correct, anyway it
+        # is difficult to find out what the call signature for multiple
+        # results is supposed to look like...
+        pytest.deprecated_call(
+            dataset.modify_results, 0, [{'x': [5]}, {'x': [6]}])
+        assert [[5], [6]] == dataset.get_data(xparam)
+
+    pytest.xfail('modify_results does not seem to work for cases where '
+                 'multiple values of multiple parameters need to be changed. '
+                 'Anyway, the signature needs to be revisited, '
+                 'and consequently the correct behavior needs to be '
+                 'implemented and covered with tests.')
+
+
+def test_modify_result(dataset):
     xparam = ParamSpec("x", "numeric", label="x parameter",
                        unit='V')
     yparam = ParamSpec("y", 'numeric', label='y parameter',
@@ -312,54 +381,120 @@ def test_modify_result():
 
     dataset.add_result({'x': 0, 'y': 1, 'z': zdata})
 
-    assert dataset.get_data('x')[0][0] == xdata
-    assert dataset.get_data('y')[0][0] == ydata
-    assert (dataset.get_data('z')[0][0] == zdata).all()
+    shadow_ds = make_shadow_dataset(dataset)
 
-    with pytest.raises(ValueError):
-        dataset.modify_result(0, {' x': 1})
+    try:
+        assert dataset.get_data('x')[0][0] == xdata
+        assert dataset.get_data('y')[0][0] == ydata
+        assert (dataset.get_data('z')[0][0] == zdata).all()
 
-    xdata = 1
-    ydata = 12
-    zdata = np.linspace(0, 1, 99)
+        assert shadow_ds.get_data('x')[0][0] == xdata
+        assert shadow_ds.get_data('y')[0][0] == ydata
+        assert (shadow_ds.get_data('z')[0][0] == zdata).all()
 
-    dataset.modify_result(0, {'x': xdata})
-    assert dataset.get_data('x')[0][0] == xdata
-
-    dataset.modify_result(0, {'y': ydata})
-    assert dataset.get_data('y')[0][0] == ydata
-
-    dataset.modify_result(0, {'z': zdata})
-    assert (dataset.get_data('z')[0][0] == zdata).all()
-
-    dataset.mark_complete()
-
-    with pytest.raises(CompletedError):
-        dataset.modify_result(0, {'x': 2})
-
-
-@settings(max_examples=25, deadline=None)
-@given(N=hst.integers(min_value=1, max_value=10000),
-       M=hst.integers(min_value=1, max_value=10000))
-@pytest.mark.usefixtures("experiment")
-def test_add_parameter_values(N, M):
-
-    mydataset = new_data_set("test_add_parameter_values")
-    xparam = ParamSpec('x', 'numeric')
-    mydataset.add_parameter(xparam)
-
-    x_results = [{'x': x} for x in range(N)]
-    mydataset.add_results(x_results)
-
-    if N != M:
         with pytest.raises(ValueError):
-            mydataset.add_parameter_values(ParamSpec("y", "numeric"),
-                                           [y for y in range(M)])
+            pytest.deprecated_call(
+                dataset.modify_result, 0, {' x': 1})
 
-    mydataset.add_parameter_values(ParamSpec("y", "numeric"),
-                                   [y for y in range(N)])
+        xdata = 1
+        ydata = 12
+        zdata = np.linspace(0, 1, 99)
 
-    mydataset.mark_complete()
+        pytest.deprecated_call(dataset.modify_result, 0, {'x': xdata})
+        assert dataset.get_data('x')[0][0] == xdata
+        assert shadow_ds.get_data('x')[0][0] == xdata
+
+        pytest.deprecated_call(dataset.modify_result, 0, {'y': ydata})
+        assert dataset.get_data('y')[0][0] == ydata
+        assert shadow_ds.get_data('y')[0][0] == ydata
+
+        pytest.deprecated_call(dataset.modify_result, 0, {'z': zdata})
+        assert (dataset.get_data('z')[0][0] == zdata).all()
+        assert (shadow_ds.get_data('z')[0][0] == zdata).all()
+
+        dataset.mark_complete()
+
+        with pytest.raises(CompletedError):
+            pytest.deprecated_call(dataset.modify_result, 0, {'x': 2})
+
+    finally:
+        shadow_ds.conn.close()
+
+
+@pytest.mark.xfail(reason='This function does not seem to work the way its '
+                          'docstring suggests. See the test body for more '
+                          'information.')
+def test_add_parameter_values(dataset):
+    n = 2
+    m = n + 1
+
+    xparam = ParamSpec('x', 'numeric')
+    dataset.add_parameter(xparam)
+
+    x_results = [{'x': x} for x in range(n)]
+    dataset.add_results(x_results)
+
+    yparam = ParamSpec("y", "numeric")
+
+    match_str = f'Need to have {n} values but got {m}.'
+    match_str = re.escape(match_str)
+    with pytest.raises(ValueError, match=match_str):
+        pytest.deprecated_call(
+            dataset.add_parameter_values, yparam, [y for y in range(m)])
+
+    yvals = [y for y in range(n)]
+
+    # Unlike what the docstring of the method suggests,
+    # `add_parameter_values` does NOT add a new parameter and values for it
+    # "NEXT TO the columns of values of existing parameters".
+    #
+    # In other words, if the initial state of the table is:
+    #
+    # |   x  |
+    # --------
+    # |   1  |
+    # |   2  |
+    #
+    # then the state of the table after calling `add_parameter_values` is
+    # going to be:
+    #
+    # |   x  |   y  |
+    # ---------------
+    # |   1  | NULL |
+    # |   2  | NULL |
+    # | NULL |  25  |
+    # | NULL |  42  |
+    #
+    # while the docstring suggests the following state:
+    #
+    # |   x  |   y  |
+    # ---------------
+    # |   1  |  25  |
+    # |   2  |  42  |
+    #
+
+    y_expected = [[None]] * n + [[y] for y in yvals]
+    pytest.deprecated_call(
+        dataset.add_parameter_values, yparam, yvals)
+
+    shadow_ds = make_shadow_dataset(dataset)
+
+    try:
+        assert y_expected == dataset.get_data(yparam)
+        assert y_expected == shadow_ds.get_data(yparam)
+
+        dataset.mark_complete()
+
+        # and now let's test that dataset's connection does not commit anymore
+        # when `atomic` is used
+        dataset.add_results([{yparam.name: -2}])
+        y_expected_2 = y_expected + [[-2]]
+
+        assert y_expected_2 == dataset.get_data(yparam)
+        assert y_expected_2 == shadow_ds.get_data(yparam)
+
+    finally:
+        shadow_ds.conn.close()
 
 
 @pytest.mark.usefixtures("dataset")
@@ -530,14 +665,15 @@ def test_get_description(some_paramspecs):
     assert loaded_ds.description == desc
 
 
-@pytest.mark.usefixtures('experiment')
-def test_metadata():
+def test_metadata(experiment, request):
 
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
 
     ds1 = DataSet(metadata=metadata1)
+    request.addfinalizer(ds1.conn.close)
     ds2 = DataSet(metadata=metadata2)
+    request.addfinalizer(ds2.conn.close)
 
     assert ds1.run_id == 1
     assert ds1.metadata == metadata1
@@ -545,19 +681,24 @@ def test_metadata():
     assert ds2.metadata == metadata2
 
     loaded_ds1 = DataSet(run_id=1)
+    request.addfinalizer(loaded_ds1.conn.close)
     assert loaded_ds1.metadata == metadata1
     loaded_ds2 = DataSet(run_id=2)
+    request.addfinalizer(loaded_ds2.conn.close)
     assert loaded_ds2.metadata == metadata2
 
     badtag = 'lex luthor'
     sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
 
-    match = (f'Tag {badtag} has value None. '
-             ' That is not a valid metadata value!')
+    bad_tag_msg = (f'Tag {badtag} has value None. '
+                    ' That is not a valid metadata value!')
 
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises(RuntimeError,
+                       match='Rolling back due to unhandled exception') as e:
         for tag, value in sorry_metadata.items():
             ds1.add_metadata(tag, value)
+
+    assert error_caused_by(e, bad_tag_msg)
 
 
 class TestGetData:
