@@ -93,7 +93,10 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
         extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     assert error_caused_by(excinfo, ('Dataset not completed. An incomplete '
-                                     'dataset can not be copied.'))
+                                     'dataset can not be copied. The '
+                                     'incomplete dataset has GUID: '
+                                     f'{source_dataset.guid} and run_id: '
+                                     f'{source_dataset.run_id}'))
 
     for ps in some_paramspecs[1].values():
         source_dataset.add_parameter(ps)

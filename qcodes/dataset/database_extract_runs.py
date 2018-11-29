@@ -181,7 +181,8 @@ def _extract_single_dataset_into_db(dataset: DataSet,
 
     if not dataset.completed:
         raise ValueError('Dataset not completed. An incomplete dataset '
-                         'can not be copied.')
+                         'can not be copied. The incomplete dataset has '
+                         f'GUID: {dataset.guid} and run_id: {dataset.run_id}')
 
     source_conn = dataset.conn
 
