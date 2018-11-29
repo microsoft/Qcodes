@@ -626,7 +626,7 @@ def test_get_array_parameter_data(array_dataset):
     parameter_test_helper(array_dataset)
 
 
-def test_get_array_parameter_data(multi_dataset):
+def test_get_multi_parameter_data(multi_dataset):
     parameter_test_helper(multi_dataset)
 
 
@@ -648,7 +648,7 @@ def parameter_test_helper(ds):
             if isinstance(v_ref, float):
                 assert isinstance(v_test, np.float64)
             elif isinstance(v_ref, int):
-                assert isinstance(v_test, np.int)
+                assert isinstance(v_test, np.int32)
             else:
                 raise RuntimeError('Unsupported data type')
             assert np.isclose(v_test, v_ref)

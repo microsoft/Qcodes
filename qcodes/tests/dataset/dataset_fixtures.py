@@ -6,7 +6,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import ArraySetPointParam, Multi2DSetPointParam
 
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import dataset
+from qcodes.tests.dataset.temporary_databases import dataset, experiment
 # pylint: enable=unused-import
 
 
@@ -33,24 +33,30 @@ def scalar_dataset(dataset):
 
 
 @pytest.fixture
-def array_dataset(dataset):
+def array_dataset(experiment):
     meas = Measurement()
     param = ArraySetPointParam()
     meas.register_parameter(param)
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param.get(),))
-    datasaver.dataset.conn.close()
-    yield dataset
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
+
 
 
 @pytest.fixture
-def multi_dataset(dataset):
+def multi_dataset(experiment):
     meas = Measurement()
     param = Multi2DSetPointParam()
+
     meas.register_parameter(param)
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param.get(),))
-    datasaver.dataset.conn.close()
-    yield dataset
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
