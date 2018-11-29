@@ -188,12 +188,12 @@ def test_get_data_by_id_order(dataset):
 
 @pytest.mark.usefixtures('experiment')
 def test_load_by_guid(some_paramspecs):
-        paramspecs = some_paramspecs[2]
-        ds = DataSet()
-        ds.add_parameter(paramspecs['ps1'])
-        ds.add_parameter(paramspecs['ps2'])
-        ds.add_result({'ps1': 1, 'ps2': 2})
+    paramspecs = some_paramspecs[2]
+    ds = DataSet()
+    ds.add_parameter(paramspecs['ps1'])
+    ds.add_parameter(paramspecs['ps2'])
+    ds.add_result({'ps1': 1, 'ps2': 2})
 
-        loaded_ds = load_by_guid(ds.guid)
+    loaded_ds = load_by_guid(ds.guid)
 
-        assert loaded_ds.the_same_dataset_as(ds)
+    assert loaded_ds.the_same_dataset_as(ds)
