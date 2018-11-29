@@ -662,13 +662,15 @@ def test_get_description(some_paramspecs):
     assert loaded_ds.description == desc
 
 
-def test_metadata(experiment):
+def test_metadata(experiment, request):
 
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
 
     ds1 = DataSet(metadata=metadata1)
+    request.addfinalizer(ds1.conn.close)
     ds2 = DataSet(metadata=metadata2)
+    request.addfinalizer(ds2.conn.close)
 
     assert ds1.run_id == 1
     assert ds1.metadata == metadata1
@@ -676,8 +678,10 @@ def test_metadata(experiment):
     assert ds2.metadata == metadata2
 
     loaded_ds1 = DataSet(run_id=1)
+    request.addfinalizer(loaded_ds1.conn.close)
     assert loaded_ds1.metadata == metadata1
     loaded_ds2 = DataSet(run_id=2)
+    request.addfinalizer(loaded_ds2.conn.close)
     assert loaded_ds2.metadata == metadata2
 
     badtag = 'lex luthor'
