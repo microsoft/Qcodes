@@ -37,6 +37,18 @@ def raise_if_file_changed(path_to_file: str):
         raise RuntimeError(f'File {path_to_file} was modified.')
 
 
+@pytest.fixture(scope='function')
+def inst():
+    """
+    Dummy instrument for testing, ensuring that it's instance gets closed
+    and removed from the global register of instruments, which, if not done,
+    make break other tests
+    """
+    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
+    yield inst
+    inst.close()
+
+
 def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
     """
     Test that an error is raised if we attempt to extract a run not present in
@@ -459,6 +471,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
                              'the target DB file.')
             assert warning[0].message.args[0] == expected_mssg
 
+
 def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
                                            some_paramspecs):
     """
@@ -511,7 +524,8 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
     assert len(Experiment(exp_id=1, conn=target_conn)) == 5
 
 
-def test_integration_station_and_measurement(two_empty_temp_db_connections):
+def test_integration_station_and_measurement(two_empty_temp_db_connections,
+                                             inst):
     """
     An integration test where the runs in the source DB file are produced
     with the Measurement object and there is a Station as well
@@ -523,7 +537,6 @@ def test_integration_station_and_measurement(two_empty_temp_db_connections):
     source_exp = Experiment(conn=source_conn)
 
     # Set up measurement scenario
-    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
     station = Station(inst)
 
     meas = Measurement(exp=source_exp, station=station)
@@ -583,7 +596,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
             extract_runs_into_db(source_path, target_path, 1, 2)
 
 
-def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs):
+def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs, inst):
     """
     Test insertion of runs with no metadata and no snapshot into a DB already
     containing a run that has both
@@ -596,7 +609,6 @@ def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs):
     target_exp = Experiment(conn=target_conn)
 
     # Set up measurement scenario
-    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
     station = Station(inst)
 
     meas = Measurement(exp=target_exp, station=station)
