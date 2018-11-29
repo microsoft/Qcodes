@@ -18,7 +18,7 @@ from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, array_dataset, multi_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -617,8 +617,20 @@ class TestGetData:
                                               start, end, expected):
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
 
+
 def test_get_parameter_data(scalar_dataset):
-    ds = scalar_dataset
+    parameter_test_helper(scalar_dataset)
+
+
+def test_get_array_parameter_data(array_dataset):
+    parameter_test_helper(array_dataset)
+
+
+def test_get_array_parameter_data(multi_dataset):
+    parameter_test_helper(multi_dataset)
+
+
+def parameter_test_helper(ds):
     params = ds.parameters.split(',')
     # delete some random parameter to test it with an incomplete list
     del params[-2]
