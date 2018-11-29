@@ -179,12 +179,14 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         return
 
     parspecs = dataset.paramspecs.values()
+    metadata = dataset.metadata
 
     _, target_run_id, target_table_name = create_run(target_conn,
                                                      target_exp_id,
                                                      name=dataset.name,
                                                      guid=dataset.guid,
-                                                     parameters=list(parspecs))
+                                                     parameters=list(parspecs),
+                                                     metadata=metadata)
     _populate_results_table(source_conn,
                             target_conn,
                             dataset.table_name,
