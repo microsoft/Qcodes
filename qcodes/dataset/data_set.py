@@ -734,6 +734,10 @@ class DataSet(Sized):
             string)
         """
         valid_param_names = self._validate_parameters(*params)
+        if len(valid_param_names) == 0:
+            raise RuntimeError('Error calling `get_data`: you need to supply '
+                               'at least one parameter for which to get the '
+                               'data.')
         return get_data(self.conn, self.table_name, valid_param_names,
                         start, end)
 
