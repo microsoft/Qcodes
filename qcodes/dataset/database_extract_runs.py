@@ -5,7 +5,8 @@ import numpy as np
 
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_or_create_experiment
-from qcodes.dataset.sqlite_base import (atomic,
+from qcodes.dataset.sqlite_base import (add_meta_data,
+                                        atomic,
                                         connect,
                                         create_run,
                                         format_table_name,
@@ -180,6 +181,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
 
     parspecs = dataset.paramspecs.values()
     metadata = dataset.metadata
+    snapshot_raw = dataset.snapshot_raw
 
     _, target_run_id, target_table_name = create_run(target_conn,
                                                      target_exp_id,
@@ -196,6 +198,9 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                         target_run_id,
                         dataset.run_timestamp_raw,
                         dataset.completed_timestamp_raw)
+
+    if snapshot_raw is not None:
+        add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
 
 
 def _populate_results_table(source_conn: SomeConnection,
