@@ -38,8 +38,8 @@ def raise_if_file_changed(path_to_file: str):
 
 def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
     """
-    Test that an error is raised if runs not present in the source DB are
-    attempted extracted
+    Test that an error is raised if we attempt to extract a run not present in
+    the source DB
     """
     source_conn, target_conn = two_empty_temp_db_connections
 
