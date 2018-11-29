@@ -1182,7 +1182,7 @@ def get_data(conn: ConnectionPlus,
     return res
 
 
-def get_parameter_data(conn: SomeConnection,
+def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
                        columns: List[str],
                        start: int = None,
