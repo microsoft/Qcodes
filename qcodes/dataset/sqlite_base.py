@@ -1424,35 +1424,42 @@ def get_dependency_parameters(conn: ConnectionPlus, param: str,
 
 
 def get_data_of_param_and_deps_as_columns(conn: ConnectionPlus,
-                                          params: List[str], run_id: int):
+                                          table_name: str,
+                                          columns: List[str],
+                                          start: Optional[int]=None,
+                                          end: Optional[int]=None) -> \
+        Dict[str, Dict[str, np.ndarray]]:
     """
-    Load
+    Get data for one or more parameters and its dependencies. The data
+    is returned as numpy arrays nested 2 layers of dicts. The keys or the
+    outermost are the requested parameters and the second level by the loaded
+    parameters.
+
     Args:
-        conn:
-        params:
-        run_id:
-
-    Returns:
-
+        conn: database connection
+        table_name: name of the table
+        columns: list of columns
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
     """
     output = {}
-    if len(params) == 0:
+    if len(columns) == 0:
         raise NotImplementedError("HERE we should look up all "
                                   "dependent standalone parameters")
 
-    for param in params:
+    # get run_id
+    sql = """
+    SELECT run_id FROM runs WHERE result_table_name = ?
+    """
+    c = atomic_transaction(conn, sql, table_name)
+    run_id = one(c, 'run_id')
+
+    for param in columns:
         params = get_dependency_parameters(conn, param, run_id)
         columns = [param.name for param in params]
         types = [param.type for param in params]
-        # !!! fix this, there should probably be a method to get the table
-        # from the run_id
-        sql = f"""
-        SELECT result_table_name FROM runs WHERE run_id = {run_id}
-        """
-        c = conn.execute(sql)
-        result_table_name = one(c, 'result_table_name')
 
-        res = get_data(conn, result_table_name, columns)
+        res = get_data(conn, table_name, columns, start=start, end=end)
 
         if 'array' in types and 'numeric' in types: # todo handle str
             # todo: Should we check that all the arrays are the same size?
