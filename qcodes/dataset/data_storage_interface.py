@@ -11,7 +11,7 @@ VALUE = Union[str, Number, ndarray, bool, None]
 VALUES = Union[Sequence[VALUE], ndarray]
 # Introducing the `NOT_GIVEN` constant, intended to use as a default
 # value of method arguments that may be left out but also may take `None`
-# as a value. 
+# as a value.
 NOT_GIVEN: Final = ('This is a placeholder for arguments that have not '
                     'been supplied.')
 # define an `_Optional` type that allows to provide optional arguments to
@@ -35,7 +35,7 @@ class DataStorageInterface(ABC):
     """
     VERSION: Final = 0
 
-    def __init__(self, guid: str, ds: 'DataSet'):
+    def __init__(self, guid: str):
         self.guid = guid
 
     @abstractmethod
