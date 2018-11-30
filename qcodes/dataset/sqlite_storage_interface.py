@@ -37,7 +37,7 @@ class SqliteStorageInterface(DataStorageInterface):
 
         self._path_to_db = path_to_db or get_DB_location()
         self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+            connect(self._path_to_db)
 
         self.run_id = run_id
 
