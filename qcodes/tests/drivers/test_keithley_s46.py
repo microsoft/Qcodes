@@ -1,4 +1,5 @@
 import pytest
+from itertools import product
 
 from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
     S46, LockAcquisitionError
@@ -40,7 +41,7 @@ def test_open_close(s46):
 
     with pytest.raises(
         LockAcquisitionError,
-        match="Relay already in use by channel"
+        match="is already in use by channel"
     ):
         s46.channels[1].state("close")
 
@@ -50,6 +51,23 @@ def test_open_close(s46):
 
     with pytest.raises(
         LockAcquisitionError,
-        match="Relay already in use by channel"
+        match="is already in use by channel"
     ):
         s46.channels[19].state("close")
+
+
+def test_aliases(s46):
+
+    hex_aliases = [
+        f"{a}{b}" for a, b in product(
+            ["A", "B", "C", "D"],
+            list(range(1, 7))
+        )
+    ]
+
+    aliases = hex_aliases + [f"R{i}" for i in range(1, 9)]
+
+    for channel in s46.channels:
+        idx = channel.channel_number - 1
+        alias = aliases[idx]
+        assert getattr(s46, alias) is channel

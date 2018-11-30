@@ -1,4 +1,4 @@
-import numpy as np
+import itertools
 import re
 
 from typing import cast
@@ -11,14 +11,14 @@ class LockAcquisitionError(Exception):
 
 
 class S46Channel(InstrumentChannel):
-    def __init__(self, parent, name, channel_number, relay):
+    def __init__(self, parent, name, channel_number, relay_lock):
         super().__init__(parent, name)
 
         self._channel_number = channel_number
-        self._relay = relay
+        self._relay_lock = relay_lock
         if self._get_state() == "close":
             try:
-                self._relay.acquire_lock(self._channel_number)
+                self._relay_lock.acquire(self._channel_number)
             except LockAcquisitionError as e:
                 raise RuntimeError(
                     "The driver is initialized from an undesirable instrument "
@@ -43,9 +43,9 @@ class S46Channel(InstrumentChannel):
     def _set_state(self, new_state: str):
 
         if new_state == "close":
-            self._relay.acquire_lock(self._channel_number)
+            self._relay_lock.acquire(self._channel_number)
         elif new_state == "open":
-            self._relay.release_lock(self._channel_number)
+            self._relay_lock.release(self._channel_number)
 
         self.write(f":{new_state} (@{self._channel_number})")
 
@@ -54,65 +54,44 @@ class S46Channel(InstrumentChannel):
         return self._channel_number
 
 
-class S46Relay(InstrumentChannel):
-    def __init__(self, parent, name, channel_offset, channel_count):
-        super().__init__(parent, name)
-
-        self._channel_offset = channel_offset
+class RelayLock:
+    def __init__(self, relay_name):
+        self.relay_name = relay_name
         self._locked_by = None
 
-        channels = ChannelList(
-            cast(VisaInstrument, self),
-            "channel",
-            S46Channel,
-            snapshotable=False
-        )
-
-        for count, channel_number in enumerate(range(
-                channel_offset, channel_offset + channel_count)):
-
-            if channel_count == 1:
-                channel_name = self.short_name
-            else:
-                channel_name = f"{self.short_name}{count + 1}"
-
-            channel = S46Channel(
-                cast(VisaInstrument, self.parent),
-                channel_name,
-                channel_number,
-                self
-            )
-            channels.append(channel)
-
-        self.add_submodule("channels", channels)
-
-    def acquire_lock(self, channel_number):
+    def acquire(self, channel_number):
 
         if self._locked_by is not None and self._locked_by != channel_number:
             raise LockAcquisitionError(
-                f"Relay {self.short_name} is already in use by channel "
+                f"Relay {self.relay_name} is already in use by channel "
                 f"{self._locked_by}"
             )
         else:
             self._locked_by = channel_number
 
-    def release_lock(self, channel_number):
+    def release(self, channel_number):
 
         if self._locked_by == channel_number:
             self._locked_by = None
 
 
 class S46(VisaInstrument):
+
+    channel_aliases = dict(
+            zip([
+                    "{}{}".format(*a)
+                    for a in itertools.product(["A", "B", "C", "D"], range(1, 7))
+                ] +
+                [
+                    f"R{i}" for i in range(1, 9)
+                ],
+                range(1, 33))
+    )
+
+    relay_names = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\n", **kwargs)
-
-        relay_layout = [
-            int(i) for i in self.ask(":CONF:CPOL?").split(",")
-        ]
-        relay_names = (["A", "B", "C", "D"] + [f"R{i}" for i in range(1, 9)])
-        # Channel offsets are independent of pole configuration. See page
-        # 2-5 of the manual
-        channel_offsets = np.cumsum([0] + 4 * [6] + 7 * [1]) + 1
 
         channels = ChannelList(
             self,
@@ -121,11 +100,19 @@ class S46(VisaInstrument):
             snapshotable=False
         )
 
-        for name, channel_offset, channel_count in zip(
-                relay_names, channel_offsets, relay_layout):
+        for relay_name, channel_count in zip(S46.relay_names, self.relay_layout):
 
-            relay = S46Relay(self, name, channel_offset, channel_count)
-            for channel in relay.channels:
+            relay_lock = RelayLock(relay_name)
+
+            for channel_index in range(1, channel_count + 1):
+
+                if channel_count > 1:
+                    alias = f"{relay_name}{channel_index}"
+                else:
+                    alias = relay_name
+
+                channel_number = S46.channel_aliases[alias]
+                channel = S46Channel(self, alias, channel_number, relay_lock)
                 channels.append(channel)
                 self.add_submodule(channel.short_name, channel)
 
@@ -145,3 +132,8 @@ class S46(VisaInstrument):
     def open_all_channels(self):
         for channel in self.get_closed_channels():
             cast(S46Channel, channel).state("open")
+
+    @property
+    def relay_layout(self):
+        return [int(i) for i in self.ask(":CONF:CPOL?").split(",")]
+
