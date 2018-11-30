@@ -1312,7 +1312,7 @@ def get_layout(conn: ConnectionPlus,
 
     Args:
         conn: The database connection
-        run_id: The run_id as in the runs table
+        layout_id: The run_id as in the layouts table
 
     Returns:
         A dict with name, label, and unit
@@ -1390,7 +1390,85 @@ def get_dependencies(conn: ConnectionPlus,
     res = many_many(c, 'independent', 'axis_num')
     return res
 
+
+def get_independent_parameters(conn: ConnectionPlus,
+                               run_id: int):
+    """"
+    This should return all parameters that are neither
+    dependent on other parameters or dependencies of other parameters
+    """
+    raise NotADirectoryError("TODO")
 # Higher level Wrappers
+
+
+def get_dependency_parameters(conn: ConnectionPlus, param: str,
+                              run_id: int) -> List[ParamSpec]:
+    """
+    Given a parameter name return its ParamSpec of the parameter along with
+    the ParamSpecs of all it's dependencies.
+
+    Args:
+        conn:
+        param:
+        run_id:
+
+    """
+    layout_id = get_layout_id(conn, param, run_id)
+    deps = get_dependencies(conn, layout_id)
+    parameters = [get_paramspec(conn, run_id, param)]
+
+    for dep in deps:
+        depinfo = get_layout(conn, dep[0])
+        parameters.append(get_paramspec(conn, run_id, depinfo['name']))
+    return parameters
+
+
+def get_data_of_param_and_deps_as_columns(conn: ConnectionPlus,
+                                          params: List[str], run_id: int):
+    """
+    Load
+    Args:
+        conn:
+        params:
+        run_id:
+
+    Returns:
+
+    """
+    output = {}
+    if len(params) == 0:
+        raise NotImplementedError("HERE we should look up all "
+                                  "dependent standalone parameters")
+
+    for param in params:
+        params = get_dependency_parameters(conn, param, run_id)
+        columns = [param.name for param in params]
+        types = [param.type for param in params]
+        # !!! fix this, there should probably be a method to get the table
+        # from the run_id
+        sql = f"""
+        SELECT result_table_name FROM runs WHERE run_id = {run_id}
+        """
+        c = conn.execute(sql)
+        result_table_name = one(c, 'result_table_name')
+
+        res = get_data(conn, result_table_name, columns)
+
+        if 'array' in types and 'numeric' in types: # todo handle str
+            # todo: Should we check that all the arrays are the same size?
+            first_array_element = types.index('array')
+            non_array_elements = [i for i, x in enumerate(types)
+                                  if x == "numeric"]
+            for dat in res:
+                for element in non_array_elements:
+                    dat[element] = np.zeros_like(dat[first_array_element]) \
+                                   + dat[element]
+
+        res_t = list(map(list, zip(*res)))
+        output[param] = {name: np.array(column_data)
+                         for name, column_data
+                         in zip(columns, res_t)}
+    return output
 
 
 def new_experiment(conn: ConnectionPlus,
