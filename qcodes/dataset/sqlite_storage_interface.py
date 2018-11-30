@@ -13,7 +13,6 @@ from qcodes.dataset.sqlite_base import (ConnectionPlus,
                                         get_experiments,
                                         get_last_experiment,
                                         get_metadata_from_run_id,
-                                        generate_guid,
                                         make_connection_plus_from,
                                         run_exists)
 
@@ -58,7 +57,7 @@ class SqliteStorageInterface(DataStorageInterface):
                                      " new_experiment(name, sample_name)")
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
-                                       generate_guid())
+                                       self.guid)
 
             self.run_id = run_id
 
