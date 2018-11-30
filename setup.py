@@ -1,3 +1,4 @@
+import sys
 from setuptools import setup, find_packages
 from distutils.version import StrictVersion
 from importlib import import_module
@@ -24,6 +25,24 @@ def get_version(verbose=1):
 def readme():
     with open('README.rst') as f:
         return f.read()
+
+
+install_requires = [
+    'numpy>=1.10',
+    'pyvisa>=1.9.1',
+    'h5py>=2.6',
+    'websockets>=3.2',
+    'jsonschema',
+    'pyzmq',
+    'wrapt',
+    'pandas',
+    'tqdm',
+    'typing_extensions'
+]
+
+
+if sys.version_info.minor < 7:
+    install_requires.append('dataclasses')
 
 
 extras = {
@@ -60,17 +79,7 @@ setup(name='qcodes',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*']},
-      install_requires=[
-          'numpy>=1.10',
-          'pyvisa>=1.9.1',
-          'h5py>=2.6',
-          'websockets>=3.2',
-          'jsonschema',
-          'pyzmq',
-          'wrapt',
-          'pandas',
-          'tqdm'
-      ],
+      install_requires=install_requires,
 
       test_suite='qcodes.tests',
       extras_require=extras_require,
