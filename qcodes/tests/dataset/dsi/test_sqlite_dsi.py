@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.sqlite_base import connect
+from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.sqlite_base import create_run
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
@@ -11,6 +11,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 
 
 def test_init_no_guid():
+    """Test that dsi requires guid as an argument"""
     match_str = re.escape("__init__() missing 1 required"
                           " positional argument: 'guid'")
     with pytest.raises(TypeError, match=match_str):
@@ -18,13 +19,13 @@ def test_init_no_guid():
 
 
 def test_init_new_run(experiment):
+    """Test initialising dsi for a new run"""
+    conn = experiment.conn
+    guid = generate_guid()
+
     pytest.fail('not implemented')
 
-    guid = 'asd'
-
-    conn = connect(':memory:')
-
-    dsi = SqliteStorageInterface(guid, conn=conn)
+    dsi = SqliteStorageInterface(guid, conn=conn, run_id=None)
 
     assert guid == dsi.guid
 
@@ -32,20 +33,23 @@ def test_init_new_run(experiment):
 
 
 def test_init_existing_run(experiment):
+    """Test initialising dsi for an existing run"""
+    conn = experiment.conn
+    guid = generate_guid()
+    name = "existing-dataset"
+    _, run_id, __ = create_run(conn, experiment.exp_id, name, guid)
+
     pytest.fail('not implemented')
 
-    # create a run in a temp db and get its guid, blah blah
-    ds = DataSet()
-
-    guid = ds.guid
-    conn = ds.conn
-
-    dsi = SqliteStorageInterface(guid, conn=conn)
+    dsi = SqliteStorageInterface(guid, conn=conn, run_id=run_id)
 
     assert guid == dsi.guid
 
     # assert existing run loaded
+    metadata = dsi.retrieve_meta_data()
+    assert metadata is not None  # ...etc....
 
 
 def test_retrieve_metadata():
+    """Test dsi.retrieve_metadata for various cases"""
     pytest.fail('not implemented')
