@@ -3,7 +3,7 @@ from typing_extensions import Final
 from numbers import Number
 from numpy import ndarray
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from qcodes.dataset.descriptions import RunDescriber
 
@@ -22,11 +22,11 @@ _Optional = Union[T, str]
 
 @dataclass
 class MetaData():
+    run_description: RunDescriber
     run_started: Optional[float] = None
     run_complete: Optional[float] = None
-    run_description: RunDescriber
-    snapshot: Optional[dict]
-    tags: Dict[str, any]
+    snapshot: Optional[dict] = None
+    tags: Dict[str, any] = field(default_factory=dict)
     tier: int = 1
 
 
