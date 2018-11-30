@@ -658,12 +658,12 @@ class AWG70000A(VisaInstrument):
         self.current_directory(path)
 
         if overwrite:
-            log.debug(f'Pre-deleting file {filename} at {path}')
+            self.log.debug(f'Pre-deleting file {filename} at {path}')
             self.visa_handle.write(f'MMEMory:DELete "{filename}"')
             # if the file does not exist,
             # an error code -256 is put in the error queue
             resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
-            log.debug(f'Pre-deletion finished with return code {resp}')
+            self.log.debug(f'Pre-deletion finished with return code {resp}')
 
         self.visa_handle.write_raw(msg)
 
@@ -839,12 +839,12 @@ class AWG70000A(VisaInstrument):
             binary_marker = struct.pack(fmt, *markers)
 
         if wfm.max() > channel_max or wfm.min() < channel_min:
-            log.warning('Waveform exceeds specified channel range.'
-                        ' The resulting waveform will be clipped. '
-                        'Waveform min.: {} (V), waveform max.: {} (V),'
-                        'Channel min.: {} (V), channel max.: {} (V)'
-                        ''.format(wfm.min(), wfm.max(), channel_min,
-                                  channel_max))
+            self.log.warning('Waveform exceeds specified channel range.'
+                             ' The resulting waveform will be clipped. '
+                             'Waveform min.: {} (V), waveform max.: {} (V),'
+                             'Channel min.: {} (V), channel max.: {} (V)'
+                             ''.format(wfm.min(), wfm.max(), channel_min,
+                                       channel_max))
 
         # the data must be such that channel_max becomes 1 and
         # channel_min becomes -1
@@ -941,7 +941,7 @@ class AWG70000A(VisaInstrument):
         # STEP 2:
         # Make all subsequence .sml files
 
-        log.debug(f'Waveforms done: {wfmx_filenames}')
+        self.log.debug(f'Waveforms done: {wfmx_filenames}')
 
         subseqsml_files: List[str] = []
         subseqsml_filenames: List[str] = []
@@ -973,7 +973,7 @@ class AWG70000A(VisaInstrument):
 
                 subseqname = f'subsequence_{pos1}'
 
-                log.debug(f'Subsequence waveform names: {ss_wfm_names}')
+                self.log.debug(f'Subsequence waveform names: {ss_wfm_names}')
 
                 subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                                    nreps=seqing['nrep'],
@@ -1012,7 +1012,7 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
-        log.debug(f'Assets for SML file: {asset_names}')
+        self.log.debug(f'Assets for SML file: {asset_names}')
 
         mainseqname = seqname
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
