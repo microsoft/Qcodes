@@ -30,6 +30,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
+                                        get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
@@ -39,12 +40,17 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 from qcodes.dataset.data_storage_interface import DataStorageInterface
 
+from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from qcodes.dataset.data_storage_interface import DataStorageInterface
+
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
+
+log = logging.getLogger(__name__)
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -187,6 +193,15 @@ class _Subscriber(Thread):
 
 
 class DataSet(Sized):
+
+    # the "persistent traits" are the attributes/properties of the DataSet
+    # that are NOT tied to the representation of the DataSet in any particular
+    # database
+    persistent_traits = ('name', 'guid', 'number_of_results',
+                         'parameters', 'paramspecs', 'exp_name', 'sample_name',
+                         'completed', 'snapshot', 'run_timestamp_raw',
+                         'description', 'completed_timestamp_raw', 'metadata')
+
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
                  conn: Optional[ConnectionPlus]=None,
@@ -364,6 +379,34 @@ class DataSet(Sized):
     def metadata(self) -> Dict:
         return self._metadata
 
+    def the_same_dataset_as(self, other: 'DataSet') -> bool:
+        """
+        Check if two datasets correspond to the same run by comparing
+        all their persistent traits. Note that this method
+        does not compare the data itself.
+
+        This function raises if the GUIDs match but anything else doesn't
+
+        Args:
+            other: the dataset to compare self to
+        """
+
+        if not isinstance(other, DataSet):
+            return False
+
+        guids_match = self.guid == other.guid
+
+        for attr in DataSet.persistent_traits:
+            if getattr(self, attr) != getattr(other, attr):
+                if guids_match:
+                    raise RuntimeError('Critical inconsistency detected! '
+                                       'The two datasets have the same GUID,'
+                                       f' but their "{attr}" differ.')
+                else:
+                    return False
+
+        return True
+
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format
@@ -491,6 +534,20 @@ class DataSet(Sized):
         # `add_meta_data` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
             add_meta_data(conn, self.run_id, {tag: metadata})
+
+    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+        """
+        Adds a snapshot to this run
+
+        Args:
+            snapshot: the raw JSON dump of the snapshot
+            overwrite: force overwrite an existing snapshot
+        """
+        if self.snapshot is None or overwrite:
+            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+        elif self.snapshot is not None and not overwrite:
+            log.warning('This dataset already has a snapshot. Use overwrite'
+                        '=True to overwrite that')
 
     @property
     def started(self) -> bool:
@@ -867,14 +924,16 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load dataset by run id
 
-    Lookup is performed in the database file that is specified in the config.
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
 
     Args:
         run_id: run id of the dataset
+        conn: connection to the database to load from
 
     Returns:
         dataset with the given run id
@@ -882,11 +941,43 @@ def load_by_id(run_id: int) -> DataSet:
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
 
-    d = DataSet(path_to_db=get_DB_location(), run_id=run_id)
+    conn = conn or connect(get_DB_location())
+
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 
-def load_by_counter(counter: int, exp_id: int) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
+    """
+    Load a dataset by its GUID
+
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
+
+    Args:
+        guid: guid of the dataset
+        conn: connection to the database to load from
+
+    Returns:
+        dataset with the given guid
+
+    Raises:
+        NameError if no run with the given GUID exists in the database
+        RuntimeError if several runs with the given GUID are found
+    """
+    conn = conn or connect(get_DB_location())
+
+    # this function raises a RuntimeError if more than one run matches the GUID
+    run_id = get_runid_from_guid(conn, guid)
+
+    if run_id == -1:
+        raise NameError(f'No run with GUID: {guid} found in database.')
+
+    return DataSet(run_id=run_id, conn=conn)
+
+
+def load_by_counter(counter: int, exp_id: int,
+                    conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 
@@ -895,11 +986,13 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
+        conn: connection to the database to load from. If not provided, a
+          connection to the DB file specified in the config is made
 
     Returns:
         dataset of the given counter in the given experiment
     """
-    conn = connect(get_DB_location())
+    conn = conn or connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -910,9 +1003,8 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     """
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
-    conn.close()
 
-    d = DataSet(get_DB_location(), run_id=run_id)
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 
