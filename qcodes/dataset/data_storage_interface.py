@@ -24,9 +24,9 @@ _Optional = Union[T, str]
 class MetaData():
     run_description: RunDescriber
     run_started: Optional[float] = None
-    run_complete: Optional[float] = None
+    run_completed: Optional[float] = None
     snapshot: Optional[dict] = None
-    tags: Dict[str, any] = field(default_factory=dict)
+    tags: Dict[str, Any] = field(default_factory=dict)
     tier: int = 1
 
 

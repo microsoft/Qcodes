@@ -37,6 +37,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
                                         ConnectionPlus)
+from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from qcodes.dataset.data_storage_interface import DataStorageInterface
 
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 from qcodes.dataset.data_storage_interface import DataStorageInterface
