@@ -32,8 +32,8 @@ def test_init(s46):
     closed_channels = [0, 7, 12]
 
     for channel_nr in range(n_channels):
-        assert s46.channels[channel_nr].state() == "close" \
-            if channel_nr in closed_channels else "open"
+        state = "close" if channel_nr in closed_channels else "open"
+        assert s46.channels[channel_nr].state() == state
 
 
 def test_open_close(s46):
@@ -53,6 +53,3 @@ def test_open_close(s46):
         match="Relay already in use by channel"
     ):
         s46.channels[19].state("close")
-
-    s46.channels[18].state("open")
-    s46.channels[19].state("close")

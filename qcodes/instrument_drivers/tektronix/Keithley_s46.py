@@ -1,146 +1,149 @@
 import numpy as np
-import itertools
-from collections import defaultdict
 import re
 
+from typing import cast
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum
-
-
-class ChannelNotPresentError(Exception):
-    pass
 
 
 class LockAcquisitionError(Exception):
     pass
 
 
-class RelayLock:
-    def __init__(self):
-        self._acquired = False
-        self._acquired_by = None
-
-    def acquire(self, requester_id):
-        if self._acquired and self._acquired_by != requester_id:
-            raise LockAcquisitionError(
-                f"Relay already in use by channel {self.acquired_by}"
-            )
-
-        self._acquired = True
-        self._acquired_by = requester_id
-
-    def release(self, requester_id):
-        if self._acquired_by != requester_id:
-            # It should be impossible to get here. There is a driver bug
-            # if we do.
-            raise RuntimeError(
-                f"Relay can only be freed by channel {self.acquired_by} "
-                f"that acquired the lock. Please get in touch with a QCoDeS "
-                f"developer to get to the root cause of this error"
-            )
-
-        self._acquired = False
-        self._acquired_by = None
-
-    @property
-    def acquired_by(self):
-        return self._acquired_by
-
-
-class RFSwitchChannel(InstrumentChannel):
-    def __init__(self, parent, name, channel_number, relay_locks):
+class S46Channel(InstrumentChannel):
+    def __init__(self, parent, name, channel_number, relay):
         super().__init__(parent, name)
+
         self._channel_number = channel_number
-
-        self._relay_id = self._get_relay()
-        self._relay_lock = relay_locks[self._relay_id]
-
+        self._relay = relay
         if self._get_state() == "close":
             try:
-                self._relay_lock.acquire(self._channel_number)
+                self._relay.acquire_lock(self._channel_number)
             except LockAcquisitionError as e:
                 raise RuntimeError(
                     "The driver is initialized from an undesirable instrument "
                     "state where more then one channel on a single relay is "
-                    "closed. It is advised to power cycle the instrument or to "
-                    "manually send the 'OPEN:ALL' SCPI command to get the "
-                    "instrument back into a normal state. Refusing to "
-                    "initialize driver!"
+                    "closed. It is advised to power cycle the instrument. "
+                    "Refusing to initialize driver!"
                 ) from e
 
         self.add_parameter(
             "state",
             get_cmd=self._get_state,
-            set_cmd=f":{{}} (@{self._channel_number})",
-            set_parser=self._set_state_parser,
+            set_cmd=self._set_state,
             vals=Enum("open", "close")
         )
 
-    def _get_relay(self):
-        relay_layout = self.parent.relay_layout
-        found = False
-
-        count = 0
-        for count, total_count in enumerate(np.cumsum(relay_layout)):
-            if total_count >= self._channel_number:
-                found = True
-                break
-
-        if not found:
-            raise ChannelNotPresentError()
-
-        return (["A", "B", "C", "D"] + [str(i) for i in range(1, 9)])[count]
-
     def _get_state(self):
-        closed_channels = re.findall(r"(\d+)[,)]",  self.ask(":CLOS?"))
-        return "close" \
-            if str(self._channel_number) in closed_channels \
-            else "open"
+        is_closed = self._channel_number in \
+                    self.root_instrument.get_closed_channels()
 
-    def _set_state_parser(self, new_state: str):
+        return {True: "close", False: "open"}[is_closed]
+
+    def _set_state(self, new_state: str):
+
+        current_state = self._get_state()
+        if new_state == current_state:
+            return
 
         if new_state == "close":
-            self._relay_lock.acquire(self._channel_number)
-        elif new_state == "open" \
-                and self._relay_lock.acquired_by == self._channel_number:
+            self._relay.acquire_lock(self._channel_number)
+        elif new_state == "open":
+            self._relay.release_lock(self._channel_number)
 
-            self._relay_lock.release(self._channel_number)
+        self.write(f":{new_state} (@{self._channel_number})")
 
-        return new_state.upper()
 
-    @property
-    def relay_id(self):
-        return self._relay_id
+class S46Relay(InstrumentChannel):
+    def __init__(self, parent, name, channel_offset, channel_count):
+        super().__init__(parent, name)
+
+        self._channel_offset = channel_offset
+        self._locked_by = None
+
+        channels = ChannelList(
+            cast(VisaInstrument, self),
+            "channel",
+            S46Channel,
+            snapshotable=False
+        )
+
+        for count, channel_number in enumerate(range(
+                channel_offset, channel_offset + channel_count)):
+
+            if channel_count == 1:
+                channel_name = self.short_name
+            else:
+                channel_name = f"{self.short_name}{count + 1}"
+
+            channel = S46Channel(
+                cast(VisaInstrument, self.parent),
+                channel_name,
+                channel_number + 1,
+                self
+            )
+            channels.append(channel)
+
+        self.add_submodule("channels", channels)
+
+    def acquire_lock(self, channel_number):
+        if self._locked_by is None:
+            self._locked_by = channel_number
+        else:
+            raise LockAcquisitionError(
+                f"Relay {self.short_name} is already in use by channel "
+                f"{self._locked_by}"
+            )
+
+    def release_lock(self, channel_number):
+        if self._locked_by == channel_number:
+            self._locked_by = None
+        else:
+            raise RuntimeError(
+                "This run time error should never occur. Please get in touch "
+                "with a QCoDeS developer"
+            )
 
 
 class S46(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\n", **kwargs)
 
-        self._relay_layout = [
+        relay_layout = [
             int(i) for i in self.ask(":CONF:CPOL?").split(",")
         ]
+        relay_names = (["A", "B", "C", "D"] + [f"R{i}" for i in range(1, 9)])
+        # Relay offsets are independent of pole configuration. See page
+        # 2-5 of the manual
+        channel_offsets = np.cumsum([0] + 4 * [6] + 7 * [1])
 
         channels = ChannelList(
-            self, "channel", RFSwitchChannel, snapshotable=False
+            self,
+            "channel",
+            S46Channel,
+            snapshotable=False
         )
 
-        relay_locks = defaultdict(RelayLock)
+        for name, channel_offset, channel_count in zip(
+                relay_names, channel_offsets, relay_layout):
 
-        for chn in itertools.count(1):
-            chn_name = f"channel{chn}"
-
-            try:
-                channel = RFSwitchChannel(self, chn_name, chn, relay_locks)
-            except ChannelNotPresentError:
-                break
-
-            self.add_submodule(chn_name, channel)
-            channels.append(channel)
+            relay = S46Relay(self, name, channel_offset, channel_count)
+            for channel in relay.channels:
+                channels.append(channel)
+                self.add_submodule(channel.short_name, channel)
 
         self.add_submodule("channels", channels)
         self.connect_message()
 
-    @property
-    def relay_layout(self):
-        return self._relay_layout
+    def get_closed_channels(self, by_name=False):
+
+        closed_channels_str = re.findall(r"\d+", self.ask(":CLOS?"))
+        closed_channels_numbers = [int(i) for i in closed_channels_str]
+
+        if not by_name:
+            return closed_channels_numbers
+        else:
+            return [
+                self.channels[i-1].short_name
+                for i in closed_channels_numbers
+            ]
