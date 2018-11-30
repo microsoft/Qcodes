@@ -116,7 +116,9 @@ class SqliteStorageInterface(DataStorageInterface):
         desc = RunDescriber.from_json(run_info['run_description'])
         run_started = run_info['run_timestamp']
         run_completed = run_info['completed_timestamp']
-        snapshot = run_info['snapshot']
+        # snapshot column may not exist, this will be changed in further db
+        # versions so that this can be substituted by `run_info['snapshot']`
+        snapshot = run_info.get('snapshot', None)
         tags = run_extra_info
 
         md = MetaData(run_description=desc,
