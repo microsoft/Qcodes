@@ -12,6 +12,7 @@ from qcodes.dataset.sqlite_base import (ConnectionPlus,
                                         create_run,
                                         get_experiments,
                                         get_last_experiment,
+                                        get_metadata_from_run_id,
                                         generate_guid,
                                         make_connection_plus_from,
                                         run_exists)
@@ -38,7 +39,7 @@ class SqliteStorageInterface(DataStorageInterface):
         self.conn = make_connection_plus_from(conn) if conn is not None else \
             connect(self.path_to_db)
 
-        self._run_id = run_id
+        self.run_id = run_id
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -59,7 +60,7 @@ class SqliteStorageInterface(DataStorageInterface):
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid())
 
-            self._run_id = run_id
+            self.run_id = run_id
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
@@ -90,5 +91,38 @@ class SqliteStorageInterface(DataStorageInterface):
                         tier: _Optional[int]=NOT_GIVEN) -> None:
         raise NotImplementedError
 
+    def get_run_table_row_full(self) -> Dict:
+        """
+        Retrieve the full run table row
+
+        Returns:
+            A dict with the column names as keys and the raw values as values
+        """
+        sql = "SELECT * FROM runs WHERE run_id = ?"
+        cursor = self.conn.cursor()
+        cursor.execute(sql, (self.run_id,))
+        return dict(cursor.fetchall()[0])
+
+    def get_run_table_row_non_standard(self) -> Dict:
+        """
+        Retrieve all the non-standard (i.e. metadata) columns
+        """
+        return get_metadata_from_run_id(self.conn, self.run_id)
+
     def retrieve_meta_data(self) -> MetaData:
-        raise NotImplementedError
+        run_info = self.get_run_table_row_full()
+        run_extra_info = self.get_run_table_row_non_standard()
+
+        desc = RunDescriber.from_json(run_info['run_description'])
+        run_started = run_info['run_timestamp']
+        run_completed = run_info['completed_timestamp']
+        snapshot = run_info['snapshot']
+        tags = run_extra_info
+
+        md = MetaData(run_description=desc,
+                      run_started=run_started,
+                      run_completed=run_completed,
+                      tags=tags,
+                      snapshot=snapshot)
+
+        return md
