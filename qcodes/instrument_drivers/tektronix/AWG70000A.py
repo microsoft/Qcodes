@@ -839,12 +839,12 @@ class AWG70000A(VisaInstrument):
             binary_marker = struct.pack(fmt, *markers)
 
         if wfm.max() > channel_max or wfm.min() < channel_min:
-            self.log.warning('Waveform exceeds specified channel range.'
-                             ' The resulting waveform will be clipped. '
-                             'Waveform min.: {} (V), waveform max.: {} (V),'
-                             'Channel min.: {} (V), channel max.: {} (V)'
-                             ''.format(wfm.min(), wfm.max(), channel_min,
-                                       channel_max))
+            log.warning('Waveform exceeds specified channel range.'
+                        ' The resulting waveform will be clipped. '
+                        'Waveform min.: {} (V), waveform max.: {} (V),'
+                        'Channel min.: {} (V), channel max.: {} (V)'
+                        ''.format(wfm.min(), wfm.max(), channel_min,
+                                  channel_max))
 
         # the data must be such that channel_max becomes 1 and
         # channel_min becomes -1
@@ -941,7 +941,7 @@ class AWG70000A(VisaInstrument):
         # STEP 2:
         # Make all subsequence .sml files
 
-        self.log.debug(f'Waveforms done: {wfmx_filenames}')
+        log.debug(f'Waveforms done: {wfmx_filenames}')
 
         subseqsml_files: List[str] = []
         subseqsml_filenames: List[str] = []
@@ -973,7 +973,7 @@ class AWG70000A(VisaInstrument):
 
                 subseqname = f'subsequence_{pos1}'
 
-                self.log.debug(f'Subsequence waveform names: {ss_wfm_names}')
+                log.debug(f'Subsequence waveform names: {ss_wfm_names}')
 
                 subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
                                                    nreps=seqing['nrep'],
@@ -1012,7 +1012,7 @@ class AWG70000A(VisaInstrument):
                                     if f'wfm_{pos1}' in wn])
         seqing = {k: [d[k] for d in seqings] for k in seqings[0].keys()}
 
-        self.log.debug(f'Assets for SML file: {asset_names}')
+        log.debug(f'Assets for SML file: {asset_names}')
 
         mainseqname = seqname
         mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
