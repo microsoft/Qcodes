@@ -36,15 +36,11 @@ class S46Channel(InstrumentChannel):
 
     def _get_state(self):
         is_closed = self._channel_number in \
-                    self.root_instrument.get_closed_channels()
+                    self.root_instrument.get_closed_channel_numbers()
 
         return {True: "close", False: "open"}[is_closed]
 
     def _set_state(self, new_state: str):
-
-        current_state = self._get_state()
-        if new_state == current_state:
-            return
 
         if new_state == "close":
             self._relay.acquire_lock(self._channel_number)
@@ -52,6 +48,10 @@ class S46Channel(InstrumentChannel):
             self._relay.release_lock(self._channel_number)
 
         self.write(f":{new_state} (@{self._channel_number})")
+
+    @property
+    def channel_number(self):
+        return self._channel_number
 
 
 class S46Relay(InstrumentChannel):
@@ -79,7 +79,7 @@ class S46Relay(InstrumentChannel):
             channel = S46Channel(
                 cast(VisaInstrument, self.parent),
                 channel_name,
-                channel_number + 1,
+                channel_number,
                 self
             )
             channels.append(channel)
@@ -87,22 +87,19 @@ class S46Relay(InstrumentChannel):
         self.add_submodule("channels", channels)
 
     def acquire_lock(self, channel_number):
-        if self._locked_by is None:
-            self._locked_by = channel_number
-        else:
+
+        if self._locked_by is not None and self._locked_by != channel_number:
             raise LockAcquisitionError(
                 f"Relay {self.short_name} is already in use by channel "
                 f"{self._locked_by}"
             )
+        else:
+            self._locked_by = channel_number
 
     def release_lock(self, channel_number):
+
         if self._locked_by == channel_number:
             self._locked_by = None
-        else:
-            raise RuntimeError(
-                "This run time error should never occur. Please get in touch "
-                "with a QCoDeS developer"
-            )
 
 
 class S46(VisaInstrument):
@@ -113,9 +110,9 @@ class S46(VisaInstrument):
             int(i) for i in self.ask(":CONF:CPOL?").split(",")
         ]
         relay_names = (["A", "B", "C", "D"] + [f"R{i}" for i in range(1, 9)])
-        # Relay offsets are independent of pole configuration. See page
+        # Channel offsets are independent of pole configuration. See page
         # 2-5 of the manual
-        channel_offsets = np.cumsum([0] + 4 * [6] + 7 * [1])
+        channel_offsets = np.cumsum([0] + 4 * [6] + 7 * [1]) + 1
 
         channels = ChannelList(
             self,
@@ -135,15 +132,16 @@ class S46(VisaInstrument):
         self.add_submodule("channels", channels)
         self.connect_message()
 
-    def get_closed_channels(self, by_name=False):
-
+    def get_closed_channel_numbers(self):
         closed_channels_str = re.findall(r"\d+", self.ask(":CLOS?"))
-        closed_channels_numbers = [int(i) for i in closed_channels_str]
+        return [int(i) for i in closed_channels_str]
 
-        if not by_name:
-            return closed_channels_numbers
-        else:
-            return [
-                self.channels[i-1].short_name
-                for i in closed_channels_numbers
-            ]
+    def get_closed_channels(self):
+        return [
+            channel for channel in self.channels if
+            channel.channel_number in self.get_closed_channel_numbers()
+        ]
+
+    def open_all_channels(self):
+        for channel in self.get_closed_channels():
+            cast(S46Channel, channel).state("open")
