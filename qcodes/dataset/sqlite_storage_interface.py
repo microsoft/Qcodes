@@ -1,9 +1,10 @@
-from typing import Union, Dict, Sequence
+from typing import Union, Dict, Sequence, Optional, Any
 from numbers import Number
 from numpy import ndarray
 
+from qcodes.dataset.descriptions import RunDescriber
 from .data_storage_interface import (
-    DataStorageInterface, VALUES)
+    DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values)
 from qcodes.dataset.database import get_DB_location
@@ -30,3 +31,23 @@ class SqliteStorageInterface(DataStorageInterface):
             insert_many_values(self.ds.conn, self.table_name,
                                list(results.keys()),
                                list(values_transposed))
+
+    def retrieve_number_of_results(self) -> int:
+        raise NotImplementedError
+
+    def retrieve_results(self, params,
+                         start=None,
+                         stop=None) -> Dict[str, ndarray]:
+        raise NotImplementedError
+
+    def store_meta_data(self, *,
+                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
+                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
+                        run_descriptor: _Optional[RunDescriber]=NOT_GIVEN,
+                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
+                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
+                        tier: _Optional[int]=NOT_GIVEN) -> None:
+        raise NotImplementedError
+
+    def retrieve_meta_data(self) -> MetaData:
+        raise NotImplementedError
