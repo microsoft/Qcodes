@@ -39,6 +39,14 @@ class DataStorageInterface(ABC):
         self.guid = guid
 
     @abstractmethod
+    def run_exists(self) -> bool:
+        pass
+
+    @abstractmethod
+    def create_run(self) -> None:
+        pass
+
+    @abstractmethod
     def store_results(self, results: Dict[str, VALUES]) -> None:
         pass
 
