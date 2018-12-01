@@ -202,89 +202,48 @@ class DataSet(Sized):
                          'completed', 'snapshot', 'run_timestamp_raw',
                          'description', 'completed_timestamp_raw', 'metadata')
 
-    def __init__(self, path_to_db: str=None,
-                 run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
-                 exp_id=None,
-                 name: str=None,
-                 specs: SPECS=None,
-                 values=None,
-                 metadata=None,
-                 storageinterface: type=SqliteStorageInterface) -> None:
+    def __init__(self,
+                 guid: Optional[str]=None,
+                 storageinterface: type=SqliteStorageInterface,
+                 **si_kwargs) -> None:
         """
         Create a new DataSet object. The object can either hold a new run or
-        an already existing run. If a run_id is provided, then an old run is
-        looked up, else a new run is created.
+        an already existing run.
 
         Args:
-            path_to_db: path to the sqlite file on disk. If not provided, the
-              path will be read from the config.
-            run_id: provide this when loading an existing run, leave it
-              as None when creating a new run
-            conn: connection to the DB; if provided and `path_to_db` is
-              provided as well, then a ValueError is raised (this is to
-              prevent the possibility of providing a connection to a DB
-              file that is different from `path_to_db`)
-            exp_id: the id of the experiment in which to create a new run.
-              Ignored if run_id is provided.
-            name: the name of the dataset. Ignored if run_id is provided.
-            specs: paramspecs belonging to the dataset. Ignored if run_id is
-              provided.
-            values: values to insert into the dataset. Ignored if run_id is
-              provided.
-            metadata: metadata to insert into the dataset. Ignored if run_id
-              is provided.
+            guid: GUID of dataset. If not provided, a new dataset is created.
+              If provided, the corresponding dataset is loaded (if it exists).
+            storageinterface: The class of the storage interface to use for
+              storing/loading the dataset
+            si_kwargs: the kwargs to pass to the constructor of the
+              storage interface
         """
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
-        self._path_to_db = path_to_db or get_DB_location()
-
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
-
-        self._run_id = run_id
-        self._debug = False
-        self.subscribers: Dict[str, _Subscriber] = {}
-
-        if run_id is not None:
-            if not run_exists(self.conn, run_id):
-                raise ValueError(f"Run with run_id {run_id} does not exist in "
-                                 f"the database")
-            self._completed = completed(self.conn, self.run_id)
-            self._started = self.number_of_results > 0
-            self._description = self._get_run_description_from_db()
-            self._metadata = get_metadata_from_run_id(self.conn, run_id)
-
-        else:
-            # Actually perform all the side effects needed for the creation
-            # of a new dataset
-            if exp_id is None:
-                if len(get_experiments(self.conn)) > 0:
-                    exp_id = get_last_experiment(self.conn)
-                else:
-                    raise ValueError("No experiments found."
-                                     "You can start a new one with:"
-                                     " new_experiment(name, sample_name)")
-            name = name or "dataset"
-            _, run_id, __ = create_run(self.conn, exp_id, name,
-                                       generate_guid(),
-                                       specs, values, metadata)
-            # this is really the UUID (an ever increasing count in the db)
-            self._run_id = run_id
-            self._completed = False
-            self._started = False
-            specs = specs or []
-            self._description = RunDescriber(InterDependencies(*specs))
-            self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
         if not issubclass(storageinterface, DataStorageInterface):
             raise ValueError("The provided storage interface is not valid. "
                              "Must be a subclass of "
                              "qcodes.dataset.data_storage_interface."
                              "DataStorageInterface")
-        self.data_storage_interface = storageinterface(self.guid, self)
+
+        if guid is not None:
+            self._guid = guid
+            self.dsi = storageinterface(self._guid, **si_kwargs)
+            if not self.dsi.run_exists():
+                raise ValueError(f'No run with GUID {guid} found.')
+
+        else:
+            self._guid = generate_guid()
+            self.dsi = storageinterface(self._guid, **si_kwargs)
+            self.dsi.create_run()
+
+        # Assign all attributes
+        run_meta_data = self.dsi.retrieve_meta_data()
+
+        self._completed: bool = run_meta_data.run_completed is None
+        self._started: bool = run_meta_data.run_started is None
+        self._description = run_meta_data.run_description
+        self._snapshot = run_meta_data.snapshot
+        self._metadata = run_meta_data.tags
 
     @property
     def run_id(self):
