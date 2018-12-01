@@ -144,11 +144,13 @@ class SqliteStorageInterface(DataStorageInterface):
         snapshot_raw: Optional[str] = run_info.get('snapshot', None)
         snapshot = json.loads(snapshot_raw) if snapshot_raw else None
         tags = run_extra_info
+        name = run_info['name']
 
         md = MetaData(run_description=desc,
                       run_started=run_started,
                       run_completed=run_completed,
                       tags=tags,
-                      snapshot=snapshot)
+                      snapshot=snapshot,
+                      name=name)
 
         return md

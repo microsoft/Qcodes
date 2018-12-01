@@ -23,6 +23,7 @@ _Optional = Union[T, str]
 @dataclass
 class MetaData():
     run_description: RunDescriber
+    name: str
     run_started: Optional[float] = None
     run_completed: Optional[float] = None
     snapshot: Optional[dict] = None
