@@ -284,8 +284,8 @@ class DataSet(Sized):
 
     @property
     def parameters(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "parameters", "run_id", self.run_id)
+        idps = self._description.interdeps
+        return ','.join([p.name for p in idps.paramspecs])
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
