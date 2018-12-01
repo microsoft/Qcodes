@@ -246,22 +246,10 @@ class DataSet(Sized):
         self._metadata = run_meta_data.tags
 
     @property
-    def run_id(self):
-        return self._run_id
-
-    @property
-    def path_to_db(self):
-        return self._path_to_db
-
-    @property
     def name(self):
-        return select_one_where(self.conn, "runs",
-                                "name", "run_id", self.run_id)
+        md = self.dsi.retrieve_meta_data()
+        return md.name
 
-    @property
-    def table_name(self):
-        return select_one_where(self.conn, "runs",
-                                "result_table_name", "run_id", self.run_id)
 
     @property
     def guid(self):
