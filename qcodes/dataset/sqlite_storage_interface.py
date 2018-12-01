@@ -126,6 +126,10 @@ class SqliteStorageInterface(DataStorageInterface):
         return get_metadata_from_run_id(self.conn, self.run_id)
 
     def retrieve_meta_data(self) -> MetaData:
+        if not self.run_exists():
+            raise ValueError(f"No run with guid {self.guid} exists. Perhaps "
+                             "you forgot to call create_run?")
+
         if self.run_id is None:
             self.run_id = get_runid_from_guid(self.conn, self.guid)
 
