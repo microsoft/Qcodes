@@ -365,7 +365,8 @@ class DataSet(Sized):
 
         If the run (or the dataset) is not completed, then returns None.
         """
-        return get_completed_timestamp_from_run_id(self.conn, self.run_id)
+        md = self.dsi.retrieve_meta_data()
+        return md.run_completed
 
     def completed_timestamp(self,
                             fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
