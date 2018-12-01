@@ -256,20 +256,13 @@ class DataSet(Sized):
     @property
     def snapshot(self) -> Optional[dict]:
         """Snapshot of the run as dictionary (or None)"""
-        snapshot_json = self.snapshot_raw
-        if snapshot_json is not None:
-            return json.loads(snapshot_json)
-        else:
-            return None
+        md = self.dsi.retrieve_meta_data()
+        return md.snapshot
 
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        if is_column_in_table(self.conn, "runs", "snapshot"):
-            return select_one_where(self.conn, "runs", "snapshot",
-                                    "run_id", self.run_id)
-        else:
-            return None
+        return json.dumps(self.snapshot) if self.snapshot else None
 
     @property
     def number_of_results(self) -> int:
