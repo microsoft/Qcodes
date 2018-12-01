@@ -7,4 +7,4 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 def test_init_for_new_run(experiment):
     ds = DataSet(guid=None)
 
-    assert isinstance(ds.data_storage_interface, SqliteStorageInterface)
+    assert isinstance(ds.dsi, SqliteStorageInterface)
