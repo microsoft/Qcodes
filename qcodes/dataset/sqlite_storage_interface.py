@@ -108,7 +108,7 @@ class SqliteStorageInterface(DataStorageInterface):
                         tier: _Optional[int]=NOT_GIVEN) -> None:
         raise NotImplementedError
 
-    def get_run_table_row_full(self) -> Dict:
+    def _get_run_table_row_full(self) -> Dict:
         """
         Retrieve the full run table row
 
@@ -120,11 +120,31 @@ class SqliteStorageInterface(DataStorageInterface):
         cursor.execute(sql, (self.run_id,))
         return dict(cursor.fetchall()[0])
 
-    def get_run_table_row_non_standard(self) -> Dict:
+    def _get_run_table_row_non_standard(self) -> Dict:
         """
         Retrieve all the non-standard (i.e. metadata) columns
         """
         return get_metadata_from_run_id(self.conn, self.run_id)
+
+    def _get_experiment_table_info(self) -> Dict:
+        """
+        Get the relevant info from the experiments table
+        """
+        sql = """
+              SELECT sample_name, experiments.name, start_time, end_time
+              FROM experiments
+              JOIN runs ON runs.exp_id = experiments.exp_id
+              WHERE runs.run_id = ?
+              """
+
+        cursor = self.conn.cursor()
+        cursor.execute(sql, (self.run_id,))
+        rows = cursor.fetchall()
+        result = dict(rows[0])
+        # consistent naming of things is hard...
+        result['exp_name'] = result.pop('name')
+
+        return result
 
     def retrieve_meta_data(self) -> MetaData:
         if not self.run_exists():
@@ -134,8 +154,10 @@ class SqliteStorageInterface(DataStorageInterface):
         if self.run_id is None:
             self.run_id = get_runid_from_guid(self.conn, self.guid)
 
-        run_info = self.get_run_table_row_full()
-        run_extra_info = self.get_run_table_row_non_standard()
+        run_info = self._get_run_table_row_full()
+        run_extra_info = self._get_run_table_row_non_standard()
+        run_exp_info = self._get_experiment_table_info()
+        run_info.update(run_exp_info)
 
         desc = RunDescriber.from_json(run_info['run_description'])
         run_started = run_info['run_timestamp']
