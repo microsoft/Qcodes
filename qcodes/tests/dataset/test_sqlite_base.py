@@ -189,6 +189,28 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
+def test_is_guid_in_db(empty_temp_db):
+    conn = mut.connect(get_DB_location())
+    mut.new_experiment(conn, 'test_exp', 'no_sample')
+
+    expected_guids = []
+
+    for _ in range(5):
+        ds = DataSet(conn=conn, run_id=None)
+        expected_guids.append(ds.guid)
+
+    try_guids = (expected_guids[:3] + ['lala', generate_guid()]
+                 + expected_guids[3:])
+
+    sorted_try_guids = np.unique(try_guids)
+
+    expected_dict = {tid: (tid in expected_guids) for tid in sorted_try_guids}
+
+    acquired_dict = mut.is_guid_in_database(conn, *try_guids)
+
+    assert expected_dict == acquired_dict
+
+
 def test_is_run_id_in_db(empty_temp_db):
     conn = mut.connect(get_DB_location())
     mut.new_experiment(conn, 'test_exp', 'no_sample')

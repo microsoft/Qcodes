@@ -858,6 +858,31 @@ def init_db(conn: ConnectionPlus)->None:
         transaction(conn, _dependencies_table_schema)
 
 
+def is_guid_in_database(conn: ConnectionPlus, *guids) -> Dict[str, bool]:
+    """
+    Look up guids and return a dictionary with the answers to the question
+    "is this guid in the database?"
+
+    Args:
+        conn: the connection to the database
+        guids: the guids to look up
+    """
+    guids = np.unique(guids)
+    placeholders = sql_placeholder_string(len(guids))
+
+    query = f"""
+            SELECT guid
+            FROM runs
+            WHERE guid in {placeholders}
+            """
+
+    cursor = conn.cursor()
+    cursor.execute(query, guids)
+    rows = cursor.fetchall()
+    existing_guids = [row[0] for row in rows]
+    return {guid: (guid in existing_guids) for guid in guids}
+
+
 def is_run_id_in_database(conn: ConnectionPlus,
                           *run_ids) -> Dict[int, bool]:
     """
