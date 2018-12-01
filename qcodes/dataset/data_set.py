@@ -307,7 +307,8 @@ class DataSet(Sized):
         The run timestamp is the moment when the measurement for this run
         started.
         """
-        return get_run_timestamp_from_run_id(self.conn, self.run_id)
+        md = self.dsi.retrieve_meta_data()
+        return md.run_started
 
     @property
     def description(self) -> RunDescriber:
