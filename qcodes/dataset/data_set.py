@@ -274,10 +274,8 @@ class DataSet(Sized):
             return None
 
     @property
-    def number_of_results(self):
-        sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
-        cursor = atomic_transaction(self.conn, sql)
-        return one(cursor, 'COUNT(*)')
+    def number_of_results(self) -> int:
+        self.dsi.retrieve_number_of_results()
 
     @property
     def counter(self):

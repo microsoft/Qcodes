@@ -1186,6 +1186,26 @@ def length(conn: ConnectionPlus,
         return _len
 
 
+def get_number_of_results(conn: ConnectionPlus, guid: str) -> int:
+    """
+    Get the number of results for the run with the provided guid
+    """
+    tab_name_query = """
+                     SELECT result_table_name
+                     FROM runs
+                     WHERE guid = ?
+                     """
+    size_query = 'SELECT COUNT(*) FROM "{}"'
+
+    with atomic(conn) as conn:
+        cursor = conn.cursor()
+        cursor.execute(tab_name_query, (guid,))
+        tab_name = one(cursor, 'result_table_name')
+        cursor.execute(size_query.format(tab_name))
+        number_of_results = one(cursor, 'COUNT(*)')
+    return number_of_results
+
+
 def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],

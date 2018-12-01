@@ -14,6 +14,7 @@ from qcodes.dataset.sqlite_base import (ConnectionPlus,
                                         create_run,
                                         get_experiments,
                                         get_last_experiment,
+                                        get_number_of_results,
                                         get_metadata_from_run_id,
                                         get_runid_from_guid,
                                         is_guid_in_database,
@@ -91,7 +92,7 @@ class SqliteStorageInterface(DataStorageInterface):
                                list(values_transposed))
 
     def retrieve_number_of_results(self) -> int:
-        raise NotImplementedError
+        return get_number_of_results(self.conn, self.guid)
 
     def retrieve_results(self, params,
                          start=None,
