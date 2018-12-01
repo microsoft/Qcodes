@@ -14,7 +14,6 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
                                         connect, create_run, completed,
                                         is_column_in_table,
-                                        get_parameters,
                                         get_experiments,
                                         get_last_experiment, select_one_where,
                                         length, modify_values,
@@ -459,7 +458,7 @@ class DataSet(Sized):
         self._description = desc
 
     def get_parameters(self) -> SPECS:
-        return get_parameters(self.conn, self.run_id)
+        return self.description.interdeps.paramspecs
 
     @deprecate(reason=None, alternative="DataSet.add_parameter")
     def add_parameters(self, specs: SPECS) -> None:
