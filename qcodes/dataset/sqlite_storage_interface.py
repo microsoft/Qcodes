@@ -169,6 +169,7 @@ class SqliteStorageInterface(DataStorageInterface):
         tags = run_extra_info
         name = run_info['name']
         exp_name = run_info['exp_name']
+        sample_name = run_info['sample_name']
 
         md = MetaData(run_description=desc,
                       run_started=run_started,
@@ -176,6 +177,7 @@ class SqliteStorageInterface(DataStorageInterface):
                       tags=tags,
                       snapshot=snapshot,
                       name=name,
-                      exp_name=exp_name)
+                      exp_name=exp_name,
+                      sample_name=sample_name)
 
         return md

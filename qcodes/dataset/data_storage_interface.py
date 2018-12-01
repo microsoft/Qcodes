@@ -25,6 +25,7 @@ class MetaData():
     run_description: RunDescriber
     name: str
     exp_name: str
+    sample_name: str
     run_started: Optional[float] = None
     run_completed: Optional[float] = None
     snapshot: Optional[dict] = None
