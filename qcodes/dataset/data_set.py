@@ -253,7 +253,7 @@ class DataSet(Sized):
 
     @property
     def guid(self):
-        return get_guid_from_run_id(self.conn, self.run_id)
+        return self._guid
 
     @property
     def snapshot(self) -> Optional[dict]:
