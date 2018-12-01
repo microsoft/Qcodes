@@ -249,7 +249,6 @@ class DataSet(Sized):
         md = self.dsi.retrieve_meta_data()
         return md.name
 
-
     @property
     def guid(self):
         return self._guid
@@ -299,7 +298,8 @@ class DataSet(Sized):
 
     @property
     def exp_name(self) -> str:
-        return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
+        md = self.dsi.retrieve_meta_data()
+        return md.exp_name
 
     @property
     def sample_name(self) -> str:
