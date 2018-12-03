@@ -407,9 +407,13 @@ class DataSet(Sized):
         """
         Perform the actions that must take place once the run has been started
         """
-        # So far it is only one action: write down the run_description
-        update_run_description(self.conn, self.run_id,
+        # write down the run_description
+        update_run_description(self.dsi.conn, self.dsi.run_id,
                                self.description.to_json())
+
+        # create columns in the results table for all parameters
+        add_parameter(self.dsi.conn, self.dsi.table_name,
+                      *self.description.interdeps.paramspecs)
 
     def toggle_debug(self):
         """
@@ -453,8 +457,6 @@ class DataSet(Sized):
                 raise ValueError('Can not have parameter '
                                  f'{spec.name} depend on {dp}, '
                                  'no such parameter in this DataSet')
-
-        add_parameter(self.conn, self.table_name, spec)
 
         desc = self.description
         desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)

@@ -2,7 +2,10 @@ from pathlib import Path
 
 import pytest
 
+from qcodes import ParamSpec
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
@@ -101,3 +104,23 @@ def test_init_for_new_run_with_given_experiment_and_name(experiment):
 
     for trait in DataSet.persistent_traits:
         getattr(ds, trait)
+
+
+def test_add_parameter(experiment):
+    """
+    Test adding new parameter to the dataset with sqlite storage interface.
+    Adding a parameter does not do anything with the database, parameter
+    information is just stored inside dataset.
+    """
+    conn = experiment.conn
+    db_file = path_to_dbfile(conn)
+
+    ds = DataSet(guid=None, storageinterface=SqliteStorageInterface, conn=conn)
+
+    spec = ParamSpec('x', 'array')
+
+    with raise_if_file_changed(db_file):
+        ds.add_parameter(ParamSpec('x', 'array'))
+
+    expected_descr = RunDescriber(InterDependencies(spec))
+    assert expected_descr == ds.description
