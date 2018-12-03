@@ -9,7 +9,7 @@ from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
-    is_pristine_run, update_run_description)
+    is_pristine_run, update_run_description, add_parameter)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (atomic,
                                         ConnectionPlus,
@@ -93,7 +93,17 @@ class SqliteStorageInterface(DataStorageInterface):
             self.conn, self.exp_id, self.name, self.guid)
 
     def prepare_for_storing_results(self) -> None:
-        pass
+        self._set_columns_of_results_table()
+
+    def _set_columns_of_results_table(self) -> None:
+        """
+        Create columns in the results table for the values that are going
+        to be added with store_results
+        """
+        md = self.retrieve_meta_data()
+        paramspecs = md.run_description.interdeps.paramspecs
+
+        add_parameter(self.conn, self.table_name, *paramspecs)
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
