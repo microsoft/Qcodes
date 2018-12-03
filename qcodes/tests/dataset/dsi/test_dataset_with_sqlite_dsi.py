@@ -57,7 +57,7 @@ def test_init_for_new_run(experiment):
         getattr(ds, trait)
 
 
-def test_init_for_run_with_given_experiment_and_name(experiment):
+def test_init_for_new_run_with_given_experiment_and_name(experiment):
     """
     Test that the initialisation of a new run within a given experiment and
     given name works
