@@ -37,9 +37,9 @@ class SqliteStorageInterface(DataStorageInterface):
                              "been passed together with non-None values. "
                              "This is not allowed.")
 
-        self._path_to_db = path_to_db or get_DB_location()
+        self.path_to_db = path_to_db or get_DB_location()
         self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self._path_to_db)
+            connect(self.path_to_db)
 
         # The run_id is assigned by create_run OR
         # retrieve_meta_data, depending on what the DataSet constructor wants
