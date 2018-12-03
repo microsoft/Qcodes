@@ -590,36 +590,6 @@ class DataSet(Sized):
 
         return len_before_add
 
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.',
-               alternative='add_parameter, add_result, add_results')
-    def add_parameter_values(self, spec: ParamSpec, values: VALUES):
-        """
-        Add a parameter to the DataSet and associates result values with the
-        new parameter.
-
-        If the DataSet is not empty, then the count of provided values must
-        equal the current count of results in the DataSet, or an error will
-        be raised.
-
-        It is an error to add parameters to a completed DataSet.
-        """
-        # first check that the len of values (if dataset is not empty)
-        # is the right size i.e. the same as the dataset
-        if len(self) > 0:
-            if len(values) != len(self):
-                raise ValueError("Need to have {} values but got {}.".format(
-                    len(self),
-                    len(values)
-                ))
-
-        with atomic(self.conn) as conn:
-            add_parameter(conn, self.table_name, spec)
-            # now add values!
-            results = [{spec.name: value} for value in values]
-            log.info(f"add_parameter_values:add_result: {results}")
-            self.add_results(results)
-
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
