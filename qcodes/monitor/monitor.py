@@ -111,6 +111,16 @@ class Monitor(Thread):
         self.loop = None
         self._parameters = parameters
         self.loop_is_closed = Event()
+        # TODO (giulioungaretti) read from config
+        self.handler = _handler(parameters, interval=interval)
+
+        log.debug("Start monitoring thread")
+        if Monitor.running:
+            # stop the old server
+            log.debug("Stopping and restarting server")
+            Monitor.running.stop()
+        self.start()
+
         Monitor.running = self
 
     def run(self):
@@ -119,7 +129,6 @@ class Monitor(Thread):
         """
         log.debug("Running Websocket server")
         self.loop = asyncio.new_event_loop()
-        self.loop_is_closed = False
         asyncio.set_event_loop(self.loop)
         try:
             server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
@@ -202,24 +211,6 @@ class Monitor(Thread):
 
         """
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
-
-    def _monitor(self, *parameters, interval=1):
-        self.handler = _handler(parameters, interval=interval)
-        # TODO (giulioungaretti) read from config
-
-        log.debug("Start monitoring thread")
-
-        if Monitor.running:
-            # stop the old server
-            log.debug("Stopping and restarting server")
-            Monitor.running.stop()
-
-        self.start()
-
-        # let the thread start
-        time.sleep(0.01)
-        log.debug("Start monitoring server")
-
 
 class Server():
 
