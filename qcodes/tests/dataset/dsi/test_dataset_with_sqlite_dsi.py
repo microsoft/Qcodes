@@ -59,6 +59,9 @@ def test_init_for_new_run(experiment):
     for trait in DataSet.persistent_traits:
         getattr(ds, trait)
 
+    assert False is ds.completed
+    assert False is ds.started
+
 
 def test_init_for_new_run_with_given_experiment_and_name(experiment):
     """
@@ -105,6 +108,9 @@ def test_init_for_new_run_with_given_experiment_and_name(experiment):
     for trait in DataSet.persistent_traits:
         getattr(ds, trait)
 
+    assert False is ds.completed
+    assert False is ds.started
+
 
 def test_add_parameter(experiment):
     """
@@ -124,3 +130,67 @@ def test_add_parameter(experiment):
 
     expected_descr = RunDescriber(InterDependencies(spec))
     assert expected_descr == ds.description
+
+
+def test_run_is_started_in_different_cases(experiment):
+    """Test that DataSet's `started` property is correct in various cases"""
+    conn = experiment.conn
+
+    control_conn = sqlite.connect(experiment.path_to_db)
+
+    # 1. Create a new dataset
+
+    ds = DataSet(guid=None, conn=conn)
+    guid = ds.guid
+
+    assert False is ds.completed
+    assert False is ds.started
+
+    same_ds = DataSet(guid=guid, conn=control_conn)
+
+    assert False is same_ds.completed
+    assert False is same_ds.started
+
+    # 2. Start this dataset
+
+    ds.add_parameter(ParamSpec('x', 'numeric'))
+    ds.add_result({'x': 0})
+
+    assert True is ds.started
+    assert False is ds.completed
+
+    same_ds = DataSet(guid=guid, conn=control_conn)
+
+    assert False is same_ds.completed
+    assert True is same_ds.started
+
+    # 3. Complete this dataset
+
+    ds.mark_complete()
+
+    same_ds = DataSet(guid=guid, conn=control_conn)
+
+    assert True is same_ds.completed
+    assert True is same_ds.started
+
+    # 4. Create a new dataset and mark it as completed without adding results
+
+    # Note that when a dataset is new and it has been marked completed
+    # without ever adding any results, the main instance will remain with
+    # started==False, while a re-loaded instance will have started==True.
+
+    ds = DataSet(guid=None, conn=conn)
+    guid = ds.guid
+
+    assert False is ds.completed
+    assert False is ds.started
+
+    ds.mark_complete()
+
+    assert True is ds.completed
+    assert False is ds.started  # <<== NOTE the difference !!!
+
+    same_ds = DataSet(guid=guid, conn=control_conn)
+
+    assert True is same_ds.completed
+    assert True is same_ds.started  # <<== NOTE the difference !!!
