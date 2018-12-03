@@ -403,14 +403,6 @@ class DataSet(Sized):
     def run_id(self) -> Optional[int]:
         return getattr(self.dsi, 'run_id', None)
 
-    def _get_run_description_from_db(self) -> RunDescriber:
-        """
-        Look up the run_description from the database
-        """
-        desc_str = select_one_where(self.conn, "runs", "run_description",
-                                    "run_id", self.run_id)
-        return RunDescriber.from_json(desc_str)
-
     def _perform_start_actions(self) -> None:
         """
         Perform the actions that must take place once the run has been started
