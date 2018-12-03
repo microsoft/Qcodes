@@ -67,8 +67,10 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
 
 
 def _handler(parameters, interval: int):
-
-    async def serverFunc(websocket, path):
+    """
+    Return the websockets server handler
+    """
+    async def server_func(websocket, path):
         while True:
             try:
                 try:
@@ -88,9 +90,9 @@ def _handler(parameters, interval: int):
                 log.debug("Got CancelledError")
                 break
 
-        log.debug("Stopping Websocket handler")
+        log.debug("Closing websockets connection")
 
-    return serverFunc
+    return server_func
 
 
 class Monitor(Thread):
