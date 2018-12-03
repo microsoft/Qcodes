@@ -21,7 +21,11 @@ _Optional = Union[T, str]
 
 
 @dataclass
-class MetaData():
+class MetaData:
+    """
+    Metadata class holds information that comes together with the actual
+    data but is not the actual data.
+    """
     run_description: RunDescriber
     name: str
     exp_name: str
