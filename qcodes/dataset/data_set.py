@@ -748,7 +748,11 @@ class DataSet(Sized):
 
     def __repr__(self) -> str:
         out = []
-        heading = f"{self.name} #{self.run_id}@{self.path_to_db}"
+        heading = f"{self.name} #{self.run_id}"
+
+        if hasattr(self.dsi, 'path_to_db'):
+            heading += f'@{self.dsi.path_to_db}'
+
         out.append(heading)
         out.append("-" * len(heading))
         ps = self.get_parameters()
