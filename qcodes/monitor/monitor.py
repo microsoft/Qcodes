@@ -27,7 +27,7 @@ import socketserver
 import webbrowser
 import websockets
 
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.instrument.parameter import Parameter
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
@@ -45,13 +45,13 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
     metas = defaultdict(list) # type: dict
     for parameter in parameters:
         # Check we have a list of parameters
-        if not isinstance(parameter, _BaseParameter):
+        if not isinstance(parameter, Parameter):
             raise ValueError("{} is not a parameter".format(parameter))
 
         # Get the latest value from the parameter, respecting the max_val_age parameter
         meta = {}
         meta["value"] = str(parameter.get_latest())
-        meta["ts"] = str(time.mktime(parameter.get_latest.get_timestamp.timestamp()))
+        meta["ts"] = str(time.mktime(parameter.get_latest.get_timestamp().timestamp()))
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
 
