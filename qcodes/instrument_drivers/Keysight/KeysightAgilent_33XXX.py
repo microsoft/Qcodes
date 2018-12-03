@@ -128,6 +128,13 @@ class OutputChannel(InstrumentChannel):
                            vals=vals.Numbers(0, 100)
                            )
 
+        self.add_parameter('pulse_width',
+                           label="Channel {} pulse width".format(channum),
+                           set_cmd='SOURce{}:FUNCtion:PULSE:WIDTh {{}}'.format(channum),
+                           get_cmd='SOURce{}:FUNCtion:PULSE:WIDTh?'.format(channum),
+                           get_parser=float,
+                           unit='S')
+
         # TRIGGER MENU
         self.add_parameter('trigger_source',
                            label='Channel {} trigger source'.format(channum),
