@@ -152,6 +152,58 @@ def test_retrieve_metadata_various_runs_with_various_metadatas():
     pytest.xfail('not implemented yet')
 
 
+def test_store_results(experiment, request):
+    guid = generate_guid()
+    conn = experiment.conn
+    dsi = SqliteStorageInterface(guid, conn=conn)
+
+    dsi.create_run()
+
+    specs = [ParamSpec("x", "numeric"), ParamSpec("y", "array")]
+    desc = RunDescriber(InterDependencies(*specs))
+
+    # Add specs for parameters via metadata
+    dsi.store_meta_data(run_description=desc)
+
+    dsi.prepare_for_storing_results()
+
+    expected_x = []
+    expected_y = []
+
+    # store_results where the results dict has single value per parameter
+    for x in range(10):
+        y = np.random.random_sample(10)
+        xx = [x]
+        yy = [y]
+        expected_x.append(xx)
+        expected_y.append(yy)
+        dsi.store_results({"x": xx, "y": yy})
+
+    # store_results where the results dict has multiple values per parameter
+    n_pts = 3
+    for x in range(3):
+        y = np.random.random_sample(10)
+        xx = [x] * n_pts
+        yy = [y] * n_pts
+        for xx_ in xx:
+            expected_x.append([xx_])
+        for yy_ in yy:
+            expected_y.append([yy_])
+        dsi.store_results({"x": xx, "y": yy})
+
+    # we use a different connection in order to make sure that the
+    # transactions get committed and the database file gets indeed changed to
+    # contain the data points
+    control_conn = connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
+
+    actual_x = get_data(control_conn, dsi.table_name, ['x'])
+    assert actual_x == expected_x
+
+    actual_y = get_data(control_conn, dsi.table_name, ['y'])
+    np.testing.assert_allclose(actual_y, expected_y)
+
+
 def test_store_meta_data__run_completed(experiment):
     guid = generate_guid()
     conn = experiment.conn
