@@ -48,6 +48,7 @@ from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
 
@@ -280,7 +281,8 @@ class DataSet(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return json.dumps(self.snapshot) if self.snapshot else None
+        return json.dumps(self.snapshot, cls=NumpyJSONEncoder) \
+            if self.snapshot else None
 
     @property
     def number_of_results(self) -> int:
