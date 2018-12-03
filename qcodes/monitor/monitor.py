@@ -122,6 +122,7 @@ class Monitor(Thread):
         self.server = None
         self._parameters = parameters
         self.loop_is_closed = Event()
+        self.server_is_started = Event()
         self.handler = _handler(parameters, interval=interval)
 
         log.debug("Start monitoring thread")
@@ -132,8 +133,7 @@ class Monitor(Thread):
         self.start()
 
         # Wait until the loop is running
-        while self.loop is None or not self.loop.is_running():
-            time.sleep(0.01)
+        self.server_is_started.wait()
         Monitor.running = self
 
     def run(self):
@@ -146,6 +146,7 @@ class Monitor(Thread):
         try:
             server_start = websockets.serve(self.handler, '127.0.0.1', WEBSOCKET_PORT)
             self.server = self.loop.run_until_complete(server_start)
+            self.server_is_started.set()
             self.loop.run_forever()
         except OSError:
             # The code above may throw an OSError
