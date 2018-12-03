@@ -744,7 +744,7 @@ class DataSet(Sized):
         return get_metadata(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
-        return length(self.conn, self.table_name)
+        return self.number_of_results
 
     def __repr__(self) -> str:
         out = []
