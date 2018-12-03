@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from qcodes import ParamSpec
-from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set import DataSet, CompletedError
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
@@ -130,6 +131,106 @@ def test_add_parameter(experiment):
 
     expected_descr = RunDescriber(InterDependencies(spec))
     assert expected_descr == ds.description
+
+
+@pytest.mark.parametrize('first_add_using_add_result', (True, False))
+def test_add_results(experiment, first_add_using_add_result, request):
+    """
+    Test adding results to the dataset. Assertions are made directly in the
+    sqlite database.
+    """
+    conn = experiment.conn
+
+    control_conn = sqlite.connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
+
+    # Initialize a dataset
+
+    ds = DataSet(guid=None, conn=conn)
+
+    # Assert initial state
+
+    assert False is ds.completed
+
+    # Add parameters to the dataset
+
+    x_spec = ParamSpec('x', 'numeric')
+    y_spec = ParamSpec('y', 'array')
+
+    ds.add_parameter(x_spec)
+    ds.add_parameter(y_spec)
+
+    # Now let's add results
+
+    expected_x = []
+    expected_y = []
+
+    # We need to test that both `add_result` and `add_results` (with 's')
+    # perform "start actions" when they are called on a non-started run,
+    # hence this parametrization
+    if first_add_using_add_result:
+        x_val = 25
+        y_val = np.random.random_sample(3)
+        expected_x.append([x_val])
+        expected_y.append([y_val])
+        ds.add_result({'x': x_val, 'y': y_val})
+        len_after_first_add = 1
+    else:
+        x_val_1 = 42
+        x_val_2 = 53
+        y_val_1 = np.random.random_sample(3)
+        y_val_2 = np.random.random_sample(3)
+        expected_x.append([x_val_1])
+        expected_x.append([x_val_2])
+        expected_y.append([y_val_1])
+        expected_y.append([y_val_2])
+        len_before_add = ds.add_results([{'x': x_val_1, 'y': y_val_1},
+                                         {'x': x_val_2, 'y': y_val_2}])
+        assert len_before_add == 0
+        len_after_first_add = 2
+
+    # We also parametrize the second addition of results
+    second_add_using_add_result = not first_add_using_add_result
+    if second_add_using_add_result:
+        x_val = 12
+        y_val = np.random.random_sample(3)
+        expected_x.append([x_val])
+        expected_y.append([y_val])
+        ds.add_result({'x': x_val, 'y': y_val})
+    else:
+        x_val_1 = 68
+        x_val_2 = 75
+        y_val_1 = np.random.random_sample(3)
+        y_val_2 = np.random.random_sample(3)
+        expected_x.append([x_val_1])
+        expected_x.append([x_val_2])
+        expected_y.append([y_val_1])
+        expected_y.append([y_val_2])
+        len_before_add = ds.add_results([{'x': x_val_1, 'y': y_val_1},
+                                         {'x': x_val_2, 'y': y_val_2}])
+        assert len_before_add == len_after_first_add
+
+    # assert that data has been added to the database
+
+    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    assert actual_x == expected_x
+
+    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    np.testing.assert_allclose(actual_y, expected_y)
+
+    # assert that we can't `add_result` to a completed dataset but we can
+    # `add_results` to it still :)
+
+    ds.mark_complete()
+
+    with pytest.raises(CompletedError):
+        ds.add_result({'x': 1})
+
+    ds.add_results([{'x': 1}])
+
+    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    expected_x_after_complete = expected_x + [[1]]
+    assert actual_x == expected_x_after_complete
 
 
 def test_run_is_started_in_different_cases(experiment):
