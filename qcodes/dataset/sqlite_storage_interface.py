@@ -10,7 +10,8 @@ from .data_storage_interface import (
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values)
 from qcodes.dataset.database import get_DB_location
-from qcodes.dataset.sqlite_base import (ConnectionPlus,
+from qcodes.dataset.sqlite_base import (atomic,
+                                        ConnectionPlus,
                                         create_run,
                                         get_experiments,
                                         get_guid_from_run_id,
@@ -19,7 +20,8 @@ from qcodes.dataset.sqlite_base import (ConnectionPlus,
                                         get_metadata_from_run_id,
                                         get_runid_from_guid,
                                         is_guid_in_database,
-                                        make_connection_plus_from)
+                                        make_connection_plus_from,
+                                        mark_run_complete)
 
 
 class SqliteStorageInterface(DataStorageInterface):
@@ -108,7 +110,38 @@ class SqliteStorageInterface(DataStorageInterface):
                         snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
                         tier: _Optional[int]=NOT_GIVEN) -> None:
-        raise NotImplementedError
+        """
+        Performs one atomic transaction for all the fields. Each field is
+        set by a separate function that should check for inconsistencies and
+        raise if it finds an inconsistency
+        """
+
+        queries = {run_completed: self._set_run_completed}
+
+        with atomic(self.conn) as conn:
+            for kwarg, func in queries.items():
+                if kwarg != NOT_GIVEN:
+                    func(conn, kwarg)
+
+    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> str:
+        """
+        Set the complete_timestamp and is_complete. Will raise if the former
+        is not-NULL or if the latter is 1
+        """
+        check = """
+                SELECT (completed_timestamp IS NULL)
+                  AND (is_completed = 0) AS pristine
+                FROM runs
+                WHERE run_id = ?
+                """
+        cursor = conn.cursor()
+        cursor.execute(check, (self.run_id,))
+        row = cursor.fetchall()[0]
+        if not row['pristine']:
+            raise ValueError(f'Can not write run_completed to GUID {self.guid}'
+                              ', that run has already been completed.')
+
+        mark_run_complete(conn, completion_time=time, run_id=self.run_id)
 
     def retrieve_number_of_results(self) -> int:
         return get_number_of_results(self.conn, self.guid)
