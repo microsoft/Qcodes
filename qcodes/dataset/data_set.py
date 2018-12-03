@@ -505,10 +505,10 @@ class DataSet(Sized):
         return self._completed
 
     @completed.setter
-    def completed(self, value):
+    def completed(self, value: bool):
         self._completed = value
         if value:
-            mark_run_complete(self.conn, self.run_id)
+            self.dsi.store_meta_data(run_completed=time.time())
 
     def mark_complete(self) -> None:
         """
