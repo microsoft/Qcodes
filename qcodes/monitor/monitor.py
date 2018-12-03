@@ -22,7 +22,7 @@ import webbrowser
 import datetime
 from copy import deepcopy
 from contextlib import suppress
-from threading import Thread
+from threading import Thread, Event
 from typing import Dict, Any
 import websockets
 
@@ -110,7 +110,7 @@ class Monitor(Thread):
         super().__init__()
         self.loop = None
         self._parameters = parameters
-        self._monitor(*parameters, interval=interval)
+        self.loop_is_closed = Event()
         Monitor.running = self
 
     def run(self):
@@ -137,8 +137,8 @@ class Monitor(Thread):
             while not self.loop.is_closed():
                 log.debug("waiting for loop to stop and close")
                 time.sleep(0.01)
-            self.loop_is_closed = True
             log.debug("loop closed")
+            self.loop_is_closed.set()
 
     def update_all(self):
         for p in self._parameters:
@@ -180,9 +180,7 @@ class Monitor(Thread):
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
             log.exception("Could not close loop")
-        while not self.loop_is_closed:
-            log.debug("waiting for loop to stop and close")
-            time.sleep(0.01)
+        self.loop_is_closed.wait()
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
