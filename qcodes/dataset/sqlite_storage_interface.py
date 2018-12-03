@@ -13,6 +13,7 @@ from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (ConnectionPlus,
                                         create_run,
                                         get_experiments,
+                                        get_guid_from_run_id,
                                         get_last_experiment,
                                         get_number_of_results,
                                         get_metadata_from_run_id,
@@ -25,12 +26,11 @@ class SqliteStorageInterface(DataStorageInterface):
     """
     """
     def __init__(self, guid: str, *,
+                 run_id: Optional[int]=None,
                  conn: Optional[ConnectionPlus]=None,
                  path_to_db: Optional[str]=None,
                  exp_id: Optional[int]=None,
                  name: Optional[str]=None):
-
-        super().__init__(guid)
 
         if path_to_db is not None and conn is not None:
             raise ValueError("Both `path_to_db` and `conn` arguments have "
@@ -40,6 +40,12 @@ class SqliteStorageInterface(DataStorageInterface):
         self.path_to_db = path_to_db or get_DB_location()
         self.conn = make_connection_plus_from(conn) if conn is not None else \
             connect(self.path_to_db)
+
+        # then GUID is ''
+        if run_id is not None:
+            guid = get_guid_from_run_id(self.conn, run_id)
+
+        super().__init__(guid)
 
         # The following attributes are assigned by create_run OR
         # retrieve_meta_data, depending on what the DataSet constructor wants

@@ -203,6 +203,7 @@ class DataSet(Sized):
 
     def __init__(self,
                  guid: Optional[str]=None,
+                 run_id: Optional[int]=None,
                  storageinterface: type=SqliteStorageInterface,
                  **si_kwargs) -> None:
         """
@@ -212,6 +213,9 @@ class DataSet(Sized):
         Args:
             guid: GUID of dataset. If not provided, a new dataset is created.
               If provided, the corresponding dataset is loaded (if it exists).
+            run_id: an alternative to GUID that can be used IFF the
+              SqliteStorageInterface is being used. It is an error to provide
+              both a run_id and a GUID.
             storageinterface: The class of the storage interface to use for
               storing/loading the dataset
             si_kwargs: the kwargs to pass to the constructor of the
@@ -225,10 +229,23 @@ class DataSet(Sized):
                              "DataStorageInterface")
 
         if guid is not None:
+            if run_id is not None:
+                raise ValueError('Got values for both GUID and run_id. Please '
+                                 'provide at most a value for one of them.')
             self._guid = guid
             self.dsi = storageinterface(self._guid, **si_kwargs)
             if not self.dsi.run_exists():
                 raise ValueError(f'No run with GUID {guid} found.')
+
+        # Note: this is not a feature we want to keep supporting, but it is
+        # needed in a transition period from run_id to GUID
+        elif run_id is not None:
+            if storageinterface != SqliteStorageInterface:
+                raise ValueError('Got a value for run_id, but the '
+                                 'storageinterface does not support that. '
+                                 'You can only use run_id with SQlite.')
+            self.dsi = storageinterface(guid='', run_id=run_id, **si_kwargs)
+            self._guid = self.dsi.guid
 
         else:
             self._guid = generate_guid()
