@@ -120,7 +120,7 @@ def test_add_parameter(experiment):
     spec = ParamSpec('x', 'array')
 
     with raise_if_file_changed(db_file):
-        ds.add_parameter(ParamSpec('x', 'array'))
+        ds.add_parameter(spec)
 
     expected_descr = RunDescriber(InterDependencies(spec))
     assert expected_descr == ds.description
