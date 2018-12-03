@@ -1531,7 +1531,8 @@ def new_experiment(conn: ConnectionPlus,
 
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
-def mark_run_complete(conn: ConnectionPlus, run_id: int):
+def mark_run_complete(conn: ConnectionPlus, completion_time: float,
+                      run_id: int):
     """ Mark run complete
 
     Args:
@@ -1547,7 +1548,7 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int):
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), True, run_id)
+    atomic_transaction(conn, query, completion_time, True, run_id)
 
 
 def completed(conn: ConnectionPlus, run_id)->bool:

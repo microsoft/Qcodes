@@ -64,7 +64,8 @@ def test_has_attributes_after_init():
 
 
 def test_dataset_read_only_properties(dataset):
-    read_only_props = DataSet.persistent_traits
+    read_only_props = list(DataSet.persistent_traits)
+    read_only_props.remove('completed')
 
     for prop in read_only_props:
         with pytest.raises(AttributeError, match="can't set attribute",

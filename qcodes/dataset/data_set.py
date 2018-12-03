@@ -503,10 +503,10 @@ class DataSet(Sized):
         return self._completed
 
     @completed.setter
-    def completed(self, value):
+    def completed(self, value: bool):
         self._completed = value
         if value:
-            mark_run_complete(self.conn, self.run_id)
+            self.dsi.store_meta_data(run_completed=time.time())
 
     def mark_complete(self) -> None:
         """
@@ -733,14 +733,14 @@ class DataSet(Sized):
         Remove all subscribers
         """
         sql = "select * from sqlite_master where type = 'trigger';"
-        triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as conn:
+        triggers = atomic_transaction(self.dsi.conn, sql).fetchall()
+        with atomic(self.dsi.conn) as conn:
             for trigger in triggers:
                 remove_trigger(conn, trigger['name'])
-            for sub in self.subscribers.values():
+            for sub in self.dsi.subscribers.values():
                 sub.schedule_stop()
                 sub.join()
-            self.subscribers.clear()
+            self.dsi.subscribers.clear()
 
     def get_metadata(self, tag):
         return get_metadata(self.conn, tag, self.table_name)
