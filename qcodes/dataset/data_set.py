@@ -286,11 +286,6 @@ class DataSet(Sized):
         self.dsi.retrieve_number_of_results()
 
     @property
-    def counter(self):
-        return select_one_where(self.conn, "runs",
-                                "result_counter", "run_id", self.run_id)
-
-    @property
     def parameters(self) -> str:
         idps = self._description.interdeps
         return ','.join([p.name for p in idps.paramspecs])
