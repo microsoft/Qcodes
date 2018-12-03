@@ -283,7 +283,7 @@ class DataSet(Sized):
 
     @property
     def number_of_results(self) -> int:
-        self.dsi.retrieve_number_of_results()
+        return self.dsi.retrieve_number_of_results()
 
     @property
     def parameters(self) -> str:
