@@ -54,6 +54,16 @@ class DataStorageInterface(ABC):
         pass
 
     @abstractmethod
+    def prepare_for_storing_results(self) -> None:
+        """
+        This method is meant for interface implementations to be able to
+        performs actions needed before calls to `store_results`. In other
+        words, by calling this method, the storage interface can know that
+        data storing is going to start "now".
+        """
+        pass
+
+    @abstractmethod
     def store_results(self, results: Dict[str, VALUES]) -> None:
         pass
 
