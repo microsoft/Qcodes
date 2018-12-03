@@ -46,7 +46,7 @@ def test_init_and_create_new_run(experiment):
     assert experiment.conn is dsi.conn
     assert guid == dsi.guid
     assert dsi.run_id is None
-    assert experiment.path_to_db == dsi._path_to_db
+    assert experiment.path_to_db == dsi.path_to_db
     assert not(dsi.run_exists())
 
     # That was the bare __init__. Now create the run
@@ -82,7 +82,7 @@ def test_init__load_existing_run(experiment):
     assert experiment.conn is dsi.conn
     assert guid == dsi.guid
     assert run_id is 1
-    assert experiment.path_to_db == dsi._path_to_db
+    assert experiment.path_to_db == dsi.path_to_db
     assert dsi.run_id is None
 
     # that was the bare init, now load the run
