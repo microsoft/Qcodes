@@ -92,14 +92,6 @@ class SqliteStorageInterface(DataStorageInterface):
                                list(results.keys()),
                                list(values_transposed))
 
-    def retrieve_number_of_results(self) -> int:
-        return get_number_of_results(self.conn, self.guid)
-
-    def retrieve_results(self, params,
-                         start=None,
-                         stop=None) -> Dict[str, ndarray]:
-        raise NotImplementedError
-
     def store_meta_data(self, *,
                         run_started: _Optional[Optional[float]]=NOT_GIVEN,
                         run_completed: _Optional[Optional[float]]=NOT_GIVEN,
@@ -107,6 +99,14 @@ class SqliteStorageInterface(DataStorageInterface):
                         snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
                         tier: _Optional[int]=NOT_GIVEN) -> None:
+        raise NotImplementedError
+
+    def retrieve_number_of_results(self) -> int:
+        return get_number_of_results(self.conn, self.guid)
+
+    def retrieve_results(self, params,
+                         start=None,
+                         stop=None) -> Dict[str, ndarray]:
         raise NotImplementedError
 
     def _get_run_table_row_full(self) -> Dict:
