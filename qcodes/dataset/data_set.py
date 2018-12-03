@@ -466,11 +466,8 @@ class DataSet(Sized):
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
         """
-
         self._metadata[tag] = metadata
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
-        with atomic(self.conn) as conn:
-            add_meta_data(conn, self.run_id, {tag: metadata})
+        self.dsi.store_meta_data(tags=self._metadata)
 
     def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
         """
