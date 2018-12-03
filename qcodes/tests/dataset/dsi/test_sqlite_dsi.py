@@ -1,5 +1,6 @@
 import re
 import time
+import json
 
 import numpy as np
 import pytest
@@ -10,7 +11,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.sqlite_base import create_run, get_runs, connect, get_data, \
-    RUNS_TABLE_COLUMNS
+    RUNS_TABLE_COLUMNS, get_metadata
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
@@ -22,6 +23,7 @@ from qcodes.tests.dataset.test_database_creation_and_upgrading import \
 # IMPORTANT: use pytest.xfail at the edn of a test function to mark tests
 # that are passing but should be improved, and write in the 'reason' what
 # there is to be improved.
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 
 def test_init_no_guid():
@@ -379,3 +381,38 @@ def test_store_meta_data__tags(experiment):
     tags_all = {**tags_3, **tags_2}
     assert md.tags == tags_all
 
+
+def test_store_meta_data__snapshot(experiment):
+    guid = generate_guid()
+    conn = experiment.conn
+    dsi = SqliteStorageInterface(guid, conn=conn)
+    dsi.create_run()
+
+    control_conn = connect(experiment.path_to_db)
+
+    # assert initial state
+
+    with pytest.raises(RuntimeError,
+                       match='Rolling back due to unhandled exception') as e:
+        get_metadata(dsi.conn, 'snapshot', dsi.table_name)
+    assert error_caused_by(e, 'no such column: snapshot')
+
+    md = dsi.retrieve_meta_data()
+    assert None is md.snapshot
+
+    # Store snapshot
+
+    snap_1 = {'station': 'Q'}
+
+    dsi.store_meta_data(snapshot=snap_1)
+
+    # assert snapshot was successfully stored
+
+    snap_1_json = json.dumps(snap_1, cls=NumpyJSONEncoder)
+    expected_snapshot = get_metadata(control_conn, 'snapshot', dsi.table_name)
+    assert expected_snapshot == snap_1_json
+
+    # assert what we can retrieve
+
+    md = dsi.retrieve_meta_data()
+    assert md.snapshot == snap_1

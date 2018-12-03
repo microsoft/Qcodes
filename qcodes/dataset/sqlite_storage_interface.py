@@ -5,6 +5,7 @@ import json
 from numpy import ndarray
 
 from qcodes.dataset.descriptions import RunDescriber
+from qcodes.utils.helpers import NumpyJSONEncoder
 from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
@@ -134,7 +135,8 @@ class SqliteStorageInterface(DataStorageInterface):
         """
         queries = {self._set_run_completed: run_completed,
                    self._set_run_description: run_description,
-                   self._set_tags: tags}
+                   self._set_tags: tags,
+                   self._set_snapshot: snapshot}
 
         with atomic(self.conn) as conn:
             for func, kwarg in queries.items():
@@ -160,6 +162,19 @@ class SqliteStorageInterface(DataStorageInterface):
         with atomic(conn) as conn:
             for tag, value in tags.items():
                 add_meta_data(conn, self.run_id, {tag: value})
+
+    def _set_snapshot(self, conn: ConnectionPlus, snapshot: dict) -> None:
+        snapshot_json = self._encode_snapshot(snapshot)
+        with atomic(conn) as conn:
+            add_meta_data(conn, self.run_id, {'snapshot': snapshot_json})
+
+    @staticmethod
+    def _encode_snapshot(snapshot: dict) -> str:
+        return json.dumps(snapshot, cls=NumpyJSONEncoder)
+
+    @staticmethod
+    def _decode_snapshot(snapshot: str) -> dict:
+        return json.loads(snapshot)
 
     def retrieve_number_of_results(self) -> int:
         return get_number_of_results(self.conn, self.guid)
@@ -229,7 +244,7 @@ class SqliteStorageInterface(DataStorageInterface):
         # snapshot column may not exist, this will be changed in future db
         # versions so that this can be substituted by `run_info['snapshot']`
         snapshot_raw: Optional[str] = run_info.get('snapshot', None)
-        snapshot = json.loads(snapshot_raw) if snapshot_raw else None
+        snapshot = self._decode_snapshot(snapshot_raw) if snapshot_raw else None
         tags = run_extra_info
         name = run_info['name']
         exp_name = run_info['exp_name']
