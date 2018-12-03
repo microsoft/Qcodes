@@ -2449,3 +2449,22 @@ def _fix_wrong_run_descriptions(conn: ConnectionPlus,
                      f'Description found: {actual_desc_str}')
             update_run_description(conn, run_id, trusted_desc.to_json())
             log.info(f'    Run id: {run_id} has been updated.')
+
+
+def is_pristine_run(conn: ConnectionPlus, run_id: int) -> bool:
+    """
+    Check whether a given run is pristine which is True when its
+    `completed_timestamp` is `NULL` and its `is_completed` is `0`.
+    """
+    check = """
+            SELECT ((completed_timestamp IS NULL) 
+                    AND (is_completed = 0))
+                AS pristine
+            FROM runs
+            WHERE run_id = ?
+            """
+    cursor = conn.cursor()
+    cursor.execute(check, (run_id,))
+    row = cursor.fetchall()[0]
+    is_pristine = row['pristine']
+    return is_pristine

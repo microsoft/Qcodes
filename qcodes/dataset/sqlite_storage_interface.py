@@ -8,7 +8,8 @@ from qcodes.dataset.descriptions import RunDescriber
 from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
-    connect, select_one_where, insert_values, insert_many_values)
+    connect, select_one_where, insert_values, insert_many_values,
+    is_pristine_run)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (atomic,
                                         ConnectionPlus,
@@ -129,21 +130,12 @@ class SqliteStorageInterface(DataStorageInterface):
                 if kwarg != NOT_GIVEN:
                     func(conn, kwarg)
 
-    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> str:
+    def _set_run_completed(self, conn: ConnectionPlus, time: float):
         """
         Set the complete_timestamp and is_complete. Will raise if the former
         is not-NULL or if the latter is 1
         """
-        check = """
-                SELECT (completed_timestamp IS NULL)
-                  AND (is_completed = 0) AS pristine
-                FROM runs
-                WHERE run_id = ?
-                """
-        cursor = conn.cursor()
-        cursor.execute(check, (self.run_id,))
-        row = cursor.fetchall()[0]
-        if not row['pristine']:
+        if not is_pristine_run(conn, self.run_id):
             raise ValueError(f'Can not write run_completed to GUID {self.guid}'
                               ', that run has already been completed.')
 
