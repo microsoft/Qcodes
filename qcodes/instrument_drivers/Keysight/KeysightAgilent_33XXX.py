@@ -128,6 +128,13 @@ class OutputChannel(InstrumentChannel):
                            vals=vals.Numbers(0, 100)
                            )
 
+        self.add_parameter('pulse_width',
+                           label="Channel {} pulse width".format(channum),
+                           set_cmd='SOURce{}:FUNCtion:PULSE:WIDTh {{}}'.format(channum),
+                           get_cmd='SOURce{}:FUNCtion:PULSE:WIDTh?'.format(channum),
+                           get_parser=float,
+                           unit='S')
+
         # TRIGGER MENU
         self.add_parameter('trigger_source',
                            label='Channel {} trigger source'.format(channum),
@@ -290,11 +297,13 @@ class WaveformGenerator_33XXX(VisaInstrument):
         # TODO: Fill out this dict with all models
         no_of_channels = {'33210A': 1,
                           '33250A': 1,
+                          '33511B': 1,
                           '33522B': 2,
                           '33622A': 2
                           }
 
         self._max_freqs = {'33210A': 10e6,
+                           '33511B': 20e6,
                            '33250A': 80e6,
                            '33522B': 30e6,
                            '33622A': 120e6}
