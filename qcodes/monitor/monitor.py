@@ -89,7 +89,7 @@ def _handler(parameters, interval: int):
                 except ValueError as e:
                     log.exception(e)
                     break
-                log.debug(f"sending.. to {websocket}")
+                log.debug("sending.. to %r", websocket)
                 await websocket.send(json.dumps(meta))
                 # Wait for interval seconds and then send again
                 await asyncio.sleep(interval)
@@ -101,8 +101,10 @@ def _handler(parameters, interval: int):
     return server_func
 
 class Monitor(Thread):
+    """
+    QCodes Monitor - WebSockets server to monitor qcodes parameters
+    """
     running = None
-    server = None
 
     def __init__(self, *parameters, interval=1):
         """
@@ -114,6 +116,7 @@ class Monitor(Thread):
         """
         super().__init__()
         self.loop = None
+        self.server = None
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.handler = _handler(parameters, interval=interval)
@@ -138,22 +141,22 @@ class Monitor(Thread):
             server_start = websockets.serve(self.handler, '127.0.0.1', WEBSOCKET_PORT)
             self.server = self.loop.run_until_complete(server_start)
             self.loop.run_forever()
-        except OSError as e:
+        except OSError:
             # The code above may throw an OSError
             # if the socket cannot be bound
-            log.exception(e)
+            log.exception("Server could not be started")
         finally:
             log.debug("loop stopped")
-            log.debug("Pending tasks at close: {}".format(
-                asyncio.Task.all_tasks(self.loop)))
+            log.debug("Pending tasks at close: %r",
+                      asyncio.Task.all_tasks(self.loop))
             self.loop.close()
-            while not self.loop.is_closed():
-                log.debug("waiting for loop to stop and close")
-                time.sleep(0.01)
             log.debug("loop closed")
             self.loop_is_closed.set()
 
     def update_all(self):
+        """
+        Update all parameters in the monitor
+        """
         for p in self._parameters:
             # call get if it can be called without arguments
             with suppress(TypeError):
@@ -173,7 +176,8 @@ class Monitor(Thread):
         log.debug("waiting for server to close")
         await self.loop.create_task(self.server.wait_closed())
         log.debug("stopping loop")
-        log.debug("Pending tasks at stop: {}".format(asyncio.Task.all_tasks(self.loop)))
+        log.debug("Pending tasks at stop: %r",
+                  asyncio.Task.all_tasks(self.loop))
         self.loop.stop()
 
     def join(self, timeout=None) -> None:
@@ -189,7 +193,7 @@ class Monitor(Thread):
             return
         try:
             asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
-        except RuntimeError as e:
+        except RuntimeError:
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
             log.exception("Could not close loop")
@@ -197,8 +201,6 @@ class Monitor(Thread):
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
-        if Monitor.running == self:
-            Monitor.running = None
 
     @staticmethod
     def show():
