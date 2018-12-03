@@ -88,23 +88,18 @@ class SqliteStorageInterface(DataStorageInterface):
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
+
         if len(next(iter(results.values()))) == 1:
-            insert_values(self.ds.conn, self.table_name,
+            # in this case, the given dictionary contains single value per key
+            insert_values(self.conn, self.table_name,
                           list(results.keys()),
                           [v[0] for v in results.values()])
         else:
+            # here, the given dictionary contains multiple values per key
             values_transposed = list(map(list, zip(*results.values())))
-            insert_many_values(self.ds.conn, self.table_name,
+            insert_many_values(self.conn, self.table_name,
                                list(results.keys()),
                                list(values_transposed))
-
-    def retrieve_number_of_results(self) -> int:
-        return get_number_of_results(self.conn, self.guid)
-
-    def retrieve_results(self, params,
-                         start=None,
-                         stop=None) -> Dict[str, ndarray]:
-        raise NotImplementedError
 
     def store_meta_data(self, *,
                         run_started: _Optional[Optional[float]]=NOT_GIVEN,
@@ -113,6 +108,14 @@ class SqliteStorageInterface(DataStorageInterface):
                         snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
                         tier: _Optional[int]=NOT_GIVEN) -> None:
+        raise NotImplementedError
+
+    def retrieve_number_of_results(self) -> int:
+        return get_number_of_results(self.conn, self.guid)
+
+    def retrieve_results(self, params,
+                         start=None,
+                         stop=None) -> Dict[str, ndarray]:
         raise NotImplementedError
 
     def _get_run_table_row_full(self) -> Dict:
