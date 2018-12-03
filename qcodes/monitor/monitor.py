@@ -10,21 +10,25 @@ Monitor a set of parameter in a background thread
 stream opuput over websocket
 """
 
-import asyncio
-from asyncio import CancelledError
 import logging
 import os
 import time
 import json
+import datetime
+from contextlib import suppress
+from typing import Dict, Any
+from collections import defaultdict
+
+import asyncio
+from asyncio import CancelledError
+from threading import Thread, Event
+
 import http.server
 import socketserver
-import webbrowser
-import datetime
-from copy import deepcopy
-from contextlib import suppress
-from threading import Thread, Event
-from typing import Dict, Any
 import websockets
+import webbrowser
+
+from qcodes.base.parameter import _BaseParameter
 
 SERVER_PORT = 3000
 
@@ -37,29 +41,33 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
     instrument it belongs to.
     """
     ts = time.time()
-    # group meta data by instrument if any
-    metas = {} # type: Dict
+    # group metadata by instrument
+    metas = defaultdict(list) # type: dict
     for parameter in parameters:
-        _meta = getattr(parameter, "_latest", None)
-        if _meta:
-            meta = deepcopy(_meta)
-        else:
-            raise ValueError("Input is not a parameter; Refusing to proceed")
-        # convert to string
-        meta['value'] = str(meta['value'])
-        if isinstance(meta["ts"], datetime.datetime):
-            meta["ts"] = time.mktime(meta["ts"].timetuple())
+        # Check we have a list of parameters
+        if not isinstance(parameter, _BaseParameter):
+            raise ValueError("{} is not a parameter".format(parameter))
+
+        # Get the latest value from the parameter, respecting the max_val_age parameter
+        meta = {}
+        meta["value"] = str(parameter.get_latest())
+        meta["ts"] = str(time.mktime(parameter.get_latest.get_timestamp.timestamp()))
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
-        # find the base instrument in case this is a channel parameter
+
+        # find the base instrument that this parameter belongs to
         baseinst = parameter.root_instrument
-        accumulator = metas.get(str(baseinst), [])
-        accumulator.append(meta)
-        metas[str(baseinst)] = accumulator
+        if baseinst is None:
+            metas["No Instrument"].append(meta)
+        else:
+            metas[str(baseinst)].append(meta)
+
+    # Create list of parameters, grouped by instrument
     parameters_out = []
     for instrument in metas:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
         parameters_out.append(temp)
+
     state = {"ts": ts, "parameters": parameters_out}
     return state
 
@@ -69,29 +77,28 @@ def _handler(parameters, interval: int):
     Return the websockets server handler
     """
     async def server_func(websocket, path):
+        """
+        Create a websockets handler that sends parameter values to a listener
+        every "interval" seconds
+        """
         while True:
             try:
+                # Update the parameter values
                 try:
                     meta = _get_metadata(*parameters)
                 except ValueError as e:
                     log.exception(e)
                     break
                 log.debug(f"sending.. to {websocket}")
-                try:
-                    await websocket.send(json.dumps(meta))
-                # mute browser disconnects
-                except websockets.exceptions.ConnectionClosed as e:
-                    log.debug(e)
-                    break
+                await websocket.send(json.dumps(meta))
+                # Wait for interval seconds and then send again
                 await asyncio.sleep(interval)
-            except CancelledError:
-                log.debug("Got CancelledError")
+            except (CancelledError, websockets.exceptions.ConnectionClosed):
+                log.debug("Got CancelledError or ConnectionClosed")
                 break
-
         log.debug("Closing websockets connection")
 
     return server_func
-
 
 class Monitor(Thread):
     running = None
@@ -105,13 +112,10 @@ class Monitor(Thread):
             *parameters: Parameters to monitor
             interval: How often one wants to refresh the values
         """
-        # let the thread start
-        time.sleep(0.01)
         super().__init__()
         self.loop = None
         self._parameters = parameters
         self.loop_is_closed = Event()
-        # TODO (giulioungaretti) read from config
         self.handler = _handler(parameters, interval=interval)
 
         log.debug("Start monitoring thread")
