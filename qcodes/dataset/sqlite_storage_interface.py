@@ -122,11 +122,10 @@ class SqliteStorageInterface(DataStorageInterface):
         set by a separate function that should check for inconsistencies and
         raise if it finds an inconsistency
         """
-
-        queries = {run_completed: self._set_run_completed}
+        queries = {self._set_run_completed: run_completed}
 
         with atomic(self.conn) as conn:
-            for kwarg, func in queries.items():
+            for func, kwarg in queries.items():
                 if kwarg != NOT_GIVEN:
                     func(conn, kwarg)
 
