@@ -5,13 +5,15 @@ from unittest import TestCase
 
 import time
 import asyncio
-import websockets
 import json
 import random
+import websockets
 
-import qcodes as qc
+from qcodes.monitor import monitor
 from qcodes.instrument.base import Parameter
 from qcodes.tests.instrument_mocks import DummyInstrument
+
+monitor.WEBSOCKET_PORT = random.randint(50000, 60000)
 
 class TestMonitor(TestCase):
     """
@@ -21,31 +23,31 @@ class TestMonitor(TestCase):
         """
         Check that monitor starts up and closes correctly
         """
-        m = qc.Monitor()
+        m = monitor.Monitor()
         self.assertTrue(m.is_alive())
         # Wait for loop to start
         while m.loop is None:
             time.sleep(0.01)
         self.assertTrue(m.loop.is_running())
-        self.assertEqual(qc.Monitor.running, m)
+        self.assertEqual(monitor.Monitor.running, m)
         m.stop()
         self.assertFalse(m.loop.is_running())
         self.assertTrue(m.loop.is_closed())
         self.assertFalse(m.is_alive())
-        self.assertIsNone(qc.Monitor.running)
+        self.assertIsNone(monitor.Monitor.running)
 
     def test_connection(self):
         """
         Test that we can connect to a monitor instance
         """
-        m = qc.Monitor()
+        m = monitor.Monitor()
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         @asyncio.coroutine
         def async_test_connection():
-            websocket = yield from websockets.connect(f"ws://localhost:{qc.monitor.monitor.WEBSOCKET_PORT}")
+            websocket = yield from websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
             yield from websocket.close()
         loop.run_until_complete(async_test_connection())
 
@@ -67,7 +69,7 @@ class TestMonitorWithInstr(TestCase):
                                set_cmd=None)
         self.param(1)
         self.monitor_parameters = tuple(self.instr.parameters.values())[1:]
-        self.monitor = qc.Monitor(*self.monitor_parameters, self.param)
+        self.monitor = monitor.Monitor(*self.monitor_parameters, self.param, interval=0.1)
 
     def tearDown(self):
         """
@@ -85,7 +87,7 @@ class TestMonitorWithInstr(TestCase):
 
         @asyncio.coroutine
         def async_test_monitor():
-            websocket = yield from websockets.connect(f"ws://localhost:{qc.monitor.monitor.WEBSOCKET_PORT}")
+            websocket = yield from websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
 
             # Recieve data from monitor
             data = yield from websocket.recv()
@@ -101,10 +103,10 @@ class TestMonitorWithInstr(TestCase):
 
             # Check parameter values
             old_timestamps = {}
-            for local, monitor in zip(self.monitor_parameters, metadata["parameters"]):
-                self.assertEqual(str(local.get_latest()), monitor["value"])
-                self.assertEqual(local.label, monitor["name"])
-                old_timestamps[local.label] = float(monitor["ts"])
+            for local, mon in zip(self.monitor_parameters, metadata["parameters"]):
+                self.assertEqual(str(local.get_latest()), mon["value"])
+                self.assertEqual(local.label, mon["name"])
+                old_timestamps[local.label] = float(mon["ts"])
                 local(random.random())
 
             # Check parameter updates
@@ -112,10 +114,10 @@ class TestMonitorWithInstr(TestCase):
             data = yield from websocket.recv()
             data = json.loads(data)
             metadata = data["parameters"][0]
-            for local, monitor in zip(self.monitor_parameters, metadata["parameters"]):
-                self.assertEqual(str(local.get_latest()), monitor["value"])
-                self.assertEqual(local.label, monitor["name"])
-                self.assertGreater(float(monitor["ts"]), old_timestamps[local.label])
+            for local, mon in zip(self.monitor_parameters, metadata["parameters"]):
+                self.assertEqual(str(local.get_latest()), mon["value"])
+                self.assertEqual(local.label, mon["name"])
+                self.assertGreater(float(mon["ts"]), old_timestamps[local.label])
 
             # Check unbound parameter
             metadata = data["parameters"][1]["parameters"]
