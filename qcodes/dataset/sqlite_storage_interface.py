@@ -106,7 +106,7 @@ class SqliteStorageInterface(DataStorageInterface):
     def store_meta_data(self, *,
                         run_started: _Optional[Optional[float]]=NOT_GIVEN,
                         run_completed: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_descriptor: _Optional[RunDescriber]=NOT_GIVEN,
+                        run_description: _Optional[RunDescriber]=NOT_GIVEN,
                         snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
                         tier: _Optional[int]=NOT_GIVEN) -> None:

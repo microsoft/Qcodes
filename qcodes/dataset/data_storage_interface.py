@@ -61,7 +61,7 @@ class DataStorageInterface(ABC):
     def store_meta_data(self, *,
                         run_started: _Optional[Optional[float]] = NOT_GIVEN,
                         run_completed: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_descriptor: _Optional[RunDescriber] = NOT_GIVEN,
+                        run_description: _Optional[RunDescriber] = NOT_GIVEN,
                         snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
                         tier: _Optional[int] = NOT_GIVEN) -> None:
@@ -82,7 +82,7 @@ class DataStorageInterface(ABC):
         pass
 
     @staticmethod
-    def _validate_results_dict(results: Dict[str, VALUES]):
+    def _validate_results_dict(results: Dict[str, VALUES]) -> None:
         assert len(results) != 0
         assert len(set(len(v) for k, v in results.items())) == 1
         assert len(next(iter(results.values()))) != 0
