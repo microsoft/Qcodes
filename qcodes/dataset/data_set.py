@@ -740,8 +740,9 @@ class DataSet(Sized):
                 sub.join()
             self.dsi.subscribers.clear()
 
-    def get_metadata(self, tag):
-        return get_metadata(self.conn, tag, self.table_name)
+    def get_metadata(self, tag: str) -> Any:
+        md = self.dsi.retrieve_meta_data()
+        return md.tags[tag]
 
     def __len__(self) -> int:
         return self.number_of_results
