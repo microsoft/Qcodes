@@ -256,7 +256,7 @@ class DataSet(Sized):
         run_meta_data = self.dsi.retrieve_meta_data()
 
         self._completed: bool = run_meta_data.run_completed is not None
-        self._started: bool = run_meta_data.run_started is None
+        self._started: bool = run_meta_data.run_started is not None
         self._description = run_meta_data.run_description
         self._snapshot = run_meta_data.snapshot
         self._metadata = run_meta_data.tags
