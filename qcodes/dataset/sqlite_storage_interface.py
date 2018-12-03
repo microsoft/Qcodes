@@ -68,13 +68,13 @@ class SqliteStorageInterface(DataStorageInterface):
 
         if self.exp_id is None:
             if len(get_experiments(self.conn)) > 0:
-                exp_id = get_last_experiment(self.conn)
+                self.exp_id = get_last_experiment(self.conn)
             else:
                 raise ValueError("No experiments found. "
                                  "You can start a new one with:"
                                  " new_experiment(name, sample_name)")
         name = self.name or "dataset"
-        _, run_id, __ = create_run(self.conn, exp_id, name,
+        _, run_id, __ = create_run(self.conn, self.exp_id, name,
                                    self.guid)
 
         self.run_id = run_id

@@ -43,3 +43,36 @@ def test_init_for_new_run(experiment):
 
     for trait in DataSet.persistent_traits:
         getattr(ds, trait)
+
+
+def test_init_for_run_with_given_experiment(experiment):
+    """
+    Test that the initialisation of a new run within a given experiment works
+    """
+    conn = experiment.conn
+
+    no_of_runs = len(sqlite.get_runs(conn, experiment.exp_id))
+    assert no_of_runs == 0
+
+    # check that this modifies the relevant file
+    with pytest.raises(RuntimeError):
+        with raise_if_file_changed(path_to_dbfile(conn)):
+            ds = DataSet(guid=None, conn=conn, exp_id=experiment.exp_id)
+
+    assert ds.exp_id == experiment.exp_id
+    assert ds.dsi.exp_id == experiment.exp_id
+
+    # check that all attributes are piped through correctly
+    assert isinstance(ds.dsi, SqliteStorageInterface)
+    assert ds.dsi.conn == conn
+    assert ds.dsi.path_to_db == path_to_dbfile(conn)
+
+    # check that the run got into the database
+
+    no_of_runs = len(sqlite.get_runs(conn, experiment.exp_id))
+    assert no_of_runs == 1
+
+    # check that all traits "work"
+
+    for trait in DataSet.persistent_traits:
+        getattr(ds, trait)
