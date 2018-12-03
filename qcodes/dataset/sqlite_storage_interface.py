@@ -82,13 +82,16 @@ class SqliteStorageInterface(DataStorageInterface):
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
+
         if len(next(iter(results.values()))) == 1:
-            insert_values(self.ds.conn, self.table_name,
+            # in this case, the given dictionary contains single value per key
+            insert_values(self.conn, self.table_name,
                           list(results.keys()),
                           [v[0] for v in results.values()])
         else:
+            # here, the given dictionary contains multiple values per key
             values_transposed = list(map(list, zip(*results.values())))
-            insert_many_values(self.ds.conn, self.table_name,
+            insert_many_values(self.conn, self.table_name,
                                list(results.keys()),
                                list(values_transposed))
 
