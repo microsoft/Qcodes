@@ -404,6 +404,10 @@ class DataSet(Sized):
 
         return completed_timestamp
 
+    @property
+    def run_id(self) -> Optional[int]:
+        return getattr(self.dsi, 'run_id', None)
+
     def _get_run_description_from_db(self) -> RunDescriber:
         """
         Look up the run_description from the database
