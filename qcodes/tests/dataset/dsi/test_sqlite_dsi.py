@@ -1,13 +1,14 @@
 import re
 import time
 
+import numpy as np
 import pytest
 
 from qcodes.dataset.data_storage_interface import MetaData
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.sqlite_base import create_run, get_runs
+from qcodes.dataset.sqlite_base import create_run, get_runs, connect, get_data
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
@@ -148,3 +149,32 @@ def test_retrieve_metadata_empty_run(experiment):
 
 def test_retrieve_metadata_various_runs_with_various_metadatas():
     pytest.xfail('not implemented yet')
+
+
+def test_store_meta_data__run_completed(experiment):
+    guid = generate_guid()
+    conn = experiment.conn
+    dsi = SqliteStorageInterface(guid, conn=conn)
+    dsi.create_run()
+
+    control_conn = connect(experiment.path_to_db)
+
+    # assert initial state
+
+    check = "SELECT completed_timestamp,is_completed FROM runs WHERE run_id = ?"
+    cursor = control_conn.execute(check, (dsi.run_id,))
+    row = cursor.fetchall()[0]
+    assert 0 == row['is_completed']
+    assert None is row['completed_timestamp']
+
+    # store metadata
+
+    some_time = time.time()
+    dsi.store_meta_data(run_completed=some_time)
+
+    # assert metadata was successfully stored
+
+    cursor = control_conn.execute(check, (dsi.run_id,))
+    row = cursor.fetchall()[0]
+    assert 1 == row['is_completed']
+    assert np.allclose(some_time, row['completed_timestamp'])
