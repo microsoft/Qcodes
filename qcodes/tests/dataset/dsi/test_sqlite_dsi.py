@@ -66,6 +66,9 @@ def test_init_and_create_new_run(experiment):
     assert md.snapshot is None
     assert {} == md.tags
     assert 1 == md.tier
+    assert 'dataset' == md.name
+    assert experiment.name == md.exp_name
+    assert experiment.sample_name == md.sample_name
 
     pytest.xfail('more assertions on the fact that run is created are needed')
 
@@ -96,6 +99,9 @@ def test_init__load_existing_run(experiment):
     assert None is md.snapshot
     assert {} == md.tags
     assert 1 == md.tier
+    assert name == md.name
+    assert experiment.name == md.exp_name
+    assert experiment.sample_name == md.sample_name
 
     pytest.xfail(
         'more assertions needed for the fact that we loaded existing runs')
@@ -124,6 +130,9 @@ def test_retrieve_metadata_empty_run(experiment):
     assert None is md.snapshot
     assert {} == md.tags
     assert 1 == md.tier
+    assert 'dataset' == md.name
+    assert experiment.name == md.exp_name
+    assert experiment.sample_name == md.sample_name
 
 
 def test_retrieve_metadata_various_runs_with_various_metadatas():
