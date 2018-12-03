@@ -132,7 +132,7 @@ class Monitor(Thread):
         self.start()
 
         # Wait until the loop is running
-        while self.loop is None:
+        while self.loop is None or not self.loop.is_running():
             time.sleep(0.01)
         Monitor.running = self
 

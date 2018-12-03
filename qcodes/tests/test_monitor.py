@@ -25,9 +25,6 @@ class TestMonitor(TestCase):
         """
         m = monitor.Monitor()
         self.assertTrue(m.is_alive())
-        # Wait for loop to start
-        while m.loop is None:
-            time.sleep(0.01)
         self.assertTrue(m.loop.is_running())
         self.assertEqual(monitor.Monitor.running, m)
         m.stop()
