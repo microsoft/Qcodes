@@ -409,12 +409,10 @@ class DataSet(Sized):
         Perform the actions that must take place once the run has been started
         """
         # write down the run_description
-        update_run_description(self.dsi.conn, self.dsi.run_id,
-                               self.description.to_json())
+        self.dsi.store_meta_data(run_description=self.description)
 
-        # create columns in the results table for all parameters
-        add_parameter(self.dsi.conn, self.dsi.table_name,
-                      *self.description.interdeps.paramspecs)
+        # let data storage interface prepare for storing actual data
+        self.dsi.prepare_for_storing_results()
 
     def toggle_debug(self):
         """
@@ -554,7 +552,7 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError
 
-        self.data_storage_interface.store_results(
+        self.dsi.store_results(
             {k: [v] for k, v in results.items()})
 
     def add_results(self, results: List[Dict[str, VALUE]]) -> int:
@@ -584,9 +582,9 @@ class DataSet(Sized):
         values = [[d.get(k, None) for k in expected_keys] for d in results]
         values_transposed = list(map(list, zip(*values)))
 
-        len_before_add = length(self.conn, self.table_name)
+        len_before_add = self.dsi.retrieve_number_of_results()
 
-        self.data_storage_interface.store_results(
+        self.dsi.store_results(
             {k: v for k, v in zip(expected_keys, values_transposed)})
 
         return len_before_add
