@@ -4,6 +4,7 @@ import time
 import numpy as np
 import pytest
 
+from qcodes import ParamSpec
 from qcodes.dataset.data_storage_interface import MetaData
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
@@ -178,3 +179,34 @@ def test_store_meta_data__run_completed(experiment):
     row = cursor.fetchall()[0]
     assert 1 == row['is_completed']
     assert np.allclose(some_time, row['completed_timestamp'])
+
+
+def test_store_meta_data__run_description(experiment):
+    guid = generate_guid()
+    conn = experiment.conn
+    dsi = SqliteStorageInterface(guid, conn=conn)
+    dsi.create_run()
+
+    control_conn = connect(experiment.path_to_db)
+
+    # assert initial state
+
+    empty_desc = RunDescriber(InterDependencies())
+    empty_desc_json = empty_desc.to_json()
+
+    check = "SELECT run_description FROM runs WHERE run_id = ?"
+    cursor = control_conn.execute(check, (dsi.run_id,))
+    row = cursor.fetchall()[0]
+    assert empty_desc_json == row['run_description']
+
+    # store metadata
+
+    some_desc = RunDescriber(InterDependencies(ParamSpec('x', 'array')))
+    some_desc_json = some_desc.to_json()
+    dsi.store_meta_data(run_description=some_desc)
+
+    # assert metadata was successfully stored
+
+    cursor = control_conn.execute(check, (dsi.run_id,))
+    row = cursor.fetchall()[0]
+    assert some_desc_json == row['run_description']

@@ -9,7 +9,7 @@ from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
-    is_pristine_run)
+    is_pristine_run, update_run_description)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (atomic,
                                         ConnectionPlus,
@@ -122,7 +122,8 @@ class SqliteStorageInterface(DataStorageInterface):
         set by a separate function that should check for inconsistencies and
         raise if it finds an inconsistency
         """
-        queries = {self._set_run_completed: run_completed}
+        queries = {self._set_run_completed: run_completed,
+                   self._set_run_description: run_description}
 
         with atomic(self.conn) as conn:
             for func, kwarg in queries.items():
@@ -139,6 +140,9 @@ class SqliteStorageInterface(DataStorageInterface):
                               ', that run has already been completed.')
 
         mark_run_complete(conn, completion_time=time, run_id=self.run_id)
+
+    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber):
+        update_run_description(conn, self.run_id, desc.to_json())
 
     def retrieve_number_of_results(self) -> int:
         return get_number_of_results(self.conn, self.guid)
