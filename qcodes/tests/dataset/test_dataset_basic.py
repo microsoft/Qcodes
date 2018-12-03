@@ -47,21 +47,16 @@ def test_has_attributes_after_init():
     (run_id is None / run_id is not None)
     """
 
-    attrs = ['path_to_db', '_path_to_db', 'conn', '_run_id', 'run_id',
-             '_debug', 'subscribers', '_completed', 'name', 'table_name',
-             'guid', 'number_of_results', 'counter', 'parameters',
-             'paramspecs', 'exp_id', 'exp_name', 'sample_name',
-             'run_timestamp_raw', 'completed_timestamp_raw', 'completed',
-             'snapshot', 'snapshot_raw']
+    attrs = DataSet.persistent_traits
 
     path_to_db = get_DB_location()
-    ds = DataSet(path_to_db, run_id=None)
+    ds = DataSet(path_to_db=path_to_db, run_id=None)
 
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
 
-    ds = DataSet(path_to_db, run_id=1)
+    ds = DataSet(path_to_db=path_to_db, run_id=1)
 
     for attr in attrs:
         assert hasattr(ds, attr)
@@ -69,11 +64,7 @@ def test_has_attributes_after_init():
 
 
 def test_dataset_read_only_properties(dataset):
-    read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
-                       'number_of_results', 'counter', 'parameters',
-                       'paramspecs', 'exp_id', 'exp_name', 'sample_name',
-                       'run_timestamp_raw', 'completed_timestamp_raw',
-                       'snapshot', 'snapshot_raw']
+    read_only_props = DataSet.persistent_traits
 
     for prop in read_only_props:
         with pytest.raises(AttributeError, match="can't set attribute",

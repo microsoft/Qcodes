@@ -203,6 +203,7 @@ class DataSet(Sized):
 
     def __init__(self,
                  guid: Optional[str]=None,
+                 run_id: Optional[int]=None,
                  storageinterface: type=SqliteStorageInterface,
                  **si_kwargs) -> None:
         """
@@ -212,6 +213,9 @@ class DataSet(Sized):
         Args:
             guid: GUID of dataset. If not provided, a new dataset is created.
               If provided, the corresponding dataset is loaded (if it exists).
+            run_id: an alternative to GUID that can be used IFF the
+              SqliteStorageInterface is being used. It is an error to provide
+              both a run_id and a GUID.
             storageinterface: The class of the storage interface to use for
               storing/loading the dataset
             si_kwargs: the kwargs to pass to the constructor of the
@@ -225,10 +229,23 @@ class DataSet(Sized):
                              "DataStorageInterface")
 
         if guid is not None:
+            if run_id is not None:
+                raise ValueError('Got values for both GUID and run_id. Please '
+                                 'provide at most a value for one of them.')
             self._guid = guid
             self.dsi = storageinterface(self._guid, **si_kwargs)
             if not self.dsi.run_exists():
                 raise ValueError(f'No run with GUID {guid} found.')
+
+        # Note: this is not a feature we want to keep supporting, but it is
+        # needed in a transition period from run_id to GUID
+        elif run_id is not None:
+            if storageinterface != SqliteStorageInterface:
+                raise ValueError('Got a value for run_id, but the '
+                                 'storageinterface does not support that. '
+                                 'You can only use run_id with SQlite.')
+            self.dsi = storageinterface(guid='', run_id=run_id, **si_kwargs)
+            self._guid = self.dsi.guid
 
         else:
             self._guid = generate_guid()
@@ -267,11 +284,6 @@ class DataSet(Sized):
     @property
     def number_of_results(self) -> int:
         self.dsi.retrieve_number_of_results()
-
-    @property
-    def counter(self):
-        return select_one_where(self.conn, "runs",
-                                "result_counter", "run_id", self.run_id)
 
     @property
     def parameters(self) -> str:
@@ -387,13 +399,9 @@ class DataSet(Sized):
 
         return completed_timestamp
 
-    def _get_run_description_from_db(self) -> RunDescriber:
-        """
-        Look up the run_description from the database
-        """
-        desc_str = select_one_where(self.conn, "runs", "run_description",
-                                    "run_id", self.run_id)
-        return RunDescriber.from_json(desc_str)
+    @property
+    def run_id(self) -> Optional[int]:
+        return getattr(self.dsi, 'run_id', None)
 
     def _perform_start_actions(self) -> None:
         """
@@ -969,7 +977,6 @@ def new_data_set(name, exp_id: Optional[int] = None,
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.
     d = DataSet(path_to_db=None, run_id=None, conn=conn,
-                name=name, specs=specs, values=values,
-                metadata=metadata, exp_id=exp_id)
+                name=name, exp_id=exp_id)
 
     return d
