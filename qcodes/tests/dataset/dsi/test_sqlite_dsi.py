@@ -27,6 +27,17 @@ def test_init_no_guid():
         SqliteStorageInterface()
 
 
+def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
+    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
+                                         "arguments have been passed together "
+                                         "with non-None values. This is not "
+                                         "allowed."):
+        some_valid_connection = experiment.conn
+        _ = SqliteStorageInterface('some valid guid',
+                                   path_to_db="some valid path",
+                                   conn=some_valid_connection)
+
+
 def test_init_and_create_new_run(experiment):
     """
     Test initialising dsi for a new run. The few steps taken in the
