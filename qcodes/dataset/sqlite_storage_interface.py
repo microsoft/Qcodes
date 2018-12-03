@@ -91,6 +91,9 @@ class SqliteStorageInterface(DataStorageInterface):
         _, self.run_id, self.table_name = create_run(
             self.conn, self.exp_id, self.name, self.guid)
 
+    def prepare_for_storing_results(self) -> None:
+        pass
+
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
 
