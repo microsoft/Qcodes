@@ -1,5 +1,4 @@
 import pytest
-from itertools import product
 
 from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
     S46, LockAcquisitionError
@@ -9,16 +8,26 @@ import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_s46.yaml@sim')
 
 
+class S46LoggedAsk(S46):
+    def __init__(self, *args, **kwargs):
+        self._ask_log = []
+        super().__init__(*args, **kwargs)
+
+    def ask(self, cmd: str):
+        self._ask_log.append(cmd)
+        return super().ask(cmd)
+
+
 @pytest.fixture(scope='module')
 def s46_six():
-    driver = S46('s46_six',address='GPIB::2::INSTR', visalib=visalib)
+    driver = S46LoggedAsk('s46_six', address='GPIB::2::INSTR', visalib=visalib)
     yield driver
     driver.close()
 
 
 @pytest.fixture(scope='module')
 def s46_four():
-    driver = S46('s46_four',address='GPIB::3::INSTR', visalib=visalib)
+    driver = S46LoggedAsk('s46_four', address='GPIB::3::INSTR', visalib=visalib)
     yield driver
     driver.close()
 
@@ -33,6 +42,7 @@ def test_runtime_error_on_bad_init():
 
 
 def test_init_six(s46_six):
+    assert s46_six._ask_log.count(":CLOS?") == 1
 
     n_channels = len(s46_six.channels)
     assert n_channels == 26
@@ -46,6 +56,7 @@ def test_init_six(s46_six):
 
 
 def test_init_four(s46_four):
+    assert s46_four._ask_log.count(":CLOS?") == 1
 
     n_channels = len(s46_four.channels)
     assert n_channels == 18
