@@ -178,7 +178,7 @@ class Monitor(Thread):
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
-        if not self.isAlive():
+        if not self.is_alive():
             # we run this check before trying to run to prevent a cryptic
             # error message
             log.debug("monitor is dead")
