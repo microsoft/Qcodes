@@ -133,7 +133,9 @@ class Monitor(Thread):
         self.start()
 
         # Wait until the loop is running
-        self.server_is_started.wait()
+        self.server_is_started.wait(timeout=5)
+        if not self.server_is_started.is_set():
+            raise RuntimeError("Failed to start server")
         Monitor.running = self
 
     def run(self):
