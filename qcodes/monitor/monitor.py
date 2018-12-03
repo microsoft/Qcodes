@@ -52,7 +52,7 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
         meta = {}
         meta["value"] = str(parameter.get_latest())
         if parameter.get_latest.get_timestamp() is not None:
-            meta["ts"] = str(parameter.get_latest.get_timestamp().timestamp())
+            meta["ts"] = parameter.get_latest.get_timestamp().timestamp()
         else:
             meta["ts"] = None
         meta["name"] = parameter.label or parameter.name
@@ -131,6 +131,9 @@ class Monitor(Thread):
             Monitor.running.stop()
         self.start()
 
+        # Wait until the loop is running
+        while self.loop is None:
+            time.sleep(0.01)
         Monitor.running = self
 
     def run(self):
