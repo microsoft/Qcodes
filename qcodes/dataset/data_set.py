@@ -513,7 +513,7 @@ class DataSet(Sized):
         Mark dataset as complete and thus read only and notify the subscribers
         """
         self.completed = True
-        for sub in self.subscribers.values():
+        for sub in self.dsi.subscribers.values():
             sub.done_callback()
 
     def add_result(self, results: Dict[str, VALUE]) -> None:
