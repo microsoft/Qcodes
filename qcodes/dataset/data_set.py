@@ -990,7 +990,6 @@ def new_data_set(name, exp_id: Optional[int] = None,
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.
     d = DataSet(path_to_db=None, run_id=None, conn=conn,
-                name=name, specs=specs, values=values,
-                metadata=metadata, exp_id=exp_id)
+                name=name, exp_id=exp_id)
 
     return d
