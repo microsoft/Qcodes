@@ -416,15 +416,6 @@ class DataSet(Sized):
         # let data storage interface prepare for storing actual data
         self.dsi.prepare_for_storing_results()
 
-    def toggle_debug(self):
-        """
-        Toggle debug mode, if debug mode is on all the queries made are
-        echoed back.
-        """
-        self._debug = not self._debug
-        self.conn.close()
-        self.conn = connect(self.path_to_db, self._debug)
-
     def add_parameter(self, spec: ParamSpec):
         """
         Add a parameter to the DataSet. To ensure sanity, parameters must be
