@@ -324,34 +324,6 @@ def test_adding_too_many_results():
     dataset.add_results(results)
 
 
-def test_modify_results(dataset):
-    xparam = ParamSpec("x", "numeric")
-    dataset.add_parameter(xparam)
-    dataset.add_result({'x': 0})
-    dataset.add_result({'x': 1})
-
-    pytest.deprecated_call(dataset.modify_results, 0, [{'x': [10]}])
-    assert [[10], [1]] == dataset.get_data(xparam)
-
-    pytest.deprecated_call(dataset.modify_results, 1, [{'x': [14]}])
-    assert [[10], [14]] == dataset.get_data(xparam)
-
-    with pytest.raises(RuntimeError,
-                       match='Rolling back due to unhandled exception'):
-        # not sure calling `modify_results` like this is correct, anyway it
-        # is difficult to find out what the call signature for multiple
-        # results is supposed to look like...
-        pytest.deprecated_call(
-            dataset.modify_results, 0, [{'x': [5]}, {'x': [6]}])
-        assert [[5], [6]] == dataset.get_data(xparam)
-
-    pytest.xfail('modify_results does not seem to work for cases where '
-                 'multiple values of multiple parameters need to be changed. '
-                 'Anyway, the signature needs to be revisited, '
-                 'and consequently the correct behavior needs to be '
-                 'implemented and covered with tests.')
-
-
 @pytest.mark.xfail(reason='This function does not seem to work the way its '
                           'docstring suggests. See the test body for more '
                           'information.')

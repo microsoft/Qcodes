@@ -592,51 +592,6 @@ class DataSet(Sized):
 
     @deprecate(reason='it is an experimental functionality, and is likely '
                       'to be removed soon.',
-               alternative='modify_result')
-    def modify_results(self, start_index: int,
-                       updates: List[Dict[str, VALUES]]):
-        """
-        Modify a sequence of results in the DataSet.
-
-        Args:
-            index: zero-based index of the result to be modified.
-            results: sequence of dictionares of updates with name of a
-                parameter as the key and the value to associate as the value.
-
-
-        It is an error to modify a result at an index less than zero or
-        beyond the end of the DataSet.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-
-        It is an error to modify a result in a completed DataSet.
-        """
-        if self.completed:
-            raise CompletedError
-
-        keys = [list(val.keys()) for val in updates]
-        flattened_keys = [item for sublist in keys for item in sublist]
-
-        mod_params = set(flattened_keys)
-        old_params = set(self.paramspecs.keys())
-        if not mod_params.issubset(old_params):
-            raise ValueError('Can not modify values for parameter(s) '
-                             f'{mod_params.difference(old_params)}, '
-                             'no such parameter(s) in the dataset.')
-
-        values = [list(val.values()) for val in updates]
-        flattened_values = [item for sublist in values for item in sublist]
-
-        with atomic(self.conn) as conn:
-            modify_many_values(conn,
-                               self.table_name,
-                               start_index,
-                               flattened_keys,
-                               flattened_values)
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.',
                alternative='add_parameter, add_result, add_results')
     def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
