@@ -1,8 +1,15 @@
+from pathlib import Path
+
+import pytest
+
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 import qcodes.dataset.sqlite_base as sqlite
+from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
+from qcodes.dataset.database import path_to_dbfile
+from qcodes.tests.dataset.test_database_extract_runs import raise_if_file_changed
 
 
 def test_init_for_new_run(experiment):
@@ -17,8 +24,15 @@ def test_init_for_new_run(experiment):
     no_of_runs = len(sqlite.get_runs(conn, experiment.exp_id))
     assert no_of_runs == 0
 
-    ds = DataSet(guid=None, conn=conn)
+    # check that this modifies the relevant file
+    with pytest.raises(RuntimeError):
+        with raise_if_file_changed(path_to_dbfile(conn)):
+            ds = DataSet(guid=None, conn=conn)
+
+    # check that all attributes are piped through correctly
     assert isinstance(ds.dsi, SqliteStorageInterface)
+    assert ds.dsi.conn == conn
+    assert ds.dsi.path_to_db == path_to_dbfile(conn)
 
     # check that the run got into the database
 
