@@ -58,6 +58,16 @@ class DataStorageInterface(ABC):
         pass
 
     @abstractmethod
+    def store_meta_data(self, *,
+                        run_started: _Optional[Optional[float]] = NOT_GIVEN,
+                        run_completed: _Optional[Optional[float]] = NOT_GIVEN,
+                        run_descriptor: _Optional[RunDescriber] = NOT_GIVEN,
+                        snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
+                        tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
+                        tier: _Optional[int] = NOT_GIVEN) -> None:
+        pass
+
+    @abstractmethod
     def retrieve_number_of_results(self) -> int:
         pass
 
@@ -65,16 +75,6 @@ class DataStorageInterface(ABC):
     def retrieve_results(self, params,
                          start=None,
                          stop=None) -> Dict[str, ndarray]:
-        pass
-
-    @abstractmethod
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_descriptor: _Optional[RunDescriber]=NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
-                        tier: _Optional[int]=NOT_GIVEN) -> None:
         pass
 
     @abstractmethod
