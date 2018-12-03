@@ -153,10 +153,6 @@ def test_retrieve_metadata_empty_run(experiment):
     assert experiment.sample_name == md.sample_name
 
 
-def test_retrieve_metadata_various_runs_with_various_metadatas():
-    pytest.xfail('not implemented yet')
-
-
 def test_store_results(experiment, request):
     """
     Test storing results via sqlite dsi. Also test
