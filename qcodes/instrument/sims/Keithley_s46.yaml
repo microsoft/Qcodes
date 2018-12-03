@@ -20,7 +20,7 @@ devices:
           q: ":CLOS?"
           r: "(@1,2,8)"
 
-  device default:
+  device six:
     eom:
       GPIB INSTR:
         q: "\n"
@@ -47,8 +47,37 @@ devices:
           q: ":OPEN {}"
           r: ""
 
+  device four:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+    - q: "*IDN?"
+      r: "KEITHLEY INSTRUMENTS INC.,MODEL SYSTEM 46, 1327388, A03  "
+    - q: ":CONF:CPOL?"
+      r: "4,4,4,4,0,0,0,0,1,0,0,1"
+
+    properties:
+
+      close:
+        getter:
+          q: ":CLOS?"
+          r: "(@1,8)"
+        setter:
+          q: ":CLOS {}"
+          r: ""
+
+      open:
+        setter:
+          q: ":OPEN {}"
+          r: ""
+
 resources:
   GPIB::1::INSTR:
     device: device bad_state
   GPIB::2::INSTR:
-    device: device default
+    device: device six
+  GPIB::3::INSTR:
+    device: device four

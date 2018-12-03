@@ -1,5 +1,5 @@
-import itertools
 import re
+from itertools import product
 
 from typing import cast
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
@@ -10,13 +10,27 @@ class LockAcquisitionError(Exception):
     pass
 
 
+def cached_method(method):
+    def inner(self, *args, get_cached=False, **kwargs):
+        if not hasattr(self, "__cached_values__"):
+            self.__cached_values__ = {}
+
+        if method not in self.__cached_values__ or not get_cached:
+            self.__cached_values__[method] = method(self, *args, **kwargs)
+
+        return self.__cached_values__[method]
+
+    return inner
+
+
 class S46Channel(InstrumentChannel):
     def __init__(self, parent, name, channel_number, relay_lock):
         super().__init__(parent, name)
 
         self._channel_number = channel_number
         self._relay_lock = relay_lock
-        if self._get_state() == "close":
+
+        if self._get_state(get_cached=True) == "close":
             try:
                 self._relay_lock.acquire(self._channel_number)
             except LockAcquisitionError as e:
@@ -34,10 +48,9 @@ class S46Channel(InstrumentChannel):
             vals=Enum("open", "close")
         )
 
-    def _get_state(self):
+    def _get_state(self, get_cached=False):
         is_closed = self._channel_number in \
-                    self.root_instrument.get_closed_channel_numbers()
-
+                    self.parent.get_closed_channel_numbers(get_cached=get_cached)
         return {True: "close", False: "open"}[is_closed]
 
     def _set_state(self, new_state: str):
@@ -77,18 +90,17 @@ class RelayLock:
 
 class S46(VisaInstrument):
 
-    channel_aliases = dict(
-            zip([
-                    "{}{}".format(*a)
-                    for a in itertools.product(["A", "B", "C", "D"], range(1, 7))
-                ] +
-                [
-                    f"R{i}" for i in range(1, 9)
-                ],
-                range(1, 33))
-    )
-
     relay_names = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+
+    _aliases_list = [
+        f"{a}{b}" for a, b in product(
+            ["A", "B", "C", "D"],
+            list(range(1, 7))
+        )
+    ]
+
+    _aliases_list += [f"R{i}" for i in range(1, 9)]
+    aliases = dict(zip(_aliases_list, range(1, 33)))
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\n", **kwargs)
@@ -101,7 +113,6 @@ class S46(VisaInstrument):
         )
 
         for relay_name, channel_count in zip(S46.relay_names, self.relay_layout):
-
             relay_lock = RelayLock(relay_name)
 
             for channel_index in range(1, channel_count + 1):
@@ -111,14 +122,15 @@ class S46(VisaInstrument):
                 else:
                     alias = relay_name
 
-                channel_number = S46.channel_aliases[alias]
+                channel_number = S46.aliases[alias]
                 channel = S46Channel(self, alias, channel_number, relay_lock)
                 channels.append(channel)
-                self.add_submodule(channel.short_name, channel)
+                self.add_submodule(alias, channel)
 
         self.add_submodule("channels", channels)
         self.connect_message()
 
+    @cached_method
     def get_closed_channel_numbers(self):
         closed_channels_str = re.findall(r"\d+", self.ask(":CLOS?"))
         return [int(i) for i in closed_channels_str]
@@ -136,4 +148,3 @@ class S46(VisaInstrument):
     @property
     def relay_layout(self):
         return [int(i) for i in self.ask(":CONF:CPOL?").split(",")]
-
