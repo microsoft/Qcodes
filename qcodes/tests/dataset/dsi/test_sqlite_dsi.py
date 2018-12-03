@@ -9,7 +9,8 @@ from qcodes.dataset.data_storage_interface import MetaData
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.sqlite_base import create_run, get_runs, connect, get_data
+from qcodes.dataset.sqlite_base import create_run, get_runs, connect, get_data, \
+    RUNS_TABLE_COLUMNS
 from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
@@ -297,3 +298,84 @@ def test_store_meta_data__run_description(experiment):
     cursor = control_conn.execute(check, (dsi.run_id,))
     row = cursor.fetchall()[0]
     assert some_desc_json == row['run_description']
+
+
+def test_store_meta_data__tags(experiment):
+    guid = generate_guid()
+    conn = experiment.conn
+    dsi = SqliteStorageInterface(guid, conn=conn)
+    dsi.create_run()
+
+    control_conn = connect(experiment.path_to_db)
+
+    # assert initial state
+
+    sql = "SELECT * FROM runs WHERE run_id = ?"
+    cursor = conn.execute(sql, (dsi.run_id,))
+    sql_result = dict(cursor.fetchall()[0])
+    standard_columns = set(RUNS_TABLE_COLUMNS)
+    actual_columns = set(sql_result.keys())
+    assert standard_columns == actual_columns
+
+    # 1. Store metadata
+
+    tags_1 = {'run_is_good': False}
+
+    dsi.store_meta_data(tags=tags_1)
+
+    # assert metadata was successfully stored
+
+    cursor = control_conn.execute(sql, (dsi.run_id,))
+    sql_result = dict(cursor.fetchall()[0])
+    expected_columns = {*standard_columns, 'run_is_good'}
+    actual_columns = set(sql_result.keys())
+    assert expected_columns == actual_columns
+
+    # assert what we can retrieve
+
+    md = dsi.retrieve_meta_data()
+    assert md.tags == tags_1
+
+    # 2. Store more metadata
+
+    tags_2 = {**tags_1, 'evil_tag': 'not_really'}
+
+    dsi.store_meta_data(tags=tags_2)
+
+    # assert metadata was successfully stored
+
+    cursor = control_conn.execute(sql, (dsi.run_id,))
+    sql_result = dict(cursor.fetchall()[0])
+    expected_columns = {*standard_columns, 'run_is_good', 'evil_tag'}
+    actual_columns = set(sql_result.keys())
+    assert expected_columns == actual_columns
+
+    # assert what we can retrieve
+
+    md = dsi.retrieve_meta_data()
+    assert md.tags == tags_2
+
+    # 3. Store a different metadata
+
+    # NOTE that in the current implementation, it is not possible to remove
+    # already added metadata.
+
+    tags_3 = {'very_different': 123.4}
+
+    dsi.store_meta_data(tags=tags_3)
+
+    # assert metadata was successfully stored
+
+    cursor = control_conn.execute(sql, (dsi.run_id,))
+    sql_result = dict(cursor.fetchall()[0])
+    expected_columns = {*standard_columns,
+                        'run_is_good', 'evil_tag', 'very_different'}
+    actual_columns = set(sql_result.keys())
+    assert expected_columns == actual_columns
+
+    # assert what we can retrieve
+
+    md = dsi.retrieve_meta_data()
+    tags_all = {**tags_3, **tags_2}
+    assert md.tags == tags_all
+

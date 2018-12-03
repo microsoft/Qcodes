@@ -9,7 +9,7 @@ from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
-    is_pristine_run, update_run_description, add_parameter)
+    is_pristine_run, update_run_description, add_parameter, add_meta_data)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (atomic,
                                         ConnectionPlus,
@@ -133,7 +133,8 @@ class SqliteStorageInterface(DataStorageInterface):
         raise if it finds an inconsistency
         """
         queries = {self._set_run_completed: run_completed,
-                   self._set_run_description: run_description}
+                   self._set_run_description: run_description,
+                   self._set_tags: tags}
 
         with atomic(self.conn) as conn:
             for func, kwarg in queries.items():
@@ -153,6 +154,12 @@ class SqliteStorageInterface(DataStorageInterface):
 
     def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber):
         update_run_description(conn, self.run_id, desc.to_json())
+
+    def _set_tags(self, conn: ConnectionPlus, tags: Dict[str, Any]) -> None:
+        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        with atomic(conn) as conn:
+            for tag, value in tags.items():
+                add_meta_data(conn, self.run_id, {tag: value})
 
     def retrieve_number_of_results(self) -> int:
         return get_number_of_results(self.conn, self.guid)
