@@ -842,14 +842,14 @@ class DataSet(Sized):
         Remove all subscribers
         """
         sql = "select * from sqlite_master where type = 'trigger';"
-        triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as conn:
+        triggers = atomic_transaction(self.dsi.conn, sql).fetchall()
+        with atomic(self.dsi.conn) as conn:
             for trigger in triggers:
                 remove_trigger(conn, trigger['name'])
-            for sub in self.subscribers.values():
+            for sub in self.dsi.subscribers.values():
                 sub.schedule_stop()
                 sub.join()
-            self.subscribers.clear()
+            self.dsi.subscribers.clear()
 
     def get_metadata(self, tag):
         return get_metadata(self.conn, tag, self.table_name)

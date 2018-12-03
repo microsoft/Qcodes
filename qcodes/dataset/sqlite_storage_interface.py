@@ -60,6 +60,9 @@ class SqliteStorageInterface(DataStorageInterface):
         self.exp_id: Optional[int] = exp_id
         self.name: Optional[str] = name
 
+        # to be implemented later
+        self.subscribers = {}
+
     def run_exists(self) -> bool:
         """
         Return the truth value of the statement "a run with the guid of this
