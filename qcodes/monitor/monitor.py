@@ -52,9 +52,7 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
         # find the base instrument in case this is a channel parameter
-        baseinst = parameter._instrument
-        while hasattr(baseinst, '_parent'):
-            baseinst = baseinst._parent
+        baseinst = parameter.root_instrument
         accumulator = metas.get(str(baseinst), [])
         accumulator.append(meta)
         metas[str(baseinst)] = accumulator
