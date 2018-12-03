@@ -29,6 +29,7 @@ import websockets
 
 from qcodes.instrument.parameter import _BaseParameter
 
+WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
 
 log = logging.getLogger(__name__)
@@ -134,7 +135,7 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         try:
-            server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
+            server_start = websockets.serve(self.handler, '127.0.0.1', WEBSOCKET_PORT)
             self.server = self.loop.run_until_complete(server_start)
             self.loop.run_forever()
         except OSError as e:
@@ -217,7 +218,7 @@ class Monitor(Thread):
 
 class Server():
 
-    def __init__(self, port=3000):
+    def __init__(self, port=SERVER_PORT):
         self.port = port
         self.handler = http.server.SimpleHTTPRequestHandler
         self.httpd = socketserver.TCPServer(("", self.port), self.handler)
@@ -226,7 +227,6 @@ class Server():
     def run(self):
         os.chdir(self.static_dir)
         log.debug("serving directory %s", self.static_dir)
-        log.info("Open browser at http://localhost::{}".format(self.port))
         self.httpd.serve_forever()
 
     def stop(self):
@@ -234,7 +234,7 @@ class Server():
 
 
 if __name__ == "__main__":
-    server = Server(SERVER_PORT)
+    server = Server()
     print("Open browser at http://localhost:{}".format(server.port))
     try:
         webbrowser.open("http://localhost:{}".format(server.port))
