@@ -41,15 +41,16 @@ class SqliteStorageInterface(DataStorageInterface):
         self.conn = make_connection_plus_from(conn) if conn is not None else \
             connect(self.path_to_db)
 
-        # The run_id is assigned by create_run OR
+        # The following attributes are assigned by create_run OR
         # retrieve_meta_data, depending on what the DataSet constructor wants
         # (i.e. to load or create)
         self.run_id: Optional[int] = None
+        self.table_name: Optional[str] = None
 
         # the following values are only used in create_run. If this instance is
         # constructed to load a run, the following values are ignored
-        self.exp_id = exp_id
-        self.name = name
+        self.exp_id: Optional[int] = exp_id
+        self.name: Optional[str] = name
 
     def run_exists(self) -> bool:
         """
@@ -73,11 +74,11 @@ class SqliteStorageInterface(DataStorageInterface):
                 raise ValueError("No experiments found. "
                                  "You can start a new one with:"
                                  " new_experiment(name, sample_name)")
-        name = self.name or "dataset"
-        _, run_id, __ = create_run(self.conn, self.exp_id, name,
-                                   self.guid)
 
-        self.run_id = run_id
+        self.name = self.name or "dataset"
+
+        _, self.run_id, self.table_name = create_run(
+            self.conn, self.exp_id, self.name, self.guid)
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
@@ -158,6 +159,9 @@ class SqliteStorageInterface(DataStorageInterface):
         run_extra_info = self._get_run_table_row_non_standard()
         run_exp_info = self._get_experiment_table_info()
         run_info.update(run_exp_info)
+
+        if self.table_name is None:
+            self.table_name = run_info['result_table_name']
 
         desc = RunDescriber.from_json(run_info['run_description'])
         run_started = run_info['run_timestamp']

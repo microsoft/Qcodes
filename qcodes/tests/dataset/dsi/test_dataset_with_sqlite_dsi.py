@@ -25,11 +25,23 @@ def test_init_for_new_run(experiment):
     assert no_of_runs == 0
 
     # check that this modifies the relevant file
+
     with pytest.raises(RuntimeError):
         with raise_if_file_changed(path_to_dbfile(conn)):
             ds = DataSet(guid=None, conn=conn)
 
+    # check sqlite-database-related properties of sqlite dsi are correctly
+    # assigned
+
+    assert ds.exp_id == experiment.exp_id
+    assert ds.dsi.exp_id == experiment.exp_id
+
+    assert ds.name == 'dataset'
+    assert ds.dsi.name == 'dataset'
+    assert ds.dsi.table_name == 'dataset-1-1'
+
     # check that all attributes are piped through correctly
+
     assert isinstance(ds.dsi, SqliteStorageInterface)
     assert ds.dsi.conn == conn
     assert ds.dsi.path_to_db == path_to_dbfile(conn)
@@ -45,24 +57,37 @@ def test_init_for_new_run(experiment):
         getattr(ds, trait)
 
 
-def test_init_for_run_with_given_experiment(experiment):
+def test_init_for_run_with_given_experiment_and_name(experiment):
     """
-    Test that the initialisation of a new run within a given experiment works
+    Test that the initialisation of a new run within a given experiment and
+    given name works
     """
     conn = experiment.conn
+    ds_name = 'extraordinary-name'
 
     no_of_runs = len(sqlite.get_runs(conn, experiment.exp_id))
     assert no_of_runs == 0
 
     # check that this modifies the relevant file
+
     with pytest.raises(RuntimeError):
         with raise_if_file_changed(path_to_dbfile(conn)):
-            ds = DataSet(guid=None, conn=conn, exp_id=experiment.exp_id)
+            ds = DataSet(guid=None, conn=conn,
+                         exp_id=experiment.exp_id,
+                         name=ds_name)
+
+    # check sqlite-database-related properties of sqlite dsi are correctly
+    # assigned
 
     assert ds.exp_id == experiment.exp_id
     assert ds.dsi.exp_id == experiment.exp_id
 
+    assert ds.name == ds_name
+    assert ds.dsi.name == ds_name
+    assert ds.dsi.table_name == f'{ds_name}-1-1'
+
     # check that all attributes are piped through correctly
+
     assert isinstance(ds.dsi, SqliteStorageInterface)
     assert ds.dsi.conn == conn
     assert ds.dsi.path_to_db == path_to_dbfile(conn)
