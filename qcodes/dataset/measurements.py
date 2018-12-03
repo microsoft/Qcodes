@@ -465,8 +465,7 @@ class Runner:
             station = self.station
 
         if station:
-            self.ds.add_snapshot(json.dumps({'station': station.snapshot()},
-                                            cls=NumpyJSONEncoder))
+            self.ds.add_snapshot({'station': station.snapshot()})
 
         if self.parameters is not None:
             for paramspec in self.parameters.values():

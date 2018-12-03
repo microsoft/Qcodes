@@ -281,8 +281,14 @@ class DataSet(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return json.dumps(self.snapshot, cls=NumpyJSONEncoder) \
-            if self.snapshot else None
+        snapshot_raw = None
+
+        if hasattr(self.dsi, '_encode_snapshot'):
+            current_snapshot = self.snapshot
+            if current_snapshot is not None:
+                snapshot_raw = self.dsi._encode_snapshot(current_snapshot)
+
+        return snapshot_raw
 
     @property
     def number_of_results(self) -> int:
@@ -469,17 +475,20 @@ class DataSet(Sized):
         self._metadata[tag] = metadata
         self.dsi.store_meta_data(tags=self._metadata)
 
-    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+    def add_snapshot(self, snapshot: dict, overwrite: bool=False) -> None:
         """
         Adds a snapshot to this run
 
         Args:
-            snapshot: the raw JSON dump of the snapshot
+            snapshot: the snapshot dictionary
             overwrite: force overwrite an existing snapshot
         """
-        if self.snapshot is None or overwrite:
-            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
-        elif self.snapshot is not None and not overwrite:
+        current_snapshot = self.snapshot
+
+        if current_snapshot is None or overwrite:
+            self.dsi.store_meta_data(snapshot=snapshot)
+
+        elif current_snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
                         '=True to overwrite that')
 
