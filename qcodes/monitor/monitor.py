@@ -51,14 +51,17 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
         # Get the latest value from the parameter, respecting the max_val_age parameter
         meta = {}
         meta["value"] = str(parameter.get_latest())
-        meta["ts"] = str(time.mktime(parameter.get_latest.get_timestamp().timestamp()))
+        if parameter.get_latest.get_timestamp() is not None:
+            meta["ts"] = str(parameter.get_latest.get_timestamp().timestamp())
+        else:
+            meta["ts"] = None
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
 
         # find the base instrument that this parameter belongs to
         baseinst = parameter.root_instrument
         if baseinst is None:
-            metas["No Instrument"].append(meta)
+            metas["Unbound Parameter"].append(meta)
         else:
             metas[str(baseinst)].append(meta)
 
