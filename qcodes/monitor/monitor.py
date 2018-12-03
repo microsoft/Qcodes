@@ -11,6 +11,7 @@ stream opuput over websocket
 """
 
 import asyncio
+from asyncio import CancelledError
 import logging
 import os
 import time
@@ -21,12 +22,8 @@ import webbrowser
 import datetime
 from copy import deepcopy
 from contextlib import suppress
-
 from threading import Thread
 from typing import Dict, Any
-from asyncio import CancelledError
-import functools
-
 import websockets
 
 SERVER_PORT = 3000
@@ -85,6 +82,7 @@ def _handler(parameters, interval: int):
                 # mute browser disconnects
                 except websockets.exceptions.ConnectionClosed as e:
                     log.debug(e)
+                    break
                 await asyncio.sleep(interval)
             except CancelledError:
                 log.debug("Got CancelledError")
@@ -171,6 +169,11 @@ class Monitor(Thread):
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
+        if not self.isAlive():
+            # we run this check before trying to run to prevent a cryptic
+            # error message
+            log.debug("monitor is dead")
+            return
         try:
             asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
         except RuntimeError as e:
@@ -183,6 +186,8 @@ class Monitor(Thread):
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
+        if Monitor.running == self:
+            Monitor.running = None
 
     @staticmethod
     def show():
