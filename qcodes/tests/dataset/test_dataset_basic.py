@@ -352,63 +352,6 @@ def test_modify_results(dataset):
                  'implemented and covered with tests.')
 
 
-def test_modify_result(dataset):
-    xparam = ParamSpec("x", "numeric", label="x parameter",
-                       unit='V')
-    yparam = ParamSpec("y", 'numeric', label='y parameter',
-                       unit='Hz', depends_on=[xparam])
-    zparam = ParamSpec("z", 'array', label='z parameter',
-                       unit='sqrt(Hz)', depends_on=[xparam])
-    dataset.add_parameter(xparam)
-    dataset.add_parameter(yparam)
-    dataset.add_parameter(zparam)
-
-    xdata = 0
-    ydata = 1
-    zdata = np.linspace(0, 1, 100)
-
-    dataset.add_result({'x': 0, 'y': 1, 'z': zdata})
-
-    shadow_ds = make_shadow_dataset(dataset)
-
-    try:
-        assert dataset.get_data('x')[0][0] == xdata
-        assert dataset.get_data('y')[0][0] == ydata
-        assert (dataset.get_data('z')[0][0] == zdata).all()
-
-        assert shadow_ds.get_data('x')[0][0] == xdata
-        assert shadow_ds.get_data('y')[0][0] == ydata
-        assert (shadow_ds.get_data('z')[0][0] == zdata).all()
-
-        with pytest.raises(ValueError):
-            pytest.deprecated_call(
-                dataset.modify_result, 0, {' x': 1})
-
-        xdata = 1
-        ydata = 12
-        zdata = np.linspace(0, 1, 99)
-
-        pytest.deprecated_call(dataset.modify_result, 0, {'x': xdata})
-        assert dataset.get_data('x')[0][0] == xdata
-        assert shadow_ds.get_data('x')[0][0] == xdata
-
-        pytest.deprecated_call(dataset.modify_result, 0, {'y': ydata})
-        assert dataset.get_data('y')[0][0] == ydata
-        assert shadow_ds.get_data('y')[0][0] == ydata
-
-        pytest.deprecated_call(dataset.modify_result, 0, {'z': zdata})
-        assert (dataset.get_data('z')[0][0] == zdata).all()
-        assert (shadow_ds.get_data('z')[0][0] == zdata).all()
-
-        dataset.mark_complete()
-
-        with pytest.raises(CompletedError):
-            pytest.deprecated_call(dataset.modify_result, 0, {'x': 2})
-
-    finally:
-        shadow_ds.conn.close()
-
-
 @pytest.mark.xfail(reason='This function does not seem to work the way its '
                           'docstring suggests. See the test body for more '
                           'information.')

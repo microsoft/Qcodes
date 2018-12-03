@@ -591,38 +591,6 @@ class DataSet(Sized):
         return len_before_add
 
     @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.')
-    def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
-        """
-        Modify a logically single result of existing parameters
-
-        Args:
-            index: zero-based index of the result to be modified.
-            results: dictionary of updates with name of a parameter as the
-               key and the value to associate as the value.
-
-        It is an error to modify a result at an index less than zero or
-        beyond the end of the DataSet.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-
-        It is an error to modify a result in a completed DataSet.
-        """
-        if self.completed:
-            raise CompletedError
-
-        for param in results.keys():
-            if param not in self.paramspecs.keys():
-                raise ValueError(f'No such parameter: {param}.')
-
-        with atomic(self.conn) as conn:
-            modify_values(conn, self.table_name, index,
-                          list(results.keys()),
-                          list(results.values())
-                          )
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
                       'to be removed soon.',
                alternative='modify_result')
     def modify_results(self, start_index: int,
