@@ -6,8 +6,6 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-from plottr.qcodes_dataset import QcodesDatasetSubscriber as LivePlotSubscriber
-
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.plotting import plot_by_id
