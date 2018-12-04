@@ -507,6 +507,13 @@ class DataSet(Sized):
                         '=True to overwrite that')
 
     @property
+    def pristine(self) -> bool:
+        """
+        DataSet is in pristine state if it hasn't started and hasn't completed
+        """
+        return not self.started and not self.completed
+
+    @property
     def started(self) -> bool:
         return self._started
 
