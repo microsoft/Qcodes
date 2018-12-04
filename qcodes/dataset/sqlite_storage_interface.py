@@ -10,9 +10,10 @@ from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
-    is_pristine_run, update_run_description, add_parameter, add_meta_data)
+    is_pristine_run, update_run_description, add_meta_data)
 from qcodes.dataset.database import get_DB_location
-from qcodes.dataset.sqlite_base import (atomic,
+from qcodes.dataset.sqlite_base import (add_parameter,
+                                        atomic,
                                         ConnectionPlus,
                                         create_run,
                                         get_experiments,
@@ -20,6 +21,7 @@ from qcodes.dataset.sqlite_base import (atomic,
                                         get_last_experiment,
                                         get_number_of_results,
                                         get_metadata_from_run_id,
+                                        get_parameters,
                                         get_result_counter_from_runid,
                                         get_runid_from_guid,
                                         is_guid_in_database,
@@ -163,6 +165,14 @@ class SqliteStorageInterface(DataStorageInterface):
         mark_run_complete(conn, completion_time=time, run_id=self.run_id)
 
     def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber):
+        # update the result_table columns and write to layouts and dependencies
+        existing_params = get_parameters(conn, self.run_id)
+        for param in desc.interdeps.paramspecs:
+            if param in existing_params:
+                pass
+            else:
+                add_parameter(conn, self.table_name, param)
+        # update the run_description itself
         update_run_description(conn, self.run_id, desc.to_json())
 
     def _set_tags(self, conn: ConnectionPlus, tags: Dict[str, Any]) -> None:
