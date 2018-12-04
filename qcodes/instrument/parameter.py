@@ -1364,7 +1364,7 @@ class GetLatest(DelegateAttributes):
             else:
                 return state['value']
 
-    def get_timestamp(self):
+    def get_timestamp(self) -> datetime:
         """
         Return the age of the last get_latest call.
         """
