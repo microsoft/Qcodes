@@ -1,7 +1,7 @@
 import itertools
 from copy import copy
 import re
-
+from typing import Sequence, Tuple
 
 import pytest
 import numpy as np
@@ -765,19 +765,86 @@ def test_get_parameter_data(scalar_dataset):
 
 
 def test_get_array_parameter_data(array_dataset):
-    parameter_test_helper(array_dataset)
+    paramspecs = array_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+
+    if 'array' not in types:
+        parameter_test_helper(array_dataset)
+
+    inputnames = ['testparameter']
+    data = array_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    assert len(data.keys()) == len(inputnames)
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'this_setpoint']
+    expected_shapes = {}
+    expected_shapes['testparameter'] = [(5, ), (5, )]
+
+    verify_data_dict(data, inputnames, expected_names, expected_shapes)
 
 
 def test_get_multi_parameter_data(multi_dataset):
-    parameter_test_helper(multi_dataset)
+    paramspecs = multi_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+
+    if 'array' not in types:
+        parameter_test_helper(multi_dataset)
+
+    inputnames = ['this', 'that']
+    data = multi_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    assert len(data.keys()) == len(inputnames)
+    expected_names = {}
+    expected_names['this'] = ['this', 'this_setpoint', 'that_setpoint']
+    expected_names['that'] = ['that', 'this_setpoint', 'that_setpoint']
+    expected_shapes = {}
+    if 'array' in types:
+        expected_shapes['this'] = [(5, 3), (5, 3)]
+        expected_shapes['that'] = [(5, 3), (5, 3)]
+    else:
+        expected_shapes['this'] = [(15,), (15,)]
+        expected_shapes['that'] = [(15,), (15,)]
+    verify_data_dict(data, inputnames, expected_names, expected_shapes)
 
 
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
-    parameter_test_helper(array_in_scalar_dataset)
+    paramspecs = array_in_scalar_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+
+    if 'array' not in types:
+        parameter_test_helper(array_in_scalar_dataset)
+
+    inputnames = ['testparameter']
+    data = array_in_scalar_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    assert len(data.keys()) == len(inputnames)
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'scalarparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+    if 'array' in types:
+        expected_shapes['testparameter'] = [(9, 5), (9, 5)]
+    else:
+        expected_shapes['testparameter'] = [(45,), (45,)]
+    verify_data_dict(data, inputnames, expected_names, expected_shapes)
 
 
 def test_get_array_in_str_param_data(array_in_str_dataset):
-    parameter_test_helper(array_in_str_dataset)
+    paramspecs = array_in_str_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+
+    if 'array' not in types:
+        parameter_test_helper(array_in_str_dataset)
+
+    inputnames = ['testparameter']
+    data = array_in_str_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    assert len(data.keys()) == len(inputnames)
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'textparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+    if 'array' in types:
+        expected_shapes['testparameter'] = [(3, 5), (3, 5)]
+    else:
+        expected_shapes['testparameter'] = [(15,), (15,)]
+    verify_data_dict(data, inputnames, expected_names, expected_shapes)
 
 
 def parameter_test_helper(ds):
@@ -788,14 +855,16 @@ def parameter_test_helper(ds):
     param_names = copy(params)
     params[0] = ds.paramspecs[params[0]]
 
+
+
     ref = ds.get_data(*params)
     dut = ds.get_parameter_data(*params)
 
     column_lengths = []
     for col in dut.values():
         column_lengths.append(col.size)
-    column_lenghts = np.array(column_lengths)
-    assert np.all(column_lenghts == column_lenghts[0])
+    column_lengths = np.array(column_lengths)
+    assert np.all(column_lengths == column_lengths[0])
 
     for i_row, row in enumerate(ref):
         for i_param, param_name in enumerate(param_names):
@@ -813,5 +882,19 @@ def parameter_test_helper(ds):
             elif isinstance(v_ref, str):
                 assert isinstance(v_test, np.str_)
                 assert v_ref == v_test
-            else:
-                raise RuntimeError('Unsupported data type')
+
+
+def verify_data_dict(data, parameter_names, expected_names,
+                     expected_shapes):
+    for param in parameter_names:
+        innerdata = data[param]
+        verify_data_dict_for_single_param(innerdata,
+                                          expected_names[param],
+                                          expected_shapes[param])
+
+
+def verify_data_dict_for_single_param(datadict,
+                                      names: Sequence[str],
+                                      shapes: Sequence[Tuple[int, ...]]):
+    for name, shape in zip(names, shapes):
+        assert datadict[name].shape == shape

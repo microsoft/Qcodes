@@ -33,11 +33,12 @@ def scalar_dataset(dataset):
     yield dataset
 
 
-@pytest.fixture
-def array_dataset(experiment):
+@pytest.fixture(scope="function",
+                params=["array", "numeric"])
+def array_dataset(experiment, request):
     meas = Measurement()
     param = ArraySetPointParam()
-    meas.register_parameter(param)
+    meas.register_parameter(param, paramtype=request.param)
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param.get(),))
@@ -47,13 +48,13 @@ def array_dataset(experiment):
         datasaver.dataset.conn.close()
 
 
-
-@pytest.fixture
-def multi_dataset(experiment):
+@pytest.fixture(scope="function",
+                params=["array", "numeric"])
+def multi_dataset(experiment, request):
     meas = Measurement()
     param = Multi2DSetPointParam()
 
-    meas.register_parameter(param)
+    meas.register_parameter(param, paramtype=request.param)
 
     with meas.run() as datasaver:
         datasaver.add_result((param, param.get(),))
@@ -62,13 +63,16 @@ def multi_dataset(experiment):
     finally:
         datasaver.dataset.conn.close()
 
-@pytest.fixture
-def array_in_scalar_dataset(experiment):
+
+@pytest.fixture(scope="function",
+                params=["array", "numeric"])
+def array_in_scalar_dataset(experiment, request):
     meas = Measurement()
     scalar_param = Parameter('scalarparam', set_cmd=None)
     param = ArraySetPointParam()
     meas.register_parameter(scalar_param)
-    meas.register_parameter(param, setpoints=(scalar_param,))
+    meas.register_parameter(param, setpoints=(scalar_param,),
+                            paramtype=request.param)
 
     with meas.run() as datasaver:
         for i in range(1, 10):
@@ -81,13 +85,15 @@ def array_in_scalar_dataset(experiment):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture
-def array_in_str_dataset(experiment):
+@pytest.fixture(scope="function",
+                params=["array", "numeric"])
+def array_in_str_dataset(experiment, request):
     meas = Measurement()
-    scalar_param = Parameter('scalarparam', set_cmd=None)
+    scalar_param = Parameter('textparam', set_cmd=None)
     param = ArraySetPointParam()
     meas.register_parameter(scalar_param, paramtype='text')
-    meas.register_parameter(param, setpoints=(scalar_param,))
+    meas.register_parameter(param, setpoints=(scalar_param,),
+                            paramtype=request.param)
 
     with meas.run() as datasaver:
         for i in ['A', 'B', 'C']:
