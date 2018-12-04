@@ -218,19 +218,17 @@ def test_add_results(experiment, first_add_using_add_result, request):
     actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
     np.testing.assert_allclose(actual_y, expected_y)
 
-    # assert that we can't `add_result` to a completed dataset but we can
-    # `add_results` to it still :)
+    # assert that we can't `add_result` and `add_results` to a completed dataset
 
     ds.mark_complete()
 
-    with pytest.raises(CompletedError):
-        ds.add_result({'x': 1})
+    with raise_if_file_changed(ds.dsi.path_to_db):
 
-    ds.add_results([{'x': 1}])
+        with pytest.raises(CompletedError):
+            ds.add_result({'x': 1})
 
-    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
-    expected_x_after_complete = expected_x + [[1]]
-    assert actual_x == expected_x_after_complete
+        with pytest.raises(CompletedError):
+            ds.add_results([{'x': 1}])
 
 
 def test_run_is_started_in_different_cases(experiment):

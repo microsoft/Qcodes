@@ -577,6 +577,9 @@ class DataSet(Sized):
             self._perform_start_actions()
             self._started = True
 
+        if self.completed:
+            raise CompletedError
+
         expected_keys = tuple(frozenset.union(*[frozenset(d) for d in results]))
         values = [[d.get(k, None) for k in expected_keys] for d in results]
         values_transposed = list(map(list, zip(*values)))
