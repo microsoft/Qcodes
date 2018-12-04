@@ -148,7 +148,8 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         try:
-            server_start = websockets.serve(self.handler, '127.0.0.1', WEBSOCKET_PORT)
+            server_start = websockets.serve(self.handler, '127.0.0.1',
+                                            WEBSOCKET_PORT, close_timeout=1)
             self.server = self.loop.run_until_complete(server_start)
             self.server_is_started.set()
             self.loop.run_forever()
@@ -182,13 +183,13 @@ class Monitor(Thread):
         Monitor.running = None
 
     async def __stop_server(self):
-        log.debug("asking server to close")
+        log.debug("asking server %r to close", self.server)
         self.server.close()
         log.debug("waiting for server to close")
         await self.loop.create_task(self.server.wait_closed())
         log.debug("stopping loop")
         log.debug("Pending tasks at stop: %r",
-                  asyncio.Task.all_tasks(self.loop))
+                asyncio.Task.all_tasks(self.loop))
         self.loop.stop()
 
     def join(self, timeout=None) -> None:
@@ -208,7 +209,9 @@ class Monitor(Thread):
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
             log.exception("Could not close loop")
-        self.loop_is_closed.wait()
+        self.loop_is_closed.wait(timeout=5)
+        if not self.loop_is_closed.is_set():
+            raise RuntimeError("Failed to join loop")
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
