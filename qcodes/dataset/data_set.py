@@ -430,6 +430,10 @@ class DataSet(Sized):
         independent parameters inferred from the first ones, and finally
         the dependent parameters
         """
+        if self.started:
+            raise RuntimeError('It is not allowed to add parameters to a '
+                               'started run')
+
         if self.parameters:
             old_params = self.parameters.split(',')
         else:
@@ -505,6 +509,7 @@ class DataSet(Sized):
     def completed(self, value: bool):
         self._completed = value
         if value:
+            self._started = True
             self.dsi.store_meta_data(run_completed=time.time())
 
     def mark_complete(self) -> None:
@@ -577,6 +582,9 @@ class DataSet(Sized):
         if not self.started:
             self._perform_start_actions()
             self._started = True
+
+        if self.completed:
+            raise CompletedError
 
         expected_keys = tuple(frozenset.union(*[frozenset(d) for d in results]))
         values = [[d.get(k, None) for k in expected_keys] for d in results]

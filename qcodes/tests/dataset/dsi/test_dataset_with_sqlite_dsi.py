@@ -117,20 +117,37 @@ def test_add_parameter(experiment):
     """
     Test adding new parameter to the dataset with sqlite storage interface.
     Adding a parameter does not do anything with the database, parameter
-    information is just stored inside dataset.
+    information is just stored inside dataset. Adding a parameter to a
+    started or completed DataSet is an error.
     """
     conn = experiment.conn
     db_file = path_to_dbfile(conn)
 
     ds = DataSet(guid=None, storageinterface=SqliteStorageInterface, conn=conn)
 
-    spec = ParamSpec('x', 'array')
+    spec = ParamSpec('x', 'numeric')
 
     with raise_if_file_changed(db_file):
         ds.add_parameter(spec)
 
     expected_descr = RunDescriber(InterDependencies(spec))
     assert expected_descr == ds.description
+
+    # Make DataSet started by adding a first result and try to add a parameter
+
+    ds.add_result({'x': 1})
+
+    with pytest.raises(RuntimeError, match='It is not allowed to add '
+                                           'parameters to a started run'):
+        ds.add_parameter(spec)
+
+    # Mark DataSet as completed and try to add a parameter
+
+    ds.mark_complete()
+
+    with pytest.raises(RuntimeError, match='It is not allowed to add '
+                                           'parameters to a started run'):
+        ds.add_parameter(spec)
 
 
 @pytest.mark.parametrize('first_add_using_add_result', (True, False))
@@ -218,19 +235,17 @@ def test_add_results(experiment, first_add_using_add_result, request):
     actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
     np.testing.assert_allclose(actual_y, expected_y)
 
-    # assert that we can't `add_result` to a completed dataset but we can
-    # `add_results` to it still :)
+    # assert that we can't `add_result` and `add_results` to a completed dataset
 
     ds.mark_complete()
 
-    with pytest.raises(CompletedError):
-        ds.add_result({'x': 1})
+    with raise_if_file_changed(ds.dsi.path_to_db):
 
-    ds.add_results([{'x': 1}])
+        with pytest.raises(CompletedError):
+            ds.add_result({'x': 1})
 
-    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
-    expected_x_after_complete = expected_x + [[1]]
-    assert actual_x == expected_x_after_complete
+        with pytest.raises(CompletedError):
+            ds.add_results([{'x': 1}])
 
 
 def test_run_is_started_in_different_cases(experiment):
@@ -276,10 +291,6 @@ def test_run_is_started_in_different_cases(experiment):
 
     # 4. Create a new dataset and mark it as completed without adding results
 
-    # Note that when a dataset is new and it has been marked completed
-    # without ever adding any results, the main instance will remain with
-    # started==False, while a re-loaded instance will have started==True.
-
     ds = DataSet(guid=None, conn=conn)
     guid = ds.guid
 
@@ -289,9 +300,9 @@ def test_run_is_started_in_different_cases(experiment):
     ds.mark_complete()
 
     assert True is ds.completed
-    assert False is ds.started  # <<== NOTE the difference !!!
+    assert True is ds.started
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert True is same_ds.completed
-    assert True is same_ds.started  # <<== NOTE the difference !!!
+    assert True is same_ds.started
