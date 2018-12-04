@@ -511,13 +511,17 @@ class DataSet(Sized):
             self._started = True
             self.dsi.store_meta_data(run_completed=time.time())
 
-    def mark_complete(self) -> None:
+    def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
         self.completed = True
         for sub in self.dsi.subscribers.values():
             sub.done_callback()
+
+    @deprecate(alternative='mark_completed')
+    def mark_complete(self):
+        self.mark_completed()
 
     def add_result(self, results: Dict[str, VALUE]) -> None:
         """

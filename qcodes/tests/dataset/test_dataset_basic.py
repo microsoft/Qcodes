@@ -1,5 +1,6 @@
 import itertools
 import re
+from unittest.mock import patch
 
 import pytest
 import numpy as np
@@ -598,3 +599,12 @@ class TestGetData:
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
+
+
+def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
+    """Test that the deprecated `mark_complete` calls `mark_completed`"""
+    ds = DataSet()
+
+    with patch.object(ds, 'mark_completed', autospec=True) as mark_completed:
+        pytest.deprecated_call(ds.mark_complete)
+        mark_completed.assert_called_once()
