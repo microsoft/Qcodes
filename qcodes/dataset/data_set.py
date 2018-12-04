@@ -514,6 +514,13 @@ class DataSet(Sized):
         return not self.started and not self.completed
 
     @property
+    def running(self) -> bool:
+        """
+        DataSet is in running state if it has started but hasn't completed
+        """
+        return self.started and not self.completed
+
+    @property
     def started(self) -> bool:
         return self._started
 

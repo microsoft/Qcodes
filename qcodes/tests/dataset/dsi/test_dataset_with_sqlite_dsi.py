@@ -250,8 +250,8 @@ def test_add_results(experiment, first_add_using_add_result, request):
 
 def test_dataset_state_in_different_cases(experiment):
     """
-    Test that DataSet's `started`, `completed`, `pristine` properties are
-    correct in various cases
+    Test that DataSet's `started`, `completed`, `pristine`, `running`
+    properties are correct in various cases
     """
     conn = experiment.conn
 
@@ -265,12 +265,14 @@ def test_dataset_state_in_different_cases(experiment):
     assert False is ds.completed
     assert False is ds.started
     assert True is ds.pristine
+    assert False is ds.running
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert False is same_ds.completed
     assert False is same_ds.started
     assert True is same_ds.pristine
+    assert False is same_ds.running
 
     # 2. Start this dataset
 
@@ -280,12 +282,14 @@ def test_dataset_state_in_different_cases(experiment):
     assert True is ds.started
     assert False is ds.completed
     assert False is ds.pristine
+    assert True is ds.running
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert False is same_ds.completed
     assert True is same_ds.started
     assert False is same_ds.pristine
+    assert True is same_ds.running
 
     # 3. Complete this dataset
 
@@ -296,6 +300,7 @@ def test_dataset_state_in_different_cases(experiment):
     assert True is same_ds.completed
     assert True is same_ds.started
     assert False is same_ds.pristine
+    assert False is same_ds.running
 
     # 4. Create a new dataset and mark it as completed without adding results
 
@@ -305,15 +310,18 @@ def test_dataset_state_in_different_cases(experiment):
     assert False is ds.completed
     assert False is ds.started
     assert True is ds.pristine
+    assert False is ds.running
 
     ds.mark_completed()
 
     assert True is ds.completed
     assert True is ds.started
     assert False is ds.pristine
+    assert False is ds.running
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert True is same_ds.completed
     assert True is same_ds.started
     assert False is same_ds.pristine
+    assert False is same_ds.running
