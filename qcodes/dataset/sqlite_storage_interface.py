@@ -176,10 +176,8 @@ class SqliteStorageInterface(DataStorageInterface):
         update_run_description(conn, self.run_id, desc.to_json())
 
     def _set_tags(self, conn: ConnectionPlus, tags: Dict[str, Any]) -> None:
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
-        with atomic(conn) as conn:
-            for tag, value in tags.items():
-                add_meta_data(conn, self.run_id, {tag: value})
+        for tag, value in tags.items():
+            add_meta_data(conn, self.run_id, {tag: value})
 
     def _set_snapshot(self, conn: ConnectionPlus, snapshot: dict) -> None:
         snapshot_json = self._encode_snapshot(snapshot)

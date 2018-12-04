@@ -496,10 +496,15 @@ def test_metadata(experiment, request):
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
 
-    ds1 = DataSet(metadata=metadata1)
-    request.addfinalizer(ds1.conn.close)
-    ds2 = DataSet(metadata=metadata2)
-    request.addfinalizer(ds2.conn.close)
+    ds1 = DataSet()
+    request.addfinalizer(ds1.dsi.conn.close)
+    for tag, md_value in metadata1.items():
+        ds1.add_metadata(tag, md_value)
+
+    ds2 = DataSet()
+    request.addfinalizer(ds2.dsi.conn.close)
+    for tag, md_value in metadata2.items():
+        ds2.add_metadata(tag, md_value)
 
     assert ds1.run_id == 1
     assert ds1.metadata == metadata1
@@ -507,17 +512,17 @@ def test_metadata(experiment, request):
     assert ds2.metadata == metadata2
 
     loaded_ds1 = DataSet(run_id=1)
-    request.addfinalizer(loaded_ds1.conn.close)
+    request.addfinalizer(loaded_ds1.dsi.conn.close)
     assert loaded_ds1.metadata == metadata1
     loaded_ds2 = DataSet(run_id=2)
-    request.addfinalizer(loaded_ds2.conn.close)
+    request.addfinalizer(loaded_ds2.dsi.conn.close)
     assert loaded_ds2.metadata == metadata2
 
     badtag = 'lex luthor'
     sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
 
     bad_tag_msg = (f'Tag {badtag} has value None. '
-                    ' That is not a valid metadata value!')
+                   'That is not a valid metadata value!')
 
     with pytest.raises(RuntimeError,
                        match='Rolling back due to unhandled exception') as e:
