@@ -1366,7 +1366,7 @@ class GetLatest(DelegateAttributes):
 
     def get_timestamp(self) -> datetime:
         """
-        Return the age of the last get_latest call.
+        Return the age of the latest parameter value.
         """
         state = self.parameter._latest
         return state["ts"]
