@@ -430,6 +430,10 @@ class DataSet(Sized):
         independent parameters inferred from the first ones, and finally
         the dependent parameters
         """
+        if self.started:
+            raise RuntimeError('It is not allowed to add parameters to a '
+                               'started run')
+
         if self.parameters:
             old_params = self.parameters.split(',')
         else:

@@ -117,20 +117,37 @@ def test_add_parameter(experiment):
     """
     Test adding new parameter to the dataset with sqlite storage interface.
     Adding a parameter does not do anything with the database, parameter
-    information is just stored inside dataset.
+    information is just stored inside dataset. Adding a parameter to a
+    started or completed DataSet is an error.
     """
     conn = experiment.conn
     db_file = path_to_dbfile(conn)
 
     ds = DataSet(guid=None, storageinterface=SqliteStorageInterface, conn=conn)
 
-    spec = ParamSpec('x', 'array')
+    spec = ParamSpec('x', 'numeric')
 
     with raise_if_file_changed(db_file):
         ds.add_parameter(spec)
 
     expected_descr = RunDescriber(InterDependencies(spec))
     assert expected_descr == ds.description
+
+    # Make DataSet started by adding a first result and try to add a parameter
+
+    ds.add_result({'x': 1})
+
+    with pytest.raises(RuntimeError, match='It is not allowed to add '
+                                           'parameters to a started run'):
+        ds.add_parameter(spec)
+
+    # Mark DataSet as completed and try to add a parameter
+
+    ds.mark_complete()
+
+    with pytest.raises(RuntimeError, match='It is not allowed to add '
+                                           'parameters to a started run'):
+        ds.add_parameter(spec)
 
 
 @pytest.mark.parametrize('first_add_using_add_result', (True, False))
