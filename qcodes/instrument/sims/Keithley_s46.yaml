@@ -1,4 +1,4 @@
-# SIMULATED INSTRUMENT FOR Keysight 33xxx series function generator
+# SIMULATED INSTRUMENT FOR Keysight S46 RF switch
 spec: "1.0"
 devices:
   device bad_state:
