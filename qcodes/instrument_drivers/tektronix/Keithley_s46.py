@@ -142,17 +142,15 @@ class S46(VisaInstrument):
 
     relay_names: list = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
 
-    _aliases_list: list = [
-        f"{a}{b}" for a, b in product(
-            ["A", "B", "C", "D"],
-            list(range(1, 7))
-        )
-    ]
-
-    _aliases_list += [f"R{i}" for i in range(1, 9)]
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.
-    aliases: Dict[str, int] = dict(zip(_aliases_list, range(1, 33)))
+    aliases: Dict[str, int] = {
+        f"{a}{b}": count + 1 for count, (a, b) in enumerate(product(
+            ["A", "B", "C", "D"],
+            range(1, 7)
+        ))
+    }
+    aliases.update({f"R{i}": i + 24 for i in range(1, 9)})
 
     def __init__(
             self,
