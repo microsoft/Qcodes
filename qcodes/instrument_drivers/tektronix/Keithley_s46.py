@@ -43,7 +43,7 @@ class RelayLock:
     """
     def __init__(self, relay_name: str):
         self.relay_name = relay_name
-        self._locked_by = None
+        self._locked_by: int = None
 
     def acquire(self, channel_number: int):
         """
