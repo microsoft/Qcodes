@@ -47,7 +47,11 @@ class SqliteStorageInterface(DataStorageInterface):
 
         # then GUID is ''
         if run_id is not None:
-            guid = get_guid_from_run_id(self.conn, run_id)
+            try:
+                guid = get_guid_from_run_id(self.conn, run_id)
+            except RuntimeError:
+                raise ValueError(f"Run with run_id {run_id} does not "
+                                 "exist in the database")
 
         super().__init__(guid)
 
