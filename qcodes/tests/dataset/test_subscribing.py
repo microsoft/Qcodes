@@ -76,8 +76,8 @@ def test_basic_subscription(dataset, basic_subscriber):
     sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
                                state={})
 
-    assert len(dataset.subscribers) == 1
-    assert list(dataset.subscribers.keys()) == [sub_id]
+    assert len(dataset.dsi.subscribers) == 1
+    assert list(dataset.dsi.subscribers.keys()) == [sub_id]
 
     expected_state = {}
 
@@ -89,19 +89,19 @@ def test_basic_subscription(dataset, basic_subscriber):
         @retry_until_does_not_throw(
             exception_class_to_expect=AssertionError, delay=0, tries=10)
         def assert_expected_state():
-            assert dataset.subscribers[sub_id].state == expected_state
+            assert dataset.dsi.subscribers[sub_id].state == expected_state
 
         assert_expected_state()
 
     dataset.unsubscribe(sub_id)
 
-    assert len(dataset.subscribers) == 0
-    assert list(dataset.subscribers.keys()) == []
+    assert len(dataset.dsi.subscribers) == 0
+    assert list(dataset.dsi.subscribers.keys()) == []
 
     # Ensure the trigger for the subscriber have been removed from the database
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
     triggers = atomic_transaction(
-        dataset.conn, get_triggers_sql).fetchall()
+        dataset.dsi.conn, get_triggers_sql).fetchall()
     assert len(triggers) == 0
 
 
@@ -150,8 +150,8 @@ def test_subscription_from_config(dataset, basic_subscriber):
         sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
                                    state={})
         sub_id_c = dataset.subscribe_from_config('test_subscriber')
-        assert len(dataset.subscribers) == 2
-        assert list(dataset.subscribers.keys()) == [sub_id, sub_id_c]
+        assert len(dataset.dsi.subscribers) == 2
+        assert list(dataset.dsi.subscribers.keys()) == [sub_id, sub_id_c]
 
         expected_state = {}
 
@@ -164,8 +164,8 @@ def test_subscription_from_config(dataset, basic_subscriber):
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0, tries=10)
             def assert_expected_state():
-                assert dataset.subscribers[sub_id].state == expected_state
-                assert dataset.subscribers[sub_id_c].state == expected_state
+                assert dataset.dsi.subscribers[sub_id].state == expected_state
+                assert dataset.dsi.subscribers[sub_id_c].state == expected_state
 
             assert_expected_state()
 
