@@ -4,7 +4,7 @@ Driver for the Tekronix S46 RF switch
 import re
 from itertools import product
 
-from typing import cast, Callable, Any, Union, Dict, List
+from typing import Callable, Any, Union, Dict, List
 from qcodes import Instrument, VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum
 
