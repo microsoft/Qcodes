@@ -194,9 +194,7 @@ class SqliteStorageInterface(DataStorageInterface):
     def retrieve_number_of_results(self) -> int:
         return get_number_of_results(self.conn, self.guid)
 
-    def retrieve_results(self, params: Sequence[str],
-                         start: Optional[int] = None,
-                         stop: Optional[int] = None
+    def retrieve_results(self, params: Sequence[str]
                          ) -> Dict[str, Dict[str, ndarray]]:
         raise NotImplementedError
 
