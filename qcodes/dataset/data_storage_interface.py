@@ -82,9 +82,28 @@ class DataStorageInterface(ABC):
         pass
 
     @abstractmethod
-    def retrieve_results(self, params,
-                         start=None,
-                         stop=None) -> Dict[str, ndarray]:
+    def retrieve_results(self, params: Sequence[str],
+                         start: Optional[int]=None,
+                         stop: Optional[int]=None
+                         ) -> Dict[str, Dict[str, ndarray]]:
+        """
+        Retrieve data from storage and return it in the format of a
+        dictionary where keys are parameter names as passed in the call,
+        and values also dictionaries where keys are parameters that a given
+        parameter has any relation to (setpoints, inferred-from's, also itself)
+        and values are numpy arrays corresponding to those (latter) parameters.
+
+        Start and stop arguments allow to select a range of results to retrieve.
+
+        Examples:
+            retrieve_results(['y']) where 'y' is a parameter that is
+                dependent on 'x', returns {'y': {'x': x_data, 'y': y_data}}
+                where x_data and y_data are one-dimensional numpy arrays of the
+                same length without null/none values
+            retrieve_results(['x']) where 'x' is an independent parameter,
+                returns {'x': {'x': x_data}} where x_data is one-dimensional
+                numpy array without null/none values
+        """
         pass
 
     @abstractmethod
