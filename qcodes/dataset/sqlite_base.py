@@ -1401,6 +1401,21 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     return run_id
 
 
+def get_result_counter_from_runid(conn: ConnectionPlus, run_id: int) -> int:
+    """
+    Get the result_counter for the run with the given run_id
+    """
+    query = """
+            SELECT result_counter
+            FROM runs
+            WHERE run_id = ?
+            """
+    cursor = conn.cursor()
+    cursor.execute(query, (run_id,))
+    counter = one(cursor, 'result_counter')
+    return counter
+
+
 def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
     """
@@ -2457,7 +2472,7 @@ def is_pristine_run(conn: ConnectionPlus, run_id: int) -> bool:
     `completed_timestamp` is `NULL` and its `is_completed` is `0`.
     """
     check = """
-            SELECT ((completed_timestamp IS NULL) 
+            SELECT ((completed_timestamp IS NULL)
                     AND (is_completed = 0))
                 AS pristine
             FROM runs
