@@ -100,8 +100,8 @@ class SqliteStorageInterface(DataStorageInterface):
 
         _, self.run_id, self.table_name = create_run(
             self.conn, self.exp_id, self.name, self.guid)
-        self.counter = get_result_counter_from_runid(self.conn, self.run_id)
 
+        self.counter = get_result_counter_from_runid(self.conn, self.run_id)
 
     def prepare_for_storing_results(self) -> None:
         self._set_columns_of_results_table()
@@ -245,10 +245,10 @@ class SqliteStorageInterface(DataStorageInterface):
 
         if self.run_id is None:
             self.run_id = get_runid_from_guid(self.conn, self.guid)
+
         if self.counter is None:
             self.counter = get_result_counter_from_runid(self.conn,
                                                          self.run_id)
-
 
         run_info = self._get_run_table_row_full()
         run_extra_info = self._get_run_table_row_non_standard()
