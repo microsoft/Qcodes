@@ -86,7 +86,6 @@ def test_init_six(s46_six):
         channel_nr = S46.aliases[channel.short_name]
         state = "close" if channel_nr in closed_channels else "open"
         assert channel.state() == state
-        assert channel_nr == S46.aliases[channel.short_name]
 
 
 def test_init_four(s46_four):
@@ -105,7 +104,6 @@ def test_init_four(s46_four):
         channel_nr = S46.aliases[channel.short_name]
         state = "close" if channel_nr in closed_channels else "open"
         assert channel.state() == state
-        assert channel_nr == S46.aliases[channel.short_name]
 
     # A four channel instrument will have channels missing
     for relay in ["A", "B", "C", "D"]:
