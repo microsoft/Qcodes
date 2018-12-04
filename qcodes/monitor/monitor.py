@@ -93,7 +93,7 @@ def _handler(parameters, interval: int):
                 # Wait for interval seconds and then send again
                 await asyncio.sleep(interval)
             except (CancelledError, websockets.exceptions.ConnectionClosed):
-                log.debug("Got CancelledError or ConnectionClosed")
+                log.debug("Got CancelledError or ConnectionClosed", exc_info=True)
                 break
         log.debug("Closing websockets connection")
 
@@ -118,7 +118,7 @@ class Monitor(Thread):
         # Check that all values are valid parameters
         for parameter in parameters:
             if not isinstance(parameter, Parameter):
-                raise TypeError("We can only monitor QCodes Parameters")
+                raise TypeError(f"We can only monitor QCodes Parameters, not {type(parameter)}")
 
         self.loop = None
         self.server = None
