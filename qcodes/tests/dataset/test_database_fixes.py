@@ -17,12 +17,12 @@ fixturepath = os.path.join(fixturepath, 'fixtures')
 def test_fix_wrong_run_descriptions():
     v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
 
-    if not os.path.exists(v3fixpath):
+    dbname_old = os.path.join(v3fixpath, 'some_runs_without_run_description.db')
+
+    if not os.path.exists(dbname_old):
         pytest.skip(
             "No db-file fixtures found. You can generate test db-files"
             " using the scripts in the legacy_DB_generation folder")
-
-    dbname_old = os.path.join(v3fixpath, 'some_runs_without_run_description.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
 
