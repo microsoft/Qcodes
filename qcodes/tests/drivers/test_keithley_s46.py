@@ -112,6 +112,19 @@ def test_init_four(s46_four):
             assert not hasattr(s46_four, alias)
 
 
+def test_channel_number_invariance(s46_four, s46_six):
+    """
+    Regardless of the channel layout (that is, number of channels per relay),
+    channel aliases should represent the same channel. See also page 2-5 of the
+    manual (e.g. B1 is *always* channel 7)
+    """
+    for alias in S46.aliases.keys():
+        if hasattr(s46_four, alias) and hasattr(s46_six, alias):
+            channel_four = getattr(s46_four, alias)
+            channel_six = getattr(s46_six, alias)
+            assert channel_four.channel_number == channel_six.channel_number
+
+
 def test_locking_mechanism(s46_six):
     """
     1) Test that the lock acquisition error is raised if we try to close
