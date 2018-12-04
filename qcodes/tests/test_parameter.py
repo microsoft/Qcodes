@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
+from datetime import datetime
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -180,6 +181,22 @@ class TestParameter(TestCase):
         p_no_snapshot(42)
         snap = p_no_snapshot.snapshot()
         self.assertNotIn('value', snap)
+
+    def test_get_latest(self):
+        # Create a gettable parameter
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        before_set = datetime.now()
+        local_parameter.set(1)
+        after_set = datetime.now()
+
+        # Check we return last set value, with the correct timestamp
+        self.assertEqual(local_parameter.get_latest(), 1)
+        self.assertTrue(before_set < local_parameter.get_latest.get_timestamp() < after_set)
+
+        # Check that updating the value updates the timestamp
+        local_parameter.set(2)
+        self.assertEqual(local_parameter.get_latest(), 2)
+        self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
