@@ -1,4 +1,5 @@
-from typing import Union, Dict, Sequence, Any, Optional, TypeVar
+from typing import Union, Dict, Sequence, Any, Optional, TypeVar, Sized, \
+    Iterable
 from typing_extensions import Final
 from numbers import Number
 from numpy import ndarray
@@ -18,6 +19,15 @@ NOT_GIVEN: Final = ('This is a placeholder for arguments that have not '
 # a method that may also be `NOT_GIVEN`
 T = TypeVar('T')
 _Optional = Union[T, str]
+
+
+T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
+
+
+# Instead of this, typing.Collection could be used. The only problem is that
+# Collection also inherits from Container which is not needed for our purposes.
+class SizedIterable(Sized, Iterable[T_co]):
+    __slots__ = ()
 
 
 @dataclass
@@ -79,6 +89,19 @@ class DataStorageInterface(ABC):
 
     @abstractmethod
     def retrieve_number_of_results(self) -> int:
+        pass
+
+    @abstractmethod
+    def replay_results(self,
+                       start: Optional[int]=None,
+                       stop: Optional[int]=None
+                       ) -> SizedIterable[Dict[str, VALUES]]:
+        """
+        Returns a train of results in the same way/format as they were stored
+        (see `store_results`).
+
+        Start and stop arguments allow to select a range of results to replay.
+        """
         pass
 
     @abstractmethod
