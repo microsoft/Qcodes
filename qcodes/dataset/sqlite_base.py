@@ -117,6 +117,14 @@ RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
                       "run_description"]
 
 
+def sql_placeholder_string(n: int) -> str:
+    """
+    Return an SQL value placeholder string for n values.
+    Example: sql_placeholder_string(5) returns '(?,?,?,?,?)'
+    """
+    return '(' + ','.join('?'*n) + ')'
+
+
 class ConnectionPlus(wrapt.ObjectProxy):
     """
     A class to extend the sqlite3.Connection object. Since sqlite3.Connection
@@ -851,6 +859,36 @@ def init_db(conn: ConnectionPlus)->None:
         transaction(conn, _dependencies_table_schema)
 
 
+def is_run_id_in_database(conn: ConnectionPlus,
+                          *run_ids) -> Dict[int, bool]:
+    """
+    Look up run_ids and return a dictionary with the answers to the question
+    "is this run_id in the database?"
+
+    Args:
+        conn: the connection to the database
+        run_ids: the run_ids to look up
+
+    Returns:
+        a dict with the run_ids as keys and bools as values. True means that
+        the run_id DOES exist in the database
+    """
+    run_ids = np.unique(run_ids)
+    placeholders = sql_placeholder_string(len(run_ids))
+
+    query = f"""
+             SELECT run_id
+             FROM runs
+             WHERE run_id in {placeholders}
+            """
+
+    cursor = conn.cursor()
+    cursor.execute(query, run_ids)
+    rows = cursor.fetchall()
+    existing_ids = [row[0] for row in rows]
+    return {run_id: (run_id in existing_ids) for run_id in run_ids}
+
+
 def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
     """
     A look-before-you-leap function to look up if a table has a certain column.
@@ -1092,7 +1130,7 @@ def modify_many_values(conn: ConnectionPlus,
     len_requested = start_index + len(list_of_values[0])
     available = _len - start_index
     if len_requested > _len:
-        reason = f""""Modify operation Out of bounds.
+        reason = f"""Modify operation Out of bounds.
         Trying to modify {len(list_of_values)} results,
         but therere are only {available} results.
         """
@@ -1305,6 +1343,64 @@ def get_setpoints(conn: ConnectionPlus,
     return output
 
 
+def get_runid_from_expid_and_counter(conn: ConnectionPlus, exp_id: int,
+                                     counter: int) -> int:
+    """
+    Get the run_id of a run in the specified experiment with the specified
+    counter
+
+    Args:
+        conn: connection to the database
+        exp_id: the exp_id of the experiment containing the run
+        counter: the intra-experiment run counter of that run
+    """
+    sql = """
+          SELECT run_id
+          FROM runs
+          WHERE result_counter= ? AND
+          exp_id = ?
+          """
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, 'run_id')
+    return run_id
+
+
+def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
+    """
+    Get the run_id of a run based on the guid
+
+    Args:
+        conn: connection to the database
+        guid: the guid to look up
+
+    Returns:
+        The run_id if found, else -1.
+
+    Raises:
+        RuntimeError if more than one run with the given    GUID exists
+    """
+    query = """
+            SELECT run_id
+            FROM runs
+            WHERE guid = ?
+            """
+    cursor = conn.cursor()
+    cursor.execute(query, (guid,))
+    rows = cursor.fetchall()
+    if len(rows) == 0:
+        run_id = -1
+    elif len(rows) > 1:
+        errormssg = ('Critical consistency error: multiple runs with'
+                     f' the same GUID found! {len(rows)} runs have GUID '
+                     f'{guid}')
+        log.critical(errormssg)
+        raise RuntimeError(errormssg)
+    else:
+        run_id = int(rows[0]['run_id'])
+
+    return run_id
+
+
 def get_layout(conn: ConnectionPlus,
                layout_id) -> Dict[str, str]:
     """
@@ -1398,6 +1494,7 @@ def get_independent_parameters(conn: ConnectionPlus,
     dependent on other parameters or dependencies of other parameters
     """
     raise NotADirectoryError("TODO")
+
 # Higher level Wrappers
 
 
@@ -1490,27 +1587,39 @@ def get_data_of_param_and_deps_as_columns(conn: ConnectionPlus,
 def new_experiment(conn: ConnectionPlus,
                    name: str,
                    sample_name: str,
-                   format_string: Optional[str] = "{}-{}-{}"
+                   format_string: Optional[str]="{}-{}-{}",
+                   start_time: Optional[float]=None,
+                   end_time: Optional[float]=None,
                    ) -> int:
-    """ Add new experiment to container
+    """
+    Add new experiment to container.
 
     Args:
         conn: database connection
         name: the name of the experiment
         sample_name: the name of the current sample
         format_string: basic format string for table-name
-            must contain 3 placeholders.
+          must contain 3 placeholders.
+        start_time: time when the experiment was started. Do not supply this
+          unless you have a very good reason to do so.
+        end_time: time when the experiment was completed. Do not supply this
+          unless you have a VERY good reason to do so
+
     Returns:
         id: row-id of the created experiment
     """
     query = """
-    INSERT INTO experiments
-        (name, sample_name, start_time, format_string, run_counter)
-    VALUES
-        (?,?,?,?,?)
-    """
-    curr = atomic_transaction(conn, query, name, sample_name,
-                              time.time(), format_string, 0)
+            INSERT INTO experiments
+            (name, sample_name, format_string,
+            run_counter, start_time, end_time)
+            VALUES
+            (?,?,?,?,?,?)
+            """
+
+    start_time = start_time or time.time()
+    values = (name, sample_name, format_string, 0, start_time, end_time)
+
+    curr = atomic_transaction(conn, query, *values)
     return curr.lastrowid
 
 
@@ -1621,6 +1730,75 @@ def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
+def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions) -> List:
+    """
+    Get exp_ids for experiments matching the match_conditions
+
+    Raises:
+        ValueError if a match_condition that is not "name", "sample_name",
+        "format_string", "run_counter", "start_time", or "end_time"
+    """
+    valid_conditions = ["name", "sample_name", "start_time", "end_time",
+                        "run_counter", "format_string"]
+
+    for mcond in match_conditions:
+        if mcond not in valid_conditions:
+            raise ValueError(f"{mcond} is not a valid match condition.")
+
+    end_time = match_conditions.get('end_time', None)
+    time_eq = "=" if end_time is not None else "IS"
+
+    sample_name = match_conditions.get('sample_name', None)
+    sample_name_eq = "=" if sample_name is not None else "IS"
+
+    query = "SELECT exp_id FROM experiments "
+    for n, mcond in enumerate(match_conditions):
+        if n == 0:
+            query += f"WHERE {mcond} = ? "
+        else:
+            query += f"AND {mcond} = ? "
+
+    # now some syntax clean-up
+    if "format_string" in match_conditions:
+        format_string = match_conditions["format_string"]
+        query = query.replace("format_string = ?",
+                              f'format_string = "{format_string}"')
+        match_conditions.pop("format_string")
+    query = query.replace("end_time = ?", f"end_time {time_eq} ?")
+    query = query.replace("sample_name = ?", f"sample_name {sample_name_eq} ?")
+
+    cursor = conn.cursor()
+    cursor.execute(query, tuple(match_conditions.values()))
+    rows = cursor.fetchall()
+
+    return [row[0] for row in rows]
+
+
+def get_exp_ids_from_run_ids(conn: ConnectionPlus,
+                             run_ids: Sequence[int]) -> List[int]:
+    """
+    Get the corresponding exp_id for a sequence of run_ids
+
+    Args:
+        conn: connection to the database
+        run_ids: a sequence of the run_ids to get the exp_id of
+
+    Returns:
+        A list of exp_ids matching the run_ids
+    """
+    sql_placeholders = sql_placeholder_string(len(run_ids))
+    exp_id_query = f"""
+                    SELECT exp_id
+                    FROM runs
+                    WHERE run_id IN {sql_placeholders}
+                    """
+    cursor = conn.cursor()
+    cursor.execute(exp_id_query, run_ids)
+    rows = cursor.fetchall()
+
+    return [exp_id for row in rows for exp_id in row]
+
+
 def get_last_experiment(conn: ConnectionPlus) -> Optional[int]:
     """
     Return last started experiment id
@@ -1709,6 +1887,22 @@ def data_sets(conn: ConnectionPlus) -> List[sqlite3.Row]:
     return c.fetchall()
 
 
+def format_table_name(fmt_str: str, name: str, exp_id: int,
+                      run_counter: int) -> str:
+    """
+    Format the format_string into a table name
+
+    Args:
+        fmt_str: a valid format string
+        name: the run name
+        exp_id: the experiment ID
+        run_counter: the intra-experiment runnumber of this run
+    """
+    table_name = fmt_str.format(name, exp_id, run_counter)
+    _validate_table_name(table_name)  # raises if table_name not valid
+    return table_name
+
+
 def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 guid: str,
                 parameters: Optional[List[ParamSpec]] = None,
@@ -1721,7 +1915,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                    where_column="exp_id",
                                                    where_value=exp_id)
     run_counter += 1
-    formatted_name = format_string.format(name, exp_id, run_counter)
+    formatted_name = format_table_name(format_string, name, exp_id,
+                                       run_counter)
     table = "runs"
 
     parameters = parameters or []
