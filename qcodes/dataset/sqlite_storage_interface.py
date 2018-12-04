@@ -1,7 +1,9 @@
-from typing import Union, Dict, Sequence, Optional, Any
+import math
+from typing import Union, Dict, Sequence, Optional, Any, Iterator
 from numbers import Number
 import json
 
+import wrapt
 from numpy import ndarray
 
 from qcodes.dataset.descriptions import RunDescriber
@@ -10,7 +12,8 @@ from .data_storage_interface import (
     DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN, SizedIterable)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
-    is_pristine_run, update_run_description, add_meta_data)
+    is_pristine_run, update_run_description, add_meta_data,
+    atomic_transaction)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (add_parameter,
                                         atomic,
@@ -27,6 +30,15 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         is_guid_in_database,
                                         make_connection_plus_from,
                                         mark_run_complete)
+
+
+class IteratorWithLength(wrapt.ObjectProxy, SizedIterable):
+    def __init__(self, iterator: Iterator, length: Optional[int]):
+        super(IteratorWithLength, self).__init__(iterator)
+        self._self_length = length
+
+    def __len__(self):
+        return self._self_length
 
 
 class SqliteStorageInterface(DataStorageInterface):
@@ -202,7 +214,44 @@ class SqliteStorageInterface(DataStorageInterface):
                        start: Optional[int] = None,
                        stop: Optional[int] = None
                        ) -> SizedIterable[Dict[str, VALUES]]:
-        raise NotImplementedError
+        if not self.run_exists():
+            raise ValueError(f"No run with guid {self.guid} exists.")
+
+        query = f'SELECT * FROM "{self.table_name}"'
+
+        start_specified = start is not None
+        stop_specified = stop is not None
+
+        where = ' WHERE' if start_specified or stop_specified else ''
+        start_condition = f' rowid >= {start}' if start_specified else ''
+        end_condition = f' rowid <= {stop}' if stop_specified else ''
+        and_ = ' AND' if start_specified and stop_specified else ''
+
+        query += where + start_condition + and_ + end_condition
+
+        cursor = atomic_transaction(self.conn, query)
+
+        # other elements of `description` are None, see docs for info.
+        column_names = tuple((t[0] for t in cursor.description))
+        # the first column is `id` which is not needed, hence is skipped.
+        column_names = column_names[1:]
+
+        # note that first element of `row` is skipped here as well.
+        results_iterator = ({key: [value]
+                             for key, value in zip(column_names,
+                                                   tuple(row)[1:])}
+                            for row in cursor)
+
+        # calculate the length of iterator
+        first = max((start if start_specified else -math.inf), 1) - 1
+        last = min((stop if stop_specified else math.inf) - 1,
+                   self.retrieve_number_of_results() - 1)
+        iterator_length = max(last - first + 1, 0)
+
+        results_iterator = IteratorWithLength(results_iterator,
+                                              iterator_length)
+
+        return results_iterator
 
     def _get_run_table_row_full(self) -> Dict:
         """

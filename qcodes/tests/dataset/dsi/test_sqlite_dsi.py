@@ -238,6 +238,90 @@ def test_store_results(experiment, request):
     np.testing.assert_allclose(actual_y, expected_y)
 
 
+def test_replay_results(experiment, request):
+    """
+    Test retrieving results via sqlite dsi.
+    """
+    guid = generate_guid()
+    conn = experiment.conn
+    dsi = SqliteStorageInterface(guid, conn=conn)
+
+    # we use a different connection in order to make sure that the
+    # transactions get committed and the database file gets indeed changed to
+    # contain the data points; for the same reason we use another dsi instance
+    control_conn = connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
+
+    # 1. test replaying if the run does not exist
+
+    match_str = re.escape(f"No run with guid {guid} exists.")
+    with pytest.raises(ValueError, match=match_str):
+        dsi.replay_results()
+
+    # create the run
+
+    dsi.create_run()
+
+    # test replaying from an empty run
+
+    results_iterator = dsi.replay_results()
+    assert 0 == len(results_iterator)
+    assert [] == list(results_iterator)
+
+    # add parameters and prepare for storing data
+
+    specs = [ParamSpec("x", "numeric"), ParamSpec("y", "array")]
+    desc = RunDescriber(InterDependencies(*specs))
+    dsi.store_meta_data(run_description=desc)
+
+    dsi.prepare_for_storing_results()
+
+    # test replaying from "prepared run"
+
+    results_iterator = dsi.replay_results()
+    assert 0 == len(results_iterator)
+    assert [] == list(results_iterator)
+
+    # add some results
+
+    expected_x = []
+    expected_y = []
+    expected_results = []
+
+    n_res = 8
+    for x in range(n_res):
+        y = np.random.random_sample(10)
+        xx = [x]
+        yy = [y]
+        expected_x.append(xx)
+        expected_y.append(yy)
+
+        result = {"x": xx, "y": yy}
+        expected_results.append(result)
+
+        dsi.store_results(result)
+
+    # ensure that results were physically added
+
+    actual_x = get_data(control_conn, dsi.table_name, ['x'])
+    assert actual_x == expected_x
+
+    actual_y = get_data(control_conn, dsi.table_name, ['y'])
+    np.testing.assert_allclose(actual_y, expected_y)
+
+    # test replaying stored results
+
+    results_iterator = dsi.replay_results()
+
+    assert n_res == len(results_iterator)
+
+    actual_results = list(results_iterator)
+    for act, exp in zip(actual_results, expected_results):
+        assert list(exp.keys()) == list(act.keys())
+        for act_item, exp_item in zip(act.values(), exp.values()):
+            np.testing.assert_allclose(act_item, exp_item)
+
+
 def test_store_meta_data__run_completed(experiment):
     guid = generate_guid()
     conn = experiment.conn
