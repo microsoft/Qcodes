@@ -95,7 +95,7 @@ def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
 def test_load_by_id(dataset):
     ds = load_by_id(dataset.run_id)
     assert dataset.run_id == ds.run_id
-    assert dataset.path_to_db == ds.path_to_db
+    assert dataset.dsi.path_to_db == ds.dsi.path_to_db
 
 
 @pytest.mark.usefixtures('experiment')
