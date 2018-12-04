@@ -32,10 +32,11 @@ def make_shadow_dataset(dataset: DataSet):
     Creates a new DataSet object that points to the same run_id in the same
     database file as the given dataset object.
 
-    Note that in order to achieve it `path_to_db` because this will create a
-    new sqlite3 connection object behind the scenes. This is very useful for
-    situations where one needs to assert the underlying modifications to the
-    database file.
+    Note that in order to achieve it, we pass`path_to_db` because this will
+    create a new sqlite3 connection object behind the scenes. This is very
+    useful for situations where one needs to assert the underlying
+    modifications to the database file, i.e. when one must assert that changes
+    were committed.
     """
     return DataSet(path_to_db=dataset.dsi.path_to_db, run_id=dataset.run_id)
 
