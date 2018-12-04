@@ -7,7 +7,7 @@ from numpy import ndarray
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.utils.helpers import NumpyJSONEncoder
 from .data_storage_interface import (
-    DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN)
+    DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN, SizedIterable)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
     is_pristine_run, update_run_description, add_meta_data)
@@ -196,6 +196,12 @@ class SqliteStorageInterface(DataStorageInterface):
 
     def retrieve_results(self, params: Sequence[str]
                          ) -> Dict[str, Dict[str, ndarray]]:
+        raise NotImplementedError
+
+    def replay_results(self,
+                       start: Optional[int] = None,
+                       stop: Optional[int] = None
+                       ) -> SizedIterable[Dict[str, VALUES]]:
         raise NotImplementedError
 
     def _get_run_table_row_full(self) -> Dict:
