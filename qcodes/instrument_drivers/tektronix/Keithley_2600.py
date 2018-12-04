@@ -22,7 +22,7 @@ class Keithley_2600(VisaInstrument):
         """
         Args:
             name: Name to use internally in QCoDeS
-            address: VISA ressource address
+            address: VISA resource address
             channel: Either 'a' or 'b'
             model: The model type, e.g. '2614B'
         """
