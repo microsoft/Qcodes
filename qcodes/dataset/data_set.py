@@ -77,8 +77,11 @@ class CompletedError(RuntimeError):
 
 class _Subscriber(Thread):
     """
-    Class to add a subscriber to a DataSet. The subscriber gets called every
-    time an insert is made to the results_table.
+    Class to add a subscriber to the Sqlite storage backend of a DataSet. If a
+    DataSet uses a different storage backend, subscribers will not work.
+
+    The subscriber gets called every time an insert is made to the
+    results_table.
 
     The _Subscriber is not meant to be instantiated directly, but rather used
     via the 'subscribe' method of the DataSet.
@@ -102,7 +105,12 @@ class _Subscriber(Thread):
         self._id = id_
 
         self.dataSet = dataSet
-        self.table_name = dataSet.table_name
+        if not isinstance(self.dataSet.dsi, SqliteStorageInterface):
+            raise ValueError('Received a dataset with a storage interface of '
+                             'type {type(dataSet.dsi)}. Storage interface '
+                             'must be of type SqliteStorageInterface.')
+
+        self.table_name = dataSet.dsi.table_name
         self._data_set_len = len(dataSet)
 
         self.state = state
@@ -121,7 +129,7 @@ class _Subscriber(Thread):
         self.callback_id = f"callback{self._id}"
         self.trigger_id = f"sub{self._id}"
 
-        conn = dataSet.conn
+        conn = dataSet.dsi.conn
 
         conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
 
@@ -262,6 +270,7 @@ class DataSet(Sized):
         self._metadata = run_meta_data.tags
 
         self._started: bool = self._completed or self.number_of_results > 0
+
 
     @property
     def name(self):
@@ -688,7 +697,7 @@ class DataSet(Sized):
         subscriber_id = uuid.uuid4().hex
         subscriber = _Subscriber(self, subscriber_id, callback, state,
                                  min_wait, min_count, callback_kwargs)
-        self.subscribers[subscriber_id] = subscriber
+        self.dsi.subscribers[subscriber_id] = subscriber
         subscriber.start()
         return subscriber_id
 
@@ -728,12 +737,12 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn) as conn:
-            sub = self.subscribers[uuid]
+        with atomic(self.dsi.conn) as conn:
+            sub = self.dsi.subscribers[uuid]
             remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
             sub.join()
-            del self.subscribers[uuid]
+            del self.dsi.subscribers[uuid]
 
     def unsubscribe_all(self):
         """
