@@ -178,7 +178,8 @@ class Experiment(Sized):
         ds = self.data_sets()
         if len(ds) > 0:
             for d in ds:
-                out.append(f"{d.run_id}-{d.name}-{d.counter}"
+                count = getattr(d, 'counter', '-')
+                out.append(f"{d.run_id}-{d.name}-{count}"
                            f"-{d.parameters}-{len(d)}")
 
         return "\n".join(out)

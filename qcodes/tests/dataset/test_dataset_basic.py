@@ -33,12 +33,13 @@ def make_shadow_dataset(dataset: DataSet):
     Creates a new DataSet object that points to the same run_id in the same
     database file as the given dataset object.
 
-    Note that in order to achieve it `path_to_db` because this will create a
-    new sqlite3 connection object behind the scenes. This is very useful for
-    situations where one needs to assert the underlying modifications to the
-    database file.
+    Note that in order to achieve it, we pass`path_to_db` because this will
+    create a new sqlite3 connection object behind the scenes. This is very
+    useful for situations where one needs to assert the underlying
+    modifications to the database file, i.e. when one must assert that changes
+    were committed.
     """
-    return DataSet(path_to_db=dataset.path_to_db, run_id=dataset.run_id)
+    return DataSet(path_to_db=dataset.dsi.path_to_db, run_id=dataset.run_id)
 
 
 @pytest.mark.usefixtures("experiment")
@@ -335,11 +336,11 @@ def test_load_by_counter():
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
-    dataset = load_by_counter(1, 1)
+    ds = load_by_counter(1, 1)
 
-    assert "test-dataset" == dataset.name
-    assert exp.sample_name == dataset.sample_name
-    assert exp.name == dataset.exp_name
+    assert "test-dataset" == ds.name
+    assert exp.sample_name == ds.sample_name
+    assert exp.name == ds.exp_name
 
 
 @pytest.mark.usefixtures("experiment")
@@ -416,7 +417,7 @@ def test_numpy_nan(dataset):
 
 def test_missing_keys(dataset):
     """
-    Test that we can now have partial results with keys missing. This is for
+    Test that we can have partial results with keys missing. This is for
     example handy when having an interleaved 1D and 2D sweep.
     """
 
@@ -481,10 +482,8 @@ def test_get_description(experiment, some_paramspecs):
     assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
                                                   paramspecs['ps2']))
 
-    # the run description gets written as the first data point is added,
-    # so now no description should be stored in the database
     prematurely_loaded_ds = DataSet(run_id=1)
-    assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
+    assert prematurely_loaded_ds.description == desc
 
     ds.add_result({'ps1': 1, 'ps2': 2})
 
@@ -498,10 +497,15 @@ def test_metadata(experiment, request):
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
 
-    ds1 = DataSet(metadata=metadata1)
-    request.addfinalizer(ds1.conn.close)
-    ds2 = DataSet(metadata=metadata2)
-    request.addfinalizer(ds2.conn.close)
+    ds1 = DataSet()
+    request.addfinalizer(ds1.dsi.conn.close)
+    for tag, md_value in metadata1.items():
+        ds1.add_metadata(tag, md_value)
+
+    ds2 = DataSet()
+    request.addfinalizer(ds2.dsi.conn.close)
+    for tag, md_value in metadata2.items():
+        ds2.add_metadata(tag, md_value)
 
     assert ds1.run_id == 1
     assert ds1.metadata == metadata1
@@ -509,17 +513,17 @@ def test_metadata(experiment, request):
     assert ds2.metadata == metadata2
 
     loaded_ds1 = DataSet(run_id=1)
-    request.addfinalizer(loaded_ds1.conn.close)
+    request.addfinalizer(loaded_ds1.dsi.conn.close)
     assert loaded_ds1.metadata == metadata1
     loaded_ds2 = DataSet(run_id=2)
-    request.addfinalizer(loaded_ds2.conn.close)
+    request.addfinalizer(loaded_ds2.dsi.conn.close)
     assert loaded_ds2.metadata == metadata2
 
     badtag = 'lex luthor'
     sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
 
     bad_tag_msg = (f'Tag {badtag} has value None. '
-                    ' That is not a valid metadata value!')
+                   'That is not a valid metadata value!')
 
     with pytest.raises(RuntimeError,
                        match='Rolling back due to unhandled exception') as e:
