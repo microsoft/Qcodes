@@ -416,7 +416,7 @@ def test_numpy_nan(dataset):
 
 def test_missing_keys(dataset):
     """
-    Test that we can now have partial results with keys missing. This is for
+    Test that we can have partial results with keys missing. This is for
     example handy when having an interleaved 1D and 2D sweep.
     """
 
