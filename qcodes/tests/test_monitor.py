@@ -3,7 +3,6 @@ Test suite for monitor
 """
 from unittest import TestCase
 
-import time
 import asyncio
 import json
 import random
