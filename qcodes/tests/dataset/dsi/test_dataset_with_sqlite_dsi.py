@@ -274,10 +274,6 @@ def test_run_is_started_in_different_cases(experiment):
 
     # 4. Create a new dataset and mark it as completed without adding results
 
-    # Note that when a dataset is new and it has been marked completed
-    # without ever adding any results, the main instance will remain with
-    # started==False, while a re-loaded instance will have started==True.
-
     ds = DataSet(guid=None, conn=conn)
     guid = ds.guid
 
@@ -287,9 +283,9 @@ def test_run_is_started_in_different_cases(experiment):
     ds.mark_complete()
 
     assert True is ds.completed
-    assert False is ds.started  # <<== NOTE the difference !!!
+    assert True is ds.started
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert True is same_ds.completed
-    assert True is same_ds.started  # <<== NOTE the difference !!!
+    assert True is same_ds.started

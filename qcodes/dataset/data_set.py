@@ -504,6 +504,7 @@ class DataSet(Sized):
     def completed(self, value: bool):
         self._completed = value
         if value:
+            self._started = True
             self.dsi.store_meta_data(run_completed=time.time())
 
     def mark_complete(self) -> None:
