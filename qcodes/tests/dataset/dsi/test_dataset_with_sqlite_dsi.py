@@ -61,7 +61,7 @@ def test_init_for_new_run(experiment):
         getattr(ds, trait)
 
     assert False is ds.completed
-    assert False is ds.started
+    assert False is ds._started
 
 
 def test_init_for_new_run_with_given_experiment_and_name(experiment):
@@ -110,7 +110,7 @@ def test_init_for_new_run_with_given_experiment_and_name(experiment):
         getattr(ds, trait)
 
     assert False is ds.completed
-    assert False is ds.started
+    assert False is ds._started
 
 
 def test_add_parameter(experiment):
@@ -251,7 +251,7 @@ def test_add_results(experiment, first_add_using_add_result, request):
 
 def test_dataset_state_in_different_cases(experiment):
     """
-    Test that DataSet's `started`, `completed`, `pristine`, `running`
+    Test that DataSet's `_started`, `completed`, `pristine`, `running`
     properties are correct in various cases
     """
     conn = experiment.conn
@@ -264,14 +264,14 @@ def test_dataset_state_in_different_cases(experiment):
     guid = ds.guid
 
     assert False is ds.completed
-    assert False is ds.started
+    assert False is ds._started
     assert True is ds.pristine
     assert False is ds.running
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert False is same_ds.completed
-    assert False is same_ds.started
+    assert False is same_ds._started
     assert True is same_ds.pristine
     assert False is same_ds.running
 
@@ -280,7 +280,7 @@ def test_dataset_state_in_different_cases(experiment):
     ds.add_parameter(ParamSpec('x', 'numeric'))
     ds.add_result({'x': 0})
 
-    assert True is ds.started
+    assert True is ds._started
     assert False is ds.completed
     assert False is ds.pristine
     assert True is ds.running
@@ -288,7 +288,7 @@ def test_dataset_state_in_different_cases(experiment):
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert False is same_ds.completed
-    assert True is same_ds.started
+    assert True is same_ds._started
     assert False is same_ds.pristine
     assert True is same_ds.running
 
@@ -299,7 +299,7 @@ def test_dataset_state_in_different_cases(experiment):
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert True is same_ds.completed
-    assert True is same_ds.started
+    assert True is same_ds._started
     assert False is same_ds.pristine
     assert False is same_ds.running
 
@@ -309,20 +309,20 @@ def test_dataset_state_in_different_cases(experiment):
     guid = ds.guid
 
     assert False is ds.completed
-    assert False is ds.started
+    assert False is ds._started
     assert True is ds.pristine
     assert False is ds.running
 
     ds.mark_completed()
 
     assert True is ds.completed
-    assert True is ds.started
+    assert True is ds._started
     assert False is ds.pristine
     assert False is ds.running
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
     assert True is same_ds.completed
-    assert True is same_ds.started
+    assert True is same_ds._started
     assert False is same_ds.pristine
     assert False is same_ds.running

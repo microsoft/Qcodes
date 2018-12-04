@@ -439,7 +439,7 @@ class DataSet(Sized):
         independent parameters inferred from the first ones, and finally
         the dependent parameters
         """
-        if self.started:
+        if self._started:
             raise RuntimeError('It is not allowed to add parameters to a '
                                'started run')
 
@@ -511,18 +511,14 @@ class DataSet(Sized):
         """
         DataSet is in pristine state if it hasn't started and hasn't completed
         """
-        return not self.started and not self.completed
+        return not self._started and not self.completed
 
     @property
     def running(self) -> bool:
         """
         DataSet is in running state if it has started but hasn't completed
         """
-        return self.started and not self.completed
-
-    @property
-    def started(self) -> bool:
-        return self._started
+        return self._started and not self.completed
 
     @property
     def completed(self) -> bool:
@@ -567,7 +563,7 @@ class DataSet(Sized):
         It is an error to add results to a completed DataSet.
         """
 
-        if not self.started:
+        if not self._started:
             self._perform_start_actions()
             self._started = True
 
@@ -606,7 +602,7 @@ class DataSet(Sized):
         It is an error to add results to a completed DataSet.
         """
 
-        if not self.started:
+        if not self._started:
             self._perform_start_actions()
             self._started = True
 
