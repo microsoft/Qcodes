@@ -181,8 +181,7 @@ class SqliteStorageInterface(DataStorageInterface):
 
     def _set_snapshot(self, conn: ConnectionPlus, snapshot: dict) -> None:
         snapshot_json = self._encode_snapshot(snapshot)
-        with atomic(conn) as conn:
-            add_meta_data(conn, self.run_id, {'snapshot': snapshot_json})
+        add_meta_data(conn, self.run_id, {'snapshot': snapshot_json})
 
     @staticmethod
     def _encode_snapshot(snapshot: dict) -> str:
