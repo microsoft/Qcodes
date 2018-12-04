@@ -1461,18 +1461,27 @@ def get_data_of_param_and_deps_as_columns(conn: ConnectionPlus,
 
         res = get_data(conn, table_name, columns, start=start, end=end)
 
-        if 'array' in types and 'numeric' in types: # todo handle str
+        if 'array' in types and ('numeric' in types or 'text' in types):
             # todo: Should we check that all the arrays are the same size?
             first_array_element = types.index('array')
-            non_array_elements = [i for i, x in enumerate(types)
-                                  if x == "numeric"]
-            for dat in res:
-                for element in non_array_elements:
-                    dat[element] = np.zeros_like(dat[first_array_element]) \
-                                   + dat[element]
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in res:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.float)
+                    # todo should we handle int/float types here
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=f'U{strlen}')
 
         res_t = list(map(list, zip(*res)))
-        output[param] = {name: np.array(column_data)
+        output[param] = {name: np.squeeze(np.array(column_data))
                          for name, column_data
                          in zip(columns, res_t)}
     return output
