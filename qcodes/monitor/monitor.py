@@ -44,10 +44,6 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
     # group metadata by instrument
     metas = defaultdict(list) # type: dict
     for parameter in parameters:
-        # Check we have a list of parameters
-        if not isinstance(parameter, Parameter):
-            raise ValueError("{} is not a parameter".format(parameter))
-
         # Get the latest value from the parameter, respecting the max_val_age parameter
         meta = {}
         meta["value"] = str(parameter.get_latest())
@@ -118,6 +114,12 @@ class Monitor(Thread):
             interval: How often one wants to refresh the values
         """
         super().__init__()
+
+        # Check that all values are valid parameters
+        for parameter in parameters:
+            if not isinstance(parameter, Parameter):
+                raise TypeError("We can only monitor QCodes Parameters")
+
         self.loop = None
         self.server = None
         self._parameters = parameters
