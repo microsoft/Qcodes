@@ -335,11 +335,11 @@ def test_load_by_counter():
     assert exp.sample_name == "test-sample"
     assert exp.last_counter == 1
 
-    dataset = load_by_counter(1, 1)
+    ds = load_by_counter(1, 1)
 
-    assert "test-dataset" == dataset.name
-    assert exp.sample_name == dataset.sample_name
-    assert exp.name == dataset.exp_name
+    assert "test-dataset" == ds.name
+    assert exp.sample_name == ds.sample_name
+    assert exp.name == ds.exp_name
 
 
 @pytest.mark.usefixtures("experiment")
