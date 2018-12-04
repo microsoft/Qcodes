@@ -109,8 +109,8 @@ def test_load_by_id_for_nonexisting_run_id(non_existing_run_id):
 
 @pytest.mark.usefixtures('experiment')
 def test_load_by_id_for_none():
-    with pytest.raises(ValueError, match='run_id has to be a positive integer, '
-                                         'not None.'):
+    with pytest.raises(ValueError, match='run_id has to be a positive integer,'
+                                         ' not None.'):
         _ = load_by_id(None)
 
 
@@ -125,7 +125,7 @@ def test_add_experiments(experiment_name,
     global n_experiments
     n_experiments += 1
 
-    _ = new_experiment(experiment_name, sample_name=sample_name)
+    new_experiment(experiment_name, sample_name=sample_name)
     exps = experiments()
     assert len(exps) == n_experiments
     exp = exps[-1]
@@ -133,24 +133,24 @@ def test_add_experiments(experiment_name,
     assert exp.sample_name == sample_name
     assert exp.last_counter == 0
 
-    dataset = new_data_set(dataset_name)
-    dsid = dataset.run_id
+    ds = new_data_set(dataset_name)
+    dsid = ds.run_id
     loaded_dataset = load_by_id(dsid)
     expected_ds_counter = 1
     assert loaded_dataset.name == dataset_name
-    assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
-                                                          exp.exp_id,
-                                                          loaded_dataset.counter)
+    assert loaded_dataset.dsi.counter == expected_ds_counter
+    assert loaded_dataset.dsi.table_name == (f"{dataset_name}-"
+                                             f"{exp.exp_id}-"
+                                             f"{loaded_dataset.dsi.counter}")
     expected_ds_counter += 1
-    dataset = new_data_set(dataset_name)
-    dsid = dataset.run_id
+    ds = new_data_set(dataset_name)
+    dsid = ds.run_id
     loaded_dataset = load_by_id(dsid)
     assert loaded_dataset.name == dataset_name
-    assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
-                                                          exp.exp_id,
-                                                          loaded_dataset.counter)
+    assert loaded_dataset.dsi.counter == expected_ds_counter
+    expected_table_name = "{}-{}-{}".format(dataset_name, exp.exp_id,
+                                            loaded_dataset.dsi.counter)
+    assert loaded_dataset.dsi.table_name == expected_table_name
 
 
 def test_add_paramspec(dataset):
