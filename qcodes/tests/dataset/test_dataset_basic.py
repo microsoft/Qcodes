@@ -37,7 +37,7 @@ def make_shadow_dataset(dataset: DataSet):
     situations where one needs to assert the underlying modifications to the
     database file.
     """
-    return DataSet(path_to_db=dataset.path_to_db, run_id=dataset.run_id)
+    return DataSet(path_to_db=dataset.dsi.path_to_db, run_id=dataset.run_id)
 
 
 @pytest.mark.usefixtures("experiment")
