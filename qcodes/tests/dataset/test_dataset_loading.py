@@ -22,7 +22,7 @@ from qcodes.tests.dataset.test_descriptions import some_paramspecs
 def test_load_by_id():
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
-    ds.mark_complete()
+    ds.mark_completed()
 
     loaded_ds = load_by_id(run_id)
     assert loaded_ds.completed is True
@@ -52,7 +52,7 @@ def test_load_by_counter():
 
     assert loaded_ds.completed is False
 
-    ds.mark_complete()
+    ds.mark_completed()
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
     assert loaded_ds.completed is True
@@ -108,7 +108,7 @@ def test_completed_timestamp():
     ds = new_data_set("my_first_ds")
 
     t_before_complete = time.time()
-    ds.mark_complete()
+    ds.mark_completed()
     t_after_complete = time.time()
 
     actual_completed_timestamp_raw = ds.completed_timestamp_raw
@@ -136,7 +136,7 @@ def test_completed_timestamp_with_default_format():
     ds = new_data_set("my_first_ds")
 
     t_before_complete = time.time()
-    ds.mark_complete()
+    ds.mark_completed()
     t_after_complete = time.time()
 
     # Note that here we also test the default format of `completed_timestamp`
@@ -174,7 +174,7 @@ def test_get_data_by_id_order(dataset):
     dataset.add_result({'depBA': 21,
                         'indep2': 2,
                         'indep1': 1})
-    dataset.mark_complete()
+    dataset.mark_completed()
 
     data = get_data_by_id(dataset.run_id)
     data_dict = {el['name']: el['data'] for el in data[0]}

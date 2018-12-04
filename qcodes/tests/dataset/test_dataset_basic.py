@@ -257,7 +257,7 @@ def test_add_data_1d():
         mydataset.add_result({'y': 500})
 
     assert mydataset.completed is False
-    mydataset.mark_complete()
+    mydataset.mark_completed()
     assert mydataset.completed is True
 
     with pytest.raises(ValueError):

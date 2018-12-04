@@ -143,7 +143,7 @@ def test_add_parameter(experiment):
 
     # Mark DataSet as completed and try to add a parameter
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     with pytest.raises(RuntimeError, match='It is not allowed to add '
                                            'parameters to a started run'):
@@ -237,7 +237,7 @@ def test_add_results(experiment, first_add_using_add_result, request):
 
     # assert that we can't `add_result` and `add_results` to a completed dataset
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     with raise_if_file_changed(ds.dsi.path_to_db):
 
@@ -282,7 +282,7 @@ def test_run_is_started_in_different_cases(experiment):
 
     # 3. Complete this dataset
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     same_ds = DataSet(guid=guid, conn=control_conn)
 
@@ -297,7 +297,7 @@ def test_run_is_started_in_different_cases(experiment):
     assert False is ds.completed
     assert False is ds.started
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     assert True is ds.completed
     assert True is ds.started
