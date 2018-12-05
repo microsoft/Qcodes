@@ -16,6 +16,7 @@ from qcodes.dataset.dependencies import InterDependencies
 import qcodes.dataset.sqlite_base as mut  # mut: module under test
 from qcodes.dataset.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
@@ -196,7 +197,6 @@ def test_get_data_no_columns(scalar_dataset):
     ref = mut.get_data(ds.conn, ds.table_name, [])
     assert ref == [[]]
 
-
 def test_get_parameter_data(scalar_dataset):
     ds = scalar_dataset
     params = ds.parameters.split(',')
@@ -216,3 +216,22 @@ def test_get_parameter_data(scalar_dataset):
             else:
                 raise RuntimeError('Unsupported data type')
             assert np.isclose(v_test, v_ref)
+
+def test_is_run_id_in_db(empty_temp_db):
+    conn = mut.connect(get_DB_location())
+    mut.new_experiment(conn, 'test_exp', 'no_sample')
+
+    for _ in range(5):
+        ds = DataSet(conn=conn, run_id=None)
+
+    # there should now be run_ids 1, 2, 3, 4, 5 in the database
+    good_ids = [1, 2, 3, 4, 5]
+    try_ids = [1, 3, 9999, 23, 0, 1, 1, 3, 34]
+
+    sorted_try_ids = np.unique(try_ids)
+
+    expected_dict = {tid: (tid in good_ids) for tid in sorted_try_ids}
+
+    acquired_dict = mut.is_run_id_in_database(conn, *try_ids)
+
+    assert expected_dict == acquired_dict

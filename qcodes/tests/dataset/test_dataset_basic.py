@@ -633,8 +633,7 @@ def test_missing_keys(dataset):
     assert dataset.get_setpoints("b")['y'] == expected_setpoints[1]
 
 
-@pytest.mark.usefixtures('experiment')
-def test_get_description(some_paramspecs):
+def test_get_description(experiment, some_paramspecs):
 
     paramspecs = some_paramspecs[2]
 
@@ -700,6 +699,20 @@ def test_metadata(experiment, request):
             ds1.add_metadata(tag, value)
 
     assert error_caused_by(e, bad_tag_msg)
+
+
+def test_the_same_dataset_as(some_paramspecs, experiment):
+    paramspecs = some_paramspecs[2]
+    ds = DataSet()
+    ds.add_parameter(paramspecs['ps1'])
+    ds.add_parameter(paramspecs['ps2'])
+    ds.add_result({'ps1': 1, 'ps2': 2})
+
+    same_ds_from_load = DataSet(run_id=ds.run_id)
+    assert ds.the_same_dataset_as(same_ds_from_load)
+
+    new_ds = DataSet()
+    assert not ds.the_same_dataset_as(new_ds)
 
 
 class TestGetData:
