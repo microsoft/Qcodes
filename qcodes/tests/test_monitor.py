@@ -32,6 +32,29 @@ class TestMonitor(TestCase):
         self.assertFalse(m.is_alive())
         self.assertIsNone(monitor.Monitor.running)
 
+    def test_monitor_replace(self):
+        """
+        Check that monitors get correctly replaced
+        """
+        m = monitor.Monitor()
+        self.assertEqual(monitor.Monitor.running, m)
+        m2 = monitor.Monitor()
+        self.assertEqual(monitor.Monitor.running, m2)
+        self.assertTrue(m.loop.is_closed())
+        self.assertFalse(m.is_alive())
+        self.assertTrue(m2.is_alive())
+        m2.stop()
+
+    def test_double_join(self):
+        """
+        Check that a double join doesn't cause a hang
+        """
+        m = monitor.Monitor()
+        self.assertEqual(monitor.Monitor.running, m)
+        m.stop()
+        m.stop()
+
+
     def test_connection(self):
         """
         Test that we can connect to a monitor instance
