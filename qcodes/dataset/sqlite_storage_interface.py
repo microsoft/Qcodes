@@ -13,7 +13,7 @@ from .data_storage_interface import (
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
     is_pristine_run, update_run_description, add_meta_data,
-    atomic_transaction)
+    atomic_transaction, _build_data_query)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.sqlite_base import (add_parameter,
                                         atomic,
@@ -217,17 +217,10 @@ class SqliteStorageInterface(DataStorageInterface):
         if not self.run_exists():
             raise ValueError(f"No run with guid {self.guid} exists.")
 
-        query = f'SELECT * FROM "{self.table_name}"'
-
-        start_specified = start is not None
-        stop_specified = stop is not None
-
-        where = ' WHERE' if start_specified or stop_specified else ''
-        start_condition = f' rowid >= {start}' if start_specified else ''
-        end_condition = f' rowid <= {stop}' if stop_specified else ''
-        and_ = ' AND' if start_specified and stop_specified else ''
-
-        query += where + start_condition + and_ + end_condition
+        query = _build_data_query(table_name=self.table_name,
+                                  columns=['*'],
+                                  start=start,
+                                  end=stop)
 
         cursor = atomic_transaction(self.conn, query)
 
@@ -243,6 +236,8 @@ class SqliteStorageInterface(DataStorageInterface):
                             for row in cursor)
 
         # calculate the length of iterator
+        start_specified = start is not None
+        stop_specified = stop is not None
         first = max((start if start_specified else -math.inf), 1) - 1
         last = min((stop if stop_specified else math.inf) - 1,
                    self.retrieve_number_of_results() - 1)

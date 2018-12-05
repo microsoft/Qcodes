@@ -309,7 +309,7 @@ def test_replay_results(experiment, request):
     actual_y = get_data(control_conn, dsi.table_name, ['y'])
     np.testing.assert_allclose(actual_y, expected_y)
 
-    # test replaying stored results
+    # test replaying all stored results
 
     results_iterator = dsi.replay_results()
 
@@ -317,6 +317,18 @@ def test_replay_results(experiment, request):
 
     actual_results = list(results_iterator)
     for act, exp in zip(actual_results, expected_results):
+        assert list(exp.keys()) == list(act.keys())
+        for act_item, exp_item in zip(act.values(), exp.values()):
+            np.testing.assert_allclose(act_item, exp_item)
+
+    # test replaying some of the stored results
+
+    results_iterator = dsi.replay_results(start=2, stop=4)
+
+    assert 3 == len(results_iterator)
+
+    actual_results = list(results_iterator)
+    for act, exp in zip(actual_results, expected_results[2-1:4]):
         assert list(exp.keys()) == list(act.keys())
         for act_item, exp_item in zip(act.values(), exp.values()):
             np.testing.assert_allclose(act_item, exp_item)
