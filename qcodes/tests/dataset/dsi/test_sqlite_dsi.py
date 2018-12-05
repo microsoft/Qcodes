@@ -100,8 +100,6 @@ def test_init_and_create_new_run(experiment):
     assert 'dataset-1-1' == dsi.table_name
     assert 1 == dsi.counter
 
-    pytest.xfail('more assertions on the fact that run is created are needed')
-
 
 def test_init__load_existing_run(experiment):
     """Test initialising dsi for an existing run"""
@@ -140,9 +138,6 @@ def test_init__load_existing_run(experiment):
     assert name == dsi.name
     assert name+'-1-1' == dsi.table_name
     assert 1 == dsi.counter
-
-    pytest.xfail(
-        'more assertions needed for the fact that we loaded existing runs')
 
 
 def test_retrieve_metadata_empty_run(experiment):
