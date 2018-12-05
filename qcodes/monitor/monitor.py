@@ -6,8 +6,19 @@
 #
 # Distributed under terms of the MIT license.
 """
-Monitor a set of parameter in a background thread
-stream opuput over websocket
+Monitor a set of parameters in a background thread
+stream output over websocket
+
+To start monitor, run this file, or if qcodes is installed as a module:
+```
+% python -m qcodes.monitor.monitor
+```
+
+Add parameters to monitor in your measurement by creating a new monitor with a list
+of parameters to monitor:
+```
+monitor = qcodes.Monitor(param1, param2, param3, ...)
+```
 """
 
 import logging
@@ -40,7 +51,7 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
     Return a dict that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
-    ts = time.time()
+    metadata_timestamp = time.time()
     # group metadata by instrument
     metas = defaultdict(list) # type: dict
     for parameter in parameters:
@@ -67,7 +78,7 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
         parameters_out.append(temp)
 
-    state = {"ts": ts, "parameters": parameters_out}
+    state = {"ts": metadata_timestamp, "parameters": parameters_out}
     return state
 
 
@@ -75,7 +86,7 @@ def _handler(parameters, interval: int):
     """
     Return the websockets server handler
     """
-    async def server_func(websocket, path):
+    async def server_func(websocket, _):
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds
@@ -85,8 +96,8 @@ def _handler(parameters, interval: int):
                 # Update the parameter values
                 try:
                     meta = _get_metadata(*parameters)
-                except ValueError as e:
-                    log.exception(e)
+                except ValueError:
+                    log.exception("Error getting parameters")
                     break
                 log.debug("sending.. to %r", websocket)
                 await websocket.send(json.dumps(meta))
@@ -169,10 +180,10 @@ class Monitor(Thread):
         """
         Update all parameters in the monitor
         """
-        for p in self._parameters:
+        for parameter in self._parameters:
             # call get if it can be called without arguments
             with suppress(TypeError):
-                p.get()
+                parameter.get()
 
     def stop(self) -> None:
         """
@@ -189,7 +200,7 @@ class Monitor(Thread):
         await self.loop.create_task(self.server.wait_closed())
         log.debug("stopping loop")
         log.debug("Pending tasks at stop: %r",
-                asyncio.Task.all_tasks(self.loop))
+                  asyncio.Task.all_tasks(self.loop))
         self.loop.stop()
 
     def join(self, timeout=None) -> None:
@@ -232,28 +243,17 @@ class Monitor(Thread):
         """
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
-class Server():
-
-    def __init__(self, port=SERVER_PORT):
-        self.port = port
-        self.handler = http.server.SimpleHTTPRequestHandler
-        self.httpd = socketserver.TCPServer(("", self.port), self.handler)
-        self.static_dir = os.path.join(os.path.dirname(__file__), 'dist')
-
-    def run(self):
-        os.chdir(self.static_dir)
-        log.debug("serving directory %s", self.static_dir)
-        self.httpd.serve_forever()
-
-    def stop(self):
-        self.httpd.shutdown()
-
-
 if __name__ == "__main__":
-    server = Server()
-    print("Open browser at http://localhost:{}".format(server.port))
+    # If this file is run, create a simple webserver that serves a simple website
+    # that can be used to view monitored parameters.
+    STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
+    os.chdir(STATIC_DIR)
     try:
-        webbrowser.open("http://localhost:{}".format(server.port))
-        server.run()
+        log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
+        with socketserver.TCPServer(("", SERVER_PORT),
+                                    http.server.SimpleHTTPRequestHandler) as httpd:
+            log.debug("serving directory %s", STATIC_DIR)
+            webbrowser.open("http://localhost:{}".format(SERVER_PORT))
+            httpd.serve_forever()
     except KeyboardInterrupt:
-        exit()
+        log.info("Shutting Down HTTP Server")
