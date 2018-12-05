@@ -47,9 +47,9 @@ def test_last_data_set_from_experiment(dataset):
     assert dataset.exp_id == ds.exp_id
     assert dataset.exp_name == ds.exp_name
     assert dataset.sample_name == ds.sample_name
-    assert dataset.path_to_db == ds.path_to_db
+    assert dataset.dsi.path_to_db == ds.dsi.path_to_db
 
-    assert experiment.path_to_db == ds.path_to_db
+    assert experiment.path_to_db == ds.dsi.path_to_db
 
 
 def test_last_data_set_from_experiment_with_no_datasets(experiment):
