@@ -811,13 +811,17 @@ class DataSet(Sized):
             start: Optional[int] = None,
             end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
         """
-        Returns the values stored in the DataSet for the specified parameters.
-        The values are returned as a dictionary of numpy arrays where the key,
-        is given by the respective parameter name and the value arrays represent
-        the data points. If some of the parameters are stored as
+        Returns the values stored in the DataSet for the specified parameters
+        and their dependencies. If no paramerers are supplied the values will
+        be returned for all parameters that are not them self depdendencies.
+
+        The values are returned as a dictionary with names of the requested
+        parameters as keys and values consisting of dictionaries with the
+        names of the parameters and its dependencies as keys and numpy arrays
+        of the data as values. If some of the parameters are stored as
         arrays the remaining parameters are expanded to the same shape as these.
-        Apart from this expansion this method returns the transpose of
-        `get_data`.
+        Apart from this expansion the data returned by this method
+        is the transpose of the date returned by `get_data`.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
@@ -835,8 +839,9 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameters to Dict of numpy arrays
-            containing the data points of type numeric, array or string.
+            Dictionary from requested parameters to Dict of parameter names
+            to numpy arrays containing the data points of type numeric,
+            array or string.
         """
         if len(params) == 0:
             valid_param_names = get_non_dependencies(self.conn,
