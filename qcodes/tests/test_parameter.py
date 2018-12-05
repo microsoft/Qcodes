@@ -191,12 +191,12 @@ class TestParameter(TestCase):
 
         # Check we return last set value, with the correct timestamp
         self.assertEqual(local_parameter.get_latest(), 1)
-        self.assertTrue(before_set < local_parameter.get_latest.get_timestamp() < after_set)
+        self.assertTrue(before_set <= local_parameter.get_latest.get_timestamp() <= after_set)
 
         # Check that updating the value updates the timestamp
         local_parameter.set(2)
         self.assertEqual(local_parameter.get_latest(), 2)
-        self.assertGreater(local_parameter.get_latest.get_timestamp(), after_set)
+        self.assertGreaterEqual(local_parameter.get_latest.get_timestamp(), after_set)
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
