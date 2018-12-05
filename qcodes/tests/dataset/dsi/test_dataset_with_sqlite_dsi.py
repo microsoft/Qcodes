@@ -391,6 +391,111 @@ def test_get_values(experiment, request):
     np.testing.assert_allclose(actual_y, sqlite_actual_y)
 
 
+def test_get_setpoints(experiment, request):
+    """
+    Test get_setpoints of DataSet, the data should come out as described in the
+    method's docstring, and as the original implementation that used
+    get_setpoints function from sqlite_base.
+    """
+    conn = experiment.conn
+
+    control_conn = sqlite.connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
+
+    # Initialize a dataset with some results
+
+    ds = DataSet(guid=None, conn=conn)
+
+    x_spec = ParamSpec('x', 'numeric')
+    y_spec = ParamSpec('y', 'array')
+    z_spec = ParamSpec('z', 'numeric', depends_on=[x_spec, y_spec])
+    ds.add_parameter(x_spec)
+    ds.add_parameter(y_spec)
+    ds.add_parameter(z_spec)
+
+    x_val_1 = 42
+    x_val_2 = 43
+    x_val_3 = None
+    x_val_4 = 96
+    y_val_1 = np.random.random_sample(3)
+    y_val_2 = None
+    y_val_3 = np.random.random_sample(3)
+    y_val_4 = np.random.random_sample(3)
+    z_val_1 = 666
+    z_val_2 = 999
+    z_val_3 = 777
+    z_val_4 = None
+    all_x = [[x_val_1], [x_val_2], [x_val_3], [x_val_4]]
+    all_y = [[y_val_1], [y_val_2], [y_val_3], [y_val_4]]
+    all_z = [[z_val_1], [z_val_2], [z_val_3], [z_val_4]]
+
+    ds.add_results([{'x': x_val_1, 'y': y_val_1, 'z': z_val_1},
+                    {'x': x_val_2, 'y': y_val_2, 'z': z_val_2},
+                    {'x': x_val_3, 'y': y_val_3, 'z': z_val_3},
+                    {'x': x_val_4, 'y': y_val_4, 'z': z_val_4}])
+
+    # assert that data has been added to the database
+
+    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    assert actual_x == all_x
+
+    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    assert len(actual_y) == len(all_y)
+    for act_y, al_y in zip(actual_y, all_y):
+        assert len(act_y) == len(al_y)
+        for ac_y, a_y in zip(act_y, al_y):
+            if isinstance(a_y, np.ndarray):
+                np.testing.assert_allclose(ac_y, a_y)
+            else:
+                assert ac_y == a_y
+
+    actual_z = sqlite.get_data(control_conn, ds.dsi.table_name, ['z'])
+    assert actual_z == all_z
+
+    # Now get data using DataSet's get_setpoints
+
+    actual_x_y = ds.get_setpoints('z')
+
+    assert list(actual_x_y.keys()) == ['x', 'y']
+
+    expected_x = [item for item, item_z in zip(all_x, all_z)
+                  for subitem in item_z
+                  if subitem is not None]
+    assert actual_x_y['x'] == expected_x
+
+    expected_y = [item for item, item_z in zip(all_y, all_z)
+                  for subitem in item_z
+                  if subitem is not None]
+    assert len(actual_x_y['y']) == len(expected_y)
+    for act_y, exp_y in zip(actual_x_y['y'], expected_y):
+        assert len(act_y) == len(exp_y)
+        for a_y, e_y in zip(act_y, exp_y):
+            if isinstance(a_y, np.ndarray):
+                np.testing.assert_allclose(a_y, e_y)
+            else:
+                assert a_y == e_y
+
+    # Finally, compare the actuals with the output of the
+    # get_setpoints function of sqlite_base module that was used as the
+    # original implementation
+
+    sqlite_actual_x_y = sqlite.get_setpoints(
+        control_conn, ds.dsi.table_name, 'z')
+
+    assert list(actual_x_y.keys()) == list(sqlite_actual_x_y.keys())
+
+    assert actual_x_y['x'] == sqlite_actual_x_y['x']
+
+    assert len(actual_x_y['y']) == len(sqlite_actual_x_y['y'])
+    for act_y, sql_y in zip(actual_x_y['y'], sqlite_actual_x_y['y']):
+        assert len(act_y) == len(sql_y)
+        for a_y, s_y in zip(act_y, sql_y):
+            if isinstance(a_y, np.ndarray):
+                np.testing.assert_allclose(a_y, s_y)
+            else:
+                assert a_y == s_y
+
+
 def test_dataset_state_in_different_cases(experiment):
     """
     Test that DataSet's `_started`, `completed`, `pristine`, `running`
