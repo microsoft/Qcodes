@@ -1,4 +1,5 @@
 import functools
+from itertools import chain
 import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
@@ -667,8 +668,13 @@ class DataSet(Sized):
                     raise ValueError(
                         "This parameter does not have  a name") from e
             valid_param_names.append(maybeParam)
-        data = get_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
+
+        results_iterator = self.dsi.replay_results(start=start, stop=end)
+
+        data = [list(chain.from_iterable([result[p]
+                                          for p in valid_param_names]))
+                for result in results_iterator]
+
         return data
 
     def get_values(self, param_name: str) -> List[List[Any]]:

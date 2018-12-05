@@ -249,6 +249,78 @@ def test_add_results(experiment, first_add_using_add_result, request):
             ds.add_results([{'x': 1}])
 
 
+@pytest.mark.parametrize('start_end', ((None, None),
+                                       (2, None),
+                                       (None, 1)))
+def test_get_data(experiment, request, start_end):
+    """
+    Test get_data of DataSet, the data should come out as described in the
+    method's docstring. Also cover 'start' and 'end' arguments with
+    parametrized tests.
+    """
+    conn = experiment.conn
+
+    control_conn = sqlite.connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
+
+    # Initialize a dataset with some results
+
+    ds = DataSet(guid=None, conn=conn)
+
+    x_spec = ParamSpec('x', 'numeric')
+    y_spec = ParamSpec('y', 'array')
+    ds.add_parameter(x_spec)
+    ds.add_parameter(y_spec)
+
+    expected_x = []
+    expected_y = []
+    expected_y_x_all = []
+
+    x_val_1 = 42
+    x_val_2 = 53
+    y_val_1 = np.random.random_sample(3)
+    y_val_2 = np.random.random_sample(3)
+    expected_x.append([x_val_1])
+    expected_x.append([x_val_2])
+    expected_y.append([y_val_1])
+    expected_y.append([y_val_2])
+    expected_y_x_all.append([y_val_1, x_val_1])
+    expected_y_x_all.append([y_val_2, x_val_2])
+    ds.add_results([{'x': x_val_1, 'y': y_val_1},
+                    {'x': x_val_2, 'y': y_val_2}])
+
+    # assert that data has been added to the database
+
+    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    assert actual_x == expected_x
+
+    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    np.testing.assert_allclose(actual_y, expected_y)
+
+    # Now get data using DataSet's get_data
+
+    actual_x = ds.get_data('x')
+    assert actual_x == expected_x
+
+    actual_y = ds.get_data('y')
+    np.testing.assert_allclose(actual_y, expected_y)
+
+    # Here we test getting data for a given set of parameters, note the
+    # reverse order of the parameters, as well as 'start' and 'end' arguments
+
+    actual_y_x = ds.get_data('y', 'x', start=start_end[0], end=start_end[1])
+
+    p_start = 0 if start_end[0] is None else start_end[0] - 1
+    p_end = len(expected_y_x_all) if start_end[1] is None else start_end[1]
+    expected_y_x = expected_y_x_all[p_start:p_end]
+
+    assert len(actual_y_x) == len(expected_y_x)
+    for act_y_x, exp_y_x in zip(actual_y_x, expected_y_x):
+        assert len(act_y_x) == len(exp_y_x)
+        for act_param, exp_param in zip(act_y_x, exp_y_x):
+            np.testing.assert_allclose(act_param, exp_param)
+
+
 def test_dataset_state_in_different_cases(experiment):
     """
     Test that DataSet's `_started`, `completed`, `pristine`, `running`
