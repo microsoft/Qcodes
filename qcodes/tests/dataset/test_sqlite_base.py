@@ -26,6 +26,8 @@ from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
 # pylint: enable=unused-import
 
+from .helper_functions import verify_data_dict
+
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 
@@ -197,25 +199,22 @@ def test_get_data_no_columns(scalar_dataset):
     ref = mut.get_data(ds.conn, ds.table_name, [])
     assert ref == [[]]
 
+
 def test_get_parameter_data(scalar_dataset):
     ds = scalar_dataset
-    params = ds.parameters.split(',')
-    # delete some random parameter to test it with an incomplete list
-    del params[-2]
+    input_names = ['param_3']
 
-    ref = mut.get_data(ds.conn, ds.table_name, params)
-    dut = mut.get_parameter_data(ds.conn, ds.table_name, params)
-    for i_row, row in enumerate(ref):
-        for i_param, param_name in enumerate(params):
-            v_ref = row[i_param]
-            v_test = dut[param_name][i_row]
-            if isinstance(v_ref, float):
-                assert isinstance(v_test, np.float64)
-            elif isinstance(v_ref, int):
-                assert isinstance(v_test, np.int)
-            else:
-                raise RuntimeError('Unsupported data type')
-            assert np.isclose(v_test, v_ref)
+    data = mut.get_parameter_data(ds.conn, ds.table_name, input_names)
+
+    assert len(data.keys()) == len(input_names)
+
+    expected_names = {}
+    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
+                                 'param_3']
+    expected_shapes = {}
+    expected_shapes['param_3'] = [(10**3, )]*4
+
+    verify_data_dict(data, input_names, expected_names, expected_shapes)
 
 def test_is_run_id_in_db(empty_temp_db):
     conn = mut.connect(get_DB_location())

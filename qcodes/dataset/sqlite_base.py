@@ -1223,31 +1223,68 @@ def get_data(conn: ConnectionPlus,
 def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
                        columns: List[str],
-                       start: int = None,
-                       end: int = None) -> Dict[str, np.ndarray]:
+                       start: Optional[int]=None,
+                       end: Optional[int]=None) -> \
+        Dict[str, Dict[str, np.ndarray]]:
     """
-    Get data from the columns of a table.
-    Allows to specfiy a range.
+    Get data for one or more parameters and its dependencies. The data
+    is returned as numpy arrays nested 2 layers of dicts. The keys or the
+    outermost are the requested parameters and the second level by the loaded
+    parameters.
 
     Args:
         conn: database connection
         table_name: name of the table
         columns: list of columns
-        start: start of range (1 indedex)
-        end: start of range (1 indedex)
-
-    Returns:
-        the data requested
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
     """
-    # Benchmarking shows that transposing the data with python types is faster
-    # than transposing the data using np.array.transpose
-    # This method is going to form the entry point for a compiled version
+    output = {}
+    if len(columns) == 0:
+        raise NotImplementedError("HERE we should look up all "
+                                  "dependent standalone parameters")
 
-    res = get_data(conn, table_name, columns, start, end)
-    res_t = list(map(list, zip(*res)))
-    return {name: np.array(column_data)
-            for name, column_data
-            in zip(columns, res_t)}
+    # get run_id
+    sql = """
+    SELECT run_id FROM runs WHERE result_table_name = ?
+    """
+    c = atomic_transaction(conn, sql, table_name)
+    run_id = one(c, 'run_id')
+
+    for param in columns:
+        params = get_dependency_parameters(conn, param, run_id)
+        columns = [param.name for param in params]
+        types = [param.type for param in params]
+
+        res = get_data(conn, table_name, columns, start=start, end=end)
+
+        if 'array' in types and ('numeric' in types or 'text' in types):
+            # todo: Should we check that all the arrays are the same size?
+            first_array_element = types.index('array')
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in res:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.float)
+                    # todo should we handle int/float types here
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=f'U{strlen}')
+
+        # Benchmarking shows that transposing the data with python types is faster
+        # than transposing the data using np.array.transpose
+        # This method is going to form the entry point for a compiled version
+        res_t = list(map(list, zip(*res)))
+        output[param] = {name: np.squeeze(np.array(column_data))
+                         for name, column_data
+                         in zip(columns, res_t)}
+    return output
 
 
 def get_values(conn: ConnectionPlus,
@@ -1518,70 +1555,6 @@ def get_dependency_parameters(conn: ConnectionPlus, param: str,
         depinfo = get_layout(conn, dep[0])
         parameters.append(get_paramspec(conn, run_id, depinfo['name']))
     return parameters
-
-
-def get_data_of_param_and_deps_as_columns(conn: ConnectionPlus,
-                                          table_name: str,
-                                          columns: List[str],
-                                          start: Optional[int]=None,
-                                          end: Optional[int]=None) -> \
-        Dict[str, Dict[str, np.ndarray]]:
-    """
-    Get data for one or more parameters and its dependencies. The data
-    is returned as numpy arrays nested 2 layers of dicts. The keys or the
-    outermost are the requested parameters and the second level by the loaded
-    parameters.
-
-    Args:
-        conn: database connection
-        table_name: name of the table
-        columns: list of columns
-        start: start of range; if None, then starts from the top of the table
-        end: end of range; if None, then ends at the bottom of the table
-    """
-    output = {}
-    if len(columns) == 0:
-        raise NotImplementedError("HERE we should look up all "
-                                  "dependent standalone parameters")
-
-    # get run_id
-    sql = """
-    SELECT run_id FROM runs WHERE result_table_name = ?
-    """
-    c = atomic_transaction(conn, sql, table_name)
-    run_id = one(c, 'run_id')
-
-    for param in columns:
-        params = get_dependency_parameters(conn, param, run_id)
-        columns = [param.name for param in params]
-        types = [param.type for param in params]
-
-        res = get_data(conn, table_name, columns, start=start, end=end)
-
-        if 'array' in types and ('numeric' in types or 'text' in types):
-            # todo: Should we check that all the arrays are the same size?
-            first_array_element = types.index('array')
-            numeric_elms = [i for i, x in enumerate(types)
-                            if x == "numeric"]
-            text_elms = [i for i, x in enumerate(types)
-                         if x == "text"]
-            for row in res:
-                for element in numeric_elms:
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=np.float)
-                    # todo should we handle int/float types here
-                for element in text_elms:
-                    strlen = len(row[element])
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=f'U{strlen}')
-
-        res_t = list(map(list, zip(*res)))
-        output[param] = {name: np.squeeze(np.array(column_data))
-                         for name, column_data
-                         in zip(columns, res_t)}
-    return output
 
 
 def new_experiment(conn: ConnectionPlus,
