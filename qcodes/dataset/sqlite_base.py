@@ -1239,25 +1239,26 @@ def get_parameter_data(conn: ConnectionPlus,
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
-    output = {}
-    if len(columns) == 0:
-        raise NotImplementedError("HERE we should look up all "
-                                  "dependent standalone parameters")
-
-    # get run_id
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
     """
     c = atomic_transaction(conn, sql, table_name)
     run_id = one(c, 'run_id')
 
-    for param in columns:
-        params = get_dependency_parameters(conn, param, run_id)
-        columns = [param.name for param in params]
-        types = [param.type for param in params]
+    output = {}
+    if len(columns) == 0:
+        columns = get_non_dependencies(conn, run_id)
 
-        res = get_data(conn, table_name, columns, start=start, end=end)
+    # loop over all the requested parameters
+    for output_param in columns:
+        # find all the dependencies of this param
+        paramspecs = get_parameter_dependencies(conn, output_param, run_id)
+        param_names = [param.name for param in paramspecs]
+        types = [param.type for param in paramspecs]
 
+        res = get_data(conn, table_name, param_names, start=start, end=end)
+        # if we have array type parameters expand all other parameters
+        # to arrays
         if 'array' in types and ('numeric' in types or 'text' in types):
             # todo: Should we check that all the arrays are the same size?
             first_array_element = types.index('array')
@@ -1277,13 +1278,13 @@ def get_parameter_data(conn: ConnectionPlus,
                                                 row[element],
                                                 dtype=f'U{strlen}')
 
-        # Benchmarking shows that transposing the data with python types is faster
-        # than transposing the data using np.array.transpose
+        # Benchmarking shows that transposing the data with python types is
+        # faster than transposing the data using np.array.transpose
         # This method is going to form the entry point for a compiled version
         res_t = list(map(list, zip(*res)))
-        output[param] = {name: np.squeeze(np.array(column_data))
+        output[output_param] = {name: np.squeeze(np.array(column_data))
                          for name, column_data
-                         in zip(columns, res_t)}
+                         in zip(param_names, res_t)}
     return output
 
 
@@ -1556,10 +1557,10 @@ def get_non_dependencies(conn: ConnectionPlus,
 # Higher level Wrappers
 
 
-def get_dependency_parameters(conn: ConnectionPlus, param: str,
+def get_parameter_dependencies(conn: ConnectionPlus, param: str,
                               run_id: int) -> List[ParamSpec]:
     """
-    Given a parameter name return its ParamSpec of the parameter along with
+    Given a parameter name return the ParamSpec of the parameter along with
     the ParamSpecs of all it's dependencies.
 
     Args:
