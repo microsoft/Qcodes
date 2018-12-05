@@ -335,7 +335,7 @@ def test_measurement_name(experiment, DAC, DMM):
     with meas.run() as datasaver:
         run_id = datasaver.run_id
         expected_name = fmt.format(name, exp_id, run_id)
-        assert datasaver.dataset.table_name == expected_name
+        assert datasaver.dataset.dsi.table_name == expected_name
 
 
 @settings(deadline=None)
@@ -459,7 +459,7 @@ def test_subscriptions(experiment, DAC, DMM):
 
         # Assert that the measurement, runner, and datasaver
         # have added subscribers to the dataset
-        assert len(datasaver._dataset.subscribers) == 2
+        assert len(datasaver._dataset.dsi.subscribers) == 2
 
         assert all_results_dict == {}
         assert values_larger_than_7 == []
@@ -505,13 +505,13 @@ def test_subscriptions(experiment, DAC, DMM):
 
     # Ensure that after exiting the "run()" context,
     # all subscribers get unsubscribed from the dataset
-    assert len(datasaver._dataset.subscribers) == 0
+    assert len(datasaver._dataset.dsi.subscribers) == 0
 
     # Ensure that the triggers for each subscriber
     # have been removed from the database
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
     triggers = atomic_transaction(
-        datasaver._dataset.conn, get_triggers_sql).fetchall()
+        datasaver._dataset.dsi.conn, get_triggers_sql).fetchall()
     assert len(triggers) == 0
 
 
@@ -545,7 +545,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
         # the total number of values being added to the dataset;
         # this way the subscriber callback is not called before
         # we exit the "run()" context.
-        subscriber = list(datasaver.dataset.subscribers.values())[0]
+        subscriber = list(datasaver.dataset.dsi.subscribers.values())[0]
         subscriber.min_queue_length = int(len(given_x_vals) + 1)
 
         for x in given_x_vals:
