@@ -18,9 +18,11 @@ class RabbitMQStorageInterface(DataStorageInterface):
                                        exchange_type='fanout')
         # the configuration of channes should perhaps be read from
         # a config file
-        self._channel.queue_declare(queue='tordensky', durable=True)
+        self._channel.queue_declare(queue='tordensky',
+                                    durable=True, exclusive=False)
         self._channel.queue_bind(exchange='mydata', queue='tordensky')
-        self._channel.queue_declare(queue='localstorage', durable=True)
+        self._channel.queue_declare(queue='localstorage',
+                                    durable=True, exclusive=False)
         self._channel.queue_bind(exchange='mydata', queue='localstorage')
 
     def store_results(self, results: Dict[str, VALUES]):
