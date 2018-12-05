@@ -190,6 +190,7 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
+@pytest.mark.filterwarnings("ignore:get_data")
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
     ref = mut.get_data(ds.conn, ds.table_name, [])
