@@ -1222,7 +1222,7 @@ def get_data(conn: ConnectionPlus,
 
 def get_parameter_data(conn: ConnectionPlus,
                        table_name: str,
-                       columns: List[str],
+                       columns: Sequence[str]=(),
                        start: Optional[int]=None,
                        end: Optional[int]=None) -> \
         Dict[str, Dict[str, np.ndarray]]:
@@ -1548,10 +1548,12 @@ def get_non_dependencies(conn: ConnectionPlus,
             maybe_independent.append(param.name)
         else:
             dependent.append(param.name)
-            dependencies.extend(param.depends_on)
+            dependencies.extend(param.depends_on.split(','))
 
     independent = set(maybe_independent) - set(dependencies)
-    return sorted(list(independent))
+    dependent = set(dependent)
+    result = independent.union(dependent)
+    return sorted(list(result))
 
 
 # Higher level Wrappers
