@@ -240,7 +240,7 @@ class GNUPlotFormat(Formatter):
             return labelstr.split()
         else:
             # fields *are* quoted (and escaped)
-            parts = re.split('"\s+"', labelstr[1:-1])
+            parts = re.split('"\\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
     def write(self, data_set, io_manager, location, force_write=False,

@@ -1,6 +1,11 @@
 import struct
 import logging
 import warnings
+import re
+from collections import namedtuple
+from collections import defaultdict
+
+from typing import Tuple
 
 import numpy as np
 import array as arr
@@ -13,6 +18,13 @@ from functools import wraps, WRAPPER_ASSIGNMENTS
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
+
+# conditionally import lomentum for support of lomentum type sequences
+try:
+    from lomentum.tools import is_subsequence, get_element_channel_ids
+    USE_LOMENTUM = True
+except ImportError:
+    USE_LOMENTUM = False
 
 
 log = logging.getLogger(__name__)
@@ -904,7 +916,7 @@ class Tektronix_AWG5014(VisaInstrument):
         been changed from their default value and put them in a
         dictionary that can easily be written into an awg file, so as
         to prevent said awg file from falling back to default values.
-        (See :meth:`~make_awg_file` and :meth:`qcodes.instrument_drivers.tektronix.AWG5014.Tektronix_AWG5014.AWG_FILE_FORMAT_CHANNEL`)
+        (See :meth:`~make_awg_file` and :meth:`~AWG_FILE_FORMAT_CHANNEL`)
         NOTE: This only works for settings changed via the corresponding
         QCoDeS parameter.
 
@@ -1022,6 +1034,152 @@ class Tektronix_AWG5014(VisaInstrument):
                                         addinputs[chan - 1]})
 
         return AWG_channel_cfg
+
+    @staticmethod
+    def parse_marker_channel_name(name: str)->Tuple[int, int]:
+        """
+        returns from the channel index and marker index from a marker
+        descriptor string e.g. '1M1'->(1,1)
+        """
+        res = re.match(r'^(?P<channel>\d+)M(?P<marker>\d+)$',
+                       name)
+        assert res is not None
+        MarkerDescriptor = namedtuple('MarkerDescriptor',
+                                      ('marker', 'channel'))
+        return MarkerDescriptor(int(res.group('marker')),
+                                int(res.group('channel')))
+
+    def make_send_and_load_awg_file_from_forged_sequence(
+            self, seq,
+            filename='customawgfile.awg',
+            preservechannelsettings=True):
+        """
+        Makes an awg file form a forged sequence as produced by
+        broadbean.sequence.Sequence.forge. The forged sequence is a dictionary
+        (see :attr:`fs_schmea <broadbean.sequence.fs_schmema>`) that does not
+        need to be created by broadbean.
+
+        Args:
+            seq: the sequence dictionary
+            filename: filename of the uploaded awg file.
+                See :meth:`~make_send_and_load_awg_file`
+            preservechannelsettings: see :meth:`~make_send_and_load_awg_file`
+
+        """
+        if not USE_LOMENTUM:
+            raise RuntimeError(
+                'The method "make_send_and_load_awg_file_from_forged_sequence" is '
+                ' only available with the `lomentum` module installed')
+        n_channels = 4
+        self.available_waveform_channels = list(range(1, n_channels+1))
+        self.available_marker_channels = [
+            f'{c}M{m}'
+            for c in self.available_waveform_channels
+            for m in [1, 2]]
+        self.available_channels = (self.available_waveform_channels +
+                                   self.available_marker_channels)
+
+        waveforms = []
+        m1s = []
+        m2s = []
+        # unfortunately the definitions of the sequence elements in terms of
+        # channel and step in :meth:`make_and_send_awg_file` and the forged
+        # sequence definition are transposed. Start by filling out after schema
+        # and transpose at the end.
+        # make...: [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+        # dict efectively: {elementid: {channelid: wfm}}
+
+        nreps = []
+        trig_waits = []
+        goto_states = []
+        jump_tos = []
+
+        # obtain list of channels defined in the first step
+        if len(seq) < 1:
+            # TODO: better error
+            raise RuntimeError('Sequences need to have at least one element')
+
+        # assume that the channels are the same on every element
+        provided_channels = get_element_channel_ids(seq[0])
+        used_waveform_channels = list(set(provided_channels).intersection(
+            set(self.available_waveform_channels)))
+        used_marker_channels = list(set(provided_channels).intersection(
+                set(self.available_marker_channels)))
+        associated_marker_channels = [
+            self.parse_marker_channel_name(name).channel
+            for name in used_marker_channels]
+        used_channels = list(
+            set(used_waveform_channels).union(set(associated_marker_channels)))
+
+        for i_elem, elem in enumerate(seq):
+            # TODO: add support for subsequences
+            assert not is_subsequence(elem)
+            datadict = elem['data']
+
+            # Split up the dictionary into two, one for the markers the other
+            # for the waveforms
+            step_waveforms = {}
+            step_markers = defaultdict(None), defaultdict(None)
+            for channel, data in datadict.items():
+                if channel in self.available_marker_channels:
+                    t = self.parse_marker_channel_name(channel)
+                    step_markers[t.marker-1][t.channel] = data
+                elif channel in self.available_waveform_channels:
+                    step_waveforms[channel] = data
+                else:
+                    raise RuntimeError(
+                        f'The channel with name {channel} as defined in '
+                        f'the element with no. {i_elem} is not an available '
+                        f'marker channel or waveform channel.\n'
+                        f'Available channels are: '
+                        f'{self.available_marker_channels} and '
+                        f'{self.available_waveform_channels}')
+
+            # create empty trace as template for filling traces with markers
+            # only and traces without markers
+            n_samples = None
+            waveform_keys = list(step_waveforms.keys())
+            marker_keys = tuple(list(step_markers[i].keys()) for i in range(2))
+            if len(waveform_keys) != 0:
+                n_samples = len(step_waveforms[waveform_keys[0]])
+            else:
+                for i in range(2):
+                    if len(marker_keys[i]) != 0:
+                        n_samples = len(step_markers[i][marker_keys[i][0]])
+                        break
+            if n_samples is None:
+                raise RuntimeError('It is not allowed to upload an element '
+                                   'without markers nor waveforms')
+            blank_trace = np.zeros(n_samples)
+
+            # I think this does might add some traces dynamically if they are
+            # not the same in all elements. Add check in the beginning
+            step_waveforms_list = [step_waveforms.get(key, blank_trace)
+                                   for key in used_channels]
+            step_markers_list = tuple([step_markers[i].get(key, blank_trace)
+                                       for key in used_channels]
+                                      for i in range(2))
+
+            waveforms.append(step_waveforms_list)
+            m1s.append(step_markers_list[0])
+            m2s.append(step_markers_list[1])
+            # sequencing
+            seq_opts = elem['sequencing']
+            nreps.append(seq_opts.get('nrep', 1))
+            trig_waits.append(seq_opts.get('trig_wait', 0))
+            goto_states.append(seq_opts.get('goto_state', 0))
+            jump_tos.append(seq_opts.get('jump_to', 0))
+        # transpose list of lists
+        waveforms = [list(x) for x in zip(*waveforms)]
+        m1s = [list(x) for x in zip(*m1s)]
+        m2s = [list(x) for x in zip(*m2s)]
+
+        self.make_send_and_load_awg_file(waveforms, m1s, m2s,
+                                         nreps, trig_waits,
+                                         goto_states, jump_tos,
+                                         channels=used_channels,
+                                         filename=filename,
+                                         preservechannelsettings=preservechannelsettings)
 
     def _generate_awg_file(self,
                            packed_waveforms, wfname_l, nrep, trig_wait,
@@ -1165,7 +1323,8 @@ class Tektronix_AWG5014(VisaInstrument):
         return awg_file
 
     @deprecate(alternative='make_awg_file, _generate_awg_file')
-    @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    @wraps(_generate_awg_file, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS
+                                              if v != '__name__'))
     def generate_awg_file(self, *args, **kwargs):
         return self._generate_awg_file(*args, **kwargs)
 
@@ -1184,7 +1343,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         if verbose:
             print('Writing to:',
-                  self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
+                  self.ask('MMEMory:CDIRectory?').replace('\n', '\\ '),
                   filename)
         # Header indicating the name and size of the file being send
         name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')
@@ -1482,7 +1641,8 @@ class Tektronix_AWG5014(VisaInstrument):
         return packed_wf
 
     @deprecate(reason='this function is for private use only.')
-    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS if v != '__name__'))
+    @wraps(_pack_waveform, assigned=tuple(v for v in WRAPPER_ASSIGNMENTS
+                                          if v != '__name__'))
     def pack_waveform(self, *args, **kwargs):
         return self._pack_waveform(*args, **kwargs)
 

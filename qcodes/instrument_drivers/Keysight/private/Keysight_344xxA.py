@@ -3,6 +3,7 @@
 from functools import partial
 import numpy as np
 import logging
+from typing import Tuple
 
 from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
@@ -418,7 +419,7 @@ class _Keysight_344xxA(VisaInstrument):
 
         self.NPLC.get()
 
-    def error(self) -> (int, str):
+    def error(self) -> Tuple[int, str]:
         """
         Return the first error message in the queue.
 

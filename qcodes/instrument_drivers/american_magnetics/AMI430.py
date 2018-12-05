@@ -330,10 +330,12 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
+        self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
         while self.ramping_state() == 'ramping':
             self._sleep(0.3)
         self._sleep(2.0)
         state = self.ramping_state()
+        self.log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
         if state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -488,7 +490,7 @@ class AMI430_3D(Instrument):
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.Iterable):
+        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
         else:
             raise ValueError("field limit should either be"
@@ -656,6 +658,14 @@ class AMI430_3D(Instrument):
             vals=Numbers()
         )
 
+        self.add_parameter(
+            'block_during_ramp',
+            set_cmd=None,
+            initial_value=True,
+            unit='',
+            vals=Bool()
+        )
+
     def _verify_safe_setpoint(self, setpoint_values):
 
         if repr(self._field_limit).isnumeric():
@@ -675,7 +685,7 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
-        log.debug("Checking whether fields can be set")
+        self.log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
         if not self._verify_safe_setpoint(values):
@@ -691,7 +701,7 @@ class AMI430_3D(Instrument):
 
         # Now that we know we can proceed, call the individual instruments
 
-        log.debug("Field values OK, proceeding")
+        self.log.debug("Field values OK, proceeding")
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
@@ -710,7 +720,8 @@ class AMI430_3D(Instrument):
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
-                instrument.set_field(value, perform_safety_check=False)
+                instrument.set_field(value, perform_safety_check=False,
+                                     block=self.block_during_ramp.get())
 
     def _request_field_change(self, instrument, value):
         """

@@ -11,11 +11,11 @@ def test_wrong_address():
     try:
         # wrong address
         keysight_sim = Keysight_34465A('keysight_34465A_sim',
-                                       address='GPIB::2::65535::INSTR',
+                                       address='GPIB::2::INSTR',
                                        visalib=visalib)
     except Exception as e:
         pass
     # right address
     keysight_sim = Keysight_34465A('keysight_34465A_sim',
-                                   address='GPIB::1::65535::INSTR',
+                                   address='GPIB::1::INSTR',
                                    visalib=visalib)
