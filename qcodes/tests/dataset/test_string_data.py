@@ -100,7 +100,7 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result(("p", "some text"))
     finally:
-        data_saver.dataset.conn.close()
+        test_set.dsi.conn.close()
 
 
 def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
@@ -121,7 +121,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     try:
         assert [['some text']] == test_set.get_data("p")
     finally:
-        test_set.conn.close()
+        test_set.dsi.conn.close()
 
 
 def test_list_of_strings(experiment):
@@ -145,4 +145,4 @@ def test_list_of_strings(experiment):
     try:
         assert [[item] for item in list_of_strings] == test_set.get_data("p")
     finally:
-        test_set.conn.close()
+        test_set.dsi.conn.close()
