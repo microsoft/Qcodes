@@ -1206,6 +1206,44 @@ def get_number_of_results(conn: ConnectionPlus, guid: str) -> int:
     return number_of_results
 
 
+def _build_data_query(table_name: str,
+                      columns: List[str],
+                      start: Optional[int]=None,
+                      end: Optional[int]=None,
+                      ) -> str:
+    """
+    Build data query from given columns of a given table.
+
+    Allows to specify a range of rows (1-based indexing, both ends are
+    included).
+
+    Args:
+        table_name: name of the table
+        columns: list of columns
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
+
+    Returns:
+        an sql query for the data
+    """
+    _columns = ",".join(columns)
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+    return query
+
+
 def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
@@ -1227,23 +1265,7 @@ def get_data(conn: ConnectionPlus,
     Returns:
         the data requested in the format of list of rows of values
     """
-    _columns = ",".join(columns)
-
-    query = f"""
-            SELECT {_columns}
-            FROM "{table_name}"
-            """
-
-    start_specified = start is not None
-    end_specified = end is not None
-
-    where = ' WHERE' if start_specified or end_specified else ''
-    start_condition = f' rowid >= {start}' if start_specified else ''
-    end_condition = f' rowid <= {end}' if end_specified else ''
-    and_ = ' AND' if start_specified and end_specified else ''
-
-    query += where + start_condition + and_ + end_condition
-
+    query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
