@@ -1,7 +1,6 @@
 import itertools
 from copy import copy
 import re
-from typing import Sequence, Tuple
 
 import pytest
 import numpy as np
@@ -27,6 +26,8 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
+
+from .helper_functions import verify_data_dict
 
 n_experiments = 0
 
@@ -774,18 +775,25 @@ class TestGetData:
 
 
 def test_get_parameter_data(scalar_dataset):
-    parameter_test_helper(scalar_dataset)
+    ds = scalar_dataset
+    input_names = ['param_3']
 
+    data = ds.get_parameter_data(*input_names)
+
+    assert len(data.keys()) == len(input_names)
+
+    expected_names = {}
+    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
+                                 'param_3']
+    expected_shapes = {}
+    expected_shapes['param_3'] = [(10**3, )]*4
+
+    verify_data_dict(data, input_names, expected_names, expected_shapes)
 
 def test_get_array_parameter_data(array_dataset):
-    paramspecs = array_dataset.paramspecs
-    types = [param.type for param in paramspecs.values()]
-
-    if 'array' not in types:
-        parameter_test_helper(array_dataset)
 
     inputnames = ['testparameter']
-    data = array_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    data = array_dataset.get_parameter_data(*inputnames)
     assert len(data.keys()) == len(inputnames)
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'this_setpoint']
@@ -799,11 +807,8 @@ def test_get_multi_parameter_data(multi_dataset):
     paramspecs = multi_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    if 'array' not in types:
-        parameter_test_helper(multi_dataset)
-
     inputnames = ['this', 'that']
-    data = multi_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    data = multi_dataset.get_parameter_data(*inputnames)
     assert len(data.keys()) == len(inputnames)
     expected_names = {}
     expected_names['this'] = ['this', 'this_setpoint', 'that_setpoint']
@@ -822,11 +827,8 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
     paramspecs = array_in_scalar_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    if 'array' not in types:
-        parameter_test_helper(array_in_scalar_dataset)
-
     inputnames = ['testparameter']
-    data = array_in_scalar_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    data = array_in_scalar_dataset.get_parameter_data(*inputnames)
     assert len(data.keys()) == len(inputnames)
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'scalarparam',
@@ -843,11 +845,8 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
     paramspecs = array_in_str_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    if 'array' not in types:
-        parameter_test_helper(array_in_str_dataset)
-
     inputnames = ['testparameter']
-    data = array_in_str_dataset.get_data_of_param_and_deps_as_columns(*inputnames)
+    data = array_in_str_dataset.get_parameter_data(*inputnames)
     assert len(data.keys()) == len(inputnames)
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'textparam',
@@ -895,19 +894,3 @@ def parameter_test_helper(ds):
             elif isinstance(v_ref, str):
                 assert isinstance(v_test, np.str_)
                 assert v_ref == v_test
-
-
-def verify_data_dict(data, parameter_names, expected_names,
-                     expected_shapes):
-    for param in parameter_names:
-        innerdata = data[param]
-        verify_data_dict_for_single_param(innerdata,
-                                          expected_names[param],
-                                          expected_shapes[param])
-
-
-def verify_data_dict_for_single_param(datadict,
-                                      names: Sequence[str],
-                                      shapes: Sequence[Tuple[int, ...]]):
-    for name, shape in zip(names, shapes):
-        assert datadict[name].shape == shape

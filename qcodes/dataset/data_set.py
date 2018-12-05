@@ -38,8 +38,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         update_run_description,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
-                                        ConnectionPlus,
-                                        get_data_of_param_and_deps_as_columns)
+                                        ConnectionPlus)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -809,7 +808,7 @@ class DataSet(Sized):
             self,
             *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, numpy.ndarray]:
+            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
         """
         Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a dictionary of numpy arrays where the key,
@@ -835,19 +834,7 @@ class DataSet(Sized):
         """
         valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
-
-    def get_data_of_param_and_deps_as_columns(
-            self,
-            *params: Union[str, ParamSpec, _BaseParameter],
-            start: Optional[int] = None,
-            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
-        valid_param_names = self._validate_parameters(*params)
-        return get_data_of_param_and_deps_as_columns(self.conn,
-                                                     self.table_name,
-                                                     valid_param_names,
-                                                     start, end)
-
+                                  start, end)
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
