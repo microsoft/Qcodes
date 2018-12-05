@@ -826,7 +826,9 @@ class DataSet(Sized):
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
             start: start value of selection range (by result count); ignored
                 if None
             end: end value of selection range (by results count); ignored if
