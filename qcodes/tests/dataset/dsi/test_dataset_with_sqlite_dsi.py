@@ -321,6 +321,76 @@ def test_get_data(experiment, request, start_end):
             np.testing.assert_allclose(act_param, exp_param)
 
 
+def test_get_values(experiment, request):
+    """
+    Test get_values of DataSet, the data should come out as described in the
+    method's docstring, and as the original implementation that used get_values
+    function from sqlite_base.
+    """
+    conn = experiment.conn
+
+    control_conn = sqlite.connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
+
+    # Initialize a dataset with some results
+
+    ds = DataSet(guid=None, conn=conn)
+
+    x_spec = ParamSpec('x', 'numeric')
+    y_spec = ParamSpec('y', 'array')
+    ds.add_parameter(x_spec)
+    ds.add_parameter(y_spec)
+
+    all_x = []
+    all_y = []
+
+    x_val_1 = 42
+    x_val_2 = None
+    y_val_1 = None
+    y_val_2 = np.random.random_sample(3)
+    all_x.append([x_val_1])
+    all_x.append([x_val_2])
+    all_y.append([y_val_1])
+    all_y.append([y_val_2])
+    ds.add_results([{'x': x_val_1, 'y': y_val_1},
+                    {'x': x_val_2, 'y': y_val_2}])
+
+    # assert that data has been added to the database
+
+    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    assert actual_x == all_x
+
+    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    assert len(actual_y) == len(all_y)
+    for act_y, al_y in zip(actual_y, all_y):
+        assert len(act_y) == len(al_y)
+        for ac_y, a_y in zip(act_y, al_y):
+            if isinstance(a_y, np.ndarray):
+                np.testing.assert_allclose(ac_y, a_y)
+            else:
+                assert ac_y == a_y
+
+    # Now get data using DataSet's get_values
+
+    actual_x = ds.get_values('x')
+    expected_x = [item for item in all_x
+                  for subitem in item
+                  if subitem is not None]
+    assert actual_x == expected_x
+
+    sqlite_actual_x = sqlite.get_values(control_conn, ds.dsi.table_name, 'x')
+    assert actual_x == sqlite_actual_x
+
+    actual_y = ds.get_values('y')
+    # `is not` removes a dimension in this particular case, hence extra `[]`
+    # around the `all_y[...]` expression
+    expected_y = [all_y[all_y is not None]]
+    np.testing.assert_allclose(actual_y, expected_y)
+
+    sqlite_actual_y = sqlite.get_values(control_conn, ds.dsi.table_name, 'y')
+    np.testing.assert_allclose(actual_y, sqlite_actual_y)
+
+
 def test_dataset_state_in_different_cases(experiment):
     """
     Test that DataSet's `_started`, `completed`, `pristine`, `running`

@@ -685,7 +685,14 @@ class DataSet(Sized):
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        values = get_values(self.conn, self.table_name, param_name)
+        # This is a naive implementation, and should probably substituted by
+        # a call to dsi.retrieve_results once that is implemented
+        values = self.get_data(param_name)
+
+        # Skipping the "None" values, for example, "NULL"s from SQLite
+        values = [val for val in values
+                  for subval in val
+                  if subval is not None]
 
         return values
 
