@@ -1541,7 +1541,7 @@ def get_non_dependencies(conn: ConnectionPlus,
     parameters = get_parameters(conn, run_id)
     maybe_independent = []
     dependent = []
-    dependencies = []
+    dependencies: List[str] = []
 
     for param in parameters:
         if len(param.depends_on) == 0:
@@ -1550,9 +1550,9 @@ def get_non_dependencies(conn: ConnectionPlus,
             dependent.append(param.name)
             dependencies.extend(param.depends_on.split(','))
 
-    independent = set(maybe_independent) - set(dependencies)
-    dependent = set(dependent)
-    result = independent.union(dependent)
+    independent_set = set(maybe_independent) - set(dependencies)
+    dependent_set = set(dependent)
+    result = independent_set.union(dependent_set)
     return sorted(list(result))
 
 
