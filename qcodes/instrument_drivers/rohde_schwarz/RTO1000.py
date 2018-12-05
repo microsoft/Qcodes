@@ -209,64 +209,64 @@ class ScopeMeasurement(InstrumentChannel):
                         )
 
         self.add_parameter('enable',
-                           label='Measurement {} enable'.format(meas_nr),
-                           set_cmd='MEASurement{}:ENABle {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} enable',
+                           set_cmd=f'MEASurement{meas_nr}:ENABle {{}}',
                            vals=vals.Enum('ON', 'OFF'),
                            docstring='Switches the mesurment on or off')
 
         self.add_parameter('source',
-                           label='Measurement {} source'.format(meas_nr),
-                           set_cmd='MEASurement{}:SOURce {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} source',
+                           set_cmd=f'MEASurement{meas_nr}:SOURce {{}}',
                            vals=self.sources,
                            docstring='Set the source of a measurement if the ' \
                                      'measurement only needs one source')
 
         self.add_parameter('source_first',
-                           label='Measurement {} first source'.format(meas_nr),
-                           set_cmd='MEASurement{}:FSRC {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} first source',
+                           set_cmd=f'MEASurement{meas_nr}:FSRC {{}}',
                            vals=self.sources,
                            docstring='Set the first source of a measurement if the ' \
                                      'measurement only needs mutliple sources')
 
         self.add_parameter('source_second',
-                           label='Measurement {} second source'.format(meas_nr),
-                           set_cmd='MEASurement{}:SSRC {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} second source',
+                           set_cmd=f'MEASurement{meas_nr}:SSRC {{}}',
                            vals=self.sources,
                            docstring='Set the second source of a measurement if the ' \
                                      'measurement only needs mutliple sources')
 
         self.add_parameter('category',
-                           label='Measurement {} category'.format(meas_nr),
-                           set_cmd='MEASurement{}:CATegory {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} category',
+                           set_cmd=f'MEASurement{meas_nr}:CATegory {{}}',
                            vals=self.categories,
                            docstring='Set the category of a measurement')
 
         self.add_parameter('main',
-                           label='Measurement {} main'.format(meas_nr),
-                           set_cmd='MEASurement{}:MAIN {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} main',
+                           set_cmd=f'MEASurement{meas_nr}:MAIN {{}}',
                            vals=self.meas_type,
                            docstring='Set the main of a measurement')
 
         self.add_parameter('statistics_enable',
-                           label='Measurement {} enable statistics'.format(meas_nr),
-                           set_cmd='MEASurement{}:STATistics:ENABle {{}}'.format(meas_nr),
+                           label=f'Measurement {meas_nr} enable statistics',
+                           set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle {{}}',
                            vals=vals.Enum('ON', 'OFF'),
                            docstring='Switches the mesurment on or off')
 
         self.add_parameter('clear',
-                           label='Measurement {} clear statistics'.format(meas_nr),
-                           set_cmd='MEASurement{}:CLEar'.format(meas_nr),
+                           label=f'Measurement {meas_nr} clear statistics',
+                           set_cmd=f'MEASurement{meas_nr}:CLEar',
                            docstring='Clears/reset measurement')
 
         self.add_parameter('event_count',
-                           label='Measurement {} number of events'.format(meas_nr),
-                           get_cmd='MEASurement{}:RESult:EVTCount?'.format(meas_nr),
+                           label=f'Measurement {meas_nr} number of events',
+                           get_cmd=f'MEASurement{meas_nr}:RESult:EVTCount?',
                            get_parser=int,
                            docstring='Number of measurement results in the long-term measurement')
 
         self.add_parameter('result_avg',
-                           label='Measurement {} averages'.format(meas_nr),
-                           get_cmd='MEASurement{}:RESult:AVG?'.format(meas_nr),
+                           label=f'Measurement {meas_nr} averages',
+                           get_cmd=f'MEASurement{meas_nr}:RESult:AVG?',
                            get_parser=float,
                            docstring='Average of the long-term measurement results')
 
@@ -512,9 +512,7 @@ class RTO1000(VisaInstrument):
                            label='Trigger mode',
                            set_cmd='TRIGger:MODE {}',
                            get_cmd='TRIGger1:SOURce?',
-                           val_mapping={'AUTO': 'AUTO',
-                                        'NORMAL': 'NORMal',
-                                        'FREERUN': 'FREerun'},
+                           vals=vals.Enum('AUTO', 'NORMAL', 'FREERUN'),
                            docstring='Sets the trigger mode which determines the ' \
                            ' behaviour of the instrument if no trigger occurs.\n'    \
                            'Options: AUTO, NORMAL, FREERUN.',
@@ -672,9 +670,9 @@ class RTO1000(VisaInstrument):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
 
-        for meas in range(1, self.num_meas+1):
-            measCh = ScopeMeasurement(self, 'measurement{}'.format(meas), meas)
-            self.add_submodule('meas{}'.format(meas), measCh)
+        for measId in range(1, self.num_meas+1):
+            measCh = ScopeMeasurement(self, f'measurement{measId}', measId)
+            self.add_submodule(f'meas{measId}', measCh)
 
         self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
