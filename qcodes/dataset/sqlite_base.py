@@ -2292,7 +2292,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
     for tag, val in metadata.items():
         if val is None:
             raise ValueError(f'Tag {tag} has value None. '
-                             ' That is not a valid metadata value!')
+                             'That is not a valid metadata value!')
     for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
