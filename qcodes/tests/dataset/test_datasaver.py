@@ -105,4 +105,4 @@ def test_saving_numeric_values_as_text(numeric_type):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, numeric_type(2)))
     finally:
-        data_saver.dataset.conn.close()
+        data_saver.dataset.dsi.conn.close()
