@@ -66,6 +66,10 @@ def test_init_and_create_new_run(experiment):
     assert dsi.run_id is None
     assert experiment.path_to_db == dsi.path_to_db
     assert not(dsi.run_exists())
+    assert None is dsi.exp_id
+    assert None is dsi.name
+    assert None is dsi.table_name
+    assert None is dsi.counter
 
     # That was the bare __init__. Now create the run
     dsi.create_run()
@@ -75,6 +79,10 @@ def test_init_and_create_new_run(experiment):
     runs_rows = get_runs(conn)
     assert 1 == len(runs_rows)
     assert 1 == runs_rows[0]['run_id']
+    assert experiment.exp_id == dsi.exp_id
+    assert runs_rows[0]['name'] == dsi.name
+    assert runs_rows[0]['result_table_name'] == dsi.table_name
+    assert runs_rows[0]['result_counter'] == dsi.counter
 
     md = dsi.retrieve_meta_data()
 
@@ -87,6 +95,10 @@ def test_init_and_create_new_run(experiment):
     assert 'dataset' == md.name
     assert experiment.name == md.exp_name
     assert experiment.sample_name == md.sample_name
+    assert experiment.exp_id == dsi.exp_id
+    assert md.name == dsi.name
+    assert 'dataset-1-1' == dsi.table_name
+    assert 1 == dsi.counter
 
     pytest.xfail('more assertions on the fact that run is created are needed')
 
@@ -105,6 +117,10 @@ def test_init__load_existing_run(experiment):
     assert run_id is 1
     assert experiment.path_to_db == dsi.path_to_db
     assert dsi.run_id is None
+    assert None is dsi.exp_id
+    assert None is dsi.name
+    assert None is dsi.table_name
+    assert None is dsi.counter
 
     # that was the bare init, now load the run
 
@@ -120,6 +136,10 @@ def test_init__load_existing_run(experiment):
     assert name == md.name
     assert experiment.name == md.exp_name
     assert experiment.sample_name == md.sample_name
+    assert experiment.exp_id == dsi.exp_id
+    assert name == dsi.name
+    assert name+'-1-1' == dsi.table_name
+    assert 1 == dsi.counter
 
     pytest.xfail(
         'more assertions needed for the fact that we loaded existing runs')
