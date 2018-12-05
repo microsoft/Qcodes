@@ -22,6 +22,7 @@ from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+from qcodes.tests.common import retry_until_does_not_throw
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -589,8 +590,13 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
         for x, y in zip(given_xvals, given_yvals):
             datasaver.add_result((DAC.ch1, x), (DMM.v1, y))
 
-    assert xvals == list(given_xvals)
-    assert yvals == list(given_yvals)
+    @retry_until_does_not_throw(
+                exception_class_to_expect=AssertionError, delay=0, tries=30)
+    def assert_x_y_vals():
+        assert xvals == list(given_xvals)
+        assert yvals == list(given_yvals)
+
+    assert_x_y_vals()
 
 
 # There is no way around it: this test is slow. We test that write_period
