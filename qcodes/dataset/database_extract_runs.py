@@ -205,7 +205,9 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                             target_conn,
                             dataset.dsi.table_name,
                             target_table_name)
-    mark_run_complete(target_conn, target_run_id)
+    mark_run_complete(target_conn,
+                      dataset.completed_timestamp_raw,
+                      target_run_id)
     _rewrite_timestamps(target_conn,
                         target_run_id,
                         dataset.run_timestamp_raw,
