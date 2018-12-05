@@ -813,7 +813,10 @@ class DataSet(Sized):
         Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a dictionary of numpy arrays where the key,
         is given by the respective parameter name and the value arrays represent
-        the data points. This method returns the transpose of `get_data`.
+        the data points. If some of the parameters are stored as
+        arrays the remaining parameters are expanded to the same shape as these.
+        Apart from this expansion this method returns the transpose of
+        `get_data`.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
@@ -829,8 +832,8 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary of numpy arrays containing the data points of type
-            numeric, array or string.
+            Dictionary from requested parameters to Dict of numpy arrays
+            containing the data points of type numeric, array or string.
         """
         valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name, valid_param_names,
