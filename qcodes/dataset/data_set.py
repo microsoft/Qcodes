@@ -473,6 +473,7 @@ class DataSet(Sized):
         desc = self.description
         desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
         self._description = desc
+
         self.dsi.store_meta_data(run_description=desc)
 
     def get_parameters(self) -> SPECS:

@@ -116,17 +116,7 @@ class SqliteStorageInterface(DataStorageInterface):
         self.counter = get_result_counter_from_runid(self.conn, self.run_id)
 
     def prepare_for_storing_results(self) -> None:
-        self._set_columns_of_results_table()
-
-    def _set_columns_of_results_table(self) -> None:
-        """
-        Create columns in the results table for the values that are going
-        to be added with store_results
-        """
-        md = self.retrieve_meta_data()
-        paramspecs = md.run_description.interdeps.paramspecs
-
-        add_parameter(self.conn, self.table_name, *paramspecs)
+        pass
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
