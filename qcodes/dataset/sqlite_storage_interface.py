@@ -261,7 +261,8 @@ class SqliteStorageInterface(DataStorageInterface):
         Get the relevant info from the experiments table
         """
         sql = """
-              SELECT sample_name, experiments.name, start_time, end_time
+              SELECT sample_name, experiments.name, start_time, end_time,
+                  experiments.exp_id
               FROM experiments
               JOIN runs ON runs.exp_id = experiments.exp_id
               WHERE runs.run_id = ?
