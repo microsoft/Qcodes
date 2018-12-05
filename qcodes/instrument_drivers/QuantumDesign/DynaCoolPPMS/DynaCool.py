@@ -17,7 +17,7 @@ class DynaCool(VisaInstrument):
 
     Args:
         name: The name used internaly by QCoDeS for this driver
-        address: The VISA ressource name.
+        address: The VISA resource name.
           E.g. 'TCPIP0::127.0.0.1::5000::SOCKET' with the appropriate IP
           address instead of 127.0.0.1. Note that the port number is
           hard-coded into the server.
