@@ -1548,7 +1548,7 @@ def get_non_dependencies(conn: ConnectionPlus,
             maybe_independent.append(param.name)
         else:
             dependent.append(param.name)
-            dependencies.extend(param.depends_on.split(','))
+            dependencies.extend(param.depends_on.split(', '))
 
     independent_set = set(maybe_independent) - set(dependencies)
     dependent_set = set(dependent)
