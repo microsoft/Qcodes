@@ -137,17 +137,18 @@ def test_get_dependents(experiment):
 
 
 def test_column_in_table(dataset):
-    assert mut.is_column_in_table(dataset.conn, "runs", "run_id")
-    assert not mut.is_column_in_table(dataset.conn, "runs", "non-existing-column")
+    assert mut.is_column_in_table(dataset.dsi.conn, "runs", "run_id")
+    assert not mut.is_column_in_table(
+        dataset.dsi.conn, "runs", "non-existing-column")
 
 
 def test_run_exist(dataset):
-    assert mut.run_exists(dataset.conn, dataset.run_id)
-    assert not mut.run_exists(dataset.conn, dataset.run_id + 1)
+    assert mut.run_exists(dataset.dsi.conn, dataset.run_id)
+    assert not mut.run_exists(dataset.dsi.conn, dataset.run_id + 1)
 
 
 def test_get_last_run(dataset):
-    assert dataset.run_id == mut.get_last_run(dataset.conn, dataset.exp_id)
+    assert dataset.run_id == mut.get_last_run(dataset.dsi.conn, dataset.exp_id)
 
 
 def test_get_last_run_no_runs(experiment):
@@ -169,10 +170,10 @@ def test_update_runs_description(dataset):
 
     for idesc in invalid_descs:
         with pytest.raises(ValueError):
-            mut.update_run_description(dataset.conn, dataset.run_id, idesc)
+            mut.update_run_description(dataset.dsi.conn, dataset.run_id, idesc)
 
     desc = RunDescriber(InterDependencies()).to_json()
-    mut.update_run_description(dataset.conn, dataset.run_id, desc)
+    mut.update_run_description(dataset.dsi.conn, dataset.run_id, desc)
 
 
 def test_runs_table_columns(empty_temp_db):
