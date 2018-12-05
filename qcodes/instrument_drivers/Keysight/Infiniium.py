@@ -40,6 +40,10 @@ class RawTrace(ArrayParameter):
         self._channel = channel
         self._instrument = instrument
 
+        self.npts: int = None 
+        self.xorigin: float = None
+        self.xincrem: float = None 
+
     def prepare_curvedata(self):
         """
         Prepare the scope for returning curve data
@@ -57,22 +61,22 @@ class RawTrace(ArrayParameter):
         # step size
         self.xincrem = float(instr.ask(":WAVeform:XINCrement?"))
         # calculate set points
-        xdata = np.linspace(self.xorigin,
-                            self.npts * self.xincrem + self.xorigin, self.npts)
+        xdata = np.linspace(
+            self.xorigin, self.npts * self.xincrem + self.xorigin, self.npts)
 
         # set setpoints
         self.setpoints = (tuple(xdata), )
         self.shape = (self.npts, )
 
         # make this on a per channel basis?
-        self._instrument._parent.trace_ready = True
+        self._instrument.root_instrument.trace_ready = True
 
     def get_raw(self):
-        # when get is called the setpoints have to be known already
+        # when get is called the set points have to be known already
         # (saving data issue). Therefor create additional prepare function that
         # queries for the size.
         # check if already prepared
-        if not self._instrument._parent.trace_ready:
+        if not self._instrument.root_instrument.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for acquiring a trace.')
 
@@ -85,10 +89,10 @@ class RawTrace(ArrayParameter):
         # TODO: check number of points
         # check if requested number of points is less than 500 million
 
-        # get intrument state
+        # get instrument state
         state = instr.ask(':RSTate?')
         # realtime mode: only one trigger is used
-        instr._parent.acquire_mode('RTIMe')
+        instr.root_instrument.acquire_mode('RTIMe')
 
         # acquire the data
         # ---------------------------------------------------------------------
@@ -100,24 +104,25 @@ class RawTrace(ArrayParameter):
         # ---------------------------------------------------------------------
 
         # select the channel from which to read
-        instr._parent.data_source('CHAN{}'.format(self._channel))
-        # specifiy the data format in which to read
+        instr.root_instrument.data_source('CHAN{}'.format(self._channel))
+        # specifically the data format in which to read
         instr.write(':WAVeform:FORMat WORD')
         instr.write(":waveform:byteorder LSBFirst")
         # streaming is only required for data > 1GB
         instr.write(':WAVeform:STReaming OFF')
 
         # request the actual transfer
-        data = instr._parent.visa_handle.query_binary_values(
+        data = instr.root_instrument.visa_handle.query_binary_values(
             'WAV:DATA?', datatype='h', is_big_endian=False,
             expect_termination=False)
         # the Infiniium does not include an extra termination char on binary
         # messages so we set expect_termination to False
 
         if len(data) != self.shape[0]:
-            raise TraceSetPointsChanged('{} points have been aquired and {} \
+            raise TraceSetPointsChanged('{} points have been acquired and {} \
             set points have been prepared in \
             prepare_curvedata'.format(len(data), self.shape[0]))
+        
         # check x data scaling
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
@@ -313,18 +318,6 @@ class InfiniiumChannel(InstrumentChannel):
                            get_parser=float
                            )
 
-        # scale and range are interdependent, when setting one, invalidate the
-        # the other.
-        # Scale is commented out for this reason
-        # self.add_parameter(name='scale',
-        #                    label='Channel {} scale'.format(channel),
-        #                    unit='V/div',
-        #                    set_cmd='CHAN{}:SCAL {{}}'.format(channel),
-        #                    get_cmd='CHAN{}:SCAL?'.format(channel),
-        #                    get_parser=float,
-        #                    vals=vals.Numbers(0,100)  # TODO: upper limit?
-        #                    )
-
         self.add_parameter(name='range',
                            label='Channel {} range'.format(channel),
                            unit='V',
@@ -387,18 +380,6 @@ class Infiniium(VisaInstrument):
         # the manual (Infiniium prog guide) for an equally infiniium list.
 
         # time base
-
-        # timebase_scale is commented out for same reason as channel scale
-        # use range instead
-        # self.add_parameter('timebase_scale',
-        #                    label='Scale of the one time devision',
-        #                    unit='s/Div',
-        #                    get_cmd=':TIMebase:SCALe?',
-        #                    set_cmd=':TIMebase:SCALe {}',
-        #                    vals=Numbers(),
-        #                    get_parser=float,
-        #                    )
-
         self.add_parameter('timebase_range',
                            label='Range of the time axis',
                            unit='s',
@@ -436,12 +417,12 @@ class Infiniium(VisaInstrument):
                            get_cmd=':TRIGger:EDGE:SOURce?',
                            set_cmd=':TRIGger:EDGE:SOURce {}',
                            vals=Enum(*(
-                               ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['CHAN{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['DIGital{}'.format(i) for i in range(16 + 1)] +
-                               ['DIG{}'.format(i) for i in range(16 + 1)] +
+                               [f'CHANnel{i}' for i in range(1, 5)] +
+                               [f'CHAN{i}'  for i in range(1, 5)] +
+                               [f'DIGital{i}'  for i in range(17)] +
+                               [f'DIG{i}'  for i in range(17)] +
                                ['AUX', 'LINE']))
-                           )  # add enum for case insesitivity
+                           )  # add enum for case insensitivity
         self.add_parameter('trigger_edge_slope',
                            label='slope of the edge trigger',
                            get_cmd=':TRIGger:EDGE:SLOPe?',
@@ -456,7 +437,7 @@ class Infiniium(VisaInstrument):
                            get_parser=float,
                            vals=Numbers(),
                            )
-        # Aquisition
+        # Acquisition
         # If sample points, rate and timebase_scale are set in an
         # incomensurate way, the scope only displays part of the waveform
         self.add_parameter('acquire_points',
@@ -476,24 +457,24 @@ class Infiniium(VisaInstrument):
                            get_parser=float
                            )
 
-        # this parameter gets used internally for data aquisition. For now it
+        # this parameter gets used internally for data acquisition. For now it
         # should not be used manually
         self.add_parameter('data_source',
                            label='Waveform Data source',
                            get_cmd=':WAVeform:SOURce?',
                            set_cmd=':WAVeform:SOURce {}',
-                           vals = Enum( *(\
-                                ['CHANnel{}'.format(i) for i in range(1, 4+1)]+\
-                                ['CHAN{}'.format(i) for i in range(1, 4+1)]+\
-                                ['DIFF{}'.format(i) for i in range(1, 2+1)]+\
-                                ['COMMonmode{}'.format(i) for i in range(3, 4+1)]+\
-                                ['COMM{}'.format(i) for i in range(3, 4+1)]+\
-                                ['FUNCtion{}'.format(i) for i in range(1, 16+1)]+\
-                                ['FUNC{}'.format(i) for i in range(1, 16+1)]+\
-                                ['WMEMory{}'.format(i) for i in range(1, 4+1)]+\
-                                ['WMEM{}'.format(i) for i in range(1, 4+1)]+\
-                                ['BUS{}'.format(i) for i in range(1, 4+1)]+\
-                                ['HISTogram', 'HIST', 'CLOCK']+\
+                           vals=Enum(*(
+                                [f'CHANnel{i}' for i in range(1, 5)] +
+                                [f'CHAN{i}' for i in range(1, 5)] +
+                                [f'DIFF{i}' for i in range(1, 3)] +
+                                [f'COMMonmode{i}' for i in range(3, 5)] +
+                                [f'COMM{i}' for i in range(3, 5)] +
+                                [f'FUNCtion{i}' for i in range(1, 17)] +
+                                [f'FUNC{i}' for i in range(1, 17)] +
+                                [f'WMEMory{i}' for i in range(1, 5)] +
+                                [f'WMEM{i}' for i in range(1, 5)] +
+                                [f'BUS{i}' for i in range(1, 5)] +
+                                ['HISTogram', 'HIST', 'CLOCK'] +
                                 ['MTRend', 'MTR']))
                            )
 
