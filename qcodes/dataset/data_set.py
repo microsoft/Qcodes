@@ -38,7 +38,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         update_run_description,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
-                                        ConnectionPlus)
+                                        ConnectionPlus,
+                                        get_non_dependencies)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -835,7 +836,11 @@ class DataSet(Sized):
             Dictionary from requested parameters to Dict of numpy arrays
             containing the data points of type numeric, array or string.
         """
-        valid_param_names = self._validate_parameters(*params)
+        if len(params) == 0:
+            valid_param_names = get_non_dependencies(self.conn,
+                                                     self.run_id)
+        else:
+            valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name, valid_param_names,
                                   start, end)
 
