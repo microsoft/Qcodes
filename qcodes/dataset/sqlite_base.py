@@ -1210,7 +1210,7 @@ def get_data(conn: ConnectionPlus,
     if len(columns) == 0:
         warnings.warn(
             'get_data: requested data without specifying parameters/columns.'
-            'Returning empyt list.'
+            'Returning empty list.'
         )
         return [[]]
     query = _build_data_query(table_name, columns, start, end)
