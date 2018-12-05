@@ -9,7 +9,7 @@ from .data_storage_interface import (
 
 class RabbitMQStorageInterface(DataStorageInterface):
 
-    def __init__(self, guid: str, ds):
+    def __init__(self, guid: str):
         super().__init__(guid)
         self._connection = pika.BlockingConnection(
             pika.ConnectionParameters('localhost'))
@@ -34,4 +34,3 @@ class RabbitMQStorageInterface(DataStorageInterface):
                                   # todo this should include the chunk id
                                   headers={'guid': self.guid},
                                   delivery_mode=2))
-
