@@ -1414,7 +1414,7 @@ def test_load_legacy_files_2D():
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == 'numeric'
-    snapshot = json.loads(data.get_metadata('snapshot'))
+    snapshot = data.snapshot
     assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
                                              'formatter', 'io', 'location',
                                              'loop', 'station']
@@ -1440,7 +1440,7 @@ def test_load_legacy_files_1D():
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == 'numeric'
-    snapshot = json.loads(data.get_metadata('snapshot'))
+    snapshot = data.snapshot
     assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
                                              'formatter', 'io', 'location',
                                              'loop', 'station']
