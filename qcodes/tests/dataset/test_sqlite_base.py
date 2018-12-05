@@ -21,7 +21,8 @@ from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
+    standalone_parameters_dataset
 from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
 # pylint: enable=unused-import
@@ -215,6 +216,14 @@ def test_get_parameter_data(scalar_dataset):
     expected_shapes['param_3'] = [(10**3, )]*4
 
     verify_data_dict(data, input_names, expected_names, expected_shapes)
+
+
+def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
+    ds = standalone_parameters_dataset
+    params = mut.get_non_dependencies(ds.conn,
+                                      ds.run_id)
+    assert params == ['param_0', 'param_1', 'param_2']
+
 
 def test_is_run_id_in_db(empty_temp_db):
     conn = mut.connect(get_DB_location())

@@ -104,3 +104,25 @@ def array_in_str_dataset(experiment, request):
         yield datasaver.dataset
     finally:
         datasaver.dataset.conn.close()
+
+@pytest.fixture
+def standalone_parameters_dataset(dataset):
+    n_params = 3
+    n_rows = 10**3
+    params_indep = [ParamSpec(f'param_{i}',
+                              'numeric',
+                              label=f'param_{i}',
+                              unit='V')
+                    for i in range(n_params)]
+
+    params = params_indep + [ParamSpec(f'param_{n_params}',
+                                       'numeric',
+                                       label=f'param_{n_params}',
+                                       unit='Ohm',
+                                       depends_on=params_indep[0:1])]
+    for p in params:
+        dataset.add_parameter(p)
+    dataset.add_results([{p.name: np.random.rand(1)[0] for p in params}
+                         for _ in range(n_rows)])
+    dataset.mark_complete()
+    yield dataset
