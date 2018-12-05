@@ -371,7 +371,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     # and ought to be the same dataset as its "ancestor"
     target_ds = DataSet(conn=target_conn, run_id=1)
 
-    assert target_ds.table_name == "customname-1-1"
+    assert target_ds.dsi.table_name == "customname-1-1"
     assert target_ds.the_same_dataset_as(source_ds_2_2)
 
 
