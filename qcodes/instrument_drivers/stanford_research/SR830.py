@@ -5,6 +5,8 @@ from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings
 
+from typing import Tuple
+
 
 class ChannelBuffer(ArrayParameter):
     """
@@ -386,7 +388,7 @@ class SR830(VisaInstrument):
                            get_cmd='OUTP? 4',
                            get_parser=float,
                            unit='deg')
-
+        
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -472,6 +474,115 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
+    
+    
+    SNAP_PARAMETERS = {
+            'x': '1',   
+            'y': '2',  
+            'r': '3', 
+            'p': '4',   
+        'phase': '4',  
+           'θ' : '4',
+         'aux1': '5',  
+         'aux2': '6',   
+         'aux3': '7',  
+         'aux4': '8',  
+         'freq': '9',   
+          'ch1': '10',
+          'ch2': '11'  
+    }
+    
+    def snap(self, *parameters: str) -> Tuple[float, ...]:
+        """
+        Get between 2 and 6 parameters at a single instant. This provides a 
+        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, 
+        the aux inputs 1-4, frequency, or what is currently displayed on 
+        channels 1 and 2.
+
+        Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
+        Snap is important when the time constant is very short, a time constant
+        less than 100 ms.
+
+        Args:
+            *parameters
+                From 2 to 6 strings of names of parameters for which the values
+                are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
+                'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
+            
+        Returns:
+            A tuple of floating point values in the same order as requested.
+
+        Examples:
+            lockin.snap('x','y') -> tuple(x,y)
+            
+            lockin.snap('aux1','aux2','freq','phase') 
+                -> tuple(aux1,aux2,freq,phase)
+
+        Note:
+            Volts for x, y, r, and aux 1-4
+            Degrees for θ
+            Hertz for freq
+            Unknown for ch1 and ch2. It will depend on what was set.
+
+             - If X,Y,R and θ are all read, then the values of X,Y are recorded
+               approximately 10 µs apart from R,θ. Thus, the values of X and Y 
+               may not yield the exact values of R and θ from a single snap.
+             - The values of the Aux Inputs may have an uncertainty of 
+               up to 32 µs.
+             - The frequency is computed only every other period or 40 ms, 
+               whichever is longer.  
+        """
+        if not 2 <= len(parameters) <= 6:
+            raise KeyError(
+                'It is only possible to request values of 2 to 6 parameters'
+                ' at a time.')
+
+        for name in parameters:
+            if name.lower() not in self.SNAP_PARAMETERS:
+                raise KeyError(f'{name} is an unknown parameter. Refer'
+                               f' to `SNAP_PARAMETERS` for a list of valid'
+                               f' parameter names')
+
+        p_ids = [self.SNAP_PARAMETERS[name.lower()] for name in parameters]
+        output = self.ask(f'SNAP? {",".join(p_ids)}')
+
+        return tuple(float(val) for val in output.split(','))
+
+    def increment_sensitivity(self):
+        """
+        Increment the sensitivity setting of the lock-in. This is equivalent
+        to pushing the sensitivity up button on the front panel. This has no
+        effect if the sensitivity is already at the maximum.
+
+        Returns:
+            Whether or not the sensitivity was actually changed.
+        """
+        return self._change_sensitivity(1)
+
+    def decrement_sensitivity(self):
+        """
+        Decrement the sensitivity setting of the lock-in. This is equivalent
+        to pushing the sensitivity down button on the front panel. This has no
+        effect if the sensitivity is already at the minimum.
+
+        Returns:
+            Whether or not the sensitivity was actually changed.
+        """
+        return self._change_sensitivity(-1)
+
+    def _change_sensitivity(self, dn):
+        _ = self.sensitivity.get()
+        n = int(self.sensitivity.raw_value)
+        if self.input_config() in ['a', 'a-b']:
+            n_to = self._N_TO_VOLT
+        else:
+            n_to = self._N_TO_CURR
+
+        if n + dn > max(n_to.keys()) or n + dn < min(n_to.keys()):
+            return False
+
+        self.sensitivity.set(n_to[n + dn])
+        return True
 
     def _set_buffer_SR(self, SR):
         self.write('SRAT {}'.format(SR))

@@ -98,6 +98,11 @@ class TestInstrument(TestCase):
             self.assertEqual(instrument,
                              Instrument.find_instrument(instrument.name))
 
+    def test_is_valid(self):
+        assert Instrument.is_valid(self.instrument)
+        self.instrument.close()
+        assert not Instrument.is_valid(self.instrument)
+
     def test_snapshot_value(self):
         self.instrument.add_parameter('has_snapshot_value',
                                       parameter_class=Parameter,

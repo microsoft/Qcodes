@@ -7,6 +7,7 @@ from functools import partial
 from contextlib import contextmanager
 from unittest.mock import mock_open, patch, PropertyMock
 from unittest import TestCase
+from typing import Optional
 import pytest
 import tempfile
 import qcodes.config
@@ -135,8 +136,9 @@ BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
                   Config.schema_default_file_name: SCHEMA,
                   }
 
+
 @contextmanager
-def default_config():
+def default_config(user_config: Optional[str]=None):
     """
     Context manager to temporarily establish default config settings.
     This is achieved by overwritting the config paths of the user-,
@@ -144,9 +146,10 @@ def default_config():
     config file in the qcodes repository.
     Additionally the current config object `qcodes.config` gets copied and
     reestablished.
+
+    Args:
+        user_config: represents the user config file content.
     """
-    default = qcodes.Config.default_file_name
-    default_schema = qcodes.Config.schema_default_file_name
     home_file_name = qcodes.Config.home_file_name
     schema_home_file_name = qcodes.Config.schema_home_file_name
     env_file_name = qcodes.Config.env_file_name
@@ -154,27 +157,34 @@ def default_config():
     cwd_file_name = qcodes.Config.cwd_file_name
     schema_cwd_file_name = qcodes.Config.schema_cwd_file_name
 
-    qcodes.Config.home_file_name = default
-    qcodes.Config.schema_home_file_name = default_schema
-    qcodes.Config.env_file_name = default
-    qcodes.Config.schema_env_file_name = default_schema
-    qcodes.Config.cwd_file_name = default
-    qcodes.Config.schema_cwd_file_name = default_schema
+    qcodes.Config.home_file_name = ''
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file_name = os.path.join(tmpdirname, 'user_config.json')
+        if user_config is not None:
+            with open(file_name, 'w') as f:
+                f.write(user_config)
 
-    default_config_obj = copy.deepcopy(qcodes.config)
-    qcodes.config = qcodes.Config()
+        qcodes.Config.home_file_name = file_name
+        qcodes.Config.schema_home_file_name = ''
+        qcodes.Config.env_file_name = ''
+        qcodes.Config.schema_env_file_name = ''
+        qcodes.Config.cwd_file_name = ''
+        qcodes.Config.schema_cwd_file_name = ''
 
-    try:
-        yield
-    finally:
-        qcodes.Config.home_file_name = home_file_name
-        qcodes.Config.schema_home_file_name = schema_home_file_name
-        qcodes.Config.env_file_name = env_file_name
-        qcodes.Config.schema_env_file_name = schema_env_file_name
-        qcodes.Config.cwd_file_name = cwd_file_name
-        qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+        default_config_obj = copy.deepcopy(qcodes.config)
+        qcodes.config = qcodes.Config()
 
-        qcodes.config = default_config_obj
+        try:
+            yield
+        finally:
+            qcodes.Config.home_file_name = home_file_name
+            qcodes.Config.schema_home_file_name = schema_home_file_name
+            qcodes.Config.env_file_name = env_file_name
+            qcodes.Config.schema_env_file_name = schema_env_file_name
+            qcodes.Config.cwd_file_name = cwd_file_name
+            qcodes.Config.schema_cwd_file_name = schema_cwd_file_name
+
+            qcodes.config = default_config_obj
 
 
 def side_effect(map, name):
@@ -315,3 +325,38 @@ def test_update_from_path(path_to_config_file_on_disk):
         expected_path = os.path.join(path_to_config_file_on_disk,
                                      'qcodesrc.json')
         assert cfg.current_config_path == expected_path
+
+
+def test_repr():
+    cfg = Config()
+    rep = cfg.__repr__()
+
+    expected_rep = (f"Current values: \n {cfg.current_config} \n"
+                    f"Current paths: \n {cfg._loaded_config_files} \n"
+                    f"{super(Config, cfg).__repr__()}")
+
+    assert rep == expected_rep
+
+
+def test_add_and_describe():
+    """
+    Test that a key an be added and described
+    """
+    with default_config():
+
+        key = 'newkey'
+        value ='testvalue'
+        value_type ='string'
+        description ='A test'
+        default = 'testdefault'
+
+        cfg = Config()
+        cfg.add(key=key, value=value, value_type=value_type,
+                description=description, default=default)
+
+
+        desc = cfg.describe(f'user.{key}')
+        expected_desc = (f"{description}.\nCurrent value: {value}. "
+                         f"Type: {value_type}. Default: {default}.")
+
+        assert desc == expected_desc

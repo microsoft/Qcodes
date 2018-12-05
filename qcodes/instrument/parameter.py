@@ -112,11 +112,11 @@ class _BaseParameter(Metadatable):
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
-        name (str): the local name of the parameter. Should be a valid
-            identifier, ie no spaces or special characters. If this parameter
-            is part of an Instrument or Station, this should match how it will
-            be referenced from that parent, ie ``instrument.name`` or
-            ``instrument.parameters[name]``
+        name (str): the local name of the parameter. Must be a valid
+            identifier, ie no spaces or special characters or starting with a
+            number. If this parameter is part of an Instrument or Station,
+            this should match how it will be referenced from that parent,
+            ie ``instrument.name`` or ``instrument.parameters[name]``
 
         instrument (Optional[Instrument]): the instrument this parameter
             belongs to, if any
@@ -200,8 +200,13 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None) -> None:
+                 **kwargs) -> None:
         super().__init__(metadata)
+        if not str(name).isidentifier():
+            raise ValueError(f"Parameter name must be a valid identifier "
+                             f"got {name} which is not. Parameter names "
+                             f"cannot start with a number and "
+                             f"must not contain spaces or special characters")
         self.name = str(name)
         self.short_name = str(name)
         self._instrument = instrument
@@ -218,11 +223,7 @@ class _BaseParameter(Metadatable):
         self.scale = scale
         self.offset = offset
         self.raw_value = None
-        if delay is not None:
-            warnings.warn("Delay kwarg is deprecated. Replace with "
-                          "inter_delay or post_delay as needed")
-            if post_delay == 0:
-                post_delay = delay
+
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
@@ -367,11 +368,11 @@ class _BaseParameter(Metadatable):
                 # apply offset first (native scale)
                 if self.offset is not None:
                     # offset values
-                    if isinstance(self.offset, collections.Iterable):
+                    if isinstance(self.offset, collections.abc.Iterable):
                         # offset contains multiple elements, one for each value
                         value = tuple(value - offset for value, offset
                                       in zip(value, self.offset))
-                    elif isinstance(value, collections.Iterable):
+                    elif isinstance(value, collections.abc.Iterable):
                         # Use single offset for all values
                         value = tuple(value - self.offset for value in value)
                     else:
@@ -380,11 +381,11 @@ class _BaseParameter(Metadatable):
                 # scale second
                 if self.scale is not None:
                     # Scale values
-                    if isinstance(self.scale, collections.Iterable):
+                    if isinstance(self.scale, collections.abc.Iterable):
                         # Scale contains multiple elements, one for each value
                         value = tuple(value / scale for value, scale
                                       in zip(value, self.scale))
-                    elif isinstance(value, collections.Iterable):
+                    elif isinstance(value, collections.abc.Iterable):
                         # Use single scale for all values
                         value = tuple(value / self.scale for value in value)
                     else:
@@ -431,7 +432,7 @@ class _BaseParameter(Metadatable):
                     # getter:
                     # apply scale first
                     if self.scale is not None:
-                        if isinstance(self.scale, collections.Iterable):
+                        if isinstance(self.scale, collections.abc.Iterable):
                             # Scale contains multiple elements, one for each value
                             raw_value = tuple(val * scale for val, scale
                                               in zip(raw_value, self.scale))
@@ -441,7 +442,7 @@ class _BaseParameter(Metadatable):
 
                     # apply offset next
                     if self.offset is not None:
-                        if isinstance(self.offset, collections.Iterable):
+                        if isinstance(self.offset, collections.abc.Iterable):
                             # offset contains multiple elements, one for each value
                             raw_value = tuple(val + offset for val, offset
                                               in zip(raw_value, self.offset))
@@ -457,7 +458,7 @@ class _BaseParameter(Metadatable):
                     t_elapsed = time.perf_counter() - self._t_last_set
                     if t_elapsed < self.inter_delay:
                         # Sleep until time since last set is larger than
-                        # self.post_delay
+                        # self.inter_delay
                         time.sleep(self.inter_delay - t_elapsed)
 
                     # Start timer to measure execution time of set_function
@@ -501,7 +502,7 @@ class _BaseParameter(Metadatable):
         if step is None:
             return [value]
         else:
-            if isinstance(value, collections.Sized) and len(value) > 1:
+            if isinstance(value, collections.abc.Sized) and len(value) > 1:
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
@@ -575,48 +576,28 @@ class _BaseParameter(Metadatable):
         else:
             self._step = step
 
-    def set_step(self, value):
-        warnings.warn(
-            "set_step is deprecated use step property as in `inst.step = "
-            "stepvalue` instead")
-        self.step = value
-
-    def get_step(self):
-        warnings.warn(
-            "set_step is deprecated use step property as in `a = inst.step` "
-            "instead")
-        return self._step
-
-    def set_delay(self, value):
-        warnings.warn(
-            "set_delay is deprecated use inter_delay or post_delay property "
-            "as in `inst.inter_delay = delayvalue` instead")
-        self.post_delay = value
-
-    def get_delay(self):
-        warnings.warn(
-            "get_delay is deprecated use inter_delay or post_delay property "
-            "as in `a = inst.inter_delay` instead")
-        return self._post_delay
-
     @property
     def post_delay(self):
-        """Property that returns the delay time of this parameter"""
+        """Delay time after *start* of set operation, for each set"""
         return self._post_delay
 
     @post_delay.setter
     def post_delay(self, post_delay):
         """
-        Configure this parameter with a delay between set operations.
+        Configure this parameter with a delay after the *start* of every set
+        operation.
 
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        after every set.
+        Typically used in conjunction with `step` to create an effective
+        ramp rate, but can also be used without a `step` to enforce a delay
+        *after* every set. One might think of post_delay as how long a set
+        operation is supposed to take. For example, there might be an
+        instrument that needs extra time after setting a parameter although
+        the command for setting the parameter returns quickly.
 
         Args:
-            post_delay(Union[int, float]): the target time between set calls.
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
+            post_delay(Union[int, float]): the target time after the *start*
+                of a set operation. The actual time will not be shorter than
+                this, but may be longer if the underlying set call takes longer.
 
         Raises:
             TypeError: If delay is not int nor float
@@ -632,7 +613,7 @@ class _BaseParameter(Metadatable):
 
     @property
     def inter_delay(self):
-        """Property that returns the delay time of this parameter"""
+        """Delay time between consecutive set operations"""
         return self._inter_delay
 
     @inter_delay.setter
@@ -640,12 +621,12 @@ class _BaseParameter(Metadatable):
         """
         Configure this parameter with a delay between set operations.
 
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        between sets.
+        Typically used in conjunction with `step` to create an effective
+        ramp rate, but can also be used without a `step` to enforce a delay
+        *between* sets.
 
         Args:
-            inter_delay(Union[int, float]): the target time between set calls.
+            inter_delay(Union[int, float]): the minimum time between set calls.
                 The actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
@@ -753,8 +734,10 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit ``get``/``set`` method. This
-       enables more advanced functionality.
+    2. Creating a subclass with an explicit ``get_raw``/``set_raw`` method.
+       This enables more advanced functionality. The ``get_raw`` and
+       ``set_raw`` methods are automatically wrapped to provide ``get`` and
+       ``set``.
 
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
@@ -945,7 +928,8 @@ class ArrayParameter(_BaseParameter):
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
 
-    Subclasses should define a ``.get`` method, which returns an array.
+    Subclasses should define a ``.get_raw`` method, which returns an array.
+    This method is automatically wrapped to provide a ``.get``` method.
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -956,7 +940,7 @@ class ArrayParameter(_BaseParameter):
     the dimension, and the size of each dimension can vary from call to call.
 
     Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -1052,8 +1036,8 @@ class ArrayParameter(_BaseParameter):
         # require one setpoint per dimension of shape
         sp_shape = (len(shape),)
 
-        sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator, numpy.ndarray)
+        sp_types = (nt, DataArray, collections.abc.Sequence,
+                    collections.abc.Iterator, numpy.ndarray)
         if (setpoints is not None and
                 not is_sequence_of(setpoints, sp_types, shape=sp_shape)):
             raise ValueError('setpoints must be a tuple of arrays')
@@ -1134,20 +1118,21 @@ class MultiParameter(_BaseParameter):
     each of arbitrary shape.
     Not necessarily part of an instrument.
 
-    Subclasses should define a ``.get`` method, which returns a sequence of
-    values. When used in a ``Loop`` or ``Measure`` operation, each of these
+    Subclasses should define a ``.get_raw`` method, which returns a sequence of
+    values. This method is automatically wrapped to provide a ``.get``` method.
+    When used in a ``Loop`` or ``Measure`` operation, each of these
     values will be entered into a different ``DataArray``. The constructor
     args describe what data we expect from each ``.get`` call and how it
     should be handled. ``.get`` should always return the same number of items,
     and most of the constructor arguments should be tuples of that same length.
 
     For now you must specify upfront the array shape of each item returned by
-    ``.get``, and this cannot change from one call to the next. Later we intend
-    to require only that you specify the dimension of each item returned, and
-    the size of each dimension can vary from call to call.
+    ``.get_raw``, and this cannot change from one call to the next. Later we
+    intend to require only that you specify the dimension of each item returned,
+    and the size of each dimension can vary from call to call.
 
     Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the whole parameter. Should be a valid
@@ -1251,8 +1236,8 @@ class MultiParameter(_BaseParameter):
                              'of ints, not ' + repr(shapes))
         self.shapes = shapes
 
-        sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator, numpy.ndarray)
+        sp_types = (nt, DataArray, collections.abc.Sequence,
+                    collections.abc.Iterator, numpy.ndarray)
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
             raise ValueError('setpoints must be a tuple of tuples of arrays')
 
@@ -1424,24 +1409,33 @@ class CombinedParameter(Metadatable):
     sequentially.
     """
 
-    def __init__(self, parameters, name, label=None,
-                 unit=None, units=None, aggregator=None):
+    def __init__(self, parameters: Sequence[Parameter], name: str,
+                 label: str = None, unit: str=None, units: str=None,
+                 aggregator: Callable=None) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
         # this is a dummy parameter
         # that mimicks the api that a normal parameter has
+        if not name.isidentifier():
+            raise ValueError(f"Parameter name must be a valid identifier "
+                             f"got {name} which is not. Parameter names "
+                             f"cannot start with a number and "
+                             f"must not contain spaces or special characters")
+
         self.parameter = lambda: None
-        self.parameter.full_name = name
-        self.parameter.name = name
-        self.parameter.label = label
+        # mypy will complain that a callable does not have these attributes
+        # but you can still create them here.
+        self.parameter.full_name = name  # type: ignore
+        self.parameter.name = name  # type: ignore
+        self.parameter.label = label  # type: ignore
 
         if units is not None:
             warn_units('CombinedParameter', self)
             if unit is None:
                 unit = units
-        self.parameter.unit = unit
-        self.setpoints=[]
+        self.parameter.unit = unit  # type: ignore
+        self.setpoints: List[Any] = []
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]

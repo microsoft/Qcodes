@@ -14,49 +14,70 @@ class S5i(Instrument):
 
     Args:
         name (str): name of the instrument.
-
         spi_rack (SPI_rack): instance of the SPI_rack class as defined in
             the spirack package. This class manages communication with the
             individual modules.
-
         module (int): module number as set on the hardware.
+        frequency (float): RF frequency at startup, default is 41 MHz.
+        enable_output (bool): Switch device output on or off, default is True.
+        output_level (int): RF output level in dBm, default is 0 dBm.
     """
 
-    def __init__(self, name, spi_rack, module, **kwargs):
+    def __init__(self, name, spi_rack, module, frequency=41e6,
+                 enable_output=True, output_level=0, **kwargs):
         super().__init__(name, **kwargs)
 
-        self.s5i = S5i_module(spi_rack, module)
+        self.s5i = S5i_module(spi_rack, module, frequency=frequency,
+                              enable_output=enable_output,
+                              output_level=output_level)
 
-        self.add_parameter('use_external_reference',
-                           label='Use external reference',
-                           get_cmd=self._use_external_reference,
-                           set_cmd=self.s5i.use_external_reference,
-                           vals=Bool())
+        self.add_parameter('output_enabled',
+                           label='RF output enabled',
+                           initial_value=enable_output,
+                           set_cmd=self.s5i.enable_output_soft,
+                           vals=Bool(),
+                           docstring='Switches output on/off')
 
         self.add_parameter('frequency_stepsize',
                            label='Frequency stepsize',
                            get_cmd=self._get_stepsize,
                            set_cmd=self.s5i.set_stepsize,
-                           units='Hz',
-                           vals=Numbers())
+                           unit='Hz',
+                           vals=Numbers(),
+                           docstring='Set the optimal frequency stepsize for '
+                                     'a minimal phase noise')
 
         self.add_parameter('frequency',
                            label='Frequency',
+                           initial_value=frequency,
                            get_cmd=self._get_rf_frequency,
                            set_cmd=self.s5i.set_frequency,
-                           units='Hz',
-                           vals=Numbers())
+                           unit='Hz',
+                           vals=Numbers(40e6, 4e9),
+                           docstring='Set RF frequency')
 
-        self.add_function('optimize_for_frequency', call_cmd=self._optimize)
+        self.add_parameter('power',
+                           label='Output Power',
+                           initial_value=output_level,
+                           set_cmd=self.s5i.set_output_power,
+                           unit='dBm',
+                           vals=Numbers(-14, 20),
+                           docstring='Set output power')
 
-    def _use_external_reference(self):
-        return self.s5i.use_external
+    def optimize_for_frequency(self):
+        """
+        This method finds the optimum stepsize for the set frequency.
+
+        The stepsize affects the phase noise of the instrument. The smaller the
+        stepsize, the greater is the phase noise. So this method sets the
+        stepsize as large as possible for the current reference frequency.
+
+        """
+        stepsize = self.s5i.get_optimal_stepsize(self.s5i.rf_frequency)
+        self.s5i.set_stepsize(stepsize)
 
     def _get_stepsize(self):
         return self.s5i.stepsize
 
     def _get_rf_frequency(self):
         return self.s5i.rf_frequency
-
-    def _optimize(self):
-        self.s5i.set_frequency_optimally(self.s5i.rf_frequency)

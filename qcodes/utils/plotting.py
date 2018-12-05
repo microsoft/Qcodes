@@ -35,13 +35,15 @@ def auto_range_iqr(data_array: np.ndarray,
     This function computes the inter-quartile-range (IQR), defined by Q3-Q1,
     i.e. the percentiles for 75% and 25% of the destribution. The region
     without outliers is defined by [Q1-1.5*IQR, Q3+1.5*IQR].
+
     Args:
         data_array: numpy array of arbitrary dimension containing the
             statistical data
         cutoff_percentile: percentile of data that may maximally be clipped
             on both sides of the distribution.
             If given a tuple (a,b) the percentile limits will be a and 100-b.
-    returns:
+
+    Returns:
         vmin, vmax: region limits [vmin, vmax]
     """
     if isinstance(cutoff_percentile, tuple):
@@ -217,27 +219,30 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
                                  ) -> None:
     """
     Sets the color limits such that outliers are disregarded, depending on
-    the configuration file `qcodesrc.json`.
-
-    Config:
-        config.plotting.auto_color_scale.enabled: default for  auto_color_scale
-            argument
-        config.plotting.auto_color_scale.cutoff_percentile: default for
-            cutoff_percentile argument
-        config.plotting.auto_color_scale.color_over: default for Matplotlib color
-            representing the datapoints clipped by the upper limit
-        config.plotting.auto_color_scale.color_under: default for Matplotlib color
-            representing the datapoints clipped by the lower limit
-
-    If optional arguments are passed the config values are overidden.
+    the configuration file `qcodesrc.json`. If optional arguments are
+    passed the config values are overidden.
 
     Args:
-         auto_color_scale: enable smart colorscale. If `False` nothing happens.
+        colorbar: The colorbar to scale
+        auto_color_scale: enable smart colorscale. If `False` nothing happens.
+            Default value is read from
+            ``config.plotting.auto_color_scale.enabled``
+        data_array: numpy array containing the data to be considered for
+            scaling
+        cutoff_percentile: The maxiumum percentile that is cut from the data.
+            Default value is read from
+            ``config.plotting.auto_color_scale.cutoff_percentile``
+        color_over: Matplotlib color representing the datapoints clipped
+            by the upper limit. Default value is read from
+            ``config.plotting.auto_color_scale.color_over``
+        color_under: Matplotlib color representing the datapoints clipped
+            by the lower limit. Default value is read from
+            ``config.plotting.auto_color_scale.color_under``
     """
     if colorbar is None:
-        log.warn('"auto_color_scale_from_config" did not receive a colorbar '
-                 'for scaling. Are you trying to scale a plot without '
-                 'colorbar?')
+        log.warning('"auto_color_scale_from_config" did not receive a colorbar '
+                    'for scaling. Are you trying to scale a plot without '
+                    'colorbar?')
         return
     if auto_color_scale is None:
         auto_color_scale = qcodes.config.plotting.auto_color_scale.enabled
@@ -255,6 +260,3 @@ def auto_color_scale_from_config(colorbar: matplotlib.pyplot.colorbar,
     apply_auto_color_scale(colorbar, data_array, cutoff_percentile,
                            color_over, color_under)
 
-# add docstring from `auto_color_scale`
-auto_color_scale_from_config.__doc__ += (
-    '\n' + apply_auto_color_scale.__doc__.split('Args:\n')[1])

@@ -355,12 +355,13 @@ class Config:
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
-    def describe(self, name):
+    def describe(self, name: str) -> str:
         """
         Describe a configuration entry
 
         Args:
-            name (str): name of entry to describe
+            name: name of entry to describe in 'dotdict' notation,
+              e.g. name="user.scriptfolder"
         """
         val = self.current_config
         sch = self.current_schema["properties"]
@@ -392,9 +393,9 @@ class Config:
 
     def __repr__(self):
         old = super().__repr__()
-        output = f"""Current values: \n {current_config} \n
-                     Current paths: \n {self._loaded_config_files} \n
-                     {old}"""
+        output = (f"Current values: \n {self.current_config} \n"
+                  f"Current paths: \n {self._loaded_config_files} \n"
+                  f"{old}")
         return output
 
 
@@ -444,7 +445,7 @@ class DotDict(dict):
 
 def update(d, u):
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = update(d.get(k, {}), v)
             d[k] = r
         else:
