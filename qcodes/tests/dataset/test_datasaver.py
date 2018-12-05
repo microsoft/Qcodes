@@ -30,8 +30,7 @@ def reset_callback_globals():
     CALLBACK_SNAPSHOT = None
 
 
-@pytest.mark.usefixtures("experiment")
-def test_default_callback():
+def test_default_callback(experiment):
     """
     The Web UI needs to know the results of an experiment with the metadata.
     So a default_callback class variable is set by the Web UI with a callback
@@ -59,8 +58,7 @@ def test_default_callback():
             test_set.dsi.conn.close()
 
 
-@pytest.mark.usefixtures("experiment")
-def test_numpy_types():
+def test_numpy_types(experiment):
     """
     Test that we can save numpy types in the data set
     """
@@ -83,11 +81,10 @@ def test_numpy_types():
     assert data == [[2] for _ in range(len(dtypes))]
 
 
-@pytest.mark.usefixtures("experiment")
 @given(numeric_type=hst.sampled_from([int, float, np.int8, np.int16, np.int32,
                                       np.int64, np.float16, np.float32,
                                       np.float64]))
-def test_saving_numeric_values_as_text(numeric_type):
+def test_saving_numeric_values_as_text(experiment, numeric_type):
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """
