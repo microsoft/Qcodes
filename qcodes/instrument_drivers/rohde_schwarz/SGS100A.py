@@ -1,4 +1,5 @@
 from qcodes import VisaInstrument, validators as vals
+from qcodes.utils.helpers import create_on_off_val_map
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
@@ -54,8 +55,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='RF Output',
                            get_cmd=':OUTP:STAT?',
                            set_cmd=':OUTP:STAT {}',
-                           get_parser=self.get_parser_on_off,
-                           set_parser=self.set_parser_on_off)
+                           val_mapping=create_on_off_val_map(on_val='1', off_val='0'))
         self.add_parameter('IQ_state',
                            label='IQ Modulation',
                            get_cmd=':IQ:STAT?',
@@ -139,34 +139,6 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
         self.add_function('run_self_tests', call_cmd='*TST?')
 
         self.connect_message()
-
-    def get_parser_on_off(self,value):
-        if value == '0':
-            ret = 'Off'
-        elif value == '1':
-            ret = 'On'
-        return ret
-
-    def set_parser_on_off(self,value):
-        if isinstance(value, bool):
-            if value:
-                ret = '1'
-            else:
-                ret = '0'
-        elif isinstance(value, str):
-            if value.upper() in ['0', 'OFF']:
-                ret = '0'
-            if value.upper() in ['1', 'ON']:
-                ret = '1'
-        elif value in [1, 0]:
-            if value == 1:
-                ret = '1'
-            elif value == 0:
-                ret = '0'
-        else:
-            raise ValueError('Unable to set parameter to {} '\
-                                'expected "ON"/1/True or "OFF"/0/False.'.format(value))
-        return ret
 
     def on(self):
         self.set('status', 'on')

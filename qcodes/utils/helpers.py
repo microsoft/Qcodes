@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
 from functools import partial
+from collections import OrderedDict
 
 import numpy as np
 
@@ -654,3 +655,20 @@ def partial_with_docstring(func, docstring, **kwargs):
     inner.__doc__ = docstring
 
     return inner
+
+
+def create_on_off_val_mapping(on_val=True, off_val=False):
+    """
+    Val map which maps readonable on/off inputs to the specified on/off_vals
+    to be sent to the intrument and if inverted maps these back to bools.
+    """
+    return OrderedDict[('On': on_val),
+                       ('ON': on_val)
+                       ('on': on_val),
+                       (1: on_val),
+                       (True: on_val),
+                       ('Off': off_val),
+                       ('OFF': off_val),
+                       ('off': off_val),
+                       (0: off_val),
+                       (False: off_val)]
