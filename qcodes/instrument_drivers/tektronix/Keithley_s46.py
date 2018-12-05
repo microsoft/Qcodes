@@ -45,7 +45,7 @@ class RelayLock:
         self.relay_name = relay_name
         self._locked_by: int = None
 
-    def acquire(self, channel_number: int):
+    def acquire(self, channel_number: int) -> None:
         """
         Request a lock acquisition
         """
@@ -57,7 +57,7 @@ class RelayLock:
         else:
             self._locked_by = channel_number
 
-    def release(self, channel_number: int):
+    def release(self, channel_number: int) -> None:
         """
         Release a lock.
         """
