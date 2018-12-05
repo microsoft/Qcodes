@@ -1524,13 +1524,34 @@ def get_dependencies(conn: ConnectionPlus,
     return res
 
 
-def get_independent_parameters(conn: ConnectionPlus,
-                               run_id: int):
-    """"
-    This should return all parameters that are neither
-    dependent on other parameters or dependencies of other parameters
+def get_non_dependencies(conn: ConnectionPlus,
+                         run_id: int) -> List[str]:
     """
-    raise NotADirectoryError("TODO")
+    Return all parameters for a given run that are not dependencies of
+    other parameters.
+
+    Args:
+        conn: connection to the database
+        run_id: The run_id of the run in question
+
+    Returns:
+
+    """
+    parameters = get_parameters(conn, run_id)
+    maybe_independent = []
+    dependent = []
+    dependencies = []
+
+    for param in parameters:
+        if len(param.depends_on) == 0:
+            maybe_independent.append(param.name)
+        else:
+            dependent.append(param.name)
+            dependencies.extend(param.depends_on)
+
+    independent = set(maybe_independent) - set(dependencies)
+    return sorted(list(independent))
+
 
 # Higher level Wrappers
 
