@@ -222,7 +222,25 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
     ds = standalone_parameters_dataset
     params = mut.get_non_dependencies(ds.conn,
                                       ds.run_id)
-    assert params == ['param_0', 'param_1', 'param_2']
+    expected_toplevel_params = ['param_1', 'param_2', 'param_3']
+    assert params == expected_toplevel_params
+
+    data = mut.get_parameter_data(ds.conn, ds.table_name)
+
+    assert len(data.keys()) == len(expected_toplevel_params)
+
+    expected_names = {}
+    expected_names['param_1'] = []
+    expected_names['param_2'] = []
+    expected_names['param_3'] = ['param_0']
+
+    expected_shapes = {}
+    expected_shapes['param_1'] = [(10 ** 3,)]
+    expected_shapes['param_2'] = [(10 ** 3,)]
+    expected_shapes['param_3'] = [(10**3, )]*2
+
+    verify_data_dict(data, expected_toplevel_params, expected_names,
+                     expected_shapes)
 
 
 def test_is_run_id_in_db(empty_temp_db):

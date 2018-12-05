@@ -15,7 +15,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
-from qcodes.dataset.sqlite_base import _unicode_categories
+from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
@@ -23,7 +23,8 @@ from qcodes.dataset.guids import parse_guid
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
-    array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset
+    array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
+    standalone_parameters_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -857,6 +858,31 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
     else:
         expected_shapes['testparameter'] = [(15,), (15,)]
     verify_data_dict(data, inputnames, expected_names, expected_shapes)
+
+
+def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
+    ds = standalone_parameters_dataset
+    params = get_non_dependencies(ds.conn,
+                                      ds.run_id)
+    expected_toplevel_params = ['param_1', 'param_2', 'param_3']
+    assert params == expected_toplevel_params
+
+    data = standalone_parameters_dataset.get_parameter_data()
+
+    assert len(data.keys()) == len(expected_toplevel_params)
+
+    expected_names = {}
+    expected_names['param_1'] = []
+    expected_names['param_2'] = []
+    expected_names['param_3'] = ['param_0']
+
+    expected_shapes = {}
+    expected_shapes['param_1'] = [(10 ** 3,)]
+    expected_shapes['param_2'] = [(10 ** 3,)]
+    expected_shapes['param_3'] = [(10**3, )]*2
+
+    verify_data_dict(data, expected_toplevel_params, expected_names,
+                     expected_shapes)
 
 
 def parameter_test_helper(ds):
