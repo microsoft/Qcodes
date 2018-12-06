@@ -47,7 +47,7 @@ class MetaData:
     tier: int = 1
 
 
-class DataStorageInterface(ABC):
+class DataReaderInterface(ABC):
     """
     """
     VERSION: Final = 0
@@ -57,34 +57,6 @@ class DataStorageInterface(ABC):
 
     @abstractmethod
     def run_exists(self) -> bool:
-        pass
-
-    @abstractmethod
-    def create_run(self) -> None:
-        pass
-
-    @abstractmethod
-    def prepare_for_storing_results(self) -> None:
-        """
-        This method is meant for interface implementations to be able to
-        performs actions needed before calls to `store_results`. In other
-        words, by calling this method, the storage interface can know that
-        data storing is going to start "now".
-        """
-        pass
-
-    @abstractmethod
-    def store_results(self, results: Dict[str, VALUES]) -> None:
-        pass
-
-    @abstractmethod
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_description: _Optional[RunDescriber] = NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
-                        tier: _Optional[int] = NOT_GIVEN) -> None:
         pass
 
     @abstractmethod
@@ -128,12 +100,59 @@ class DataStorageInterface(ABC):
     @abstractmethod
     def retrieve_meta_data(self) -> MetaData:
         pass
+    
+
+class DataWriterInterface(ABC):
+    """
+    """
+    VERSION: Final = 0
+
+    def __init__(self, guid: str):
+        self.guid = guid
+
+    @abstractmethod
+    def create_run(self) -> None:
+        pass
+
+    @abstractmethod
+    def prepare_for_storing_results(self) -> None:
+        """
+        This method is meant for interface implementations to be able to
+        performs actions needed before calls to `store_results`. In other
+        words, by calling this method, the storage interface can know that
+        data storing is going to start "now".
+        """
+        pass
+
+    @abstractmethod
+    def store_results(self, results: Dict[str, VALUES]) -> None:
+        pass
+
+    @abstractmethod
+    def store_meta_data(self, *,
+                        run_started: _Optional[Optional[float]] = NOT_GIVEN,
+                        run_completed: _Optional[Optional[float]] = NOT_GIVEN,
+                        run_description: _Optional[RunDescriber] = NOT_GIVEN,
+                        snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
+                        tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
+                        tier: _Optional[int] = NOT_GIVEN) -> None:
+        pass
 
     @staticmethod
     def _validate_results_dict(results: Dict[str, VALUES]) -> None:
         assert len(results) != 0
         assert len(set(len(v) for k, v in results.items())) == 1
         assert len(next(iter(results.values()))) != 0
+
+
+class DataStorageInterface(DataReaderInterface, DataWriterInterface, ABC):
+    """
+    """
+    VERSION: Final = 0
+
+    def __init__(self, guid: str):
+        super(DataStorageInterface, self).__init__(guid)
+        self.guid = guid
 
 
 def rows_from_results(results: Dict[str, VALUES]):
