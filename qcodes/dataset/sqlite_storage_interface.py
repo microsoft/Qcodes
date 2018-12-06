@@ -1,12 +1,12 @@
 import math
-from typing import Union, Dict, Sequence, Optional, Any, Iterator, Callable
+from typing import Union, Dict, Sequence, Optional, Any, Iterator, Callable, \
+    TYPE_CHECKING
 from numbers import Number
 import json
 
 import wrapt
 from numpy import ndarray
 
-from qcodes.dataset.data_set import _Subscriber
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.utils.helpers import NumpyJSONEncoder
 from .data_storage_interface import (
@@ -31,6 +31,9 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         is_guid_in_database,
                                         make_connection_plus_from,
                                         mark_run_complete)
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set import _Subscriber
 
 
 class IteratorWithLength(wrapt.ObjectProxy, SizedIterable):
@@ -85,7 +88,7 @@ class SqliteStorageInterface(DataStorageInterface):
         self.name: Optional[str] = name
 
         # to be implemented later
-        self.subscribers: Dict[str, _Subscriber] = {}
+        self.subscribers: Dict[str, '_Subscriber'] = {}
 
     def run_exists(self) -> bool:
         """
