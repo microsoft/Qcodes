@@ -105,6 +105,7 @@ def array_in_str_dataset(experiment, request):
     finally:
         datasaver.dataset.conn.close()
 
+
 @pytest.fixture
 def standalone_parameters_dataset(dataset):
     n_params = 3
