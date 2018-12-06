@@ -523,3 +523,5 @@ def test_store_meta_data__snapshot(experiment):
 
     md = dsi.retrieve_meta_data()
     assert md.snapshot == snap_1
+
+    control_conn.close()
