@@ -478,7 +478,7 @@ class DataSet(Sized):
         self.dsi.store_meta_data(run_description=desc)
 
     def get_parameters(self) -> SPECS:
-        return self.description.interdeps.paramspecs
+        return list(self.description.interdeps.paramspecs)
 
     def add_metadata(self, tag: str, metadata: Any):
         """
