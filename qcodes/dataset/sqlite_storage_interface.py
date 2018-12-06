@@ -1,5 +1,5 @@
 import math
-from typing import Union, Dict, Sequence, Optional, Any, Iterator
+from typing import Union, Dict, Sequence, Optional, Any, Iterator, Callable
 from numbers import Number
 import json
 
@@ -147,6 +147,7 @@ class SqliteStorageInterface(DataStorageInterface):
         set by a separate function that should check for inconsistencies and
         raise if it finds an inconsistency
         """
+        queries: Dict[Callable[[ConnectionPlus, Any], None], _Optional[Any]]
         queries = {self._set_run_completed: run_completed,
                    self._set_run_description: run_description,
                    self._set_tags: tags,
@@ -157,7 +158,7 @@ class SqliteStorageInterface(DataStorageInterface):
                 if kwarg != NOT_GIVEN:
                     func(conn, kwarg)
 
-    def _set_run_completed(self, conn: ConnectionPlus, time: float):
+    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> None:
         """
         Set the complete_timestamp and is_complete. Will raise if the former
         is not-NULL or if the latter is 1
@@ -168,7 +169,8 @@ class SqliteStorageInterface(DataStorageInterface):
 
         mark_run_complete(conn, completion_time=time, run_id=self.run_id)
 
-    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber):
+    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber) \
+            -> None:
         # update the result_table columns and write to layouts and dependencies
         existing_params = get_parameters(conn, self.run_id)
         for param in desc.interdeps.paramspecs:
