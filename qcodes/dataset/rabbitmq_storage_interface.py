@@ -34,3 +34,29 @@ class RabbitMQStorageInterface(DataStorageInterface):
                                   # todo this should include the chunk id
                                   headers={'guid': self.guid},
                                   delivery_mode=2))
+
+    # "junk" implementation of abstract methods
+
+    def run_exists(self):
+        raise NotImplementedError
+
+    def create_run(self):
+        raise NotImplementedError
+
+    def prepare_for_storing_results(self):
+        raise NotImplementedError
+
+    def store_meta_data(self):
+        raise NotImplementedError
+
+    def retrieve_number_of_results(self):
+        raise NotImplementedError
+
+    def replay_results(self):
+        raise NotImplementedError
+
+    def retrieve_meta_data(self):
+        raise NotImplementedError
+
+    def retrieve_results(self):
+        raise NotImplementedError
