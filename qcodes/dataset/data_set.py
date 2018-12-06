@@ -8,6 +8,7 @@ import logging
 import uuid
 from queue import Queue, Empty
 import numpy
+import pandas as pd
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -813,7 +814,7 @@ class DataSet(Sized):
         """
         Returns the values stored in the DataSet for the specified parameters
         and their dependencies. If no paramerers are supplied the values will
-        be returned for all parameters that are not them self depdendencies.
+        be returned for all parameters that are not them self dependencies.
 
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
@@ -850,6 +851,57 @@ class DataSet(Sized):
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name, valid_param_names,
                                   start, end)
+
+    def get_data_as_pandas_dataframe(self,
+                                     *params: Union[str,
+                                                    ParamSpec,
+                                                    _BaseParameter],
+                                     start: Optional[int] = None,
+                                     end: Optional[int] = None) -> \
+            List[pd.DataFrame]:
+        """
+        Returns the values stored in the DataSet for the specified parameters
+        and their dependencies. If no paramerers are supplied the values will
+        be returned for all parameters that are not them self dependencies.
+
+        The values are returned as a list of Pandas DataFrames. One for each
+        names of the parameters and its dependencies as keys and numpy arrays
+        of the data as values. If some of the parameters are stored as
+        arrays the remaining parameters are expanded to the same shape as these.
+        Apart from this expansion the data returned by this method
+        is the transpose of the date returned by `get_data`.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a list of empty arrays is returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+
+        """
+        dfs = []
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+        for subdict in datadict.values():
+            keys = list(subdict.keys())
+            multiindex = pd.MultiIndex.from_arrays(
+                tuple(subdict[key].ravel() for key in keys[1:]),
+                names=keys[1:])
+            df = pd.DataFrame(subdict[keys[0]].ravel(), index=multiindex,
+                              columns=[keys[0]])
+            dfs.append(df)
+        return dfs
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
