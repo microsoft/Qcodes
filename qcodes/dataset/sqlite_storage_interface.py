@@ -235,7 +235,7 @@ class SqliteStorageInterface(DataStorageInterface):
         first = max((start if start_specified else -math.inf), 1) - 1
         last = min((stop if stop_specified else math.inf) - 1,
                    self.retrieve_number_of_results() - 1)
-        iterator_length = max(last - first + 1, 0)
+        iterator_length = int(max(last - first + 1, 0))
 
         results_iterator = IteratorWithLength(results_iterator,
                                               iterator_length)
