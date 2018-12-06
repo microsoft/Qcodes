@@ -23,7 +23,7 @@ branches:
 
 before_install:
 - docker pull rabbitmq
-- docker run --hostname localhost -p 5672:5672 --name some-rabbit rabbitmq:3
+- docker run -d --hostname localhost -p 5672:5672 --name some-rabbit rabbitmq:3
 - docker ps -a
 
 # command to install dependencies and qcodes
