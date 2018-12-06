@@ -3,32 +3,14 @@ Driver for the Tekronix S46 RF switch
 """
 import re
 from itertools import product
+from functools import partial
 
-from typing import Callable, Any, Union, Dict, List
-from qcodes import Instrument, VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Enum
+from typing import Any, Dict, List, Optional
+from qcodes import Instrument, VisaInstrument, Parameter
 
 
 class LockAcquisitionError(Exception):
     pass
-
-
-def cached_method(method: Callable) -> Callable:
-    """
-    A decorator which adds a keyword 'get_cached' to a method. When
-    'get_cached=True', the decorated method returns a cached return value. If
-    the method has not been called before, or 'get_cached=False' the original
-    method is called.
-    """
-    def inner(self, *args: Any, get_cached: bool=False, **kwargs: Any) -> Any:
-        if not hasattr(self, "__cached_values__"):
-            self.__cached_values__ = {}
-
-        if method not in self.__cached_values__ or not get_cached:
-            self.__cached_values__[method] = method(self, *args, **kwargs)
-
-        return self.__cached_values__[method]
-    return inner
 
 
 class RelayLock:
@@ -65,36 +47,35 @@ class RelayLock:
             self._locked_by = None
 
 
-class S46Channel(InstrumentChannel):
+class S46Parameter(Parameter):
     """
-    A channel class for the S46
+    A parameter class for S46 channels. We do not use the QCoDeS
+    InstrumentChannel class because our channel has one state parameter,
+    which can either be "open" or "close".
 
     Args:
-        parent
         name
-        channel_number: unlike other instruments, channel numbers on the
-            S46 will not be contiguous. That is, we may have channels 1, 2 and 4
-            but channel 3 may be missing.
-        relay_lock: When closing the channel, request a lock acquisition.
-            Release the lock when opening
+        instrument
+        channel_number
+        lock: Acquire the lock when closing and release when opening
     """
     def __init__(
             self,
-            parent: Union[Instrument, 'InstrumentChannel'],
             name: str,
+            instrument: Optional[Instrument],
             channel_number: int,
-            relay_lock: RelayLock
+            lock: RelayLock
     ):
-        super().__init__(parent, name)
+        super().__init__(name, instrument)
 
+        self._lock = lock
         self._channel_number = channel_number
-        self._relay_lock = relay_lock
-        # Acquire the lock if upon init we find the channel closed.
-        if self._get_state(init=True) == "close":
+        self.get = partial(self._get, get_cached=False)
+
+        if self._get(get_cached=True) == "close":
             try:
-                self._relay_lock.acquire(self._channel_number)
+                self._lock.acquire(self._channel_number)
             except LockAcquisitionError as e:
-                # another channel has already acquired the lock
                 raise RuntimeError(
                     "The driver is initialized from an undesirable instrument "
                     "state where more then one channel on a single relay is "
@@ -102,36 +83,25 @@ class S46Channel(InstrumentChannel):
                     "Refusing to initialize driver!"
                 ) from e
 
-        self.add_parameter(
-            "state",
-            get_cmd=self._get_state,
-            set_cmd=self._set_state,
-            vals=Enum("open", "close")
-        )
+        self.set = self._set
 
-    def _get_state(self, init: bool=False) -> str:
-        """
-        Args:
-            init: When calling this method from self.__init__, make this
-                value 'True'. This will prevent the instrument being queried
-                ':CLOS?' for each channel.
-        """
-        closed_channels = self.parent.get_closed_channel_numbers(
-            get_cached=init)
+    def _get(self, get_cached):
 
-        is_closed = self._channel_number in closed_channels
-        return {True: "close", False: "open"}[is_closed]
+        closed_channels = self._instrument.closed_channels.get_latest()
 
-    def _set_state(self, new_state: str) -> None:
-        """
-        Open/Close the channel
-        """
+        if not get_cached or closed_channels is None:
+            closed_channels = self._instrument.closed_channels.get()
+
+        return "close" if self.name in closed_channels else "open"
+
+    def _set(self, new_state) -> None:
+
         if new_state == "close":
-            self._relay_lock.acquire(self._channel_number)
+            self._lock.acquire(self._channel_number)
         elif new_state == "open":
-            self._relay_lock.release(self._channel_number)
+            self._lock.release(self._channel_number)
 
-        self.write(f":{new_state} (@{self._channel_number})")
+        self._instrument.write(f":{new_state} (@{self._channel_number})")
 
     @property
     def channel_number(self) -> int:
@@ -144,13 +114,15 @@ class S46(VisaInstrument):
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.
-    aliases: Dict[str, int] = {
+    channel_numbers: Dict[str, int] = {
         f"{a}{b}": count + 1 for count, (a, b) in enumerate(product(
             ["A", "B", "C", "D"],
             range(1, 7)
         ))
     }
-    aliases.update({f"R{i}": i + 24 for i in range(1, 9)})
+    channel_numbers.update({f"R{i}": i + 24 for i in range(1, 9)})
+    # Make a reverse dict for efficient alias lookup given a channel number
+    aliases = dict((v, k) for k, v in channel_numbers.items())
 
     def __init__(
             self,
@@ -161,12 +133,13 @@ class S46(VisaInstrument):
 
         super().__init__(name, address, terminator="\n", **kwargs)
 
-        channels = ChannelList(
-            self,
-            "channel",
-            S46Channel,
-            snapshotable=False
+        self.add_parameter(
+            "closed_channels",
+            get_cmd=":CLOS?",
+            get_parser=self._get_closed_channels_parser
         )
+
+        self._available_channels: List[str] = []
 
         for relay_name, channel_count in zip(
                 S46.relay_names, self.relay_layout):
@@ -181,40 +154,28 @@ class S46(VisaInstrument):
                     alias = relay_name  # For channels R1 to R8, we have one
                     # channel per relay. Channel alias = relay name
 
-                channel_number = S46.aliases[alias]
-                channel = S46Channel(self, alias, channel_number, relay_lock)
-                channels.append(channel)
-                self.add_submodule(alias, channel)
+                self.add_parameter(
+                    alias,
+                    channel_number=S46.channel_numbers[alias],
+                    lock=relay_lock,
+                    parameter_class=S46Parameter
+                )
 
-        self.add_submodule("channels", channels)
-        self.connect_message()
+                self._available_channels.append(alias)
 
-    @cached_method
-    def get_closed_channel_numbers(self) -> List[int]:
+    @staticmethod
+    def _get_closed_channels_parser(reply: str) -> List[str]:
         """
-        Query the instrument for closed channels. Add an option to return
-        a cached response so we can prevent this method from being called
-        repeatedly for each channel during initialization of the driver.
+        The SCPI command ":CLOS ?" returns a reply in the form
+        "(@1,9)", if channels 1 and 9 are closed. Return a list of
+        strings, representing the aliases of the closed channels
         """
-        closed_channels_str = re.findall(r"\d+", self.ask(":CLOS?"))
-        return [int(i) for i in closed_channels_str]
-
-    def get_closed_channels(self) -> List[S46Channel]:
-        """
-        Return a list of closed channels as a list of channel objects
-        """
-        return [
-            channel for channel in self.channels if
-            channel.channel_number in self.get_closed_channel_numbers()
-        ]
+        closed_channels_str = re.findall(r"\d+", reply)
+        return [S46.aliases[int(i)] for i in closed_channels_str]
 
     def open_all_channels(self) -> None:
-        """
-        Please do not write ':OPEN ALL' to the instrument as this will
-        circumvent the lock.
-        """
-        for channel in self.get_closed_channels():
-            channel.state("open")
+        for channel_name in self.closed_channels():
+            self.parameters[channel_name].set("open")
 
     @property
     def relay_layout(self) -> List[int]:
@@ -223,3 +184,7 @@ class S46(VisaInstrument):
         that we can have zero channels per relay.
         """
         return [int(i) for i in self.ask(":CONF:CPOL?").split(",")]
+
+    @property
+    def available_channels(self) -> List[str]:
+        return self._available_channels

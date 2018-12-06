@@ -1,8 +1,12 @@
+from io import StringIO
+import logging
+
 import pytest
 
 from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
     S46, LockAcquisitionError
 )
+from qcodes.instrument.visa import VISA_LOGGER
 
 import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_s46.yaml@sim')
@@ -20,21 +24,9 @@ def test_aliases_dict():
         offset_dict = dict(zip(["A", "B", "C", "D", "R"], range(0, 32, 6)))
         return offset_dict[alias[0]] + int(alias[1:])
 
-    assert all([nr == calc_channel_nr(al) for al, nr in S46.aliases.items()])
-
-
-class S46LoggedAsk(S46):
-    """
-    A version of the driver which logs every ask command. We need this to
-    assert that ':CLOS?' is called once during initialization
-    """
-    def __init__(self, *args, **kwargs):
-        self._ask_log = []
-        super().__init__(*args, **kwargs)
-
-    def ask(self, cmd: str):
-        self._ask_log.append(cmd)
-        return super().ask(cmd)
+    assert all([
+        nr == calc_channel_nr(al) for al, nr in S46.channel_numbers.items()
+    ])
 
 
 @pytest.fixture(scope='module')
@@ -42,7 +34,15 @@ def s46_six():
     """
     A six channel-per-relay instrument
     """
-    driver = S46LoggedAsk('s46_six', address='GPIB::2::INSTR', visalib=visalib)
+    io_stream = StringIO()
+    handler = logging.StreamHandler(io_stream)
+    logger = logging.getLogger(VISA_LOGGER)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    driver = S46('s46_six', address='GPIB::2::INSTR', visalib=visalib)
+    driver.io_stream = io_stream
+
     yield driver
     driver.close()
 
@@ -52,7 +52,15 @@ def s46_four():
     """
     A four channel-per-relay instrument
     """
-    driver = S46LoggedAsk('s46_four', address='GPIB::3::INSTR', visalib=visalib)
+    io_stream = StringIO()
+    handler = logging.StreamHandler(io_stream)
+    logger = logging.getLogger(VISA_LOGGER)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    driver = S46('s46_four', address='GPIB::3::INSTR', visalib=visalib)
+    driver.io_stream = io_stream
+
     yield driver
     driver.close()
 
@@ -74,36 +82,28 @@ def test_init_six(s46_six):
     """
     Test that the six channel instrument initializes correctly.
     """
-    assert s46_six._ask_log.count(":CLOS?") == 1
+    log_messages = s46_six.io_stream.getvalue()
+    assert log_messages.count(":CLOS?") == 1
+    assert len(s46_six.available_channels) == 26
 
-    n_channels = len(s46_six.channels)
-    # Channels A1 to D6 + R5 + R8 (4 * 6 + 2)
-    assert n_channels == 26
-
-    closed_channels = [1, 8, 13]
-
-    for channel in s46_six.channels:
-        channel_nr = S46.aliases[channel.short_name]
-        state = "close" if channel_nr in closed_channels else "open"
-        assert channel.state() == state
+    closed_channel_numbers = [1, 8, 13]
+    assert s46_six.closed_channels() == [
+        S46.aliases[i] for i in closed_channel_numbers
+    ]
 
 
 def test_init_four(s46_four):
     """
     Test that the six channel instrument initializes correctly.
     """
-    assert s46_four._ask_log.count(":CLOS?") == 1
+    log_messages = s46_four.io_stream.getvalue()
+    assert log_messages.count(":CLOS?") == 1
+    assert len(s46_four.available_channels) == 18
 
-    n_channels = len(s46_four.channels)
-    # Channels A1 to D4 + R5 + R8 (4 * 4 + 2)
-    assert n_channels == 18
-
-    closed_channels = [1, 8]
-
-    for channel in s46_four.channels:
-        channel_nr = S46.aliases[channel.short_name]
-        state = "close" if channel_nr in closed_channels else "open"
-        assert channel.state() == state
+    closed_channel_numbers = [1, 8]
+    assert s46_four.closed_channels() == [
+        S46.aliases[i] for i in closed_channel_numbers
+    ]
 
     # A four channel instrument will have channels missing
     for relay in ["A", "B", "C", "D"]:
@@ -118,7 +118,7 @@ def test_channel_number_invariance(s46_four, s46_six):
     channel aliases should represent the same channel. See also page 2-5 of the
     manual (e.g. B1 is *always* channel 7)
     """
-    for alias in S46.aliases.keys():
+    for alias in S46.channel_numbers.keys():
         if hasattr(s46_four, alias) and hasattr(s46_six, alias):
             channel_four = getattr(s46_four, alias)
             channel_six = getattr(s46_six, alias)
@@ -136,21 +136,31 @@ def test_locking_mechanism(s46_six):
         match="is already in use by channel"
     ):
         # A1 should be closed already
-        s46_six.A2.state("close")
+        s46_six.A2("close")
     # release the lock
-    s46_six.A1.state("open")
+    s46_six.A1("open")
     # now we should be able to close A2
-    s46_six.A2.state("close")
+    s46_six.A2("close")
 
     # Let C1 acquire the lock
-    s46_six.C1.state("close")
+    s46_six.C1("close")
     # closing C2 should raise an error
     with pytest.raises(
         LockAcquisitionError,
         match="is already in use by channel"
     ):
-        s46_six.C2.state("close")
+        s46_six.C2("close")
 
     # Upon opening C1 we should be able to close C2
-    s46_six.C1.state("open")
-    s46_six.C2.state("close")
+    s46_six.C1("open")
+    s46_six.C2("close")
+
+
+def test_open_all(s46_six):
+    """
+    Verify that calling 'open_all_channels' does not cause an exception.
+    Unfortunately, pyvisa-sim is not flexible enough for us to test if channels
+    have truly opened.
+    """
+    s46_six.open_all_channels()
+
