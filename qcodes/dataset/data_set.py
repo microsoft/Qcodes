@@ -38,11 +38,11 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
                                         ConnectionPlus)
-from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
-from qcodes.dataset.data_storage_interface import DataStorageInterface
-
-from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
-from qcodes.dataset.data_storage_interface import DataStorageInterface
+from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
+                                                     SqliteWriterInterface)
+from qcodes.dataset.data_storage_interface import (DataReaderInterface,
+                                                   DataWriterInterface,
+                                                   DataStorageInterface)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -213,9 +213,10 @@ class DataSet(Sized):
                          'description', 'completed_timestamp_raw', 'metadata')
 
     def __init__(self,
-                 guid: Optional[str]=None,
-                 run_id: Optional[int]=None,
-                 storageinterface: type=SqliteStorageInterface,
+                 guid: Optional[str] = None,
+                 run_id: Optional[int] = None,
+                 readerinterface: type = SqliteReaderInterface,
+                 writerinterface: type = SqliteWriterInterface,
                  **si_kwargs) -> None:
         """
         Create a new DataSet object. The object can either hold a new run or
@@ -233,34 +234,43 @@ class DataSet(Sized):
               storage interface
         """
 
-        if not issubclass(storageinterface, DataStorageInterface):
-            raise ValueError("The provided storage interface is not valid. "
+        if not issubclass(readerinterface, DataReaderInterface):
+            raise ValueError("The provided data reader interface is not valid. "
                              "Must be a subclass of "
                              "qcodes.dataset.data_storage_interface."
-                             "DataStorageInterface")
+                             "DataReaderInterface")
 
-        if guid is not None:
+        if guid is not None:  # Case: Loading run
             if run_id is not None:
                 raise ValueError('Got values for both GUID and run_id. Please '
                                  'provide at most a value for one of them.')
             self._guid = guid
-            self.dsi = storageinterface(self._guid, **si_kwargs)
+            self.dsi = DataStorageInterface(self._guid,
+                                            reader=readerinterface,
+                                            writer=writerinterface,
+                                            reader_kwargs=si_kwargs)
             if not self.dsi.run_exists():
                 raise ValueError(f'No run with GUID {guid} found.')
 
         # Note: this is not a feature we want to keep supporting, but it is
         # needed in a transition period from run_id to GUID
-        elif run_id is not None:
-            if storageinterface != SqliteStorageInterface:
+        elif run_id is not None:  # Case: Loading run
+            if readerinterface != SqliteReaderInterface:
                 raise ValueError('Got a value for run_id, but the '
                                  'storageinterface does not support that. '
                                  'You can only use run_id with SQlite.')
-            self.dsi = storageinterface(guid='', run_id=run_id, **si_kwargs)
+            self.dsi = DataStorageInterface(guid='',
+                                            reader=readerinterface,
+                                            writer=writerinterface,
+                                            reader_kwargs=si_kwargs)
             self._guid = self.dsi.guid
 
-        else:
+        else:  # Case: Creating run
             self._guid = generate_guid()
-            self.dsi = storageinterface(self._guid, **si_kwargs)
+            self.dsi = DataStorageInterface(self._guid,
+                                            reader=readerinterface,
+                                            writer=writerinterface,
+                                            writer_kwargs=si_kwargs)
             self.dsi.create_run()
 
         # Assign all attributes
@@ -318,7 +328,7 @@ class DataSet(Sized):
 
     @property
     def exp_id(self) -> int:
-        return getattr(self.dsi, 'exp_id', None)
+        return getattr(self.dsi.reader, 'exp_id', None)
 
     @property
     def exp_name(self) -> str:
@@ -539,7 +549,7 @@ class DataSet(Sized):
         Mark dataset as complete and thus read only and notify the subscribers
         """
         self.completed = True
-        for sub in self.dsi.subscribers.values():
+        for sub in self.dsi.writer.subscribers.values():
             sub.done_callback()
 
     @deprecate(alternative='mark_completed')
@@ -743,7 +753,7 @@ class DataSet(Sized):
         subscriber_id = uuid.uuid4().hex
         subscriber = _Subscriber(self, subscriber_id, callback, state,
                                  min_wait, min_count, callback_kwargs)
-        self.dsi.subscribers[subscriber_id] = subscriber
+        self.dsi.writer.subscribers[subscriber_id] = subscriber
         subscriber.start()
         return subscriber_id
 

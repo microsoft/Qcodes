@@ -7,7 +7,9 @@ from qcodes import ParamSpec
 from qcodes.dataset.data_set import DataSet, CompletedError
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from qcodes.dataset.data_storage_interface import DataStorageInterface
+from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
+                                                     SqliteWriterInterface)
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 import qcodes.dataset.sqlite_base as sqlite
@@ -38,17 +40,19 @@ def test_init_for_new_run(experiment):
     # assigned
 
     assert ds.exp_id == experiment.exp_id
-    assert ds.dsi.exp_id == experiment.exp_id
+    assert ds.dsi.reader.exp_id == experiment.exp_id
 
     assert ds.name == 'dataset'
-    assert ds.dsi.name == 'dataset'
-    assert ds.dsi.table_name == 'dataset-1-1'
+    assert ds.dsi.reader.name == 'dataset'
+    assert ds.dsi.reader.table_name == 'dataset-1-1'
 
     # check that all attributes are piped through correctly
 
-    assert isinstance(ds.dsi, SqliteStorageInterface)
-    assert ds.dsi.conn == conn
-    assert ds.dsi.path_to_db == path_to_dbfile(conn)
+    assert isinstance(ds.dsi, DataStorageInterface)
+    # for a *new* run, the connection is given to the writer
+    assert ds.dsi.writer.conn == conn
+    assert ds.dsi.reader.conn != conn
+    assert ds.dsi.reader.path_to_db == path_to_dbfile(conn)
 
     # check that the run got into the database
 
@@ -87,17 +91,19 @@ def test_init_for_new_run_with_given_experiment_and_name(experiment):
     # assigned
 
     assert ds.exp_id == experiment.exp_id
-    assert ds.dsi.exp_id == experiment.exp_id
+    assert ds.dsi.reader.exp_id == experiment.exp_id
 
     assert ds.name == ds_name
-    assert ds.dsi.name == ds_name
-    assert ds.dsi.table_name == f'{ds_name}-1-1'
+    assert ds.dsi.reader.name == ds_name
+    assert ds.dsi.reader.table_name == f'{ds_name}-1-1'
 
     # check that all attributes are piped through correctly
 
-    assert isinstance(ds.dsi, SqliteStorageInterface)
-    assert ds.dsi.conn == conn
-    assert ds.dsi.path_to_db == path_to_dbfile(conn)
+    assert isinstance(ds.dsi.reader, SqliteReaderInterface)
+    # for a *new* run, the connection is given to the writer
+    assert ds.dsi.writer.conn == conn
+    assert ds.dsi.reader.conn != conn
+    assert ds.dsi.reader.path_to_db == path_to_dbfile(conn)
 
     # check that the run got into the database
 
@@ -123,7 +129,7 @@ def test_add_parameter(experiment):
     conn = experiment.conn
     db_file = path_to_dbfile(conn)
 
-    ds = DataSet(guid=None, storageinterface=SqliteStorageInterface, conn=conn)
+    ds = DataSet(guid=None, conn=conn)
 
     spec = ParamSpec('x', 'numeric')
 
@@ -230,17 +236,18 @@ def test_add_results(experiment, first_add_using_add_result, request):
 
     # assert that data has been added to the database
 
-    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    actual_x = sqlite.get_data(control_conn, ds.dsi.writer.table_name, ['x'])
     assert actual_x == expected_x
 
-    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    actual_y = sqlite.get_data(control_conn, ds.dsi.reader.table_name, ['y'])
     np.testing.assert_allclose(actual_y, expected_y)
 
-    # assert that we can't `add_result` and `add_results` to a completed dataset
+    # assert that we can't `add_result` and `add_results`
+    # to a completed dataset
 
     ds.mark_completed()
 
-    with raise_if_file_changed(ds.dsi.path_to_db):
+    with raise_if_file_changed(ds.dsi.reader.path_to_db):
 
         with pytest.raises(CompletedError):
             ds.add_result({'x': 1})
@@ -291,10 +298,10 @@ def test_get_data(experiment, request, start_end):
 
     # assert that data has been added to the database
 
-    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    actual_x = sqlite.get_data(control_conn, ds.dsi.reader.table_name, ['x'])
     assert actual_x == expected_x
 
-    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    actual_y = sqlite.get_data(control_conn, ds.dsi.writer.table_name, ['y'])
     np.testing.assert_allclose(actual_y, expected_y)
 
     # Now get data using DataSet's get_data
@@ -357,10 +364,10 @@ def test_get_values(experiment, request):
 
     # assert that data has been added to the database
 
-    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    actual_x = sqlite.get_data(control_conn, ds.dsi.reader.table_name, ['x'])
     assert actual_x == all_x
 
-    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    actual_y = sqlite.get_data(control_conn, ds.dsi.reader.table_name, ['y'])
     assert len(actual_y) == len(all_y)
     for act_y, al_y in zip(actual_y, all_y):
         assert len(act_y) == len(al_y)
@@ -378,7 +385,8 @@ def test_get_values(experiment, request):
                   if subitem is not None]
     assert actual_x == expected_x
 
-    sqlite_actual_x = sqlite.get_values(control_conn, ds.dsi.table_name, 'x')
+    sqlite_actual_x = sqlite.get_values(control_conn,
+                                        ds.dsi.reader.table_name, 'x')
     assert actual_x == sqlite_actual_x
 
     actual_y = ds.get_values('y')
@@ -387,7 +395,8 @@ def test_get_values(experiment, request):
     expected_y = [all_y[all_y is not None]]
     np.testing.assert_allclose(actual_y, expected_y)
 
-    sqlite_actual_y = sqlite.get_values(control_conn, ds.dsi.table_name, 'y')
+    sqlite_actual_y = sqlite.get_values(control_conn,
+                                        ds.dsi.writer.table_name, 'y')
     np.testing.assert_allclose(actual_y, sqlite_actual_y)
 
 
@@ -436,10 +445,10 @@ def test_get_setpoints(experiment, request):
 
     # assert that data has been added to the database
 
-    actual_x = sqlite.get_data(control_conn, ds.dsi.table_name, ['x'])
+    actual_x = sqlite.get_data(control_conn, ds.dsi.writer.table_name, ['x'])
     assert actual_x == all_x
 
-    actual_y = sqlite.get_data(control_conn, ds.dsi.table_name, ['y'])
+    actual_y = sqlite.get_data(control_conn, ds.dsi.reader.table_name, ['y'])
     assert len(actual_y) == len(all_y)
     for act_y, al_y in zip(actual_y, all_y):
         assert len(act_y) == len(al_y)
@@ -449,7 +458,7 @@ def test_get_setpoints(experiment, request):
             else:
                 assert ac_y == a_y
 
-    actual_z = sqlite.get_data(control_conn, ds.dsi.table_name, ['z'])
+    actual_z = sqlite.get_data(control_conn, ds.dsi.reader.table_name, ['z'])
     assert actual_z == all_z
 
     # Now get data using DataSet's get_setpoints
@@ -480,7 +489,7 @@ def test_get_setpoints(experiment, request):
     # original implementation
 
     sqlite_actual_x_y = sqlite.get_setpoints(
-        control_conn, ds.dsi.table_name, 'z')
+        control_conn, ds.dsi.writer.table_name, 'z')
 
     assert list(actual_x_y.keys()) == list(sqlite_actual_x_y.keys())
 

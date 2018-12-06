@@ -9,8 +9,9 @@ from numpy import ndarray
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.utils.helpers import NumpyJSONEncoder
-from .data_storage_interface import (
-    DataStorageInterface, VALUES, MetaData, _Optional, NOT_GIVEN, SizedIterable)
+from qcodes.dataset.data_storage_interface import (
+    DataReaderInterface, DataWriterInterface, VALUES,
+    MetaData, _Optional, NOT_GIVEN, SizedIterable)
 from .sqlite_base import (
     connect, select_one_where, insert_values, insert_many_values,
     is_pristine_run, update_run_description, add_meta_data,
@@ -45,15 +46,14 @@ class IteratorWithLength(wrapt.ObjectProxy, SizedIterable):
         return self._self_length
 
 
-class SqliteStorageInterface(DataStorageInterface):
+class SqliteReaderInterface(DataReaderInterface):
     """
     """
     def __init__(self, guid: str, *,
                  run_id: Optional[int]=None,
                  conn: Optional[ConnectionPlus]=None,
                  path_to_db: Optional[str]=None,
-                 exp_id: Optional[int]=None,
-                 name: Optional[str]=None):
+                 exp_id: Optional[int]=None):
 
         if path_to_db is not None and conn is not None:
             raise ValueError("Both `path_to_db` and `conn` arguments have "
@@ -74,123 +74,23 @@ class SqliteStorageInterface(DataStorageInterface):
 
         super().__init__(guid)
 
-        # The following attributes are assigned by create_run OR
-        # retrieve_meta_data, depending on what the DataSet constructor wants
-        # (i.e. to load or create)
+        # The following attributes are assigned in retrieve meta_data
         self.run_id: Optional[int] = None
         self.table_name: Optional[str] = None
         self.counter: Optional[int] = None
-
-        # the following values are only used in create_run. If this instance is
-        # constructed to load a run, the following values are ignored,
-        # and get overwritten by retrieve_meta_data call
-        self.exp_id: Optional[int] = exp_id
-        self.name: Optional[str] = name
-
-        # to be implemented later
-        self.subscribers: Dict[str, '_Subscriber'] = {}
+        self.name: Optional[str] = None
+        self.exp_id: Optional[str] = None
 
     def run_exists(self) -> bool:
         """
         Return the truth value of the statement "a run with the guid of this
         instance exists in the database"
         """
+        if self.guid == '' and self.run_id is None:
+            return False
+
         answers = is_guid_in_database(self.conn, self.guid)
         return answers[self.guid]
-
-    def create_run(self) -> None:
-        """
-        Create an entry for this run is the database file
-        """
-        if self.run_exists():
-            raise ValueError('Run already exists, can not create it.')
-
-        if self.exp_id is None:
-            if len(get_experiments(self.conn)) > 0:
-                self.exp_id = get_last_experiment(self.conn)
-            else:
-                raise ValueError("No experiments found. "
-                                 "You can start a new one with:"
-                                 " new_experiment(name, sample_name)")
-
-        self.name = self.name or "dataset"
-
-        _, self.run_id, self.table_name = create_run(
-            self.conn, self.exp_id, self.name, self.guid)
-
-        self.counter = get_result_counter_from_runid(self.conn, self.run_id)
-
-    def prepare_for_storing_results(self) -> None:
-        pass
-
-    def store_results(self, results: Dict[str, VALUES]):
-        self._validate_results_dict(results)
-
-        if len(next(iter(results.values()))) == 1:
-            # in this case, the given dictionary contains single value per key
-            insert_values(self.conn, self.table_name,
-                          list(results.keys()),
-                          [v[0] for v in results.values()])
-        else:
-            # here, the given dictionary contains multiple values per key
-            values_transposed = list(map(list, zip(*results.values())))
-            insert_many_values(self.conn, self.table_name,
-                               list(results.keys()),
-                               list(values_transposed))  # type: ignore
-
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_description: _Optional[RunDescriber]=NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
-                        tier: _Optional[int]=NOT_GIVEN) -> None:
-        """
-        Performs one atomic transaction for all the fields. Each field is
-        set by a separate function that should check for inconsistencies and
-        raise if it finds an inconsistency
-        """
-        queries: Dict[Callable[[ConnectionPlus, Any], None], _Optional[Any]]
-        queries = {self._set_run_completed: run_completed,
-                   self._set_run_description: run_description,
-                   self._set_tags: tags,
-                   self._set_snapshot: snapshot}
-
-        with atomic(self.conn) as conn:
-            for func, kwarg in queries.items():
-                if kwarg != NOT_GIVEN:
-                    func(conn, kwarg)
-
-    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> None:
-        """
-        Set the complete_timestamp and is_complete. Will raise if the former
-        is not-NULL or if the latter is 1
-        """
-        if not is_pristine_run(conn, self.run_id):
-            raise ValueError(f'Can not write run_completed to GUID {self.guid}'
-                              ', that run has already been completed.')
-
-        mark_run_complete(conn, completion_time=time, run_id=self.run_id)
-
-    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber) \
-            -> None:
-        # update the result_table columns and write to layouts and dependencies
-        existing_params = get_parameters(conn, self.run_id)
-        for param in desc.interdeps.paramspecs:
-            if param in existing_params:
-                pass
-            else:
-                add_parameter(conn, self.table_name, param)
-        # update the run_description itself
-        update_run_description(conn, self.run_id, desc.to_json())
-
-    def _set_tags(self, conn: ConnectionPlus, tags: Dict[str, Any]) -> None:
-        for tag, value in tags.items():
-            add_meta_data(conn, self.run_id, {tag: value})
-
-    def _set_snapshot(self, conn: ConnectionPlus, snapshot: dict) -> None:
-        snapshot_json = self._encode_snapshot(snapshot)
-        add_meta_data(conn, self.run_id, {'snapshot': snapshot_json})
 
     @staticmethod
     def _encode_snapshot(snapshot: dict) -> str:
@@ -332,3 +232,139 @@ class SqliteStorageInterface(DataStorageInterface):
                       sample_name=sample_name)
 
         return md
+
+
+class SqliteWriterInterface(DataWriterInterface):
+    """
+    """
+    def __init__(self, guid: str, *,
+                 conn: Optional[ConnectionPlus] = None,
+                 path_to_db: Optional[str] = None,
+                 exp_id: Optional[int] = None,
+                 name: Optional[str] = None):
+
+        if path_to_db is not None and conn is not None:
+            raise ValueError("Both `path_to_db` and `conn` arguments have "
+                                "been passed together with non-None values. "
+                                "This is not allowed.")
+
+        self.path_to_db = path_to_db or get_DB_location()
+        self.conn = make_connection_plus_from(conn) if conn is not None else \
+            connect(self.path_to_db)
+
+        super().__init__(guid)
+
+        # the following values are used in create_run
+        self.exp_id: Optional[int] = exp_id
+        self.name: Optional[str] = name
+
+        # The following attributes are assigned by create_run OR
+        # retrieve_meta_data, depending on what the DataSet constructor wants
+        # (i.e. to load or create)
+        self.run_id: Optional[int] = None
+        self.table_name: Optional[str] = None
+        self.counter: Optional[int] = None
+
+        # Used by the DataSet
+        self.subscribers: Dict[str, '_Subscriber'] = {}
+
+    def create_run(self) -> None:
+        """
+        Create an entry for this run is the database file
+        """
+
+        if self.exp_id is None:
+            if len(get_experiments(self.conn)) > 0:
+                self.exp_id = get_last_experiment(self.conn)
+            else:
+                raise ValueError("No experiments found. "
+                                 "You can start a new one with:"
+                                 " new_experiment(name, sample_name)")
+
+        self.name = self.name or "dataset"
+
+        with atomic(self.conn) as aconn:
+
+            _, self.run_id, self.table_name = create_run(
+                aconn, self.exp_id, self.name, self.guid)
+            self.counter = get_result_counter_from_runid(aconn, self.run_id)
+
+    def prepare_for_storing_results(self) -> None:
+        pass
+
+    def store_results(self, results: Dict[str, VALUES]):
+        self._validate_results_dict(results)
+
+        if len(next(iter(results.values()))) == 1:
+            # in this case, the given dictionary contains single value per key
+            insert_values(self.conn, self.table_name,
+                          list(results.keys()),
+                          [v[0] for v in results.values()])
+        else:
+            # here, the given dictionary contains multiple values per key
+            values_transposed = list(map(list, zip(*results.values())))
+            insert_many_values(self.conn, self.table_name,
+                               list(results.keys()),
+                               list(values_transposed))  # type: ignore
+
+    def store_meta_data(self, *,
+                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
+                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
+                        run_description: _Optional[RunDescriber]=NOT_GIVEN,
+                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
+                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
+                        tier: _Optional[int]=NOT_GIVEN) -> None:
+        """
+        Performs one atomic transaction for all the fields. Each field is
+        set by a separate function that should check for inconsistencies and
+        raise if it finds an inconsistency
+        """
+        queries: Dict[Callable[[ConnectionPlus, Any], None], _Optional[Any]]
+        queries = {self._set_run_completed: run_completed,
+                   self._set_run_description: run_description,
+                   self._set_tags: tags,
+                   self._set_snapshot: snapshot}
+
+        with atomic(self.conn) as conn:
+            for func, kwarg in queries.items():
+                if kwarg != NOT_GIVEN:
+                    func(conn, kwarg)
+
+    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> None:
+        """
+        Set the complete_timestamp and is_complete. Will raise if the former
+        is not-NULL or if the latter is 1
+        """
+        if not is_pristine_run(conn, self.run_id):
+            raise ValueError(f'Can not write run_completed to GUID {self.guid}'
+                              ', that run has already been completed.')
+
+        mark_run_complete(conn, completion_time=time, run_id=self.run_id)
+
+    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber) \
+            -> None:
+        # update the result_table columns and write to layouts and dependencies
+        existing_params = get_parameters(conn, self.run_id)
+        for param in desc.interdeps.paramspecs:
+            if param in existing_params:
+                pass
+            else:
+                add_parameter(conn, self.table_name, param)
+        # update the run_description itself
+        update_run_description(conn, self.run_id, desc.to_json())
+
+    def _set_tags(self, conn: ConnectionPlus, tags: Dict[str, Any]) -> None:
+        for tag, value in tags.items():
+            add_meta_data(conn, self.run_id, {tag: value})
+
+    def _set_snapshot(self, conn: ConnectionPlus, snapshot: dict) -> None:
+        snapshot_json = self._encode_snapshot(snapshot)
+        add_meta_data(conn, self.run_id, {'snapshot': snapshot_json})
+
+    @staticmethod
+    def _encode_snapshot(snapshot: dict) -> str:
+        return json.dumps(snapshot, cls=NumpyJSONEncoder)
+
+    @staticmethod
+    def _decode_snapshot(snapshot: str) -> dict:
+        return json.loads(snapshot)
