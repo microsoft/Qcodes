@@ -1,5 +1,6 @@
 import math
-from typing import Union, Dict, Sequence, Optional, Any, Iterator
+from typing import Union, Dict, Sequence, Optional, Any, Iterator, Callable, \
+    TYPE_CHECKING
 from numbers import Number
 import json
 
@@ -30,6 +31,9 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         is_guid_in_database,
                                         make_connection_plus_from,
                                         mark_run_complete)
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set import _Subscriber
 
 
 class IteratorWithLength(wrapt.ObjectProxy, SizedIterable):
@@ -84,7 +88,7 @@ class SqliteStorageInterface(DataStorageInterface):
         self.name: Optional[str] = name
 
         # to be implemented later
-        self.subscribers = {}
+        self.subscribers: Dict[str, '_Subscriber'] = {}
 
     def run_exists(self) -> bool:
         """
@@ -132,7 +136,7 @@ class SqliteStorageInterface(DataStorageInterface):
             values_transposed = list(map(list, zip(*results.values())))
             insert_many_values(self.conn, self.table_name,
                                list(results.keys()),
-                               list(values_transposed))
+                               list(values_transposed))  # type: ignore
 
     def store_meta_data(self, *,
                         run_started: _Optional[Optional[float]]=NOT_GIVEN,
@@ -146,6 +150,7 @@ class SqliteStorageInterface(DataStorageInterface):
         set by a separate function that should check for inconsistencies and
         raise if it finds an inconsistency
         """
+        queries: Dict[Callable[[ConnectionPlus, Any], None], _Optional[Any]]
         queries = {self._set_run_completed: run_completed,
                    self._set_run_description: run_description,
                    self._set_tags: tags,
@@ -156,7 +161,7 @@ class SqliteStorageInterface(DataStorageInterface):
                 if kwarg != NOT_GIVEN:
                     func(conn, kwarg)
 
-    def _set_run_completed(self, conn: ConnectionPlus, time: float):
+    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> None:
         """
         Set the complete_timestamp and is_complete. Will raise if the former
         is not-NULL or if the latter is 1
@@ -167,7 +172,8 @@ class SqliteStorageInterface(DataStorageInterface):
 
         mark_run_complete(conn, completion_time=time, run_id=self.run_id)
 
-    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber):
+    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber) \
+            -> None:
         # update the result_table columns and write to layouts and dependencies
         existing_params = get_parameters(conn, self.run_id)
         for param in desc.interdeps.paramspecs:
@@ -232,7 +238,7 @@ class SqliteStorageInterface(DataStorageInterface):
         first = max((start if start_specified else -math.inf), 1) - 1
         last = min((stop if stop_specified else math.inf) - 1,
                    self.retrieve_number_of_results() - 1)
-        iterator_length = max(last - first + 1, 0)
+        iterator_length = int(max(last - first + 1, 0))
 
         results_iterator = IteratorWithLength(results_iterator,
                                               iterator_length)

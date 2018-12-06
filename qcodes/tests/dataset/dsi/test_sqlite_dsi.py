@@ -489,13 +489,14 @@ def test_store_meta_data__tags(experiment):
     assert md.tags == tags_all
 
 
-def test_store_meta_data__snapshot(experiment):
+def test_store_meta_data__snapshot(experiment, request):
     guid = generate_guid()
     conn = experiment.conn
     dsi = SqliteStorageInterface(guid, conn=conn)
     dsi.create_run()
 
     control_conn = connect(experiment.path_to_db)
+    request.addfinalizer(control_conn.close)
 
     # assert initial state
 
