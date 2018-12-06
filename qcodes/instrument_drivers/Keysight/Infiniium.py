@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Callable
+from typing import Callable
 from functools import partial
 
 import numpy as np
@@ -40,9 +40,10 @@ class RawTrace(ArrayParameter):
         self._channel = channel
         self._instrument = instrument
 
-        self.npts: int = None 
+        self.npts: int = None
         self.xorigin: float = None
-        self.xincrem: float = None 
+        self.xincrem: float = None
+        self.xdata : np.ndarray = None
 
     def prepare_curvedata(self):
         """
@@ -61,11 +62,11 @@ class RawTrace(ArrayParameter):
         # step size
         self.xincrem = float(instr.ask(":WAVeform:XINCrement?"))
         # calculate set points
-        xdata = np.linspace(
+        self.xdata = np.linspace(
             self.xorigin, self.npts * self.xincrem + self.xorigin, self.npts)
 
         # set setpoints
-        self.setpoints = (tuple(xdata), )
+        self.setpoints = (tuple(self.xdata), )
         self.shape = (self.npts, )
 
         # make this on a per channel basis?
@@ -127,22 +128,18 @@ class RawTrace(ArrayParameter):
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
         xincrem = float(instr.ask(":WAVeform:XINCrement?"))
-        error = self.xorigin - xorigin
-        # this is a bad workaround
-        if error > xincrem:
-            raise TraceSetPointsChanged('{} is the prepared x origin and {} \
-            is the x origin after the measurement.'.format(self.xorigin,
-                                                           xorigin))
-        error = (self.xincrem - xincrem) / xincrem
-        if error > 1e-6:
-            raise TraceSetPointsChanged('{} is the prepared x increment and {} \
-            is the x increment after the measurement.'.format(self.xincrem,
-                                                              xincrem))
+
+        xdata_sampled = np.linspace(
+            xorigin, self.npts * xincrem + xorigin, self.npts)
+
+        ydata_sampled = np.array(data)
+        ydata = np.interp(self.xdata, xdata_sampled, ydata_sampled)
+
         # y data scaling
         yorigin = float(instr.ask(":WAVeform:YORigin?"))
         yinc = float(instr.ask(":WAVeform:YINCrement?"))
-        channel_data = np.array(data)
-        channel_data = np.multiply(channel_data, yinc) + yorigin
+
+        channel_data = np.multiply(ydata, yinc) + yorigin
 
         # restore original state
         # ---------------------------------------------------------------------
@@ -439,7 +436,7 @@ class Infiniium(VisaInstrument):
                            )
         # Acquisition
         # If sample points, rate and timebase_scale are set in an
-        # incomensurate way, the scope only displays part of the waveform
+        # incommensurate way, the scope only displays part of the waveform
         self.add_parameter('acquire_points',
                            label='sample points',
                            get_cmd='ACQ:POIN?',
@@ -480,42 +477,46 @@ class Infiniium(VisaInstrument):
 
         # TODO: implement as array parameter to allow for setting the other filter
         # ratios
-        self.add_parameter('acquire_interpolate',
-                            get_cmd=':ACQuire:INTerpolate?',
-                            set_cmd=self._cmd_and_invalidate(':ACQuire:INTerpolate {}'),
-                            val_mapping={True: 1, False: 0}
-                            )
+        self.add_parameter(
+            'acquire_interpolate',
+            get_cmd=':ACQuire:INTerpolate?',
+            set_cmd=self._cmd_and_invalidate(':ACQuire:INTerpolate {}'),
+            val_mapping={True: 1, False: 0}
+        )
 
-        self.add_parameter('acquire_mode',
-                            label='Acquisition mode',
-                            get_cmd= 'ACQuire:MODE?',
-                            set_cmd='ACQuire:MODE {}',
-                            vals=Enum('ETIMe', 'RTIMe', 'PDETect',
-                                      'HRESolution', 'SEGMented',
-                                      'SEGPdetect', 'SEGHres')
-                            )
+        self.add_parameter(
+            'acquire_mode',
+            label='Acquisition mode',
+            get_cmd= 'ACQuire:MODE?',
+            set_cmd='ACQuire:MODE {}',
+            vals=Enum(
+                'ETIMe', 'RTIMe', 'PDETect',
+                'HRESolution', 'SEGMented',
+                'SEGPdetect', 'SEGHres')
+        )
 
-        self.add_parameter('acquire_timespan',
-                            get_cmd=(lambda: self.acquire_points.get_latest() \
-                                            /self.acquire_sample_rate.get_latest()),
-                            unit='s',
-                            get_parser=float
-                            )
+        self.add_parameter(
+            'acquire_timespan',
+            get_cmd=lambda: self.acquire_points.get_latest() / self.acquire_sample_rate.get_latest(),
+            unit='s',
+            get_parser=float
+        )
 
         # time of the first point
-        self.add_parameter('waveform_xorigin',
-                            get_cmd='WAVeform:XORigin?',
-                            unit='s',
-                            get_parser=float
-                            )
+        self.add_parameter(
+            'waveform_xorigin',
+            get_cmd='WAVeform:XORigin?',
+            unit='s',
+            get_parser=float
+        )
         # Channels
-        channels = ChannelList(self, "Channels", InfiniiumChannel,
-                                snapshotable=False)
+        channels = ChannelList(
+            self, "Channels", InfiniiumChannel, snapshotable=False)
 
-        for i in range(1,5):
-            channel = InfiniiumChannel(self, 'chan{}'.format(i), i)
+        for i in range(1, 5):
+            channel = InfiniiumChannel(self, f'chan{i}', i)
             channels.append(channel)
-            self.add_submodule('ch{}'.format(i), channel)
+            self.add_submodule(f'ch{i}', channel)
         channels.lock()
         self.add_submodule('channels', channels)
 
