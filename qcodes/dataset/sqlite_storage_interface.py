@@ -6,6 +6,7 @@ import json
 import wrapt
 from numpy import ndarray
 
+from qcodes.dataset.data_set import _Subscriber
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.utils.helpers import NumpyJSONEncoder
 from .data_storage_interface import (
@@ -84,7 +85,7 @@ class SqliteStorageInterface(DataStorageInterface):
         self.name: Optional[str] = name
 
         # to be implemented later
-        self.subscribers = {}
+        self.subscribers: Dict[str, _Subscriber] = {}
 
     def run_exists(self) -> bool:
         """
