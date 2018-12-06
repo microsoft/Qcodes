@@ -779,38 +779,39 @@ def test_get_parameter_data(scalar_dataset):
     ds = scalar_dataset
     input_names = ['param_3']
 
-    data = ds.get_parameter_data(*input_names)
-
-    assert len(data.keys()) == len(input_names)
-
     expected_names = {}
     expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
                                  'param_3']
     expected_shapes = {}
     expected_shapes['param_3'] = [(10**3, )]*4
 
-    verify_data_dict(data, input_names, expected_names, expected_shapes)
+    parameter_test_helper(scalar_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes)
+
 
 def test_get_array_parameter_data(array_dataset):
 
-    inputnames = ['testparameter']
-    data = array_dataset.get_parameter_data(*inputnames)
-    assert len(data.keys()) == len(inputnames)
+    input_names = ['testparameter']
+
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'this_setpoint']
     expected_shapes = {}
     expected_shapes['testparameter'] = [(5, ), (5, )]
 
-    verify_data_dict(data, inputnames, expected_names, expected_shapes)
+    parameter_test_helper(array_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes)
 
 
 def test_get_multi_parameter_data(multi_dataset):
     paramspecs = multi_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    inputnames = ['this', 'that']
-    data = multi_dataset.get_parameter_data(*inputnames)
-    assert len(data.keys()) == len(inputnames)
+    input_names = ['this', 'that']
+
     expected_names = {}
     expected_names['this'] = ['this', 'this_setpoint', 'that_setpoint']
     expected_names['that'] = ['that', 'this_setpoint', 'that_setpoint']
@@ -821,16 +822,18 @@ def test_get_multi_parameter_data(multi_dataset):
     else:
         expected_shapes['this'] = [(15,), (15,)]
         expected_shapes['that'] = [(15,), (15,)]
-    verify_data_dict(data, inputnames, expected_names, expected_shapes)
+    parameter_test_helper(multi_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes)
 
 
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
     paramspecs = array_in_scalar_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    inputnames = ['testparameter']
-    data = array_in_scalar_dataset.get_parameter_data(*inputnames)
-    assert len(data.keys()) == len(inputnames)
+    input_names = ['testparameter']
+
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'scalarparam',
                                        'this_setpoint']
@@ -839,16 +842,18 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
         expected_shapes['testparameter'] = [(9, 5), (9, 5)]
     else:
         expected_shapes['testparameter'] = [(45,), (45,)]
-    verify_data_dict(data, inputnames, expected_names, expected_shapes)
+    parameter_test_helper(array_in_scalar_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes)
 
 
 def test_get_array_in_str_param_data(array_in_str_dataset):
     paramspecs = array_in_str_dataset.paramspecs
     types = [param.type for param in paramspecs.values()]
 
-    inputnames = ['testparameter']
-    data = array_in_str_dataset.get_parameter_data(*inputnames)
-    assert len(data.keys()) == len(inputnames)
+    input_names = ['testparameter']
+
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'textparam',
                                        'this_setpoint']
@@ -857,19 +862,18 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
         expected_shapes['testparameter'] = [(3, 5), (3, 5)]
     else:
         expected_shapes['testparameter'] = [(15,), (15,)]
-    verify_data_dict(data, inputnames, expected_names, expected_shapes)
+    parameter_test_helper(array_in_str_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes)
 
 
 def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
     ds = standalone_parameters_dataset
-    params = get_non_dependencies(ds.conn,
-                                      ds.run_id)
+    params = get_non_dependencies(ds.conn, ds.run_id)
+
     expected_toplevel_params = ['param_1', 'param_2', 'param_3']
     assert params == expected_toplevel_params
-
-    data = standalone_parameters_dataset.get_parameter_data()
-
-    assert len(data.keys()) == len(expected_toplevel_params)
 
     expected_names = {}
     expected_names['param_1'] = []
@@ -881,42 +885,18 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
     expected_shapes['param_2'] = [(10 ** 3,)]
     expected_shapes['param_3'] = [(10**3, )]*2
 
-    verify_data_dict(data, expected_toplevel_params, expected_names,
-                     expected_shapes)
+    parameter_test_helper(ds,
+                          expected_toplevel_params,
+                          expected_names,
+                          expected_shapes)
 
 
-def parameter_test_helper(ds):
-    params = ds.parameters.split(',')
-    # delete some random parameter to test it with an incomplete list
-    del params[-2]
-    # replace first list entry by paramspec
-    param_names = copy(params)
-    params[0] = ds.paramspecs[params[0]]
+def parameter_test_helper(ds, toplevel_names, expected_names, expected_shapes):
+    data = ds.get_parameter_data(*toplevel_names)
+    all_data = ds.get_parameter_data()
 
+    assert data.keys() == all_data.keys()
+    assert len(data.keys()) == len(toplevel_names)
 
-
-    ref = ds.get_data(*params)
-    dut = ds.get_parameter_data(*params)
-
-    column_lengths = []
-    for col in dut.values():
-        column_lengths.append(col.size)
-    column_lengths = np.array(column_lengths)
-    assert np.all(column_lengths == column_lengths[0])
-
-    for i_row, row in enumerate(ref):
-        for i_param, param_name in enumerate(param_names):
-            v_ref = row[i_param]
-            v_test = dut[param_name][i_row]
-            if isinstance(v_ref, float):
-                assert isinstance(v_test, np.float64)
-                assert np.isclose(v_test, v_ref)
-            elif isinstance(v_ref, int):
-                # default datatype for int is c_long which is 32 bit on
-                # windows and 64bit on linux
-                assert isinstance(v_test, np.int32) or \
-                       isinstance(v_test, np.int64)
-                assert np.isclose(v_test, v_ref)
-            elif isinstance(v_ref, str):
-                assert isinstance(v_test, np.str_)
-                assert v_ref == v_test
+    verify_data_dict(data, toplevel_names, expected_names, expected_shapes)
+    verify_data_dict(all_data, toplevel_names, expected_names, expected_shapes)
