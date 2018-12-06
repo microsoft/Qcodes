@@ -50,8 +50,6 @@ class MetaData:
 class DataReaderInterface(ABC):
     """
     """
-    VERSION: Final = 0
-
     def __init__(self, guid: str):
         self.guid = guid
 
@@ -105,8 +103,6 @@ class DataReaderInterface(ABC):
 class DataWriterInterface(ABC):
     """
     """
-    VERSION: Final = 0
-
     def __init__(self, guid: str):
         self.guid = guid
 
@@ -148,8 +144,6 @@ class DataWriterInterface(ABC):
 class DataStorageInterface(DataReaderInterface, DataWriterInterface, ABC):
     """
     """
-    VERSION: Final = 0
-
     def __init__(self, guid: str):
         super(DataStorageInterface, self).__init__(guid)
         self.guid = guid
