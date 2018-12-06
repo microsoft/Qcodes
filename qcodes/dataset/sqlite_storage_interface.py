@@ -78,7 +78,8 @@ class SqliteStorageInterface(DataStorageInterface):
         self.counter: Optional[int] = None
 
         # the following values are only used in create_run. If this instance is
-        # constructed to load a run, the following values are ignored
+        # constructed to load a run, the following values are ignored,
+        # and get overwritten by retrieve_meta_data call
         self.exp_id: Optional[int] = exp_id
         self.name: Optional[str] = name
 
@@ -116,17 +117,7 @@ class SqliteStorageInterface(DataStorageInterface):
         self.counter = get_result_counter_from_runid(self.conn, self.run_id)
 
     def prepare_for_storing_results(self) -> None:
-        self._set_columns_of_results_table()
-
-    def _set_columns_of_results_table(self) -> None:
-        """
-        Create columns in the results table for the values that are going
-        to be added with store_results
-        """
-        md = self.retrieve_meta_data()
-        paramspecs = md.run_description.interdeps.paramspecs
-
-        add_parameter(self.conn, self.table_name, *paramspecs)
+        pass
 
     def store_results(self, results: Dict[str, VALUES]):
         self._validate_results_dict(results)
@@ -271,7 +262,8 @@ class SqliteStorageInterface(DataStorageInterface):
         Get the relevant info from the experiments table
         """
         sql = """
-              SELECT sample_name, experiments.name, start_time, end_time
+              SELECT sample_name, experiments.name, start_time, end_time,
+                  experiments.exp_id
               FROM experiments
               JOIN runs ON runs.exp_id = experiments.exp_id
               WHERE runs.run_id = ?
@@ -303,9 +295,6 @@ class SqliteStorageInterface(DataStorageInterface):
         run_exp_info = self._get_experiment_table_info()
         run_info.update(run_exp_info)
 
-        if self.table_name is None:
-            self.table_name = run_info['result_table_name']
-
         desc = RunDescriber.from_json(run_info['run_description'])
         run_started = run_info['run_timestamp']
         run_completed = run_info['completed_timestamp']
@@ -317,6 +306,15 @@ class SqliteStorageInterface(DataStorageInterface):
         name = run_info['name']
         exp_name = run_info['exp_name']
         sample_name = run_info['sample_name']
+
+        if self.name is None:
+            self.name = name
+
+        if self.table_name is None:
+            self.table_name = run_info['result_table_name']
+
+        if self.exp_id is None:
+            self.exp_id = run_exp_info['exp_id']
 
         md = MetaData(run_description=desc,
                       run_started=run_started,

@@ -3,6 +3,7 @@ import json
 import numpy
 import pytest
 
+from qcodes.dataset.sqlite_base import get_metadata
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.measurements import Measurement
@@ -51,9 +52,13 @@ def test_station_snapshot_during_measurement(experiment, dac, dmm,
     with measurement.run() as data_saver:
         data_saver.add_result((dac.ch1, 7), (dmm.v1, 5))
 
-    # 1. Test `get_metadata('snapshot')` method
+    # 1. Use `get_metadata('snapshot', ...)` method of sqlite_base to extract
+    # the snapshot from the database for reference
 
-    json_snapshot_from_dataset = data_saver.dataset.get_metadata('snapshot')
+    json_snapshot_from_dataset = get_metadata(
+        data_saver.dataset.dsi.conn,
+        'snapshot',
+        data_saver.dataset.dsi.table_name)
     snapshot_from_dataset = json.loads(json_snapshot_from_dataset)
 
     expected_snapshot = {'station': snapshot_of_station}

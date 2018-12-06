@@ -184,7 +184,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                          'can not be copied. The incomplete dataset has '
                          f'GUID: {dataset.guid} and run_id: {dataset.run_id}')
 
-    source_conn = dataset.conn
+    source_conn = dataset.dsi.conn
 
     run_id = get_runid_from_guid(target_conn, dataset.guid)
 
@@ -203,9 +203,11 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                                                      metadata=metadata)
     _populate_results_table(source_conn,
                             target_conn,
-                            dataset.table_name,
+                            dataset.dsi.table_name,
                             target_table_name)
-    mark_run_complete(target_conn, target_run_id)
+    mark_run_complete(target_conn,
+                      dataset.completed_timestamp_raw,
+                      target_run_id)
     _rewrite_timestamps(target_conn,
                         target_run_id,
                         dataset.run_timestamp_raw,

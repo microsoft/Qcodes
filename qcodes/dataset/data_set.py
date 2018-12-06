@@ -1,4 +1,6 @@
 import functools
+from collections import defaultdict
+from itertools import chain
 import json
 from typing import Any, Dict, List, Optional, Union, Sized, Callable
 from threading import Thread
@@ -472,6 +474,7 @@ class DataSet(Sized):
         desc = self.description
         desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
         self._description = desc
+
         self.dsi.store_meta_data(run_description=desc)
 
     def get_parameters(self) -> SPECS:
@@ -667,8 +670,13 @@ class DataSet(Sized):
                     raise ValueError(
                         "This parameter does not have  a name") from e
             valid_param_names.append(maybeParam)
-        data = get_data(self.conn, self.table_name, valid_param_names,
-                        start, end)
+
+        results_iterator = self.dsi.replay_results(start=start, stop=end)
+
+        data = [list(chain.from_iterable([result[p]
+                                          for p in valid_param_names]))
+                for result in results_iterator]
+
         return data
 
     def get_values(self, param_name: str) -> List[List[Any]]:
@@ -678,7 +686,14 @@ class DataSet(Sized):
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        values = get_values(self.conn, self.table_name, param_name)
+        # This is a naive implementation, and should probably substituted by
+        # a call to dsi.retrieve_results once that is implemented
+        values = self.get_data(param_name)
+
+        # Skipping the "None" values, for example, "NULL"s from SQLite
+        values = [val for val in values
+                  for subval in val
+                  if subval is not None]
 
         return values
 
@@ -690,14 +705,30 @@ class DataSet(Sized):
             param_name: The name of the parameter for which to get the
                 setpoints
         """
-
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        if self.paramspecs[param_name].depends_on == '':
+        sp_names_str = self.paramspecs[param_name].depends_on
+        if sp_names_str == '':
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
-        setpoints = get_setpoints(self.conn, self.table_name, param_name)
+        sp_names = sp_names_str.split(', ')
+
+        # This is a naive implementation, and should probably be substituted by
+        # a call to dsi.retrieve_results once that is implemented
+
+        results_iterator = self.dsi.replay_results()
+
+        setpoints = defaultdict(list)  # we are going to accumulate values
+
+        for result in results_iterator:
+            # Skipping the setpoint values for "None" values of the parameter
+            # (for example, "NULL"s from SQLite)
+            param_result_subitem_is_value = \
+                [subitem is not None for subitem in result[param_name]]
+            if all(param_result_subitem_is_value):
+                for sp_name in sp_names:
+                    setpoints[sp_name].append(result[sp_name])
 
         return setpoints
 

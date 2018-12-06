@@ -10,6 +10,7 @@ import pytest
 
 import qcodes as qc
 from qcodes import new_experiment, new_data_set, ParamSpec
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import (initialise_database,
@@ -347,10 +348,15 @@ def test_update_existing_guids(caplog):
                            'INFO', 'INFO']
 
         with caplog.at_level(logging.INFO):
-            update_GUIDs(ds1.conn)
+            update_GUIDs(ds1.dsi.conn)
 
             for record, lvl in zip(caplog.records, expected_levels):
                 assert record.levelname == lvl
+
+        # We need to instantiate the datasets because `guid` does not get
+        # updated in DataSet instances if it's changed only in the database
+        ds1 = DataSet(path_to_db=ds1.dsi.path_to_db, run_id=ds1.run_id)
+        ds2 = DataSet(path_to_db=ds2.dsi.path_to_db, run_id=ds2.run_id)
 
         guid_comps_1 = parse_guid(ds1.guid)
         assert guid_comps_1['location'] == new_loc
