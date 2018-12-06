@@ -133,7 +133,7 @@ class SqliteStorageInterface(DataStorageInterface):
             values_transposed = list(map(list, zip(*results.values())))
             insert_many_values(self.conn, self.table_name,
                                list(results.keys()),
-                               list(values_transposed))
+                               list(values_transposed))  # type: ignore
 
     def store_meta_data(self, *,
                         run_started: _Optional[Optional[float]]=NOT_GIVEN,
