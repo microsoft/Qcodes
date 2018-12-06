@@ -719,6 +719,7 @@ class DataSet(Sized):
 
         results_iterator = self.dsi.replay_results()
 
+        setpoints: Dict[str, List[List[Any]]]
         setpoints = defaultdict(list)  # we are going to accumulate values
 
         for result in results_iterator:
