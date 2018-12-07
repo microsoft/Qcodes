@@ -11,8 +11,8 @@ jobs:
       vmImage: "win1803"
 
     steps:
-#      - powershell: |
-#          Invoke-WebRequest https://raw.githubusercontent.com/Drylm/rmq-win/master/Dockerfile.3.7.7 -OutFile rmqdockerfile
+      - powershell: |
+           docker version
 #          docker build -t rmq:3.7.7 -f .\rmqdockerfile .
       - task: Docker@1
         inputs:
