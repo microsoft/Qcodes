@@ -12,15 +12,15 @@ jobs:
 
     steps:
       - task: Docker@1
-          inputs:
-            command: 'run'
-            imagename: 'rabbitmq:3'
-            containerName: some-rabbit
-            ports: 5672
-            volumes: '$(System.DefaultWorkingDirectory):/src'
-            workingDirectory: /src
-            restartPolicy: onFailure
-          displayName: 'Run rabbitmq'
+        inputs:
+          command: 'run'
+          imagename: 'rabbitmq:3'
+          containerName: some-rabbit
+          ports: 5672
+          volumes: '$(System.DefaultWorkingDirectory):/src'
+          workingDirectory: /src
+          restartPolicy: onFailure
+        displayName: 'Run rabbitmq'
       # Conda Environment
       # Create and activate a Conda environment.
       - task: CondaEnvironment@1
