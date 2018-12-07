@@ -12,7 +12,8 @@ jobs:
 
     steps:
       # switch to linux containers
-      - powershell: "& 'C:\Program Files\Docker\Docker\DockerCli.exe' -SwitchDaemon"
+      - powershell: |
+          "& 'C:\\Program Files\\Docker\\Docker\\DockerCli.exe' -SwitchDaemon"
       - task: Docker@1
         inputs:
           command: 'run'
