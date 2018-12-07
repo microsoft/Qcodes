@@ -15,8 +15,9 @@ jobs:
       - powershell: |
           get-command Docker
           docker version
-          "& 'C:\\Program Files\\Docker\\Docker\\DockerCli.exe' -SwitchDaemon"
+          "& 'C:\\Program Files\\Docker\\DockerCli.exe' -SwitchDaemon"
           docker version
+
       - task: Docker@1
         inputs:
           command: 'run'
