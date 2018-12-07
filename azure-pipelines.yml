@@ -20,8 +20,6 @@ jobs:
           imagename: 'rabbitmq:3'
           containerName: some-rabbit
           ports: 5672
-          volumes: '$(System.DefaultWorkingDirectory):/src'
-          workingDirectory: /src
           restartPolicy: onFailure
         displayName: 'Run rabbitmq'
       # Conda Environment
