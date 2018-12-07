@@ -13,16 +13,7 @@ jobs:
     steps:
       - powershell: |
           docker version
-          docker --help
-          docker run --help
-      - task: Docker@1
-        inputs:
-          command: 'run --isolation hyperv'
-          imagename: 'gsxsolutions/rmq-nano:3.7.7'
-          containerName: some-rabbit
-          ports: 5672
-          restartPolicy: onFailure
-        displayName: 'Run rabbitmq'
+          docker run --isolation=hyperv gsxsolutions/rmq-nano:3.7.7
       # Conda Environment
       # Create and activate a Conda environment.
       - task: CondaEnvironment@1
