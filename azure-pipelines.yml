@@ -11,6 +11,9 @@ jobs:
       vmImage: "vs2017-win2016"
 
     steps:
+      # switch to linux containers
+      - script: |
+          & 'C:\Program Files\Docker\Docker\DockerCli.exe' -SwitchDaemon
       - task: Docker@1
         inputs:
           command: 'run'
