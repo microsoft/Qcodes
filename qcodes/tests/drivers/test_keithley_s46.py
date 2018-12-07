@@ -1,5 +1,4 @@
 import logging
-
 import pytest
 
 from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
@@ -64,14 +63,14 @@ def test_runtime_error_on_bad_init():
 
 def test_query_close_once_at_init(caplog):
     """
-    Test that, during initialisation, we query the closed channels once only
+    Test that, during initialisation, we query the closed channels only once
     """
     with caplog.at_level(logging.DEBUG):
         S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
         assert caplog.text.count(":CLOS?") == 1
 
 
-def test_init_six(s46_six):
+def test_init_six(s46_six, caplog):
     """
     Test that the six channel instrument initializes correctly.
     """
@@ -81,6 +80,16 @@ def test_init_six(s46_six):
     assert s46_six.closed_channels() == [
         S46.aliases[i] for i in closed_channel_numbers
     ]
+
+    with caplog.at_level(logging.DEBUG):
+        s46_six.open_all_channels()
+        assert ":open (@1)" in caplog.text
+        assert ":open (@8)" in caplog.text
+        assert ":open (@13)" in caplog.text
+
+        assert s46_six.A1._lock._locked_by is None
+        assert s46_six.B1._lock._locked_by is None
+        assert s46_six.C1._lock._locked_by is None
 
 
 def test_init_four(s46_four):
@@ -120,6 +129,8 @@ def test_locking_mechanism(s46_six):
     more then once channel per replay
     2) Test that the lock is released when opening a channel that was closed
     """
+    s46_six.A1("close")
+
     with pytest.raises(
         LockAcquisitionError,
         match="is already in use by channel"
@@ -143,13 +154,3 @@ def test_locking_mechanism(s46_six):
     # Upon opening C1 we should be able to close C2
     s46_six.C1("open")
     s46_six.C2("close")
-
-
-def test_open_all(s46_six):
-    """
-    Verify that calling 'open_all_channels' does not cause an exception.
-    Unfortunately, pyvisa-sim is not flexible enough for us to test if channels
-    have truly opened.
-    """
-    s46_six.open_all_channels()
-
