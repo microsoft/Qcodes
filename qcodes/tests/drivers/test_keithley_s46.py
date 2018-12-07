@@ -1,4 +1,3 @@
-from io import StringIO
 import logging
 
 import pytest
@@ -6,7 +5,6 @@ import pytest
 from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
     S46, LockAcquisitionError
 )
-from qcodes.instrument.visa import VISA_LOGGER
 
 import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_s46.yaml@sim')
@@ -34,14 +32,7 @@ def s46_six():
     """
     A six channel-per-relay instrument
     """
-    io_stream = StringIO()
-    handler = logging.StreamHandler(io_stream)
-    logger = logging.getLogger(VISA_LOGGER)
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
     driver = S46('s46_six', address='GPIB::2::INSTR', visalib=visalib)
-    driver.io_stream = io_stream
 
     yield driver
     driver.close()
@@ -52,14 +43,7 @@ def s46_four():
     """
     A four channel-per-relay instrument
     """
-    io_stream = StringIO()
-    handler = logging.StreamHandler(io_stream)
-    logger = logging.getLogger(VISA_LOGGER)
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
     driver = S46('s46_four', address='GPIB::3::INSTR', visalib=visalib)
-    driver.io_stream = io_stream
 
     yield driver
     driver.close()
@@ -78,12 +62,19 @@ def test_runtime_error_on_bad_init():
         S46('s46_bad_state', address='GPIB::1::INSTR', visalib=visalib)
 
 
+def test_query_close_once_at_init(caplog):
+    """
+    Test that, during initialisation, we query the closed channels once only
+    """
+    with caplog.at_level(logging.DEBUG):
+        S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
+        assert caplog.text.count(":CLOS?") == 1
+
+
 def test_init_six(s46_six):
     """
     Test that the six channel instrument initializes correctly.
     """
-    log_messages = s46_six.io_stream.getvalue()
-    assert log_messages.count(":CLOS?") == 1
     assert len(s46_six.available_channels) == 26
 
     closed_channel_numbers = [1, 8, 13]
@@ -96,8 +87,6 @@ def test_init_four(s46_four):
     """
     Test that the six channel instrument initializes correctly.
     """
-    log_messages = s46_four.io_stream.getvalue()
-    assert log_messages.count(":CLOS?") == 1
     assert len(s46_four.available_channels) == 18
 
     closed_channel_numbers = [1, 8]
