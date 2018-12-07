@@ -9,6 +9,7 @@ import importlib
 import logging
 import uuid
 from queue import Queue, Empty
+from time import sleep
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -46,7 +47,7 @@ from qcodes.dataset.data_storage_interface import (DataReaderInterface,
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.database import get_DB_location, path_to_dbfile
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
@@ -107,12 +108,13 @@ class _Subscriber(Thread):
         self._id = id_
 
         self.dataSet = dataSet
-        if not isinstance(self.dataSet.dsi, SqliteStorageInterface):
-            raise ValueError('Received a dataset with a storage interface of '
-                             'type {type(dataSet.dsi)}. Storage interface '
-                             'must be of type SqliteStorageInterface.')
+        if not isinstance(self.dataSet.dsi.writer, SqliteWriterInterface):
+            raise ValueError('Received a dataset with a writer interface of '
+                             'type {type(dataSet.dsi.writer)}. Writer '
+                             'interface must be of type '
+                             'SqliteWriterInterface.')
 
-        self.table_name = dataSet.dsi.table_name
+        self.table_name = dataSet.dsi.writer.table_name
         self._data_set_len = len(dataSet)
 
         self.state = state
@@ -120,7 +122,8 @@ class _Subscriber(Thread):
         self.data_queue: Queue = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
-        self._loop_sleep_time = loop_sleep_time / 1000  # convert milliseconds to seconds
+        # convert milliseconds to seconds
+        self._loop_sleep_time = loop_sleep_time / 1000
         self.min_queue_length = min_queue_length
 
         if callback_kwargs is None or len(callback_kwargs) == 0:
@@ -131,7 +134,7 @@ class _Subscriber(Thread):
         self.callback_id = f"callback{self._id}"
         self.trigger_id = f"sub{self._id}"
 
-        conn = dataSet.dsi.conn
+        conn = dataSet.dsi.writer.conn
 
         conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
 
@@ -240,7 +243,22 @@ class DataSet(Sized):
                              "qcodes.dataset.data_storage_interface."
                              "DataReaderInterface")
 
+        # Sqlite connection handling:
+        # pass the db path to the "non-prominent" interface, i.e.
+        # the reader when we create a new run and the writer when we load
+        reader_is_sqlite = readerinterface == SqliteReaderInterface
+        writer_is_sqlite = writerinterface == SqliteWriterInterface
+        if  reader_is_sqlite and writer_is_sqlite:
+            if si_kwargs.get('conn', None) is not None:
+                path_to_db = path_to_dbfile(si_kwargs['conn'])
+            else:
+                path_to_db = si_kwargs.get('path_to_db', None)
+            secondary_kwargs = {'path_to_db': path_to_db}
+        else:
+            secondary_kwargs = {}
+
         if guid is not None:  # Case: Loading run
+            log.info(f'Attempting to load existing run with GUID: {guid}')
             if run_id is not None:
                 raise ValueError('Got values for both GUID and run_id. Please '
                                  'provide at most a value for one of them.')
@@ -248,29 +266,35 @@ class DataSet(Sized):
             self.dsi = DataStorageInterface(self._guid,
                                             reader=readerinterface,
                                             writer=writerinterface,
-                                            reader_kwargs=si_kwargs)
+                                            reader_kwargs=si_kwargs,
+                                            writer_kwargs=secondary_kwargs)
             if not self.dsi.run_exists():
                 raise ValueError(f'No run with GUID {guid} found.')
 
         # Note: this is not a feature we want to keep supporting, but it is
         # needed in a transition period from run_id to GUID
         elif run_id is not None:  # Case: Loading run
+            log.info(f'Attempting to load existing run with run_id: {run_id}')
             if readerinterface != SqliteReaderInterface:
                 raise ValueError('Got a value for run_id, but the '
                                  'storageinterface does not support that. '
                                  'You can only use run_id with SQlite.')
+            si_kwargs['run_id'] = run_id
             self.dsi = DataStorageInterface(guid='',
                                             reader=readerinterface,
                                             writer=writerinterface,
-                                            reader_kwargs=si_kwargs)
+                                            reader_kwargs=si_kwargs,
+                                            writer_kwargs=secondary_kwargs)
             self._guid = self.dsi.guid
 
         else:  # Case: Creating run
             self._guid = generate_guid()
+            log.info(f'Creating new run with GUID: {self._guid}')
             self.dsi = DataStorageInterface(self._guid,
                                             reader=readerinterface,
                                             writer=writerinterface,
-                                            writer_kwargs=si_kwargs)
+                                            writer_kwargs=si_kwargs,
+                                            reader_kwargs=secondary_kwargs)
             self.dsi.create_run()
 
         # Assign all attributes
@@ -304,10 +328,10 @@ class DataSet(Sized):
         """Snapshot of the run as a JSON-formatted string (or None)"""
         snapshot_raw = None
 
-        if hasattr(self.dsi, '_encode_snapshot'):
+        if hasattr(self.dsi.reader, '_encode_snapshot'):
             current_snapshot = self.snapshot
             if current_snapshot is not None:
-                snapshot_raw = self.dsi._encode_snapshot(current_snapshot)
+                snapshot_raw = self.dsi.reader._encode_snapshot(current_snapshot)
 
         return snapshot_raw
 
@@ -353,7 +377,8 @@ class DataSet(Sized):
 
     @property
     def description(self) -> RunDescriber:
-        return self._description
+        md = self.dsi.retrieve_meta_data()
+        return md.run_description
 
     @property
     def metadata(self) -> Dict:
@@ -431,7 +456,14 @@ class DataSet(Sized):
 
     @property
     def run_id(self) -> Optional[int]:
-        return getattr(self.dsi, 'run_id', None)
+        w_run_id = getattr(self.dsi.writer, 'run_id', None)
+        r_run_id = getattr(self.dsi.reader, 'run_id', None)
+        if w_run_id is not None and r_run_id is not None:
+            if w_run_id != r_run_id:
+                raise RuntimeError('Reader and writer run_id inconsistent! '
+                                   f'Reader run_id: {r_run_id}, '
+                                   f'writer run_id: {w_run_id}')
+        return w_run_id or r_run_id
 
     def _perform_start_actions(self) -> None:
         """
@@ -739,7 +771,7 @@ class DataSet(Sized):
                 [subitem is not None for subitem in result[param_name]]
             if all(param_result_subitem_is_value):
                 for sp_name in sp_names:
-                    setpoints[sp_name].append(result[sp_name])
+                    setpoints[sp_name].append(result[sp_name])  # type:ignore
 
         return setpoints
 
@@ -793,26 +825,26 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.dsi.conn) as conn:
-            sub = self.dsi.subscribers[uuid]
+        with atomic(self.dsi.writer.conn) as conn:
+            sub = self.dsi.writer.subscribers[uuid]
             remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
             sub.join()
-            del self.dsi.subscribers[uuid]
+            del self.dsi.writer.subscribers[uuid]
 
     def unsubscribe_all(self):
         """
         Remove all subscribers
         """
         sql = "select * from sqlite_master where type = 'trigger';"
-        triggers = atomic_transaction(self.dsi.conn, sql).fetchall()
-        with atomic(self.dsi.conn) as conn:
+        triggers = atomic_transaction(self.dsi.writer.conn, sql).fetchall()
+        with atomic(self.dsi.writer.conn) as conn:
             for trigger in triggers:
                 remove_trigger(conn, trigger['name'])
-            for sub in self.dsi.subscribers.values():
+            for sub in self.dsi.writer.subscribers.values():
                 sub.schedule_stop()
                 sub.join()
-            self.dsi.subscribers.clear()
+            self.dsi.writer.subscribers.clear()
 
     def get_metadata(self, tag: str) -> Any:
         md = self.dsi.retrieve_meta_data()
@@ -825,8 +857,8 @@ class DataSet(Sized):
         out = []
         heading = f"{self.name} #{self.run_id}"
 
-        if hasattr(self.dsi, 'path_to_db'):
-            heading += f'@{self.dsi.path_to_db}'
+        if hasattr(self.dsi.reader, 'path_to_db'):
+            heading += f'@{self.dsi.reader.path_to_db}'
 
         out.append(heading)
         out.append("-" * len(heading))

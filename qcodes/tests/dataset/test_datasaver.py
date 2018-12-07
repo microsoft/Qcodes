@@ -55,7 +55,8 @@ def test_default_callback(experiment):
     finally:
         DataSaver.default_callback = None
         if test_set is not None:
-            test_set.dsi.conn.close()
+            test_set.dsi.writer.conn.close()
+            test_set.dsi.reader.conn.close()
 
 
 def test_numpy_types(experiment):
@@ -102,4 +103,5 @@ def test_saving_numeric_values_as_text(experiment, numeric_type):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, numeric_type(2)))
     finally:
-        data_saver.dataset.dsi.conn.close()
+        data_saver.dataset.dsi.writer.conn.close()
+        data_saver.dataset.dsi.reader.conn.close()

@@ -88,8 +88,11 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
+def test_basic_extraction(two_empty_temp_db_connections,
+                          some_paramspecs, request):
     source_conn, target_conn = two_empty_temp_db_connections
+    #request.addfinalizer(source_conn.close)
+    #request.addfinalizer(target_conn.close)
 
     source_path = path_to_dbfile(source_conn)
     target_path = path_to_dbfile(target_conn)
@@ -101,6 +104,8 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
 
     source_exp = Experiment(conn=source_conn)
     source_dataset = DataSet(conn=source_conn, name="basic_copy_paste_name")
+    assert source_dataset.dsi.writer.conn == source_conn
+    request.addfinalizer(source_dataset.dsi.reader.conn.close)
 
     with pytest.raises(RuntimeError) as excinfo:
         extract_runs_into_db(source_path, target_path, source_dataset.run_id)
@@ -138,6 +143,8 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     assert len(target_exp) == length1
 
     target_dataset = DataSet(conn=target_conn, run_id=1)
+    request.addfinalizer(target_dataset.dsi.writer.conn.close)
+    assert target_dataset.dsi.reader.conn == target_conn
 
     # Now make the interesting comparisons: are the target objects the same as
     # the source objects?
@@ -158,6 +165,8 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     # trying to insert the same run again should be a NOOP
     with raise_if_file_changed(target_path):
         extract_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+    assert True
 
 
 def test_correct_experiment_routing(two_empty_temp_db_connections,
@@ -371,7 +380,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     # and ought to be the same dataset as its "ancestor"
     target_ds = DataSet(conn=target_conn, run_id=1)
 
-    assert target_ds.dsi.table_name == "customname-1-1"
+    assert target_ds.dsi.reader.table_name == "customname-1-1"
     assert target_ds.the_same_dataset_as(source_ds_2_2)
 
 
@@ -553,18 +562,21 @@ def test_integration_station_and_measurement(two_empty_temp_db_connections,
 
     extract_runs_into_db(source_path, target_path, 1)
 
+    print('CREATING NEW DATASET BY LOADING')
     target_ds = DataSet(conn=target_conn, run_id=1)
 
     assert datasaver.dataset.the_same_dataset_as(target_ds)
 
 
-def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
+def test_atomicity(two_empty_temp_db_connections, some_paramspecs, request):
     """
     Test the atomicity of the transaction by extracting and inserting two
     runs where the second one is not completed. The not completed error must
     roll back any changes to the target
     """
     source_conn, target_conn = two_empty_temp_db_connections
+    request.addfinalizer(source_conn.close)
+    request.addfinalizer(target_conn.close)
 
     source_path = path_to_dbfile(source_conn)
     target_path = path_to_dbfile(target_conn)
@@ -575,6 +587,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
 
     source_exp = Experiment(conn=source_conn)
     source_ds_1 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
+    request.addfinalizer(source_ds_1.dsi.reader.conn.close)
     for ps in some_paramspecs[2].values():
         source_ds_1.add_parameter(ps)
     source_ds_1.add_result({ps.name: 2.1
@@ -582,6 +595,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
     source_ds_1.mark_completed()
 
     source_ds_2 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
+    request.addfinalizer(source_ds_2.dsi.reader.conn.close)
     for ps in some_paramspecs[2].values():
         source_ds_2.add_parameter(ps)
     source_ds_2.add_result({ps.name: 2.1

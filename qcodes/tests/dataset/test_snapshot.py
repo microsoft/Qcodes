@@ -56,9 +56,9 @@ def test_station_snapshot_during_measurement(experiment, dac, dmm,
     # the snapshot from the database for reference
 
     json_snapshot_from_dataset = get_metadata(
-        data_saver.dataset.dsi.conn,
+        data_saver.dataset.dsi.writer.conn,
         'snapshot',
-        data_saver.dataset.dsi.table_name)
+        data_saver.dataset.dsi.writer.table_name)
     snapshot_from_dataset = json.loads(json_snapshot_from_dataset)
 
     expected_snapshot = {'station': snapshot_of_station}

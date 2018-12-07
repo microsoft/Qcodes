@@ -140,6 +140,7 @@ class DataWriterInterface(ABC):
         assert len(set(len(v) for k, v in results.items())) == 1
         assert len(next(iter(results.values()))) != 0
 
+
 class DataStorageInterface:
     """
     """

@@ -52,8 +52,7 @@ class SqliteReaderInterface(DataReaderInterface):
     def __init__(self, guid: str, *,
                  run_id: Optional[int]=None,
                  conn: Optional[ConnectionPlus]=None,
-                 path_to_db: Optional[str]=None,
-                 exp_id: Optional[int]=None):
+                 path_to_db: Optional[str]=None):
 
         if path_to_db is not None and conn is not None:
             raise ValueError("Both `path_to_db` and `conn` arguments have "
@@ -62,10 +61,9 @@ class SqliteReaderInterface(DataReaderInterface):
 
         self.path_to_db = path_to_db or get_DB_location()
         self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+            connect(self.path_to_db, debug=False)
 
-        # then GUID is ''
-        if run_id is not None:
+        if run_id is not None:  # then GUID is '' and we must get it
             try:
                 guid = get_guid_from_run_id(self.conn, run_id)
             except RuntimeError:
@@ -245,8 +243,8 @@ class SqliteWriterInterface(DataWriterInterface):
 
         if path_to_db is not None and conn is not None:
             raise ValueError("Both `path_to_db` and `conn` arguments have "
-                                "been passed together with non-None values. "
-                                "This is not allowed.")
+                             "been passed together with non-None values. "
+                             "This is not allowed.")
 
         self.path_to_db = path_to_db or get_DB_location()
         self.conn = make_connection_plus_from(conn) if conn is not None else \
@@ -272,7 +270,6 @@ class SqliteWriterInterface(DataWriterInterface):
         """
         Create an entry for this run is the database file
         """
-
         if self.exp_id is None:
             if len(get_experiments(self.conn)) > 0:
                 self.exp_id = get_last_experiment(self.conn)
@@ -287,7 +284,10 @@ class SqliteWriterInterface(DataWriterInterface):
 
             _, self.run_id, self.table_name = create_run(
                 aconn, self.exp_id, self.name, self.guid)
+
+        with atomic(self.conn) as aconn:
             self.counter = get_result_counter_from_runid(aconn, self.run_id)
+
 
     def prepare_for_storing_results(self) -> None:
         pass

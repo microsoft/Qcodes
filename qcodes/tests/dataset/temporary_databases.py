@@ -59,7 +59,8 @@ def dataset(experiment):
         yield dataset
     finally:
         dataset.unsubscribe_all()
-        dataset.dsi.conn.close()
+        dataset.dsi.writer.conn.close()
+        dataset.dsi.reader.conn.close()
 
 
 @contextmanager

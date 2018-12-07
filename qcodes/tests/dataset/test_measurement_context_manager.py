@@ -336,7 +336,7 @@ def test_measurement_name(experiment, DAC, DMM):
     with meas.run() as datasaver:
         run_id = datasaver.run_id
         expected_name = fmt.format(name, exp_id, run_id)
-        assert datasaver.dataset.dsi.table_name == expected_name
+        assert datasaver.dataset.dsi.writer.table_name == expected_name
 
 
 @settings(deadline=None)
@@ -410,9 +410,10 @@ def test_enter_and_exit_actions(DAC, words):
         meas.add_after_run(action, testlist)
 
 
-def test_subscriptions(experiment, DAC, DMM):
+def test_subscriptions(experiment, DAC, DMM, request):
     """
-    Test that subscribers are called at the moment the data is flushed to database
+    Test that subscribers are called at the moment the data is flushed to
+    database
 
     Note that for the purpose of this test, flush_data_to_database method is
     called explicitly instead of waiting for the data to be flushed
@@ -460,7 +461,7 @@ def test_subscriptions(experiment, DAC, DMM):
 
         # Assert that the measurement, runner, and datasaver
         # have added subscribers to the dataset
-        assert len(datasaver._dataset.dsi.subscribers) == 2
+        assert len(datasaver._dataset.dsi.writer.subscribers) == 2
 
         assert all_results_dict == {}
         assert values_larger_than_7 == []
@@ -481,20 +482,20 @@ def test_subscriptions(experiment, DAC, DMM):
             datasaver.flush_data_to_database()
 
             # In order to make this test deterministic, we need to ensure that
-            # just enough time has passed between the moment the data is flushed
-            # to database and the "state" object (that is passed to subscriber
-            # constructor) has been updated by the corresponding subscriber's
-            # callback function. At the moment, there is no robust way to ensure
-            # this. The reason is that the subscribers have internal queue which
-            # is populated via a trigger call from the SQL database, hence from
-            # this "main" thread it is difficult to say whether the queue is
-            # empty because the subscriber callbacks have already been executed
-            # or because the triggers of the SQL database has not been executed
-            # yet.
+            # just enough time has passed between the moment the data is
+            # flushed to database and the "state" object (that is passed to
+            # subscriber constructor) has been updated by the corresponding
+            # subscriber's callback function. At the moment, there is no robust
+            # way to ensure this. The reason is that the subscribers have
+            # internal queue which is populated via a trigger call from the SQL
+            # database, hence from this "main" thread it is difficult to say
+            # whether the queue is empty because the subscriber callbacks have
+            # already been executed or because the triggers of the SQL database
+            # has not been executed yet.
             #
-            # In order to overcome this problem, a special decorator is used
-            # to wrap the assertions. This is going to ensure that some time
-            # is given to the Subscriber threads to finish exhausting the queue.
+            # In order to overcome this problem, a special decorator is used to
+            # wrap the assertions. This is going to ensure that some time is
+            # given to the Subscriber threads to finish exhausting the queue.
             @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0.5, tries=10)
             def assert_states_updated_from_callbacks():
@@ -504,20 +505,23 @@ def test_subscriptions(experiment, DAC, DMM):
 
             assert_states_updated_from_callbacks()
 
+    request.addfinalizer(datasaver._dataset.dsi.writer.conn.close)
+    request.addfinalizer(datasaver._dataset.dsi.reader.conn.close)
+
     # Ensure that after exiting the "run()" context,
     # all subscribers get unsubscribed from the dataset
-    assert len(datasaver._dataset.dsi.subscribers) == 0
+    assert len(datasaver._dataset.dsi.writer.subscribers) == 0
 
     # Ensure that the triggers for each subscriber
     # have been removed from the database
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
     triggers = atomic_transaction(
-        datasaver._dataset.dsi.conn, get_triggers_sql).fetchall()
+        datasaver._dataset.dsi.writer.conn, get_triggers_sql).fetchall()
     assert len(triggers) == 0
 
 
-def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
-                                                                     DAC):
+def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
+    experiment, DAC, request):
     """
     Upon quitting the "run()" context, verify that in case the queue is
     not empty, the subscriber's callback is still called on that data.
@@ -546,7 +550,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
         # the total number of values being added to the dataset;
         # this way the subscriber callback is not called before
         # we exit the "run()" context.
-        subscriber = list(datasaver.dataset.dsi.subscribers.values())[0]
+        subscriber = list(datasaver.dataset.dsi.writer.subscribers.values())[0]
         subscriber.min_queue_length = int(len(given_x_vals) + 1)
 
         for x in given_x_vals:
@@ -554,13 +558,17 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
             # Verify that the subscriber callback is not called yet
             assert collected_x_vals == []
 
+    request.addfinalizer(datasaver._dataset.dsi.writer.conn.close)
+    request.addfinalizer(datasaver._dataset.dsi.reader.conn.close)
+
     # Verify that the subscriber callback is finally called
     assert collected_x_vals == given_x_vals
 
 
 @settings(deadline=None, max_examples=25)
 @given(N=hst.integers(min_value=2000, max_value=3000))
-def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
+def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N,
+                                                request):
     def sub_get_x_vals(results, length, state):
         """
         A list of all x values
@@ -589,6 +597,8 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
     with meas.run() as datasaver:
         for x, y in zip(given_xvals, given_yvals):
             datasaver.add_result((DAC.ch1, x), (DMM.v1, y))
+    request.addfinalizer(datasaver._dataset.dsi.writer.conn.close)
+    request.addfinalizer(datasaver._dataset.dsi.reader.conn.close)
 
     @retry_until_does_not_throw(
                 exception_class_to_expect=AssertionError, delay=0, tries=30)
