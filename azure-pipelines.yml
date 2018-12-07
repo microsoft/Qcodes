@@ -13,9 +13,11 @@ jobs:
     steps:
       - powershell: |
           docker version
+          docker --help
+          docker run --help
       - task: Docker@1
         inputs:
-          command: 'run'
+          command: 'run --isolation hyperv'
           imagename: 'gsxsolutions/rmq-nano:3.7.7'
           containerName: some-rabbit
           ports: 5672
