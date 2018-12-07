@@ -8,7 +8,7 @@ trigger:
 jobs:
   - job: "run_the_tests"
     pool:
-      vmImage: "vs2017-win2016"
+      vmImage: "win1803"
 
     steps:
       # switch to linux containers
