@@ -13,7 +13,7 @@ jobs:
     steps:
       - powershell: |
           docker version
-          docker run --isolation=hyperv gsxsolutions/rmq-nano:3.7.7 -d
+          docker run -d --isolation=hyperv gsxsolutions/rmq-nano:3.7.7
       # Conda Environment
       # Create and activate a Conda environment.
       - task: CondaEnvironment@1
