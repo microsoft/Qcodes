@@ -13,17 +13,12 @@ jobs:
     steps:
       # switch to linux containers
       - powershell: |
-          get-command Docker
-          cd 'C:\\Program Files\\Docker\\'
-          ls -R
-          docker version
-          "& 'C:\\Program Files\\Docker\\DockerCli.exe' -SwitchDaemon"
-          docker version
-
+          Invoke-WebRequest https://raw.githubusercontent.com/Drylm/rmq-win/master/Dockerfile.3.7.7 -OutFile rmqdockerfile
+          docker build -t rmq:3.7.7 -f .\rmqdockerfile .
       - task: Docker@1
         inputs:
           command: 'run'
-          imagename: 'rabbitmq:3'
+          imagename: 'rmq:3.7.7'
           containerName: some-rabbit
           ports: 5672
           volumes: '$(System.DefaultWorkingDirectory):/src'
