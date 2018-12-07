@@ -13,6 +13,7 @@ jobs:
     steps:
       # switch to linux containers
       - powershell: |
+          get-command Docker
           docker version
           "& 'C:\\Program Files\\Docker\\Docker\\DockerCli.exe' -SwitchDaemon"
           docker version
