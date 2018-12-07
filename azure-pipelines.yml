@@ -16,7 +16,7 @@ jobs:
       - task: Docker@1
         inputs:
           command: 'run'
-          imagename: 'gsxsolutions/rmq-nano'
+          imagename: 'gsxsolutions/rmq-nano:3.7.7'
           containerName: some-rabbit
           ports: 5672
           restartPolicy: onFailure
