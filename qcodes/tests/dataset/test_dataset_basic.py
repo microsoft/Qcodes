@@ -802,12 +802,17 @@ def test_get_array_parameter_data(array_dataset):
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'this_setpoint']
     expected_shapes = {}
-    expected_shapes['testparameter'] = [(5, ), (5, )]
+    expected_len = 5
+    expected_shapes['testparameter'] = [(expected_len, ), (expected_len, )]
+    expected_values = {}
+    expected_values['testparameter'] = [np.ones(expected_len) + 1,
+                                        np.linspace(5, 9, expected_len)]
 
     parameter_test_helper(array_dataset,
                           input_names,
                           expected_names,
-                          expected_shapes)
+                          expected_shapes,
+                          expected_values)
 
 
 def test_get_multi_parameter_data(multi_dataset):
@@ -820,16 +825,39 @@ def test_get_multi_parameter_data(multi_dataset):
     expected_names['this'] = ['this', 'this_setpoint', 'that_setpoint']
     expected_names['that'] = ['that', 'this_setpoint', 'that_setpoint']
     expected_shapes = {}
+    expected_values = {}
+    shape_1 = 5
+    shape_2 = 3
+
+    this_data = np.zeros((shape_1, shape_2))
+    that_data = np.ones((shape_1, shape_2))
+    sp_1_data = np.tile(np.linspace(5, 9, shape_1).reshape(shape_1, 1),
+                                           (1, shape_2))
+    sp_2_data = np.tile(np.linspace(9, 11, shape_2), (shape_1, 1))
     if 'array' in types:
-        expected_shapes['this'] = [(5, 3), (5, 3)]
-        expected_shapes['that'] = [(5, 3), (5, 3)]
+        expected_shapes['this'] = [(shape_1, shape_2), (shape_1, shape_2)]
+        expected_shapes['that'] = [(shape_1, shape_2), (shape_1, shape_2)]
+        expected_values['this'] = [this_data,
+                                   sp_1_data,
+                                   sp_2_data]
+        expected_values['that'] = [that_data,
+                                   sp_1_data,
+                                   sp_2_data]
+
     else:
         expected_shapes['this'] = [(15,), (15,)]
         expected_shapes['that'] = [(15,), (15,)]
+        expected_values['this'] = [this_data.ravel(),
+                                   sp_1_data.ravel(),
+                                   sp_2_data.ravel()]
+        expected_values['that'] = [that_data.ravel(),
+                                   sp_1_data.ravel(),
+                                   sp_2_data.ravel()]
     parameter_test_helper(multi_dataset,
                           input_names,
                           expected_names,
-                          expected_shapes)
+                          expected_shapes,
+                          expected_values)
 
 
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
@@ -899,6 +927,7 @@ def parameter_test_helper(ds, toplevel_names,
                           expected_names,
                           expected_shapes,
                           expected_values):
+
     data = ds.get_parameter_data(*toplevel_names)
     all_data = ds.get_parameter_data()
 
