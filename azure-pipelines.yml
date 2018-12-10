@@ -14,6 +14,26 @@ jobs:
       - powershell: |
           docker version
           docker run -d --isolation=hyperv gsxsolutions/rmq-nano:3.7.7
+
+      - powershell: |
+
+
+          # Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+          $miniconda_url = "https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+          $miniconda_exe = "$env:TEMP\miniconda.exe"
+          $env_bat = "$env:TEMP\create_qcodes_env.bat"
+          $conda_install_bat = "$env:TEMP\conda_install.bat"
+          $miniconda_install_path = "$HOME\miniconda\"
+
+          # install miniconda and update
+          Write-Host 'downloading miniconda, please wait'
+          (New-Object System.Net.WebClient).DownloadFile($miniconda_url, $miniconda_exe)| Out-Host
+          Write-Host 'installing miniconda'
+          &$miniconda_exe /InstallationType=JustMe /AddToPath=1 /S "/D=$miniconda_install_path" | Out-Host
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          Write-Host 'updating miniconda'
+          conda update -y conda
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
       # Conda Environment
       # Create and activate a Conda environment.
       - task: CondaEnvironment@1
