@@ -1,5 +1,5 @@
 from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.helpers import create_on_off_val_map
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
@@ -66,8 +66,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='Pulse Modulation',
                            get_cmd=':SOUR:PULM:STAT?',
                            set_cmd=':SOUR:PULM:STAT {}',
-                           get_parser=self.get_parser_on_off,
-                           set_parser=self.set_parser_on_off)
+                           val_mapping=create_on_off_val_map(on_val='1', off_val='0'))
         self.add_parameter('pulsemod_source',
                            label='Pulse Modulation Source',
                            get_cmd='SOUR:PULM:SOUR?',
@@ -108,8 +107,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='IQ Impairments',
                            get_cmd=':SOUR:IQ:IMP:STAT?',
                            set_cmd=':SOUR:IQ:IMP:STAT {}',
-                           get_parser=self.get_parser_on_off,
-                           set_parser=self.set_parser_on_off)
+                           val_mapping=create_on_off_val_map(on_val='1', off_val='0'))
         self.add_parameter('I_offset',
                            label='I Offset',
                            get_cmd='SOUR:IQ:IMP:LEAK:I?',
