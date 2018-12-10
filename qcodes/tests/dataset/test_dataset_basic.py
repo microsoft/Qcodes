@@ -1,6 +1,7 @@
 import itertools
 from copy import copy
 import re
+import random
 
 import pytest
 import numpy as np
@@ -891,12 +892,30 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
                           expected_shapes)
 
 
-def parameter_test_helper(ds, toplevel_names, expected_names, expected_shapes):
+def parameter_test_helper(ds, toplevel_names,
+                          expected_names,
+                          expected_shapes):
     data = ds.get_parameter_data(*toplevel_names)
     all_data = ds.get_parameter_data()
 
-    assert data.keys() == all_data.keys()
+    all_parameters = list(all_data.keys())
+    assert set(data.keys()).issubset(set(all_parameters))
     assert len(data.keys()) == len(toplevel_names)
 
     verify_data_dict(data, toplevel_names, expected_names, expected_shapes)
     verify_data_dict(all_data, toplevel_names, expected_names, expected_shapes)
+
+    # now lets remove a random element from the list
+    # and test that we don't get data back for that element.
+    # This only makes sense if there originally where more than
+    # one parameter in the list
+    if len(all_parameters) > 1:
+        elem_to_remove = random.randint(0, len(toplevel_names) - 1)
+        subset_names = copy(all_parameters)
+        name_removed = subset_names.pop(elem_to_remove)
+        expected_names.pop(name_removed)
+        expected_shapes.pop(name_removed)
+
+        subset_data = ds.get_parameter_data(*subset_names)
+        verify_data_dict(subset_data, subset_names, expected_names,
+                         expected_shapes)
