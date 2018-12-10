@@ -27,8 +27,9 @@ def scalar_dataset(dataset):
                                        depends_on=params_indep)]
     for p in params:
         dataset.add_parameter(p)
-    dataset.add_results([{p.name: np.random.rand(1)[0] for p in params}
-                         for _ in range(n_rows)])
+    dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
+                          for pn, p in enumerate(params)}
+                         for i in range(n_rows)])
     dataset.mark_complete()
     yield dataset
 
