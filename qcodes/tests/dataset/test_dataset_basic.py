@@ -951,8 +951,8 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
     assert params == expected_toplevel_params
 
     expected_names = {}
-    expected_names['param_1'] = []
-    expected_names['param_2'] = []
+    expected_names['param_1'] = ['param_1']
+    expected_names['param_2'] = ['param_2']
     expected_names['param_3'] = ['param_3', 'param_0']
 
     expected_shapes = {}
