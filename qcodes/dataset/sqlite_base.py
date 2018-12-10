@@ -1228,9 +1228,17 @@ def get_parameter_data(conn: ConnectionPlus,
         Dict[str, Dict[str, np.ndarray]]:
     """
     Get data for one or more parameters and its dependencies. The data
-    is returned as numpy arrays nested 2 layers of dicts. The keys or the
-    outermost are the requested parameters and the second level by the loaded
-    parameters.
+    is returned as numpy arrays within 2 layers of nested dicts. The keys of
+    the outermost dict are the requested parameters and the keys of the second
+    level are the loaded parameters (requested parameter followed by its
+    dependencies). Start and End  sllows one to specify a range of rows
+    (1-based indexing, both ends are included).
+
+    Note that this assumes that all array type parameters have the same length.
+    This should always be the case for a parameter and its dependencies.
+
+    Note that all numeric data will at the moment be returned as floating point
+    values.
 
     Args:
         conn: database connection
@@ -1260,7 +1268,6 @@ def get_parameter_data(conn: ConnectionPlus,
         # if we have array type parameters expand all other parameters
         # to arrays
         if 'array' in types and ('numeric' in types or 'text' in types):
-            # todo: Should we check that all the arrays are the same size?
             first_array_element = types.index('array')
             numeric_elms = [i for i, x in enumerate(types)
                             if x == "numeric"]
@@ -1272,6 +1279,10 @@ def get_parameter_data(conn: ConnectionPlus,
                                                 row[element],
                                                 dtype=np.float)
                     # todo should we handle int/float types here
+                    # we would in practice have to perform another
+                    # loop to check that all elements of a given can be cast to
+                    # int without loosing precision before choosing an interger
+                    # representation of the array
                 for element in text_elms:
                     strlen = len(row[element])
                     row[element] = np.full_like(row[first_array_element],
@@ -1280,7 +1291,6 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # Benchmarking shows that transposing the data with python types is
         # faster than transposing the data using np.array.transpose
-        # This method is going to form the entry point for a compiled version
         res_t = list(map(list, zip(*res)))
         output[output_param] = {name: np.squeeze(np.array(column_data))
                          for name, column_data
@@ -1536,7 +1546,7 @@ def get_non_dependencies(conn: ConnectionPlus,
         run_id: The run_id of the run in question
 
     Returns:
-
+        A list of the parameter names.
     """
     parameters = get_parameters(conn, run_id)
     maybe_independent = []
@@ -1562,14 +1572,17 @@ def get_non_dependencies(conn: ConnectionPlus,
 def get_parameter_dependencies(conn: ConnectionPlus, param: str,
                               run_id: int) -> List[ParamSpec]:
     """
-    Given a parameter name return the ParamSpec of the parameter along with
-    the ParamSpecs of all it's dependencies.
+    Given a parameter name return a list of ParamSpecs where the first
+    element is the ParamSpec of the given parameter and the rest of the
+    elements are ParamSpecs of its dependencies.
 
     Args:
-        conn:
-        param:
-        run_id:
+        conn: connection to the database
+        param: the name of the parameter to look up
+        run_id: run_id: The run_id of the run in question
 
+    Returns:
+        List of ParameterSpecs of the parameter followed by its dependencies.
     """
     layout_id = get_layout_id(conn, param, run_id)
     deps = get_dependencies(conn, layout_id)
