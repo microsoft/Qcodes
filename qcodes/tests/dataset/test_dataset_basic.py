@@ -870,14 +870,35 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
     expected_names['testparameter'] = ['testparameter', 'scalarparam',
                                        'this_setpoint']
     expected_shapes = {}
+
+    shape_1 = 9
+    shape_2 = 5
+
+    test_parameter_values = np.tile((np.ones(shape_2) + 1).reshape(1, shape_2),
+                                    (shape_1, 1))
+    scalar_param_values = np.tile(np.arange(1, 10).reshape(shape_1, 1),
+                                  (1, shape_2))
+    setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
+                                    (shape_1, 1))
+    expected_shapes['testparameter'] = {}
+    expected_values = {}
     if 'array' in types:
         expected_shapes['testparameter'] = [(9, 5), (9, 5)]
+        expected_values['testparameter'] = [
+            test_parameter_values,
+            scalar_param_values,
+            setpoint_param_values]
     else:
         expected_shapes['testparameter'] = [(45,), (45,)]
+        expected_values['testparameter'] = [
+            test_parameter_values.ravel(),
+            scalar_param_values.ravel(),
+            setpoint_param_values.ravel()]
     parameter_test_helper(array_in_scalar_dataset,
                           input_names,
                           expected_names,
-                          expected_shapes)
+                          expected_shapes,
+                          expected_values)
 
 
 def test_get_array_in_str_param_data(array_in_str_dataset):
