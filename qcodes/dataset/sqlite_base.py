@@ -321,7 +321,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def connect(name: str, debug: bool = False,
-            version: int=-1) -> ConnectionPlus:
+            version: int=-1, read_only=False) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type

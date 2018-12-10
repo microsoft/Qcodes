@@ -348,15 +348,15 @@ def test_update_existing_guids(caplog):
                            'INFO', 'INFO']
 
         with caplog.at_level(logging.INFO):
-            update_GUIDs(ds1.dsi.conn)
+            update_GUIDs(ds1.dsi.writer.conn)
 
             for record, lvl in zip(caplog.records, expected_levels):
                 assert record.levelname == lvl
 
         # We need to instantiate the datasets because `guid` does not get
         # updated in DataSet instances if it's changed only in the database
-        ds1 = DataSet(path_to_db=ds1.dsi.path_to_db, run_id=ds1.run_id)
-        ds2 = DataSet(path_to_db=ds2.dsi.path_to_db, run_id=ds2.run_id)
+        ds1 = DataSet(path_to_db=ds1.dsi.reader.path_to_db, run_id=ds1.run_id)
+        ds2 = DataSet(path_to_db=ds2.dsi.reader.path_to_db, run_id=ds2.run_id)
 
         guid_comps_1 = parse_guid(ds1.guid)
         assert guid_comps_1['location'] == new_loc

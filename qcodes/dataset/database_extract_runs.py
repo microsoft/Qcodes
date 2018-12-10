@@ -59,7 +59,6 @@ def extract_runs_into_db(source_db_path: str,
                  'upgrade_target_db=True to auto-upgrade the target DB file.')
             return
 
-
     source_conn = connect(source_db_path)
 
     # Validate that all runs are in the source database
@@ -105,6 +104,9 @@ def extract_runs_into_db(source_db_path: str,
     try:
         with atomic(target_conn) as target_conn:
 
+            # for testing, it is important to close all connections
+            connections = [target_conn, source_conn]
+
             target_exp_id = _create_exp_if_needed(target_conn,
                                                   exp_attrs['name'],
                                                   exp_attrs['sample_name'],
@@ -114,13 +116,14 @@ def extract_runs_into_db(source_db_path: str,
 
             # Finally insert the runs
             for run_id in run_ids:
-                _extract_single_dataset_into_db(DataSet(run_id=run_id,
-                                                        conn=source_conn),
+                ds = DataSet(run_id=run_id, conn=source_conn)
+                connections.append(ds.dsi.writer.conn)
+                _extract_single_dataset_into_db(ds,
                                                 target_conn,
                                                 target_exp_id)
     finally:
-        source_conn.close()
-        target_conn.close()
+        for connection in connections:
+            connection.close()
 
 
 def _create_exp_if_needed(target_conn: ConnectionPlus,
@@ -184,7 +187,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                          'can not be copied. The incomplete dataset has '
                          f'GUID: {dataset.guid} and run_id: {dataset.run_id}')
 
-    source_conn = dataset.dsi.conn
+    source_conn = dataset.dsi.reader.conn
 
     run_id = get_runid_from_guid(target_conn, dataset.guid)
 
@@ -203,7 +206,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                                                      metadata=metadata)
     _populate_results_table(source_conn,
                             target_conn,
-                            dataset.dsi.table_name,
+                            dataset.dsi.reader.table_name,
                             target_table_name)
     mark_run_complete(target_conn,
                       dataset.completed_timestamp_raw,

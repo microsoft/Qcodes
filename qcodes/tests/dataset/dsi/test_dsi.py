@@ -3,12 +3,12 @@ import re
 import numpy as np
 import pytest
 
-from qcodes.dataset.data_storage_interface import DataStorageInterface
+from qcodes.dataset.data_storage_interface import DataWriterInterface
 
 
 def test_validate_results_dict():
     """Test _validate_results_dict helper function of DSI"""
-    validate = DataStorageInterface._validate_results_dict
+    validate = DataWriterInterface._validate_results_dict
 
     validate({'x': [1]})
     validate({'x': [1], 'y': [2]})

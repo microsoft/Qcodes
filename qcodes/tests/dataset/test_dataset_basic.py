@@ -39,7 +39,8 @@ def make_shadow_dataset(dataset: DataSet):
     modifications to the database file, i.e. when one must assert that changes
     were committed.
     """
-    return DataSet(path_to_db=dataset.dsi.path_to_db, run_id=dataset.run_id)
+    return DataSet(path_to_db=dataset.dsi.writer.path_to_db,
+                   run_id=dataset.run_id)
 
 
 @pytest.mark.usefixtures("experiment")
@@ -97,7 +98,7 @@ def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
 def test_load_by_id(dataset):
     ds = load_by_id(dataset.run_id)
     assert dataset.run_id == ds.run_id
-    assert dataset.dsi.path_to_db == ds.dsi.path_to_db
+    assert dataset.dsi.reader.path_to_db == ds.dsi.reader.path_to_db
 
 
 @pytest.mark.usefixtures('experiment')
@@ -140,19 +141,19 @@ def test_add_experiments(experiment_name,
     loaded_dataset = load_by_id(dsid)
     expected_ds_counter = 1
     assert loaded_dataset.name == dataset_name
-    assert loaded_dataset.dsi.counter == expected_ds_counter
-    assert loaded_dataset.dsi.table_name == (f"{dataset_name}-"
-                                             f"{exp.exp_id}-"
-                                             f"{loaded_dataset.dsi.counter}")
+    assert loaded_dataset.dsi.reader.counter == expected_ds_counter
+    expected_tab_nam = (f"{dataset_name}-{exp.exp_id}-"
+                        f"{loaded_dataset.dsi.reader.counter}")
+    assert loaded_dataset.dsi.reader.table_name == expected_tab_nam
     expected_ds_counter += 1
     ds = new_data_set(dataset_name)
     dsid = ds.run_id
     loaded_dataset = load_by_id(dsid)
     assert loaded_dataset.name == dataset_name
-    assert loaded_dataset.dsi.counter == expected_ds_counter
+    assert loaded_dataset.dsi.reader.counter == expected_ds_counter
     expected_table_name = "{}-{}-{}".format(dataset_name, exp.exp_id,
-                                            loaded_dataset.dsi.counter)
-    assert loaded_dataset.dsi.table_name == expected_table_name
+                                            loaded_dataset.dsi.reader.counter)
+    assert loaded_dataset.dsi.reader.table_name == expected_table_name
 
 
 def test_add_paramspec(dataset):
@@ -498,12 +499,16 @@ def test_metadata(experiment, request):
     metadata2 = {'more': 'meta'}
 
     ds1 = DataSet()
-    request.addfinalizer(ds1.dsi.conn.close)
+    request.addfinalizer(ds1.dsi.writer.conn.close)
+    request.addfinalizer(ds1.dsi.reader.conn.close)
+
     for tag, md_value in metadata1.items():
         ds1.add_metadata(tag, md_value)
 
     ds2 = DataSet()
-    request.addfinalizer(ds2.dsi.conn.close)
+    request.addfinalizer(ds2.dsi.writer.conn.close)
+    request.addfinalizer(ds2.dsi.reader.conn.close)
+
     for tag, md_value in metadata2.items():
         ds2.add_metadata(tag, md_value)
 
@@ -513,10 +518,14 @@ def test_metadata(experiment, request):
     assert ds2.metadata == metadata2
 
     loaded_ds1 = DataSet(run_id=1)
-    request.addfinalizer(loaded_ds1.dsi.conn.close)
+    request.addfinalizer(loaded_ds1.dsi.reader.conn.close)
+    request.addfinalizer(loaded_ds1.dsi.writer.conn.close)
+
     assert loaded_ds1.metadata == metadata1
     loaded_ds2 = DataSet(run_id=2)
-    request.addfinalizer(loaded_ds2.dsi.conn.close)
+    request.addfinalizer(loaded_ds2.dsi.reader.conn.close)
+    request.addfinalizer(loaded_ds2.dsi.writer.conn.close)
+
     assert loaded_ds2.metadata == metadata2
 
     badtag = 'lex luthor'

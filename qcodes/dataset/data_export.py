@@ -63,7 +63,7 @@ def get_data_by_id(run_id: int) -> List:
 
     data = load_by_id(run_id)
 
-    conn = data.dsi.conn
+    conn = data.dsi.reader.conn
     deps = get_dependents(conn, run_id)
 
     output = []

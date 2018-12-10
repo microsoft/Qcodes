@@ -14,7 +14,7 @@ fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
 
 
-def test_fix_wrong_run_descriptions():
+def test_fix_wrong_run_descriptions(request):
     v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
 
     dbname_old = os.path.join(v3fixpath, 'some_runs_without_run_description.db')
@@ -43,3 +43,9 @@ def test_fix_wrong_run_descriptions():
 
         ds4 = DataSet(conn=conn, run_id=4)
         assert empty_description == ds4.description
+
+        # Because of the nested context managers, request.addfinalizer can not
+        # be used to close the connections; it must happen already here
+        for ds in [ds1, ds2, ds3, ds4]:
+            ds.dsi.writer.conn.close()
+
