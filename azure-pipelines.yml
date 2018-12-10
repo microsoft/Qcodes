@@ -31,7 +31,7 @@ jobs:
           Write-Host 'updating miniconda'
           conda update -y conda
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          Write-Host "##vso[task.prependpath]$HOME\miniconda"
+          Write-Host "##vso[task.prependpath]$HOME\miniconda\Scripts"
       # Conda Environment
       # Create and activate a Conda environment.
       - task: CondaEnvironment@1
