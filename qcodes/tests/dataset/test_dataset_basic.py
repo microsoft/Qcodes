@@ -905,13 +905,11 @@ def parameter_test_helper(ds, toplevel_names,
     verify_data_dict(data, toplevel_names, expected_names, expected_shapes)
     verify_data_dict(all_data, toplevel_names, expected_names, expected_shapes)
 
-    # now lets remove a random element from the list
-    # and test that we don't get data back for that element.
-    # This only makes sense if there originally where more than
-    # one parameter in the list
-    if len(all_parameters) > 1:
-        elem_to_remove = random.randint(0, len(toplevel_names) - 1)
-        subset_names = copy(all_parameters)
+    # Now lets remove a random element from the list
+    # We do this one by one until there is only one element in the list
+    subset_names = copy(all_parameters)
+    while len(subset_names) > 1:
+        elem_to_remove = random.randint(0, len(subset_names) - 1)
         name_removed = subset_names.pop(elem_to_remove)
         expected_names.pop(name_removed)
         expected_shapes.pop(name_removed)
