@@ -13,12 +13,15 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
     Args:
         data: The data to verify
         parameter_names: names of the parameters requested
-        expected_names: names of the paramerters expected to be loaded
-        expected_shapes: shapes of the paramters loaded
+        expected_names: names of the parameters expected to be loaded
+        expected_shapes: shapes of the parameters loaded
 
     Returns:
 
     """
+    # check that all the expected parameters in the dict are
+    # included in the list of parameters
+    assert all(param in parameter_names for param in list(data.keys())) is True
     for param in parameter_names:
         innerdata = data[param]
         verify_data_dict_for_single_param(innerdata,
