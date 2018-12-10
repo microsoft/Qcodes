@@ -37,6 +37,8 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
                                       names: Sequence[str],
                                       shapes: Sequence[Tuple[int, ...]],
                                       values):
+    # check that there are no unexpected elements in the dict
+    assert all(param in names for param in list(datadict.keys())) is True
     for name, shape, value in zip(names, shapes, values):
         assert datadict[name].shape == shape
         np.testing.assert_array_equal(datadict[name], value)
