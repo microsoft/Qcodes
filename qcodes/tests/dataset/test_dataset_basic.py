@@ -911,14 +911,36 @@ def test_get_array_in_str_param_data(array_in_str_dataset):
     expected_names['testparameter'] = ['testparameter', 'textparam',
                                        'this_setpoint']
     expected_shapes = {}
+
+    shape_1 = 3
+    shape_2 = 5
+
+    test_parameter_values = np.tile((np.ones(shape_2) + 1).reshape(1, shape_2),
+                                    (shape_1, 1))
+    scalar_param_values = np.tile(np.array(['A', 'B', 'C']).reshape(shape_1, 1),
+                                  (1, shape_2))
+    setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
+                                    (shape_1, 1))
+    expected_shapes['testparameter'] = {}
+    expected_values = {}
+
     if 'array' in types:
         expected_shapes['testparameter'] = [(3, 5), (3, 5)]
+        expected_values['testparameter'] = [
+            test_parameter_values,
+            scalar_param_values,
+            setpoint_param_values]
     else:
         expected_shapes['testparameter'] = [(15,), (15,)]
+        expected_values['testparameter'] = [
+            test_parameter_values.ravel(),
+            scalar_param_values.ravel(),
+            setpoint_param_values.ravel()]
     parameter_test_helper(array_in_str_dataset,
                           input_names,
                           expected_names,
-                          expected_shapes)
+                          expected_shapes,
+                          expected_values)
 
 
 def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
@@ -931,17 +953,24 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
     expected_names = {}
     expected_names['param_1'] = []
     expected_names['param_2'] = []
-    expected_names['param_3'] = ['param_0']
+    expected_names['param_3'] = ['param_3', 'param_0']
 
     expected_shapes = {}
     expected_shapes['param_1'] = [(10 ** 3,)]
     expected_shapes['param_2'] = [(10 ** 3,)]
     expected_shapes['param_3'] = [(10**3, )]*2
 
+    expected_values = {}
+    expected_values['param_1'] = [np.arange(10000, 10000 + 1000)]
+    expected_values['param_2'] = [np.arange(20000, 20000 + 1000)]
+    expected_values['param_3'] = [np.arange(30000, 30000 + 1000),
+                                  np.arange(0, 1000)]
+
     parameter_test_helper(ds,
                           expected_toplevel_params,
                           expected_names,
-                          expected_shapes)
+                          expected_shapes,
+                          expected_values)
 
 
 def parameter_test_helper(ds, toplevel_names,
