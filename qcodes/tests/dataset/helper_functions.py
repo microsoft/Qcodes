@@ -39,4 +39,4 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
                                       values):
     for name, shape, value in zip(names, shapes, values):
         assert datadict[name].shape == shape
-        np.testing.assert_allclose(datadict[name], value)
+        np.testing.assert_array_equal(datadict[name], value)
