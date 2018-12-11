@@ -61,6 +61,17 @@ def read_config_file() -> Dict:
     return conf
 
 
+def write_config_file(conf: Dict) -> None:
+    """
+    Write the given dictionary to the config file
+    """
+    # TODO: validate conf
+    conf_path = qcodes.dataset.__file__.replace('__init__.py', 'rmq_conf.json')
+    with open(conf_path, 'w') as fid:
+        raw_json = json.dumps(conf)
+        fid.write(raw_json)
+
+
 if __name__ == "__main__":
 
     conf = read_config_file()
