@@ -31,9 +31,24 @@ class Heart(Thread):
             self.conn.process_data_events()
 
 
+class BakedPotato:
+    """
+    A non-functional heart for mocking
+    """
+
+    def __init__(self, conn: BlockingConnection):
+        pass
+
+    def stop(self):
+        pass
+
+    def start(self):
+        pass
+
+
 class RabbitMQWriterInterface(DataWriterInterface):
 
-    def __init__(self, guid: str):
+    def __init__(self, guid: str, disable_heartbeat: bool = False):
         super().__init__(guid)
 
         conf = read_config_file()
@@ -41,7 +56,11 @@ class RabbitMQWriterInterface(DataWriterInterface):
         self.conn = conn
         self.channel = chan
 
-        self.heart = Heart(self.conn)
+        if not disable_heartbeat:
+            self.heart = Heart(self.conn)
+        else:
+            self.heart = BakedPotato(self.conn)
+
         self.heart.start()
 
     def store_results(self, results: Dict[str, VALUES]):
