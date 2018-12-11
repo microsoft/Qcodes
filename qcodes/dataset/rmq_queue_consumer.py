@@ -1,13 +1,9 @@
 
-from datetime import datetime
-import time
 from typing import Callable, Optional
 from abc import ABC, abstractmethod
 
 import pika
-
-from qcodes.dataset.data_storage_interface import DataStorageInterface
-from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from pika.exceptions import IncompatibleProtocolError, ChannelClosed
 
 
 class QueueConsumer(ABC):
@@ -35,19 +31,26 @@ class RMQConsumer(QueueConsumer):
     def __init__(self, callback: Optional[Callable] = None):
 
         params = pika.ConnectionParameters('localhost')
-        self.connection = pika.BlockingConnection(params)
+
+        try:
+            self.connection = pika.BlockingConnection(params)
+        except IncompatibleProtocolError as e:
+            raise RuntimeError('Could not start RMQConsumer. Did you forget '
+                               'to run rmq_setup.py?') from e
 
         callback = callback or self.default_callback
         super().__init__(callback)
 
-        self.channel = self.connection.channel()
-
-        self.channel.basic_qos(prefetch_count=0,
-                               all_channels=True)
-        self.channel.basic_consume(self.callback,
-                                   queue='localstorage',
-                                   no_ack=False)
-
+        try:
+            self.channel = self.connection.channel()
+            self.channel.basic_qos(prefetch_count=0,
+                                   all_channels=True)
+            self.channel.basic_consume(self.callback,
+                                       queue='localstorage',
+                                       no_ack=False)
+        except ChannelClosed as e:
+            raise RuntimeError('Could not start RMQConsumer. Did you forget '
+                               'to run rmq_setup.py?') from e
         self.i = 0
 
     @staticmethod
