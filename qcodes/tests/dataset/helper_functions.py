@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple, Dict
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_array_equal
 
 def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
                      parameter_names: Sequence[str],
@@ -41,4 +41,4 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
     assert all(param in names for param in list(datadict.keys())) is True
     for name, shape, value in zip(names, shapes, values):
         assert datadict[name].shape == shape
-        np.testing.assert_array_equal(datadict[name], value)
+        assert_array_equal(datadict[name], value)
