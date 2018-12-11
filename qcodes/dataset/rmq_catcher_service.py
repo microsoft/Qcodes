@@ -20,6 +20,7 @@ class Catcher:
     """
 
     def __init__(self, consumer: type,
+                 consumer_callback: str = 'catcher_default',
                  reader: type = SqliteReaderInterface,
                  writer: type = SqliteWriterInterface,
                  consumer_kwargs: Optional[Dict] = None,
@@ -45,7 +46,11 @@ class Catcher:
                              f'f{writer}, which is not a '
                              'subclass of DataWriterInterface')
 
-        self.consumer = consumer(callback=self.message_callback,
+        callbacks = {'consumer_default': None,
+                     'catcher_default': self.message_callback}
+        callback = callbacks[consumer_callback]
+
+        self.consumer = consumer(callback=callback,
                                  **consumer_kwargs)
         self.reader_factory = reader
         self.writer_factory = writer
@@ -73,9 +78,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=('Run the RMQ -> local store '
                                                   'service'))
+    parser.add_argument('--callback', type=str,
+                        help="The argument to pass for consumer_callback")
     args = parser.parse_args()
+    cb = args.callback
 
-    catcher = Catcher(consumer=RMQConsumer)
+    cb = cb or "catcher_default"
+
+    catcher = Catcher(consumer=RMQConsumer, consumer_callback=cb)
 
     print(f'Started RabbitMQ Local Storage Consumer at {current_time()}')
     print('Press Ctrl-C to stop')
