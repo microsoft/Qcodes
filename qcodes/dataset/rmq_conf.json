@@ -1,0 +1,34 @@
+{
+    "host": "localhost",
+    "exchanges":
+    [
+        {
+            "exchange": "mydata",
+            "exchange_type": "fanout"
+        }
+    ],
+    "queues":
+    [
+        {
+            "queue": "tordensky",
+            "durable": true,
+            "exclusive": false
+        },
+        {
+            "queue": "localstorage",
+            "durable": true,
+            "exclusive": false
+        }
+    ],
+    "bindings":
+    [
+        {
+            "exchange": "mydata",
+            "queue": "localstorage"
+        },
+        {
+            "exchange": "mydata",
+            "queue": "tordensky"
+        }
+    ]
+}
