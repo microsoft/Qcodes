@@ -1281,7 +1281,7 @@ def get_parameter_data(conn: ConnectionPlus,
                     # todo should we handle int/float types here
                     # we would in practice have to perform another
                     # loop to check that all elements of a given can be cast to
-                    # int without loosing precision before choosing an interger
+                    # int without loosing precision before choosing an integer
                     # representation of the array
                 for element in text_elms:
                     strlen = len(row[element])
