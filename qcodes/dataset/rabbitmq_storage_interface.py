@@ -45,6 +45,9 @@ class BakedPotato:
     def start(self):
         pass
 
+    def join(self):
+        pass
+
 
 class RabbitMQWriterInterface(DataWriterInterface):
 
@@ -86,4 +89,5 @@ class RabbitMQWriterInterface(DataWriterInterface):
 
     def close(self):
         self.heart.stop()
+        self.heart.join()
         self.conn.close()
