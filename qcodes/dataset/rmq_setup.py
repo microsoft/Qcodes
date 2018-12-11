@@ -26,7 +26,8 @@ def setup_exchange_and_queues_from_conf(
     Args:
         conf: the json.loads of the conf file
     """
-    params = pika.ConnectionParameters(conf['host'])
+    params = pika.ConnectionParameters(conf['host'],
+                                       heartbeat_interval=conf['heartbeat'])
     try:
         # TODO: should we use a blockingconnection here?
         conn = pika.BlockingConnection(params)

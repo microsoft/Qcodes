@@ -1,5 +1,6 @@
 {
     "host": "localhost",
+    "heartbeat": 5,
     "exchanges":
     [
         {
