@@ -1,11 +1,34 @@
 import pickle
 from typing import Dict
+from threading import Thread
 
 import pika
+from pika.adapters.blocking_connection import BlockingConnection
 
 from qcodes.dataset.rmq_setup import (read_config_file,
                                       setup_exchange_and_queues_from_conf)
 from qcodes.dataset.data_storage_interface import (DataWriterInterface, VALUES)
+
+
+class Heart(Thread):
+    """
+    A separate thread to send heartbeats to RMQ
+    """
+
+    def __init__(self, conn: BlockingConnection):
+        super().__init__()
+        self.conn = conn
+        self.keep_beating = True
+        self.conf = read_config_file()
+        self.sleep_time = self.conf['heartbeat']/2
+
+    def stop(self):
+        self.keep_beating = False
+
+    def run(self):
+        while self.keep_beating:
+            self.conn.sleep(self.sleep_time)
+            self.conn.process_data_events()
 
 
 class RabbitMQStorageInterface(DataWriterInterface):
@@ -17,6 +40,9 @@ class RabbitMQStorageInterface(DataWriterInterface):
         conn, chan = setup_exchange_and_queues_from_conf(conf)
         self.conn = conn
         self.channel = chan
+
+        self.heart = Heart(self.conn)
+        self.heart.start()
 
     def store_results(self, results: Dict[str, VALUES]):
         results_dump = pickle.dumps(results)
@@ -39,3 +65,6 @@ class RabbitMQStorageInterface(DataWriterInterface):
     def store_meta_data(self):
         raise NotImplementedError
 
+    def close(self):
+        self.heart.stop()
+        self.conn.close()
