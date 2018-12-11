@@ -31,7 +31,7 @@ class Heart(Thread):
             self.conn.process_data_events()
 
 
-class RabbitMQStorageInterface(DataWriterInterface):
+class RabbitMQWriterInterface(DataWriterInterface):
 
     def __init__(self, guid: str):
         super().__init__(guid)
