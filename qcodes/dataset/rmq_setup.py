@@ -68,7 +68,7 @@ def write_config_file(conf: Dict) -> None:
     # TODO: validate conf
     conf_path = qcodes.dataset.__file__.replace('__init__.py', 'rmq_conf.json')
     with open(conf_path, 'w') as fid:
-        raw_json = json.dumps(conf)
+        raw_json = json.dumps(conf, indent=4)
         fid.write(raw_json)
 
 
