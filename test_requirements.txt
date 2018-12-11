@@ -9,3 +9,5 @@ lxml
 codecov
 asv
 gitpython
+docker
+pika
