@@ -1,15 +1,13 @@
 {
     "host": "localhost",
-    "heartbeat": 5,
-    "exchanges":
-    [
+    "heartbeat": 60,
+    "exchanges": [
         {
             "exchange": "mydata",
             "exchange_type": "fanout"
         }
     ],
-    "queues":
-    [
+    "queues": [
         {
             "queue": "tordensky",
             "durable": true,
@@ -21,8 +19,7 @@
             "exclusive": false
         }
     ],
-    "bindings":
-    [
+    "bindings": [
         {
             "exchange": "mydata",
             "queue": "localstorage"
