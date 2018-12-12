@@ -17,6 +17,7 @@ python:
 branches:
   only:
     - master
+    - DataStorageInterface
 
 # command to install dependencies and qcodes
 # We want to fail early if there is an installation problem, so
