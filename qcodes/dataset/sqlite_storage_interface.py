@@ -30,7 +30,6 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         get_result_counter_from_runid,
                                         get_runid_from_guid,
                                         is_guid_in_database,
-                                        make_connection_plus_from,
                                         mark_run_complete)
 
 if TYPE_CHECKING:
@@ -50,25 +49,14 @@ class SqliteReaderInterface(DataReaderInterface):
     """
     """
     def __init__(self, guid: str, *,
-                 run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
-                 path_to_db: Optional[str]=None):
+                 conn: Optional[ConnectionPlus]=None):
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError("conn must be a QCoDeS ConnectionPlus "
+                             "object")
 
-        self.path_to_db = path_to_db or get_DB_location()
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db, debug=False)
-
-        if run_id is not None:  # then GUID is '' and we must get it
-            try:
-                guid = get_guid_from_run_id(self.conn, run_id)
-            except RuntimeError:
-                raise ValueError(f"Run with run_id {run_id} does not "
-                                 "exist in the database")
+        self.path_to_db = get_DB_location()
+        self.conn = conn
 
         super().__init__(guid)
 
@@ -237,16 +225,19 @@ class SqliteWriterInterface(DataWriterInterface):
     """
     def __init__(self, guid: str, *,
                  conn: Optional[ConnectionPlus] = None,
+<<<<<<< HEAD
                  path_to_db: Optional[str] = None):
+=======
+                 exp_id: Optional[int] = None,
+                 name: Optional[str] = None):
+>>>>>>> 256cf1cc62233c3e69c05ae2a20ae485f1f83832
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError("conn must be a QCoDeS ConnectionPlus "
+                             "object")
 
-        self.path_to_db = path_to_db or get_DB_location()
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+        self.path_to_db = get_DB_location()
+        self.conn = conn
 
         super().__init__(guid)
 
