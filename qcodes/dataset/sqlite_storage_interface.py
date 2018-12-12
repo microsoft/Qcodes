@@ -30,7 +30,6 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         get_result_counter_from_runid,
                                         get_runid_from_guid,
                                         is_guid_in_database,
-                                        make_connection_plus_from,
                                         mark_run_complete)
 
 if TYPE_CHECKING:
@@ -50,7 +49,6 @@ class SqliteReaderInterface(DataReaderInterface):
     """
     """
     def __init__(self, guid: str, *,
-                 run_id: Optional[int]=None,
                  conn: Optional[ConnectionPlus]=None):
 
         if not isinstance(conn, ConnectionPlus):
@@ -59,13 +57,6 @@ class SqliteReaderInterface(DataReaderInterface):
 
         self.path_to_db = get_DB_location()
         self.conn = conn
-
-        if run_id is not None:  # then GUID is '' and we must get it
-            try:
-                guid = get_guid_from_run_id(self.conn, run_id)
-            except RuntimeError:
-                raise ValueError(f"Run with run_id {run_id} does not "
-                                 "exist in the database")
 
         super().__init__(guid)
 
