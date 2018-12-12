@@ -59,7 +59,7 @@ class RMQConsumer(QueueConsumer):
                          properties: pika.spec.BasicProperties,
                          body):
         print('Something happened')
-        print(ch, method, properties, body)
+        print(ch, '\n', method, '\n', properties, '\n', body)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def close(self):
