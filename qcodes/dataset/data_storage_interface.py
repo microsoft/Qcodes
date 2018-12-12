@@ -138,7 +138,10 @@ class DataWriterInterface(ABC):
                         run_description: _Optional[RunDescriber] = NOT_GIVEN,
                         snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
-                        tier: _Optional[int] = NOT_GIVEN) -> None:
+                        tier: _Optional[int] = NOT_GIVEN,
+                        name: _Optional[str] = NOT_GIVEN,
+                        exp_name: _Optional[str] = NOT_GIVEN,
+                        sample_name: _Optional[str] = NOT_GIVEN) -> None:
         pass
 
     @staticmethod
@@ -176,13 +179,19 @@ class DataStorageInterface:
                         run_description: _Optional[RunDescriber] = NOT_GIVEN,
                         snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
-                        tier: _Optional[int] = NOT_GIVEN) -> None:
+                        tier: _Optional[int] = NOT_GIVEN,
+                        name: _Optional[str] = NOT_GIVEN,
+                        exp_name: _Optional[str] = NOT_GIVEN,
+                        sample_name: _Optional[str] = NOT_GIVEN) -> None:
         self.writer.store_meta_data(run_started=run_started,
                                     run_completed=run_completed,
                                     run_description=run_description,
                                     snapshot=snapshot,
                                     tags=tags,
-                                    tier=tier)
+                                    tier=tier,
+                                    name=name,
+                                    exp_name=exp_name,
+                                    sample_name=sample_name)
 
     def prepare_for_storing_results(self) -> None:
         self.writer.prepare_for_storing_results()
