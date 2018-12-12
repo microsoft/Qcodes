@@ -239,12 +239,16 @@ class DataSet(Sized):
 
         if not issubclass(readerinterface, DataReaderInterface):
             raise ValueError("The provided data reader interface is not "
-                                "valid. Must be a subclass of "
-                                "qcodes.dataset.data_storage_interface."
-                                "DataReaderInterface")
+                             "valid. Must be a subclass of "
+                             "qcodes.dataset.data_storage_interface."
+                             "DataReaderInterface")
 
         reader_is_sqlite = readerinterface == SqliteReaderInterface
         writer_is_sqlite = writerinterface == SqliteWriterInterface
+
+        if run_id is not None and guid is not None:
+            raise ValueError('Got values for both GUID and run_id. Please '
+                             'provide at most a value for one of them.')
 
         # First handle the annoying situation of no GUID but a run_id
 
@@ -260,16 +264,18 @@ class DataSet(Sized):
                     conn = connect(get_DB_location())
                 else:
                     conn = connect(path_to_db)
-            guid = get_guid_from_run_id(conn, run_id)
+            try:
+                guid = get_guid_from_run_id(conn, run_id)
+            except RuntimeError:
+                raise ValueError(f"Run with run_id "
+                                 f"{run_id} does not "
+                                 f"exist in the database")
 
         # Now (guid is None) is the switch for creating / loading a dataset
 
 
         if guid is not None:  # Case: Loading run
             log.info(f'Attempting to load existing run with GUID: {guid}')
-            if run_id is not None:
-                raise ValueError('Got values for both GUID and run_id. Please '
-                                 'provide at most a value for one of them.')
 
             # Handle kwargs
             reader_kwargs = DataSet._kwargs_for_reader_when_loading(
