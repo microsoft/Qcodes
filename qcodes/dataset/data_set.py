@@ -44,7 +44,8 @@ from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 from qcodes.dataset.data_storage_interface import (DataReaderInterface,
                                                    DataWriterInterface,
-                                                   DataStorageInterface)
+                                                   DataStorageInterface,
+                                                   MetaData)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -608,7 +609,8 @@ class DataSet(Sized):
         Perform the actions that must take place once the run has been started
         """
         # write down the run_description
-        self.dsi.store_meta_data(run_description=self.description)
+        self.dsi.store_meta_data(
+            MetaData(run_description=self.description.to_json()))
 
         # let data storage interface prepare for storing actual data
         self.dsi.prepare_for_storing_results()
@@ -655,7 +657,7 @@ class DataSet(Sized):
         desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
         self._description = desc
 
-        self.dsi.store_meta_data(run_description=desc)
+        self.dsi.store_meta_data(MetaData(run_description=desc.to_json()))
 
     def get_parameters(self) -> SPECS:
         return list(self.description.interdeps.paramspecs)
@@ -670,7 +672,7 @@ class DataSet(Sized):
             metadata: actual metadata
         """
         self._metadata[tag] = metadata
-        self.dsi.store_meta_data(tags=self._metadata)
+        self.dsi.store_meta_data(MetaData(tags=self._metadata))
 
     def add_snapshot(self, snapshot: dict, overwrite: bool=False) -> None:
         """
@@ -683,7 +685,7 @@ class DataSet(Sized):
         current_snapshot = self.snapshot
 
         if current_snapshot is None or overwrite:
-            self.dsi.store_meta_data(snapshot=snapshot)
+            self.dsi.store_meta_data(MetaData(snapshot=snapshot))
 
         elif current_snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
@@ -712,7 +714,7 @@ class DataSet(Sized):
         self._completed = value
         if value:
             self._started = True
-            self.dsi.store_meta_data(run_completed=time.time())
+            self.dsi.store_meta_data(MetaData(run_completed=time.time()))
 
     def mark_completed(self) -> None:
         """

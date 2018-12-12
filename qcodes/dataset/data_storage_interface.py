@@ -36,14 +36,15 @@ class MetaData:
     Metadata class holds information that comes together with the actual
     data but is not the actual data.
     """
-    run_description: RunDescriber
-    name: str
-    exp_name: str
-    sample_name: str
-    run_started: Optional[float] = None
-    run_completed: Optional[float] = None
-    snapshot: Optional[dict] = None
-    tags: Dict[str, Any] = field(default_factory=dict)
+    run_description: _Optional[str] = NOT_GIVEN
+    exp_name: _Optional[str] = NOT_GIVEN
+    sample_name: _Optional[str] = NOT_GIVEN
+    name: _Optional[str] = NOT_GIVEN
+    run_started: _Optional[Optional[float]] = NOT_GIVEN
+    run_completed: _Optional[Optional[float]] = NOT_GIVEN
+    snapshot: _Optional[Optional[dict]] = NOT_GIVEN
+    tags: _Optional[Dict[str, Any]] = NOT_GIVEN
+    #tier: _Optional[int] = NOT_GIVEN
     tier: int = 1
 
 
@@ -132,16 +133,7 @@ class DataWriterInterface(ABC):
         pass
 
     @abstractmethod
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_description: _Optional[RunDescriber] = NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
-                        tier: _Optional[int] = NOT_GIVEN,
-                        name: _Optional[str] = NOT_GIVEN,
-                        exp_name: _Optional[str] = NOT_GIVEN,
-                        sample_name: _Optional[str] = NOT_GIVEN) -> None:
+    def store_meta_data(self, metadata: MetaData) -> None:
         pass
 
     @staticmethod
@@ -173,25 +165,8 @@ class DataStorageInterface:
     def store_results(self, results: Dict[str, VALUES]) -> None:
         self.writer.store_results(results)
 
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]] = NOT_GIVEN,
-                        run_description: _Optional[RunDescriber] = NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]] = NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]] = NOT_GIVEN,
-                        tier: _Optional[int] = NOT_GIVEN,
-                        name: _Optional[str] = NOT_GIVEN,
-                        exp_name: _Optional[str] = NOT_GIVEN,
-                        sample_name: _Optional[str] = NOT_GIVEN) -> None:
-        self.writer.store_meta_data(run_started=run_started,
-                                    run_completed=run_completed,
-                                    run_description=run_description,
-                                    snapshot=snapshot,
-                                    tags=tags,
-                                    tier=tier,
-                                    name=name,
-                                    exp_name=exp_name,
-                                    sample_name=sample_name)
+    def store_meta_data(self, metadata: MetaData) -> None:
+        self.writer.store_meta_data(metadata)
 
     def prepare_for_storing_results(self) -> None:
         self.writer.prepare_for_storing_results()
