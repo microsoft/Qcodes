@@ -224,13 +224,7 @@ class SqliteWriterInterface(DataWriterInterface):
     """
     """
     def __init__(self, guid: str, *,
-                 conn: Optional[ConnectionPlus] = None,
-<<<<<<< HEAD
-                 path_to_db: Optional[str] = None):
-=======
-                 exp_id: Optional[int] = None,
-                 name: Optional[str] = None):
->>>>>>> 256cf1cc62233c3e69c05ae2a20ae485f1f83832
+                 conn: Optional[ConnectionPlus] = None):
 
         if not isinstance(conn, ConnectionPlus):
             raise ValueError("conn must be a QCoDeS ConnectionPlus "
