@@ -51,17 +51,14 @@ class SqliteReaderInterface(DataReaderInterface):
     """
     def __init__(self, guid: str, *,
                  run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
-                 path_to_db: Optional[str]=None):
+                 conn: Optional[ConnectionPlus]=None):
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError("conn must be a QCoDeS ConnectionPlus "
+                             "object")
 
-        self.path_to_db = path_to_db or get_DB_location()
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db, debug=False)
+        self.path_to_db = get_DB_location()
+        self.conn = conn
 
         if run_id is not None:  # then GUID is '' and we must get it
             try:
@@ -237,18 +234,15 @@ class SqliteWriterInterface(DataWriterInterface):
     """
     def __init__(self, guid: str, *,
                  conn: Optional[ConnectionPlus] = None,
-                 path_to_db: Optional[str] = None,
                  exp_id: Optional[int] = None,
                  name: Optional[str] = None):
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError("conn must be a QCoDeS ConnectionPlus "
+                             "object")
 
-        self.path_to_db = path_to_db or get_DB_location()
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+        self.path_to_db = get_DB_location()
+        self.conn = conn
 
         super().__init__(guid)
 
