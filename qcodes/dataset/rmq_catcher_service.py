@@ -5,6 +5,8 @@ import argparse
 from typing import List, Dict, Optional
 import time
 import datetime
+from functools import partial
+import pickle
 
 from qcodes.dataset.rmq_queue_consumer import QueueConsumer, RMQConsumer
 from qcodes.dataset.data_storage_interface import (DataReaderInterface,
@@ -23,13 +25,9 @@ class Catcher:
                  consumer_callback: str = 'catcher_default',
                  reader: type = SqliteReaderInterface,
                  writer: type = SqliteWriterInterface,
-                 consumer_kwargs: Optional[Dict] = None,
-                 reader_kwargs: Optional[Dict] = None,
-                 writer_kwargs: Optional[Dict] = None):
+                 consumer_kwargs: Optional[Dict] = None):
 
         consumer_kwargs = consumer_kwargs or {}
-        reader_kwargs = reader_kwargs or {}
-        writer_kwargs = writer_kwargs or {}
 
         if not issubclass(consumer, QueueConsumer):
             raise ValueError('Received an invalid consumer, '
@@ -46,6 +44,10 @@ class Catcher:
                              f'f{writer}, which is not a '
                              'subclass of DataWriterInterface')
 
+        if writer != SqliteWriterInterface:
+            raise NotImplementedError('Catcher currently only supports '
+                                      'writing to SQLite.')
+
         callbacks = {'consumer_default': None,
                      'catcher_default': self.message_callback}
         callback = callbacks[consumer_callback]
@@ -55,16 +57,36 @@ class Catcher:
         self.reader_factory = reader
         self.writer_factory = writer
 
-        self.active_guids: List[str] = []
+        self.active_writers: Dict[str: SqliteWriterInterface] = {}
 
         self.number_of_received_messages = 0
 
-    # TODO: the extension of this function is the real development.
-    # For now allow a simple action that is testable (and that we'll probably
-    # want to keep)
-
     def message_callback(self, ch, method, properties, body):
         self.number_of_received_messages += 1
+
+        header = properties.headers
+        guid = header['guid']
+
+        print(properties.headers)
+        print(pickle.loads(body))
+
+        if guid not in self.active_guids:
+            reader = self.reader_factory(guid)
+            if not reader.run_exists():
+                self.active_writers[guid] = self.writer_factory(guid)
+                self.active_writers[guid].create_run()
+
+        if header['messagetype'] == 'data':
+            results = pickle.loads(body)
+            self.active_writers[guid].store_results(results)
+
+        if header['messagetype'] == 'metadata':
+            metadata = pickle.loads(body)
+            self.active_writers[guid].store_metadata(metadata)
+
+    @property
+    def active_guids(self) -> List[str]:
+        return list(self.active_writers.keys())
 
 
 def current_time() -> str:
