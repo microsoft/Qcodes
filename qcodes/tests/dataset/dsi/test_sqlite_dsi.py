@@ -14,7 +14,8 @@ from qcodes.dataset.sqlite_base import create_run, get_runs, connect, get_data, 
     RUNS_TABLE_COLUMNS, get_metadata
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
-from qcodes.dataset.data_storage_interface import DataStorageInterface
+from qcodes.dataset.data_storage_interface import (DataStorageInterface,
+                                                   MetaData)
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
@@ -193,7 +194,7 @@ def test_store_results(experiment, request):
     desc = RunDescriber(InterDependencies(*specs))
 
     # Add specs for parameters via metadata
-    dsi_writer.store_meta_data(run_description=desc)
+    dsi_writer.store_meta_data(MetaData(run_description=desc.to_json()))
 
     dsi_writer.prepare_for_storing_results()
 
@@ -280,7 +281,7 @@ def test_replay_results(experiment, request):
 
     specs = [ParamSpec("x", "numeric"), ParamSpec("y", "array")]
     desc = RunDescriber(InterDependencies(*specs))
-    dsi.store_meta_data(run_description=desc)
+    dsi.store_meta_data(MetaData(run_description=desc.to_json()))
 
     dsi.prepare_for_storing_results()
 
@@ -366,7 +367,7 @@ def test_store_meta_data__run_completed(experiment):
     # store metadata
 
     some_time = time.time()
-    dsi.store_meta_data(run_completed=some_time)
+    dsi.store_meta_data(MetaData(run_completed=some_time))
 
     # assert metadata was successfully stored
 
@@ -403,7 +404,7 @@ def test_store_meta_data__run_description(experiment):
 
     some_desc = RunDescriber(InterDependencies(ParamSpec('x', 'array')))
     some_desc_json = some_desc.to_json()
-    dsi.store_meta_data(run_description=some_desc)
+    dsi.store_meta_data(MetaData(run_description=some_desc.to_json()))
 
     # assert metadata was successfully stored
 
@@ -438,7 +439,7 @@ def test_store_meta_data__tags(experiment):
 
     tags_1 = {'run_is_good': False}
 
-    dsi.store_meta_data(tags=tags_1)
+    dsi.store_meta_data(MetaData(tags=tags_1))
 
     # assert metadata was successfully stored
 
@@ -457,7 +458,7 @@ def test_store_meta_data__tags(experiment):
 
     tags_2 = {**tags_1, 'evil_tag': 'not_really'}
 
-    dsi.store_meta_data(tags=tags_2)
+    dsi.store_meta_data(MetaData(tags=tags_2))
 
     # assert metadata was successfully stored
 
@@ -479,7 +480,7 @@ def test_store_meta_data__tags(experiment):
 
     tags_3 = {'very_different': 123.4}
 
-    dsi.store_meta_data(tags=tags_3)
+    dsi.store_meta_data(MetaData(tags=tags_3))
 
     # assert metadata was successfully stored
 
@@ -526,7 +527,7 @@ def test_store_meta_data__snapshot(experiment, request):
 
     snap_1 = {'station': 'Q'}
 
-    dsi.store_meta_data(snapshot=snap_1)
+    dsi.store_meta_data(MetaData(snapshot=snap_1))
 
     # assert snapshot was successfully stored
 

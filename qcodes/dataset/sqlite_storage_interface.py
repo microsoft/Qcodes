@@ -31,6 +31,7 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         get_runid_from_guid,
                                         is_guid_in_database,
                                         mark_run_complete)
+from qcodes.dataset.descriptions import RunDescriber
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_set import _Subscriber
@@ -297,26 +298,18 @@ class SqliteWriterInterface(DataWriterInterface):
                                list(results.keys()),
                                list(values_transposed))  # type: ignore
 
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_description: _Optional[RunDescriber]=NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
-                        tier: _Optional[int]=NOT_GIVEN,
-                        name: _Optional[str] = NOT_GIVEN,
-                        exp_name: _Optional[str] = NOT_GIVEN,
-                        sample_name: _Optional[str] = NOT_GIVEN) -> None:
+    def store_meta_data(self, metadata: MetaData) -> None:
         """
         Performs one atomic transaction for all the fields. Each field is
         set by a separate function that should check for inconsistencies and
         raise if it finds an inconsistency
         """
+
         queries: Dict[Callable[[ConnectionPlus, Any], None], _Optional[Any]]
-        queries = {self._set_run_completed: run_completed,
-                   self._set_run_description: run_description,
-                   self._set_tags: tags,
-                   self._set_snapshot: snapshot}
+        queries = {self._set_run_completed: metadata.run_completed,
+                   self._set_run_description: metadata.run_description,
+                   self._set_tags: metadata.tags,
+                   self._set_snapshot: metadata.snapshot}
 
         with atomic(self.conn) as conn:
             for func, kwarg in queries.items():
@@ -334,8 +327,9 @@ class SqliteWriterInterface(DataWriterInterface):
 
         mark_run_complete(conn, completion_time=time, run_id=self.run_id)
 
-    def _set_run_description(self, conn: ConnectionPlus, desc: RunDescriber) \
+    def _set_run_description(self, conn: ConnectionPlus, desc_str: str) \
             -> None:
+        desc = RunDescriber.from_json(desc_str)
         # update the result_table columns and write to layouts and dependencies
         existing_params = get_parameters(conn, self.run_id)
         for param in desc.interdeps.paramspecs:
