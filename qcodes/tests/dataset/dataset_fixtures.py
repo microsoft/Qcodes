@@ -65,15 +65,34 @@ def multi_dataset(experiment, request):
         datasaver.dataset.conn.close()
 
 
-@pytest.fixture(scope="function",
-                params=["array", "numeric"])
-def array_in_scalar_dataset(experiment, request):
+@pytest.fixture(scope="function")
+def array_in_scalar_dataset(experiment):
     meas = Measurement()
     scalar_param = Parameter('scalarparam', set_cmd=None)
     param = ArraySetPointParam()
     meas.register_parameter(scalar_param)
     meas.register_parameter(param, setpoints=(scalar_param,),
-                            paramtype=request.param)
+                            paramtype='array')
+
+    with meas.run() as datasaver:
+        for i in range(1, 10):
+            scalar_param.set(i)
+            datasaver.add_result((scalar_param, scalar_param.get()),
+                                 (param, param.get()))
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
+
+
+@pytest.fixture(scope="function")
+def array_in_scalar_dataset_unrolled(experiment):
+    meas = Measurement()
+    scalar_param = Parameter('scalarparam', set_cmd=None)
+    param = ArraySetPointParam()
+    meas.register_parameter(scalar_param)
+    meas.register_parameter(param, setpoints=(scalar_param,),
+                            paramtype='numeric')
 
     with meas.run() as datasaver:
         for i in range(1, 10):

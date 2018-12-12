@@ -25,7 +25,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
-    standalone_parameters_dataset
+    standalone_parameters_dataset, array_in_scalar_dataset_unrolled
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -873,10 +873,10 @@ def test_get_multi_parameter_data(multi_dataset):
                           expected_values)
 
 
-def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
-    paramspecs = array_in_scalar_dataset.paramspecs
-    types = [param.type for param in paramspecs.values()]
-
+@given(start=hst.one_of(hst.integers(1, 9), hst.none()),
+       end=hst.one_of(hst.integers(1, 9), hst.none()))
+def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
+                                        start, end):
     input_names = ['testparameter']
 
     expected_names = {}
@@ -894,24 +894,63 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset):
     setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
                                     (shape_1, 1))
     expected_shapes['testparameter'] = {}
+    expected_shapes['testparameter'] = [(9, 5), (9, 5)]
     expected_values = {}
-    if 'array' in types:
-        expected_shapes['testparameter'] = [(9, 5), (9, 5)]
-        expected_values['testparameter'] = [
-            test_parameter_values,
-            scalar_param_values,
-            setpoint_param_values]
-    else:
-        expected_shapes['testparameter'] = [(45,), (45,)]
-        expected_values['testparameter'] = [
-            test_parameter_values.ravel(),
-            scalar_param_values.ravel(),
-            setpoint_param_values.ravel()]
+    expected_values['testparameter'] = [
+        test_parameter_values,
+        scalar_param_values,
+        setpoint_param_values]
+
+    start, end = limit_data_to_start_end(start, end, input_names,
+                                         expected_names, expected_shapes,
+                                         expected_values)
     parameter_test_helper(array_in_scalar_dataset,
                           input_names,
                           expected_names,
                           expected_shapes,
-                          expected_values)
+                          expected_values,
+                          start,
+                          end)
+
+
+@given(start=hst.one_of(hst.integers(1, 45), hst.none()),
+       end=hst.one_of(hst.integers(1, 45), hst.none()))
+def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
+                                            start, end):
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'scalarparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+
+    shape_1 = 9
+    shape_2 = 5
+
+    test_parameter_values = np.tile((np.ones(shape_2) + 1).reshape(1, shape_2),
+                                    (shape_1, 1))
+    scalar_param_values = np.tile(np.arange(1, 10).reshape(shape_1, 1),
+                                  (1, shape_2))
+    setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
+                                    (shape_1, 1))
+    expected_shapes['testparameter'] = {}
+    expected_shapes['testparameter'] = [(45,), (45,)]
+    expected_values = {}
+    expected_values['testparameter'] = [
+        test_parameter_values.ravel(),
+        scalar_param_values.ravel(),
+        setpoint_param_values.ravel()]
+
+    start, end = limit_data_to_start_end(start, end, input_names,
+                                         expected_names, expected_shapes,
+                                         expected_values)
+    parameter_test_helper(array_in_scalar_dataset_unrolled,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values,
+                          start,
+                          end)
 
 
 def test_get_array_in_str_param_data(array_in_str_dataset):
