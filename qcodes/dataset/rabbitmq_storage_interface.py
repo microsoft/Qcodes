@@ -4,6 +4,7 @@ from threading import Thread
 
 import pika
 from pika.adapters.blocking_connection import BlockingConnection
+import dataclasses
 
 from qcodes.dataset.rmq_setup import (read_config_file,
                                       setup_exchange_and_queues_from_conf)
@@ -83,23 +84,26 @@ class RabbitMQWriterInterface(DataWriterInterface):
     def create_run(self, exp_id: Optional[int] = None,
                    name: Optional[str] = None) -> None:
         # TODO: this function ought to produce the run_started value
-        self.store_meta_data(tags={'exp_id': exp_id},
-                             name=name)
+        self.store_meta_data(MetaData(tags={'exp_id': exp_id},
+                                      name=name))
         raise NotImplementedError
 
     def prepare_for_storing_results(self):
         raise NotImplementedError
 
-    def store_meta_data(self, *,
-                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
-                        run_description: _Optional[RunDescriber]=NOT_GIVEN,
-                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
-                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
-                        tier: _Optional[int]=NOT_GIVEN,
-                        name: _Optional[str] = NOT_GIVEN,
-                        exp_name: _Optional[str] = NOT_GIVEN,
-                        sample_name: _Optional[str] = NOT_GIVEN) -> None):
+    def store_meta_data(self, metadata: MetaData) -> None:
+        md_dump = pickle.dumps(dataclasses.asdict(metadata))
+        self.channel.publish(exchange='mydata',
+                        routing_key='',
+                        body=md_dump,
+                        properties=pika.BasicProperties(
+                            # todo this should include the chunk id
+                            headers={'guid': self.guid,
+                                    'messagetype': 'metadata',
+                                    'version': 0},
+                            delivery_mode=2))
+
+    def resume_run(self, *args):
         raise NotImplementedError
 
     def close(self):
