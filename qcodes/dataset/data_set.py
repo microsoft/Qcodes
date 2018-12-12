@@ -39,6 +39,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
                                         ConnectionPlus)
+from qcodes.dataset.rabbitmq_storage_interface import RabbitMQWriterInterface
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 from qcodes.dataset.data_storage_interface import (DataReaderInterface,
@@ -330,11 +331,12 @@ class DataSet(Sized):
         """
         Helper function to dig out appropriate kwargs for create_run
         """
-        if writer == SqliteWriterInterface:
+        if writer in (SqliteWriterInterface, RabbitMQWriterInterface):
             return {'exp_id': si_kwargs.get('exp_id', None),
                     'name': si_kwargs.get('name', None)}
         else:
-            raise NotImplementedError('Only SQLiteWriterInterface is '
+            raise NotImplementedError('Only SQLiteWriterInterface and '
+                                      'RabbitMQWriterInterface are '
                                       'currently supported.')
 
     @staticmethod
@@ -384,8 +386,11 @@ class DataSet(Sized):
             else:
                 conn = connect(path_to_dbfile(conn))
             return {'conn': conn}
+        elif writer == RabbitMQWriterInterface:
+            return {}
         else:
-            raise NotImplementedError('Only SQLiteWriterInterface is '
+            raise NotImplementedError('Only SQLiteWriterInterface and '
+                                      'RabbitMQWriterInterface are '
                                       'currently supported.')
 
     @staticmethod
@@ -407,8 +412,11 @@ class DataSet(Sized):
                                  "with non-None values. This is not "
                                  "allowed.")
             return {'conn': conn}
+        elif writer == RabbitMQWriterInterface:
+            return {}
         else:
-            raise NotImplementedError('Only SQLiteWriterInterface is '
+            raise NotImplementedError('Only SQLiteWriterInterface and '
+                                      'RabbitMQWriterInterface are '
                                       'currently supported.')
 
     @staticmethod
