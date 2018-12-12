@@ -804,18 +804,23 @@ def test_get_parameter_data(scalar_dataset, start, end):
 
 
 def test_get_array_parameter_data(array_dataset):
-
+    paramspecs = array_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
     input_names = ['testparameter']
 
     expected_names = {}
     expected_names['testparameter'] = ['testparameter', 'this_setpoint']
     expected_shapes = {}
     expected_len = 5
-    expected_shapes['testparameter'] = [(expected_len, ), (expected_len, )]
+    expected_shapes['testparameter'] = [(expected_len,), (expected_len,)]
     expected_values = {}
     expected_values['testparameter'] = [np.ones(expected_len) + 1,
                                         np.linspace(5, 9, expected_len)]
-
+    if 'array' in types:
+        expected_shapes['testparameter'] = [(1, expected_len),
+                                            (1, expected_len)]
+        for i in range(len(expected_values['testparameter'])):
+            expected_values['testparameter'][i] = expected_values['testparameter'][i].reshape(1, expected_len)
     parameter_test_helper(array_dataset,
                           input_names,
                           expected_names,
@@ -843,14 +848,14 @@ def test_get_multi_parameter_data(multi_dataset):
                                            (1, shape_2))
     sp_2_data = np.tile(np.linspace(9, 11, shape_2), (shape_1, 1))
     if 'array' in types:
-        expected_shapes['this'] = [(shape_1, shape_2), (shape_1, shape_2)]
-        expected_shapes['that'] = [(shape_1, shape_2), (shape_1, shape_2)]
-        expected_values['this'] = [this_data,
-                                   sp_1_data,
-                                   sp_2_data]
-        expected_values['that'] = [that_data,
-                                   sp_1_data,
-                                   sp_2_data]
+        expected_shapes['this'] = [(1, shape_1, shape_2), (1, shape_1, shape_2)]
+        expected_shapes['that'] = [(1, shape_1, shape_2), (1, shape_1, shape_2)]
+        expected_values['this'] = [this_data.reshape(1, shape_1, shape_2),
+                                   sp_1_data.reshape(1, shape_1, shape_2),
+                                   sp_2_data.reshape(1, shape_1, shape_2)]
+        expected_values['that'] = [that_data.reshape(1, shape_1, shape_2),
+                                   sp_1_data.reshape(1, shape_1, shape_2),
+                                   sp_2_data.reshape(1, shape_1, shape_2)]
 
     else:
         expected_shapes['this'] = [(15,), (15,)]
