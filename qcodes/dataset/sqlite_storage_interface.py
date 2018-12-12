@@ -303,7 +303,10 @@ class SqliteWriterInterface(DataWriterInterface):
                         run_description: _Optional[RunDescriber]=NOT_GIVEN,
                         snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
                         tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
-                        tier: _Optional[int]=NOT_GIVEN) -> None:
+                        tier: _Optional[int]=NOT_GIVEN,
+                        name: _Optional[str] = NOT_GIVEN,
+                        exp_name: _Optional[str] = NOT_GIVEN,
+                        sample_name: _Optional[str] = NOT_GIVEN) -> None:
         """
         Performs one atomic transaction for all the fields. Each field is
         set by a separate function that should check for inconsistencies and
