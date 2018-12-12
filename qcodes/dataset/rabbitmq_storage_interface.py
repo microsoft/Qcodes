@@ -1,5 +1,5 @@
 import pickle
-from typing import Dict
+from typing import Dict, Optional
 from threading import Thread
 
 import pika
@@ -7,7 +7,9 @@ from pika.adapters.blocking_connection import BlockingConnection
 
 from qcodes.dataset.rmq_setup import (read_config_file,
                                       setup_exchange_and_queues_from_conf)
-from qcodes.dataset.data_storage_interface import (DataWriterInterface, VALUES)
+from qcodes.dataset.data_storage_interface import (DataWriterInterface,
+                                                   VALUES,
+                                                   MetaData)
 
 
 class Heart(Thread):
@@ -78,9 +80,8 @@ class RabbitMQWriterInterface(DataWriterInterface):
                                           'version': 0},
                                  delivery_mode=2))
 
-    # "junk" implementation of abstract methods
-
-    def create_run(self):
+    def create_run(self, exp_id: Optional[int] = None,
+                   name: Optional[str] = None) -> None:
         raise NotImplementedError
 
     def prepare_for_storing_results(self):
