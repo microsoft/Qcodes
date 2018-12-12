@@ -53,7 +53,7 @@ class SqliteReaderInterface(DataReaderInterface):
 
         if not isinstance(conn, ConnectionPlus):
             raise ValueError("conn must be a QCoDeS ConnectionPlus "
-                             "object")
+                             f"object. Received {type(conn)}")
 
         self.path_to_db = get_DB_location()
         self.conn = conn
@@ -228,7 +228,7 @@ class SqliteWriterInterface(DataWriterInterface):
 
         if not isinstance(conn, ConnectionPlus):
             raise ValueError("conn must be a QCoDeS ConnectionPlus "
-                             "object")
+                             f"object. Received {type(conn)}")
 
         self.path_to_db = get_DB_location()
         self.conn = conn
