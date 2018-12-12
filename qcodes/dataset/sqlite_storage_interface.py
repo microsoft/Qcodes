@@ -237,9 +237,7 @@ class SqliteWriterInterface(DataWriterInterface):
     """
     def __init__(self, guid: str, *,
                  conn: Optional[ConnectionPlus] = None,
-                 path_to_db: Optional[str] = None,
-                 exp_id: Optional[int] = None,
-                 name: Optional[str] = None):
+                 path_to_db: Optional[str] = None):
 
         if path_to_db is not None and conn is not None:
             raise ValueError("Both `path_to_db` and `conn` arguments have "
@@ -252,13 +250,9 @@ class SqliteWriterInterface(DataWriterInterface):
 
         super().__init__(guid)
 
-        # the following values are used in create_run
-        self.exp_id: Optional[int] = exp_id
-        self.name: Optional[str] = name
-
-        # The following attributes are assigned by create_run OR
-        # retrieve_meta_data, depending on what the DataSet constructor wants
-        # (i.e. to load or create)
+        # The following attributes are assigned by create_run or resume_run
+        self.exp_id: Optional[int] = None
+        self.name: Optional[str] = None
         self.run_id: Optional[int] = None
         self.table_name: Optional[str] = None
         self.counter: Optional[int] = None
@@ -266,10 +260,16 @@ class SqliteWriterInterface(DataWriterInterface):
         # Used by the DataSet
         self.subscribers: Dict[str, '_Subscriber'] = {}
 
-    def create_run(self) -> None:
+    def create_run(self,
+                   exp_id: Optional[int] = None,
+                   name: Optional[str] = None) -> None:
         """
         Create an entry for this run is the database file
         """
+
+        self.name = name or "dataset"
+        self.exp_id = exp_id
+
         if self.exp_id is None:
             if len(get_experiments(self.conn)) > 0:
                 self.exp_id = get_last_experiment(self.conn)
@@ -277,8 +277,6 @@ class SqliteWriterInterface(DataWriterInterface):
                 raise ValueError("No experiments found. "
                                  "You can start a new one with:"
                                  " new_experiment(name, sample_name)")
-
-        self.name = self.name or "dataset"
 
         with atomic(self.conn) as aconn:
 
@@ -288,6 +286,13 @@ class SqliteWriterInterface(DataWriterInterface):
         with atomic(self.conn) as aconn:
             self.counter = get_result_counter_from_runid(aconn, self.run_id)
 
+    def resume_run(self, exp_id: int, run_id: int, name: str, table_name: str,
+                   counter: int) -> None:
+        self.exp_id = exp_id
+        self.run_id = run_id
+        self.name = name
+        self.table_name = table_name
+        self.counter = counter
 
     def prepare_for_storing_results(self) -> None:
         pass

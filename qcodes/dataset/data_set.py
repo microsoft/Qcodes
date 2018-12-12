@@ -238,64 +238,76 @@ class DataSet(Sized):
         """
 
         if not issubclass(readerinterface, DataReaderInterface):
-            raise ValueError("The provided data reader interface is not valid. "
-                             "Must be a subclass of "
-                             "qcodes.dataset.data_storage_interface."
-                             "DataReaderInterface")
+            raise ValueError("The provided data reader interface is not "
+                                "valid. Must be a subclass of "
+                                "qcodes.dataset.data_storage_interface."
+                                "DataReaderInterface")
 
-        # Sqlite connection handling:
-        # pass the db path to the "non-prominent" interface, i.e.
-        # the reader when we create a new run and the writer when we load
         reader_is_sqlite = readerinterface == SqliteReaderInterface
         writer_is_sqlite = writerinterface == SqliteWriterInterface
-        if  reader_is_sqlite and writer_is_sqlite:
-            if si_kwargs.get('conn', None) is not None:
-                path_to_db = path_to_dbfile(si_kwargs['conn'])
-            else:
+
+        # First handle the annoying situation of no GUID but a run_id
+
+        if guid is None and run_id is not None:
+            if not(reader_is_sqlite):
+                raise ValueError('Got a run_id but is not using '
+                                 'SQLiteReaderInterface.')
+
+            conn = si_kwargs.get('conn', None)
+            if conn is None:
                 path_to_db = si_kwargs.get('path_to_db', None)
-            secondary_kwargs = {'path_to_db': path_to_db}
-        else:
-            secondary_kwargs = {}
+                if path_to_db is None:
+                    conn = connect(get_DB_location())
+                else:
+                    conn = connect(path_to_db)
+            guid = get_guid_from_run_id(conn, run_id)
+
+        # Now (guid is None) is the switch for creating / loading a dataset
+
 
         if guid is not None:  # Case: Loading run
             log.info(f'Attempting to load existing run with GUID: {guid}')
             if run_id is not None:
                 raise ValueError('Got values for both GUID and run_id. Please '
                                  'provide at most a value for one of them.')
+
+            # Handle kwargs
+            reader_kwargs = DataSet._kwargs_for_reader_when_loading(
+                                readerinterface, **si_kwargs)
+            writer_kwargs = DataSet._kwargs_for_writer_when_loading(
+                                writerinterface, **si_kwargs)
+
             self._guid = guid
             self.dsi = DataStorageInterface(self._guid,
                                             reader=readerinterface,
                                             writer=writerinterface,
-                                            reader_kwargs=si_kwargs,
-                                            writer_kwargs=secondary_kwargs)
+                                            reader_kwargs=reader_kwargs,
+                                            writer_kwargs=writer_kwargs)
             if not self.dsi.run_exists():
                 raise ValueError(f'No run with GUID {guid} found.')
-
-        # Note: this is not a feature we want to keep supporting, but it is
-        # needed in a transition period from run_id to GUID
-        elif run_id is not None:  # Case: Loading run
-            log.info(f'Attempting to load existing run with run_id: {run_id}')
-            if readerinterface != SqliteReaderInterface:
-                raise ValueError('Got a value for run_id, but the '
-                                 'storageinterface does not support that. '
-                                 'You can only use run_id with SQlite.')
-            si_kwargs['run_id'] = run_id
-            self.dsi = DataStorageInterface(guid='',
-                                            reader=readerinterface,
-                                            writer=writerinterface,
-                                            reader_kwargs=si_kwargs,
-                                            writer_kwargs=secondary_kwargs)
-            self._guid = self.dsi.guid
+            self.dsi.retrieve_meta_data()
+            r = self.dsi.reader
+            self.dsi.writer.resume_run(r.exp_id, r.run_id, r.name,
+                                       r.table_name, r.counter)
 
         else:  # Case: Creating run
             self._guid = generate_guid()
             log.info(f'Creating new run with GUID: {self._guid}')
+
+            # Handle kwargs
+            reader_kwargs = DataSet._kwargs_for_reader_when_creating(
+                                readerinterface, **si_kwargs)
+            writer_kwargs = DataSet._kwargs_for_writer_when_creating(
+                                writerinterface, **si_kwargs)
+            creation_kwargs = DataSet._kwargs_for_create_run(
+                                writerinterface, **si_kwargs)
+
             self.dsi = DataStorageInterface(self._guid,
                                             reader=readerinterface,
                                             writer=writerinterface,
-                                            writer_kwargs=si_kwargs,
-                                            reader_kwargs=secondary_kwargs)
-            self.dsi.create_run()
+                                            writer_kwargs=writer_kwargs,
+                                            reader_kwargs=reader_kwargs)
+            self.dsi.create_run(**creation_kwargs)
 
         # Assign all attributes
         run_meta_data = self.dsi.retrieve_meta_data()
@@ -307,6 +319,98 @@ class DataSet(Sized):
 
         self._started: bool = self._completed or self.number_of_results > 0
 
+    @staticmethod
+    def _kwargs_for_create_run(writer: type, **si_kwargs):
+        """
+        Helper function to dig out appropriate kwargs for create_run
+        """
+        if writer == SqliteWriterInterface:
+            return {'exp_id': si_kwargs.get('exp_id', None),
+                    'name': si_kwargs.get('name', None)}
+        else:
+            raise NotImplementedError('Only SQLiteWriterInterface is '
+                                      'currently supported.')
+
+    @staticmethod
+    def _kwargs_for_reader_when_loading(reader: type, **si_kwargs):
+        """
+        Helper function to dig out the appropriate kwargs for the reader
+        """
+        if reader == SqliteReaderInterface:
+            conn = si_kwargs.get('conn', None)
+            if conn is None:
+                path_to_db = si_kwargs.get('path_to_db', None)
+                if path_to_db is None:
+                    conn = connect(get_DB_location())
+                else:
+                    conn = connect(path_to_db)
+            return {'conn': conn}
+        else:
+            raise NotImplementedError('Only SQLiteReaderInterface is '
+                                      'currently supported.')
+
+    @staticmethod
+    def _kwargs_for_writer_when_loading(writer: type, **si_kwargs):
+        """
+        Helper function to dig out the appropriate kwargs for the writer
+        """
+
+        if writer == SqliteWriterInterface:
+            # When we are loading, the writer gets a NEW connection to
+            # the same DB
+            conn = si_kwargs.get('conn', None)
+            if conn is None:
+                path_to_db = si_kwargs.get('path_to_db', None)
+                if path_to_db is None:
+                    conn = connect(get_DB_location())
+                else:
+                    conn = connect(path_to_db)
+            else:
+                conn = connect(path_to_dbfile(conn))
+            return {'conn': conn}
+        else:
+            raise NotImplementedError('Only SQLiteWriterInterface is '
+                                      'currently supported.')
+
+    @staticmethod
+    def _kwargs_for_writer_when_creating(writer: type, **si_kwargs):
+        """
+        Helper function to dig out the appropriate kwargs for the writer
+        """
+        if writer == SqliteWriterInterface:
+            conn = si_kwargs.get('conn', None)
+            if conn is None:
+                path_to_db = si_kwargs.get('path_to_db', None)
+                if path_to_db is None:
+                    conn = connect(get_DB_location())
+                else:
+                    conn = connect(path_to_db)
+            return {'conn': conn}
+        else:
+            raise NotImplementedError('Only SQLiteWriterInterface is '
+                                      'currently supported.')
+
+    @staticmethod
+    def _kwargs_for_reader_when_creating(reader: type, **si_kwargs):
+        """
+        Helper function to dig out the appropriate kwargs for the reader
+        """
+        if reader == SqliteReaderInterface:
+            # when we are creating a new run, the reader gets a NEW connection
+            # to the same DB. TODO: make this connection read-only
+            conn = si_kwargs.get('conn', None)
+            if conn is None:
+                path_to_db = si_kwargs.get('path_to_db', None)
+                if path_to_db is None:
+                    conn = connect(get_DB_location())
+                else:
+                    conn = connect(path_to_db)
+            else:
+                conn = connect(path_to_dbfile(conn))
+            return {'conn': conn}
+        else:
+            raise NotImplementedError('Only SQLiteReaderInterface is '
+                                      'currently supported.')
 
     @property
     def name(self):
