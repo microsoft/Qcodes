@@ -82,12 +82,24 @@ class RabbitMQWriterInterface(DataWriterInterface):
 
     def create_run(self, exp_id: Optional[int] = None,
                    name: Optional[str] = None) -> None:
+        # TODO: this function ought to produce the run_started value
+        self.store_meta_data(tags={'exp_id': exp_id},
+                             name=name)
         raise NotImplementedError
 
     def prepare_for_storing_results(self):
         raise NotImplementedError
 
-    def store_meta_data(self):
+    def store_meta_data(self, *,
+                        run_started: _Optional[Optional[float]]=NOT_GIVEN,
+                        run_completed: _Optional[Optional[float]]=NOT_GIVEN,
+                        run_description: _Optional[RunDescriber]=NOT_GIVEN,
+                        snapshot: _Optional[Optional[dict]]=NOT_GIVEN,
+                        tags: _Optional[Dict[str, Any]]=NOT_GIVEN,
+                        tier: _Optional[int]=NOT_GIVEN,
+                        name: _Optional[str] = NOT_GIVEN,
+                        exp_name: _Optional[str] = NOT_GIVEN,
+                        sample_name: _Optional[str] = NOT_GIVEN) -> None):
         raise NotImplementedError
 
     def close(self):
