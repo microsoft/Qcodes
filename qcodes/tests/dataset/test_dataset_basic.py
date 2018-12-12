@@ -776,7 +776,9 @@ class TestGetData:
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
 
 
-def test_get_parameter_data(scalar_dataset):
+@given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
+       end=hst.one_of(hst.integers(1, 10**3), hst.none()))
+def test_get_parameter_data(scalar_dataset, start, end):
     input_names = ['param_3']
 
     expected_names = {}
@@ -788,11 +790,17 @@ def test_get_parameter_data(scalar_dataset):
     expected_values['param_3'] = [np.arange(10000*a, 10000*a+1000)
                                   for a in range(4)]
 
+    start, end = limit_data_to_start_end(start, end, input_names,
+                                         expected_names, expected_shapes,
+                                         expected_values)
+
     parameter_test_helper(scalar_dataset,
                           input_names,
                           expected_names,
                           expected_shapes,
-                          expected_values)
+                          expected_values,
+                          start,
+                          end)
 
 
 def test_get_array_parameter_data(array_dataset):
@@ -976,10 +984,12 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
 def parameter_test_helper(ds, toplevel_names,
                           expected_names,
                           expected_shapes,
-                          expected_values):
+                          expected_values,
+                          start=None,
+                          end=None):
 
-    data = ds.get_parameter_data(*toplevel_names)
-    all_data = ds.get_parameter_data()
+    data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
+    all_data = ds.get_parameter_data(start=start, end=end)
 
     all_parameters = list(all_data.keys())
     assert set(data.keys()).issubset(set(all_parameters))
@@ -1000,6 +1010,34 @@ def parameter_test_helper(ds, toplevel_names,
         expected_shapes.pop(name_removed)
         expected_values.pop(name_removed)
 
-        subset_data = ds.get_parameter_data(*subset_names)
+        subset_data = ds.get_parameter_data(*subset_names,
+                                            start=start, end=end)
         verify_data_dict(subset_data, subset_names, expected_names,
                          expected_shapes, expected_values)
+
+
+def limit_data_to_start_end(start, end, input_names, expected_names,
+                            expected_shapes, expected_values):
+    if not (start is None and end is None):
+        if start is None:
+            start = 1
+        elif end is None:
+            # all the shapes are the same so pick the first one
+            end = expected_shapes[input_names[0]][0][0]
+        if end < start:
+            for name in input_names:
+                expected_names[name] = []
+                expected_shapes[name] = ()
+                expected_values[name] = {}
+        else:
+            for name in input_names:
+                new_shapes = []
+                for shape in expected_shapes[name]:
+                    shape_list = list(shape)
+                    shape_list[0] = end - start + 1
+                    new_shapes.append(tuple(shape_list))
+                expected_shapes[name] = new_shapes
+                for i in range(len(expected_values[name])):
+                    expected_values[name][i] = \
+                        expected_values[name][i][start - 1:end]
+    return start, end
