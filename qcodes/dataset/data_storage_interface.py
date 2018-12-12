@@ -107,7 +107,14 @@ class DataWriterInterface(ABC):
         self.guid = guid
 
     @abstractmethod
-    def create_run(self) -> None:
+    def create_run(self, **kwargs) -> None:
+        pass
+
+    @abstractmethod
+    def resume_run(self, *args) -> None:
+        """
+        Enable the writer to resume appending to an existing run
+        """
         pass
 
     @abstractmethod
@@ -157,8 +164,8 @@ class DataStorageInterface:
         self.guid = self.reader.guid
         self.writer = writer(self.guid, **writer_kwargs)
 
-    def create_run(self) -> None:
-        self.writer.create_run()
+    def create_run(self, **kwargs) -> None:
+        self.writer.create_run(**kwargs)
 
     def store_results(self, results: Dict[str, VALUES]) -> None:
         self.writer.store_results(results)

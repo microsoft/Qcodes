@@ -20,7 +20,7 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
-
+from qcodes.dataset.database import path_to_dbfile
 
 # IMPORTANT: use pytest.xfail at the edn of a test function to mark tests
 # that are passing but should be improved, and write in the 'reason' what
@@ -37,24 +37,6 @@ def test_init_no_guid():
     with pytest.raises(TypeError, match=match_str):
         SqliteWriterInterface()
 
-
-def test_create_dataset_pass_both_connection_and_path_to_db(experiment):
-    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
-                                         "arguments have been passed together "
-                                         "with non-None values. This is not "
-                                         "allowed."):
-        some_valid_connection = experiment.conn
-        SqliteReaderInterface('some valid guid',
-                              path_to_db="some valid path",
-                              conn=some_valid_connection)
-    with pytest.raises(ValueError, match="Both `path_to_db` and `conn` "
-                                         "arguments have been passed together "
-                                         "with non-None values. This is not "
-                                         "allowed."):
-        some_valid_connection = experiment.conn
-        SqliteWriterInterface('some valid guid',
-                              path_to_db="some valid path",
-                              conn=some_valid_connection)
 
 def test_init_and_create_new_run(experiment):
     """
@@ -264,10 +246,12 @@ def test_replay_results(experiment, request):
     """
     guid = generate_guid()
     conn = experiment.conn
+    reader_conn = connect(path_to_dbfile(conn))
     dsi = DataStorageInterface(guid,
                                reader=SqliteReaderInterface,
                                writer=SqliteWriterInterface,
-                               writer_kwargs={'conn': conn})
+                               writer_kwargs={'conn': conn},
+                               reader_kwargs={'conn': reader_conn})
 
     # we use a different connection in order to make sure that the
     # transactions get committed and the database file gets indeed changed to
@@ -361,10 +345,12 @@ def test_replay_results(experiment, request):
 def test_store_meta_data__run_completed(experiment):
     guid = generate_guid()
     conn = experiment.conn
+    reader_conn = connect(path_to_dbfile(conn))
     dsi = DataStorageInterface(guid,
                                reader=SqliteReaderInterface,
                                writer=SqliteWriterInterface,
-                               writer_kwargs={'conn': conn})
+                               writer_kwargs={'conn': conn},
+                               reader_kwargs={'conn': reader_conn})
     dsi.create_run()
 
     control_conn = connect(experiment.path_to_db)
@@ -393,10 +379,12 @@ def test_store_meta_data__run_completed(experiment):
 def test_store_meta_data__run_description(experiment):
     guid = generate_guid()
     conn = experiment.conn
+    reader_conn = connect(path_to_dbfile(conn))
     dsi = DataStorageInterface(guid,
                                reader=SqliteReaderInterface,
                                writer=SqliteWriterInterface,
-                               writer_kwargs={'conn': conn})
+                               writer_kwargs={'conn': conn},
+                               reader_kwargs={'conn': reader_conn})
     dsi.create_run()
 
     control_conn = connect(experiment.path_to_db)
@@ -427,10 +415,12 @@ def test_store_meta_data__run_description(experiment):
 def test_store_meta_data__tags(experiment):
     guid = generate_guid()
     conn = experiment.conn
+    reader_conn = connect(path_to_dbfile(conn))
     dsi = DataStorageInterface(guid,
                                reader=SqliteReaderInterface,
                                writer=SqliteWriterInterface,
-                               writer_kwargs={'conn': conn})
+                               writer_kwargs={'conn': conn},
+                               reader_kwargs={'conn': reader_conn})
     dsi.create_run()
 
     control_conn = connect(experiment.path_to_db)
@@ -510,11 +500,13 @@ def test_store_meta_data__tags(experiment):
 def test_store_meta_data__snapshot(experiment, request):
     guid = generate_guid()
     conn = experiment.conn
-    request.addfinalizer(conn.close)
+    reader_conn = connect(path_to_dbfile(conn))
+    request.addfinalizer(reader_conn.close)
     dsi = DataStorageInterface(guid,
                                reader=SqliteReaderInterface,
                                writer=SqliteWriterInterface,
-                               writer_kwargs={'conn': conn})
+                               writer_kwargs={'conn': conn},
+                               reader_kwargs={'conn': reader_conn})
     dsi.create_run()
 
     control_conn = connect(experiment.path_to_db)

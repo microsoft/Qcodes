@@ -30,7 +30,6 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         get_result_counter_from_runid,
                                         get_runid_from_guid,
                                         is_guid_in_database,
-                                        make_connection_plus_from,
                                         mark_run_complete)
 
 if TYPE_CHECKING:
@@ -50,25 +49,14 @@ class SqliteReaderInterface(DataReaderInterface):
     """
     """
     def __init__(self, guid: str, *,
-                 run_id: Optional[int]=None,
-                 conn: Optional[ConnectionPlus]=None,
-                 path_to_db: Optional[str]=None):
+                 conn: Optional[ConnectionPlus]=None):
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError("conn must be a QCoDeS ConnectionPlus "
+                             f"object. Received {type(conn)}")
 
-        self.path_to_db = path_to_db or get_DB_location()
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db, debug=False)
-
-        if run_id is not None:  # then GUID is '' and we must get it
-            try:
-                guid = get_guid_from_run_id(self.conn, run_id)
-            except RuntimeError:
-                raise ValueError(f"Run with run_id {run_id} does not "
-                                 "exist in the database")
+        self.path_to_db = get_DB_location()
+        self.conn = conn
 
         super().__init__(guid)
 
@@ -236,29 +224,20 @@ class SqliteWriterInterface(DataWriterInterface):
     """
     """
     def __init__(self, guid: str, *,
-                 conn: Optional[ConnectionPlus] = None,
-                 path_to_db: Optional[str] = None,
-                 exp_id: Optional[int] = None,
-                 name: Optional[str] = None):
+                 conn: Optional[ConnectionPlus] = None):
 
-        if path_to_db is not None and conn is not None:
-            raise ValueError("Both `path_to_db` and `conn` arguments have "
-                             "been passed together with non-None values. "
-                             "This is not allowed.")
+        if not isinstance(conn, ConnectionPlus):
+            raise ValueError("conn must be a QCoDeS ConnectionPlus "
+                             f"object. Received {type(conn)}")
 
-        self.path_to_db = path_to_db or get_DB_location()
-        self.conn = make_connection_plus_from(conn) if conn is not None else \
-            connect(self.path_to_db)
+        self.path_to_db = get_DB_location()
+        self.conn = conn
 
         super().__init__(guid)
 
-        # the following values are used in create_run
-        self.exp_id: Optional[int] = exp_id
-        self.name: Optional[str] = name
-
-        # The following attributes are assigned by create_run OR
-        # retrieve_meta_data, depending on what the DataSet constructor wants
-        # (i.e. to load or create)
+        # The following attributes are assigned by create_run or resume_run
+        self.exp_id: Optional[int] = None
+        self.name: Optional[str] = None
         self.run_id: Optional[int] = None
         self.table_name: Optional[str] = None
         self.counter: Optional[int] = None
@@ -266,10 +245,16 @@ class SqliteWriterInterface(DataWriterInterface):
         # Used by the DataSet
         self.subscribers: Dict[str, '_Subscriber'] = {}
 
-    def create_run(self) -> None:
+    def create_run(self,
+                   exp_id: Optional[int] = None,
+                   name: Optional[str] = None) -> None:
         """
         Create an entry for this run is the database file
         """
+
+        self.name = name or "dataset"
+        self.exp_id = exp_id
+
         if self.exp_id is None:
             if len(get_experiments(self.conn)) > 0:
                 self.exp_id = get_last_experiment(self.conn)
@@ -277,8 +262,6 @@ class SqliteWriterInterface(DataWriterInterface):
                 raise ValueError("No experiments found. "
                                  "You can start a new one with:"
                                  " new_experiment(name, sample_name)")
-
-        self.name = self.name or "dataset"
 
         with atomic(self.conn) as aconn:
 
@@ -288,6 +271,13 @@ class SqliteWriterInterface(DataWriterInterface):
         with atomic(self.conn) as aconn:
             self.counter = get_result_counter_from_runid(aconn, self.run_id)
 
+    def resume_run(self, exp_id: int, run_id: int, name: str, table_name: str,
+                   counter: int) -> None:
+        self.exp_id = exp_id
+        self.run_id = run_id
+        self.name = name
+        self.table_name = table_name
+        self.counter = counter
 
     def prepare_for_storing_results(self) -> None:
         pass
