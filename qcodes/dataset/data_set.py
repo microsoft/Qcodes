@@ -350,6 +350,11 @@ class DataSet(Sized):
                     conn = connect(get_DB_location())
                 else:
                     conn = connect(path_to_db)
+            elif si_kwargs.get('path_to_db', None) is not None:
+                raise ValueError("Both `path_to_db` and `conn` "
+                                 "arguments have been passed together "
+                                 "with non-None values. This is not "
+                                 "allowed.")
             return {'conn': conn}
         else:
             raise NotImplementedError('Only SQLiteReaderInterface is '
@@ -371,6 +376,11 @@ class DataSet(Sized):
                     conn = connect(get_DB_location())
                 else:
                     conn = connect(path_to_db)
+            elif si_kwargs.get('path_to_db', None) is not None:
+                raise ValueError("Both `path_to_db` and `conn` "
+                                 "arguments have been passed together "
+                                 "with non-None values. This is not "
+                                 "allowed.")
             else:
                 conn = connect(path_to_dbfile(conn))
             return {'conn': conn}
@@ -391,6 +401,11 @@ class DataSet(Sized):
                     conn = connect(get_DB_location())
                 else:
                     conn = connect(path_to_db)
+            elif si_kwargs.get('path_to_db', None) is not None:
+                raise ValueError("Both `path_to_db` and `conn` "
+                                 "arguments have been passed together "
+                                 "with non-None values. This is not "
+                                 "allowed.")
             return {'conn': conn}
         else:
             raise NotImplementedError('Only SQLiteWriterInterface is '
@@ -411,6 +426,11 @@ class DataSet(Sized):
                     conn = connect(get_DB_location())
                 else:
                     conn = connect(path_to_db)
+            elif si_kwargs.get('path_to_db', None) is not None:
+                raise ValueError("Both `path_to_db` and `conn` "
+                                 "arguments have been passed together "
+                                 "with non-None values. This is not "
+                                 "allowed.")
             else:
                 conn = connect(path_to_dbfile(conn))
             return {'conn': conn}
