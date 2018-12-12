@@ -73,7 +73,9 @@ class RabbitMQWriterInterface(DataWriterInterface):
                              body=results_dump,
                              properties=pika.BasicProperties(
                                  # todo this should include the chunk id
-                                 headers={'guid': self.guid},
+                                 headers={'guid': self.guid,
+                                          'messagetype': 'data',
+                                          'version': 0},
                                  delivery_mode=2))
 
     # "junk" implementation of abstract methods
