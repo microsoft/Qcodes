@@ -6,12 +6,20 @@ import numpy as np
 import pytest
 
 from qcodes import ParamSpec
+from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_storage_interface import MetaData
 from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.sqlite_base import create_run, get_runs, connect, get_data, \
-    RUNS_TABLE_COLUMNS, get_metadata
+from qcodes.dataset.sqlite_base import (connect,
+                                        create_run,
+                                        get_data,
+                                        get_experiments,
+                                        get_metadata,
+                                        get_run_counter,
+                                        get_runs,
+                                        RUNS_TABLE_COLUMNS)
+
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 from qcodes.dataset.data_storage_interface import (DataStorageInterface,
@@ -543,3 +551,49 @@ def test_store_meta_data__snapshot(experiment, request):
     assert md.snapshot == snap_1
 
     dsi.reader.conn.close()
+
+
+def test_create_run_in_empty_db(empty_temp_db, request):
+    guid = generate_guid()
+    writer_conn = connect(get_DB_location())
+    reader_conn = connect(get_DB_location())
+    request.addfinalizer(reader_conn.close)
+    request.addfinalizer(writer_conn.close)
+    dsi = DataStorageInterface(guid,
+                               reader=SqliteReaderInterface,
+                               writer=SqliteWriterInterface,
+                               writer_kwargs={'conn': writer_conn},
+                               reader_kwargs={'conn': reader_conn})
+    assert len(get_experiments(reader_conn)) == 0
+
+    # First all the ways create_run will NOT create an experiment in an
+    # empty DB
+
+    match = re.escape("No experiments found. "
+                      "You can start a new one with:"
+                      " new_experiment(name, sample_name)")
+    with pytest.raises(ValueError, match=match):
+        dsi.create_run()
+
+    with pytest.raises(RuntimeError):
+        dsi.create_run(exp_id=1)
+
+    exp_name = None
+    sample_name = 'some_sample'
+    match = re.escape(f'Got values for exp_name: {exp_name} and '
+                      f'sample_name: {sample_name}. They must both '
+                      'be None or both be not-None.')
+    with pytest.raises(ValueError, match=match):
+        dsi.create_run(exp_name=exp_name, sample_name=sample_name)
+
+    # Then finally create an experiment
+    dsi.create_run(exp_name='my_experiment', sample_name='best_sample_ever')
+
+    # note: by using the reader_conn here, we also assert that all changes
+    # were committed
+    assert len(get_experiments(reader_conn)) == 1
+
+    # now check that we can address that experiment with exp_id
+    dsi.create_run(exp_id=1)
+
+    assert get_run_counter(reader_conn, exp_id=1) == 2
