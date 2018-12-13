@@ -13,6 +13,8 @@ from qcodes.dataset.data_storage_interface import (DataReaderInterface,
                                                    DataWriterInterface)
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
+from qcodes.dataset.database import get_DB_location
+from qcodes.dataset.sqlite_base import connect
 
 
 class Catcher:
@@ -71,9 +73,19 @@ class Catcher:
         print(pickle.loads(body))
 
         if guid not in self.active_guids:
-            reader = self.reader_factory(guid)
+
+            # Look up to see if run exists
+            # if not, check if package is data, discard if it is
+            # if it is metadata, see if it has enough info to create a run
+            # if not, discard it
+
+            # we assume that reader and writer are SQLite interfaces
+            reader_conn = connect(get_DB_location())
+            reader = self.reader_factory(guid, conn=reader_conn)
+            writer_conn = connect(get_DB_location())
             if not reader.run_exists():
-                self.active_writers[guid] = self.writer_factory(guid)
+                self.active_writers[guid] = self.writer_factory(
+                                                guid, conn=writer_conn)
                 self.active_writers[guid].create_run()
 
         if header['messagetype'] == 'data':
