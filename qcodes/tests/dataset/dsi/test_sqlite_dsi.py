@@ -83,7 +83,8 @@ def test_init_and_create_new_run(experiment):
     md = dsi_reader.retrieve_meta_data()
 
     assert md.run_completed is None
-    assert RunDescriber(InterDependencies()) == md.run_description
+    empty_desc = RunDescriber(InterDependencies())
+    assert empty_desc.to_json() == md.run_description
     assert md.run_started > check_time
     assert md.snapshot is None
     assert {} == md.tags
@@ -122,7 +123,7 @@ def test_init__load_existing_run(experiment):
 
     assert dsi.run_id == run_id
     assert None is md.run_completed
-    assert RunDescriber(InterDependencies()) == md.run_description
+    assert RunDescriber(InterDependencies()).to_json() == md.run_description
     assert md.run_started > 0
     assert None is md.snapshot
     assert {} == md.tags
@@ -155,7 +156,7 @@ def test_retrieve_metadata_empty_run(experiment):
     assert md is not None
     assert isinstance(md, MetaData)
     assert None is md.run_completed
-    assert RunDescriber(InterDependencies()) == md.run_description
+    assert RunDescriber(InterDependencies()).to_json() == md.run_description
     assert md.run_started > t_before_run_init
     assert None is md.snapshot
     assert {} == md.tags

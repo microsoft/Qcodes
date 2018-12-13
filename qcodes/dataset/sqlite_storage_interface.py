@@ -209,7 +209,7 @@ class SqliteReaderInterface(DataReaderInterface):
         if self.exp_id is None:
             self.exp_id = run_exp_info['exp_id']
 
-        md = MetaData(run_description=desc,
+        md = MetaData(run_description=desc.to_json(),
                       run_started=run_started,
                       run_completed=run_completed,
                       tags=tags,
@@ -246,15 +246,13 @@ class SqliteWriterInterface(DataWriterInterface):
         # Used by the DataSet
         self.subscribers: Dict[str, '_Subscriber'] = {}
 
-    def create_run(self,
-                   exp_id: Optional[int] = None,
-                   name: Optional[str] = None) -> None:
+    def create_run(self, **kwargs) -> None:
         """
         Create an entry for this run is the database file
         """
 
-        self.name = name or "dataset"
-        self.exp_id = exp_id
+        self.name = kwargs.get('name', None) or "dataset"
+        self.exp_id = kwargs.get('exp_id', None)
 
         if self.exp_id is None:
             if len(get_experiments(self.conn)) > 0:
@@ -272,13 +270,20 @@ class SqliteWriterInterface(DataWriterInterface):
         with atomic(self.conn) as aconn:
             self.counter = get_result_counter_from_runid(aconn, self.run_id)
 
-    def resume_run(self, exp_id: int, run_id: int, name: str, table_name: str,
-                   counter: int) -> None:
-        self.exp_id = exp_id
-        self.run_id = run_id
-        self.name = name
-        self.table_name = table_name
-        self.counter = counter
+    def resume_run(self, *args) -> None:
+        """
+        Args:
+            exp_id: experiment id
+            run_id: run_id
+            name: run name
+            table_name: name of results table
+            counter: run count for this run in its experiment
+        """
+        self.exp_id = args[0]
+        self.run_id = args[1]
+        self.name = args[2]
+        self.table_name = args[3]
+        self.counter = args[4]
 
     def prepare_for_storing_results(self) -> None:
         pass
