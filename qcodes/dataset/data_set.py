@@ -219,8 +219,11 @@ class DataSet(Sized):
     def __init__(self,
                  guid: Optional[str] = None,
                  run_id: Optional[int] = None,
-                 readerinterface: type = SqliteReaderInterface,
-                 writerinterface: type = SqliteWriterInterface,
+                 reader_interface: type = SqliteReaderInterface,
+                 writer_interface: type = SqliteWriterInterface,
+                 reader_kwargs: Optional[dict] = None,
+                 writer_kwargs: Optional[dict] = None,
+                 create_run_kwargs: Optional[dict] = None,
                  **si_kwargs) -> None:
         """
         Create a new DataSet object. The object can either hold a new run or
@@ -232,11 +235,19 @@ class DataSet(Sized):
             run_id: an alternative to GUID that can be used IFF the
               SqliteStorageInterface is being used. It is an error to provide
               both a run_id and a GUID.
-            storageinterface: The class of the storage interface to use for
-              storing/loading the dataset
-            si_kwargs: the kwargs to pass to the constructor of the
-              storage interface
+            reader_kwargs: kwargs to pass to readerinterface constructor.
+            writer_kwargs: kwargs to pass to writerinterface constructor.
+            create_run_kwargs: kwargs to pass to create_run.
+            si_kwargs: the kwargs to pass to the readerinterface,
+                writerinterface and create_run. Passing arguments this way
+                is deprecated and only supported for sqlite interfaces for
+                backwards compatibility.
         """
+        if reader_kwargs is None:
+            reader_kwargs = {}
+        if writer_kwargs is None:
+            writer_kwargs = {}
+
 
         if not issubclass(readerinterface, DataReaderInterface):
             raise ValueError("The provided data reader interface is not "
@@ -273,16 +284,21 @@ class DataSet(Sized):
                                  f"exist in the database")
 
         # Now (guid is None) is the switch for creating / loading a dataset
-
+        if not reader_is_sqlite and not writer_is_sqlite and len(si_kwargs) > 0:
+            raise RuntimeError(f"Passing non explicit kwargs {si_kwargs}, "
+                                 "but you are not using sqlite reader and "
+                                 "writer interface. This is not supported.")
 
         if guid is not None:  # Case: Loading run
             log.info(f'Attempting to load existing run with GUID: {guid}')
 
-            # Handle kwargs
-            reader_kwargs = DataSet._kwargs_for_reader_when_loading(
-                                readerinterface, **si_kwargs)
-            writer_kwargs = DataSet._kwargs_for_writer_when_loading(
-                                writerinterface, **si_kwargs)
+            # Handle unbundling of kwargs for sqlite interface
+            if reader_is_sqlite:
+                reader_kwargs.update(DataSet._kwargs_for_reader_when_loading(
+                                    readerinterface, **si_kwargs))
+            if writer_is_sqlite:
+                writer_kwargs.update(DataSet._kwargs_for_writer_when_loading(
+                                writerinterface, **si_kwargs))
 
             self._guid = guid
             self.dsi = DataStorageInterface(self._guid,
@@ -301,20 +317,23 @@ class DataSet(Sized):
             self._guid = generate_guid()
             log.info(f'Creating new run with GUID: {self._guid}')
 
-            # Handle kwargs
-            reader_kwargs = DataSet._kwargs_for_reader_when_creating(
-                                readerinterface, **si_kwargs)
-            writer_kwargs = DataSet._kwargs_for_writer_when_creating(
-                                writerinterface, **si_kwargs)
-            creation_kwargs = DataSet._kwargs_for_create_run(
-                                writerinterface, **si_kwargs)
+            # Handle unbundling of kwargs for sqlite interface
+            if reader_is_sqlite:
+                reader_kwargs.update(DataSet._kwargs_for_reader_when_creating(
+                                readerinterface, **si_kwargs))
+            if writer_is_sqlite:
+                writer_kwargs.update(DataSet._kwargs_for_writer_when_creating(
+                                writerinterface, **si_kwargs))
+            if writer_is_sqlite:
+                create_run_kwargs.update(DataSet._kwargs_for_create_run(
+                                    writerinterface, **si_kwargs))
 
             self.dsi = DataStorageInterface(self._guid,
                                             reader=readerinterface,
                                             writer=writerinterface,
                                             writer_kwargs=writer_kwargs,
                                             reader_kwargs=reader_kwargs)
-            self.dsi.create_run(**creation_kwargs)
+            self.dsi.create_run(**create_run_kwargs)
 
         # Assign all attributes
         run_meta_data = self.dsi.retrieve_meta_data()
