@@ -10,7 +10,8 @@ import pickle
 
 from qcodes.dataset.rmq_queue_consumer import QueueConsumer, RMQConsumer
 from qcodes.dataset.data_storage_interface import (DataReaderInterface,
-                                                   DataWriterInterface)
+                                                   DataWriterInterface,
+                                                   MetaData)
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 from qcodes.dataset.database import get_DB_location
@@ -68,9 +69,11 @@ class Catcher:
 
         header = properties.headers
         guid = header['guid']
+        message_type = header['messagetype']
 
         print(properties.headers)
         print(pickle.loads(body))
+        delivery_tag = method.consumer_tag
 
         if guid not in self.active_guids:
 
@@ -79,14 +82,28 @@ class Catcher:
             # if it is metadata, see if it has enough info to create a run
             # if not, discard it
 
-            # we assume that reader and writer are SQLite interfaces
+            # we assume for now that reader and writer are SQLite interfaces
             reader_conn = connect(get_DB_location())
             reader = self.reader_factory(guid, conn=reader_conn)
-            writer_conn = connect(get_DB_location())
             if not reader.run_exists():
-                self.active_writers[guid] = self.writer_factory(
+                # Then the message must be metadata for us to continue
+                if message_type != 'metadata':
+                    # then we should put the message back in the queue
+                    ch.basic_nack(delivery_tag=delivery_tag,
+                                  requeue=True)
+                else:
+                    # parse the message
+                    metadata = self.parse_metadata_body(body)
+                    writer_conn = connect(get_DB_location())
+                    self.active_writers[guid] = self.writer_factory(
                                                 guid, conn=writer_conn)
-                self.active_writers[guid].create_run()
+
+                    exp_id = metadata.tags['exp_id']
+                    name = metadata.name
+                    self.active_writers[guid].create_run(exp_id=exp_id,
+                                                         name=name)
+
+
 
         if header['messagetype'] == 'data':
             results = pickle.loads(body)
@@ -95,6 +112,10 @@ class Catcher:
         if header['messagetype'] == 'metadata':
             metadata = pickle.loads(body)
             self.active_writers[guid].store_metadata(metadata)
+
+    def parse_metadata_body(self, body) -> MetaData:
+        asdict = pickle.loads(body)
+        return MetaData(**asdict)
 
     @property
     def active_guids(self) -> List[str]:
