@@ -86,7 +86,6 @@ class RabbitMQWriterInterface(DataWriterInterface):
         # TODO: this function ought to produce the run_started value
         self.store_meta_data(MetaData(tags={'exp_id': exp_id},
                                       name=name))
-        raise NotImplementedError
 
     def prepare_for_storing_results(self):
         raise NotImplementedError
