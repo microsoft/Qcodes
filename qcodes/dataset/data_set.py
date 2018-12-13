@@ -2,7 +2,7 @@ import functools
 from collections import defaultdict
 from itertools import chain
 import json
-from typing import Any, Dict, List, Optional, Union, Sized, Callable
+from typing import Any, Dict, List, Optional, Union, Sized, Callable, cast
 from threading import Thread
 import time
 import importlib
@@ -338,12 +338,12 @@ class DataSet(Sized):
             self.dsi.create_run(**create_run_kwargs)
 
         # Assign all attributes
-        run_meta_data = self.dsi.retrieve_meta_data()
+        run_md = self.dsi.retrieve_meta_data()
 
-        self._completed: bool = run_meta_data.run_completed is not None
-        self._description = run_meta_data.run_description
-        self._snapshot = run_meta_data.snapshot
-        self._metadata = run_meta_data.tags
+        self._completed: bool = run_md.run_completed is not None
+        self._description = RunDescriber.from_json(run_md.run_description)
+        self._snapshot = run_md.snapshot
+        self._metadata = cast(Dict, run_md.tags)
 
         self._started: bool = self._completed or self.number_of_results > 0
 
@@ -473,7 +473,7 @@ class DataSet(Sized):
     def snapshot(self) -> Optional[dict]:
         """Snapshot of the run as dictionary (or None)"""
         md = self.dsi.retrieve_meta_data()
-        return md.snapshot
+        return cast(Optional[dict], md.snapshot)
 
     @property
     def snapshot_raw(self) -> Optional[str]:
@@ -517,7 +517,7 @@ class DataSet(Sized):
         return md.sample_name
 
     @property
-    def run_timestamp_raw(self) -> float:
+    def run_timestamp_raw(self) -> Optional[float]:
         """
         Returns run timestamp as number of seconds since the Epoch
 
@@ -525,12 +525,12 @@ class DataSet(Sized):
         started.
         """
         md = self.dsi.retrieve_meta_data()
-        return md.run_started
+        return cast(Optional[float], md.run_started)
 
     @property
     def description(self) -> RunDescriber:
         md = self.dsi.retrieve_meta_data()
-        return md.run_description
+        return RunDescriber.from_json(md.run_description)
 
     @property
     def metadata(self) -> Dict:
@@ -564,7 +564,7 @@ class DataSet(Sized):
 
         return True
 
-    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
+    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
 
@@ -573,7 +573,10 @@ class DataSet(Sized):
 
         Consult with `time.strftime` for information about the format.
         """
-        return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+        if self.run_timestamp_raw is None:
+            return None
+        else:
+            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
     def completed_timestamp_raw(self) -> Union[float, None]:
@@ -584,7 +587,7 @@ class DataSet(Sized):
         If the run (or the dataset) is not completed, then returns None.
         """
         md = self.dsi.retrieve_meta_data()
-        return md.run_completed
+        return cast(Union[float, None], md.run_completed)
 
     def completed_timestamp(self,
                             fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
@@ -1001,7 +1004,8 @@ class DataSet(Sized):
 
     def get_metadata(self, tag: str) -> Any:
         md = self.dsi.retrieve_meta_data()
-        return md.tags[tag]
+        tags: Dict = cast(Dict, md.tags)
+        return tags[tag]
 
     def __len__(self) -> int:
         return self.number_of_results
