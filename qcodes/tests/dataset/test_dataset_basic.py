@@ -894,7 +894,7 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
     setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
                                     (shape_1, 1))
     expected_shapes['testparameter'] = {}
-    expected_shapes['testparameter'] = [(9, 5), (9, 5)]
+    expected_shapes['testparameter'] = [(shape_1, shape_2), (shape_1, shape_2)]
     expected_values = {}
     expected_values['testparameter'] = [
         test_parameter_values,
@@ -934,7 +934,7 @@ def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
     setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
                                     (shape_1, 1))
     expected_shapes['testparameter'] = {}
-    expected_shapes['testparameter'] = [(45,), (45,)]
+    expected_shapes['testparameter'] = [(shape_1*shape_2,), (shape_1*shape_2,)]
     expected_values = {}
     expected_values['testparameter'] = [
         test_parameter_values.ravel(),
