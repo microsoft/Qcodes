@@ -247,6 +247,8 @@ class DataSet(Sized):
             reader_kwargs = {}
         if writer_kwargs is None:
             writer_kwargs = {}
+        if create_run_kwargs is None:
+            create_run_kwargs = {}
 
 
         if not issubclass(readerinterface, DataReaderInterface):
