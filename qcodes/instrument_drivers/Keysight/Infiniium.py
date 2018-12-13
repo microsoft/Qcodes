@@ -267,6 +267,13 @@ class MeasurementSubsystem(InstrumentChannel):
                            unit='V',
                            snapshot_value=False)
 
+        self.add_parameter(name="phase",
+                           label="Phase difference",
+                           get_cmd=self._make_meas_cmd("PHASe"),
+                           get_parser=float,
+                           unit="deg",
+                           snapshot_value=False)
+
     @staticmethod
     def _make_meas_cmd(cmd: str) -> str:
         """
