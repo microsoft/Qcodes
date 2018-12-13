@@ -43,7 +43,7 @@ class RMQConsumer(QueueConsumer):
 
         try:
             self.channel = self.connection.channel()
-            self.channel.basic_qos(prefetch_count=0,
+            self.channel.basic_qos(prefetch_count=1,
                                    all_channels=True)
             self.channel.basic_consume(self.callback,
                                        queue='localstorage',
