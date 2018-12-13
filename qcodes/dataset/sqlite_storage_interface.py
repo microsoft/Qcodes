@@ -3,6 +3,7 @@ from typing import Union, Dict, Sequence, Optional, Any, Iterator, Callable, \
     TYPE_CHECKING
 from numbers import Number
 import json
+import time
 
 import wrapt
 from numpy import ndarray
@@ -26,11 +27,13 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         get_last_experiment,
                                         get_number_of_results,
                                         get_metadata_from_run_id,
+                                        get_matching_exp_ids,
                                         get_parameters,
                                         get_result_counter_from_runid,
                                         get_runid_from_guid,
                                         is_guid_in_database,
-                                        mark_run_complete)
+                                        mark_run_complete,
+                                        new_experiment)
 from qcodes.dataset.descriptions import RunDescriber
 
 if TYPE_CHECKING:
@@ -248,19 +251,41 @@ class SqliteWriterInterface(DataWriterInterface):
 
     def create_run(self, **kwargs) -> None:
         """
-        Create an entry for this run is the database file
+        Create an entry for this run is the database file. The kwargs may be
+        exp_id, exp_name, sample_name, name. The logic for creating new runs
+        in existing experiments is as follows: first exp_id is used to look up
+        an experiment. If an experiment is not found, nothing happens. Next the
+        (exp_name, sample_name) tuple is used to look up an experiment. If an
+        experiment is not found, one is CREATED with those two attributes.
         """
 
         self.name = kwargs.get('name', None) or "dataset"
         self.exp_id = kwargs.get('exp_id', None)
+        exp_name = kwargs.get('exp_name', None)
+        sample_name = kwargs.get('sample_name', None)
+
+        if sum(1 if v is None else 0 for v in (exp_name, sample_name)) == 1:
+            raise ValueError(f'Got values for exp_name: {exp_name} and '
+                             f'sample_name: {sample_name}. They must both '
+                             'be None or both be not-None.')
 
         if self.exp_id is None:
             if len(get_experiments(self.conn)) > 0:
                 self.exp_id = get_last_experiment(self.conn)
-            else:
+            elif sample_name is None:
                 raise ValueError("No experiments found. "
                                  "You can start a new one with:"
                                  " new_experiment(name, sample_name)")
+            elif sample_name is not None:
+                experiments = get_matching_exp_ids(self.conn,
+                                                   name=exp_name,
+                                                   sample_name=sample_name)
+                if len(experiments) == 0:
+                    self.exp_id = new_experiment(self.conn, name=exp_name,
+                                                 sample_name=sample_name,
+                                                 start_time=time.time())
+                else:
+                    self.exp_id = experiments[-1]
 
         with atomic(self.conn) as aconn:
 
