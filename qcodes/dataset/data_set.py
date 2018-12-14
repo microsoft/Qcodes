@@ -341,8 +341,21 @@ class DataSet(Sized):
                                             reader_kwargs=reader_kwargs)
             self.dsi.create_run(**create_run_kwargs)
 
-        # Assign all attributes
-        run_md = self.dsi.retrieve_meta_data()
+        # Here we have to wait a bit for RMQ to process the "create_run"
+        # messages
+        timeout = 5  # timeout in seconds
+        keep_trying = True
+        t0 = time.perf_counter()
+
+        while keep_trying:
+            try:
+                # Assign all attributes
+                run_md = self.dsi.retrieve_meta_data()
+                keep_trying = False
+            except ValueError as e:  # perhaps make this RunDoesNotExistError?
+                time.sleep(0.1)
+                if time.perf_counter() - t0 > timeout:
+                    raise e
 
         self._completed: bool = run_md.run_completed is not None
         self._description = RunDescriber.from_json(run_md.run_description)
