@@ -4,6 +4,7 @@ from typing import Union, Dict, Sequence, Optional, Any, Iterator, Callable, \
 from numbers import Number
 import json
 import time
+import logging
 
 import wrapt
 from numpy import ndarray
@@ -38,6 +39,8 @@ from qcodes.dataset.descriptions import RunDescriber
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_set import _Subscriber
+
+log = logging.getLogger(__name__)
 
 
 class IteratorWithLength(wrapt.ObjectProxy, SizedIterable):
@@ -258,6 +261,8 @@ class SqliteWriterInterface(DataWriterInterface):
         (exp_name, sample_name) tuple is used to look up an experiment. If an
         experiment is not found, one is CREATED with those two attributes.
         """
+
+        log.info(f'GUID: {self.guid}. Called with {kwargs}')
 
         self.name = kwargs.get('name', None) or "dataset"
         self.exp_id = kwargs.get('exp_id', None)
