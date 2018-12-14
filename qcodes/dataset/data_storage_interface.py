@@ -5,6 +5,7 @@ from numbers import Number
 from numpy import ndarray
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+import logging
 
 from qcodes.dataset.descriptions import RunDescriber
 
@@ -23,6 +24,7 @@ _Optional = Union[T, str]
 
 T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
 
+log = logging.getLogger(__name__)
 
 # Instead of this, typing.Collection could be used. The only problem is that
 # Collection also inherits from Container which is not needed for our purposes.
@@ -158,6 +160,10 @@ class DataStorageInterface:
         self.reader = reader(guid, **reader_kwargs)
         self.guid = self.reader.guid
         self.writer = writer(self.guid, **writer_kwargs)
+        log.info(f'Created DataStorageInterface with guid: {guid}, '
+                 f'reader: {reader}, writer: {writer}, '
+                 f'reader_kwargs: {reader_kwargs}, '
+                 f'writer_kwargs: {writer_kwargs}.')
 
     def create_run(self, **kwargs) -> None:
         self.writer.create_run(**kwargs)
