@@ -57,7 +57,7 @@ script:
       pip install .
     - python qcodes/dataset/docker_setup.py
     - docker ps --no-trunc
-    - sleep 3  # give docker some time to start
+    - sleep 10  # give docker some time to start
     - python qcodes/dataset/rmq_setup.py
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
