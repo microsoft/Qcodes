@@ -81,11 +81,18 @@ class RabbitMQWriterInterface(DataWriterInterface):
                                           'version': 0},
                                  delivery_mode=2))
 
-    def create_run(self, exp_id: Optional[int] = None,
-                   name: Optional[str] = None) -> None:
+    def create_run(self, **kwargs) -> None:
+        exp_id: Optional[int] = kwargs.get('exp_id', None)
+        name: Optional[str] = kwargs.get('name', None)
+        exp_name: Optional[str] = kwargs.get('exp_name', None)
+        sample_name: Optional[str] = kwargs.get('sample_name', None)
         # TODO: this function ought to produce the run_started value
-        self.store_meta_data(MetaData(tags={'exp_id': exp_id},
-                                      name=name))
+        metadata = MetaData(tags={'exp_id': exp_id},
+                                      name=name,
+                                      exp_name=exp_name,
+                                      sample_name=sample_name)
+
+        self.store_meta_data(metadata)
 
     def prepare_for_storing_results(self):
         raise NotImplementedError
@@ -93,14 +100,14 @@ class RabbitMQWriterInterface(DataWriterInterface):
     def store_meta_data(self, metadata: MetaData) -> None:
         md_dump = pickle.dumps(dataclasses.asdict(metadata))
         self.channel.publish(exchange='mydata',
-                        routing_key='',
-                        body=md_dump,
-                        properties=pika.BasicProperties(
-                            # todo this should include the chunk id
-                            headers={'guid': self.guid,
-                                    'messagetype': 'metadata',
-                                    'version': 0},
-                            delivery_mode=2))
+                             routing_key='',
+                             body=md_dump,
+                             properties=pika.BasicProperties(
+                                 # todo this should include the chunk id
+                                 headers={'guid': self.guid,
+                                          'messagetype': 'metadata',
+                                          'version': 0},
+                                 delivery_mode=2))
 
     def resume_run(self, *args):
         raise NotImplementedError
