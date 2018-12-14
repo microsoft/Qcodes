@@ -24,8 +24,6 @@ branches:
 
 before_install:
 - docker pull rabbitmq
-- docker run -d --hostname localhost -p 5672:5672 --name some-rabbit rabbitmq:3
-- docker ps -a
 
 # command to install dependencies and qcodes
 # We want to fail early if there is an installation problem, so
@@ -57,6 +55,8 @@ script:
       cd ../../../..
       pip uninstall -y qcodes
       pip install .
+    - python qcodes/dataset/docker_setup.py
+    - python qcodes/dataset/rmq_setup.py
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
