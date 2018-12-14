@@ -60,7 +60,7 @@ class Catcher:
         self.reader_factory = reader
         self.writer_factory = writer
 
-        self.active_writers: Dict[str: SqliteWriterInterface] = {}
+        self.active_writers: Dict[str, SqliteWriterInterface] = {}
 
         self.number_of_received_messages = 0
 
