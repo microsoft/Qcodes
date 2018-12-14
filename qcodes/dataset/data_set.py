@@ -260,6 +260,7 @@ class DataSet(Sized):
 
         reader_is_sqlite = readerinterface == SqliteReaderInterface
         writer_is_sqlite = writerinterface == SqliteWriterInterface
+        writer_is_rmq = writerinterface == RabbitMQWriterInterface
 
         if run_id is not None and guid is not None:
             raise ValueError('Got values for both GUID and run_id. Please '
@@ -327,7 +328,7 @@ class DataSet(Sized):
             if writer_is_sqlite:
                 writer_kwargs.update(DataSet._kwargs_for_writer_when_creating(
                                 writerinterface, **si_kwargs))
-            if writer_is_sqlite:
+            if writer_is_sqlite or writer_is_rmq:
                 create_run_kwargs.update(DataSet._kwargs_for_create_run(
                                     writerinterface, **si_kwargs))
 
@@ -355,7 +356,9 @@ class DataSet(Sized):
         """
         if writer in (SqliteWriterInterface, RabbitMQWriterInterface):
             return {'exp_id': si_kwargs.get('exp_id', None),
-                    'name': si_kwargs.get('name', None)}
+                    'name': si_kwargs.get('name', None),
+                    'exp_name': si_kwargs.get('exp_name', None),
+                    'sample_name': si_kwargs.get('sample_name', None)}
         else:
             raise NotImplementedError('Only SQLiteWriterInterface and '
                                       'RabbitMQWriterInterface are '
