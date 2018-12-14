@@ -34,17 +34,17 @@ class Catcher:
 
         if not issubclass(consumer, QueueConsumer):
             raise ValueError('Received an invalid consumer, '
-                             f'f{consumer}, which is not a '
+                             f'{consumer}, which is not a '
                              'subclass of QueueConsumer')
 
         if not issubclass(reader, DataReaderInterface):
             raise ValueError('Received an invalid local storage reader, '
-                             f'f{reader}, which is not a '
+                             f'{reader}, which is not a '
                              'subclass of DataReaderInterface')
 
         if not issubclass(writer, DataWriterInterface):
             raise ValueError('Received an invalid local storage writer, '
-                             f'f{writer}, which is not a '
+                             f'{writer}, which is not a '
                              'subclass of DataWriterInterface')
 
         if writer != SqliteWriterInterface:
@@ -72,8 +72,7 @@ class Catcher:
         message_type = header['messagetype']
 
         print(properties.headers)
-        print(pickle.loads(body))
-        delivery_tag = method.consumer_tag
+        delivery_tag = method.delivery_tag
 
         if guid not in self.active_guids:
 
@@ -95,23 +94,21 @@ class Catcher:
                     # parse the message
                     metadata = self.parse_metadata_body(body)
                     writer_conn = connect(get_DB_location())
+                    print(f'Connecting writer to {get_DB_location()}')
+                    print(time.time())
                     self.active_writers[guid] = self.writer_factory(
-                                                guid, conn=writer_conn)
+                                                    guid, conn=writer_conn)
 
                     exp_id = metadata.tags['exp_id']
                     name = metadata.name
-                    self.active_writers[guid].create_run(exp_id=exp_id,
-                                                         name=name)
+                    exp_name = metadata.exp_name
+                    sample_name = metadata.sample_name
+                    print(metadata)
+                    self.active_writers[guid].create_run(
+                        exp_id=exp_id, name=name, exp_name=exp_name,
+                        sample_name=sample_name)
+                    ch.basic_ack(delivery_tag=delivery_tag)
 
-
-
-        if header['messagetype'] == 'data':
-            results = pickle.loads(body)
-            self.active_writers[guid].store_results(results)
-
-        if header['messagetype'] == 'metadata':
-            metadata = pickle.loads(body)
-            self.active_writers[guid].store_metadata(metadata)
 
     def parse_metadata_body(self, body) -> MetaData:
         asdict = pickle.loads(body)
