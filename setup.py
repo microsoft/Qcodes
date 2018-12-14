@@ -78,7 +78,8 @@ setup(name='qcodes',
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
-                               'tests/dataset/fixtures/2018-01-17/*/*']},
+                               'tests/dataset/fixtures/2018-01-17/*/*',
+                               'dataset/rmq_conf.json']},
       install_requires=install_requires,
 
       test_suite='qcodes.tests',
@@ -116,7 +117,7 @@ valueerror_template = '''
 
 othererror_template = '''
 *****
-***** could not import package {0}. Please try importing it from 
+***** could not import package {0}. Please try importing it from
 ***** the commandline to diagnose the issue.
 *****
 '''
