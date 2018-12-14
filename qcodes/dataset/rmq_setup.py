@@ -1,7 +1,8 @@
 # This script sets up the RMQ with the exchanges and queues specified in the
-# rmq_conf.json file
+# rmq_conf.json file (or rmq_test_conf.json if we are testing)
 from typing import Dict, Tuple
 import json
+import argparse
 
 import qcodes
 import pika
@@ -48,11 +49,17 @@ def setup_exchange_and_queues_from_conf(
     return conn, channel
 
 
-def read_config_file() -> Dict:
+def read_config_file(testing: bool = False) -> Dict:
     """
     Read the config file and return it as a dict
     """
-    conf_path = qcodes.dataset.__file__.replace('__init__.py', 'rmq_conf.json')
+    if not testing:
+        filename = 'rmq_conf.json'
+    else:
+        filename = 'rmq_test_conf.json'
+
+    conf_path = qcodes.dataset.__file__.replace('__init__.py', filename)
+
     with open(conf_path, 'r') as fid:
         raw_json = fid.read()
     conf = json.loads(raw_json)
@@ -74,7 +81,12 @@ def write_config_file(conf: Dict) -> None:
 
 if __name__ == "__main__":
 
-    conf = read_config_file()
+    parser = argparse.ArgumentParser(description='Prepare queues and exchange')
+    parser.add_argument('--testing', type=bool,
+                        help='If True, set up a non-durable test queue')
+    args = parser.parse_args()
+
+    conf = read_config_file(testing=args.testing)
 
     print('[*] Setting up exchange and queues...')
 

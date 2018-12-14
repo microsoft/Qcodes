@@ -5,6 +5,9 @@ from abc import ABC, abstractmethod
 import pika
 from pika.exceptions import IncompatibleProtocolError, ChannelClosed
 
+from qcodes.dataset.rmq_setup import (read_config_file,
+                                      setup_exchange_and_queues_from_conf)
+
 
 class QueueConsumer(ABC):
     """
@@ -28,30 +31,24 @@ class RMQConsumer(QueueConsumer):
     The object whose role it is to read messages off of the 'Local Storage'
     queue and pass them on via a callback function
     """
-    def __init__(self, callback: Optional[Callable] = None):
+    def __init__(self, callback: Optional[Callable] = None,
+                 use_test_queue: bool = False):
 
-        params = pika.ConnectionParameters('localhost')
 
-        try:
-            self.connection = pika.BlockingConnection(params)
-        except IncompatibleProtocolError as e:
-            raise RuntimeError('Could not start RMQConsumer. Did you forget '
-                               'to run rmq_setup.py?') from e
+
+        conf = read_config_file(testing=use_test_queue)
+        conn, channel = setup_exchange_and_queues_from_conf(conf)
+        self.connection = conn
+        self.channel = channel
 
         callback = callback or self.default_callback
         super().__init__(callback)
 
-        try:
-            self.channel = self.connection.channel()
-            self.channel.basic_qos(prefetch_count=1,
-                                   all_channels=True)
-            self.channel.basic_consume(self.callback,
-                                       queue='localstorage',
-                                       no_ack=False)
-        except ChannelClosed as e:
-            raise RuntimeError('Could not start RMQConsumer. Did you forget '
-                               'to run rmq_setup.py?') from e
-        self.i = 0
+        self.channel.basic_qos(prefetch_count=1,
+                                all_channels=True)
+        self.channel.basic_consume(self.callback,
+                                    queue='localstorage',
+                                    no_ack=False)
 
     @staticmethod
     def default_callback(ch: pika.channel.Channel,

@@ -1,0 +1,23 @@
+{
+    "host": "localhost",
+    "heartbeat": 60,
+    "exchanges": [
+        {
+            "exchange": "mydata",
+            "exchange_type": "fanout"
+        }
+    ],
+    "queues": [
+        {
+            "queue": "testqueue",
+            "durable": false,
+            "exclusive": false
+        }
+    ],
+    "bindings": [
+        {
+            "exchange": "mydata",
+            "queue": "testqueue"
+        }
+    ]
+}

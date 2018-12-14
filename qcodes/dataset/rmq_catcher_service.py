@@ -130,12 +130,18 @@ if __name__ == "__main__":
                                                   'service'))
     parser.add_argument('--callback', type=str,
                         help="The argument to pass for consumer_callback")
+    parser.add_argument('--testing', type=bool,
+                        help='If True, consume from a non-durable test queue')
+    parser.add_argument
     args = parser.parse_args()
     cb = args.callback
+    testing = args.testing
 
     cb = cb or "catcher_default"
 
-    catcher = Catcher(consumer=RMQConsumer, consumer_callback=cb)
+    catcher = Catcher(consumer=RMQConsumer,
+                      consumer_callback=cb,
+                      consumer_kwargs={'use_test_queue': testing})
 
     print(f'Started RabbitMQ Local Storage Consumer at {current_time()}')
     print('Press Ctrl-C to stop')

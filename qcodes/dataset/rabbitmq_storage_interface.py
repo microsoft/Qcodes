@@ -64,10 +64,11 @@ class BakedPotato:
 class RabbitMQWriterInterface(DataWriterInterface):
 
     def __init__(self, guid: str, path_to_db: str,
-                 disable_heartbeat: bool = False):
+                 disable_heartbeat: bool = False,
+                 use_test_queue: bool = False):
         super().__init__(guid)
 
-        conf = read_config_file()
+        conf = read_config_file(testing=use_test_queue)
         conn, chan = setup_exchange_and_queues_from_conf(conf)
         self.conn = conn
         self.channel = chan
