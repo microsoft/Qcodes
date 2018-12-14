@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Dict
 import re
 
 import pytest
@@ -11,16 +11,47 @@ from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 
 
+class MockChannel:
+    """
+    A mock of the channel part of a message
+    """
+    def __init__(self):
+        self.acks = 0
+        self.nacks = 0
+
+    def basic_ack(self, delivery_tag=0):
+        self.acks += 1
+
+    def basic_nack(self, delivery_tag=0, requeue=True):
+        self.nacks += 1
+
+
+class MockProperties:
+    """
+    A mock of the properties part of a message
+    """
+    def __init__(self, header: Dict):
+        self.headers: Dict = header
+
+
+class MockMethod:
+    """
+    A mock of the method part of a message
+    """
+    def __init__(self):
+        self.delivery_tag = 0
+
+
 class MockRMQMessage:
     """
     A mock of the messages that RMQ sends
     """
-    def __init__(self, body):
+    def __init__(self, ch, header, body):
         # TODO: Figure out in how great detail we need to mock
         # channel, method, and properties
-        self.ch = 'mock_channel'
-        self.method = 'mock_method'
-        self.properties = 'mock_properties'
+        self.ch = ch
+        self.method = MockMethod()
+        self.properties = MockProperties(header=header)
         self.body = body
 
 
@@ -70,11 +101,16 @@ def test_catcher_init():
     assert catcher.number_of_received_messages == 0
 
 
-@settings(max_examples=10)
-@given(N=hst.integers(min_value=1, max_value=1000))
+@settings(max_examples=10, deadline=500)
+@given(N=hst.integers(min_value=1, max_value=100))
 def test_number_of_messages(N):
-    # TODO: update the bodies to match the real bodies better
-    messages = [MockRMQMessage(body=str(n)) for n in range(N)]
+    # Send a lot of data messages through so that nothing is actually created
+    # on disk. Assert that theu all went through and were nack'ed
+
+    channel = MockChannel()
+
+    header = {'guid': 'mock', 'messagetype': 'data'}
+    messages = [MockRMQMessage(ch=channel, body=str(n), header=header) for n in range(N)]
 
     catcher = Catcher(consumer=MockConsumer,
                       consumer_kwargs={'messages': messages})
@@ -82,3 +118,4 @@ def test_number_of_messages(N):
     assert catcher.number_of_received_messages == 0
     catcher.consumer.start_consuming()
     assert catcher.number_of_received_messages == N
+    assert channel.nacks == N
