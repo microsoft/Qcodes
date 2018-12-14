@@ -325,12 +325,14 @@ class DataSet(Sized):
             if reader_is_sqlite:
                 reader_kwargs.update(DataSet._kwargs_for_reader_when_creating(
                                 readerinterface, **si_kwargs))
-            if writer_is_sqlite:
+            if writer_is_sqlite or writer_is_rmq:
                 writer_kwargs.update(DataSet._kwargs_for_writer_when_creating(
                                 writerinterface, **si_kwargs))
             if writer_is_sqlite or writer_is_rmq:
                 create_run_kwargs.update(DataSet._kwargs_for_create_run(
                                     writerinterface, **si_kwargs))
+
+            print(writer_kwargs)
 
             self.dsi = DataStorageInterface(self._guid,
                                             reader=readerinterface,
@@ -438,7 +440,13 @@ class DataSet(Sized):
                                  "allowed.")
             return {'conn': conn}
         elif writer == RabbitMQWriterInterface:
-            return {}
+            if si_kwargs.get('conn', None) is not None:
+                path_to_db = path_to_dbfile(si_kwargs.get('conn'))
+            elif si_kwargs.get('path_to_db', None) is not None:
+                path_to_db = si_kwargs.get('path_to_db')
+            else:
+                path_to_db = get_DB_location()
+            return {'path_to_db': path_to_db}
         else:
             raise NotImplementedError('Only SQLiteWriterInterface and '
                                       'RabbitMQWriterInterface are '
