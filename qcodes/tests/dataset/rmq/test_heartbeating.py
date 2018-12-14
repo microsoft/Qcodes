@@ -54,6 +54,7 @@ def test_no_heartbeat_times_out():
     with configs_set_to([{"heartbeat": heartbeat}]):
 
         rmq_writer = RabbitMQWriterInterface(guid="testing",
+                                             path_to_db='',
                                              disable_heartbeat=True)
         rmq_writer.store_results({'x': [1]})
         # TODO: why does this test fail when the sleep is less than
@@ -76,6 +77,7 @@ def test_with_heartbeat_does_not_time_out():
     with configs_set_to([{"heartbeat": heartbeat}]):
 
         rmq_writer = RabbitMQWriterInterface(guid="testing",
+                                             path_to_db='',
                                              disable_heartbeat=False)
         rmq_writer.store_results({'x': [1]})
 
