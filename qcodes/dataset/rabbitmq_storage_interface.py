@@ -1,5 +1,5 @@
 import pickle
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 from threading import Thread
 
 import pika
@@ -63,9 +63,9 @@ class RabbitMQWriterInterface(DataWriterInterface):
         self.channel = chan
 
         if not disable_heartbeat:
-            self.heart = Heart(self.conn)
+            self.heart: Union[Heart, BakedPotato] = Heart(self.conn)
         else:
-            self.heart = BakedPotato(self.conn)
+            self.heart: Union[Heart, BakedPotato] = BakedPotato(self.conn)
 
         self.heart.start()
 
