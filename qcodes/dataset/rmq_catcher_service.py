@@ -93,9 +93,7 @@ class Catcher:
                 else:
                     # parse the message
                     metadata = self.parse_metadata_body(body)
-                    writer_conn = connect(get_DB_location())
-                    print(f'Connecting writer to {get_DB_location()}')
-                    print(time.time())
+                    writer_conn = connect(header['db_location'])
                     self.active_writers[guid] = self.writer_factory(
                                                     guid, conn=writer_conn)
 
