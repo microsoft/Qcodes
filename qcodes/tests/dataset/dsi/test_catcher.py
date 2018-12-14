@@ -7,7 +7,8 @@ from hypothesis import given, settings
 
 from qcodes.dataset.rmq_queue_consumer import QueueConsumer
 from qcodes.dataset.rmq_catcher_service import Catcher
-from qcodes.dataset.sqlite_storage_interface import SqliteStorageInterface
+from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
+                                                     SqliteWriterInterface)
 
 
 class MockRMQMessage:
@@ -48,23 +49,22 @@ class MockConsumer(QueueConsumer):
 def test_catcher_init():
 
     bad_writer = MockConsumer
-    match = re.escape('Received an invalid local_reader_writer, '
-                      f'f{bad_writer}, which is not a '
-                      'subclass of DataStorageInterface')
+    match = re.escape('Received an invalid local storage writer, '
+                      f'{bad_writer}, which is not a '
+                      'subclass of DataWriterInterface')
     with pytest.raises(ValueError, match=match):
         Catcher(consumer=MockConsumer,
-                local_reader_writer=bad_writer)
+                writer=bad_writer)
 
-    bad_consumer = SqliteStorageInterface
+    bad_consumer = SqliteReaderInterface
     match = re.escape('Received an invalid consumer, '
-                      f'f{bad_consumer}, which is not a '
+                      f'{bad_consumer}, which is not a '
                       'subclass of QueueConsumer')
     with pytest.raises(ValueError, match=match):
         Catcher(consumer=bad_consumer,
-                local_reader_writer=bad_writer)
+                writer=bad_writer)
 
-    catcher = Catcher(consumer=MockConsumer,
-                      local_reader_writer=SqliteStorageInterface)
+    catcher = Catcher(consumer=MockConsumer)
 
     assert catcher.active_guids == []
     assert catcher.number_of_received_messages == 0
@@ -77,7 +77,6 @@ def test_number_of_messages(N):
     messages = [MockRMQMessage(body=str(n)) for n in range(N)]
 
     catcher = Catcher(consumer=MockConsumer,
-                      local_reader_writer=SqliteStorageInterface,
                       consumer_kwargs={'messages': messages})
 
     assert catcher.number_of_received_messages == 0
