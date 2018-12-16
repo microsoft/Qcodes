@@ -1,9 +1,12 @@
 from typing import Sequence, Tuple, Dict
 
 import numpy as np
+import pandas
 from numpy.testing import assert_array_equal
 
+
 def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
+                     dataframe: Dict[str, pandas.DataFrame],
                      parameter_names: Sequence[str],
                      expected_names: Dict[str, Sequence[str]],
                      expected_shapes: Dict[str, Sequence[Tuple[int, ...]]],
@@ -13,6 +16,7 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
 
     Args:
         data: The dict data to verify the shape and content of.
+        dataframe: The data represented as a dict of Pandas DataFrames.
         parameter_names: names of the parameters loaded as top level
             keys in the dict.
         expected_names: names of the parameters expected as keys in the second
