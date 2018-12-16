@@ -29,15 +29,20 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
     # check that all the expected parameters in the dict are
     # included in the list of parameters
     assert all(param in parameter_names for param in list(data.keys())) is True
+    assert all(param in parameter_names for
+               param in list(dataframe.keys())) is True
     for param in parameter_names:
         innerdata = data[param]
+        innerdataframe = dataframe[param]
         verify_data_dict_for_single_param(innerdata,
+                                          innerdataframe,
                                           expected_names[param],
                                           expected_shapes[param],
                                           expected_values[param])
 
 
 def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
+                                      dataframe: pandas.DataFrame,
                                       names: Sequence[str],
                                       shapes: Sequence[Tuple[int, ...]],
                                       values):
