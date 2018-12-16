@@ -861,15 +861,14 @@ class DataSet(Sized):
             List[pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
-        and their dependencies. If no paramerers are supplied the values will
-        be returned for all parameters that are not them self dependencies.
+        and their dependencies as a dict of Pandas DataFrames. Each element in
+        the dict is indexed by the names of the requested parameters.
 
-        The values are returned as a list of Pandas DataFrames. One for each
-        names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as
-        arrays the remaining parameters are expanded to the same shape as these.
-        Apart from this expansion the data returned by this method
-        is the transpose of the date returned by `get_data`.
+        Each DataFrame contains a column for the data and is indexed by a
+        MultiIndex formed from all the setpoints of the parameter.
+
+        If no parameters are supplied dataframes will be be returned for all
+        parameters that are not them self dependencies of other parameters.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
@@ -889,18 +888,18 @@ class DataSet(Sized):
         Returns:
 
         """
-        dfs = []
+        dfs = {}
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        for subdict in datadict.values():
+        for name, subdict in datadict.items():
             keys = list(subdict.keys())
             multiindex = pd.MultiIndex.from_arrays(
                 tuple(subdict[key].ravel() for key in keys[1:]),
                 names=keys[1:])
             df = pd.DataFrame(subdict[keys[0]].ravel(), index=multiindex,
                               columns=[keys[0]])
-            dfs.append(df)
+            dfs[name] = df
         return dfs
 
     def get_values(self, param_name: str) -> List[List[Any]]:
