@@ -894,10 +894,16 @@ class DataSet(Sized):
                                            end=end)
         for name, subdict in datadict.items():
             keys = list(subdict.keys())
-            multiindex = pd.MultiIndex.from_arrays(
-                tuple(subdict[key].ravel() for key in keys[1:]),
-                names=keys[1:])
-            df = pd.DataFrame(subdict[keys[0]].ravel(), index=multiindex,
+            if len(keys) == 0:
+                dfs[name] = {}
+                continue
+            if len(keys) == 1:
+                index = None
+            else:
+                index = pd.MultiIndex.from_arrays(
+                    tuple(subdict[key].ravel() for key in keys[1:]),
+                    names=keys[1:])
+            df = pd.DataFrame(subdict[keys[0]].ravel(), index=index,
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
