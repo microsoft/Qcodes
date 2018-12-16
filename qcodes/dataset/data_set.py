@@ -895,7 +895,7 @@ class DataSet(Sized):
         for name, subdict in datadict.items():
             keys = list(subdict.keys())
             if len(keys) == 0:
-                dfs[name] = {}
+                dfs[name] = pd.DataFrame()
                 continue
             if len(keys) == 1:
                 index = None
