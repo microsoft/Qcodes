@@ -858,7 +858,7 @@ class DataSet(Sized):
                                                     _BaseParameter],
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
-            List[pd.DataFrame]:
+            Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
         and their dependencies as a dict of Pandas DataFrames. Each element in
