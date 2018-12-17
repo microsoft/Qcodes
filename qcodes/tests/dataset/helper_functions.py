@@ -47,7 +47,20 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
                                       shapes: Sequence[Tuple[int, ...]],
                                       values):
     # check that there are no unexpected elements in the dict
-    assert all(param in names for param in list(datadict.keys())) is True
+    key_names = list(datadict.keys())
+    assert set(key_names) == set(names)
+    # check that the dataframe has the same elements as index and columns
+    pandas_index_names = list(dataframe.index.names)
+    pandas_column_names = list(dataframe)
+    pandas_names = []
+    for i in pandas_index_names:
+        if i is not None:
+            pandas_names.append(i)
+    for i in pandas_column_names:
+        if i is not None:
+            pandas_names.append(i)
+    assert set(pandas_names) == set(names)
+
     for name, shape, value in zip(names, shapes, values):
         assert datadict[name].shape == shape
         assert_array_equal(datadict[name], value)
