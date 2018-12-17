@@ -1,5 +1,6 @@
 from typing import Sequence, Tuple, Dict
 from operator import mul
+from typing import Optional
 from functools import reduce
 
 import numpy as np
@@ -8,13 +9,15 @@ from numpy.testing import assert_array_equal
 
 
 def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
-                     dataframe: Dict[str, pandas.DataFrame],
+                     dataframe: Optional[Dict[str, pandas.DataFrame]],
                      parameter_names: Sequence[str],
                      expected_names: Dict[str, Sequence[str]],
                      expected_shapes: Dict[str, Sequence[Tuple[int, ...]]],
                      expected_values: Dict[str, Sequence[np.ndarray]]) -> None:
     """
-    Simple helper function to verify a dict of data. The expected names values
+    Simple helper function to verify a dict of data. It can also optionally
+
+    The expected names values
     and shapes should be given as a dict with keys given by the dependent
     parameters. Each value in the dicts should be the sequence of expected
     names/shapes/values for that requested parameter and its dependencies.
@@ -37,26 +40,40 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
     # check that all the expected parameters in the dict are
     # included in the list of parameters
     assert all(param in parameter_names for param in list(data.keys())) is True
-    assert all(param in parameter_names for
-               param in list(dataframe.keys())) is True
+    if dataframe is not None:
+        assert all(param in parameter_names for
+                   param in list(dataframe.keys())) is True
     for param in parameter_names:
         innerdata = data[param]
-        innerdataframe = dataframe[param]
         verify_data_dict_for_single_param(innerdata,
-                                          innerdataframe,
                                           expected_names[param],
                                           expected_shapes[param],
                                           expected_values[param])
+        if dataframe is not None:
+            innerdataframe = dataframe[param]
+            verify_dataframe_for_single_param(innerdataframe,
+                                              expected_names[param],
+                                              expected_shapes[param],
+                                              expected_values[param])
 
 
 def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
-                                      dataframe: pandas.DataFrame,
                                       names: Sequence[str],
                                       shapes: Sequence[Tuple[int, ...]],
                                       values):
     # check that there are no unexpected elements in the dict
     key_names = list(datadict.keys())
     assert set(key_names) == set(names)
+
+    for name, shape, value in zip(names, shapes, values):
+        assert datadict[name].shape == shape
+        assert_array_equal(datadict[name], value)
+
+
+def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
+                                      names: Sequence[str],
+                                      shapes: Sequence[Tuple[int, ...]],
+                                      values):
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)
@@ -88,7 +105,5 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
     simpledf = dataframe.reset_index()
 
     for name, shape, value in zip(names, shapes, values):
-        assert datadict[name].shape == shape
         assert len(simpledf[name]) == reduce(mul, shape)
         assert_array_equal(dataframe.reset_index()[name].values, value.ravel())
-        assert_array_equal(datadict[name], value)
