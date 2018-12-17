@@ -14,18 +14,24 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
                      expected_shapes: Dict[str, Sequence[Tuple[int, ...]]],
                      expected_values: Dict[str, Sequence[np.ndarray]]) -> None:
     """
-    Simple helper function to verify a dict of data
+    Simple helper function to verify a dict of data. The expected names values
+    and shapes should be given as a dict with keys given by the dependent
+    parameters. Each value in the dicts should be the sequence of expected
+    names/shapes/values for that requested parameter and its dependencies.
+    The first element in the sequence must be the dependent parameter loaded.
 
     Args:
         data: The dict data to verify the shape and content of.
         dataframe: The data represented as a dict of Pandas DataFrames.
-        parameter_names: names of the parameters loaded as top level
-            keys in the dict.
-        expected_names: names of the parameters expected as keys in the second
-            level.
-        expected_shapes: expected shapes of the parameters loaded in the values
-            of the dict.
-        expected_values: expected content of the data arrays.
+        parameter_names: names of the parameters requested. These are expected
+            as top level keys in the dict.
+        expected_names: names of the parameters expected to be loaded for a
+            given parameter as a sequence indexed by the parameter.
+        expected_shapes: expected shapes of the parameters loaded. The shapes
+            should be stored as a tuple per parameter in a sequence containing
+            all the loaded parameters for a given requested parameter.
+        expected_values: expected content of the data arrays stored in a
+            sequence
 
     """
     # check that all the expected parameters in the dict are
@@ -62,6 +68,22 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
         if i is not None:
             pandas_names.append(i)
     assert set(pandas_names) == set(names)
+
+    # lets check that the index is made up
+    # from all but the first column as expected
+    if len(values) > 1:
+        expected_index_values = values[1:]
+        index_values = dataframe.index.values
+
+        nindexes = len(expected_index_values)
+        nrows = shapes[0]
+
+        for row in range(len(nrows)):
+            row_index_values = index_values[row]
+            expected_values = \
+                tuple(expected_index_values[indexnum].ravel()[row]
+                      for indexnum in range(nindexes))
+            assert row_index_values == expected_values
 
     simpledf = dataframe.reset_index()
 
