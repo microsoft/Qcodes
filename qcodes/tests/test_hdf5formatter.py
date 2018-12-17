@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from shutil import copy
 
+import qcodes.data
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
@@ -149,6 +150,15 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data1)
         self.formatter.close_file(data2)
 
+    def test_partial_dataset(self):
+        data = qcodes.data.data_set.new_data(formatter=self.formatter)
+        data_array = qcodes.data.data_array.DataArray(array_id = 'test_partial_dataset', shape = (10,))
+        data_array.init_data()
+        data_array.ndarray[0] = 1
+        data.add_array(data_array)
+        data.write()
+        data.read()
+
     def test_loop_writing_2D(self):
         # pass
         station = Station()
@@ -275,6 +285,7 @@ class TestHDF5_Format(TestCase):
         some_dict = {}
         some_dict['list_of_ints'] = list(np.arange(5))
         some_dict['list_of_floats'] = list(np.arange(5.1))
+        some_dict['list_of_mixed_type'] = list([1, '1'])
         fp = self.loc_provider(
             io=DataSet.default_io,
             record={'name': 'test_dict_writing'})+'.hdf5'
@@ -309,7 +320,6 @@ class TestHDF5_Format(TestCase):
         some_dict['nested_dataset'] = data1
 
         some_dict['list_of_dataset'] = [data1, data1]
-        some_dict['list_of_mixed_type'] = ['hello', 4, 4.2]
 
         fp = self.loc_provider(
             io=DataSet.default_io,
@@ -323,8 +333,6 @@ class TestHDF5_Format(TestCase):
                          new_dict['nested_dataset'])
         self.assertEqual(str(some_dict['list_of_dataset']),
                          new_dict['list_of_dataset'])
-        self.assertEqual(str(some_dict['list_of_mixed_type']),
-                         new_dict['list_of_mixed_type'])
 
         F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
         with self.assertRaises(NotImplementedError):

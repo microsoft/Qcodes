@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from .USBHIDMixin import MiniCircuitsHIDMixin
 from qcodes.instrument.base import Instrument
@@ -51,7 +51,7 @@ class RUDAT_13G_90(Instrument):
 
         self.connect_message()
 
-    def get_idn(self) -> Dict[str, str]:
+    def get_idn(self) -> Dict[str, Optional[str]]:
         model = self.model_name()
         serial = self.serial_number()
         firmware = self.firmware()

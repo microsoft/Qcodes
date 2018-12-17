@@ -29,8 +29,8 @@ class QtPlot(BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
-    For information on how x/y/z \*args are handled see add() in the base
-    plotting class.
+    For information on how ``x/y/z *args`` are handled see ``add()`` in the
+     base plotting class.
 
     Args:
         *args: shortcut to provide the x/y/z data. See BasePlot.add
@@ -40,8 +40,8 @@ class QtPlot(BasePlot):
         interval: period in seconds between update checks
             default 0.25
         theme: tuple of (foreground_color, background_color), where each is
-            a valid Qt color. default (dark gray, white), opposite the pyqtgraph
-            default of (white, black)
+            a valid Qt color. default (dark gray, white), opposite the
+            pyqtgraph default of (white, black)
         fig_x_pos: fraction of screen width to place the figure at
             0 is all the way to the left and
             1 is all the way to the right.
@@ -143,7 +143,7 @@ class QtPlot(BasePlot):
         """
         self.win.clear()
         self.traces = []
-        self.subplots = [] # type: List[Union[PlotItem, ObjectProxy]]
+        self.subplots: List[Union[PlotItem, ObjectProxy]] = []
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -497,7 +497,11 @@ class QtPlot(BasePlot):
         buffer.open(self.rpg.QtCore.QIODevice.ReadWrite)
         image.save(buffer, 'PNG')
         buffer.close()
-        return bytes(byte_array._getValue())
+
+        if hasattr(byte_array, '_getValue'):
+            return bytes(byte_array._getValue())
+        else:
+            return bytes(byte_array)
 
     def save(self, filename=None):
         """
@@ -521,14 +525,14 @@ class QtPlot(BasePlot):
         """
         Auto range all limits in case they were changed during interactive
         plot. Reset colormap if changed and resize window to original size.
+
         Args:
             reset_colorbar: Should the limits and colorscale of the colorbar
                 be reset. Off by default
         """
         # seem to be a bug in mypy but the type of self.subplots cannot be
         # deducted even when typed above so ignore it and cast for now
-        subplots = self.subplots # type: ignore
-        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        subplots = self.subplots
         for subplot in subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
@@ -567,8 +571,7 @@ class QtPlot(BasePlot):
         standardunits = self.standardunits
         # seem to be a bug in mypy but the type of self.subplots cannot be
         # deducted even when typed above so ignore it and cast for now
-        subplots = self.subplots # type: ignore
-        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        subplots = self.subplots
         for i, plot in enumerate(subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):

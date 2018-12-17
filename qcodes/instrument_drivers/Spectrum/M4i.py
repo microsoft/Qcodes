@@ -592,8 +592,8 @@ class M4i(Instrument):
 
     def active_channels(self):
         """ Return a list with the indices of the active channels """
-        x = bin(self.enable_channels())[2:]
-        return [i for i in range(len(x)) if x[i]]
+        x = bin(self.enable_channels())[2:][::-1]
+        return [i for i in range(len(x)) if int(x[i])]
 
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))

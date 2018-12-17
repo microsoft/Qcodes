@@ -5,6 +5,7 @@ using the nbagg backend and matplotlib
 from collections import Mapping
 from collections import Sequence
 from functools import partial
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -128,25 +129,29 @@ class MatPlot(BasePlot):
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
-    def add_to_plot(self, use_offset=False, **kwargs):
+    def add_to_plot(self, use_offset: bool=False, **kwargs):
         """
         adds one trace to this MatPlot.
 
         Args:
-            use_offset (bool, Optional): Whether or not ticks can have an offset
-            
-            kwargs: with the following exceptions (mostly the data!), these are
-                passed directly to the matplotlib plotting routine.
-                `subplot`: the 1-based axes number to append to (default 1)
-                if kwargs include `z`, we will draw a heatmap (ax.pcolormesh):
-                    `x`, `y`, and `z` are passed as positional args to
-                     pcolormesh
-                without `z` we draw a scatter/lines plot (ax.plot):
-                    `x`, `y`, and `fmt` (if present) are passed as positional
-                    args
-        
+            use_offset: Whether or not ticks can have an offset
+            **kwargs: with the exceptions given in the notes below
+                (mostly the data!), these are passed directly to
+                the matplotlib plotting routine.
+
         Returns:
             Plot handle for trace
+
+        Notes:
+            The following special cases apply for kwargs that are
+            not passed directly to the plotting routine.
+
+            * `subplot`: the 1-based axes number to append to (default 1)
+            * if kwargs include `z`, we will draw a heatmap (ax.pcolormesh)
+              `x`, `y`, and `z` are passed as positional args to pcolormesh
+            * without `z` we draw a scatter/lines plot (ax.plot)
+              `x`, `y`, and `fmt` (if present) are passed as positional
+              args
         """
         # TODO some way to specify overlaid axes?
         # Note that there is a conversion from subplot kwarg, which is
@@ -221,7 +226,7 @@ class MatPlot(BasePlot):
         """
         if not isinstance(subplots, tuple):
             raise TypeError('Subplots {} must be a tuple'.format(subplots))
-        return (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
+        return (3 + 3 * subplots[1], 1 + 3 * subplots[0])
 
     def update_plot(self):
         """
@@ -242,7 +247,13 @@ class MatPlot(BasePlot):
                     plot_object.remove()
 
                 ax = self[config.get('subplot', 1) - 1]
-                plot_object = self._draw_pcolormesh(ax, **config)
+                kwargs = deepcopy(config)
+                # figsize may be passed in as part of config.
+                # pcolormesh will raise an error if this is passed to it
+                # so strip it here.
+                if 'figsize' in kwargs:
+                    kwargs.pop('figsize')
+                plot_object = self._draw_pcolormesh(ax, **kwargs)
                 trace['plot_object'] = plot_object
 
                 if plot_object:
@@ -277,7 +288,7 @@ class MatPlot(BasePlot):
                    zlabel=None,
                    xunit=None,
                    yunit=None,
-                    zunit=None,
+                   zunit=None,
                    **kwargs):
         # NOTE(alexj)stripping out subplot because which subplot we're in is
         # already described by ax, and it's not a kwarg to matplotlib's ax.plot.
@@ -287,6 +298,62 @@ class MatPlot(BasePlot):
 
         line, = ax.plot(*args, **kwargs)
         return line
+
+    @staticmethod
+    def _make_args_for_pcolormesh(args_masked, x, y):
+        """
+        Make args for pcolormesh.
+        pcolormesh accepts as args either
+        C - a (potentially) masked array
+        or
+        x, y, C where x and y are the colour box edge arrays and
+        are NOT allowed to be masked
+        """
+
+        if x is not None and y is not None:
+            # If x and y are provided, modify the arrays such that they
+            # correspond to grid corners instead of grid centers.
+            # This is to ensure that pcolormesh centers correctly and
+            # does not ignore edge points.
+            args = []
+            for k, arr in enumerate(args_masked[:-1]):
+                # If a two-dimensional array is provided, only consider the
+                # first row/column, depending on the axis
+                if arr.ndim > 1:
+                    arr = arr[0] if k == 0 else arr[:, 0]
+                # first extrapolate to fill any empty values Matplotlib 2.2 no
+                # longer support nans in x and y for pcolormesh.
+                if np.ma.is_masked(arr[1]):
+                    step_size = 1.
+                    # Only the first element is not nan. We have to guess the
+                    # step size
+                else:
+                    # the average stepsize is our best guess
+                    step_size = np.ma.average(np.ma.diff(arr))
+
+                last_good_value = arr[np.logical_not(arr.mask)][-1]
+                extrapolation_start = last_good_value+step_size
+                n_invalid = np.sum(arr.mask)
+                extrapolation_stop = extrapolation_start+step_size*(n_invalid-1)
+                # numpy (1.14) has a deprecation warning related to shared
+                # masks. Let's silence this by making sure that this is
+                # not shared before modifying the mask
+                arr.unshare_mask()
+                arr[arr.mask] = np.linspace(extrapolation_start,
+                                            extrapolation_stop,
+                                            num=n_invalid)
+                # Now shift array to get edge coordinates rather than
+                # centre coordinates
+                arr_shift = np.insert(arr, 0, arr[0])
+                arr_shift[0] -= step_size/2
+                arr_shift[1:] += step_size/2
+                args.append(arr_shift)
+            args.append(args_masked[-1])
+        else:
+            # Only the masked value of z is used as a mask
+            args = args_masked[-1:]
+
+        return args
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
                          xlabel=None,
@@ -301,8 +368,9 @@ class MatPlot(BasePlot):
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
+
         args_masked = [masked_invalid(arg) for arg in [x, y, z]
-                      if arg is not None]
+                       if arg is not None]
 
         if np.any([np.all(getmask(arg)) for arg in args_masked]):
             # if the z array is masked, don't draw at all
@@ -310,48 +378,10 @@ class MatPlot(BasePlot):
             # pcolormesh does not accept masked x and y axes, so we do not need
             # to check for them.
             return False
-
         if 'cmap' not in kwargs:
             kwargs['cmap'] = qcodes.config['gui']['defaultcolormap']
-        if x is not None and y is not None:
-            # If x and y are provided, modify the arrays such that they
-            # correspond to grid corners instead of grid centers.
-            # This is to ensure that pcolormesh centers correctly and
-            # does not ignore edge points.
-            args = []
-            for k, arr in enumerate(args_masked[:-1]):
-                # If a two-dimensional array is provided, only consider the
-                # first row/column, depending on the axis
-                if arr.ndim > 1:
-                    arr = arr[0] if k == 0 else arr[:,0]
 
-                if np.ma.is_masked(arr[1]):
-                    # Only the first element is not nan, in this case pad with
-                    # a value, and separate their values by 1
-                    arr_pad = np.pad(arr, (1, 0), mode='symmetric')
-                    arr_pad[:2] += [-0.5, 0.5]
-                else:
-                    # Add padding on both sides equal to endpoints
-                    arr_pad = np.pad(arr, (1, 1), mode='symmetric')
-                    # Add differences to edgepoints (may be nan)
-                    arr_pad[0] += arr_pad[1] - arr_pad[2]
-                    arr_pad[-1] += arr_pad[-2] - arr_pad[-3]
-
-                    diff = np.ma.diff(arr_pad) / 2
-                    # Insert value at beginning and end of diff to ensure same
-                    # length
-                    diff = np.insert(diff, 0, diff[0])
-
-                    arr_pad += diff
-                    # Ignore final value
-                    arr_pad = arr_pad[:-1]
-                    # C is allowed to be masked in pcolormesh but x and y are
-                    # not so replace any empty data with nans
-                args.append(np.ma.filled(arr_pad, fill_value=np.nan))
-            args.append(args_masked[-1])
-        else:
-            # Only the masked value of z is used as a mask
-            args = args_masked[-1:]
+        args = self._make_args_for_pcolormesh(args_masked, x, y)
 
         pc = ax.pcolormesh(*args, **kwargs)
 
@@ -397,7 +427,7 @@ class MatPlot(BasePlot):
     def save(self, filename=None):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title.
 
         Args:

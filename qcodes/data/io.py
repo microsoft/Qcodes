@@ -34,7 +34,7 @@ The main thing these managers need to implement is the open context manager:
 
 IO managers should also implement:
 
-- a join method, ala os.path.join(\*args).
+- a join method, ala ``os.path.join(*args)``.
 - a list method, that returns all objects matching location
 - a remove method, ala os.remove(path) except that it will remove directories
   as well as files, since we're allowing "locations" to be directories

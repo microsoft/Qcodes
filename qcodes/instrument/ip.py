@@ -145,12 +145,12 @@ class IPInstrument(Instrument):
 
     def _send(self, cmd):
         data = cmd + self._terminator
-        log.info(f"Writing {data} to instrument {self.name}")
+        log.debug(f"Writing {data} to instrument {self.name}")
         self._socket.sendall(data.encode())
 
     def _recv(self):
         result = self._socket.recv(self._buffer_size)
-        log.info(f"Got {result} from instrument {self.name}")
+        log.debug(f"Got {result} from instrument {self.name}")
         if result == b'':
             log.warning("Got empty response from Socket recv() "
                         "Connection broken.")
