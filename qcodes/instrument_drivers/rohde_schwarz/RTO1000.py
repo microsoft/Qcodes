@@ -1,8 +1,11 @@
 # All manual references are to R&S RTO Digital Oscilloscope User Manual
 # for firmware 3.65, 2017
 
-import numpy as np
+import logging
 import warnings
+import time
+
+import numpy as np
 from distutils.version import LooseVersion
 
 from qcodes import Instrument
@@ -10,6 +13,8 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import ArrayParameter
+
+log = logging.getLogger(__name__)
 
 
 class ScopeTrace(ArrayParameter):
@@ -37,18 +42,8 @@ class ScopeTrace(ArrayParameter):
         """
         Prepare the scope for returning data, calculate the setpoints
         """
-
-        # we must have this nesting, since the parameter high_definition_state
-        # only exists if HD
-        if self.channel._parent.HD:
-            if self.channel._parent.high_definition_state() == 'ON':
-                dataformat = 'INT,16'
-            else:
-                dataformat = 'INT,8'
-        else:
-            dataformat = 'INT,8'
-
-        self.channel._parent.dataformat(dataformat)
+        # We always use 16 bit integers for the data format
+        self.channel._parent.dataformat('INT,16')
         # ensure little-endianess
         self.channel._parent.write('FORMat:BORder LSBFirst')
         # only export y-values
@@ -82,16 +77,28 @@ class ScopeTrace(ArrayParameter):
         # we must ensure that all this took effect before proceeding
         self.channel._parent.ask('*OPC?')
 
-    def get(self):
+    def get_raw(self):
         """
         Returns a trace
         """
+
+        instr = self.channel._parent
 
         if not self._trace_ready:
             raise ValueError('Trace not ready! Please call '
                              'prepare_trace().')
 
-        vh = self.channel._parent.visa_handle
+        if instr.run_mode() == 'RUN Nx SINGLE':
+            N = instr.num_acquisitions()
+            M = instr.completed_acquisitions()
+            log.info('Acquiring {} traces.'.format(N))
+            while M < N:
+                log.info('Acquired {}:{} traces.'.format(M, N))
+                time.sleep(0.25)
+                M = instr.completed_acquisitions()
+
+        log.info('Acquisition completed. Polling trace from instrument.')
+        vh = instr.visa_handle
         vh.write('CHANnel{}:DATA?'.format(self.channum))
         raw_vals = vh.read_raw()
 
@@ -101,7 +108,7 @@ class ScopeTrace(ArrayParameter):
         # cut of the header and the trailing '\n'
         raw_vals = raw_vals[2+num_length:-1]
 
-        dataformat = self.channel._parent.dataformat.get_latest()
+        dataformat = instr.dataformat.get_latest()
 
         if dataformat == 'INT,8':
             int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
@@ -114,13 +121,9 @@ class ScopeTrace(ArrayParameter):
 
         scale = self.channel.scale()
         no_divs = 10  # TODO: Is this ever NOT 10?
-        if self.channel._parent.HD:
-            if self.channel._parent.high_definition_state() == 'ON':
-                quant_levels = 253*256
-            else:
-                quant_levels = 253
-        else:
-            quant_levels = 253
+
+        # we always export as 16 bit integers
+        quant_levels = 253*256
         conv_factor = scale*no_divs/quant_levels
         output = conv_factor*int_vals + self.channel.offset()
 
@@ -287,7 +290,7 @@ class RTO1000(VisaInstrument):
                  model: str=None, timeout: float=5.,
                  HD: bool=True,
                  terminator: str='\n',
-                 **kwargs):
+                 **kwargs) -> None:
         """
         Args:
             name: name of the instrument
@@ -308,6 +311,10 @@ class RTO1000(VisaInstrument):
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
         # the user must provide the model manually
         firmware_version = self.get_idn()['firmware']
+
+        if LooseVersion(firmware_version) < LooseVersion('3'):
+            log.warning('Old firmware version detected. This driver may '
+                        'not be compatible. Please upgrade your firmware.')
 
         if LooseVersion(firmware_version) >= LooseVersion('3.65'):
             # strip just in case there is a newline character at the end
@@ -424,11 +431,26 @@ class RTO1000(VisaInstrument):
         #########################
         # Acquisition
 
+        # I couldn't find a way to query the run mode, so we manually keep
+        # track of it. It is very important when getting the trace to make
+        # sense of completed_acquisitions
+        self.add_parameter('run_mode',
+                           label='Run/acqusition mode of the scope',
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.run_mode('RUN CONT')
+
         self.add_parameter('num_acquisitions',
-                           label='Number of single acquisitions',
-                           get_cmd='ACQuire:COUNt ?',
+                           label='Number of single acquisitions to perform',
+                           get_cmd='ACQuire:COUNt?',
                            set_cmd='ACQuire:COUNt {}',
                            vals=vals.Ints(1, 16777215),
+                           get_parser=int)
+
+        self.add_parameter('completed_acquisitions',
+                           label='Number of completed acquisitions',
+                           get_cmd='ACQuire:CURRent?',
                            get_parser=int)
 
         self.add_parameter('sampling_rate',
@@ -468,13 +490,19 @@ class RTO1000(VisaInstrument):
                                get_cmd='HDEFinition:STAte?',
                                val_mapping={'ON': 1, 'OFF': 0})
 
+            self.add_parameter('high_definition_bandwidth',
+                               label='High definition mode bandwidth',
+                               set_cmd='HDEFinition:BWIDth {}',
+                               get_cmd='HDEFinition:BWIDth?',
+                               unit='Hz',
+                               get_parser=float,
+                               vals=vals.Numbers(1e4, 1e9))
+
         # Add the channels to the instrument
         for ch in range(1, self.num_chans+1):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
 
-        self.add_function('run_cont', call_cmd='RUN')
-        self.add_function('run_single', call_cmd='SINGle')
         self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
         self.add_function('opc', call_cmd='*OPC?')
@@ -483,6 +511,20 @@ class RTO1000(VisaInstrument):
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
 
         self.connect_message()
+
+    def run_cont(self) -> None:
+        """
+        Set the instrument in 'RUN CONT' mode
+        """
+        self.write('RUN')
+        self.run_mode.set('RUN CONT')
+
+    def run_single(self) -> None:
+        """
+        Set the instrument in 'RUN Nx SINGLE' mode
+        """
+        self.write('SINGLE')
+        self.run_mode.set('RUN Nx SINGLE')
 
     #########################
     # Specialised set/get functions

@@ -19,7 +19,6 @@ devices:
           r: "{}"
         setter:
           q: "CONF:RAMP:RATE:UNITS {}"
-          r: OK
 
       field units:
         default: 1
@@ -28,7 +27,14 @@ devices:
           r: "{}"
         setter:
           q: "CONF:FIELD:UNITS {}"
-          r: OK
+
+      current limit:
+        default: 80
+        getter:
+          q: "CURR:LIMIT?"
+          r: "{}"
+        setter:
+          q: "CONF:CURR:LIMIT {}"
 
       ramp rate current first segment:
         default: '50, 50, 50'
@@ -37,7 +43,6 @@ devices:
           r: '{}'
         setter:
           q: 'CONF:RAMP:RATE:CURRENT:1 {}'
-          r: OK
 
       ramp target:
         default: 0  # or what?
@@ -46,7 +51,6 @@ devices:
           r: "{}"
         #setter:  # this is commented out because two properties can not share a setter
          # q: "CONF:FIELD:TARG {}"
-         # r: OK
 
       coil constant:
         default: 1
@@ -61,7 +65,6 @@ devices:
           r: "{}"
         setter:
           q: "CONF:FIELD:TARG {}"  # in the simulated instrument, the target is reached
-          r: OK
 
       ramping state:
         default: 2  # always in holding state, always ready
@@ -76,7 +79,7 @@ devices:
           r: "{}"
         setter:
           q: "QU {}"
-          r: OK
+
 
       persistent mode:
         default: 0
@@ -91,17 +94,22 @@ devices:
           r: "{}"
         setter:
           q: "PS {}"
-          r: OK
 
       pause:
         setter:
           q: "PAUSE"
-          r: OK
 
       ramp:
         setter:
           q: "RAMP"
-          r: OK
+
+      current rating:
+        default: 3
+        getter:
+          q: "CURR:RATING?"
+          r: "{}"
+        setter:
+          q: "CONF:CURR:RATING {}"
 
 
 resources:  # we always need three power supplies; one for each axis. For the testing we add a few more

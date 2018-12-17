@@ -1,4 +1,4 @@
-from qcodes import Instrument
+from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Enum, Numbers
 
 try:
@@ -60,7 +60,7 @@ class D5a(Instrument):
         self._span_set_map = {
             '4v uni': 0,
             '4v bi': 2,
-            '2.5v bi': 4,
+            '2v bi': 4,
         }
 
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
@@ -117,9 +117,9 @@ class D5a(Instrument):
     def _get_validator(self, dac):
         span = self.d5a.span[dac]
         if span == D5a_module.range_2V_bi:
-            validator = Numbers(-1 * self._gain, 1 * self._gain)
-        elif span == D5a_module.range_4V_bi:
             validator = Numbers(-2 * self._gain, 2 * self._gain)
+        elif span == D5a_module.range_4V_bi:
+            validator = Numbers(-4 * self._gain, 4 * self._gain)
         elif span == D5a_module.range_4V_uni:
             validator = Numbers(0, 4 * self._gain)
         else:

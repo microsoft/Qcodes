@@ -1,0 +1,43 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      ASRL INSTR:
+        q: "\r"
+        r: "\r"
+    error: ERROR
+    dialogues:
+      - q: "IDN"
+        r: "BS123 005 16 b"
+
+    properties:
+      voltage_ch1:
+        default: 1.2
+        getter:
+          q: "BS123 U01"
+          r: "-1,2 V"
+        setter:
+          q: "BS123 CH01 {}"
+          r: "\x06"
+      voltage_ch2:
+        default: 1.2
+        getter:
+          q: "BS123 U02"
+          r: "-1,2 V"
+        setter:
+          q: "BS123 CH02 {}"
+          r: ""
+      current_ch1:
+        default: 0.001
+        getter:
+          q: "BS123 I01"
+          r: "+0,001 mA"
+      temperature:
+        getter:
+          q: "BS123 TEMP"
+          r: "TEMP 27\xb0C"
+
+
+resources:
+  "ASRL3":
+    device: device 1

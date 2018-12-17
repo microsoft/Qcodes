@@ -1,5 +1,6 @@
 from functools import partial
 import logging
+from typing import Union
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -27,7 +28,7 @@ class OutputChannel(InstrumentChannel):
         """
         super().__init__(parent, name)
 
-        def val_parser(parser: type, inputstring: str) -> str:
+        def val_parser(parser: type, inputstring: str) -> Union[float,int]:
             """
             Parses return values from instrument. Meant to be used when a query
             can return a meaningful finite number or a numeric representation
@@ -126,6 +127,13 @@ class OutputChannel(InstrumentChannel):
                            unit='%',
                            vals=vals.Numbers(0, 100)
                            )
+
+        self.add_parameter('pulse_width',
+                           label="Channel {} pulse width".format(channum),
+                           set_cmd='SOURce{}:FUNCtion:PULSE:WIDTh {{}}'.format(channum),
+                           get_cmd='SOURce{}:FUNCtion:PULSE:WIDTh?'.format(channum),
+                           get_parser=float,
+                           unit='S')
 
         # TRIGGER MENU
         self.add_parameter('trigger_source',
@@ -289,11 +297,13 @@ class WaveformGenerator_33XXX(VisaInstrument):
         # TODO: Fill out this dict with all models
         no_of_channels = {'33210A': 1,
                           '33250A': 1,
+                          '33511B': 1,
                           '33522B': 2,
                           '33622A': 2
                           }
 
         self._max_freqs = {'33210A': 10e6,
+                           '33511B': 20e6,
                            '33250A': 80e6,
                            '33522B': 30e6,
                            '33622A': 120e6}

@@ -88,7 +88,7 @@ class Demodulation_AcquisitionController(AcquisitionController):
         # Alazar card starts listening for a trigger pulse
         pass
 
-    def handle_buffer(self, data):
+    def handle_buffer(self, data, buffer_number=None):
         """
         See AcquisitionController
         :return:
@@ -127,7 +127,6 @@ class Demodulation_AcquisitionController(AcquisitionController):
             return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
-        return None
 
     def fit(self, buf):
         """

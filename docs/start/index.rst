@@ -66,15 +66,77 @@ Finally install QCoDeS add the repository via
 
     pip install -e <path-to-repository>
 
+This will perform an `editable install` such that any changes of QCoDeS in your
+local git clone are automatically available without having to reinstall QCoDeS.
+
+Other dependencies
+~~~~~~~~~~~~~~~~~~
+
+You probably also wants to install National Instruments VISA from
+`here <https://www.ni.com/visa/>`__. To download it
+you will need to create an account on the National Instruments homepage but
+the download is free of charge.
+
+Updating QCoDeS
+~~~~~~~~~~~~~~~
+
+If you have installed with pip, run the following to update:
+
+.. code:: bash
+
+   pip install --upgrade qcodes
+
+in principle, there should be a new release out roughly every month.
+
+If you have installed with git, pull the QCoDeS repository using your
+favourite method (git bash, git shell, github desktop, ...). There are
+new commits to the repository daily.
+
+Keeping your environment up to date
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Additional dependencies are periodically added to the QCoDeS environment and
+new versions of packages that QCoDeS depends on are released.
+
+To keep the QCoDeS environment up to date you can run
+
+.. code:: bash
+
+   conda update -n base conda -c defaults
+   conda env update
+
+from the root of your QCoDeS git repository.
+
+Alternatively you can grab a new version of the ``environment.yml`` file as
+explained above and run the same commands from a directory containing that file.
+
+The first line ensures that the ``conda`` package manager it self is
+up to date and the second line will ensure that the latest versions of the
+packages used by QCoDeS are installed. See
+`here <https://conda.io/docs/commands/env/conda-env-update.html>`__ for more
+documentation on ``conda env update``.
+
+If you using QCoDeS from an editable install you should also reinstall QCoDeS using
+
+.. code:: bash
+
+    pip install -e <path-to-repository>
+
+After upgrading the environment to make sure that dependencies are tracked correctly.
+
+Note that if you install packages yourself into the same
+environment it is preferable to install them using ``conda``. There is a chance that
+mixing packages from ``conda`` and ``pip`` will produce a broken environment.
+Especially if the same package is installed using both ``pip`` and ``conda``.
 
 Using QCoDes
 ------------
 For using QCoDeS, as with any other python library, it is useful to use an
 application that facilitates the editing and execution of python files. With
-Anaconda there come two preinstalled options:
+Anaconda come two preinstalled options:
 
- * **Jupyter**, a browser based notebook
- * **Spyder**, an integrated development environment
+ - **Jupyter**, a browser based notebook
+ - **Spyder**, an integrated development environment
 
 To start either of them you can use the shortcuts in the start menu under
 *Anaconda3* with a trailing *(qcodes)*.

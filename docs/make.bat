@@ -18,6 +18,8 @@ if "%1" == "" goto help
 if "%1" == "help" (
 	:help
 	echo.Please use `make ^<target^>` where ^<target^> is one of
+	echo.  htmlapi    to make standalone HTML including auto gen API docs. Executes example notebooks.
+	echo.  htmlfast   like htmlapi but skips execution of notebooks
 	echo.  html       to make standalone HTML files
 	echo.  dirhtml    to make HTML files named index.html in directories
 	echo.  singlehtml to make a single large HTML file
@@ -46,6 +48,9 @@ if "%1" == "help" (
 if "%1" == "clean" (
 	for /d %%i in (%BUILDDIR%\*) do rmdir /q /s %%i
 	del /q /s %BUILDDIR%\*
+	del /q /s "_auto"
+	del /q /s "_notebooks"
+	del /q /s "api\generated"
 	goto end
 )
 
@@ -75,11 +80,25 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
+	:HTML
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1
 	echo.
 	echo.Build finished. The HTML pages are in %BUILDDIR%/html.
 	goto end
+)
+
+if "%1" == "htmlapi" (
+:HTMLAPI:
+	sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ..\qcodes\instrument_drivers\Spectrum\pyspcm.py ..\qcodes\instrument_drivers\Spectrum\M4i.py ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\*
+	mkdir api\generated\
+	copy _auto\qcodes.instrument_drivers.* api\generated\
+	goto HTML
+)
+
+if "%1" == "htmlfast" (
+	set ALLSPHINXOPTS=-D nbsphinx_execute=never %ALLSPHINXOPTS%
+	goto HTMLAPI
 )
 
 if "%1" == "dirhtml" (

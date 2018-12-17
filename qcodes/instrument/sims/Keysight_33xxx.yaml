@@ -1,0 +1,50 @@
+# SIMULATED INSTRUMENT FOR Keysight 33xxx series function generator
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, 33522B, 1, 0.1"
+
+    properties:
+
+      sync output:
+        default: 0
+        getter:
+          q: "OUTPut:SYNC?"
+          r: "{}"
+        setter:
+          q: "OUTPut:SYNC {}"
+
+      sync output source:
+        default: CH1
+        getter:
+          q: "OUTPut:SYNC:SOURce?"
+          r: "{}"
+        setter:
+          q: "OUTPut:SYNC:SOURce {}"
+
+      chan1 function type:
+        default: SIN
+        getter:
+          q: "SOURce1:FUNCtion?"
+          r: "{}"
+        setter:
+          q: "SOURce1:FUNCtion {}"
+
+      chan1 burst ncycles:
+        default: 1
+        getter:
+          q: "SOURce1:BURSt:NCYCLes?"
+          r: "{}"
+        setter:
+          q: "SOURce1:BURSt:NCYCles {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

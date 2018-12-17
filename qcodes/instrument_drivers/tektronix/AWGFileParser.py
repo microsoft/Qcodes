@@ -341,7 +341,7 @@ def _unwrap(bites, fmt):
 
     if fmt == 's':
         value = bites[:-1].decode('ascii')
-    elif fmt is 'ignore':
+    elif fmt == 'ignore':
         value = 'Not read'
     else:
         value = struct.unpack('<'+fmt, bites)

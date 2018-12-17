@@ -4,6 +4,40 @@ omit =
     */__init__.py
     test.py
     tests/*
-    instrument_drivers/*
-    instrument_drivers/*/*
     utils/reload_code.py
+    instrument_drivers/Advantech/*
+    instrument_drivers/QuTech/*
+    instrument_drivers/cryogenic/*
+    instrument_drivers/rigol/*
+    instrument_drivers/tektronix/*
+    instrument_drivers/AlazarTech/*
+    instrument_drivers/Lakeshore/*
+    instrument_drivers/Spectrum/*
+    instrument_drivers/agilent/*
+    instrument_drivers/devices.py/*
+    instrument_drivers/test.py
+    instrument_drivers/HP/*
+    instrument_drivers/Minicircuits/*
+    instrument_drivers/ZI/*
+    instrument_drivers/ithaco/*
+    instrument_drivers/signal_hound/*
+    instrument_drivers/weinschel/*
+    instrument_drivers/Harvard/*
+    instrument_drivers/QDev/*
+    instrument_drivers/cryocon/*
+    instrument_drivers/oxford/*
+    instrument_drivers/stanford_research/*
+    instrument_drivers/yokogawa/*
+    instrument_drivers/devices.py
+    instrument_drivers/rohde_schwarz/ZNB*
+    instrument_drivers/rohde_schwarz/SMR40.py
+    instrument_drivers/rohde_schwarz/SGS100A.py
+    instrument_drivers/Keysight/Infiniium.py
+    instrument_drivers/Keysight/Keysight_33500B.py
+    instrument_drivers/Keysight/Keysight_33500B_channels.py
+    instrument_drivers/Keysight/Keysight_E8267D.py
+    instrument_drivers/Keysight/M3201A.py
+    instrument_drivers/Keysight/M3300A.py
+    instrument_drivers/Keysight/N51x1.py
+    instrument_drivers/Keysight/SD_common/*
+    instrument_drivers/Keysight/test_suite.py
