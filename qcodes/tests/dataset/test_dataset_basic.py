@@ -783,13 +783,13 @@ def test_get_parameter_data(scalar_dataset, start, end):
     input_names = ['param_3']
 
     expected_names = {}
-    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
-                                 'param_3']
+    expected_names['param_3'] = ['param_3', 'param_0', 'param_1', 'param_2']
     expected_shapes = {}
     expected_shapes['param_3'] = [(10**3, )]*4
     expected_values = {}
-    expected_values['param_3'] = [np.arange(10000*a, 10000*a+1000)
-                                  for a in range(4)]
+    expected_values['param_3'] = [np.arange(30000, 31000)] + \
+                                 [np.arange(10000*a, 10000*a+1000)
+                                  for a in range(3)]
 
     start, end = limit_data_to_start_end(start, end, input_names,
                                          expected_names, expected_shapes,
