@@ -29,7 +29,8 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
-from .helper_functions import verify_data_dict
+pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
+from qcodes.tests.dataset.helper_functions import verify_data_dict
 
 n_experiments = 0
 
