@@ -1,4 +1,6 @@
 from typing import Sequence, Tuple, Dict
+from operator import mul
+from functools import reduce
 
 import numpy as np
 import pandas
@@ -61,6 +63,10 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
             pandas_names.append(i)
     assert set(pandas_names) == set(names)
 
+    simpledf = dataframe.reset_index()
+
     for name, shape, value in zip(names, shapes, values):
         assert datadict[name].shape == shape
+        assert len(simpledf[name]) == reduce(mul, shape)
+        assert_array_equal(dataframe.reset_index()[name].values, value.ravel())
         assert_array_equal(datadict[name], value)
