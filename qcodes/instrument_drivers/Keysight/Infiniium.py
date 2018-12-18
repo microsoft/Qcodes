@@ -509,6 +509,20 @@ class Infiniium(VisaInstrument):
             get_parser=float
         )
 
+        self.add_parameter(
+            "acquire_averaging",
+            get_cmd=":ACQUIRE:AVERAGE?",
+            set_cmd=":ACQUIRE:AVERAGE {}",
+            val_mapping={True: 1, False: 0}
+        )
+
+        self.add_parameter(
+            "acquire_averaging_count",
+            get_cmd=":ACQUIRE:AVERAGE:COUNT?",
+            set_cmd=":ACQUIRE:AVERAGE:COUNT {}",
+            vals=vals.Numbers(2, 65534)
+        )
+
         # time of the first point
         self.add_parameter(
             'waveform_xorigin',
