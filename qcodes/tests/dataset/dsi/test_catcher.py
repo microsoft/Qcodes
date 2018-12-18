@@ -9,7 +9,7 @@ from qcodes.dataset.rmq_queue_consumer import QueueConsumer
 from qcodes.dataset.rmq_catcher_service import Catcher
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
-
+from qcodes.tests.dataset.temporary_databases import empty_temp_db
 
 class MockChannel:
     """
@@ -103,7 +103,7 @@ def test_catcher_init():
 
 @settings(max_examples=10, deadline=500)
 @given(N=hst.integers(min_value=1, max_value=100))
-def test_number_of_messages(N):
+def test_number_of_messages(empty_temp_db, N):
     # Send a lot of data messages through so that nothing is actually created
     # on disk. Assert that theu all went through and were nack'ed
 
