@@ -97,6 +97,12 @@ def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
 
         for row in range(len(nrows)):
             row_index_values = index_values[row]
+            # one dimensional arrays will have single values for there indexed
+            # not tuples as they don't use multiindex. Put these in tuples
+            # for easy comparison
+            if not isinstance(dataframe.index, pandas.MultiIndex):
+                row_index_values = (row_index_values,)
+
             expected_values = \
                 tuple(expected_index_values[indexnum].ravel()[row]
                       for indexnum in range(nindexes))

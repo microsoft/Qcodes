@@ -899,6 +899,8 @@ class DataSet(Sized):
                 continue
             if len(keys) == 1:
                 index = None
+            elif len(keys) == 2:
+                index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
             else:
                 index = pd.MultiIndex.from_arrays(
                     tuple(subdict[key].ravel() for key in keys[1:]),
