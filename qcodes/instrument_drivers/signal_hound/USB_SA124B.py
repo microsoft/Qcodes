@@ -148,7 +148,7 @@ class FrequencySweep(ArrayParameter):
                                "for 'SignalHound_USB_SA124B'")
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
-        data = self.instrument._get_averaged_sweep_data()
+        data = self.instrument._get_sweep_data()
         sleep(2*self.instrument.sleep_time.get())
         return data
 
@@ -181,6 +181,9 @@ class SignalHound_USB_SA124B(Instrument):
         self._trace_updated = False
         log.info('Initializing instrument SignalHound USB 124B')
         self.dll = ct.CDLL(dll_path or self.dll_path)
+
+        self._set_ctypes_argtypes()
+
         self.hf = Constants
         self.add_parameter('frequency',
                            label='Frequency',
@@ -325,6 +328,45 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.connect_message()
 
+    def _set_ctypes_argtypes(self) -> None:
+        """
+        Set the expected argtypes for function calls in the sa_api dll
+        These should match the function signatures defined in the sa-api
+        header files included with the signal hound sdk
+        """
+        self.dll.saConfigCenterSpan.argtypes = [ct.c_int,
+                                                ct.c_double,
+                                                ct.c_double]
+        self.dll.saConfigAcquisition.argtypes = [ct.c_int,
+                                                 ct.c_int,
+                                                 ct.c_int]
+        self.dll.saConfigLevel.argtypes = [ct.c_int,
+                                           ct.c_double]
+        self.dll.saSetTimebase.argtypes = [ct.c_int,
+                                           ct.c_int]
+        self.dll.saConfigSweepCoupling.argypes = [ct.c_int,
+                                                  ct.c_double,
+                                                  ct.c_double,
+                                                  ct.c_bool]
+        self.dll.saInitiate.argtypes = [ct.c_int,
+                                        ct.c_int,
+                                        ct.c_int]
+        self.dll.saOpenDevice.argtypes = [ct.POINTER(ct.c_int)]
+        self.dll.saCloseDevice.argtypes = [ct.c_int]
+        self.dll.saPreset.argtypes = [ct.c_int]
+        self.dll.saGetDeviceType.argtypes = [ct.c_int,
+                                             ct.POINTER(ct.c_int)]
+        self.dll.saQuerySweepInfo.argtypes = [ct.c_int,
+                                              ct.POINTER(ct.c_int),
+                                              ct.POINTER(ct.c_double),
+                                              ct.POINTER(ct.c_double)]
+        self.dll.saGetSweep_32f.argtypes = [ct.c_int, ct.POINTER(ct.c_float),
+                                            ct.POINTER(ct.c_float)]
+        self.dll.saGetSerialNumber.argtypes = [ct.c_int,
+                                               ct.POINTER(ct.c_int)]
+        self.dll.saGetFirmwareString.argtypes = [ct.c_int,
+                                                 ct.c_char_p]
+
     def _update_trace(self) -> None:
         """
         Private method to sync changes of the
@@ -364,14 +406,14 @@ class SignalHound_USB_SA124B(Instrument):
 
         # 2. Acquisition configuration
         detectorVals = {
-            'min-max': ct.c_uint(self.hf.sa_MIN_MAX),
-            'average': ct.c_uint(self.hf.sa_AVERAGE)
+            'min-max': ct.c_int(self.hf.sa_MIN_MAX),
+            'average': ct.c_int(self.hf.sa_AVERAGE)
         }
         scaleVals = {
-            'log-scale': ct.c_uint(self.hf.sa_LOG_SCALE),
-            'lin-scale': ct.c_uint(self.hf.sa_LIN_SCALE),
-            'log-full-scale': ct.c_uint(self.hf.sa_LOG_FULL_SCALE),
-            'lin-full-scale': ct.c_uint(self.hf.sa_LIN_FULL_SCALE)
+            'log-scale': ct.c_int(self.hf.sa_LOG_SCALE),
+            'lin-scale': ct.c_int(self.hf.sa_LIN_SCALE),
+            'log-full-scale': ct.c_int(self.hf.sa_LOG_FULL_SCALE),
+            'lin-full-scale': ct.c_int(self.hf.sa_LIN_FULL_SCALE)
         }
         detector = detectorVals[self.acquisition_mode()]
         scale = scaleVals[self.scale()]
@@ -504,7 +546,7 @@ class SignalHound_USB_SA124B(Instrument):
         """
         log.info('Querying device for model information')
 
-        devType = ct.c_uint(0)
+        devType = ct.c_int32(0)
         devTypePnt = ct.pointer(devType)
 
         err = self.dll.saGetDeviceType(self.deviceHandle, devTypePnt)
@@ -558,38 +600,22 @@ class SignalHound_USB_SA124B(Instrument):
             self.sync_parameters()
         sweep_len, _, _ = self.QuerySweep()
 
-        minarr = (ct.c_float * sweep_len)()
-        maxarr = (ct.c_float * sweep_len)()
-        sleep_time = self.sleep_time.get()
-        sleep(sleep_time)  # Added extra sleep for updating issue
-        err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        sleep(sleep_time)  # Added extra sleep
-        if not err == saStatus.saNoError:
-            # if an error occurs tries preparing the device and then asks again
-            log.warning('Error raised in _get_sweep_data, '
-                        'trying to get data')
-            sleep(sleep_time)
-            self.sync_parameters()
-            sleep(sleep_time)
-            minarr = (ct.c_float * sweep_len)()
-            maxarr = (ct.c_float * sweep_len)()
-            err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-        self.check_for_error(err, 'saGetSweep_32f')
 
-        datamin = np.array([minarr[elem] for elem in range(sweep_len)])
-
-        return datamin
-
-    def _get_averaged_sweep_data(self) -> np.ndarray:
-        """
-        Averages over SH.sweep Navg times
-
-        """
-        sweep_len, _, _ = self.QuerySweep()
         data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
-            data += self._get_sweep_data()
+
+            datamin = np.zeros((sweep_len), dtype=np.float32)
+            datamax = np.zeros((sweep_len), dtype=np.float32)
+
+            minarr = datamin.ctypes.data_as(ct.POINTER(ct.c_float))
+            maxarr = datamax.ctypes.data_as(ct.POINTER(ct.c_float))
+
+            sleep(self.sleep_time.get())  # Added extra sleep for updating issue
+            err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
+            self.check_for_error(err, 'saGetSweep_32f')
+            data += datamin
+
         return data / Navg
 
     def _get_power_at_freq(self) -> float:
@@ -607,10 +633,10 @@ class SignalHound_USB_SA124B(Instrument):
             self.rbw(1e3)
         if not self._parameters_synced:
             # call configure to update both
-            # the paramters on the device and the
+            # the parameters on the device and the
             # setpoints and units
             self.configure()
-        data = self._get_averaged_sweep_data()
+        data = self._get_sweep_data()
         max_power = np.max(data)
         if needs_reset:
             self.span(original_span)

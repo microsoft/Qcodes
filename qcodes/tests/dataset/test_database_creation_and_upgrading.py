@@ -21,11 +21,13 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 from qcodes.dataset.sqlite_base import (connect,
                                         one,
                                         update_GUIDs,
+                                        get_db_version_and_newest_available_version,
                                         get_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
                                         perform_db_upgrade_1_to_2,
-                                        perform_db_upgrade_2_to_3)
+                                        perform_db_upgrade_2_to_3,
+                                        _latest_available_version)
 
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
@@ -69,20 +71,31 @@ def location_and_station_set_to(location: int, work_station: int):
         cfg.save_to_home()
 
 
-@pytest.mark.usefixtures("empty_temp_db")
-def test_tables_exist():
-    for version in [-1, 0, 1]:
-        conn = connect(qc.config["core"]["db_location"],
-                       qc.config["core"]["db_debug"],
-                       version=version)
-        cursor = conn.execute("select sql from sqlite_master"
-                              " where type = 'table'")
-        expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
-        rows = [row for row in cursor]
-        assert len(rows) == len(expected_tables)
-        for row, expected_table in zip(rows, expected_tables):
-            assert expected_table in row['sql']
-        conn.close()
+LATEST_VERSION = _latest_available_version()
+VERSIONS = tuple(range(LATEST_VERSION + 1))
+LATEST_VERSION_ARG = -1
+
+
+@pytest.mark.parametrize('ver', VERSIONS + (LATEST_VERSION_ARG,))
+def test_connect_upgrades_user_version(ver):
+    expected_version = ver if ver != LATEST_VERSION_ARG else LATEST_VERSION
+    conn = connect(':memory:', version=ver)
+    assert expected_version == get_user_version(conn)
+
+
+@pytest.mark.parametrize('version', VERSIONS + (LATEST_VERSION_ARG,))
+def test_tables_exist(empty_temp_db, version):
+    conn = connect(qc.config["core"]["db_location"],
+                   qc.config["core"]["db_debug"],
+                   version=version)
+    cursor = conn.execute("select sql from sqlite_master"
+                          " where type = 'table'")
+    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+    rows = [row for row in cursor]
+    assert len(rows) == len(expected_tables)
+    for row, expected_table in zip(rows, expected_tables):
+        assert expected_table in row['sql']
+    conn.close()
 
 
 def test_initialise_database_at_for_nonexisting_db():
@@ -124,11 +137,11 @@ def test_perform_actual_upgrade_0_to_1():
 
     v0fixpath = os.path.join(fixturepath, 'db_files', 'version0')
 
-    if not os.path.exists(v0fixpath):
+    dbname_old = os.path.join(v0fixpath, 'empty.db')
+
+    if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
-
-    dbname_old = os.path.join(v0fixpath, 'empty.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=0) as conn:
 
@@ -152,11 +165,11 @@ def test_perform_actual_upgrade_1_to_2():
 
     v1fixpath = os.path.join(fixturepath, 'db_files', 'version1')
 
-    if not os.path.exists(v1fixpath):
+    dbname_old = os.path.join(v1fixpath, 'empty.db')
+
+    if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
-
-    dbname_old = os.path.join(v1fixpath, 'empty.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=1) as conn:
 
@@ -182,11 +195,11 @@ def test_perform_actual_upgrade_2_to_3_empty():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
-    if not os.path.exists(v2fixpath):
+    dbname_old = os.path.join(v2fixpath, 'empty.db')
+
+    if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
-
-    dbname_old = os.path.join(v2fixpath, 'empty.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -211,11 +224,11 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
-    if not os.path.exists(v2fixpath):
+    dbname_old = os.path.join(v2fixpath, 'empty_runs.db')
+
+    if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
-
-    dbname_old = os.path.join(v2fixpath, 'empty_runs.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -226,11 +239,11 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
-    if not os.path.exists(v2fixpath):
+    dbname_old = os.path.join(v2fixpath, 'some_runs.db')
+
+    if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
                     " using the scripts in the legacy_DB_generation folder")
-
-    dbname_old = os.path.join(v2fixpath, 'some_runs.db')
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -358,3 +371,24 @@ def test_update_existing_guids(caplog):
         guid_comps_5 = parse_guid(ds5.guid)
         assert guid_comps_5['location'] == old_loc
         assert guid_comps_5['work_station'] == old_ws
+
+
+def test_latest_available_version():
+    assert 3 == _latest_available_version()
+
+
+@pytest.mark.parametrize('version', VERSIONS)
+def test_getting_db_version(version):
+
+    fixpath = os.path.join(fixturepath, 'db_files', f'version{version}')
+
+    dbname = os.path.join(fixpath, 'empty.db')
+
+    if not os.path.exists(dbname):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the legacy_DB_generation folder")
+
+    (db_v, new_v) = get_db_version_and_newest_available_version(dbname)
+
+    assert db_v == version
+    assert new_v == LATEST_VERSION

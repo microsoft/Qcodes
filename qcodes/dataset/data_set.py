@@ -30,10 +30,13 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
+                                        get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
-                                        run_exists)
+                                        run_exists, remove_trigger,
+                                        make_connection_plus_from,
+                                        ConnectionPlus)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -41,6 +44,8 @@ from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
+
+log = logging.getLogger(__name__)
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -109,6 +114,7 @@ class _Subscriber(Thread):
             self.callback = functools.partial(callback, **callback_kwargs)
 
         self.callback_id = f"callback{self._id}"
+        self.trigger_id = f"sub{self._id}"
 
         conn = dataSet.conn
 
@@ -117,7 +123,7 @@ class _Subscriber(Thread):
         parameters = dataSet.get_parameters()
         sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
         sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER sub{self._id}
+        CREATE TRIGGER {self.trigger_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callback_id}({sql_param_list});
@@ -182,9 +188,18 @@ class _Subscriber(Thread):
 
 
 class DataSet(Sized):
+
+    # the "persistent traits" are the attributes/properties of the DataSet
+    # that are NOT tied to the representation of the DataSet in any particular
+    # database
+    persistent_traits = ('name', 'guid', 'number_of_results',
+                         'parameters', 'paramspecs', 'exp_name', 'sample_name',
+                         'completed', 'snapshot', 'run_timestamp_raw',
+                         'description', 'completed_timestamp_raw', 'metadata')
+
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
-                 conn=None,
+                 conn: Optional[ConnectionPlus]=None,
                  exp_id=None,
                  name: str=None,
                  specs: SPECS=None,
@@ -220,7 +235,8 @@ class DataSet(Sized):
                              "This is not allowed.")
         self._path_to_db = path_to_db or get_DB_location()
 
-        self.conn = conn or connect(self.path_to_db)
+        self.conn = make_connection_plus_from(conn) if conn is not None else \
+            connect(self.path_to_db)
 
         self._run_id = run_id
         self._debug = False
@@ -350,6 +366,34 @@ class DataSet(Sized):
     def metadata(self) -> Dict:
         return self._metadata
 
+    def the_same_dataset_as(self, other: 'DataSet') -> bool:
+        """
+        Check if two datasets correspond to the same run by comparing
+        all their persistent traits. Note that this method
+        does not compare the data itself.
+
+        This function raises if the GUIDs match but anything else doesn't
+
+        Args:
+            other: the dataset to compare self to
+        """
+
+        if not isinstance(other, DataSet):
+            return False
+
+        guids_match = self.guid == other.guid
+
+        for attr in DataSet.persistent_traits:
+            if getattr(self, attr) != getattr(other, attr):
+                if guids_match:
+                    raise RuntimeError('Critical inconsistency detected! '
+                                       'The two datasets have the same GUID,'
+                                       f' but their "{attr}" differ.')
+                else:
+                    return False
+
+        return True
+
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format
@@ -474,9 +518,23 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        add_meta_data(self.conn, self.run_id, {tag: metadata})
-        # `add_meta_data` does not commit, hence we commit here:
-        self.conn.commit()
+        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        with atomic(self.conn) as conn:
+            add_meta_data(conn, self.run_id, {tag: metadata})
+
+    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+        """
+        Adds a snapshot to this run
+
+        Args:
+            snapshot: the raw JSON dump of the snapshot
+            overwrite: force overwrite an existing snapshot
+        """
+        if self.snapshot is None or overwrite:
+            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+        elif self.snapshot is not None and not overwrite:
+            log.warning('This dataset already has a snapshot. Use overwrite'
+                        '=True to overwrite that')
 
     @property
     def started(self) -> bool:
@@ -575,6 +633,8 @@ class DataSet(Sized):
                            values)
         return len_before_add
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.')
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
         """
         Modify a logically single result of existing parameters
@@ -599,12 +659,15 @@ class DataSet(Sized):
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
 
-        with atomic(self.conn) as self.conn:
-            modify_values(self.conn, self.table_name, index,
+        with atomic(self.conn) as conn:
+            modify_values(conn, self.table_name, index,
                           list(results.keys()),
                           list(results.values())
                           )
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
+               alternative='modify_result')
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
         """
@@ -640,13 +703,16 @@ class DataSet(Sized):
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
 
-        with atomic(self.conn) as self.conn:
-            modify_many_values(self.conn,
+        with atomic(self.conn) as conn:
+            modify_many_values(conn,
                                self.table_name,
                                start_index,
                                flattened_keys,
                                flattened_values)
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
+               alternative='add_parameter, add_result, add_results')
     def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
         Add a parameter to the DataSet and associates result values with the
@@ -667,8 +733,8 @@ class DataSet(Sized):
                     len(values)
                 ))
 
-        with atomic(self.conn) as self.conn:
-            add_parameter(self.conn, self.table_name, spec)
+        with atomic(self.conn) as conn:
+            add_parameter(conn, self.table_name, spec)
             # now add values!
             results = [{spec.name: value} for value in values]
             self.add_results(results)
@@ -804,15 +870,12 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn) as self.conn:
-            self._remove_trigger(uuid)
+        with atomic(self.conn) as conn:
             sub = self.subscribers[uuid]
+            remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
             sub.join()
             del self.subscribers[uuid]
-
-    def _remove_trigger(self, name):
-        transaction(self.conn, f"DROP TRIGGER IF EXISTS {name};")
 
     def unsubscribe_all(self):
         """
@@ -820,9 +883,9 @@ class DataSet(Sized):
         """
         sql = "select * from sqlite_master where type = 'trigger';"
         triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as self.conn:
+        with atomic(self.conn) as conn:
             for trigger in triggers:
-                self._remove_trigger(trigger['name'])
+                remove_trigger(conn, trigger['name'])
             for sub in self.subscribers.values():
                 sub.schedule_stop()
                 sub.join()
@@ -848,14 +911,16 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load dataset by run id
 
-    Lookup is performed in the database file that is specified in the config.
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
 
     Args:
         run_id: run id of the dataset
+        conn: connection to the database to load from
 
     Returns:
         dataset with the given run id
@@ -863,11 +928,43 @@ def load_by_id(run_id: int) -> DataSet:
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
 
-    d = DataSet(path_to_db=get_DB_location(), run_id=run_id)
+    conn = conn or connect(get_DB_location())
+
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 
-def load_by_counter(counter: int, exp_id: int) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
+    """
+    Load a dataset by its GUID
+
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
+
+    Args:
+        guid: guid of the dataset
+        conn: connection to the database to load from
+
+    Returns:
+        dataset with the given guid
+
+    Raises:
+        NameError if no run with the given GUID exists in the database
+        RuntimeError if several runs with the given GUID are found
+    """
+    conn = conn or connect(get_DB_location())
+
+    # this function raises a RuntimeError if more than one run matches the GUID
+    run_id = get_runid_from_guid(conn, guid)
+
+    if run_id == -1:
+        raise NameError(f'No run with GUID: {guid} found in database.')
+
+    return DataSet(run_id=run_id, conn=conn)
+
+
+def load_by_counter(counter: int, exp_id: int,
+                    conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 
@@ -876,11 +973,13 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
+        conn: connection to the database to load from. If not provided, a
+          connection to the DB file specified in the config is made
 
     Returns:
         dataset of the given counter in the given experiment
     """
-    conn = connect(get_DB_location())
+    conn = conn or connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -891,9 +990,8 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     """
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
-    conn.close()
 
-    d = DataSet(get_DB_location(), run_id=run_id)
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 

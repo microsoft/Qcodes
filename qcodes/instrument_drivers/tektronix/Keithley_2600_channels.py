@@ -349,7 +349,7 @@ class Keithley_2600(VisaInstrument):
         """
         Args:
             name: Name to use internally in QCoDeS
-            address: VISA ressource address
+            address: VISA resource address
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
