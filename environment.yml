@@ -30,5 +30,5 @@ dependencies:
  - dataclasses  # this won't be needed when we move to python 3.7
  - typing_extensions
  - pip:
-    - websockets>=3.2
+    - websockets>=7.0
     - broadbean>=0.9.1

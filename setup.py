@@ -31,7 +31,7 @@ install_requires = [
     'numpy>=1.10',
     'pyvisa>=1.9.1',
     'h5py>=2.6',
-    'websockets>=3.2',
+    'websockets>=7.0',
     'jsonschema',
     'pyzmq',
     'wrapt',
@@ -79,8 +79,9 @@ setup(name='qcodes',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
                                'tests/dataset/fixtures/2018-01-17/*/*']},
-      install_requires=install_requires,
 
+      install_requires=install_requires,
+      
       test_suite='qcodes.tests',
       extras_require=extras_require,
 
