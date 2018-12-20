@@ -1,9 +1,63 @@
 import numpy as np
-from typing import cast
+from typing import cast, Union, List, Tuple, Iterable
+from itertools import takewhile, repeat
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
+
+
+def read_curve_file(file_path: str) -> dict:
+    """
+    Read a curve file with extension *.330
+    The format of the file is as follows:
+
+    Item1: value
+    Item2: value
+    Item3: value
+
+    Header1   Header2   Header3
+    data11     data12    data13
+    data21     data22    data23
+    """
+
+    def split_data_line(
+            line: str,
+            parsers: Union[type, List]=str
+    ) -> List[str]:
+
+        if not isinstance(parsers, list):
+            parsers = repeat(parsers)
+
+        line_split = [i for i in line.split("  ") if i != ""]
+
+        return [
+            parser(i) for parser, i in zip(parsers, line_split)
+        ]
+
+    def strip(strings: Iterable[str]) -> Tuple:
+        return tuple(s.strip() for s in strings)
+
+    with open(file_path, "r") as curve_file:
+        file_content = curve_file.read()
+
+    lines = iter(file_content.split("\n"))
+    # Meta data lines contain a colon
+    metadata_lines = takewhile(lambda s: ":" in s, lines)
+    curve_data = dict([strip(line.split(":")) for line in metadata_lines])
+    # After meta data we have a data header
+    header_items = strip(split_data_line(next(lines)))
+    # After that we have the curve data
+    data = [
+        split_data_line(line, parsers=float)
+        for line in lines if line != ""
+    ]
+
+    curve_data["data"] = dict(
+        zip(header_items, zip(*data))
+    )
+
+    return curve_data
 
 
 class Model_325_Curve(InstrumentChannel):
