@@ -217,11 +217,12 @@ class DynaCool(VisaInstrument):
         The combined set function for the three field parameters,
         field_setpoint, field_rate, and field_approach
         """
-        vals: List[Union[int, float]]
-        vals = list(self.parameters[p].raw_value for p in self.field_params)
-        vals[self.field_params.index(param)] = value
+        temp_values = list(self.parameters[p].raw_value
+                           for p in self.field_params)
+        values = cast(List[Union[int, float]], temp_values)
+        values[self.field_params.index(param)] = value
 
-        self.write(f'FELD {vals[0]}, {vals[1]}, {vals[2]}, 0')
+        self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')
 
     def _temp_getter(self, param_name: str) -> Union[int, float]:
         """
@@ -240,11 +241,12 @@ class DynaCool(VisaInstrument):
         The setter function for the temperature parameters. All three are set
         with the same call to the instrument API
         """
-        vals: List[Union[int, float]]
-        vals = list(self.parameters[par].raw_value for par in self.temp_params)
-        vals[self.temp_params.index(param)] = value
+        temp_values = list(self.parameters[par].raw_value
+                           for par in self.temp_params)
+        values = cast(List[Union[int, float]], temp_values)
+        values[self.temp_params.index(param)] = value
 
-        self.write(f'TEMP {vals[0]}, {vals[1]}, {vals[2]}')
+        self.write(f'TEMP {values[0]}, {values[1]}, {values[2]}')
 
     def write(self, cmd: str) -> None:
         """
