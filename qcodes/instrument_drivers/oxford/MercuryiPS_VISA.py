@@ -202,8 +202,8 @@ class MercurySlavePS(InstrumentChannel):
         # holds the value reported back by the instrument
         self._parent.ask(dressed_cmd)
 
-        # TODO: we could use the opportunity to check that we did set/ achieve
-        # the intended value
+        # TODO: we could use the opportunity to check that we did set/achieve
+        #  the intended value
 
 
 class MercuryiPS(VisaInstrument):
@@ -264,8 +264,9 @@ class MercuryiPS(VisaInstrument):
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
 
-        for coord, unit in zip(['x', 'y', 'z', 'r', 'theta', 'phi', 'rho'],
-                               ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
+        for coord, unit in zip(
+                ['x', 'y', 'z', 'r', 'theta',   'phi',     'rho'],
+                ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
                                unit=unit,
@@ -278,11 +279,13 @@ class MercuryiPS(VisaInstrument):
                                get_cmd=partial(self._get_measured, [coord]))
 
         # FieldVector-valued parameters #
+
         self.add_parameter(name="field_target",
                            label="target field",
                            unit="T",
                            get_cmd=self._get_target_field,
                            set_cmd=self._set_target_field)
+
         self.add_parameter(name="field_measured",
                            label="measured field",
                            unit="T",
@@ -314,7 +317,7 @@ class MercuryiPS(VisaInstrument):
             z=self.GRPZ.field_ramp_rate(),
         )
 
-    def _set_ramp_rate(self, rate : FieldVector) -> None:
+    def _set_ramp_rate(self, rate: FieldVector) -> None:
         self.GRPX.field_ramp_rate(rate.x)
         self.GRPY.field_ramp_rate(rate.y)
         self.GRPZ.field_ramp_rate(rate.z)
@@ -363,7 +366,7 @@ class MercuryiPS(VisaInstrument):
         for targ, slave in zip(cartesian_targ, self.submodules.values()):
             slave.field_target(targ)
 
-    def _set_target_field(self, field : FieldVector) -> None:
+    def _set_target_field(self, field: FieldVector) -> None:
         for coord in 'xyz':
             self._set_target(coord, field[coord])
 
@@ -439,7 +442,7 @@ class MercuryiPS(VisaInstrument):
 
         self._field_limits = limit_func
 
-    def ramp(self, mode : str = "safe") -> None:
+    def ramp(self, mode: str="safe") -> None:
         """
         Ramp the fields to their present target value
 

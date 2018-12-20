@@ -59,7 +59,6 @@ class FieldVector(object):
         self._compute_unknowns()
 
     def _set_attribute_value(self, attr_name, value):
-
         if value is None:
             return
 
@@ -75,17 +74,15 @@ class FieldVector(object):
                 )
 
     def _set_attribute_values(self, attr_names, values):
-
         for attr_name, value in zip(attr_names, values):
             self._set_attribute_value(attr_name, value)
 
     def __getnewargs__(self):
-        return (self.x, self.y, self.z)
+        return self.x, self.y, self.z
 
     @staticmethod
     def _cartesian_to_other(x, y, z):
         """ Convert a cartesian set of coordinates to values of interest."""
-
         if any([i is None for i in [x, y, z]]):
             return None
 
@@ -102,7 +99,6 @@ class FieldVector(object):
     @staticmethod
     def _spherical_to_other(r, theta, phi):
         """Convert from spherical to other representations"""
-
         if any([i is None for i in [r, theta, phi]]):
             return None
 
@@ -116,7 +112,6 @@ class FieldVector(object):
     @staticmethod
     def _cylindrical_to_other(phi, rho, z):
         """Convert from cylindrical to other representations"""
-
         if any([i is None for i in [phi, rho, z]]):
             return None
 
@@ -139,7 +134,6 @@ class FieldVector(object):
         This function will raise an error if there are contradictory inputs
         (e.g. x=3, y=4, z=0 and rho=6).
         """
-
         for f in [
             lambda: FieldVector._cartesian_to_other(self._x, self._y, self._z),
             lambda: FieldVector._spherical_to_other(self._r, self._theta,
@@ -153,7 +147,7 @@ class FieldVector(object):
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self : T, other : T):
+    def copy(self: T, other: T):
         """Copy the properties of other vector to yourself"""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
@@ -167,12 +161,14 @@ class FieldVector(object):
             >>> f = FieldVector(x=0, y=2, z=6)
             >>> f.set_vector(x=9, y=3, z=1)
             >>> f.set_vector(r=1, theta=30.0, phi=10.0)
-            >>> f.set_vector(x=9, y=0)  # this should raise a value error:
+            # The following should raise a value error:
             # "Can only set vector with a complete value set"
-            >>> f.set_vector(x=9, y=0, r=3)  # although mathematically it is
-            # possible to compute the complete vector from the values given,
-            # this is too hard to implement with generality (and not worth it)
-            # so this to will raise the above mentioned ValueError
+            >>> f.set_vector(x=9, y=0)
+            # Although mathematically it is possible to compute the complete
+            # vector from the values given, this is too hard to implement with
+            # generality (and not worth it), so the following will raise the
+            # above-mentioned ValueError too
+            >>> f.set_vector(x=9, y=0, r=3)
         """
         names = sorted(list(new_values.keys()))
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
@@ -191,18 +187,18 @@ class FieldVector(object):
 
         Examples:
             >>> f = FieldVector(x=2, y=3, z=4)
-            >>> f.set_component(r=10) # Since r is part of the set
-            # (r, theta, phi) representing spherical coordinates, setting r
-            # means that theta and phi are kept constant and only r is changed.
-            # After changing r, (x, y, z) values are recomputed, as is the rho
-            # coordinate. Internally we arrange this by setting x, y, z and
-            # rho to None and calling self._compute_unknowns()
+            # Since r is part of the set (r, theta, phi) representing
+            # spherical coordinates, setting r means that theta and phi are
+            # kept constant and only r is changed. After changing r,
+            # (x, y, z) values are recomputed, as is the rho coordinate.
+            # Internally we arrange this by setting x, y, z and rho to None
+            # and calling self._compute_unknowns()
+            >>> f.set_component(r=10)
 
         Parameters:
             new_values (dict): keys representing parameter names and values the
             values to be set
         """
-
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
 
@@ -302,14 +298,18 @@ class FieldVector(object):
 
     # NB: we disable the pylint warning here so that we can match
     #     NumPy's naming convention for the norm method.
-    def norm(self, ord : NormOrder = 2) -> float: # pylint: disable=redefined-builtin
+    def norm(self,
+             ord: NormOrder=2  # pylint: disable=redefined-builtin
+             ) -> float:
         """
         Returns the norm of this field vector. See np.norm
         for the definition of the ord keyword argument.
         """
         return np.linalg.norm([self.x, self.y, self.z], ord=ord)
 
-    def distance(self, other, ord : NormOrder = 2) -> float: # pylint: disable=redefined-builtin
+    def distance(self, other,
+                 ord: NormOrder=2  # pylint: disable=redefined-builtin
+                 ) -> float:
         return (self - other).norm(ord=ord)
 
     @property
@@ -340,7 +340,7 @@ class FieldVector(object):
     def phi(self) -> float:
         return np.degrees(self._phi)
 
-    ## Representation Methods ##
+    # Representation Methods #
 
     def repr_cartesian(self) -> str:
         return f"FieldVector(x={self.x}, y={self.y}, z={self.z})"
@@ -361,22 +361,22 @@ class FieldVector(object):
         else:
             return super().__repr__()
 
-    ## Homogenous Coordinates ##
+    # Homogeneous Coordinates #
 
     def as_homogeneous(self) -> np.ndarray:
         return np.array([self.x, self.y, self.z, 1])
 
     @classmethod
-    def from_homogeneous(cls : Type[T], hvec : np.ndarray) -> T:
-        # Homogenous coordinates define an equivalence relation
+    def from_homogeneous(cls: Type[T], hvec: np.ndarray) -> T:
+        # Homogeneous coordinates define an equivalence relation
         #     [x / s, y / s, z / s, 1] == [x, y, z, s].
         # More generally,
         #     [x, y, z, s] == [x', y', z', s']
         #     iff x / s == x' / s',
         #         y / s == y' / s', and
         #         z / s == z' / s'.
-        # This definition has the consequence that for any
-        # w, w * [x, y, z, s] == [x, y, z, s].
+        # This definition has the consequence that for any w,
+        # w * [x, y, z, s] == [x, y, z, s].
         # Thus, we start by rescaling such that s == 1.
         hvec /= hvec[-1]
         return cls(

@@ -46,8 +46,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
         "__dtype__" containing value "complex"
         * object with a `_JSONEncoder` method get converted the return value of
         that method
-        * objects which support the pickle protocol get converted using the data
-        provided by that protocol
+        * objects which support the pickle protocol get converted using the
+        data provided by that protocol
         * other objects which cannot be serialized get converted to their
         string representation (suing the `str` function)
         """
