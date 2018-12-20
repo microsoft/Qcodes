@@ -31,7 +31,6 @@ def read_curve_file(file_path: str) -> dict:
             parsers = repeat(parsers)
 
         line_split = [i for i in line.split("  ") if i != ""]
-
         return [
             parser(i) for parser, i in zip(parsers, line_split)
         ]
