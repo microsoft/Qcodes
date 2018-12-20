@@ -1,6 +1,7 @@
 import numpy as np
 from typing import cast, Union, List, Tuple, Iterable
 from itertools import takewhile, repeat
+import os
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
@@ -39,25 +40,47 @@ def read_curve_file(file_path: str) -> dict:
         return tuple(s.strip() for s in strings)
 
     with open(file_path, "r") as curve_file:
-        file_content = curve_file.read()
+        lines = iter(curve_file.readlines())
 
-    lines = iter(file_content.split("\n"))
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
-    curve_data = dict([strip(line.split(":")) for line in metadata_lines])
+    # Data from the file is collected in the following dict
+    file_data = dict([strip(line.split(":")) for line in metadata_lines])
     # After meta data we have a data header
     header_items = strip(split_data_line(next(lines)))
     # After that we have the curve data
     data = [
         split_data_line(line, parsers=float)
-        for line in lines if line != ""
+        for line in lines if line.strip() != ""
     ]
 
-    curve_data["data"] = dict(
+    file_data["data"] = dict(
         zip(header_items, zip(*data))
     )
 
-    return curve_data
+    return file_data
+
+
+def sanitize_data(file_data: dict) -> None:
+    """
+    Data as found in the curve files are slightly different then
+    the dictionary as expected by the 'upload_curve' method of the
+    driver
+
+    Note: This function modifies the input
+    """
+    data_dict = file_data["data"]
+    # We do not need the index column
+    del data_dict["No."]
+    # Rename the 'Units' column to the appropriate name
+    # Look up under the 'Data Format' entry to find what units we have
+    data_format = file_data['Data Format']
+    # This is a string in the form '4      (Log Ohms/Kelvin)'
+    data_format_int = int(data_format[0])
+    correct_name = Model_325_Curve.valid_sensor_units[data_format_int - 1]
+    # Rename the column
+    data_dict[correct_name] = data_dict["Units"]
+    del data_dict["Units"]
 
 
 class Model_325_Curve(InstrumentChannel):
@@ -186,7 +209,7 @@ class Model_325_Curve(InstrumentChannel):
                 enumerate(zip(temperature_values, sensor_values)):
 
             cmd_str = f"CRVPT {self._index}, {value_index + 1}, " \
-                      f"{sensor_value:3.3}, {temperature_value:3.3}"
+                      f"{sensor_value:3.3f}, {temperature_value:3.3f}"
 
             self.write(cmd_str)
 
@@ -523,8 +546,26 @@ class Model_325(VisaInstrument):
 
         sensor_unit = Model_325_Curve.validate_datadict(data_dict)
 
-        curve = self.curve[index]
+        curve = self.curve[index - 1]
         curve.curve_name(name)
         curve.serial_number(serial_number)
         curve.format(f"{sensor_unit}/K")
         curve.set_data(data_dict, sensor_unit=sensor_unit)
+
+    def upload_curve_from_file(self, index: int, file_path: str) -> None:
+        """
+        Upload a curve from a curve file. Note that we only support
+        curve files with extension *.330
+        """
+        _, filename = os.path.split(file_path)
+        if not filename.endswith(".330"):
+            raise ValueError("Only curve files with extension *.330 is supported")
+
+        file_data = read_curve_file(file_path)
+        sanitize_data(file_data)
+
+        name = file_data["Sensor Model"]
+        serial_number = file_data["Serial Number"]
+        data_dict = file_data["data"]
+
+        self.upload_curve(index, name, serial_number, data_dict)
