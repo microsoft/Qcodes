@@ -29,7 +29,7 @@ def read_curve_file(curve_file: TextIO) -> dict:
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data: dict = dict(metadata={}, data={})
+    file_data = dict()
     # Capture meta data
     parsed_lines = [strip(line.split(":")) for line in metadata_lines]
     file_data["metadata"] = {key: value for key, value in parsed_lines}
