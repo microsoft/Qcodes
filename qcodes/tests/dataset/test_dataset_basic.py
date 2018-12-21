@@ -1,5 +1,7 @@
 import itertools
+from copy import copy
 import re
+import random
 
 import pytest
 import numpy as np
@@ -14,15 +16,20 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
-from qcodes.dataset.sqlite_base import _unicode_categories
+from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.guids import parse_guid
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
+    array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
+    standalone_parameters_dataset, array_in_scalar_dataset_unrolled
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
+
+from .helper_functions import verify_data_dict
 
 n_experiments = 0
 
@@ -767,3 +774,314 @@ class TestGetData:
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
+
+
+@given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
+       end=hst.one_of(hst.integers(1, 10**3), hst.none()))
+def test_get_parameter_data(scalar_dataset, start, end):
+    input_names = ['param_3']
+
+    expected_names = {}
+    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
+                                 'param_3']
+    expected_shapes = {}
+    expected_shapes['param_3'] = [(10**3, )]*4
+    expected_values = {}
+    expected_values['param_3'] = [np.arange(10000*a, 10000*a+1000)
+                                  for a in range(4)]
+
+    start, end = limit_data_to_start_end(start, end, input_names,
+                                         expected_names, expected_shapes,
+                                         expected_values)
+
+    parameter_test_helper(scalar_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values,
+                          start,
+                          end)
+
+
+def test_get_array_parameter_data(array_dataset):
+    paramspecs = array_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'this_setpoint']
+    expected_shapes = {}
+    expected_len = 5
+    expected_shapes['testparameter'] = [(expected_len,), (expected_len,)]
+    expected_values = {}
+    expected_values['testparameter'] = [np.ones(expected_len) + 1,
+                                        np.linspace(5, 9, expected_len)]
+    if 'array' in types:
+        expected_shapes['testparameter'] = [(1, expected_len),
+                                            (1, expected_len)]
+        for i in range(len(expected_values['testparameter'])):
+            expected_values['testparameter'][i] = expected_values['testparameter'][i].reshape(1, expected_len)
+    parameter_test_helper(array_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
+
+
+def test_get_multi_parameter_data(multi_dataset):
+    paramspecs = multi_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+
+    input_names = ['this', 'that']
+
+    expected_names = {}
+    expected_names['this'] = ['this', 'this_setpoint', 'that_setpoint']
+    expected_names['that'] = ['that', 'this_setpoint', 'that_setpoint']
+    expected_shapes = {}
+    expected_values = {}
+    shape_1 = 5
+    shape_2 = 3
+
+    this_data = np.zeros((shape_1, shape_2))
+    that_data = np.ones((shape_1, shape_2))
+    sp_1_data = np.tile(np.linspace(5, 9, shape_1).reshape(shape_1, 1),
+                                           (1, shape_2))
+    sp_2_data = np.tile(np.linspace(9, 11, shape_2), (shape_1, 1))
+    if 'array' in types:
+        expected_shapes['this'] = [(1, shape_1, shape_2), (1, shape_1, shape_2)]
+        expected_shapes['that'] = [(1, shape_1, shape_2), (1, shape_1, shape_2)]
+        expected_values['this'] = [this_data.reshape(1, shape_1, shape_2),
+                                   sp_1_data.reshape(1, shape_1, shape_2),
+                                   sp_2_data.reshape(1, shape_1, shape_2)]
+        expected_values['that'] = [that_data.reshape(1, shape_1, shape_2),
+                                   sp_1_data.reshape(1, shape_1, shape_2),
+                                   sp_2_data.reshape(1, shape_1, shape_2)]
+
+    else:
+        expected_shapes['this'] = [(15,), (15,)]
+        expected_shapes['that'] = [(15,), (15,)]
+        expected_values['this'] = [this_data.ravel(),
+                                   sp_1_data.ravel(),
+                                   sp_2_data.ravel()]
+        expected_values['that'] = [that_data.ravel(),
+                                   sp_1_data.ravel(),
+                                   sp_2_data.ravel()]
+    parameter_test_helper(multi_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
+
+
+@given(start=hst.one_of(hst.integers(1, 9), hst.none()),
+       end=hst.one_of(hst.integers(1, 9), hst.none()))
+def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
+                                        start, end):
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'scalarparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+
+    shape_1 = 9
+    shape_2 = 5
+
+    test_parameter_values = np.tile((np.ones(shape_2) + 1).reshape(1, shape_2),
+                                    (shape_1, 1))
+    scalar_param_values = np.tile(np.arange(1, 10).reshape(shape_1, 1),
+                                  (1, shape_2))
+    setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
+                                    (shape_1, 1))
+    expected_shapes['testparameter'] = {}
+    expected_shapes['testparameter'] = [(shape_1, shape_2), (shape_1, shape_2)]
+    expected_values = {}
+    expected_values['testparameter'] = [
+        test_parameter_values,
+        scalar_param_values,
+        setpoint_param_values]
+
+    start, end = limit_data_to_start_end(start, end, input_names,
+                                         expected_names, expected_shapes,
+                                         expected_values)
+    parameter_test_helper(array_in_scalar_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values,
+                          start,
+                          end)
+
+
+@given(start=hst.one_of(hst.integers(1, 45), hst.none()),
+       end=hst.one_of(hst.integers(1, 45), hst.none()))
+def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
+                                            start, end):
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'scalarparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+
+    shape_1 = 9
+    shape_2 = 5
+
+    test_parameter_values = np.tile((np.ones(shape_2) + 1).reshape(1, shape_2),
+                                    (shape_1, 1))
+    scalar_param_values = np.tile(np.arange(1, 10).reshape(shape_1, 1),
+                                  (1, shape_2))
+    setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
+                                    (shape_1, 1))
+    expected_shapes['testparameter'] = {}
+    expected_shapes['testparameter'] = [(shape_1*shape_2,), (shape_1*shape_2,)]
+    expected_values = {}
+    expected_values['testparameter'] = [
+        test_parameter_values.ravel(),
+        scalar_param_values.ravel(),
+        setpoint_param_values.ravel()]
+
+    start, end = limit_data_to_start_end(start, end, input_names,
+                                         expected_names, expected_shapes,
+                                         expected_values)
+    parameter_test_helper(array_in_scalar_dataset_unrolled,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values,
+                          start,
+                          end)
+
+
+def test_get_array_in_str_param_data(array_in_str_dataset):
+    paramspecs = array_in_str_dataset.paramspecs
+    types = [param.type for param in paramspecs.values()]
+
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'textparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+
+    shape_1 = 3
+    shape_2 = 5
+
+    test_parameter_values = np.tile((np.ones(shape_2) + 1).reshape(1, shape_2),
+                                    (shape_1, 1))
+    scalar_param_values = np.tile(np.array(['A', 'B', 'C']).reshape(shape_1, 1),
+                                  (1, shape_2))
+    setpoint_param_values = np.tile((np.linspace(5, 9, shape_2)).reshape(1, shape_2),
+                                    (shape_1, 1))
+    expected_shapes['testparameter'] = {}
+    expected_values = {}
+
+    if 'array' in types:
+        expected_shapes['testparameter'] = [(3, 5), (3, 5)]
+        expected_values['testparameter'] = [
+            test_parameter_values,
+            scalar_param_values,
+            setpoint_param_values]
+    else:
+        expected_shapes['testparameter'] = [(15,), (15,)]
+        expected_values['testparameter'] = [
+            test_parameter_values.ravel(),
+            scalar_param_values.ravel(),
+            setpoint_param_values.ravel()]
+    parameter_test_helper(array_in_str_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
+
+
+def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
+    ds = standalone_parameters_dataset
+    params = get_non_dependencies(ds.conn, ds.run_id)
+
+    expected_toplevel_params = ['param_1', 'param_2', 'param_3']
+    assert params == expected_toplevel_params
+
+    expected_names = {}
+    expected_names['param_1'] = ['param_1']
+    expected_names['param_2'] = ['param_2']
+    expected_names['param_3'] = ['param_3', 'param_0']
+
+    expected_shapes = {}
+    expected_shapes['param_1'] = [(10 ** 3,)]
+    expected_shapes['param_2'] = [(10 ** 3,)]
+    expected_shapes['param_3'] = [(10**3, )]*2
+
+    expected_values = {}
+    expected_values['param_1'] = [np.arange(10000, 10000 + 1000)]
+    expected_values['param_2'] = [np.arange(20000, 20000 + 1000)]
+    expected_values['param_3'] = [np.arange(30000, 30000 + 1000),
+                                  np.arange(0, 1000)]
+
+    parameter_test_helper(ds,
+                          expected_toplevel_params,
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
+
+
+def parameter_test_helper(ds, toplevel_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values,
+                          start=None,
+                          end=None):
+
+    data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
+    all_data = ds.get_parameter_data(start=start, end=end)
+
+    all_parameters = list(all_data.keys())
+    assert set(data.keys()).issubset(set(all_parameters))
+    assert len(data.keys()) == len(toplevel_names)
+
+    verify_data_dict(data, toplevel_names, expected_names, expected_shapes,
+                     expected_values)
+    verify_data_dict(all_data, toplevel_names, expected_names, expected_shapes,
+                     expected_values)
+
+    # Now lets remove a random element from the list
+    # We do this one by one until there is only one element in the list
+    subset_names = copy(all_parameters)
+    while len(subset_names) > 1:
+        elem_to_remove = random.randint(0, len(subset_names) - 1)
+        name_removed = subset_names.pop(elem_to_remove)
+        expected_names.pop(name_removed)
+        expected_shapes.pop(name_removed)
+        expected_values.pop(name_removed)
+
+        subset_data = ds.get_parameter_data(*subset_names,
+                                            start=start, end=end)
+        verify_data_dict(subset_data, subset_names, expected_names,
+                         expected_shapes, expected_values)
+
+
+def limit_data_to_start_end(start, end, input_names, expected_names,
+                            expected_shapes, expected_values):
+    if not (start is None and end is None):
+        if start is None:
+            start = 1
+        elif end is None:
+            # all the shapes are the same so pick the first one
+            end = expected_shapes[input_names[0]][0][0]
+        if end < start:
+            for name in input_names:
+                expected_names[name] = []
+                expected_shapes[name] = ()
+                expected_values[name] = {}
+        else:
+            for name in input_names:
+                new_shapes = []
+                for shape in expected_shapes[name]:
+                    shape_list = list(shape)
+                    shape_list[0] = end - start + 1
+                    new_shapes.append(tuple(shape_list))
+                expected_shapes[name] = new_shapes
+                for i in range(len(expected_values[name])):
+                    expected_values[name][i] = \
+                        expected_values[name][i][start - 1:end]
+    return start, end
