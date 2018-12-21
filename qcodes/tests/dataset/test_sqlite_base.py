@@ -21,8 +21,13 @@ from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset
+from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
+    standalone_parameters_dataset
 from qcodes.tests.dataset.test_database_creation_and_upgrading import \
     error_caused_by
+# pylint: enable=unused-import
+
+from .helper_functions import verify_data_dict
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -187,6 +192,65 @@ def test_runs_table_columns(empty_temp_db):
         colnames.remove(row['name'])
 
     assert colnames == []
+
+
+@pytest.mark.filterwarnings("ignore:get_data")
+def test_get_data_no_columns(scalar_dataset):
+    ds = scalar_dataset
+    ref = mut.get_data(ds.conn, ds.table_name, [])
+    assert ref == [[]]
+
+
+def test_get_parameter_data(scalar_dataset):
+    ds = scalar_dataset
+    input_names = ['param_3']
+
+    data = mut.get_parameter_data(ds.conn, ds.table_name, input_names)
+
+    assert len(data.keys()) == len(input_names)
+
+    expected_names = {}
+    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
+                                 'param_3']
+    expected_shapes = {}
+    expected_shapes['param_3'] = [(10**3, )]*4
+
+    expected_values = {}
+    expected_values['param_3'] = [np.arange(10000*a, 10000*a+1000)
+                                  for a in range(4)]
+    verify_data_dict(data, input_names, expected_names, expected_shapes,
+                     expected_values)
+
+
+def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
+    ds = standalone_parameters_dataset
+    params = mut.get_non_dependencies(ds.conn,
+                                      ds.run_id)
+    expected_toplevel_params = ['param_1', 'param_2', 'param_3']
+    assert params == expected_toplevel_params
+
+    data = mut.get_parameter_data(ds.conn, ds.table_name)
+
+    assert len(data.keys()) == len(expected_toplevel_params)
+
+    expected_names = {}
+    expected_names['param_1'] = ['param_1']
+    expected_names['param_2'] = ['param_2']
+    expected_names['param_3'] = ['param_3', 'param_0']
+
+    expected_shapes = {}
+    expected_shapes['param_1'] = [(10 ** 3,)]
+    expected_shapes['param_2'] = [(10 ** 3,)]
+    expected_shapes['param_3'] = [(10**3, )]*2
+
+    expected_values = {}
+    expected_values['param_1'] = [np.arange(10000, 10000 + 1000)]
+    expected_values['param_2'] = [np.arange(20000, 20000 + 1000)]
+    expected_values['param_3'] = [np.arange(30000, 30000 + 1000),
+                                  np.arange(0, 1000)]
+
+    verify_data_dict(data, expected_toplevel_params, expected_names,
+                     expected_shapes, expected_values)
 
 
 def test_is_run_id_in_db(empty_temp_db):
