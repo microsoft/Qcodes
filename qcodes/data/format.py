@@ -53,7 +53,7 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set, io_manager, location, write_metadata=True,
+    def write(self, data_set: DataSet, io_manager, location, write_metadata=True,
               force_write=False, only_complete=True):
         """
         Write the DataSet to storage.
@@ -64,7 +64,7 @@ class Formatter:
         and when to just append or otherwise update the file(s).
 
         Args:
-            data_set (DataSet): the data we are writing.
+            data_set: the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
             write_metadata (bool): if True, then the metadata is written to disk
@@ -114,14 +114,15 @@ class Formatter:
                     log.warning('error reading file ' + fn)
                     log.warning(format_exc())
 
-    def write_metadata(self, data_set, io_manager, location, read_first=True):
+    def write_metadata(self, data_set: 'DataSet',
+                       io_manager, location, read_first=True):
         """
         Write the metadata for this DataSet to storage.
 
         Subclasses must override this method.
 
         Args:
-            data_set (DataSet): the data we are writing.
+            data_set: the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
             read_first (bool, optional): whether to first look for previously
@@ -130,18 +131,18 @@ class Formatter:
         """
         raise NotImplementedError
 
-    def read_metadata(self, data_set):
+    def read_metadata(self, data_set: 'DataSet'):
         """
         Read the metadata from this DataSet from storage.
 
         Subclasses must override this method.
 
         Args:
-            data_set (DataSet): the data to read metadata into
+            data_set: the data to read metadata into
         """
         raise NotImplementedError
 
-    def read_one_file(self, data_set, f, ids_read):
+    def read_one_file(self, data_set: 'DataSet', f, ids_read):
         """
         Read data from a single file into a ``DataSet``.
 
@@ -150,7 +151,7 @@ class Formatter:
         time, or ``read`` which finds matching files on its own.
 
         Args:
-            data_set (DataSet): the data we are reading into.
+            data_set: the data we are reading into.
 
             f (file-like): a file-like object to read from, as provided by
                 ``io_manager.open``.
