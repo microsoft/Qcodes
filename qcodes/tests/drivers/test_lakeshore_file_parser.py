@@ -3,7 +3,8 @@ import pytest
 
 from qcodes.instrument_drivers.Lakeshore.Model_325 import read_curve_file, get_sanitize_data
 
-curve_file_content = """Sensor Model:   CX-1050-SD-HT-1.4L
+curve_file_content = """ \
+Sensor Model:   CX-1050-SD-HT-1.4L
 Serial Number:  X116121
 Interpolation Method:   Lagrangian
 SetPoint Limit: 325.0      (Kelvin)
