@@ -9,7 +9,7 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 
 def read_curve_file(curve_file: TextIO) -> dict:
     """
-    Read a curve file with extension *.330
+    Read a curve file with extension .330
     The file format of this file is shown in test_lakeshore_file_parser.py
     in the test module
 
@@ -542,10 +542,10 @@ class Model_325(VisaInstrument):
     def upload_curve_from_file(self, index: int, file_path: str) -> None:
         """
         Upload a curve from a curve file. Note that we only support
-        curve files with extension *.330
+        curve files with extension .330
         """
         if not file_path.endswith(".330"):
-            raise ValueError("Only curve files with extension *.330 are supported")
+            raise ValueError("Only curve files with extension .330 are supported")
 
         with open(file_path, "r") as curve_file:
             file_data = read_curve_file(curve_file)
