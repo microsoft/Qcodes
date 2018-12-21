@@ -131,15 +131,15 @@ class ScopeTrace(ArrayParameter):
 
 class ScopeMeasurement(InstrumentChannel):
     """
-    Class to hold a mesurement of the scope
+    Class to hold a measurement of the scope
     """
 
     def __init__(self, parent: Instrument, name: str, meas_nr: int):
         """
         Args:
             parent: The instrument to which the channel is attached
-            name: The name of the mesurement
-            meas_nr: The number of the mesurment in question. Must match the
+            name: The name of the measurement
+            meas_nr: The number of the measurement in question. Must match the
                 actual number as used by the instrument (1..8)
         """
 
@@ -212,7 +212,7 @@ class ScopeMeasurement(InstrumentChannel):
                            label=f'Measurement {meas_nr} enable',
                            set_cmd=f'MEASurement{meas_nr}:ENABle {{}}',
                            vals=vals.Enum('ON', 'OFF'),
-                           docstring='Switches the mesurment on or off')
+                           docstring='Switches the measurement on or off')
 
         self.add_parameter('source',
                            label=f'Measurement {meas_nr} source',
@@ -233,7 +233,7 @@ class ScopeMeasurement(InstrumentChannel):
                            set_cmd=f'MEASurement{meas_nr}:SSRC {{}}',
                            vals=self.sources,
                            docstring='Set the second source of a measurement if the ' \
-                                     'measurement only needs mutliple sources')
+                                     'measurement only needs multiple sources')
 
         self.add_parameter('category',
                            label=f'Measurement {meas_nr} category',
@@ -251,7 +251,7 @@ class ScopeMeasurement(InstrumentChannel):
                            label=f'Measurement {meas_nr} enable statistics',
                            set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle {{}}',
                            vals=vals.Enum('ON', 'OFF'),
-                           docstring='Switches the mesurment on or off')
+                           docstring='Switches the measurement on or off')
 
         self.add_parameter('clear',
                            label=f'Measurement {meas_nr} clear statistics',
@@ -445,6 +445,8 @@ class RTO1000(VisaInstrument):
         """
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)
+
+
 
         # With firmware versions earlier than 3.65, it seems that the
         # model number can NOT be queried from the instrument
@@ -678,6 +680,7 @@ class RTO1000(VisaInstrument):
         self.add_function('reset', call_cmd='*RST')
         self.add_parameter('opc', get_cmd='*OPC?')
         self.add_parameter('stop_opc', get_cmd='STOP;*OPC?')
+        self.add_parameter('status_operation', get_cmd='STATus:OPERation:CONDition?', get_parser=int)
         self.add_function('run_continues', call_cmd='RUNContinous')
         # starts the shutdown of the system
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
@@ -697,6 +700,17 @@ class RTO1000(VisaInstrument):
         """
         self.write('SINGLE')
         self.run_mode.set('RUN Nx SINGLE')
+
+    def is_triggered(self) -> bool:
+        waitTriggerMask = 0b01000;
+        return bool(self.status_operation() & waitTriggerMask) == False
+
+    def is_running(self) -> bool:
+        measuringMask = 0b10000;
+        return bool(self.status_operation() & measuringMask)
+
+    def is_acquiring(self) -> bool:
+        return self.is_triggered() & self.is_running()
 
     #########################
     # Specialised set/get functions
