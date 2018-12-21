@@ -873,7 +873,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a list of empty arrays is returned.
+        of the DataSet – then a dict of empty dataframes is returned.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
