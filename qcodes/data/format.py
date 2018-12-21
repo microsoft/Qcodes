@@ -2,6 +2,11 @@ from collections import namedtuple
 from traceback import format_exc
 from operator import attrgetter
 import logging
+from typing import TYPE_CHECKING, Set
+
+if TYPE_CHECKING:
+    from .data_set import DataSet
+
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +74,7 @@ class Formatter:
         """
         raise NotImplementedError
 
-    def read(self, data_set):
+    def read(self, data_set: 'DataSet') -> None:
         """
         Read the entire ``DataSet``.
 
@@ -80,7 +85,7 @@ class Formatter:
         initialization functionality defined here.
 
         Args:
-            data_set (DataSet): the data to read into. Should already have
+            data_set: the data to read into. Should already have
                 attributes ``io`` (an io manager), ``location`` (string),
                 and ``arrays`` (dict of ``{array_id: array}``, can be empty
                 or can already have some or all of the arrays present, they
@@ -100,7 +105,7 @@ class Formatter:
 
         self.read_metadata(data_set)
 
-        ids_read = set()
+        ids_read: Set[str] = set()
         for fn in data_files:
             with io_manager.open(fn, 'r') as f:
                 try:
