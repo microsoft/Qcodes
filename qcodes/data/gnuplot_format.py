@@ -247,8 +247,12 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set: 'DataSet', io_manager, location,
-              force_write=False, write_metadata=True, only_complete=True,
+    # this signature is unfortunatly incompatible with the super class
+    # so we have to ignore type errors
+    def write(self,
+              data_set: 'DataSet',  # type: ignore
+              io_manager, location, force_write=False,
+              write_metadata=True, only_complete=True,
               filename=None):
         """
         Write updates in this DataSet to storage.
