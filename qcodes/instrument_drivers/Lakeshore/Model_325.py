@@ -1,7 +1,6 @@
 import numpy as np
 from typing import cast, List, Tuple, Iterable, TextIO
 from itertools import takewhile
-import os
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Numbers
@@ -11,7 +10,8 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 def read_curve_file(curve_file: TextIO) -> dict:
     """
     Read a curve file with extension *.330
-    The file format of this file is shown in qcodes\tests\drivers\test_lakeshore_file_parser.py
+    The file format of this file is shown in test_lakeshore_file_parser.py
+    in the test module
 
     The output is a dictionary with keys: "metadata" and "data".
     The metadata dictionary contains the first n lines of the curve file which
@@ -29,9 +29,10 @@ def read_curve_file(curve_file: TextIO) -> dict:
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data = dict(metadata={}, data={})
+    file_data: dict = dict(metadata={}, data={})
     # Capture meta data
-    file_data["metadata"] = dict([strip(line.split(":")) for line in metadata_lines])
+    parsed_lines = [strip(line.split(":")) for line in metadata_lines]
+    file_data["metadata"] = {key: value for key, value in parsed_lines}
     # After meta data we have a data header
     header_items = strip(split_data_line(next(lines)))
     # After that we have the curve data
