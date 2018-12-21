@@ -1,6 +1,6 @@
 import numpy as np
-from typing import cast, Union, List, Tuple, Iterable
-from itertools import takewhile, repeat
+from typing import cast, List, Tuple, Iterable, TextIO
+from itertools import takewhile
 import os
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
@@ -8,7 +8,7 @@ from qcodes.utils.validators import Enum, Numbers
 from qcodes.instrument.group_parameter import GroupParameter, Group
 
 
-def read_curve_file(file_path: str) -> dict:
+def read_curve_file(curve_file: TextIO) -> dict:
     """
     Read a curve file with extension *.330
     The format of the file is as follows:
@@ -22,34 +22,24 @@ def read_curve_file(file_path: str) -> dict:
     data21     data22    data23
     """
 
-    def split_data_line(
-            line: str,
-            parsers: Union[type, List]=str
-    ) -> List[str]:
-
-        if not isinstance(parsers, list):
-            parsers = repeat(parsers)
-
-        line_split = [i for i in line.split("  ") if i != ""]
-        return [
-            parser(i) for parser, i in zip(parsers, line_split)
-        ]
+    def split_data_line(line: str, parser: type = str) -> List[str]:
+        return [parser(i) for i in line.split("  ") if i != ""]
 
     def strip(strings: Iterable[str]) -> Tuple:
         return tuple(s.strip() for s in strings)
 
-    with open(file_path, "r") as curve_file:
-        lines = iter(curve_file.readlines())
-
+    lines = iter(curve_file.readlines())
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data = dict([strip(line.split(":")) for line in metadata_lines])
+    file_data = dict(metadata={}, data={})
+    # Capture meta data
+    file_data["metadata"] = dict([strip(line.split(":")) for line in metadata_lines])
     # After meta data we have a data header
     header_items = strip(split_data_line(next(lines)))
     # After that we have the curve data
     data = [
-        split_data_line(line, parsers=float)
+        split_data_line(line, parser=float)
         for line in lines if line.strip() != ""
     ]
 
@@ -60,26 +50,26 @@ def read_curve_file(file_path: str) -> dict:
     return file_data
 
 
-def sanitize_data(file_data: dict) -> None:
+def get_sanitize_data(file_data: dict) -> dict:
     """
     Data as found in the curve files are slightly different then
     the dictionary as expected by the 'upload_curve' method of the
     driver
-
-    Note: This function modifies the input
     """
-    data_dict = file_data["data"]
+    data_dict = dict(file_data["data"])
     # We do not need the index column
     del data_dict["No."]
     # Rename the 'Units' column to the appropriate name
     # Look up under the 'Data Format' entry to find what units we have
-    data_format = file_data['Data Format']
+    data_format = file_data['metadata']['Data Format']
     # This is a string in the form '4      (Log Ohms/Kelvin)'
-    data_format_int = int(data_format[0])
+    data_format_int = int(data_format.split()[0])
     correct_name = Model_325_Curve.valid_sensor_units[data_format_int - 1]
     # Rename the column
     data_dict[correct_name] = data_dict["Units"]
     del data_dict["Units"]
+
+    return data_dict
 
 
 class Model_325_Curve(InstrumentChannel):
@@ -560,11 +550,11 @@ class Model_325(VisaInstrument):
         if not filename.endswith(".330"):
             raise ValueError("Only curve files with extension *.330 is supported")
 
-        file_data = read_curve_file(file_path)
-        sanitize_data(file_data)
+        with open(file_path, "r") as curve_file:
+            file_data = read_curve_file(curve_file)
 
-        name = file_data["Sensor Model"]
-        serial_number = file_data["Serial Number"]
-        data_dict = file_data["data"]
+        data_dict = get_sanitize_data(file_data)
+        name = file_data["metadata"]["Sensor Model"]
+        serial_number = file_data["metadata"]["Serial Number"]
 
         self.upload_curve(index, name, serial_number, data_dict)
