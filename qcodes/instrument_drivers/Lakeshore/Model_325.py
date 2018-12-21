@@ -11,15 +11,12 @@ from qcodes.instrument.group_parameter import GroupParameter, Group
 def read_curve_file(curve_file: TextIO) -> dict:
     """
     Read a curve file with extension *.330
-    The format of the file is as follows:
+    The file format of this file is shown in qcodes\tests\drivers\test_lakeshore_file_parser.py
 
-    Item1: value
-    Item2: value
-    Item3: value
-
-    Header1   Header2   Header3
-    data11     data12    data13
-    data21     data22    data23
+    The output is a dictionary with keys: "metadata" and "data".
+    The metadata dictionary contains the first n lines of the curve file which
+    are in the format "item: value". The data dictionary contains the actual
+    curve data.
     """
 
     def split_data_line(line: str, parser: type = str) -> List[str]:
@@ -546,8 +543,7 @@ class Model_325(VisaInstrument):
         Upload a curve from a curve file. Note that we only support
         curve files with extension *.330
         """
-        _, filename = os.path.split(file_path)
-        if not filename.endswith(".330"):
+        if not file_path.endswith(".330"):
             raise ValueError("Only curve files with extension *.330 is supported")
 
         with open(file_path, "r") as curve_file:
