@@ -861,19 +861,23 @@ class DataSet(Sized):
             Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
-        and their dependencies as a dict of Pandas DataFrames. Each element in
-        the dict is indexed by the names of the requested parameters.
+        and their dependencies as a dict of :py:class:`pandas.DataFrame`\s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
 
         Each DataFrame contains a column for the data and is indexed by a
-        MultiIndex formed from all the setpoints of the parameter.
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
 
-        If no parameters are supplied dataframes will be be returned for all
-        parameters that are not them self dependencies of other parameters.
+        If no parameters are supplied data will be be
+        returned for all parameters in the dataset that are not them self
+        dependencies of other parameters.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a dict of empty dataframes is returned.
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame`\s is
+        returned.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -886,7 +890,10 @@ class DataSet(Sized):
                 None
 
         Returns:
-
+            Dictionary from requested parameter names to
+            :py:class:`pandas.DataFrame`\s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
         """
         dfs = {}
         datadict = self.get_parameter_data(*params,
