@@ -545,7 +545,7 @@ class Model_325(VisaInstrument):
         curve files with extension *.330
         """
         if not file_path.endswith(".330"):
-            raise ValueError("Only curve files with extension *.330 is supported")
+            raise ValueError("Only curve files with extension *.330 are supported")
 
         with open(file_path, "r") as curve_file:
             file_data = read_curve_file(curve_file)
