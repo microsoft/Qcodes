@@ -77,7 +77,7 @@ class Rigol_DG4000(VisaInstrument):
             ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
             pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
             harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
-            arb_freq = [50e6, 40e6, 25e6, 15e6][i]
+            self.arb_freq = [50e6, 40e6, 25e6, 15e6][i]
         else:
             raise KeyError('Model code ' + model + ' is not recognized')
 
@@ -204,11 +204,6 @@ class Rigol_DG4000(VisaInstrument):
             # TODO: Various parameters are limited by
             # impedance/freq/period/amplitude settings, this might be very hard
             # to implement in here
-            self.add_function(ch + 'custom',
-                              call_cmd=source + 'APPL:CUST '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, arb_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'harmonic',
                               call_cmd=source + 'APPL:HARM '
@@ -247,7 +242,7 @@ class Rigol_DG4000(VisaInstrument):
             self.add_function(ch + 'user',
                               call_cmd=source + 'APPL:USER '
                                                 '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, arb_freq),
+                              args=[Numbers(1e-6, self.arb_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_parameter(ch + 'configuration',
@@ -574,6 +569,40 @@ class Rigol_DG4000(VisaInstrument):
             self.reset()
 
         self.connect_message()
+
+    def ch1_custom(self, frequency: float, amplitude: float, offset: float,
+                   phase: float) -> None:
+        """
+        Output the user-defined waveform with the specified parameters
+        (frequency, amplitude, DC offset and start phase).
+        """
+        validators = [Numbers(1e-6, self.arb_freq), Numbers(),
+                      Numbers(), Numbers(0, 360)]
+        values = [frequency, amplitude, offset, phase]
+
+        for vd, vl in zip(validators, values):
+            vd.validate(vl)
+
+        cmd = (f'SOUR1:APPL:CUST {frequency:.6e},{amplitude:.6e},'
+               f'{offset:.6e},{phase:.6e}')
+        self.write(cmd)
+
+    def ch2_custom(self, frequency: float, amplitude: float, offset: float,
+                   phase: float) -> None:
+        """
+        Output the user-defined waveform with the specified parameters
+        (frequency, amplitude, DC offset and start phase).
+        """
+        validators = [Numbers(1e-6, self.arb_freq), Numbers(),
+                      Numbers(), Numbers(0, 360)]
+        values = [frequency, amplitude, offset, phase]
+
+        for vd, vl in zip(validators, values):
+            vd.validate(vl)
+
+        cmd = (f'SOUR2:APPL:CUST {frequency:.6e},{amplitude:.6e},'
+               f'{offset:.6e},{phase:.6e}')
+        self.write(cmd)
 
     def _upload_data(self, data):
         """
