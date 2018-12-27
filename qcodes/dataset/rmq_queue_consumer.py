@@ -62,6 +62,9 @@ class RMQConsumer(QueueConsumer):
     def close(self):
         self.connection.close()
 
+    def stop_consuming(self):
+        self.channel.stop_consuming()
+
     def start_consuming(self):
         self.channel.start_consuming()
 
