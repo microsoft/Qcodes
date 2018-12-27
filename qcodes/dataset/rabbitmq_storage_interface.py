@@ -39,7 +39,6 @@ class Heart(Thread):
 
     def run(self):
         while self.keep_beating:
-            self.conn.sleep(self.sleep_time)
             self.conn.process_data_events()
 
 
