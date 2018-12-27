@@ -100,7 +100,7 @@ atexit.register(Instrument.close_all)
 def test(**kwargs):
     """
     Run QCoDeS tests. This requires the test requirements given
-    in test_requirements.txt to be installed.
+    in requirements.txt to be installed.
     All arguments are forwarded to pytest.main
     """
     try:

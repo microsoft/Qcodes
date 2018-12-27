@@ -24,10 +24,8 @@ branches:
 # we install here, although we uninstall below
 install:
     - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install -r test_requirements.txt --upgrade --upgrade-strategy only-if-needed
+    - pip install -r requirements.txt --upgrade --upgrade-strategy only-if-needed
     - pip install -r docs_requirements.txt
-    - pip install .
 
 before_script: # configure a headless display to test plot generation
     - "export DISPLAY=:99.0"

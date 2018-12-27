@@ -20,9 +20,8 @@ install:
   - conda update -n base conda
   - conda env create -q -f environment.yml
   - activate qcodes
-  - pip install -r test_requirements.txt
+  - pip install -r requirements.txt
   - pip install -r docs_requirements.txt
-  - pip install -e .
 
 # Test scripts
 test_script:
