@@ -1,0 +1,24 @@
+Parameters:
+- !ParamSpec
+  name: dac_ch1
+  type: numeric
+  label: Gate ch1
+  unit: V
+  _inferred_from: []
+  _depends_on: []
+- !ParamSpec
+  name: dac_ch2
+  type: numeric
+  label: Gate ch2
+  unit: V
+  _inferred_from: []
+  _depends_on: []
+- !ParamSpec
+  name: dmm_v1
+  type: numeric
+  label: Gate v1
+  unit: V
+  _inferred_from: []
+  _depends_on:
+  - dac_ch1
+  - dac_ch2

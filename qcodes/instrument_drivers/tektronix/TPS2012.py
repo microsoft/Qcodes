@@ -55,7 +55,7 @@ class ScopeArray(ArrayParameter):
 
         self._instrument._parent.trace_ready = True
 
-    def get(self):
+    def get_raw(self):
         if not self._instrument._parent.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for giving a trace.')
