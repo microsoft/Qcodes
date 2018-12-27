@@ -69,10 +69,12 @@ class F1d(Instrument):
                            set_cmd=self.f1d.enable_remote,
                            docstring=('getting the remote status is not '
                                         'possible'))
-        self.add_function('clear_rf_clip',
-                          call_cmd=self.f1d.clear_rf_clip)
-        self.add_function('is_rf_clipped',
-                          call_cmd=self.f1d.rf_clipped)
+
+    def clear_rf_clip(self):
+        self.f1d.clear_rf_clip()
+
+    def is_rf_clipped(self):
+        self.f1d.rf_clipped()
 
     def get_remote_settings(self):
         return self.f1d.remote_settings
