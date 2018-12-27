@@ -388,7 +388,7 @@ class SR830(VisaInstrument):
                            get_cmd='OUTP? 4',
                            get_parser=float,
                            unit='deg')
-        
+
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -428,10 +428,6 @@ class SR830(VisaInstrument):
                            get_cmd='SPTS ?',
                            get_parser=int)
 
-        # Interface
-        self.add_function('disable_front_panel', call_cmd='OVRM 0')
-        self.add_function('enable_front_panel', call_cmd='OVRM 1')
-
         # Initialize the proper units of the outputs and sensitivities
         self.input_config()
 
@@ -440,29 +436,29 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
-    
-    
+
+
     SNAP_PARAMETERS = {
-            'x': '1',   
-            'y': '2',  
-            'r': '3', 
-            'p': '4',   
-        'phase': '4',  
+            'x': '1',
+            'y': '2',
+            'r': '3',
+            'p': '4',
+        'phase': '4',
            'θ' : '4',
-         'aux1': '5',  
-         'aux2': '6',   
-         'aux3': '7',  
-         'aux4': '8',  
-         'freq': '9',   
+         'aux1': '5',
+         'aux2': '6',
+         'aux3': '7',
+         'aux4': '8',
+         'freq': '9',
           'ch1': '10',
-          'ch2': '11'  
+          'ch2': '11'
     }
-    
+
     def snap(self, *parameters: str) -> Tuple[float, ...]:
         """
-        Get between 2 and 6 parameters at a single instant. This provides a 
-        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, 
-        the aux inputs 1-4, frequency, or what is currently displayed on 
+        Get between 2 and 6 parameters at a single instant. This provides a
+        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ,
+        the aux inputs 1-4, frequency, or what is currently displayed on
         channels 1 and 2.
 
         Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
@@ -474,14 +470,14 @@ class SR830(VisaInstrument):
                 From 2 to 6 strings of names of parameters for which the values
                 are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
                 'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
-            
+
         Returns:
             A tuple of floating point values in the same order as requested.
 
         Examples:
             lockin.snap('x','y') -> tuple(x,y)
-            
-            lockin.snap('aux1','aux2','freq','phase') 
+
+            lockin.snap('aux1','aux2','freq','phase')
                 -> tuple(aux1,aux2,freq,phase)
 
         Note:
@@ -491,12 +487,12 @@ class SR830(VisaInstrument):
             Unknown for ch1 and ch2. It will depend on what was set.
 
              - If X,Y,R and θ are all read, then the values of X,Y are recorded
-               approximately 10 µs apart from R,θ. Thus, the values of X and Y 
+               approximately 10 µs apart from R,θ. Thus, the values of X and Y
                may not yield the exact values of R and θ from a single snap.
-             - The values of the Aux Inputs may have an uncertainty of 
+             - The values of the Aux Inputs may have an uncertainty of
                up to 32 µs.
-             - The frequency is computed only every other period or 40 ms, 
-               whichever is longer.  
+             - The frequency is computed only every other period or 40 ms,
+               whichever is longer.
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
