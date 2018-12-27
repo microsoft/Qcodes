@@ -48,10 +48,11 @@ class M2j(Instrument):
                            docstring='Measured RF power after amplification '
                                      '(not calibrated)')
 
-        self.add_function('clear_rf_clip',
-                          call_cmd=self.m2j.clear_rf_clip)
-        self.add_function('is_rf_clipped',
-                          call_cmd=self.m2j.rf_clipped)
+    def clear_rf_clip(self):
+        self.m2j.clear_rf_clip()
+
+    def is_rf_clipped(self):
+        self.m2j.rf_clipped()
 
     def _set_gain(self, gain):
         ref_scale = int(self._gain_parameters['slope'] * np.log(
