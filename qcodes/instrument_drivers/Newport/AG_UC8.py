@@ -280,10 +280,6 @@ class Newport_AG_UC8(VisaInstrument):
 
         self.add_submodule("channels", channel_list)
 
-        self.add_function("reset",
-                          call_cmd=self.reset,
-                          args=())
-
         # Set controller in remote mode (otherwise many commands don't work).
         self.write("MR")
 
