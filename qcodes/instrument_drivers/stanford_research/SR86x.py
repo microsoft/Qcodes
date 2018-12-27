@@ -964,12 +964,6 @@ class SR86x(VisaInstrument):
         data_channels.lock()
         self.add_submodule("data_channels", data_channels)
 
-        # Interface
-        self.add_function('reset', call_cmd='*RST')
-
-        self.add_function('disable_front_panel', call_cmd='OVRM 0')
-        self.add_function('enable_front_panel', call_cmd='OVRM 1')
-
         buffer = SR86xBuffer(self, "{}_buffer".format(self.name))
         self.add_submodule("buffer", buffer)
 
