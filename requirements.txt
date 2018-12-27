@@ -11,5 +11,5 @@ codecov
 asv
 gitpython
 
-
-
+pyqtgraph==0.10.0
+PyQt5
