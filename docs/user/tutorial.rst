@@ -119,7 +119,7 @@ and we save the sum of them.
     z_vals = np.linspace(1, 2, 2)
 
     loop = qc.Loop(magnet.sweep(x_vals, y_vals, z_vals), delay=0.001).each(p4)
-    data =loop.run()
+    data = loop.run()
 
 
 
@@ -134,8 +134,8 @@ Meta Instruments
 The concept of a meta instrument is that of having
 two separate Instrument, real or virtual, whose actions can
 the be controlled from the meta instrument.
-In the following example we will create two dummy instruments and a meta instruments.
-All the instruments will live on a InstrumentServer.
+In the following example we will create two dummy instruments and a meta instrument.
+All the instruments will live on an InstrumentServer.
 
 
 .. note:: this is rather non-trival due to the limitation of the
@@ -254,9 +254,9 @@ Async Meta
 Say you want to set two instruments at the same time.
 You can use the following:
 
-.. note:: the curernt architecture is so that you MUST one  server per base instrument
+.. note:: the current architecture is so that you MUST one server per base instrument
 
-The base instrument class stays the same, meta gets a new method f.ex:
+The base instrument class stays the same, Meta gets a new method for example:
 
 .. code:: python
 
@@ -303,12 +303,12 @@ The base instrument class stays the same, meta gets a new method f.ex:
 This way:
     >>> meta.setBothAsync(0)
 
-will set both instrument at the same time, say it takes 10 seconds per set,
+will set both instruments at the same time, say it takes 10 seconds per set,
 then setting two things will take 10 seconds, not 20 seconds.
 
 For a complete working example see :download:`this example script <./meta.py>`.
 
-Avanced
--------
+Advanced
+--------
 
 .. todo::  missing

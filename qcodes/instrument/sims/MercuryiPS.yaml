@@ -84,6 +84,33 @@ devices:
           q: "SET:DEV:GRPZ:PSU:ACTN:{}"
           r: ""
 
+      x ramp rate:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPX:PSU:SIG:RFST"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPX:PSU:SIG:RFST:{}"
+          r: ""
+
+      y ramp rate:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPY:PSU:SIG:RFST"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPY:PSU:SIG:RFST:{}"
+          r: ""
+
+      z ramp rate:
+        default: 0
+        getter:
+          q: "READ:DEV:GRPZ:PSU:SIG:RFST"
+          r: "{}"
+        setter:
+          q: "SET:DEV:GRPZ:PSU:SIG:RFST:{}"
+          r: ""
+
 
 resources:
   GPIB::1::INSTR:
