@@ -976,12 +976,12 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
         assert datadict['data'].shape == (N * M,)
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None, use_coverage=False)
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints(channel_array_instrument,
                                             DAC, n):
-
+    random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
     chan.dummy_n_points(n)
@@ -999,6 +999,9 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
 
     # Now for a real measurement
     with meas.run() as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
         datasaver.add_result((param, param()))
     assert datasaver.points_written == n
 
@@ -1009,14 +1012,17 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         data = ds.get_data(param)
         assert len(data) == n
         assert len(data[0]) == 1
-    datadicts = get_data_by_id(datasaver.run_id)
-    # one dependent parameter
-    assert len(datadicts) == 1
-    datadicts = datadicts[0]
-    assert len(datadicts) == len(meas.parameters)
-    for datadict in datadicts:
-        assert datadict['data'].shape == (n,)
-
+    datadict = ds.get_parameter_data()
+    assert len(datadict) == 1
+    subdata = datadict['dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
+    assert_allclose(subdata['dummy_channel_inst_ChanA_dummy_sp_axis'],
+                    np.linspace(chan.dummy_start(),
+                                chan.dummy_stop(),
+                                chan.dummy_n_points()))
+    np.random.seed(random_seed)
+    assert_allclose(subdata['dummy_channel_inst_ChanA_'
+                            'dummy_parameter_with_setpoints'],
+                    np.random.rand(n))
 
 
 @settings(max_examples=5, deadline=None)
