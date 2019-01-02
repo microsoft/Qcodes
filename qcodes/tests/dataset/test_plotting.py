@@ -2,7 +2,6 @@ import numpy as np
 from hypothesis import given, example, assume
 from hypothesis.strategies import text, sampled_from, floats, lists, data, \
     one_of, just
-import matplotlib.pyplot as plt
 
 import qcodes as qc
 from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
