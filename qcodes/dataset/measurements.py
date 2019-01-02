@@ -765,7 +765,7 @@ class Measurement:
         """
         name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
-        for i, setpoints in enumerate(parameter.setpoints):
+        for setpoints in parameter.setpoints:
             if not isinstance(setpoints, Parameter):
                 raise RuntimeError("The setpoints of a "
                                    "ParameterWithSetpoints "
