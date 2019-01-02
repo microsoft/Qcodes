@@ -89,8 +89,6 @@ class Rigol_DG4000(VisaInstrument):
                            set_cmd='COUN:ATT {}',
                            val_mapping={1: '1X', 10: '10X'})
 
-        self.add_function('auto_counter', call_cmd='COUN:AUTO')
-
         self.add_parameter('counter_coupling',
                            get_cmd='COUN:COUP?',
                            set_cmd='COUN:COUP {}',
@@ -354,9 +352,6 @@ class Rigol_DG4000(VisaInstrument):
                                unit='deg',
                                vals=Numbers(0, 360))
 
-            self.add_function(ch + 'align_phase',
-                              call_cmd=source + 'PHAS:INIT')
-
             # Source Pulse
             self.add_parameter(ch + 'pulse_duty_cycle',
                                get_cmd=source + 'PULS:DCYC?',
@@ -468,20 +463,10 @@ class Rigol_DG4000(VisaInstrument):
                                vals=Enum('vpp', 'vrms', 'dbm'))
 
         # System
-        self.add_function('beep', call_cmd='SYST:BEEP')
-
         self.add_parameter('beeper_enabled',
                            get_cmd='SYST:BEEP:STAT?',
                            set_cmd='SYST:BEEP:STAT {}',
                            val_mapping=on_off_map)
-
-        self.add_function('copy_config_to_ch1', call_cmd='SYST:CSC CH2,CH1')
-        self.add_function('copy_config_to_ch2', call_cmd='SYST:CSC CH1,CH2')
-
-        self.add_function('copy_waveform_to_ch1', call_cmd='SYST:CWC CH2,CH1')
-        self.add_function('copy_waveform_to_ch2', call_cmd='SYST:CWC CH1,CH2')
-
-        self.add_function('get_error', call_cmd='SYST:ERR?', return_parser=str)
 
         self.add_parameter('keyboard_locked',
                            get_cmd='SYST:KLOCK?',
@@ -494,36 +479,95 @@ class Rigol_DG4000(VisaInstrument):
                            set_cmd='SYST:POWS {}',
                            vals=Enum('user', 'auto'))
 
-        system_states = Enum('default', 'user1', 'user2', 'user3',
-                             'user4', 'user5', 'user6', 'user7',
-                             'user8', 'user9', 'user10')
-
-        self.add_function('preset',
-                          call_cmd='SYST:PRES {}',
-                          args=[system_states])
-
-        self.add_function('restart', call_cmd='SYST:RESTART')
-
         self.add_parameter('reference_clock_source',
                            get_cmd='SYST:ROSC:SOUR?',
                            set_cmd='SYST:ROSC:SOUR {}',
                            val_mapping={'internal': 'INT', 'external': 'EXT'})
 
-        self.add_function('shutdown', call_cmd='SYST:SHUTDOWN')
-
         self.add_parameter('scpi_version', get_cmd='SYST:VERS?')
-
-        # Trace
-        self.add_function('upload_data',
-                          call_cmd=self._upload_data,
-                          args=[Anything()])
-
-        self.add_function('reset', call_cmd='*RST')
 
         if reset:
             self.reset()
 
         self.connect_message()
+
+    def get_error(self) -> str:
+        """
+        Query the error event queue
+        """
+        resp = self.ask('SYST:ERR?')
+        return str(resp)
+
+    def preset(self, system_state: str) -> None:
+        """
+        Restore the system to its default state or to a user-defined state
+
+        Args:
+            system_state: The state to which the system shall be restored
+        """
+        valid_states = Enum('default', 'user1', 'user2', 'user3',
+                            'user4', 'user5', 'user6', 'user7',
+                            'user8', 'user9', 'user10')
+        valid_states.validate(system_state)
+        self.write(f"SYST:PRES {system_state}")
+
+    def copy_waveform_to_ch1(self) -> None:
+        """
+        Copy the arbitrary waveform data (not include the waveform parameters)
+        of CH2 to CH1
+        """
+        self.write('SYST:CWC CH2,CH1')
+
+    def copy_waveform_to_ch2(self) -> None:
+        """
+        Copy the arbitrary waveform data (not include the waveform parameters)
+        of CH1 to CH2
+        """
+        self.write('SYST:CWC CH1,CH2')
+
+
+    def copy_config_to_ch1(self) -> None:
+        """
+        Copy the configuration state of CH2 to CH1.
+        """
+        self.write('SYST:CSC CH2,CH1')
+
+    def copy_config_to_ch2(self) -> None:
+        """
+        Copy the configuration state of CH1 to CH2.
+        """
+        self.write('SYST:CSC CH1,CH2')
+
+    def beep(self) -> None:
+        """
+        The beeper generates a beep immediately (if the beeper is enabled)
+        """
+        self.write("SYST:BEEP")
+
+    def restart(self) -> None:
+        """
+        Restart the instrument
+        """
+        self.write("SYST:RESTART")
+
+    def shutdown(self) -> None:
+        """
+        Shut down the instrument
+        """
+        self.write("SYST:SHUTDOWN")
+
+    def reset(self) -> None:
+        """
+        Restore the instrument to its default states
+        """
+        self.write('*RST')
+
+    def auto_counter(self) -> None:
+        """
+        Send this command and the instrument will set the gate time of the
+        counter automatically.
+        """
+        self.write('COUN:AUTO')
 
     # Source Apply
     # TODO: Various parameters are limited by
@@ -740,7 +784,25 @@ class Rigol_DG4000(VisaInstrument):
                            offset=offset, phase=delay,
                            max_freq=self.arb_freq)
 
-    def _upload_data(self, data):
+    def ch1_align_phase(self) -> None:
+        """
+        Execute align phase
+
+        This command is invalid when any of the two channels is in modulation
+        mode
+        """
+        self.write("SOUR1:PHAS:INIT")
+
+    def ch2_align_phase(self) -> None:
+        """
+        Execute align phase
+
+        This command is invalid when any of the two channels is in modulation
+        mode
+        """
+        self.write("SOUR2:PHAS:INIT")
+
+    def upload_data(self, data):
         """
         Upload data to the AWG memory.
 
