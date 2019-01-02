@@ -66,12 +66,12 @@ def _appropriate_kwargs(plottype: str,
             kwargs['cmap'] = qc.config.plotting.default_color_map
         return kwargs
 
-    switch = {'line': linehandler,
-              'point': linehandler,
-              'bar': linehandler,
-              'heatmap': heatmaphandler}
+    plot_handler_mapping = {'line': linehandler,
+                            'point': linehandler,
+                            'bar': linehandler,
+                            'heatmap': heatmaphandler}
 
-    yield switch[plottype](**kwargs.copy())
+    yield plot_handler_mapping[plottype](**kwargs.copy())
 
 
 def plot_by_id(run_id: int,
