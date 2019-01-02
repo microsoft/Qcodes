@@ -570,22 +570,40 @@ class Rigol_DG4000(VisaInstrument):
 
         self.connect_message()
 
+    def _source_apply(self, source: int, form: str,
+                      freq: float, amplitude: float,
+                      offset: float, phase: float, max_freq: float) -> None:
+        """
+        Helper function to apply a waveform to the output
+        """
+        validators = [Numbers(1e-6, max_freq), Numbers(), Numbers(),
+                      Numbers(0, 360)]
+        values = [freq, amplitude, offset, phase]
+
+        for vd, vl in zip(validators, values):
+            vd.validate(vl)
+
+        known_forms = ('CUST', 'HARM', 'RAMP', 'SIN', 'SQU', 'USER')
+
+        if form not in known_forms:
+            raise ValueError(f'Unknown form: {form}. Must be one of '
+                             f'{known_forms}')
+
+        cmd = (f'SOUR{source}:APPL:{form} {freq:.6e},{amplitude:.6e},'
+               f'{offset:.6e},{phase:.6e}')
+
+        self.write(cmd)
+
     def ch1_custom(self, frequency: float, amplitude: float, offset: float,
                    phase: float) -> None:
         """
         Output the user-defined waveform with the specified parameters
         (frequency, amplitude, DC offset and start phase).
         """
-        validators = [Numbers(1e-6, self.arb_freq), Numbers(),
-                      Numbers(), Numbers(0, 360)]
-        values = [frequency, amplitude, offset, phase]
-
-        for vd, vl in zip(validators, values):
-            vd.validate(vl)
-
-        cmd = (f'SOUR1:APPL:CUST {frequency:.6e},{amplitude:.6e},'
-               f'{offset:.6e},{phase:.6e}')
-        self.write(cmd)
+        self._source_apply(source=1, form='CUST',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
 
     def ch2_custom(self, frequency: float, amplitude: float, offset: float,
                    phase: float) -> None:
@@ -593,16 +611,10 @@ class Rigol_DG4000(VisaInstrument):
         Output the user-defined waveform with the specified parameters
         (frequency, amplitude, DC offset and start phase).
         """
-        validators = [Numbers(1e-6, self.arb_freq), Numbers(),
-                      Numbers(), Numbers(0, 360)]
-        values = [frequency, amplitude, offset, phase]
-
-        for vd, vl in zip(validators, values):
-            vd.validate(vl)
-
-        cmd = (f'SOUR2:APPL:CUST {frequency:.6e},{amplitude:.6e},'
-               f'{offset:.6e},{phase:.6e}')
-        self.write(cmd)
+        self._source_apply(source=2, form='CUST',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
 
     def _upload_data(self, data):
         """
