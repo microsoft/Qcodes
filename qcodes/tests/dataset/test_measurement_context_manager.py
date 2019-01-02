@@ -976,7 +976,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
         assert datadict['data'].shape == (N * M,)
 
 
-@settings(max_examples=5, deadline=None, use_coverage=False)
+@settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints(channel_array_instrument,
