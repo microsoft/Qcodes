@@ -175,8 +175,7 @@ def plot_by_id(run_id: int,
     for data, ax, colorbar in zip(alldata, axes, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
-            log.debug('Plotting by id, doing a 1D plot')
-            log.debug(f"kwargs are {kwargs}")
+            log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
             xpoints = data[0]['data']
             ypoints = data[1]['data']
@@ -214,8 +213,7 @@ def plot_by_id(run_id: int,
             ax.set_title(title)
 
         elif len(data) == 3:  # 2D PLOTTING
-            log.debug('Plotting by id, doing a 2D plot')
-            log.debug(f"kwargs are {kwargs}")
+            log.debug(f'Doing a 2D plot with kwargs: {kwargs}')
 
             # From the setpoints, figure out which 2D plotter to use
             # TODO: The "decision tree" for what gets plotted how and how
