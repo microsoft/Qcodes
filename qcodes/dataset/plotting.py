@@ -39,10 +39,9 @@ SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
 
 
 @contextmanager
-def appropriate_kwargs(plottype: str,
-                       ax: matplotlib.axes.Axes,
-                       colorbar: Optional[matplotlib.colorbar.Colorbar] = None,
-                       **kwargs):
+def _appropriate_kwargs(plottype: str,
+                        colorbar_present: bool,
+                        **kwargs):
     """
     NB: Only to be used inside :meth"`plot_by_id`.
 
@@ -55,8 +54,7 @@ def appropriate_kwargs(plottype: str,
 
     Args:
         plottype: The plot type for which the kwargs should be adjusted
-        ax: The ax that is to be plotted on
-        colorbar: The colorbar that is to be used (if any)
+        colorbar_present: Is there a non-None colorbar in this plot iteration?
     """
 
     def linehandler(**kwargs):
@@ -64,7 +62,7 @@ def appropriate_kwargs(plottype: str,
         return kwargs
 
     def heatmaphandler(**kwargs):
-        if colorbar is None and 'cmap' not in kwargs:
+        if not(colorbar_present) and 'cmap' not in kwargs:
             kwargs['cmap'] = qc.config.plotting.default_color_map
         return kwargs
 
@@ -192,13 +190,16 @@ def plot_by_id(run_id: int,
                 xpoints = xpoints[order]
                 ypoints = ypoints[order]
 
-                with appropriate_kwargs(plottype, ax, colorbar, **kwargs) as k:
+                with _appropriate_kwargs(plottype,
+                                         colorbar is not None, **kwargs) as k:
                     ax.plot(xpoints, ypoints, **k)
             elif plottype == 'point':
-                with appropriate_kwargs(plottype, ax, colorbar, **kwargs) as k:
+                with _appropriate_kwargs(plottype,
+                                         colorbar is not None, **kwargs) as k:
                     ax.scatter(xpoints, ypoints, **k)
             elif plottype == 'bar':
-                with appropriate_kwargs(plottype, ax, colorbar, **kwargs) as k:
+                with _appropriate_kwargs(plottype,
+                                         colorbar is not None, **kwargs) as k:
                     ax.bar(xpoints, ypoints, **k)
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
@@ -234,7 +235,8 @@ def plot_by_id(run_id: int,
                            'unknown': plot_2d_scatterplot}
             plot_func = how_to_plot[plottype]
 
-            with appropriate_kwargs('heatmap', ax, colorbar, **kwargs) as k:
+            with _appropriate_kwargs('heatmap',
+                                     colorbar is not None, **kwargs) as k:
                 ax, colorbar = plot_func(xpoints, ypoints, zpoints,
                                          ax, colorbar,
                                          **k)

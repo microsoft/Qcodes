@@ -8,7 +8,7 @@ import qcodes as qc
 from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
     _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
-from qcodes.dataset.plotting import plot_by_id, appropriate_kwargs
+from qcodes.dataset.plotting import plot_by_id, _appropriate_kwargs
 from qcodes.dataset.measurements import Measurement
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
@@ -121,31 +121,30 @@ def test_plot_by_id_line_and_heatmap(experiment):
 
 
 def test_appropriate_kwargs():
-    _, ax = plt.subplots()
 
     kwargs = {'cmap': 'bone'}
     check = kwargs.copy()
 
-    with appropriate_kwargs('line', ax, None, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('line', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == {}
 
     assert kwargs == check
 
-    with appropriate_kwargs('point', ax, None, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('point', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == {}
 
     assert kwargs == check
 
-    with appropriate_kwargs('bar', ax, None, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('bar', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == {}
 
     assert kwargs == check
 
-    with appropriate_kwargs('heatmap', ax, None, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('heatmap', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == kwargs
 
     assert kwargs == check
 
-    with appropriate_kwargs('heatmap', ax, None, **{}) as ap_kwargs:
+    with _appropriate_kwargs('heatmap', False, **{}) as ap_kwargs:
         assert len(ap_kwargs) == 1
         assert ap_kwargs['cmap'] == qc.config.plotting.default_color_map
