@@ -200,51 +200,6 @@ class Rigol_DG4000(VisaInstrument):
                                set_cmd=output + 'SYNC {}',
                                val_mapping=on_off_map)
 
-            # Source Apply
-            # TODO: Various parameters are limited by
-            # impedance/freq/period/amplitude settings, this might be very hard
-            # to implement in here
-
-            self.add_function(ch + 'harmonic',
-                              call_cmd=source + 'APPL:HARM '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, harmonic_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'noise',
-                              call_cmd=source + 'APPL:NOIS {:.6e},{:.6e}',
-                              args=[Numbers(0, 10), Numbers()])
-
-            self.add_function(ch + 'pulse',
-                              call_cmd=source + 'APPL:PULS '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, pulse_freq),
-                                    Numbers(), Numbers(), Numbers(0)])
-
-            self.add_function(ch + 'ramp',
-                              call_cmd=source + 'APPL:RAMP '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, ramp_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'sinusoid',
-                              call_cmd=source + 'APPL:SIN '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, sine_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'square',
-                              call_cmd=source + 'APPL:SQU '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, square_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'user',
-                              call_cmd=source + 'APPL:USER '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, self.arb_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
             self.add_parameter(ch + 'configuration',
                                get_cmd=source + 'APPL?',
                                get_parser=parse_multiple_outputs)
@@ -570,6 +525,10 @@ class Rigol_DG4000(VisaInstrument):
 
         self.connect_message()
 
+    # Source Apply
+    # TODO: Various parameters are limited by
+    # impedance/freq/period/amplitude settings, that ought to be implemented
+
     def _source_apply(self, source: int, form: str,
                       freq: float, amplitude: float,
                       offset: float, phase: float, max_freq: float) -> None:
@@ -583,7 +542,7 @@ class Rigol_DG4000(VisaInstrument):
         for vd, vl in zip(validators, values):
             vd.validate(vl)
 
-        known_forms = ('CUST', 'HARM', 'RAMP', 'SIN', 'SQU', 'USER')
+        known_forms = ('CUST', 'HARM', 'RAMP', 'SIN', 'SQU', 'USER', 'PULS')
 
         if form not in known_forms:
             raise ValueError(f'Unknown form: {form}. Must be one of '
@@ -592,6 +551,20 @@ class Rigol_DG4000(VisaInstrument):
         cmd = (f'SOUR{source}:APPL:{form} {freq:.6e},{amplitude:.6e},'
                f'{offset:.6e},{phase:.6e}')
 
+        self.write(cmd)
+
+    def _source_apply_noise(self, source: int, amplitude: float,
+                            offset: float) -> None:
+        """
+        Helper function for app;y noise
+        """
+        validators = [Numbers(0, 10), Numbers()]
+        values = [amplitude, offset]
+        for vd, vl in zip(validators, values):
+            vd.validate(vl)
+
+        cmd = (f'SOUR{source}:APPL:NOISE {amplitude:.6e},'
+               f'{offset:.6e}')
         self.write(cmd)
 
     def ch1_custom(self, frequency: float, amplitude: float, offset: float,
@@ -614,6 +587,157 @@ class Rigol_DG4000(VisaInstrument):
         self._source_apply(source=2, form='CUST',
                            freq=frequency, amplitude=amplitude,
                            offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch1_harmonic(self, frequency: float, amplitude: float, offset: float,
+                     phase: float) -> None:
+        """
+        Output a harmonic with specified frequency, amplitude, DC offset and
+        start phase.
+        """
+        self._source_apply(source=1, form='HARM',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.harmonic_freq)
+
+    def ch2_harmonic(self, frequency: float, amplitude: float, offset: float,
+                     phase: float) -> None:
+        """
+        Output a harmonic with specified frequency, amplitude, DC offset and
+        start phase.
+        """
+        self._source_apply(source=2, form='HARM',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.harmonic_freq)
+
+    def ch1_ramp(self, frequency: float, amplitude: float, offset: float,
+                 phase: float) -> None:
+        """
+        Output a ramp with specified frequency, amplitude, DC offset and start
+        phase.
+        """
+        self._source_apply(source=1, form='RAMP',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.ramp_freq)
+
+    def ch2_ramp(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a ramp with specified frequency, amplitude, DC offset and start
+        phase.
+        """
+        self._source_apply(source=2, form='RAMP',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.ramp_freq)
+
+
+    def ch1_sinusoid(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a sine waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=1, form='SIN',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.sine_freq)
+
+    def ch2_sinusoid(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a sine waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=2, form='SIN',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.sine_freq)
+
+    def ch1_square(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a square waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=1, form='SQU',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.square_freq)
+
+    def ch2_square(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a square waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=2, form='SQU',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.square_freq)
+
+    def ch1_user(self, frequency: float, amplitude: float, offset: float,
+                 phase: float) -> None:
+        """
+        Output an arbitrary waveform with specified frequency, amplitude, DC
+        offset and start phase.
+        """
+        self._source_apply(source=1, form='USER',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch2_user(self, frequency: float, amplitude: float, offset: float,
+                 phase: float) -> None:
+        """
+        Output an arbitrary waveform with specified frequency, amplitude, DC
+        offset and start phase.
+        """
+        self._source_apply(source=2, form='USER',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch1_noise(self, amplitude: float, offset: float) -> None:
+        """
+        Output a noise with specified amplitude and DC offset.
+        """
+        self._source_apply_noise(source=1, amplitude=amplitude,
+                                 offset=offset)
+
+    def ch2_noise(self, amplitude: float, offset: float) -> None:
+        """
+        Output a noise with specified amplitude and DC offset.
+        """
+        self._source_apply_noise(source=2, amplitude=amplitude,
+                                 offset=offset)
+
+    def ch1_pulse(self, frequency: float, amplitude: float, offset: float,
+                  delay: float) -> None:
+        """
+        Output a pulse with specified frequency, amplitude, DC offset and
+        delay.
+        """
+        # this function takes a delay rather than a phase, but the same SCPI
+        # command-builder can be used
+        self._source_apply(source=1, form='PULS',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=delay,
+                           max_freq=self.arb_freq)
+
+    def ch2_pulse(self, frequency: float, amplitude: float, offset: float,
+                  delay: float) -> None:
+        """
+        Output a pulse with specified frequency, amplitude, DC offset and
+        delay.
+        """
+        # this function takes a delay rather than a phase, but the same SCPI
+        # command-builder can be used
+        self._source_apply(source=2, form='PULS',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=delay,
                            max_freq=self.arb_freq)
 
     def _upload_data(self, data):
