@@ -129,8 +129,12 @@ def diff_param_values_by_id(left_id: RunId, right_id: RunId) -> ParameterDiff:
     right_snapshot = load_by_id(right_id).snapshot
 
     if left_snapshot is None or right_snapshot is None:
-        raise RuntimeError(f"Tried to compare {left_snapshot} "
-                           f"and {right_snapshot}"
-                           f"but on of them is empty")
+        if left_snapshot is None:
+            empty = left_id
+        else:
+            empty = right_id
+        raise RuntimeError(f"Tried to compare two snapshots"
+                           f"but the snapshot of {empty} "
+                           f"is empty.")
 
     return diff_param_values(left_snapshot, right_snapshot)
