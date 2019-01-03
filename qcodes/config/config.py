@@ -373,7 +373,8 @@ class Config:
         sch = self.current_schema["properties"]
         for key in name.split('.'):
             if val is None:
-                raise RuntimeError(f"{name} is not found in config")
+                raise RuntimeError(f"Cannot describe {name} Some part of it "
+                                   f"is null")
             val = val[key]
             if sch.get(key):
                 sch = sch[key]
