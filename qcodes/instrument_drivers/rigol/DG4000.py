@@ -297,29 +297,12 @@ class Rigol_DG4000(VisaInstrument):
                                vals=Numbers(20, 80))
 
             # Source Harmonic
-            self.add_function(ch + 'set_harmonic_amplitude',
-                              call_cmd=source + 'HARM:AMPL {},{:.6e}',
-                              args=[Ints(2, 16), Numbers(0)])
-
-            self.add_function(ch + 'get_harmonic_amplitude',
-                              call_cmd=source + 'HARM:AMPL? {}',
-                              args=[Ints(2, 16)],
-                              return_parser=float)
 
             self.add_parameter(ch + 'harmonic_order',
                                get_cmd=source + 'HARM:ORDE?',
                                get_parser=int,
                                set_cmd=source + 'HARM:ORDE {}',
                                vals=Ints(2, 16))
-
-            self.add_function(ch + 'set_harmonic_phase',
-                              call_cmd=source + 'HARM:PHAS {},{:.6e}',
-                              args=[Ints(2, 16), Numbers(0, 360)])
-
-            self.add_function(ch + 'get_harmonic_phase',
-                              call_cmd=source + 'HARM:PHAS? {}',
-                              args=[Ints(2, 16)],
-                              return_parser=float)
 
             self.add_parameter(ch + 'harmonic_type',
                                get_cmd=source + 'HARM:TYP?',
@@ -525,7 +508,6 @@ class Rigol_DG4000(VisaInstrument):
         """
         self.write('SYST:CWC CH1,CH2')
 
-
     def copy_config_to_ch1(self) -> None:
         """
         Copy the configuration state of CH2 to CH1.
@@ -568,6 +550,70 @@ class Rigol_DG4000(VisaInstrument):
         counter automatically.
         """
         self.write('COUN:AUTO')
+
+    def ch1_set_harmonic_amplitude(self, order: int, amplitude: float) -> None:
+        """
+        Set the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0).validate(amplitude)
+        self.write(f"SOUR1:HARM:AMPL {order},{amplitude:.6e}")
+
+    def ch2_set_harmonic_amplitude(self, order: int, amplitude: float) -> None:
+        """
+        Set the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0).validate(amplitude)
+        self.write(f"SOUR2:HARM:AMPL {order},{amplitude:.6e}")
+
+    def ch1_get_harmonic_amplitude(self, order: int) -> float:
+        """
+        Query the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR1:HARM:AMPL? {order}')
+        return float(resp)
+
+    def ch2_get_harmonic_amplitude(self, order: int) -> float:
+        """
+        Query the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR2:HARM:AMPL? {order}')
+        return float(resp)
+
+    def ch1_set_harmonic_phase(self, order: int, phase: float) -> None:
+        """
+        Set the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0, 360).validate(phase)
+        self.write(f"SOUR1:HARM:PHAS {order},{phase:.6e}")
+
+    def ch2_set_harmonic_phase(self, order: int, phase: float) -> None:
+        """
+        Set the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0, 360).validate(phase)
+        self.write(f"SOUR2:HARM:PHAS {order},{phase:.6e}")
+
+    def ch1_get_harmonic_phase(self, order: int) -> float:
+        """
+        Query the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR1:HARM:PHAS? {order}')
+        return float(resp)
+
+    def ch2_get_harmonic_phase(self, order: int) -> float:
+        """
+        Query the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR2:HARM:PHAS? {order}')
+        return float(resp)
 
     # Source Apply
     # TODO: Various parameters are limited by
