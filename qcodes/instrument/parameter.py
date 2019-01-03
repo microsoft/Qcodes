@@ -954,7 +954,8 @@ class ParameterWithSetpoints(Parameter):
     def setpoints(self, setpoints: Sequence[_BaseParameter]):
         for setpointarray in setpoints:
             if not isinstance(setpointarray, _BaseParameter):
-                raise RuntimeError
+                raise TypeError(f"Setpoints is of type {type(setpointarray)}"
+                                f" expcected a QCoDeS parameter")
         self._setpoints = setpoints
 
     def validate_consistent_shape(self) -> bool:
