@@ -346,11 +346,11 @@ class _BaseParameter(Metadatable):
         if validate:
             self.validate(value)
         if (self.get_parser is None and
-            self.set_parser is None and
-            self.val_mapping is None and
-            self.scale is None and
-            self.offset is None):
-                self.raw_value = value
+                self.set_parser is None and
+                self.val_mapping is None and
+                self.scale is None and
+                self.offset is None):
+            self.raw_value = value
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
 
@@ -964,6 +964,7 @@ class ParameterWithSetpoints(Parameter):
         both the setpoints and the actual parameters have validators
         of type Arrays with a defined shape.
         """
+
         if not isinstance(self.vals, Arrays):
             raise RuntimeError("Can only validate shapes for Array "
                                "Parameters")
@@ -972,7 +973,7 @@ class ParameterWithSetpoints(Parameter):
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
                 raise RuntimeError("Can only validate shapes for Array "
-                                   "Parameters")
+                                   "Parameters.")
             setpoints_shape_list.extend(sp.vals.shape)
         setpoints_shape = tuple(setpoints_shape_list)
 
@@ -987,6 +988,16 @@ class ParameterWithSetpoints(Parameter):
         if output_shape != setpoints_shape:
             return False
         return True
+
+    def _save_val(self, value, validate=False):
+        """
+        Overwrites the standard `_save_val` to also check the
+        the parameter has consistent shape with it's setpoints
+
+        Arguments are passed to the super method
+        """
+        self.validate_consistent_shape()
+        super()._save_val(value, validate)
 
 
 class GeneratedSetPoints(Parameter):
