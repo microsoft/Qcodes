@@ -997,7 +997,11 @@ class ParameterWithSetpoints(Parameter):
 
         Arguments are passed to the super method
         """
-        self.validate_consistent_shape()
+        consistent = self.validate_consistent_shape()
+        if consistent is False:
+            raise RuntimeError(f"Inconsistent shape between parameter and "
+                               f"setpoints for parameter: "
+                               f"{self.full_name}")
         super()._save_val(value, validate)
 
 
