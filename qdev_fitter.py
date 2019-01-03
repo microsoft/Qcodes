@@ -8,7 +8,7 @@ from scipy.optimize import curve_fit
 from qcodes import config
 
 from qcodes.dataset.data_set import load_by_id
-from qcodes.dataset.plotting import plot_by_id
+from qdev_wrappers.dataset.plotting import plot_by_id
 from qcodes.dataset.data_export import get_data_by_id
 
 
@@ -21,7 +21,8 @@ class qdev_fitter():
     def fit(self, dataid, fitclass, save_plots=True, p0=None,**kwargs):
 
         ax_list, _ = plot_by_id(dataid)
-
+        popt_list = []
+        pcov_list = []
         for i, ax in enumerate(ax_list):
             if ax.lines == []:
                 print(f'No line found in plot {i}.')
@@ -32,6 +33,8 @@ class qdev_fitter():
                 if (p0 is None and hasattr(fitclass,'guess')):
                     p0 = getattr(fitclass,'guess')(xdata, ydata)
                 popt, pcov = curve_fit(fitclass.fun, xdata, ydata, p0=p0, **kwargs)
+                popt_list.append(popt)
+                pcov_list.append(pcov)
 
                 if save_plots:
                     self.plot_1D(ax, xdata, ydata, fitclass, popt)
@@ -45,9 +48,9 @@ class qdev_fitter():
                     analysis_dir = os.path.join(storage_dir, 'Analysis')
                     os.makedirs(analysis_dir, exist_ok=True)
 
-                    full_path = os.path.join('Analysis', f'{dataid}_{i}.png')
+                    full_path = os.path.join(analysis_dir, f'{dataid}_{i}.png')
                     ax.figure.savefig(full_path, dpi=500)
-                return popt, pcov
+        return popt_list, pcov_list
 
 
     def plot_1D(self, ax, xdata, ydata, fitclass, popt):
@@ -58,7 +61,7 @@ class qdev_fitter():
         ax.figure.set_size_inches(6.5,4)
         ax.figure.tight_layout(pad=3)
 
-        # Get labels for fit results
+        # Get labels for fit results with correct scaling
         p_label_list = []
         for i in range(len(fitclass.p_names)):
             ax_letter = fitclass.p_units[i]
@@ -77,7 +80,6 @@ class qdev_fitter():
         ax.figure.text(0.8, 0.45, '\n'.join(p_label_list),bbox={'ec':'k','fc':'w'})
         ax.set_title(fitclass.fun_str)
         ax.figure.subplots_adjust(right=0.78)
-        ax.figure.draw()
 
 
 #  Predefined fucntions
