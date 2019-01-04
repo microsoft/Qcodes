@@ -174,7 +174,7 @@ class _Keysight_344xxA(VisaInstrument):
                            set_cmd=False,
                            label='Line Frequency',
                            unit='Hz',
-                           docstring=('The frequency of the power line where'
+                           docstring=('The frequency of the power line where '
                                       'the instrument is plugged')
                            )
 
