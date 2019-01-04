@@ -52,5 +52,5 @@ jobs:
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: 'docs/_build/html'
-          artifactName: 'docs'
+          artifactName: 'qcodes_docs'
           publishLocation: 'Container'
