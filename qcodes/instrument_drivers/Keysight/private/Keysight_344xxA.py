@@ -207,8 +207,7 @@ class _Keysight_344xxA(VisaInstrument):
             (line frequency noise) rejection.
             
             Setting the integration time also sets the measurement 
-            resolution.""")
-                           )
+            resolution."""))
 
         self.add_parameter('volt',
                            get_cmd=self._get_voltage,
@@ -249,8 +248,7 @@ class _Keysight_344xxA(VisaInstrument):
             remote interface and provides basic security.
             
             Displaying text with `display_text` parameter will work even 
-            when the display is disabled.""")
-                           )
+            when the display is disabled."""))
 
         self.add_parameter('display_text',
                            label='Display text',
@@ -261,8 +259,7 @@ class _Keysight_344xxA(VisaInstrument):
                            docstring=textwrap.dedent("""\
             Displays the given text on the screen. Specifying empty string 
             moves the display back to its normal state. The same can be 
-            achieved by calling `display_clear`.""")
-                           )
+            achieved by calling `display_clear`."""))
 
         self.add_parameter('autozero',
                            label='Autozero',
@@ -290,8 +287,7 @@ class _Keysight_344xxA(VisaInstrument):
                   integration time is less than 1 PLC, the zero measurement 
                   is taken at 1 PLC to optimize noise rejection. Subsequent 
                   measurements are taken at the specified fast (< 1 PLC) 
-                  integration time.""")
-                           )
+                  integration time."""))
 
         ####################################
         # TRIGGERING
