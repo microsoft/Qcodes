@@ -313,11 +313,17 @@ class _Keysight_344xxA(VisaInstrument):
                            vals=vals.MultiType(vals.Numbers(0, 3600),
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=float,
-                           docstring="Step size for DC measurements is "
-                                     "approximately 1 µs.\nFor AC "
-                                     "measurements, step size depends on AC "
-                                     "bandwidth."
-                           )
+                           docstring=textwrap.dedent("""\
+            Sets the delay between the trigger signal and the first 
+            measurement. This may be useful in applications where you want 
+            to allow the input to settle before taking a measurement or for 
+            pacing a burst of measurements.
+            
+            Step size for DC measurements is approximately 1 µs. For AC 
+            measurements, step size depends on AC bandwidth.
+            
+            Selecting a specific trigger delay disables the automatic 
+            trigger delay."""))
 
         self.add_parameter('trigger_slope',
                            label='Trigger Slope',
