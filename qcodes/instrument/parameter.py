@@ -357,9 +357,10 @@ class _BaseParameter(Metadatable):
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
 
-    def _wrap_get(self, get_function):
+    def _wrap_get(self, get_function: Callable[..., ParamDataType]) ->\
+            Callable[..., ParamDataType]:
         @wraps(get_function)
-        def get_wrapper(*args, **kwargs):
+        def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             try:
                 # There might be cases where a .get also has args/kwargs
                 value = get_function(*args, **kwargs)
@@ -373,11 +374,11 @@ class _BaseParameter(Metadatable):
                     # offset values
                     if isinstance(self.offset, collections.abc.Iterable):
                         # offset contains multiple elements, one for each value
-                        value = tuple(value - offset for value, offset
+                        value = tuple(val - offset for val, offset
                                       in zip(value, self.offset))
                     elif isinstance(value, collections.abc.Iterable):
                         # Use single offset for all values
-                        value = tuple(value - self.offset for value in value)
+                        value = tuple(val - self.offset for val in value)
                     else:
                         value -= self.offset
 
@@ -386,11 +387,11 @@ class _BaseParameter(Metadatable):
                     # Scale values
                     if isinstance(self.scale, collections.abc.Iterable):
                         # Scale contains multiple elements, one for each value
-                        value = tuple(value / scale for value, scale
+                        value = tuple(val / scale for val, scale
                                       in zip(value, self.scale))
                     elif isinstance(value, collections.abc.Iterable):
                         # Use single scale for all values
-                        value = tuple(value / self.scale for value in value)
+                        value = tuple(val / self.scale for val in value)
                     else:
                         value /= self.scale
 
@@ -410,9 +411,10 @@ class _BaseParameter(Metadatable):
 
         return get_wrapper
 
-    def _wrap_set(self, set_function):
+    def _wrap_set(self, set_function: Callable[..., None]) -> \
+            Callable[..., None]:
         @wraps(set_function)
-        def set_wrapper(value, **kwargs):
+        def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
                 self.validate(value)
 
