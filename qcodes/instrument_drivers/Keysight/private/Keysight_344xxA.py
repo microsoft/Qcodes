@@ -474,8 +474,7 @@ class _Keysight_344xxA(VisaInstrument):
             reading memory
         """
         raw_vals: str = self.ask('FETCH?')
-        vals = np.array(list(map(float, raw_vals.split(','))))
-        return vals
+        return _raw_vals_to_array(raw_vals)
 
     def _set_databuffer_setpoints(self, cmd, value):
         """
@@ -568,3 +567,18 @@ class _Keysight_344xxA(VisaInstrument):
                 print(err_code, err_message)
 
         log.debug('...flushing complete')
+
+
+def _raw_vals_to_array(raw_vals: str) -> np.array:
+    """
+    Helper function that converts comma-delimited string of floating-point
+    values to a numpy 1D array of them. Most data retrieval command of these
+    instruments return data in this format.
+
+    Args:
+        raw_vals: comma-delimited string of floating-point values
+
+    Returns:
+        numpy 1D array of data
+    """
+    return np.array(list(map(float, raw_vals.split(','))))
