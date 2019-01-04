@@ -26,7 +26,7 @@ import os
 import time
 import json
 from contextlib import suppress
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 from collections import defaultdict
 
 import asyncio

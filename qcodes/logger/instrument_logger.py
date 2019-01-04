@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import logging
-from typing import Optional, Sequence, Union, TYPE_CHECKING, cast
+from typing import Optional, Sequence, Union, TYPE_CHECKING
 import collections.abc
 from .logger import get_console_handler, LevelType, handler_level
 if TYPE_CHECKING:
