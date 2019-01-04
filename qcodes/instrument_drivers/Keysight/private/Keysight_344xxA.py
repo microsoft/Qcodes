@@ -360,7 +360,25 @@ class _Keysight_344xxA(VisaInstrument):
                            unit='s',
                            vals=vals.MultiType(vals.Numbers(0, 3600),
                                                vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=float)
+                           get_parser=float,
+                           docstring=textwrap.dedent("""\
+            The value is rounded by the instrument to the nearest step. For DC 
+            measurements, the step size is 1 µs. For AC measurements, 
+            it is AC bandwidth dependent.
+            
+            Special values are: MIN - recommended minimum, MAX - maximum, 
+            DEF - default. In order to obtain the actual value of the 
+            parameter that gets set when setting it to one of these special 
+            values, just call the get method of the parameter, or use 
+            corresponding parameters in this driver, 
+            like `sample_timer_minimum`.
+
+            Specifying a value that is between the absolute minimum (assumes 
+            no range changes) and the recommended minimum value, 
+            may generate a timing violation error when making measurements.
+            
+            Applying a value less than the absolute minimum will generate an 
+            error."""))
 
         self.add_parameter('sample_timer_minimum',
                            label='Minimal sample time',
