@@ -456,7 +456,7 @@ class _Keysight_344xxA(VisaInstrument):
 
         Storing measurements in reading memory with this method is faster than
         sending measurements to the instrument's output buffer using
-        `read` method ("READ?" command) (provided you do not `_fetch`,
+        `read` method ("READ?" command) (provided you do not `fetch`,
         "FETCh?" command, until done).
         """
         self.write('INIT')
@@ -496,7 +496,7 @@ class _Keysight_344xxA(VisaInstrument):
 
         return float(response)
 
-    def _fetch(self) -> np.array:
+    def fetch(self) -> np.array:
         """
         Waits for measurements to complete and copies all available
         measurements to the instrument's output buffer. The readings remain
@@ -518,7 +518,7 @@ class _Keysight_344xxA(VisaInstrument):
         complete, and transfers all available measurements.
 
         This method is similar to calling :meth:`init_measurement` followed
-        immediately by :meth:`_fetch`.
+        immediately by :meth:`fetch`.
 
         Returns:
             a 1D numpy array of all measured values
