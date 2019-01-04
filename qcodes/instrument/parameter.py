@@ -618,12 +618,12 @@ class _BaseParameter(Metadatable):
         self._post_delay = post_delay
 
     @property
-    def inter_delay(self):
+    def inter_delay(self) -> Number:
         """Delay time between consecutive set operations"""
         return self._inter_delay
 
     @inter_delay.setter
-    def inter_delay(self, inter_delay):
+    def inter_delay(self, inter_delay: Number) -> None:
         """
         Configure this parameter with a delay between set operations.
 
@@ -649,7 +649,7 @@ class _BaseParameter(Metadatable):
         self._inter_delay = inter_delay
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return "_".join(self.name_parts)
 
     def set_validator(self, vals):
