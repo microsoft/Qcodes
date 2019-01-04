@@ -512,7 +512,7 @@ class _Keysight_344xxA(VisaInstrument):
         raw_vals: str = self.ask('FETCH?')
         return _raw_vals_to_array(raw_vals)
 
-    def _read(self) -> np.array:
+    def read(self) -> np.array:
         """
         Starts a new set of measurements, waits for all measurements to
         complete, and transfers all available measurements.
