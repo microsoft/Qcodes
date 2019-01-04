@@ -325,6 +325,20 @@ class _Keysight_344xxA(VisaInstrument):
             Selecting a specific trigger delay disables the automatic 
             trigger delay."""))
 
+        self.add_parameter('auto_trigger_delay_enabled',
+                           label='Auto Trigger Delay Enabled',
+                           set_cmd='TRIGger:DELay:AUTO {}',
+                           get_cmd='TRIGger:DELay:AUTO?',
+                           get_parser=int,
+                           val_mapping={True: 1, False: 0},
+                           docstring=textwrap.dedent("""\
+            Disables or enables automatic trigger delay. If enabled, 
+            the instrument determines the delay based on function, range, 
+            and integration time or bandwidth.
+            
+            Selecting a specific trigger delay using `trigger_delay` disables 
+            the automatic trigger delay."""))
+
         self.add_parameter('trigger_slope',
                            label='Trigger Slope',
                            set_cmd='TRIGger:SLOPe {}',
