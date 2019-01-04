@@ -742,6 +742,60 @@ def test_datasaver_numeric_and_array_paramtype():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
+def test_datasaver_arrays_in_numeric_paramtype():
+    """
+    Test saving arrays with different lengths within an loop of single
+    parameters works.
+    """
+    new_experiment('firstexp', sample_name='no sample')
+
+    meas = Measurement()
+
+    meas.register_custom_parameter(name='numeric_1',
+                                   label='Magnetic field',
+                                   unit='T',
+                                   paramtype='numeric')
+    meas.register_custom_parameter(name='array_1',
+                                   label='Alazar signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+    meas.register_custom_parameter(name='array_2',
+                                   label='Some other signal',
+                                   unit='V',
+                                   paramtype='array',
+                                   setpoints=('numeric_1',))
+    loop_lenght = 10
+    inner_lenght_1 = 10
+    inner_lenght_2 = 20
+
+    with meas.run() as datasaver:
+        for i in range(loop_lenght):
+            signal1 = np.arange(inner_lenght_1) + i
+            signal2 = np.arange(inner_lenght_2) + i
+            datasaver.add_result(('numeric_1', i),
+                                 ('array_1', signal1),
+                                 ('array_2', signal2))
+
+    assert datasaver.points_written == 10
+
+    data = datasaver.dataset.get_parameter_data()
+    assert len(data['array_1']['numeric_1'].ravel()) == \
+        loop_lenght*inner_lenght_1
+    assert_array_equal(data['array_1']['numeric_1'],
+                       np.repeat(np.arange(loop_lenght),
+                                 inner_lenght_1).reshape(loop_lenght,
+                                                         inner_lenght_1))
+
+    assert len(data['array_2']['numeric_1'].ravel()) == \
+        loop_lenght*inner_lenght_2
+    assert_array_equal(data['array_2']['numeric_1'],
+                       np.repeat(np.arange(loop_lenght),
+                                 inner_lenght_2).reshape(loop_lenght,
+                                                         inner_lenght_2))
+
+
+@pytest.mark.usefixtures("empty_temp_db")
 def test_datasaver_numeric_after_array_paramtype():
     """
     Test that passing values for 'array' parameter in `add_result` before
