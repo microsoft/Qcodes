@@ -124,26 +124,26 @@ def test_appropriate_kwargs():
     kwargs = {'cmap': 'bone'}
     check = kwargs.copy()
 
-    with _appropriate_kwargs('line', False, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('1D_line', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == {}
 
     assert kwargs == check
 
-    with _appropriate_kwargs('point', False, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('1D_point', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == {}
 
     assert kwargs == check
 
-    with _appropriate_kwargs('bar', False, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('1D_bar', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == {}
 
     assert kwargs == check
 
-    with _appropriate_kwargs('heatmap', False, **kwargs) as ap_kwargs:
+    with _appropriate_kwargs('2D_grid', False, **kwargs) as ap_kwargs:
         assert ap_kwargs == kwargs
 
     assert kwargs == check
 
-    with _appropriate_kwargs('heatmap', False, **{}) as ap_kwargs:
+    with _appropriate_kwargs('2D_point', False, **{}) as ap_kwargs:
         assert len(ap_kwargs) == 1
         assert ap_kwargs['cmap'] == qc.config.plotting.default_color_map
