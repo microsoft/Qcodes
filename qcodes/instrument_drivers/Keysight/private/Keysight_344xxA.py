@@ -225,6 +225,23 @@ class _Keysight_344xxA(VisaInstrument):
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
 
+        self.add_parameter('display_enabled',
+                           label='Display enabled',
+                           set_cmd='DISPlay:STATe {}',
+                           get_cmd='DISPlay:STATe?',
+                           val_mapping={True: 1, False: 0},
+                           docstring=textwrap.dedent("""\
+            Disables or enables the front panel display. When disabled, 
+            the display dims, and all annunciators are disabled. However, 
+            the screen remains on.
+            
+            Disabling the display improves command execution speed from the 
+            remote interface and provides basic security.
+            
+            Displaying text with `display_text` parameter will work even 
+            when the display is disabled.""")
+                           )
+
         self.add_parameter('display_text',
                            label='Display text',
                            set_cmd='DISPLAY:TEXT "{}"',
