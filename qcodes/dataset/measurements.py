@@ -176,8 +176,9 @@ class DataSaver:
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
                 array_size = len(value.ravel())
-                if param_spec.type != 'array' and array_size > 1:
-                    inserting_unrolled_array = True
+                if param_spec.type != 'array':
+                    if array_size > 1:
+                        inserting_unrolled_array = True
                     if input_size > 1 and input_size != array_size:
                         raise ValueError('Incompatible array dimensions. Trying to'
                                         f' add arrays of dimension {input_size} '
