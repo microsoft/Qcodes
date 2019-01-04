@@ -476,6 +476,20 @@ class _Keysight_344xxA(VisaInstrument):
         raw_vals: str = self.ask('FETCH?')
         return _raw_vals_to_array(raw_vals)
 
+    def _read(self) -> np.array:
+        """
+        Starts a new set of measurements, waits for all measurements to
+        complete, and transfers all available measurements.
+
+        This method is similar to calling :meth:`init_measurement` followed
+        immediately by :meth:`_fetch`.
+
+        Returns:
+            a 1D numpy array of all measured values
+        """
+        raw_vals: str = self.ask('READ?')
+        return _raw_vals_to_array(raw_vals)
+
     def _set_databuffer_setpoints(self, cmd, value):
         """
         set_cmd for all databuffer-setpoint related parameters
