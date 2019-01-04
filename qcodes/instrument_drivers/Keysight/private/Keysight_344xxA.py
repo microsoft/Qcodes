@@ -296,14 +296,19 @@ class _Keysight_344xxA(VisaInstrument):
         ####################################
         # TRIGGERING
 
+        if self.model in ['34465A', '34470A']:
+            _max_trigger_count = 1e9
+        else:
+            _max_trigger_count = 1e6
+
         self.add_parameter('trigger_count',
                            label='Trigger Count',
                            set_cmd='TRIGger:COUNt {}',
                            get_cmd='TRIGger:COUNt?',
                            get_parser=float,
-                           vals=vals.MultiType(vals.Numbers(1, 1e6),
-                                               vals.Enum('MIN', 'MAX', 'DEF',
-                                                         'INF')))
+                           vals=vals.MultiType(
+                               vals.Numbers(1, _max_trigger_count),
+                               vals.Enum('MIN', 'MAX', 'DEF', 'INF')))
 
         self.add_parameter('trigger_delay',
                            label='Trigger Delay',
