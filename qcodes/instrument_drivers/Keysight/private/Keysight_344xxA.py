@@ -325,11 +325,58 @@ class _Keysight_344xxA(VisaInstrument):
                            get_cmd='TRIGger:SLOPe?',
                            vals=vals.Enum('POS', 'NEG'))
 
+        if self.model in ['34465A', '34470A'] and self.has_DIG:
+            self.add_parameter('trigger_level',
+                               label='Trigger Level',
+                               unit='V',
+                               set_cmd='TRIGger:LEVel {}',
+                               get_cmd='TRIGger:LEVel?',
+                               vals=vals.MultiType(
+                                   vals.Numbers(-1000, 1000),
+                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               docstring=textwrap.dedent("""\
+                Sets the level on which a trigger occurs when level 
+                triggering is enabled (`trigger_source set to "INT").
+                
+                Note that for 100 mV to 100 V ranges and autorange is off, 
+                the trigger level can only be set within ±120% of the 
+                range."""))
+
+        _trigger_source_docstring = textwrap.dedent("""\
+            Selects the trigger source for measurements.
+            
+            IMMediate: The trigger signal is always present. When you place 
+                the instrument in the "wait-for-trigger" state, the trigger is 
+                issued immediately.
+                
+            BUS: The instrument is triggered by `trigger` method of this 
+                driver once the DMM is in the "wait-for-trigger" state.
+            
+            EXTernal: The instrument accepts hardware triggers applied to 
+                the rear-panel Ext Trig input and takes the specified number 
+                of measurements (`sample_count`), each time a TTL pulse 
+                specified by `trigger_slope` is received. If the 
+                instrument receives an external trigger before it is ready, 
+                it buffers one trigger.""")
+        _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
+
+        if self.model in ['34465A', '34470A'] and self.has_DIG:
+            _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
+            # extra empty lines are needed for readability of the docstring
+            _trigger_source_docstring += textwrap.dedent("""\
+            
+            
+            INTernal: Provides level triggering capability. To trigger on a 
+                level on the input signal, select INTernal for the source, 
+                and set the level and slope with the `trigger_level` and 
+                `trigger_slope` parameters.""")
+
         self.add_parameter('trigger_source',
                            label='Trigger Source',
                            set_cmd='TRIGger:SOURce {}',
                            get_cmd='TRIGger:SOURce?',
-                           vals=vals.Enum('IMM', 'EXT', 'BUS', 'INT'))
+                           vals=_trigger_source_vals,
+                           docstring=_trigger_source_docstring)
 
         ####################################
         # SAMPLING
@@ -632,6 +679,10 @@ class _Keysight_344xxA(VisaInstrument):
         """
         self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
         self.range.get()
+
+    def trigger(self) -> None:
+        """Triggers the instrument if `trigger_source` is "BUS"."""
+        self.write('*TRG')
 
     def error(self) -> Tuple[int, str]:
         """
