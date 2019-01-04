@@ -180,9 +180,9 @@ class DataSaver:
                     if array_size > 1:
                         inserting_unrolled_array = True
                     if input_size > 1 and input_size != array_size:
-                        raise ValueError('Incompatible array dimensions. Trying to'
-                                        f' add arrays of dimension {input_size} '
-                                        f'and {array_size}')
+                        raise ValueError(f'Incompatible array dimensions. '
+                                         f'Trying to add arrays of dimension '
+                                         f'{input_size} and {array_size}')
                     else:
                         input_size = array_size
             elif is_number(value):
