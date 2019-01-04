@@ -352,7 +352,7 @@ class _Keysight_344xxA(VisaInstrument):
         self.write('INIT')
 
     def reset(self) -> None:
-        self.write('reset')
+        self.write('*RST')
 
     def display_clear(self) -> None:
         self.write('DISPLay:TEXT:CLEar')
