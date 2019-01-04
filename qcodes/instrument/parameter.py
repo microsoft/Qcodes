@@ -526,7 +526,7 @@ class _BaseParameter(Metadatable):
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
 
-    def validate(self, value: Any) -> None:
+    def validate(self, value: ParamDataType) -> None:
         """
         Validate value
 
@@ -994,7 +994,7 @@ class ParameterWithSetpoints(Parameter):
             return False
         return True
 
-    def validate(self, value: Any) -> None:
+    def validate(self, value: ParamDataType) -> None:
         """
         Overwrites the standard `validate` to also check the
         the parameter has consistent shape with it's setpoints.
