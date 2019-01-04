@@ -293,6 +293,7 @@ class _Keysight_344xxA(VisaInstrument):
                   integration time.""")
                            )
 
+        ####################################
         # TRIGGERING
 
         self.add_parameter('trigger_count',
@@ -330,6 +331,7 @@ class _Keysight_344xxA(VisaInstrument):
                            get_cmd='TRIGger:SOURce?',
                            vals=vals.Enum('IMM', 'EXT', 'BUS', 'INT'))
 
+        ####################################
         # SAMPLING
 
         if self.model in ['34465A', '34470A']:
@@ -428,7 +430,9 @@ class _Keysight_344xxA(VisaInstrument):
             for every measurement (not multiple ranges, just one range up or 
             down per measurement)."""))
 
+        ####################################
         # The array parameter
+
         self.add_parameter('data_buffer',
                            parameter_class=ArrayMeasurement)
 
@@ -476,6 +480,9 @@ class _Keysight_344xxA(VisaInstrument):
 
                 Setting the aperture time automatically enables the aperture 
                 mode."""))
+
+        ####################################
+        # Connect message
 
         if not silent:
             self.connect_message()
