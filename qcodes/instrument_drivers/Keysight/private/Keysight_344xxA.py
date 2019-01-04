@@ -437,7 +437,7 @@ class _Keysight_344xxA(VisaInstrument):
                            parameter_class=ArrayMeasurement)
 
         ####################################
-        # Model-specific parameters
+        # Aperture parameters
 
         if self.model in ['34465A', '34470A']:
             # Define the extreme aperture time values for the 34465A and 34470A
