@@ -591,6 +591,15 @@ class _Keysight_344xxA(VisaInstrument):
 
         self.NPLC.get()
 
+    def autorange_once(self) -> None:
+        """
+        Performs immediate autorange and then turns autoranging off.
+
+        The value of the `range` parameter is also updated.
+        """
+        self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
+        self.range.get()
+
     def error(self) -> Tuple[int, str]:
         """
         Return the first error message in the queue. It also clears it from
