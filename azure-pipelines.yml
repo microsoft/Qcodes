@@ -46,6 +46,7 @@ jobs:
           make.bat htmlapi
         displayName: "docsbuild"
       - task: PublishTestResults@1
+        condition: always() # this step will always run, even if the pipeline is cancelled
         inputs:
           testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
