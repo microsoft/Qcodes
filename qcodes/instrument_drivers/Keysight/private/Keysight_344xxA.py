@@ -368,13 +368,14 @@ class _Keysight_344xxA(VisaInstrument):
                                           ' specified num. of pretrigger samples.')
                                )
 
-        self.add_parameter('sample_source',
-                           label='Sample Timing Source',
-                           set_cmd='SAMPle:SOURce {}',
-                           get_cmd='SAMPle:SOURce?',
-                           vals=vals.Enum('IMM', 'TIM'),
-                           docstring=('Determines sampling time, immediate'
-                                      ' or using sample_timer'))
+        if self.model in ['34465A', '34470A']:
+            self.add_parameter('sample_source',
+                               label='Sample Timing Source',
+                               set_cmd='SAMPle:SOURce {}',
+                               get_cmd='SAMPle:SOURce?',
+                               vals=vals.Enum('IMM', 'TIM'),
+                               docstring=('Determines sampling time, '
+                                          'immediate or using sample_timer'))
 
         self.add_parameter('sample_timer',
                            label='Sample Timer',
