@@ -8,7 +8,7 @@ from scipy.optimize import curve_fit
 from qcodes import config
 
 from qcodes.dataset.data_set import load_by_id
-from qdev_wrappers.dataset.plotting import plot_by_id
+from qcodes.dataset.plotting import plot_by_id
 from qcodes.dataset.data_export import get_data_by_id
 
 
