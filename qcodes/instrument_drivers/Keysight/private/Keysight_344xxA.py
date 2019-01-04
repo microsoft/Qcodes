@@ -388,13 +388,29 @@ class _Keysight_344xxA(VisaInstrument):
                                           'automatically enables the aperture'
                                           ' mode.'))
 
-        self.add_function('init_measurement', call_cmd='INIT')
-        self.add_function('reset', call_cmd='*RST')
-        self.add_function('display_clear', call_cmd=('DISPLay:TEXT:CLEar'))
-        self.add_function('abort_measurement', call_cmd='ABORt')
-
         if not silent:
             self.connect_message()
+
+    def init_measurement(self) -> None:
+        """
+        Change the state of the triggering system from "idle" to
+        "wait-for-trigger", and clear the previous set of measurements from
+        reading memory
+        """
+        self.write('INIT')
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def display_clear(self) -> None:
+        self.write('DISPLay:TEXT:CLEar')
+
+    def abort_measurement(self) -> None:
+        """
+        Abort a measurement in progress, returning the instrument to the
+        trigger idle state.
+        """
+        self.write('ABORt')
 
     def _licenses(self):
         licenses_raw = self.ask('SYST:LIC:CAT?')
