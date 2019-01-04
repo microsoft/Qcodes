@@ -384,7 +384,25 @@ class _Keysight_344xxA(VisaInstrument):
                            label='Minimal sample time',
                            get_cmd='SAMPle:TIMer? MIN',
                            get_parser=float,
-                           unit='s')
+                           unit='s',
+                           docstring=textwrap.dedent("""\
+            This value is measurement dependent. It depends on such things 
+            as the integration time, autozero on or off, autorange on or 
+            off, and the measurement range. Basically, the minimum is 
+            automatically determined by the instrument so that the sample 
+            interval is always greater than the sampling time.
+            
+            Since the minimum value changes depending on configuration, a 
+            command order dependency exists. You must completely configure 
+            the measurement before setting the sample timer to minimum, 
+            or you may generate an error. A complete configuration includes 
+            such things as math statistics or scaling.
+            
+            When using autorange, the minimum value is the recommended value, 
+            not the absolute minimum value. With autorange enabled, minimum 
+            value is calculated assuming a single range change will occur 
+            for every measurement (not multiple ranges, just one range up or 
+            down per measurement)."""))
 
         # The array parameter
         self.add_parameter('data_buffer',
