@@ -990,19 +990,21 @@ class ParameterWithSetpoints(Parameter):
             return False
         return True
 
-    def _save_val(self, value, validate=False):
+    def validate(self, value):
         """
-        Overwrites the standard `_save_val` to also check the
-        the parameter has consistent shape with it's setpoints
+        Overwrites the standard `validate` to also check the
+        the parameter has consistent shape with it's setpoints.
+        This only makes sense if the parameter has an Arrays validator
 
         Arguments are passed to the super method
         """
-        consistent = self.validate_consistent_shape()
-        if consistent is False:
-            raise RuntimeError(f"Inconsistent shape between parameter and "
-                               f"setpoints for parameter: "
-                               f"{self.full_name}")
-        super()._save_val(value, validate)
+        if isinstance(self.vals, Arrays):
+            consistent = self.validate_consistent_shape()
+            if consistent is False:
+                raise RuntimeError(f"Inconsistent shape between parameter and "
+                                   f"setpoints for parameter: "
+                                   f"{self.full_name}")
+        super().validate(value)
 
 
 class GeneratedSetPoints(Parameter):
