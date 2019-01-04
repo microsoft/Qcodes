@@ -308,7 +308,18 @@ class _Keysight_344xxA(VisaInstrument):
                            get_parser=float,
                            vals=vals.MultiType(
                                vals.Numbers(1, _max_trigger_count),
-                               vals.Enum('MIN', 'MAX', 'DEF', 'INF')))
+                               vals.Enum('MIN', 'MAX', 'DEF', 'INF')),
+                           docstring=textwrap.dedent("""\
+            Selects the number of triggers that are accepted by the 
+            instrument before returning to the "idle" trigger state.
+
+            You can use the specified trigger count in conjunction with 
+            `sample_count`. In this case, the number of measurements 
+            returned is the sample count multiplied by the trigger count.
+
+            A variable trigger count is not available from the front panel. 
+            However, when you return to remote control of the instrument, 
+            the trigger count returns to the previous value you selected."""))
 
         self.add_parameter('trigger_delay',
                            label='Trigger Delay',
