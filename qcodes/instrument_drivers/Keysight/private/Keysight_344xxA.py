@@ -381,7 +381,7 @@ class _Keysight_344xxA(VisaInstrument):
             error."""))
 
         self.add_parameter('sample_timer_minimum',
-                           label='Minimal sample time',
+                           label='Minimal recommended sample time',
                            get_cmd='SAMPle:TIMer? MIN',
                            get_parser=float,
                            unit='s',
