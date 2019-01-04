@@ -639,11 +639,9 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
-@pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_arrays_lists_tuples(N):
-    new_experiment('firstexp', sample_name='no sample')
+def test_datasaver_arrays_lists_tuples(N, experiment):
 
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
 
     meas.register_custom_parameter(name='freqax',
                                    label='Frequency axis',
