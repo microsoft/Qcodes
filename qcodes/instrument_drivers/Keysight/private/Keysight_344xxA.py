@@ -237,6 +237,7 @@ class _Keysight_344xxA(VisaInstrument):
 
         self.add_parameter('trigger_delay',
                            label='Trigger Delay',
+                           unit='s',
                            set_cmd='TRIGger:DELay {}',
                            get_cmd='TRIGger:DELay?',
                            vals=vals.MultiType(vals.Numbers(0, 3600),
