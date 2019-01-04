@@ -446,6 +446,23 @@ class _Keysight_344xxA(VisaInstrument):
 
         return float(response)
 
+    def _fetch(self) -> np.array:
+        """
+        Waits for measurements to complete and copies all available
+        measurements to the instrument's output buffer. The readings remain
+        in reading memory.
+
+        This query does not erase measurements from the reading memory. You
+        can call this method multiple times to retrieve the same data.
+
+        Returns:
+            a 1D numpy array of all measured values that are currently in the
+            reading memory
+        """
+        raw_vals: str = self.ask('FETCH?')
+        vals = np.array(list(map(float, raw_vals.split(','))))
+        return vals
+
     def _set_databuffer_setpoints(self, cmd, value):
         """
         set_cmd for all databuffer-setpoint related parameters
