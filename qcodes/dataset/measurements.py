@@ -178,12 +178,12 @@ class DataSaver:
                 array_size = len(value.ravel())
                 if param_spec.type != 'array' and array_size > 1:
                     inserting_unrolled_array = True
-                if input_size > 1 and input_size != array_size:
-                    raise ValueError('Incompatible array dimensions. Trying to'
-                                     f' add arrays of dimension {input_size} '
-                                     f'and {array_size}')
-                else:
-                    input_size = array_size
+                    if input_size > 1 and input_size != array_size:
+                        raise ValueError('Incompatible array dimensions. Trying to'
+                                        f' add arrays of dimension {input_size} '
+                                        f'and {array_size}')
+                    else:
+                        input_size = array_size
             elif is_number(value):
                 if inserting_this_as_array:
                     raise ValueError("Trying to insert into an ArrayType with "
