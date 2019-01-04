@@ -745,7 +745,7 @@ def test_datasaver_numeric_and_array_paramtype():
 def test_datasaver_arrays_in_numeric_paramtype():
     """
     Test saving arrays with different lengths within an loop of single
-    parameters works.
+    scalar parameters works.
     """
     new_experiment('firstexp', sample_name='no sample')
 
