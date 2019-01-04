@@ -412,7 +412,16 @@ class _Keysight_344xxA(VisaInstrument):
         """
         Change the state of the triggering system from "idle" to
         "wait-for-trigger", and clear the previous set of measurements from
-        reading memory
+        reading memory.
+
+        This method is an "overlapped" command. This means that after
+        executing it, you can send other commands that do not affect the
+        measurements.
+
+        Storing measurements in reading memory with this method is faster than
+        sending measurements to the instrument's output buffer using
+        `read` method ("READ?" command) (provided you do not `_fetch`,
+        "FETCh?" command, until done).
         """
         self.write('INIT')
 
