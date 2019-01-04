@@ -782,17 +782,20 @@ def test_datasaver_arrays_in_numeric_paramtype():
     data = datasaver.dataset.get_parameter_data()
     assert len(data['array_1']['numeric_1'].ravel()) == \
         loop_lenght*inner_lenght_1
-    assert_array_equal(data['array_1']['numeric_1'],
-                       np.repeat(np.arange(loop_lenght),
-                                 inner_lenght_1).reshape(loop_lenght,
-                                                         inner_lenght_1))
 
+    expected_num_data_1 = np.repeat(np.arange(loop_lenght),
+                                 inner_lenght_1).reshape(loop_lenght,
+                                                         inner_lenght_1)
+    assert_array_equal(data['array_1']['numeric_1'],
+                       expected_num_data_1)
+
+    expected_num_data_2 = np.repeat(np.arange(loop_lenght),
+                                 inner_lenght_2).reshape(loop_lenght,
+                                                         inner_lenght_2)
     assert len(data['array_2']['numeric_1'].ravel()) == \
         loop_lenght*inner_lenght_2
     assert_array_equal(data['array_2']['numeric_1'],
-                       np.repeat(np.arange(loop_lenght),
-                                 inner_lenght_2).reshape(loop_lenght,
-                                                         inner_lenght_2))
+                       expected_num_data_2)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
