@@ -80,7 +80,8 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 Number = Union[float, int]
-
+# for now the type the parameter may contain is not restricted at all
+ParamDataType = Any
 
 class _SetParamContext:
     """
@@ -239,7 +240,8 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest = {'value': None, 'ts': None, 'raw_value': None}
+        self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
+            {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get_raw') and self.get_raw is not None:
@@ -266,7 +268,7 @@ class _BaseParameter(Metadatable):
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
@@ -274,7 +276,7 @@ class _BaseParameter(Metadatable):
         else:
             return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return named_repr(self)
 
     def __call__(self, *args, **kwargs):
@@ -291,8 +293,9 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict[str, Any]:
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Sequence[str] = None) -> \
+            Dict[str, Any]:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -339,7 +342,7 @@ class _BaseParameter(Metadatable):
 
         return state
 
-    def _save_val(self, value, validate=False):
+    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
         Update latest
         """
@@ -485,9 +488,9 @@ class _BaseParameter(Metadatable):
         return set_wrapper
 
     def get_ramp_values(self, value: Union[float, int, Sized],
-                        step: Union[float, int]=None) -> List[Union[float,
-                                                                    int,
-                                                                    Sized]]:
+                        step: Number = None) -> List[Union[float,
+                                                           int,
+                                                           Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -503,7 +506,8 @@ class _BaseParameter(Metadatable):
             return [value]
         else:
             if isinstance(value, collections.abc.Sized) and len(value) > 1:
-                raise RuntimeError("Don't know how to step a parameter with more than one value")
+                raise RuntimeError("Don't know how to step a parameter"
+                                   " with more than one value")
             if self.get_latest() is None:
                 self.get()
             start_value = self.get_latest()
@@ -522,7 +526,7 @@ class _BaseParameter(Metadatable):
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
 
-    def validate(self, value):
+    def validate(self, value: Any) -> None:
         """
         Validate value
 
@@ -539,11 +543,11 @@ class _BaseParameter(Metadatable):
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def step(self):
+    def step(self) -> Optional[Number]:
         return self._step
 
     @step.setter
-    def step(self, step: Union[int, float]):
+    def step(self, step: Number):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
@@ -562,7 +566,7 @@ class _BaseParameter(Metadatable):
             TypeError: if step is not a number
         """
         if step is None:
-            self._step = step # type: Optional[Union[float, int]]
+            self._step: Optional[Number] = step
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -577,12 +581,12 @@ class _BaseParameter(Metadatable):
             self._step = step
 
     @property
-    def post_delay(self):
+    def post_delay(self) -> Number:
         """Delay time after *start* of set operation, for each set"""
         return self._post_delay
 
     @post_delay.setter
-    def post_delay(self, post_delay):
+    def post_delay(self, post_delay: Number) -> None:
         """
         Configure this parameter with a delay after the *start* of every set
         operation.
@@ -990,7 +994,7 @@ class ParameterWithSetpoints(Parameter):
             return False
         return True
 
-    def validate(self, value):
+    def validate(self, value: Any) -> None:
         """
         Overwrites the standard `validate` to also check the
         the parameter has consistent shape with it's setpoints.
