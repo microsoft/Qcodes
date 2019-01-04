@@ -345,7 +345,14 @@ class _Keysight_344xxA(VisaInstrument):
                            vals=vals.MultiType(
                                vals.Numbers(1, _max_sample_count),
                                vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=int)
+                           get_parser=int,
+                           docstring=textwrap.dedent("""\
+            Specifies the number of measurements (samples) the instrument 
+            takes per trigger.
+            
+            MAX selects 1 billion readings. However, when pretrigger is 
+            selected, the maximum is 50,000 readings (without the MEM 
+            option) or 2,000,000 readings (with the MEM option)"""))
 
         if self.has_DIG:
             self.add_parameter('sample_count_pretrigger',
