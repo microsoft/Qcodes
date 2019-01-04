@@ -64,10 +64,12 @@ setup(name='qcodes',
           'numpy>=1.10',
           'pyvisa>=1.9.1',
           'h5py>=2.6',
-          'websockets>=3.2',
+          'websockets>=7.0',
           'jsonschema',
           'pyzmq',
-          'wrapt'
+          'wrapt',
+          'pandas',
+          'tqdm'
       ],
 
       test_suite='qcodes.tests',
@@ -103,6 +105,13 @@ valueerror_template = '''
 *****
 '''
 
+othererror_template = '''
+*****
+***** could not import package {0}. Please try importing it from 
+***** the commandline to diagnose the issue.
+*****
+'''
+
 # now test the versions of extras
 for extra, (module_name, min_version) in extras.items():
     try:
@@ -114,3 +123,5 @@ for extra, (module_name, min_version) in extras.items():
     except ValueError:
         print(valueerror_template.format(
             module_name, module.__version__, min_version, extra))
+    except:
+        print(othererror_template.format(module_name))

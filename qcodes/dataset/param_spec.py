@@ -1,19 +1,18 @@
-from typing import Union, Sequence, List
+from typing import Union, Sequence, List, Dict, Any
+from copy import deepcopy
 
-# TODO: we should validate type somehow
-# we can't accept everything (or we can but crash at runtime?)
-# we only support the types in VALUES type, that is:
-# str, Number, List, ndarray, bool
+
+
 class ParamSpec:
 
     allowed_types = ['array', 'numeric', 'text']
 
     def __init__(self, name: str,
                  paramtype: str,
-                 label: str = None,
-                 unit: str = None,
-                 inferred_from: Sequence[Union['ParamSpec', str]] = None,
-                 depends_on: Sequence[Union['ParamSpec', str]] = None,
+                 label: str=None,
+                 unit: str=None,
+                 inferred_from: Sequence[Union['ParamSpec', str]]=None,
+                 depends_on: Sequence[Union['ParamSpec', str]]=None,
                  **metadata) -> None:
         """
         Args:
@@ -61,45 +60,78 @@ class ParamSpec:
 
     def add_inferred_from(
             self,
-            inferred_from: Sequence[Union['ParamSpec', str]]
-    ) -> None:
+            inferred_from: Sequence[Union['ParamSpec', str]]) -> None:
         """
         Args:
             inferred_from: the parameters that this parameter is inferred_from
         """
         self._inferred_from.extend(
             p.name if isinstance(p, ParamSpec) else p
-            for p in inferred_from
-        )
+            for p in inferred_from)
 
-    def add_depends_on(
-            self,
-            depends_on: Sequence[Union['ParamSpec', str]]
-    ) -> None:
+    def add_depends_on(self,
+                       depends_on: Sequence[Union['ParamSpec', str]]) -> None:
         """
         Args:
             depends_on: the parameters that this parameter depends on
         """
         self._depends_on.extend(
             p.name if isinstance(p, ParamSpec) else p
-            for p in depends_on
-        )
+            for p in depends_on)
 
     def copy(self) -> 'ParamSpec':
         """
         Make a copy of self
         """
-        return ParamSpec(
-            self.name,
-            self.type,
-            self.label,
-            self.unit,
-            self._inferred_from,
-            self._depends_on
-        )
+        return ParamSpec(self.name, self.type, self.label, self.unit,
+                         deepcopy(self._inferred_from),
+                         deepcopy(self._depends_on))
 
     def sql_repr(self):
         return f"{self.name} {self.type}"
 
     def __repr__(self):
-        return f"{self.name} ({self.type})"
+        return (f"ParamSpec('{self.name}', '{self.type}', '{self.label}', "
+                f"'{self.unit}', inferred_from={self._inferred_from}, "
+                f"depends_on={self._depends_on})")
+
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpec):
+            return False
+        attrs = ['name', 'type', 'label', 'unit', '_inferred_from',
+                 '_depends_on']
+        for attr in attrs:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Write the ParamSpec as a dictionary
+        """
+        output: Dict[str, Any] = {}
+        output['name'] = self.name
+        output['paramtype'] = self.type
+        output['label'] = self.label
+        output['unit'] = self.unit
+        output['inferred_from'] = self._inferred_from
+        output['depends_on'] = self._depends_on
+
+        return output
+
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+        """
+        Create a ParamSpec instance of the current version
+        from a serialized ParamSpec of some version
+
+        The version changes must be implemented as a series of transformations
+        of the serialized dict.
+        """
+
+        return ParamSpec(name=ser['name'],
+                         paramtype=ser['paramtype'],
+                         label=ser['label'],
+                         unit=ser['unit'],
+                         inferred_from=ser['inferred_from'],
+                         depends_on=ser['depends_on'])

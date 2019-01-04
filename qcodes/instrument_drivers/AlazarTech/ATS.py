@@ -148,6 +148,7 @@ class AlazarTech_ATS(Instrument):
     }
 
     _board_names = {
+        0: 'ATS_NONE',
         1: 'ATS850',
         2: 'ATS310',
         3: 'ATS330',
@@ -177,7 +178,13 @@ class AlazarTech_ATS(Instrument):
         27: 'ATS9370',
         28: 'ATU7825',
         29: 'ATS9373',
-        30: 'ATS9416'
+        30: 'ATS9416',
+        31: 'ATS9637',
+        32: 'ATS9120',
+        33: 'ATS9371',
+        34: 'ATS9130',
+        35: 'ATS9352',
+        36: 'ATS9453',
     }
 
     @classmethod
@@ -260,6 +267,16 @@ class AlazarTech_ATS(Instrument):
 
         self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [
             ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
+        self._ATS_dll.AlazarReadRegister.argtypes = [
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.c_uint32]
+        self._ATS_dll.AlazarWriteRegister.argtypes = [
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_uint32]
         self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
                                                         ctypes.c_uint32,
                                                         ctypes.c_long,
@@ -291,11 +308,18 @@ class AlazarTech_ATS(Instrument):
         """
         This methods gets the most relevant information of this instrument
 
+        The firmware version reported should match the version number of
+        downloadable fw files from AlazarTech. But note that the firmware
+        version has often been found to be incorrect for several firmware
+        versions. At the time of writing it is known to be correct for the
+        9360 (v 21.07) and 9373 (v 30.04) but incorrect for several earlier
+        versions. In Alazar DSO this is reported as FPGA Version.
+
         Returns:
 
             Dictionary containing
 
-                - 'firmware': None
+                - 'firmware': as string
                 - 'model': as string
                 - 'serial': board serial number
                 - 'vendor': 'AlazarTech',
@@ -361,7 +385,17 @@ class AlazarTech_ATS(Instrument):
                        self._handle, 0x10000031, 0, ctypes.byref(value))
         pcie_link_width = str(value.value)
 
-        return {'firmware': None,
+
+        # Alazartech has confirmed in a support mail that this
+        # is the way to get the firmware version
+        firmware_major = (int(asopc_type) >> 16) & 0xff
+        firmware_minor = (int(asopc_type) >> 24) & 0xf
+        # firmware_minor above does not contain any prefixed zeros
+        # but the minor version is always 2 digits.
+        firmware_version = f'{firmware_major}.{firmware_minor:02d}'
+
+
+        return {'firmware': firmware_version,
                 'model': board_kind,
                 'max_samples': max_s,
                 'bits_per_sample': bps,
@@ -982,6 +1016,41 @@ class AlazarTech_ATS(Instrument):
             return 16
         else:
             raise RuntimeError('Invalid channel configuration supplied')
+
+
+    def _read_register(self, offset: int) -> int:
+        """
+        Read a value from a given register in the Alazars memory
+
+        Args:
+            offset: Offset into he memmory to read from
+
+        Returns:
+            The value read as en integer
+        """
+        output = ctypes.c_uint32(0)
+        pwd = ctypes.c_uint32(0x32145876)
+        self._call_dll('AlazarReadRegister',
+                       self._handle,
+                       offset,
+                       ctypes.byref(output),
+                       pwd)
+        return output.value
+
+    def _write_register(self, offset: int, value: int) -> None:
+        """
+        Write a value to a given offset in the Alazars memory
+
+        Args:
+            offset: The offset to write to
+            value: The value to write
+        """
+        pwd = ctypes.c_uint32(0x32145876)
+        self._call_dll('AlazarWriteRegister',
+                       self._handle,
+                       offset,
+                       value,
+                       pwd)
 
 
 class Buffer:

@@ -61,25 +61,6 @@ lh.setLevel(logging.DEBUG)
 lh.setFormatter(formatter)
 
 
-def get_messages(iostream: io.StringIO) -> List[str]:
-    """
-    Get all the lines currently in the logging output stream
-    and clear them from the stream
-
-    Args:
-        iostream: the stream to which the logging module logs
-
-    Returns:
-        The messages one-by-one, under the assumption that VISA
-            uses '\n' termination.
-    """
-    messages = iostream.getvalue().split('\n')
-    iostream.seek(0)
-    iostream.truncate(0)
-
-    return messages
-
-
 random_coordinates = {
     "cartesian": tuples(
         floats(min_value=0, max_value=1),  # x
@@ -271,14 +252,14 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
         if "CONF:FIELD:TARG" not in msg:
             continue
 
-        g = re.search("(.): CONF:FIELD:TARG", msg)
+        g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
         name = g.groups()[0]
         order.append(name)
 
     return order
 
 
-def test_ramp_down_first(current_driver):
+def test_ramp_down_first(current_driver, caplog):
     """
     To prevent quenching of the magnets, we need the driver to always
     be within the field limits. Part of the strategy of making sure
@@ -294,23 +275,26 @@ def test_ramp_down_first(current_driver):
     # We begin with ramping down x first while ramping up y and z
     delta = np.array([-0.1, 0.1, 0.1])
 
-    for count, ramp_down_name in enumerate(names):
-        # The second iteration will ramp down y while ramping up x and z.
-        set_point += np.roll(delta, count)
-        # Check if y is adjusted first.
-        # We will perform the same test with z in the third iteration
+    log_name = 'qcodes.instrument.base'
 
-        # clear the message stream
-        get_messages(iostream)
+    with caplog.at_level(logging.DEBUG, logger=log_name):
+        for count, ramp_down_name in enumerate(names):
+            # The second iteration will ramp down y while ramping up x and z.
+            set_point += np.roll(delta, count)
+            # Check if y is adjusted first.
+            # We will perform the same test with z in the third iteration
 
-        # make a ramp
-        current_driver.cartesian(set_point)
-        # get the logging outputs from the instruments.
-        messages = get_messages(iostream)
-        # get the order in which the ramps down occur
-        order = get_ramp_down_order(messages)
-        # the first one should be the one for which delta < 0
-        assert order[0] == names[count]
+            # clear the message stream
+            caplog.clear()
+
+            # make a ramp
+            current_driver.cartesian(set_point)
+            # get the logging outputs from the instruments.
+            messages = [record.message for record in caplog.records]
+            # get the order in which the ramps down occur
+            order = get_ramp_down_order(messages)
+            # the first one should be the one for which delta < 0
+            assert order[0][0] == names[count]
 
 
 def test_field_limit_exception(current_driver):
@@ -420,7 +404,7 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
     assert current_driver.block_during_ramp() == True
 
-    log_name = 'qcodes.instrument_drivers.american_magnetics.AMI430'
+    log_name = 'qcodes.instrument.base'
 
     with caplog.at_level(logging.DEBUG, logger=log_name):
         current_driver.cartesian((0, 0, 0))
@@ -428,8 +412,8 @@ def test_blocking_ramp_parameter(current_driver, caplog):
         current_driver.cartesian((0, 0, 1))
 
         messages = [record.message for record in caplog.records]
-        assert messages[-1] == 'Finished blocking ramp'
-        assert messages[-6] == 'Starting blocking ramp of z to 1'
+        assert messages[-1] == '[z(AMI430_VISA)] Finished blocking ramp'
+        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1'
 
         caplog.clear()
         current_driver.block_during_ramp(False)

@@ -1,10 +1,12 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple, Iterable
+from collections import namedtuple
+from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
+from datetime import datetime
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -180,9 +182,25 @@ class TestParameter(TestCase):
         snap = p_no_snapshot.snapshot()
         self.assertNotIn('value', snap)
 
+    def test_get_latest(self):
+        # Create a gettable parameter
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        before_set = datetime.now()
+        local_parameter.set(1)
+        after_set = datetime.now()
+
+        # Check we return last set value, with the correct timestamp
+        self.assertEqual(local_parameter.get_latest(), 1)
+        self.assertTrue(before_set <= local_parameter.get_latest.get_timestamp() <= after_set)
+
+        # Check that updating the value updates the timestamp
+        local_parameter.set(2)
+        self.assertEqual(local_parameter.get_latest(), 2)
+        self.assertGreaterEqual(local_parameter.get_latest.get_timestamp(), after_set)
+
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
-        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
         self.assertTrue(hasattr(gettable_parameter, 'get'))
         self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
@@ -191,14 +209,14 @@ class TestParameter(TestCase):
         self.assertIsNone(gettable_parameter())
 
         # Create parameter that saves value during set, and has no get_cmd
-        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
         self.assertFalse(hasattr(settable_parameter, 'get'))
         self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
             settable_parameter()
         settable_parameter(42)
 
-        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
         self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
         self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
         self.assertIsNone(settable_gettable_parameter())
@@ -220,6 +238,15 @@ class TestParameter(TestCase):
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
+
+    def test_bad_name(self):
+        with self.assertRaises(ValueError):
+            Parameter('p with space')
+        with self.assertRaises(ValueError):
+            Parameter('⛄')
+        with self.assertRaises(ValueError):
+            Parameter('1')
+
 
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
