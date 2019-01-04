@@ -420,6 +420,11 @@ class _Keysight_344xxA(VisaInstrument):
         self.write('*RST')
 
     def display_clear(self) -> None:
+        """
+        Clear text from display. Depending on the display being
+        enabled/disabled, this either returns to display's normal state or
+        leaves it black, respectively.
+        """
         self.write('DISPLay:TEXT:CLEar')
         self.display_text.get()  # also update the parameter value
 
