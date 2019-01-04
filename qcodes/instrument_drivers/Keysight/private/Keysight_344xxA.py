@@ -138,17 +138,17 @@ class _Keysight_344xxA(VisaInstrument):
         idn = self.IDN.get()
         self.model = idn['model']
 
-        DIG = 'DIG' in self._licenses()
-
         ####################################
         # Instrument specifications
+
+        self.has_DIG = 'DIG' in self._licenses()
 
         PLCs = {'34460A': [0.02, 0.2, 1, 10, 100],
                 '34461A': [0.02, 0.2, 1, 10, 100],
                 '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
                 '34470A': [0.02, 0.06, 0.2, 1, 10, 100]
                 }
-        if DIG:
+        if self.has_DIG:
             PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
             PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
 
@@ -166,7 +166,7 @@ class _Keysight_344xxA(VisaInstrument):
                        '34470A': [1e-6, 0.5e-6, 0.3e-6, 0.1e-6, 0.03e-6,
                                   0.01e-6]
                        }
-        if DIG:
+        if self.has_DIG:
             res_factors['34465A'] = [30e-6, 15e-6, 6e-6] + res_factors['34465A']
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
@@ -340,7 +340,7 @@ class _Keysight_344xxA(VisaInstrument):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=int)
 
-        if DIG:
+        if self.has_DIG:
             self.add_parameter('sample_count_pretrigger',
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
@@ -429,7 +429,7 @@ class _Keysight_344xxA(VisaInstrument):
             elif utility_freq == 60:
                 apt_times = {'34465A': [0.3e-3, 1.67],
                             '34470A': [0.3e-3, 1.67]}
-            if DIG:
+            if self.has_DIG:
                 apt_times['34465A'][0] = 20e-6
                 apt_times['34470A'][0] = 20e-6
 
