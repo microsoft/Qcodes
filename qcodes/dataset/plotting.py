@@ -66,10 +66,14 @@ def _appropriate_kwargs(plottype: str,
             kwargs['cmap'] = qc.config.plotting.default_color_map
         return kwargs
 
-    plot_handler_mapping = {'line': linehandler,
-                            'point': linehandler,
-                            'bar': linehandler,
-                            'heatmap': heatmaphandler}
+    plot_handler_mapping = {'1D_line': linehandler,
+                            '1D_point': linehandler,
+                            '1D_bar': linehandler,
+                            '2D_point': heatmaphandler,
+                            '2D_grid': heatmaphandler,
+                            '2D_scatter': heatmaphandler,
+                            '2D_equidistant': heatmaphandler,
+                            '2D_unknown': heatmaphandler}
 
     yield plot_handler_mapping[plottype](**kwargs.copy())
 
@@ -183,7 +187,7 @@ def plot_by_id(run_id: int,
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
 
-            if plottype == 'line':
+            if plottype == '1D_line':
                 # sort for plotting
                 order = xpoints.argsort()
                 xpoints = xpoints[order]
@@ -192,11 +196,11 @@ def plot_by_id(run_id: int,
                 with _appropriate_kwargs(plottype,
                                          colorbar is not None, **kwargs) as k:
                     ax.plot(xpoints, ypoints, **k)
-            elif plottype == 'point':
+            elif plottype == '1D_point':
                 with _appropriate_kwargs(plottype,
                                          colorbar is not None, **kwargs) as k:
                     ax.scatter(xpoints, ypoints, **k)
-            elif plottype == 'bar':
+            elif plottype == '1D_bar':
                 with _appropriate_kwargs(plottype,
                                          colorbar is not None, **kwargs) as k:
                     ax.bar(xpoints, ypoints, **k)
@@ -227,13 +231,13 @@ def plot_by_id(run_id: int,
 
             log.debug(f'Determined plottype: {plottype}')
 
-            how_to_plot = {'grid': plot_on_a_plain_grid,
-                           'equidistant': plot_on_a_plain_grid,
-                           'point': plot_2d_scatterplot,
-                           'unknown': plot_2d_scatterplot}
+            how_to_plot = {'2D_grid': plot_on_a_plain_grid,
+                           '2D_equidistant': plot_on_a_plain_grid,
+                           '2D_point': plot_2d_scatterplot,
+                           '2D_unknown': plot_2d_scatterplot}
             plot_func = how_to_plot[plottype]
 
-            with _appropriate_kwargs('heatmap',
+            with _appropriate_kwargs(plottype,
                                      colorbar is not None, **kwargs) as k:
                 ax, colorbar = plot_func(xpoints, ypoints, zpoints,
                                          ax, colorbar,
