@@ -765,7 +765,7 @@ def test_datasaver_arrays_in_numeric_paramtype():
                                    unit='V',
                                    paramtype='array',
                                    setpoints=('numeric_1',))
-    loop_lenght = 10
+    loop_lenght = 15
     inner_lenght_1 = 10
     inner_lenght_2 = 20
 
@@ -777,25 +777,35 @@ def test_datasaver_arrays_in_numeric_paramtype():
                                  ('array_1', signal1),
                                  ('array_2', signal2))
 
-    assert datasaver.points_written == 10
+    assert datasaver.points_written == loop_lenght
 
     data = datasaver.dataset.get_parameter_data()
+    assert len(data) == 2
+    assert len(data['array_1']) == 2
     assert len(data['array_1']['numeric_1'].ravel()) == \
         loop_lenght*inner_lenght_1
-
     expected_num_data_1 = np.repeat(np.arange(loop_lenght),
-                                 inner_lenght_1).reshape(loop_lenght,
-                                                         inner_lenght_1)
+                                    inner_lenght_1).reshape(loop_lenght,
+                                                            inner_lenght_1)
+    a = np.tile(np.arange(inner_lenght_1), (loop_lenght, 1))
+    expected_array_data_1 = a + np.arange(loop_lenght).reshape(loop_lenght, 1)
     assert_array_equal(data['array_1']['numeric_1'],
                        expected_num_data_1)
+    assert_array_equal(data['array_1']['array_1'],
+                       expected_array_data_1)
 
+    assert len(data['array_1']) == 2
     expected_num_data_2 = np.repeat(np.arange(loop_lenght),
-                                 inner_lenght_2).reshape(loop_lenght,
-                                                         inner_lenght_2)
+                                    inner_lenght_2).reshape(loop_lenght,
+                                                            inner_lenght_2)
+    a = np.tile(np.arange(inner_lenght_2), (loop_lenght, 1))
+    expected_array_data_2 = a + np.arange(loop_lenght).reshape(loop_lenght, 1)
     assert len(data['array_2']['numeric_1'].ravel()) == \
         loop_lenght*inner_lenght_2
     assert_array_equal(data['array_2']['numeric_1'],
                        expected_num_data_2)
+    assert_array_equal(data['array_2']['array_2'],
+                       expected_array_data_2)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
