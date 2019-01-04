@@ -229,6 +229,7 @@ class _Keysight_344xxA(VisaInstrument):
                            label='Display text',
                            set_cmd='DISPLAY:TEXT "{}"',
                            get_cmd='DISPLAY:TEXT?',
+                           get_parser=lambda s: s.strip('"'),
                            vals=vals.Strings(),
                            docstring=textwrap.dedent("""\
             Displays the given text on the screen. Specifying empty string 
