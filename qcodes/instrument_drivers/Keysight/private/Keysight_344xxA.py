@@ -225,7 +225,25 @@ class _Keysight_344xxA(VisaInstrument):
                            get_parser=float,
                            set_cmd=self._set_resolution,
                            label='Resolution',
-                           unit='V')
+                           unit='V',
+                           vals=vals.MultiType(
+                               vals.Numbers(0),
+                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           docstring=textwrap.dedent("""\
+            Selects the measurement resolution for DC voltage and ratio 
+            measurements. The resolution is specified in the same units as the 
+            selected measurement function, not in number of digits.
+            
+            You can also specify MIN (best resolution) or MAX (worst 
+            resolution).
+            
+            To achieve normal mode (line frequency noise) rejection, 
+            use a resolution that corresponds to an integration time that is 
+            an integral number of power line cycles.
+            
+            Refer to "Resolution Table" or "Range, Resolution and NPLC" 
+            sections of the instrument's manual for the available ranges for 
+            the resolution values."""))
 
         self.add_parameter('autorange',
                            label='Autorange',
