@@ -404,6 +404,7 @@ class _Keysight_344xxA(VisaInstrument):
 
     def display_clear(self) -> None:
         self.write('DISPLay:TEXT:CLEar')
+        self.display_text.get()  # also update the parameter value
 
     def abort_measurement(self) -> None:
         """
