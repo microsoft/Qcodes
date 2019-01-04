@@ -452,7 +452,12 @@ class _Keysight_344xxA(VisaInstrument):
                                set_cmd='SENSe:VOLTage:DC:APERture:ENABled {}',
                                get_cmd='SENSe:VOLTage:DC:APERture:ENABled?',
                                val_mapping={'ON': 1, 'OFF': 0},
-                               vals=vals.Enum('ON', 'OFF'))
+                               vals=vals.Enum('ON', 'OFF'),
+                               docstring=textwrap.dedent("""\
+                Enables the setting of integration time in seconds (called 
+                aperture time) for DC voltage measurements. If aperture time 
+                mode is disabled (default), the integration time is set in PLC 
+                (power-line cycles)."""))
 
             self.add_parameter('aperture_time',
                                label='Aperture time',
