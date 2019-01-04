@@ -359,14 +359,14 @@ class _Keysight_344xxA(VisaInstrument):
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
                                get_cmd='SAMPle:COUNt:PRETrigger?',
-                               vals=vals.MultiType(vals.Numbers(0, 2e6-1),
-                                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               vals=vals.MultiType(
+                                   vals.Numbers(0, 2e6-1),
+                                   vals.Enum('MIN', 'MAX', 'DEF')),
                                get_parser=int,
-                               docstring=('Allows collection of the data '
-                                          'being digitized the trigger. Reserves '
-                                          'memory for pretrigger samples up to the'
-                                          ' specified num. of pretrigger samples.')
-                               )
+                               docstring=textwrap.dedent("""\
+                Allows collection of the data being digitized the trigger. 
+                Reserves memory for pretrigger samples up to the specified 
+                num. of pretrigger samples."""))
 
         if self.model in ['34465A', '34470A']:
             self.add_parameter('sample_source',
