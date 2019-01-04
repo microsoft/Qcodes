@@ -584,17 +584,18 @@ def _average_heatmap(
     Take a pair of Axes, Colorbar and average along one dimension if the axis
     holds a heatmap. Else just return the arguments unchanged.
     """
-    # if we receive a line plot axis, we just do nothing
+    # If we receive anything we can't recognize as a heatmap on a grid,
+    # then we make no attempt of averaging, but just let the arguments
+    # slip through
     if ax.collections == []:
         return ax, cbax
 
     if len(ax.collections) > 1:
-        raise NotImplementedError('Wrong type of axis, '
-                                  'contains too many things')
+        return ax, cbax
 
     mesh = ax.collections[0]
     if not isinstance(mesh, QuadMesh):
-        raise ValueError('Wrong type of axis, does not hold a heatmap')
+            return ax, cbax
 
     flat_data = mesh.get_array()
     x_prime, y_prime, _ = np.shape(mesh._coordinates)
