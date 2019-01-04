@@ -7,6 +7,7 @@ from typing import Tuple
 
 from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
+from qcodes.utils.deprecate import deprecate
 from qcodes import VisaInstrument
 from pyvisa import VisaIOError
 
@@ -26,6 +27,14 @@ class ArrayMeasurement(ArrayParameter):
         self.unit = ''
         self.properly_prepared = False
 
+    @deprecate(reason='the use of this ArrayParameter is limiting as it '
+                      'represents only a single way of performing '
+                      'measurements and performs preparations that are not '
+                      'generally applicable',
+               alternative='driver methods like `fetch` and `read` (together '
+                           'with other methods and parameters) and custom '
+                           'functions and parameters implemented on top of '
+                           'them')
     def prepare(self):
         """
         Prepare the measurement, create the setpoints.
