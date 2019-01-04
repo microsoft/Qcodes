@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
+from matplotlib.collections import QuadMesh
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
@@ -552,3 +553,118 @@ def _is_string_valued_array(values: np.ndarray) -> bool:
         True, if the array contains string; False otherwise
     """
     return isinstance(values[0], str)
+
+#
+# Post analysis functions for plot_by_id
+#
+
+
+def _get_axis(coords: np.ndarray, avg_dim: str) -> np.ndarray:
+    """
+    Helper function for _average_heatmap to get the points of either
+    the x- or y-axis from a meshgrid's coordinates
+    """
+    if avg_dim == 'column':
+        bins = coords[0][:, 0]
+    elif avg_dim == 'row':
+        bins = coords[:, 0][:, 1]
+    else:
+        raise ValueError(f'Unknown avg_dim: {avg_dim}')
+    delta = np.mean(np.diff(bins))
+    points = bins[:-1] + delta/2
+
+    return points
+
+def _average_heatmap(
+    ax: matplotlib.axes.Axes,
+    cbax: Optional[matplotlib.colorbar.Colorbar],
+    avg_dim: str) -> Tuple[matplotlib.axes.Axes,
+                           Optional[matplotlib.colorbar.Colorbar]]:
+    """
+    Take a pair of Axes, Colorbar and average along one dimension if the axis
+    holds a heatmap. Else just return the arguments unchanged.
+    """
+    # if we receive a line plot axis, we just do nothing
+    if ax.collections == []:
+        return ax, cbax
+
+    if len(ax.collections) > 1:
+        raise NotImplementedError('Wrong type of axis, '
+                                  'contains too many things')
+
+    mesh = ax.collections[0]
+    if not isinstance(mesh, QuadMesh):
+        raise ValueError('Wrong type of axis, does not hold a heatmap')
+
+    flat_data = mesh.get_array()
+    x_prime, y_prime, _ = np.shape(mesh._coordinates)
+    x_len = x_prime - 1
+    y_len = y_prime - 1
+    data = flat_data.reshape(x_len, y_len).copy()
+
+    xlabel = ax.get_xlabel()
+    ylabel = ax.get_ylabel()
+
+    zlabel = cbax._label
+    title = ax.get_title()
+
+    new_xdata = _get_axis(mesh._coordinates, avg_dim=avg_dim)
+
+    ax.clear()
+    avg_dim_int = {'column': 0, 'row': 1}[avg_dim]
+    ax.plot(new_xdata, np.mean(data, avg_dim_int))
+
+    new_xlabel = {'column': xlabel, 'row': ylabel}[avg_dim]
+    ax.set_xlabel(new_xlabel)
+
+    ax.set_ylabel(zlabel)
+    new_title = f"{title}\nAveraged by {avg_dim}"
+    ax.set_title(new_title)
+    cbax.remove()
+    cbax = None
+
+    return ax, cbax
+
+
+def average_columnwise(axs_and_cbaxs: AxesTupleList) -> AxesTupleList:
+    """
+    Take the output plots of plot_by_id and average every heatmap along its
+    columns. Leave the line plots unchanged.
+
+    Args:
+        axs_and_cbaxs: The output of plot_by_id
+
+    Returns:
+        The same axes and colorbars, but changed to now hold line plots where
+        once were heatmaps
+    """
+    modified_axs = []
+    modified_cbaxs = []
+    for ax, cbax in zip(*axs_and_cbaxs):
+        mod_ax, mod_cbax = _average_heatmap(ax, cbax, avg_dim='column')
+        modified_axs.append(mod_ax)
+        modified_cbaxs.append(mod_cbax)
+
+    return modified_axs, modified_cbaxs
+
+
+def average_rowwise(axs_and_cbaxs: AxesTupleList) -> AxesTupleList:
+    """
+    Take the output plots of plot_by_id and average every heatmap along its
+    columns. Leave the line plots unchanged.
+
+    Args:
+        axs_and_cbaxs: The output of plot_by_id
+
+    Returns:
+        The same axes and colorbars, but changed to now hold line plots where
+        once were heatmaps
+    """
+    modified_axs = []
+    modified_cbaxs = []
+    for ax, cbax in zip(*axs_and_cbaxs):
+        mod_ax, mod_cbax = _average_heatmap(ax, cbax, avg_dim='row')
+        modified_axs.append(mod_ax)
+        modified_cbaxs.append(mod_cbax)
+
+    return modified_axs, modified_cbaxs
