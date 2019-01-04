@@ -50,9 +50,10 @@ class ArrayMeasurement(ArrayParameter):
         inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
         inst.trigger_count(1)
         inst.trigger_delay(0)
-        inst.sample_count_pretrigger(0)
         inst.sample_source('TIM')
         inst.autorange('OFF')
+        if inst.has_DIG:
+            inst.sample_count_pretrigger(0)
 
         if inst.trigger_source() is None:
             raise ValueError('Trigger source unspecified! Please set '
