@@ -1,5 +1,5 @@
 # QCoDeS driver for the Keysight 344xxA Digital Multimeter
-
+import textwrap
 from functools import partial
 import numpy as np
 import logging
@@ -184,7 +184,21 @@ class _Keysight_344xxA(VisaInstrument):
                            set_cmd=self._set_NPLC,
                            vals=vals.Enum(*self.NPLC_list),
                            label='Integration time',
-                           unit='NPLC')
+                           unit='NPLC',
+                           docstring=textwrap.dedent("""\
+            Sets the integration time in number of power line cycles (PLC) 
+            for DC voltage and ratio measurements. Integration time is the 
+            period that the instrument's analog-to-digital (A/D) converter 
+            samples the input signal for a measurement. A longer integration 
+            time gives better measurement resolution but slower measurement 
+            speed.
+            
+            Only integration times of 1, 10, or 100 PLC provide normal mode 
+            (line frequency noise) rejection.
+            
+            Setting the integration time also sets the measurement 
+            resolution.""")
+                           )
 
         self.add_parameter('volt',
                            get_cmd=self._get_voltage,
@@ -215,14 +229,41 @@ class _Keysight_344xxA(VisaInstrument):
                            label='Display text',
                            set_cmd='DISPLAY:TEXT "{}"',
                            get_cmd='DISPLAY:TEXT?',
-                           vals=vals.Strings())
+                           vals=vals.Strings(),
+                           docstring=textwrap.dedent("""\
+            Displays the given text on the screen. Specifying empty string 
+            moves the display back to its normal state. The same can be 
+            achieved by calling `display_clear`.""")
+                           )
 
         self.add_parameter('autozero',
                            label='Autozero',
                            set_cmd='SENSe:VOLTage:DC:ZERO:AUTO {}',
                            get_cmd='SENSe:VOLTage:DC:ZERO:AUTO?',
                            val_mapping={'ON': 1, 'OFF': 0, 'ONCE': 'ONCE'},
-                           vals=vals.Enum('ON', 'OFF', 'ONCE'))
+                           vals=vals.Enum('ON', 'OFF', 'ONCE'),
+                           docstring=textwrap.dedent("""\
+            Disables or enables the autozero mode for DC voltage and ratio 
+            measurements.
+            
+            ON:   the DMM internally measures the offset following each 
+                  measurement. It then subtracts that measurement from the 
+                  preceding reading. This prevents offset voltages present on
+                  the DMM’s input circuitry from affecting measurement 
+                  accuracy.
+            OFF:  the instrument uses the last measured zero measurement and 
+                  subtracts it from each measurement. It takes a new zero 
+                  measurement each time you change the function, range or 
+                  integration time.
+            ONCE: the instrument takes one zero measurement and sets 
+                  autozero OFF. The zero measurement taken is used for all 
+                  subsequent measurements until the next change to the 
+                  function, range or integration time. If the specified 
+                  integration time is less than 1 PLC, the zero measurement 
+                  is taken at 1 PLC to optimize noise rejection. Subsequent 
+                  measurements are taken at the specified fast (< 1 PLC) 
+                  integration time.""")
+                           )
 
         # TRIGGERING
 
@@ -242,7 +283,12 @@ class _Keysight_344xxA(VisaInstrument):
                            get_cmd='TRIGger:DELay?',
                            vals=vals.MultiType(vals.Numbers(0, 3600),
                                                vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=float)
+                           get_parser=float,
+                           docstring="Step size for DC measurements is "
+                                     "approximately 1 µs.\nFor AC "
+                                     "measurements, step size depends on AC "
+                                     "bandwidth."
+                           )
 
         self.add_parameter('trigger_slope',
                            label='Trigger Slope',
