@@ -202,8 +202,8 @@ class MercurySlavePS(InstrumentChannel):
         # holds the value reported back by the instrument
         self._parent.ask(dressed_cmd)
 
-        # TODO: we could use the opportunity to check that we did set/ achieve
-        # the intended value
+        # TODO: we could use the opportunity to check that we did set/achieve
+        #  the intended value
 
 
 class MercuryiPS(VisaInstrument):
@@ -264,8 +264,9 @@ class MercuryiPS(VisaInstrument):
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
 
-        for coord, unit in zip(['x', 'y', 'z', 'r', 'theta', 'phi', 'rho'],
-                               ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
+        for coord, unit in zip(
+                ['x', 'y', 'z', 'r', 'theta',   'phi',     'rho'],
+                ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
                                unit=unit,
@@ -277,10 +278,49 @@ class MercuryiPS(VisaInstrument):
                                unit='T',
                                get_cmd=partial(self._get_measured, [coord]))
 
+        # FieldVector-valued parameters #
+
+        self.add_parameter(name="field_target",
+                           label="target field",
+                           unit="T",
+                           get_cmd=self._get_target_field,
+                           set_cmd=self._set_target_field)
+
+        self.add_parameter(name="field_measured",
+                           label="measured field",
+                           unit="T",
+                           get_cmd=self._get_field)
+
+        self.add_parameter(name="field_ramp_rate",
+                           label="ramp rate",
+                           unit="T/s",
+                           get_cmd=self._get_ramp_rate,
+                           set_cmd=self._set_ramp_rate)
+
         self.connect_message()
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
+
+    def _get_target_field(self) -> FieldVector:
+        return FieldVector(
+            **{
+                coord: self._get_component(coord)
+                for coord in 'xyz'
+            }
+        )
+
+    def _get_ramp_rate(self) -> FieldVector:
+        return FieldVector(
+            x=self.GRPX.field_ramp_rate(),
+            y=self.GRPY.field_ramp_rate(),
+            z=self.GRPZ.field_ramp_rate(),
+        )
+
+    def _set_ramp_rate(self, rate: FieldVector) -> None:
+        self.GRPX.field_ramp_rate(rate.x)
+        self.GRPY.field_ramp_rate(rate.y)
+        self.GRPZ.field_ramp_rate(rate.z)
 
     def _get_measured(self, coordinates: List[str]) -> Union[float,
                                                              List[float]]:
@@ -296,6 +336,13 @@ class MercuryiPS(VisaInstrument):
             return meas_field.get_components(*coordinates)[0]
         else:
             return meas_field.get_components(*coordinates)
+
+    def _get_field(self) -> FieldVector:
+        return FieldVector(
+            x=self.x_measured(),
+            y=self.y_measured(),
+            z=self.z_measured()
+        )
 
     def _set_target(self, coordinate: str, target: float) -> None:
         """
@@ -318,6 +365,10 @@ class MercuryiPS(VisaInstrument):
         cartesian_targ = self._target_vector.get_components('x', 'y', 'z')
         for targ, slave in zip(cartesian_targ, self.submodules.values()):
             slave.field_target(targ)
+
+    def _set_target_field(self, field: FieldVector) -> None:
+        for coord in 'xyz':
+            self._set_target(coord, field[coord])
 
     def _idn_getter(self) -> Dict[str, str]:
         """
@@ -391,7 +442,7 @@ class MercuryiPS(VisaInstrument):
 
         self._field_limits = limit_func
 
-    def ramp(self, mode: str) -> None:
+    def ramp(self, mode: str="safe") -> None:
         """
         Ramp the fields to their present target value
 
