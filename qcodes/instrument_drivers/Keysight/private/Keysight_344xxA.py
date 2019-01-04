@@ -332,13 +332,19 @@ class _Keysight_344xxA(VisaInstrument):
 
         # SAMPLING
 
+        if self.model in ['34465A', '34470A']:
+            _max_sample_count = 1e9
+        else:
+            _max_sample_count = 1e6
+
         self.add_parameter('sample_count',
                            label='Sample Count',
                            set_cmd=partial(self._set_databuffer_setpoints,
                                            'SAMPle:COUNt {}'),
                            get_cmd='SAMPle:COUNt?',
-                           vals=vals.MultiType(vals.Numbers(1, 1e6),
-                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           vals=vals.MultiType(
+                               vals.Numbers(1, _max_sample_count),
+                               vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=int)
 
         if self.has_DIG:
