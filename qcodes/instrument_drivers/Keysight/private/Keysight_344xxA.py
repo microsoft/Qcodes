@@ -465,9 +465,16 @@ class _Keysight_344xxA(VisaInstrument):
                                get_cmd='SENSe:VOLTage:DC:APERture?',
                                get_parser=float,
                                vals=vals.Numbers(*apt_times[self.model]),
-                               docstring=('Setting the aperture time '
-                                          'automatically enables the aperture'
-                                          ' mode.'))
+                               docstring=textwrap.dedent("""\
+                Specifies the integration time in seconds (called aperture 
+                time) with 2 µs resolution for DC voltage measurements.
+                
+                Use this command for precise control of the DMM's 
+                integration time. Use `NPLC` for better power-line noise 
+                rejection characteristics (NPLC > 1).
+
+                Setting the aperture time automatically enables the aperture 
+                mode."""))
 
         if not silent:
             self.connect_message()
