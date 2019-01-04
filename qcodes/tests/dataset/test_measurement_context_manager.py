@@ -741,15 +741,12 @@ def test_datasaver_numeric_and_array_paramtype():
     assert np.allclose(data[0][1], signal)
 
 
-@pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_arrays_in_numeric_paramtype():
+def test_datasaver_arrays_in_numeric_paramtype(experiment):
     """
     Test saving arrays with different lengths within an loop of single
     scalar parameters works.
     """
-    new_experiment('firstexp', sample_name='no sample')
-
-    meas = Measurement()
+    meas = Measurement(exp=experiment)
 
     meas.register_custom_parameter(name='numeric_1',
                                    label='Magnetic field',
