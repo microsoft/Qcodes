@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence, Optional, Any)
+                    MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
 from numbers import Number
 
@@ -465,10 +465,8 @@ class Runner:
             station = self.station
 
         if station:
-            self.ds.add_metadata('snapshot',
-                                 json.dumps({'station': station.snapshot()},
-                                            cls=NumpyJSONEncoder)
-                                 )
+            self.ds.add_snapshot(json.dumps({'station': station.snapshot()},
+                                            cls=NumpyJSONEncoder))
 
         if self.parameters is not None:
             for paramspec in self.parameters.values():
@@ -507,6 +505,8 @@ class Runner:
         self.ds.unsubscribe_all()
 
 
+
+T = TypeVar('T', bound='Measurement')
 class Measurement:
     """
     Measurement procedure container
@@ -592,10 +592,10 @@ class Measurement:
         return depends_on, inf_from
 
     def register_parameter(
-            self, parameter: _BaseParameter,
+            self : T, parameter: _BaseParameter,
             setpoints: setpoints_type = None,
             basis: setpoints_type = None,
-            paramtype: str = 'numeric') -> None:
+            paramtype: str = 'numeric') -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -645,12 +645,14 @@ class Measurement:
             raise RuntimeError("Does not know how to register a parameter"
                                f"of type {type(parameter)}")
 
-    def _register_parameter(self, name: str,
+        return self
+
+    def _register_parameter(self : T, name: str,
                             label: str,
                             unit: str,
                             setpoints: setpoints_type,
                             basis: setpoints_type,
-                            paramtype: str) -> None:
+                            paramtype: str) -> T:
         """
         Generate ParamSpecs and register them for an individual parameter
         """
@@ -679,6 +681,8 @@ class Measurement:
             self.parameters.pop(name)
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
+
+        return self
 
     def _register_arrayparameter(self,
                                  parameter: ArrayParameter,
@@ -771,11 +775,11 @@ class Measurement:
                                      paramtype)
 
     def register_custom_parameter(
-            self, name: str,
+            self : T, name: str,
             label: str = None, unit: str = None,
             basis: setpoints_type = None,
             setpoints: setpoints_type = None,
-            paramtype: str = 'numeric') -> None:
+            paramtype: str = 'numeric') -> T:
         """
         Register a custom parameter with this measurement
 
@@ -793,12 +797,12 @@ class Measurement:
                 are the setpoints of this parameter
             paramtype: type of the parameter, i.e. the SQL storage class
         """
-        self._register_parameter(name,
-                                 label,
-                                 unit,
-                                 setpoints,
-                                 basis,
-                                 paramtype)
+        return self._register_parameter(name,
+                                        label,
+                                        unit,
+                                        setpoints,
+                                        basis,
+                                        paramtype)
 
     def unregister_parameter(self,
                              parameter: setpoints_type) -> None:
@@ -830,7 +834,7 @@ class Measurement:
         self.parameters.pop(param)
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self, func: Callable, args: tuple) -> None:
+    def add_before_run(self : T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -846,7 +850,9 @@ class Measurement:
 
         self.enteractions.append((func, args))
 
-    def add_after_run(self, func: Callable, args: tuple) -> None:
+        return self
+
+    def add_after_run(self : T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -862,9 +868,11 @@ class Measurement:
 
         self.exitactions.append((func, args))
 
-    def add_subscriber(self,
+        return self
+
+    def add_subscriber(self : T,
                        func: Callable,
-                       state: Union[MutableSequence, MutableMapping]) -> None:
+                       state: Union[MutableSequence, MutableMapping]) -> T:
         """
         Add a subscriber to the dataset of the measurement.
 
@@ -875,6 +883,8 @@ class Measurement:
             state: The variable to hold the state.
         """
         self.subscribers.append((func, state))
+
+        return self
 
     def run(self) -> Runner:
         """

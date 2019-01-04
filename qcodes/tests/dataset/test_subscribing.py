@@ -9,11 +9,14 @@ import logging
 import qcodes
 from qcodes.dataset.param_spec import ParamSpec
 # pylint: disable=unused-import
+from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.tests.dataset.temporary_databases import (
     empty_temp_db, experiment, dataset)
 # pylint: enable=unused-import
+from qcodes.tests.dataset.test_dataset_basic import make_shadow_dataset
 
 from qcodes.tests.test_config import default_config
+from qcodes.tests.common import retry_until_does_not_throw
 
 
 log = logging.getLogger(__name__)
@@ -82,7 +85,24 @@ def test_basic_subscription(dataset, basic_subscriber):
         y = -x**2
         dataset.add_result({'x': x, 'y': y})
         expected_state[x+1] = [(x, y)]
-        assert dataset.subscribers[sub_id].state == expected_state
+
+        @retry_until_does_not_throw(
+            exception_class_to_expect=AssertionError, delay=0, tries=10)
+        def assert_expected_state():
+            assert dataset.subscribers[sub_id].state == expected_state
+
+        assert_expected_state()
+
+    dataset.unsubscribe(sub_id)
+
+    assert len(dataset.subscribers) == 0
+    assert list(dataset.subscribers.keys()) == []
+
+    # Ensure the trigger for the subscriber have been removed from the database
+    get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
+    triggers = atomic_transaction(
+        dataset.conn, get_triggers_sql).fetchall()
+    assert len(triggers) == 0
 
 
 def test_subscription_from_config(dataset, basic_subscriber):
@@ -135,12 +155,20 @@ def test_subscription_from_config(dataset, basic_subscriber):
 
         expected_state = {}
 
-        for x in range(10):
+        # Here we are only testing 2 to reduce the CI time
+        for x in range(2):
             y = -x**2
             dataset.add_result({'x': x, 'y': y})
             expected_state[x+1] = [(x, y)]
-            assert dataset.subscribers[sub_id].state == expected_state
-            assert dataset.subscribers[sub_id_c].state == expected_state
+
+            @retry_until_does_not_throw(
+                exception_class_to_expect=AssertionError, delay=0, tries=10)
+            def assert_expected_state():
+                assert dataset.subscribers[sub_id].state == expected_state
+                assert dataset.subscribers[sub_id_c].state == expected_state
+
+            assert_expected_state()
+
 
 def test_subscription_from_config_wrong_name(dataset):
     """
@@ -174,4 +202,3 @@ def test_subscription_from_config_wrong_name(dataset):
         assert 'test_subscriber' not in qcodes.config.subscription.subscribers
         with pytest.raises(RuntimeError):
             sub_id_c = dataset.subscribe_from_config('test_subscriber')
-
