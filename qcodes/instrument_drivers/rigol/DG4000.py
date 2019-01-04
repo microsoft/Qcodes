@@ -72,11 +72,11 @@ class Rigol_DG4000(VisaInstrument):
         if model in models:
             i = models.index(model)
 
-            sine_freq = [200e6, 160e6, 100e6, 60e6][i]
-            square_freq = [60e6, 50e6, 40e6, 25e6][i]
-            ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
-            pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
-            harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
+            self.sine_freq = [200e6, 160e6, 100e6, 60e6][i]
+            self.square_freq = [60e6, 50e6, 40e6, 25e6][i]
+            self.ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
+            self.pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
+            self.harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
             self.arb_freq = [50e6, 40e6, 25e6, 15e6][i]
         else:
             raise KeyError('Model code ' + model + ' is not recognized')
