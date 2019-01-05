@@ -65,8 +65,6 @@ class D5a(Instrument):
 
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
 
-        self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero)
-
         if self._mV:
             self._gain = 1e3
             unit = 'mV'
@@ -96,7 +94,10 @@ class D5a(Instrument):
                                vals=Enum(*self._span_set_map.keys()),
                                docstring='Change the output span of the DAC. This command also updates the validator.')
 
-    def _set_dacs_zero(self):
+    def set_dacs_zero(self):
+        """
+        Set all dacs to zero volts
+        """
         for i in range(self._number_dacs):
             self._set_dac(i, 0.0)
 

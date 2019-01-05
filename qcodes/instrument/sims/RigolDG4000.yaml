@@ -1,0 +1,26 @@
+# SIMULATED INSTRUMENT FOR RIGOL DG4000 AWG
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, DG4202, 1000, 0.0"  # __init__ queries for the model
+
+    properties:
+
+      counter attenuation:
+        default: "1X"
+        getter:
+          q: "COUN:ATT?"
+          r: "{}"
+        setter:
+          q: "COUN:ATT {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

@@ -26,9 +26,6 @@ class InstrumentChannel(InstrumentBase):
 
         parameters (Dict[Parameter]): All the parameters supported by this
           channel. Usually populated via ``add_parameter``
-
-        functions (Dict[Function]): All the functions supported by this
-          channel. Usually populated via ``add_function``
     """
 
     def __init__(self,
@@ -408,11 +405,11 @@ class ChannelList(Metadatable):
 
     def __getattr__(self, name: str):
         """
-        Return a multi-channel function or parameter that we can use to get or
+        Return a multi-channel parameter that we can use to get or
         set all items in a channel list simultaneously.
 
         Params:
-            name(str): The name of the parameter or function that we want to
+            name(str): The name of the parameter that we want to
             operate on.
         """
         # Check if this is a valid parameter
@@ -470,14 +467,13 @@ class ChannelList(Metadatable):
                                      setpoint_labels=setpoint_labels)
             return param
 
-        # Check if this is a valid function
-        if name in self._channels[0].functions:
-            # We want to return a reference to a function that would call the
-            # function for each of the channels in turn.
-            def multi_func(*args, **kwargs):
-                for chan in self._channels:
-                    chan.functions[name](*args, **kwargs)
-            return multi_func
+        # if it is not a parameter, we fall back to simply getting that attr
+        elif hasattr(self._channels[0], name):
+            def multi_attr(*args, **kwargs):
+                out = tuple(getattr(chan, name)(*args, **kwargs)
+                            for chan in self._channels)
+                return out
+            return multi_attr
 
         try:
             return self._channel_mapping[name]
@@ -491,7 +487,6 @@ class ChannelList(Metadatable):
         names = list(super().__dir__())
         if self._channels:
             names += list(self._channels[0].parameters.keys())
-            names += list(self._channels[0].functions.keys())
             names += [channel.short_name for channel in self._channels]
         return sorted(set(names))
 

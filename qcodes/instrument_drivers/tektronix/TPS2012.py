@@ -239,18 +239,6 @@ class TPS2012(VisaInstrument):
         # Scope trace boolean
         self.trace_ready = False
 
-        # functions
-
-        self.add_function('force_trigger',
-                          call_cmd='TRIGger FORce',
-                          docstring='Force trigger event')
-        self.add_function('run',
-                          call_cmd='ACQuire:STATE RUN',
-                          docstring='Start acquisition')
-        self.add_function('stop',
-                          call_cmd='ACQuire:STATE STOP',
-                          docstring='Stop acquisition')
-
         # general parameters
         self.add_parameter('trigger_type',
                            label='Type of the trigger',
@@ -317,6 +305,18 @@ class TPS2012(VisaInstrument):
         # Note: using data width 2 has been tested to not add
         # significantly to transfer times. The maximal length
         # of an array in one transfer is 2500 points.
+
+    def force_trigger(self) -> None:
+        """Force trigger event"""
+        self.write('TRIGger FORce')
+
+    def run(self) -> None:
+        """Start acquisition"""
+        self.write('ACQuire:STATE RUN')
+
+    def stop(self) -> None:
+        """Stop acquisition"""
+        self.write('ACQuire:STATE STOP')
 
     def _set_timescale(self, scale):
         """

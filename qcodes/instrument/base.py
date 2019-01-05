@@ -38,8 +38,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         parameters (Dict[Parameter]): All the parameters supported by this
             instrument. Usually populated via ``add_parameter``
 
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``
         submodules (Dict[Metadatable]): All the submodules of this instrument
             such as channel lists or logical groupings of parameters.
             Usually populated via ``add_submodule``
@@ -51,7 +49,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
-        self.functions: Dict[str, Function] = {}
         self.submodules: Dict[str, Union['InstrumentBase',
                                          'ChannelList']] = {}
         super().__init__(**kwargs)
@@ -105,9 +102,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         simply making a new method in your ``Instrument`` subclass definition.
 
         Args:
-            name (str): how the Function will be stored within
-            ``instrument.Functions`` and also how you  address it using the
-            shortcut methods: ``instrument.call(func_name, *args)`` etc.
+            name: the name of the bound method
 
             **kwargs: constructor kwargs for ``Function``
 
@@ -115,10 +110,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             KeyError: if this instrument already has a function with this
                 name.
         """
-        if name in self.functions:
-            raise KeyError('Duplicate function name {}'.format(name))
+
+        warnings.warn("The use of 'add_function' has been deprecated. Please "
+                      "use a normal bound method instead.")
+
+        if name in self.parameters:
+            raise KeyError(f'A parameter with the name {name} already exists.')
         func = Function(name=name, instrument=self, **kwargs)
-        self.functions[name] = func
+        self.__setattr__(func.name, func)
 
     def add_submodule(self, name: str, submodule:  Union['InstrumentBase', 'ChannelList']) -> None:
         """
@@ -170,8 +169,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
 
         snap = {
-            "functions": {name: func.snapshot(update=update)
-                          for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
                            for name, subm in self.submodules.items()},
             "__class__": full_class(self)
@@ -300,14 +297,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     # instrument.get('someparam') === instrument['someparam'].get()         #
     # etc...                                                                #
     #
-    delegate_attr_dicts = ['parameters', 'functions', 'submodules']
+    delegate_attr_dicts = ['parameters', 'submodules']
 
     def __getitem__(self, key: str) -> Union[Callable, Parameter]:
-        """Delegate instrument['name'] to parameter or function 'name'."""
-        try:
-            return self.parameters[key]
-        except KeyError:
-            return self.functions[key]
+        """Delegate instrument['name'] to parameter 'name'."""
+        return self.parameters[key]
 
     def set(self, param_name: str, value: Any) -> None:
         """
@@ -330,19 +324,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             The current value of the parameter.
         """
         return self.parameters[param_name].get()
-
-    def call(self, func_name: str, *args) -> Any:
-        """
-        Shortcut for calling a function from its name.
-
-        Args:
-            func_name: The name of a function of this instrument.
-            *args: any arguments to the function.
-
-        Returns:
-            The return value of the function.
-        """
-        return self.functions[func_name].call(*args)
 
     def __getstate__(self):
         """Prevent pickling instruments, and give a nice error message."""
@@ -390,9 +371,6 @@ class Instrument(InstrumentBase):
 
         parameters (Dict[Parameter]): All the parameters supported by this
             instrument. Usually populated via ``add_parameter``
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``
 
         submodules (Dict[Metadatable]): All the submodules of this instrument
             such as channel lists or logical groupings of parameters.

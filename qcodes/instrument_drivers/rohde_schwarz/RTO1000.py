@@ -503,14 +503,23 @@ class RTO1000(VisaInstrument):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
 
-        self.add_function('stop', call_cmd='STOP')
-        self.add_function('reset', call_cmd='*RST')
-        self.add_function('opc', call_cmd='*OPC?')
-        self.add_function('stop_opc', call_cmd='*STOP;OPC?')
-        # starts the shutdown of the system
-        self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
-
         self.connect_message()
+
+    def stop(self) -> None:
+        self.write('STOP')
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def opc(self) -> None:
+        self.write('*OPC?')
+
+    def stop_opc(self) -> None:
+        self.write('*STOP;OPC?')
+
+    def system_shutdown(self) -> None:
+        """Start the shutdown of the system"""
+        self.write('SYSTem:EXIT')
 
     def run_cont(self) -> None:
         """

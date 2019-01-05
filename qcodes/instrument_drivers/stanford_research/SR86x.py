@@ -864,11 +864,6 @@ class SR86x(VisaInstrument):
                       "reference signal"
         )
 
-        # Auto functions
-        self.add_function('auto_range', call_cmd='ARNG')
-        self.add_function('auto_scale', call_cmd='ASCL')
-        self.add_function('auto_phase', call_cmd='APHS')
-
         # Data transfer
         # first 4 parameters from a list of 16 below.
         self.add_parameter('X',
@@ -969,17 +964,23 @@ class SR86x(VisaInstrument):
         data_channels.lock()
         self.add_submodule("data_channels", data_channels)
 
-        # Interface
-        self.add_function('reset', call_cmd='*RST')
-
-        self.add_function('disable_front_panel', call_cmd='OVRM 0')
-        self.add_function('enable_front_panel', call_cmd='OVRM 1')
-
         buffer = SR86xBuffer(self, "{}_buffer".format(self.name))
         self.add_submodule("buffer", buffer)
 
         self.input_config()
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def auto_range(self) -> None:
+        self.write('ARNG')
+
+    def auto_phase(self) -> None:
+        self.write('APHS')
+
+    def auto_scale(self) -> None:
+        self.write('ASCL')
 
     def _set_units(self, unit):
         for param in [self.X, self.Y, self.R, self.sensitivity]:

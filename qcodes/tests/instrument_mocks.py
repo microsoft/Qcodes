@@ -149,8 +149,15 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
-        self.add_function(name='log_my_name',
-                          call_cmd=partial(log.debug, f'{name}'))
+    def log_my_name(self):
+        log.debug(f'{self.short_name}')
+
+    @staticmethod
+    def add_one(x: int) -> int:
+        return x + 1
+
+    def get_my_name(self):
+        return self.short_name
 
 
 class DummyChannelInstrument(Instrument):

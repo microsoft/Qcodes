@@ -156,8 +156,6 @@ class Keithley_2000(VisaInstrument):
                            unit='arb.unit',
                            get_cmd=self._read_next_value)
 
-        self.add_function('reset', call_cmd='*RST')
-
         if reset:
             self.reset()
 
@@ -166,6 +164,9 @@ class Keithley_2000(VisaInstrument):
         self.write('FORM:ELEM READ')
 
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
 
     def trigger(self):
         if not self.trigger_continuous():

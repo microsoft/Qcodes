@@ -66,15 +66,7 @@ class TestInstrument(TestCase):
     def test_add_remove_f_p(self):
         with self.assertRaises(KeyError):
                 self.instrument.add_parameter('dac1', get_cmd='foo')
-        self.instrument.add_function('function', call_cmd='foo')
-        with self.assertRaises(KeyError):
-                self.instrument.add_function('function', call_cmd='foo')
 
-        self.instrument.add_function('dac1', call_cmd='foo')
-        # test custom __get_attr__
-        self.instrument['function']
-        # by desgin one gets the parameter if a function exists and has same
-        # name
         dac1 = self.instrument['dac1']
         self.assertTrue(isinstance(dac1, Parameter))
 

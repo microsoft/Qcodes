@@ -11,6 +11,7 @@ from qcodes import validators as vals
 
 log = logging.getLogger(__name__)
 
+
 class RohdeSchwarz_SMR40(VisaInstrument):
     """This is the qcodes driver for the Rohde & Schwarz SMR40 signal generator
     Status: beta-version.
@@ -64,10 +65,6 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         self.add_parameter('pulse_delay',
                            get_cmd=self.do_get_pulse_delay,
                            set_cmd=self.do_set_pulse_delay)
-
-        # TODO(TF): check the way of defining this type of functions, where logging is added
-        # self.add_function('reset')
-        # self.add_function('get_all')
 
         if reset:
             self.reset()

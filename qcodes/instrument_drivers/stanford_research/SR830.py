@@ -388,7 +388,7 @@ class SR830(VisaInstrument):
                            get_cmd='OUTP? 4',
                            get_parser=float,
                            unit='deg')
-        
+
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -428,44 +428,6 @@ class SR830(VisaInstrument):
                            get_cmd='SPTS ?',
                            get_parser=int)
 
-        # Auto functions
-        self.add_function('auto_gain', call_cmd='AGAN')
-        self.add_function('auto_reserve', call_cmd='ARSV')
-        self.add_function('auto_phase', call_cmd='APHS')
-        self.add_function('auto_offset', call_cmd='AOFF {0}',
-                          args=[Enum(1, 2, 3)])
-
-        # Interface
-        self.add_function('reset', call_cmd='*RST')
-
-        self.add_function('disable_front_panel', call_cmd='OVRM 0')
-        self.add_function('enable_front_panel', call_cmd='OVRM 1')
-
-        self.add_function('send_trigger', call_cmd='TRIG',
-                          docstring=("Send a software trigger. "
-                                     "This command has the same effect as a "
-                                     "trigger at the rear panel trigger"
-                                     " input."))
-
-        self.add_function('buffer_start', call_cmd='STRT',
-                          docstring=("The buffer_start command starts or "
-                                     "resumes data storage. buffer_start"
-                                     " is ignored if storage is already in"
-                                     " progress."))
-
-        self.add_function('buffer_pause', call_cmd='PAUS',
-                          docstring=("The buffer_pause command pauses data "
-                                     "storage. If storage is already paused "
-                                     "or reset then this command is ignored."))
-
-        self.add_function('buffer_reset', call_cmd='REST',
-                          docstring=("The buffer_reset command resets the data"
-                                     " buffers. The buffer_reset command can "
-                                     "be sent at any time - any storage in "
-                                     "progress, paused or not, will be reset."
-                                     " This command will erase the data "
-                                     "buffer."))
-
         # Initialize the proper units of the outputs and sensitivities
         self.input_config()
 
@@ -474,29 +436,29 @@ class SR830(VisaInstrument):
         self._buffer2_ready = False
 
         self.connect_message()
-    
-    
+
+
     SNAP_PARAMETERS = {
-            'x': '1',   
-            'y': '2',  
-            'r': '3', 
-            'p': '4',   
-        'phase': '4',  
+            'x': '1',
+            'y': '2',
+            'r': '3',
+            'p': '4',
+        'phase': '4',
            'θ' : '4',
-         'aux1': '5',  
-         'aux2': '6',   
-         'aux3': '7',  
-         'aux4': '8',  
-         'freq': '9',   
+         'aux1': '5',
+         'aux2': '6',
+         'aux3': '7',
+         'aux4': '8',
+         'freq': '9',
           'ch1': '10',
-          'ch2': '11'  
+          'ch2': '11'
     }
-    
+
     def snap(self, *parameters: str) -> Tuple[float, ...]:
         """
-        Get between 2 and 6 parameters at a single instant. This provides a 
-        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ, 
-        the aux inputs 1-4, frequency, or what is currently displayed on 
+        Get between 2 and 6 parameters at a single instant. This provides a
+        coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ,
+        the aux inputs 1-4, frequency, or what is currently displayed on
         channels 1 and 2.
 
         Reading X and Y (or R and θ) gives a coherent snapshot of the signal.
@@ -508,14 +470,14 @@ class SR830(VisaInstrument):
                 From 2 to 6 strings of names of parameters for which the values
                 are requested. including: 'x', 'y', 'r', 'p', 'phase' or 'θ',
                 'aux1', 'aux2', 'aux3', 'aux4', 'freq', 'ch1', and 'ch2'.
-            
+
         Returns:
             A tuple of floating point values in the same order as requested.
 
         Examples:
             lockin.snap('x','y') -> tuple(x,y)
-            
-            lockin.snap('aux1','aux2','freq','phase') 
+
+            lockin.snap('aux1','aux2','freq','phase')
                 -> tuple(aux1,aux2,freq,phase)
 
         Note:
@@ -525,12 +487,12 @@ class SR830(VisaInstrument):
             Unknown for ch1 and ch2. It will depend on what was set.
 
              - If X,Y,R and θ are all read, then the values of X,Y are recorded
-               approximately 10 µs apart from R,θ. Thus, the values of X and Y 
+               approximately 10 µs apart from R,θ. Thus, the values of X and Y
                may not yield the exact values of R and θ from a single snap.
-             - The values of the Aux Inputs may have an uncertainty of 
+             - The values of the Aux Inputs may have an uncertainty of
                up to 32 µs.
-             - The frequency is computed only every other period or 40 ms, 
-               whichever is longer.  
+             - The frequency is computed only every other period or 40 ms,
+               whichever is longer.
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
@@ -583,6 +545,54 @@ class SR830(VisaInstrument):
 
         self.sensitivity.set(n_to[n + dn])
         return True
+
+    def auto_gain(self) -> None:
+        self.write('AGAN')
+
+    def auto_reserve(self) -> None:
+        self.write('ARSV')
+
+    def auto_phase(self) -> None:
+        self.write('APHS')
+
+    def auto_offset(self, option: int) -> None:
+        """
+        Auto offset either X (option=1), Y (option=2), or R (option=3)
+        """
+        if option not in [1, 2, 3]:
+            raise ValueError('Invalid option. Must be 1, 2, or 3')
+        self.write(f'AOFF {option}')
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def send_trigger(self) -> None:
+        """
+        Send a software trigger. Has the same effect as a trigger at the rear
+        panel trigger input
+        """
+        self.write('TRIG')
+
+    def buffer_start(self) -> None:
+        """
+        Start or resume data storage. Is ignored if storage is already in
+        progress
+        """
+        self.write('STRT')
+
+    def buffer_pause(self) -> None:
+        """
+        Pause data storage. Is ignored if storage is already paused or reset
+        """
+        self.write('PAUS')
+
+    def buffer_reset(self) -> None:
+        """
+        Reset the data buffers. This function can be called at any time - any
+        storage in progress, paused or not, will be reset. Calling this
+        function erases the data buffer.
+        """
+        self.write('REST')
 
     def _set_buffer_SR(self, SR):
         self.write('SRAT {}'.format(SR))

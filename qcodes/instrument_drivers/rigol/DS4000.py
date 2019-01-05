@@ -174,6 +174,7 @@ class RigolDS4000Channel(InstrumentChannel):
                            raw=True
                            )
 
+
 class DS4000(VisaInstrument):
     """
     This is the QCoDeS driver for the Rigol DS4000 series oscilloscopes.
@@ -196,23 +197,6 @@ class DS4000(VisaInstrument):
         self.connect_message()
 
         self._check_firmware_version()
-
-        # functions
-        self.add_function('run',
-                          call_cmd=':RUN',
-                          docstring='Start acquisition')
-        self.add_function('stop',
-                          call_cmd=':STOP',
-                          docstring='Stop acquisition')
-        self.add_function('single',
-                          call_cmd=':SINGle',
-                          docstring='Single trace acquisition')
-        self.add_function('force_trigger',
-                          call_cmd='TFORce',
-                          docstring='Force trigger event')
-        self.add_function("auto_scale",
-                          call_cmd=":AUToscale",
-                          docstring="Perform autoscale")
 
         # general parameters
         self.add_parameter('trigger_type',
@@ -255,6 +239,25 @@ class DS4000(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
+    def run(self) -> None:
+        """Start acquisition"""
+        self.write(':RUN')
+
+    def stop(self) -> None:
+        """Stop acquisition"""
+        self.write(':STOP')
+
+    def single(self) -> None:
+        """Single trace acquisition"""
+        self.write(':SINGle')
+
+    def force_trigger(self) -> None:
+        """Force trigger event"""
+        self.write(':TFORce')
+
+    def auto_scale(self) -> None:
+        """Perform autoscale"""
+        self.write(':AUToscale')
     def _check_firmware_version(self):
         #Require version 00.02.03
 

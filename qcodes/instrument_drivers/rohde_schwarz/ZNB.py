@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+from warnings import warn
 
 from qcodes import VisaInstrument
 from qcodes import ChannelList, InstrumentChannel
@@ -225,8 +226,8 @@ class ZNBChannel(InstrumentChannel):
                            channel=n,
                            parameter_class=FrequencySweep)
 
-        self.add_function('autoscale',
-                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
+    def autoscale(self) -> None:
+        self.write(f'DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{self._tracename}"')
 
     def _set_format(self, val):
         unit_mapping = {'MLOG\n': 'dB',
@@ -335,7 +336,7 @@ class ZNBChannel(InstrumentChannel):
         # preserve original state of the znb
         initial_state = self.status()
         self.status(1)
-        self._parent.cont_meas_off()
+        self._parent.sweep_mode('SINGLE')
         try:
             # if force polar is set, the SDAT data format will be used. Here
             # the data will be transfered as a complex number independet of
@@ -356,7 +357,7 @@ class ZNBChannel(InstrumentChannel):
                                  'Smith', 'Inverse Smith']:
                 data = data[0::2] + 1j * data[1::2]
         finally:
-            self._parent.cont_meas_on()
+            self._parent.sweep_mode('CONTINUOUS')
             self.status(initial_state)
         return data
 
@@ -382,9 +383,14 @@ class ZNB(VisaInstrument):
     CHANNEL_CLASS = ZNBChannel
 
 
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs) -> None:
+    def __init__(self, name: str, address: str,
+                 init_s_params: bool=True, **kwargs) -> None:
 
-        super().__init__(name=name, address=address, **kwargs)
+        # NOTE(WilliamHPNielsen): there is an implicit assumption in the
+        # val_mappings of this driver that the terminator is '', i.e. that
+        # a '\n' is also returned
+        super().__init__(name=name, address=address, terminator='',
+                         **kwargs)
 
         # TODO(JHN) I could not find a way to get max and min freq from
         # the API, if that is possible replace below with that
@@ -417,22 +423,37 @@ class ZNB(VisaInstrument):
                            get_cmd='OUTP1?',
                            set_cmd='OUTP1 {}',
                            val_mapping={True: '1\n', False: '0\n'})
-        self.add_function('reset', call_cmd='*RST')
-        self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
-        self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
-        self.add_function('cont_meas_on', call_cmd='INIT:CONT:ALL ON')
-        self.add_function('cont_meas_off', call_cmd='INIT:CONT:ALL OFF')
-        self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
-        self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
-        self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
-        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(
-            num_ports, num_ports))
-        self.add_function('display_single_window',
-                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
-        self.add_function('display_dual_window',
-                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,1')
-        self.add_function('rf_off', call_cmd='OUTP1 OFF')
-        self.add_function('rf_on', call_cmd='OUTP1 ON')
+
+        self.add_parameter(name='tooltip',
+                           set_cmd='SYSTem:ERRor:DISPlay {}',
+                           get_cmd='SYSTem:ERRor:DISPlay?',
+                           get_parser=int,
+                           val_mapping={"ON": 1, "OFF": 0})
+
+        self.add_parameter(name='sweep_mode',
+                           label='Sweep mode',
+                           set_cmd='INITiate:CONTinuous:ALL {}',
+                           get_cmd='INITiate:CONTinuous:ALL?',
+                           val_mapping={'SINGLE': 0, 'CONTINUOUS': 1},
+                           get_parser=int)
+
+        self.add_parameter(name="display_updates",
+                           label="Display updates on instrument",
+                           set_cmd="SYSTem:DISPlay:UPDate {}",
+                           get_cmd="SYSTem:DISPlay:UPDate?",
+                           val_mapping={'ON': '1\n', 'OFF': '0\n',
+                                        'ONCE': 'ONCE\n'})
+
+        self.add_parameter(name='display_layout',
+                           label='Instrument display layout mode',
+                           set_cmd='DISPlay:LAYout {}',
+                           get_cmd='DISPlay:LAYout?',
+                           val_mapping={'LINEUP': 'LIN\n',
+                                        'STACK': 'STAC\n',
+                                        'HORIZONTAL': 'HOR\n',
+                                        'VERTICAL': 'VER\n',
+                                        'GRID': 'GRID\n'})
+
         self.reset()
         self.clear_channels()
         channels = ChannelList(self, "VNAChannels", self.CHANNEL_CLASS,
@@ -447,9 +468,79 @@ class ZNB(VisaInstrument):
             self.display_sij_split()
             self.channels.autoscale()
 
-        self.update_display_on()
-        self.rf_off()
+        self.display_updates('ON')
+        self.rf_power(False)
         self.connect_message()
+
+    def rf_on(self) -> None:
+        warn("The function rf_on has been deprecated. Please use the "
+             "rf_power parameter instead (set it to True)")
+        self.rf_power(True)
+
+    def rf_off(self) -> None:
+        warn("The function rf_off has been deprecated. Please use the "
+             "rf_power parameter instead (set it to False)")
+        self.rf_power(False)
+
+    def display_sij_split(self) -> None:
+        """
+        Set the display to an NxN grid, where N is the number of ports
+        """
+        self.display_layout('GRID')
+        num_ports = self.num_ports()
+        self.write(f'DISP:LAY:GRID {num_ports},{num_ports}')
+
+    def display_single_window(self) -> None:
+        """
+        Set the display to a single window (a 1x1 GRID)
+        """
+        self.display_layout('GRID')
+        self.write('DISP:LAY:GRID 1, 1')
+
+    def display_dual_window(self) -> None:
+        """
+        Set the display to two panes, horizontally split (a 2x1 grid)
+        """
+        self.display_layout('GRID')
+        self.write('DISP:LAY:GRID 2, 1')
+
+    def tooltip_on(self) -> None:
+        warn("The function tooltip_on has been deprecated. Please use the "
+             "tooltip parameter instead")
+        self.tooltip('ON')
+
+    def tooltip_off(self) -> None:
+        warn("The function tooltip_off has been deprecated. Please use the "
+             "tooltip parameter instead")
+        self.tooltip('OFF')
+
+    def cont_meas_on(self) -> None:
+        warn("The function cont_meas_on has been deprecated. Please use the "
+             "sweep_mode parameter instead (set it to 'CONTINUOUS')")
+        self.sweep_mode('CONTINUOUS')
+
+    def cont_meas_off(self) -> None:
+        warn("The function cont_meas_off has been deprecated. Please use the "
+             "sweep_mode parameter instead (set it to 'SINGLE')")
+        self.sweep_mode('SINGLE')
+
+    def update_display_on(self) -> None:
+        warn("The function update_display_on has been deprecated. Please use "
+             "the display_updates parameter instead (set it to 'ON')")
+        self.display_updates('ON')
+
+    def update_display_off(self) -> None:
+        warn("The function update_display_off has been deprecated. Please use "
+             "the display_updates parameter instead (set it to 'OFF')")
+        self.display_updates('OFF')
+
+    def update_display_once(self) -> None:
+        warn("The function update_display_once has been deprecated. Please "
+             "use the display_updates parameter instead (set it to 'ONCE')")
+        self.display_updates('ONCE')
+
+    def reset(self) -> None:
+        self.write('*RST')
 
     def display_grid(self, rows: int, cols: int):
         """

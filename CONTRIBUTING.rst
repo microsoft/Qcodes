@@ -107,9 +107,9 @@ will be tested unless you write the test to explicitly test more than
 this.
 
 Coverage testing is generally meaningless for instrument drivers, as
-calls to ``add_parameter`` and ``add_function`` do not add any code
+calls to ``add_parameter`` do not add any code
 other than the call itself, which is covered immediately on
-instantiation rather than on calling these parameters/functions. So it
+instantiation rather than on calling these parameters. So it
 is up to the driver author to ensure that all functionality the
 instrument supports is covered by tests. Also, it's mentioned below but
 bears repeating: if you fix a bug, write a test that would have failed

@@ -135,10 +135,13 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_parser=float,
                            vals=vals.Numbers(-8, 8))
 
-        self.add_function('reset', call_cmd='*RST')
-        self.add_function('run_self_tests', call_cmd='*TST?')
-
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
+
+    def run_self_tests(self) -> None:
+        self.write('*TST?')
 
     def get_parser_on_off(self,value):
         if value == '0':

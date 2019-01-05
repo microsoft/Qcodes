@@ -72,12 +72,12 @@ class Rigol_DG4000(VisaInstrument):
         if model in models:
             i = models.index(model)
 
-            sine_freq = [200e6, 160e6, 100e6, 60e6][i]
-            square_freq = [60e6, 50e6, 40e6, 25e6][i]
-            ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
-            pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
-            harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
-            arb_freq = [50e6, 40e6, 25e6, 15e6][i]
+            self.sine_freq = [200e6, 160e6, 100e6, 60e6][i]
+            self.square_freq = [60e6, 50e6, 40e6, 25e6][i]
+            self.ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
+            self.pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
+            self.harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
+            self.arb_freq = [50e6, 40e6, 25e6, 15e6][i]
         else:
             raise KeyError('Model code ' + model + ' is not recognized')
 
@@ -88,8 +88,6 @@ class Rigol_DG4000(VisaInstrument):
                            get_cmd='COUN:ATT?',
                            set_cmd='COUN:ATT {}',
                            val_mapping={1: '1X', 10: '10X'})
-
-        self.add_function('auto_counter', call_cmd='COUN:AUTO')
 
         self.add_parameter('counter_coupling',
                            get_cmd='COUN:COUP?',
@@ -200,56 +198,6 @@ class Rigol_DG4000(VisaInstrument):
                                set_cmd=output + 'SYNC {}',
                                val_mapping=on_off_map)
 
-            # Source Apply
-            # TODO: Various parameters are limited by
-            # impedance/freq/period/amplitude settings, this might be very hard
-            # to implement in here
-            self.add_function(ch + 'custom',
-                              call_cmd=source + 'APPL:CUST '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, arb_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'harmonic',
-                              call_cmd=source + 'APPL:HARM '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, harmonic_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'noise',
-                              call_cmd=source + 'APPL:NOIS {:.6e},{:.6e}',
-                              args=[Numbers(0, 10), Numbers()])
-
-            self.add_function(ch + 'pulse',
-                              call_cmd=source + 'APPL:PULS '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, pulse_freq),
-                                    Numbers(), Numbers(), Numbers(0)])
-
-            self.add_function(ch + 'ramp',
-                              call_cmd=source + 'APPL:RAMP '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, ramp_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'sinusoid',
-                              call_cmd=source + 'APPL:SIN '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, sine_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'square',
-                              call_cmd=source + 'APPL:SQU '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, square_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
-            self.add_function(ch + 'user',
-                              call_cmd=source + 'APPL:USER '
-                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, arb_freq),
-                                    Numbers(), Numbers(), Numbers(0, 360)])
-
             self.add_parameter(ch + 'configuration',
                                get_cmd=source + 'APPL?',
                                get_parser=parse_multiple_outputs)
@@ -349,29 +297,12 @@ class Rigol_DG4000(VisaInstrument):
                                vals=Numbers(20, 80))
 
             # Source Harmonic
-            self.add_function(ch + 'set_harmonic_amplitude',
-                              call_cmd=source + 'HARM:AMPL {},{:.6e}',
-                              args=[Ints(2, 16), Numbers(0)])
-
-            self.add_function(ch + 'get_harmonic_amplitude',
-                              call_cmd=source + 'HARM:AMPL? {}',
-                              args=[Ints(2, 16)],
-                              return_parser=float)
 
             self.add_parameter(ch + 'harmonic_order',
                                get_cmd=source + 'HARM:ORDE?',
                                get_parser=int,
                                set_cmd=source + 'HARM:ORDE {}',
                                vals=Ints(2, 16))
-
-            self.add_function(ch + 'set_harmonic_phase',
-                              call_cmd=source + 'HARM:PHAS {},{:.6e}',
-                              args=[Ints(2, 16), Numbers(0, 360)])
-
-            self.add_function(ch + 'get_harmonic_phase',
-                              call_cmd=source + 'HARM:PHAS? {}',
-                              args=[Ints(2, 16)],
-                              return_parser=float)
 
             self.add_parameter(ch + 'harmonic_type',
                                get_cmd=source + 'HARM:TYP?',
@@ -403,9 +334,6 @@ class Rigol_DG4000(VisaInstrument):
                                set_cmd=source + 'PHAS {}',
                                unit='deg',
                                vals=Numbers(0, 360))
-
-            self.add_function(ch + 'align_phase',
-                              call_cmd=source + 'PHAS:INIT')
 
             # Source Pulse
             self.add_parameter(ch + 'pulse_duty_cycle',
@@ -518,20 +446,10 @@ class Rigol_DG4000(VisaInstrument):
                                vals=Enum('vpp', 'vrms', 'dbm'))
 
         # System
-        self.add_function('beep', call_cmd='SYST:BEEP')
-
         self.add_parameter('beeper_enabled',
                            get_cmd='SYST:BEEP:STAT?',
                            set_cmd='SYST:BEEP:STAT {}',
                            val_mapping=on_off_map)
-
-        self.add_function('copy_config_to_ch1', call_cmd='SYST:CSC CH2,CH1')
-        self.add_function('copy_config_to_ch2', call_cmd='SYST:CSC CH1,CH2')
-
-        self.add_function('copy_waveform_to_ch1', call_cmd='SYST:CWC CH2,CH1')
-        self.add_function('copy_waveform_to_ch2', call_cmd='SYST:CWC CH1,CH2')
-
-        self.add_function('get_error', call_cmd='SYST:ERR?', return_parser=str)
 
         self.add_parameter('keyboard_locked',
                            get_cmd='SYST:KLOCK?',
@@ -544,38 +462,393 @@ class Rigol_DG4000(VisaInstrument):
                            set_cmd='SYST:POWS {}',
                            vals=Enum('user', 'auto'))
 
-        system_states = Enum('default', 'user1', 'user2', 'user3',
-                             'user4', 'user5', 'user6', 'user7',
-                             'user8', 'user9', 'user10')
-
-        self.add_function('preset',
-                          call_cmd='SYST:PRES {}',
-                          args=[system_states])
-
-        self.add_function('restart', call_cmd='SYST:RESTART')
-
         self.add_parameter('reference_clock_source',
                            get_cmd='SYST:ROSC:SOUR?',
                            set_cmd='SYST:ROSC:SOUR {}',
                            val_mapping={'internal': 'INT', 'external': 'EXT'})
 
-        self.add_function('shutdown', call_cmd='SYST:SHUTDOWN')
-
         self.add_parameter('scpi_version', get_cmd='SYST:VERS?')
-
-        # Trace
-        self.add_function('upload_data',
-                          call_cmd=self._upload_data,
-                          args=[Anything()])
-
-        self.add_function('reset', call_cmd='*RST')
 
         if reset:
             self.reset()
 
         self.connect_message()
 
-    def _upload_data(self, data):
+    def get_error(self) -> str:
+        """
+        Query the error event queue
+        """
+        resp = self.ask('SYST:ERR?')
+        return str(resp)
+
+    def preset(self, system_state: str) -> None:
+        """
+        Restore the system to its default state or to a user-defined state
+
+        Args:
+            system_state: The state to which the system shall be restored
+        """
+        valid_states = Enum('default', 'user1', 'user2', 'user3',
+                            'user4', 'user5', 'user6', 'user7',
+                            'user8', 'user9', 'user10')
+        valid_states.validate(system_state)
+        self.write(f"SYST:PRES {system_state}")
+
+    def copy_waveform_to_ch1(self) -> None:
+        """
+        Copy the arbitrary waveform data (not include the waveform parameters)
+        of CH2 to CH1
+        """
+        self.write('SYST:CWC CH2,CH1')
+
+    def copy_waveform_to_ch2(self) -> None:
+        """
+        Copy the arbitrary waveform data (not include the waveform parameters)
+        of CH1 to CH2
+        """
+        self.write('SYST:CWC CH1,CH2')
+
+    def copy_config_to_ch1(self) -> None:
+        """
+        Copy the configuration state of CH2 to CH1.
+        """
+        self.write('SYST:CSC CH2,CH1')
+
+    def copy_config_to_ch2(self) -> None:
+        """
+        Copy the configuration state of CH1 to CH2.
+        """
+        self.write('SYST:CSC CH1,CH2')
+
+    def beep(self) -> None:
+        """
+        The beeper generates a beep immediately (if the beeper is enabled)
+        """
+        self.write("SYST:BEEP")
+
+    def restart(self) -> None:
+        """
+        Restart the instrument
+        """
+        self.write("SYST:RESTART")
+
+    def shutdown(self) -> None:
+        """
+        Shut down the instrument
+        """
+        self.write("SYST:SHUTDOWN")
+
+    def reset(self) -> None:
+        """
+        Restore the instrument to its default states
+        """
+        self.write('*RST')
+
+    def auto_counter(self) -> None:
+        """
+        Send this command and the instrument will set the gate time of the
+        counter automatically.
+        """
+        self.write('COUN:AUTO')
+
+    def ch1_set_harmonic_amplitude(self, order: int, amplitude: float) -> None:
+        """
+        Set the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0).validate(amplitude)
+        self.write(f"SOUR1:HARM:AMPL {order},{amplitude:.6e}")
+
+    def ch2_set_harmonic_amplitude(self, order: int, amplitude: float) -> None:
+        """
+        Set the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0).validate(amplitude)
+        self.write(f"SOUR2:HARM:AMPL {order},{amplitude:.6e}")
+
+    def ch1_get_harmonic_amplitude(self, order: int) -> float:
+        """
+        Query the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR1:HARM:AMPL? {order}')
+        return float(resp)
+
+    def ch2_get_harmonic_amplitude(self, order: int) -> float:
+        """
+        Query the amplitude of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR2:HARM:AMPL? {order}')
+        return float(resp)
+
+    def ch1_set_harmonic_phase(self, order: int, phase: float) -> None:
+        """
+        Set the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0, 360).validate(phase)
+        self.write(f"SOUR1:HARM:PHAS {order},{phase:.6e}")
+
+    def ch2_set_harmonic_phase(self, order: int, phase: float) -> None:
+        """
+        Set the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        Numbers(0, 360).validate(phase)
+        self.write(f"SOUR2:HARM:PHAS {order},{phase:.6e}")
+
+    def ch1_get_harmonic_phase(self, order: int) -> float:
+        """
+        Query the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR1:HARM:PHAS? {order}')
+        return float(resp)
+
+    def ch2_get_harmonic_phase(self, order: int) -> float:
+        """
+        Query the phase of the specified order of harmonic
+        """
+        Ints(2, 16).validate(order)
+        resp = self.ask(f'SOUR2:HARM:PHAS? {order}')
+        return float(resp)
+
+    # Source Apply
+    # TODO: Various parameters are limited by
+    # impedance/freq/period/amplitude settings, that ought to be implemented
+
+    def _source_apply(self, source: int, form: str,
+                      freq: float, amplitude: float,
+                      offset: float, phase: float, max_freq: float) -> None:
+        """
+        Helper function to apply a waveform to the output
+        """
+        validators = [Numbers(1e-6, max_freq), Numbers(), Numbers(),
+                      Numbers(0, 360)]
+        values = [freq, amplitude, offset, phase]
+
+        for vd, vl in zip(validators, values):
+            vd.validate(vl)
+
+        known_forms = ('CUST', 'HARM', 'RAMP', 'SIN', 'SQU', 'USER', 'PULS')
+
+        if form not in known_forms:
+            raise ValueError(f'Unknown form: {form}. Must be one of '
+                             f'{known_forms}')
+
+        cmd = (f'SOUR{source}:APPL:{form} {freq:.6e},{amplitude:.6e},'
+               f'{offset:.6e},{phase:.6e}')
+
+        self.write(cmd)
+
+    def _source_apply_noise(self, source: int, amplitude: float,
+                            offset: float) -> None:
+        """
+        Helper function for app;y noise
+        """
+        validators = [Numbers(0, 10), Numbers()]
+        values = [amplitude, offset]
+        for vd, vl in zip(validators, values):
+            vd.validate(vl)
+
+        cmd = (f'SOUR{source}:APPL:NOISE {amplitude:.6e},'
+               f'{offset:.6e}')
+        self.write(cmd)
+
+    def ch1_custom(self, frequency: float, amplitude: float, offset: float,
+                   phase: float) -> None:
+        """
+        Output the user-defined waveform with the specified parameters
+        (frequency, amplitude, DC offset and start phase).
+        """
+        self._source_apply(source=1, form='CUST',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch2_custom(self, frequency: float, amplitude: float, offset: float,
+                   phase: float) -> None:
+        """
+        Output the user-defined waveform with the specified parameters
+        (frequency, amplitude, DC offset and start phase).
+        """
+        self._source_apply(source=2, form='CUST',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch1_harmonic(self, frequency: float, amplitude: float, offset: float,
+                     phase: float) -> None:
+        """
+        Output a harmonic with specified frequency, amplitude, DC offset and
+        start phase.
+        """
+        self._source_apply(source=1, form='HARM',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.harmonic_freq)
+
+    def ch2_harmonic(self, frequency: float, amplitude: float, offset: float,
+                     phase: float) -> None:
+        """
+        Output a harmonic with specified frequency, amplitude, DC offset and
+        start phase.
+        """
+        self._source_apply(source=2, form='HARM',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.harmonic_freq)
+
+    def ch1_ramp(self, frequency: float, amplitude: float, offset: float,
+                 phase: float) -> None:
+        """
+        Output a ramp with specified frequency, amplitude, DC offset and start
+        phase.
+        """
+        self._source_apply(source=1, form='RAMP',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.ramp_freq)
+
+    def ch2_ramp(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a ramp with specified frequency, amplitude, DC offset and start
+        phase.
+        """
+        self._source_apply(source=2, form='RAMP',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.ramp_freq)
+
+
+    def ch1_sinusoid(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a sine waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=1, form='SIN',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.sine_freq)
+
+    def ch2_sinusoid(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a sine waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=2, form='SIN',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.sine_freq)
+
+    def ch1_square(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a square waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=1, form='SQU',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.square_freq)
+
+    def ch2_square(self, frequency: float, amplitude: float, offset: float,
+                    phase: float) -> None:
+        """
+        Output a square waveform with specified frequency, amplitude, DC offset
+        and start phase.
+        """
+        self._source_apply(source=2, form='SQU',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.square_freq)
+
+    def ch1_user(self, frequency: float, amplitude: float, offset: float,
+                 phase: float) -> None:
+        """
+        Output an arbitrary waveform with specified frequency, amplitude, DC
+        offset and start phase.
+        """
+        self._source_apply(source=1, form='USER',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch2_user(self, frequency: float, amplitude: float, offset: float,
+                 phase: float) -> None:
+        """
+        Output an arbitrary waveform with specified frequency, amplitude, DC
+        offset and start phase.
+        """
+        self._source_apply(source=2, form='USER',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=phase,
+                           max_freq=self.arb_freq)
+
+    def ch1_noise(self, amplitude: float, offset: float) -> None:
+        """
+        Output a noise with specified amplitude and DC offset.
+        """
+        self._source_apply_noise(source=1, amplitude=amplitude,
+                                 offset=offset)
+
+    def ch2_noise(self, amplitude: float, offset: float) -> None:
+        """
+        Output a noise with specified amplitude and DC offset.
+        """
+        self._source_apply_noise(source=2, amplitude=amplitude,
+                                 offset=offset)
+
+    def ch1_pulse(self, frequency: float, amplitude: float, offset: float,
+                  delay: float) -> None:
+        """
+        Output a pulse with specified frequency, amplitude, DC offset and
+        delay.
+        """
+        # this function takes a delay rather than a phase, but the same SCPI
+        # command-builder can be used
+        self._source_apply(source=1, form='PULS',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=delay,
+                           max_freq=self.arb_freq)
+
+    def ch2_pulse(self, frequency: float, amplitude: float, offset: float,
+                  delay: float) -> None:
+        """
+        Output a pulse with specified frequency, amplitude, DC offset and
+        delay.
+        """
+        # this function takes a delay rather than a phase, but the same SCPI
+        # command-builder can be used
+        self._source_apply(source=2, form='PULS',
+                           freq=frequency, amplitude=amplitude,
+                           offset=offset, phase=delay,
+                           max_freq=self.arb_freq)
+
+    def ch1_align_phase(self) -> None:
+        """
+        Execute align phase
+
+        This command is invalid when any of the two channels is in modulation
+        mode
+        """
+        self.write("SOUR1:PHAS:INIT")
+
+    def ch2_align_phase(self) -> None:
+        """
+        Execute align phase
+
+        This command is invalid when any of the two channels is in modulation
+        mode
+        """
+        self.write("SOUR2:PHAS:INIT")
+
+    def upload_data(self, data):
         """
         Upload data to the AWG memory.
 

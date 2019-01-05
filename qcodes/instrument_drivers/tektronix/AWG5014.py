@@ -164,8 +164,6 @@ class Tektronix_AWG5014(VisaInstrument):
         self._values = {}
         self._values['files'] = {}
 
-        self.add_function('reset', call_cmd='*RST')
-
         self.add_parameter('state',
                            get_cmd=self.get_state)
         self.add_parameter('run_mode',
@@ -406,6 +404,9 @@ class Tektronix_AWG5014(VisaInstrument):
             log.info('AWG clock freq not set to 1GHz')
 
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
 
     # Convenience parser
     def newlinestripper(self, string):

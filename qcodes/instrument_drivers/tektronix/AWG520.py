@@ -67,7 +67,6 @@ class Tektronix_AWG520(VisaInstrument):
         self._numpoints = numpoints
         self._fname = ''
 
-        self.add_function('reset', call_cmd='*RST')
         self.add_parameter('state',
                            get_cmd=self.get_state)
 
@@ -159,6 +158,9 @@ class Tektronix_AWG520(VisaInstrument):
         else:
             self.get_all()
         self.connect_message()
+
+    def reset(self) -> None:
+        self.write('*RST')
 
     # Functions
     def _gen_ch_set_func(self, fun, ch):

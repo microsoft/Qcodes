@@ -192,7 +192,6 @@ class DG1062Channel(InstrumentChannel):
         # We want to be able to do the following:
         # >>> help(gd.channels[0].sin)
         # >>> gd.channels[0].sin(freq=2E3, ampl=1.0, offset=0, phase=0)
-        # We do not use add_function as it is more cumbersome to use.
         for waveform in self.waveforms:
             f = partial_with_docstring(
                 self.apply,

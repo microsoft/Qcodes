@@ -114,10 +114,7 @@ class IVVI(VisaInstrument):
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
-        self.add_function(
-            'trigger',
-            call_cmd=self._send_trigger
-        )
+        self.trigger = self._send_trigger
 
         # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
