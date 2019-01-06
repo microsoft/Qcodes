@@ -964,7 +964,7 @@ class ParameterWithSetpoints(Parameter):
                                 f" expcected a QCoDeS parameter")
         self._setpoints = setpoints
 
-    def validate_consistent_shape(self) -> bool:
+    def validate_consistent_shape(self):
         """
         Verifies that the shape of the Array Validator of the parameter
         is consistent with the Validator of the Setpoints. This requires that
@@ -973,27 +973,29 @@ class ParameterWithSetpoints(Parameter):
         """
 
         if not isinstance(self.vals, Arrays):
-            raise RuntimeError("Can only validate shapes for Array "
-                               "Parameters")
+            raise ValueError("Can only validate shapes for Array "
+                             "Parameters")
         output_shape = self.vals.shape
         setpoints_shape_list: List[int] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
-                raise RuntimeError("Can only validate shapes for Array "
-                                   "Parameters.")
+                raise ValueError("Can only validate shapes for Array "
+                                 "Parameters.")
             setpoints_shape_list.extend(sp.vals.shape)
         setpoints_shape = tuple(setpoints_shape_list)
 
         if output_shape is None:
-            raise RuntimeError("Trying to verify shape but output "
-                               "does not have any shape")
+            raise ValueError("Trying to verify shape but output "
+                             "does not have any shape")
         if None in output_shape or None in setpoints_shape:
-            raise RuntimeError(f"One or more dimensions have unknown shape"
-                               f"when comparing output: {output_shape} to "
-                               f"setpoints: {setpoints_shape}")
+            raise ValueError(f"One or more dimensions have unknown shape"
+                             f"when comparing output: {output_shape} to "
+                             f"setpoints: {setpoints_shape}")
 
         if output_shape != setpoints_shape:
-            return False
+            raise ValueError(f"Shape of output is not consistent with"
+                             f"setpoints. Output is shape {output_shape} and "
+                             f"setpoints are shape {setpoints_shape}")
         return True
 
     def validate(self, value: ParamDataType) -> None:
@@ -1007,9 +1009,9 @@ class ParameterWithSetpoints(Parameter):
         if isinstance(self.vals, Arrays):
             consistent = self.validate_consistent_shape()
             if consistent is False:
-                raise RuntimeError(f"Inconsistent shape between parameter and "
-                                   f"setpoints for parameter: "
-                                   f"{self.full_name}")
+                raise ValueError(f"Inconsistent shape between parameter and "
+                                 f"setpoints for parameter: "
+                                 f"{self.full_name}")
         super().validate(value)
 
 
