@@ -19,7 +19,7 @@ def test_verification_invalid_shape():
     n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
     n_points_1.set(10)
-    n_points_2.set(10)
+    n_points_2.set(20)
 
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
                           vals=vals.Arrays(shape=(n_points_1,)))
@@ -28,15 +28,16 @@ def test_verification_invalid_shape():
 
     param_with_setpoints = ParameterWithSetpoints('param',
                                                   get_cmd=lambda:
-                                                  rand(n_points_2()),
+                                                  rand(n_points_1()),
                                                   setpoints=(setpoints_1,),
-                                                  vals=vals.Arrays(shape=(n_points_2,)))
+                                                  vals=vals.Arrays(shape=(n_points_1,)))
 
     # the two shapes are the same so validation works
     param_with_setpoints.validate_consistent_shape()
     param_with_setpoints.validate(param_with_setpoints.get())
 
-    n_points_2(20)
+    param_with_setpoints.setpoints = (setpoints_2,)
+    param_with_setpoints.get_raw = lambda: rand(n_points_2())
     with pytest.raises(ValueError):
         param_with_setpoints.validate_consistent_shape()
     with pytest.raises(ValueError):
