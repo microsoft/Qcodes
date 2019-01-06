@@ -549,7 +549,7 @@ class Arrays(Validator):
             if np.shape(value) != shape:
                 raise ValueError(
                     f'{repr(value)} does not have expected shape {shape},'
-                    f'it has shape {np.shape(value)}; {context}')
+                    f' it has shape {np.shape(value)}; {context}')
 
         # Only check if max is not inf as it can be expensive for large arrays
         if self._max_value != (float("inf")):
