@@ -57,9 +57,15 @@ def test_verification_shapes():
                                                         shape=(n_points_2,)))
 
     # inconsistent shapes
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'Shape of output is not consistent '
+                                         r'with setpoints\. Output is shape '
+                                         r'\(20,\) and setpoints are shape '
+                                         r'\(10,\)'):
         param_with_setpoints_3.validate_consistent_shape()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'Shape of output is not consistent '
+                                         r'with setpoints\. Output is shape '
+                                         r'\(20,\) and setpoints are shape '
+                                         r'\(10,\)'):
         param_with_setpoints_3.validate(param_with_setpoints_3.get())
 
     # output is not consistent with validator
@@ -73,5 +79,8 @@ def test_verification_shapes():
     # this does not raise because the validator shapes are consistent
     param_with_setpoints_4.validate_consistent_shape()
     # but the output is not consistent with the validator
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r'does not have expected shape'
+                                         r' \(10,\), '
+                                         r'it has shape \(20,\); '
+                                         r'Parameter: param_4'):
         param_with_setpoints_4.validate(param_with_setpoints_4())
