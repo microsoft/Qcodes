@@ -988,12 +988,12 @@ class ParameterWithSetpoints(Parameter):
             raise ValueError("Trying to verify shape but output "
                              "does not have any shape")
         if None in output_shape or None in setpoints_shape:
-            raise ValueError(f"One or more dimensions have unknown shape"
+            raise ValueError(f"One or more dimensions have unknown shape "
                              f"when comparing output: {output_shape} to "
                              f"setpoints: {setpoints_shape}")
 
         if output_shape != setpoints_shape:
-            raise ValueError(f"Shape of output is not consistent with"
+            raise ValueError(f"Shape of output is not consistent with "
                              f"setpoints. Output is shape {output_shape} and "
                              f"setpoints are shape {setpoints_shape}")
         return True
