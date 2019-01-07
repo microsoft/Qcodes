@@ -1,10 +1,11 @@
 import textwrap
 import numpy as np
 import logging
-from typing import Tuple
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument, InstrumentChannel
+from qcodes.instrument_drivers.Keysight.private.error_handling import \
+    KeysightErrorQueueMixin
 
 log = logging.getLogger(__name__)
 
@@ -284,7 +285,7 @@ class Display(InstrumentChannel):
         self.text.get()  # also update the parameter value
 
 
-class _Keysight_344xxA(VisaInstrument):
+class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     """
     Instrument class for Keysight 34460A, 34461A, 34465A and 34470A
     multimeters.
@@ -645,53 +646,6 @@ class _Keysight_344xxA(VisaInstrument):
         """
         self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
         self.range.get()
-
-    def error(self) -> Tuple[int, str]:
-        """
-        Return the first error message in the queue. It also clears it from
-        the error queue.
-
-        Up to 20 errors can be stored in the instrument's error queue.
-        Error retrieval is first-in-first-out (FIFO).
-
-        If more than 20 errors have occurred, the most recent error stored
-        in the queue is replaced with -350,"Queue overflow". No additional
-        errors are stored until you remove errors from the queue. If no
-        errors have occurred when you read the error queue, the instrument
-        responds with +0,"No error".
-
-        Returns:
-            The error code and the error message.
-        """
-        rawmssg = self.ask('SYSTem:ERRor?')
-        code = int(rawmssg.split(',')[0])
-        mssg = rawmssg.split(',')[1].strip().replace('"', '')
-
-        return code, mssg
-
-    def flush_error_queue(self, verbose: bool=True) -> None:
-        """
-        Clear the instrument error queue, and prints it.
-
-        Args:
-            verbose: If true, the error messages are printed.
-                Default: True.
-        """
-
-        log.debug('Flushing error queue...')
-
-        err_code, err_message = self.error()
-        log.debug('    {}, {}'.format(err_code, err_message))
-        if verbose:
-            print(err_code, err_message)
-
-        while err_code != 0:
-            err_code, err_message = self.error()
-            log.debug('    {}, {}'.format(err_code, err_message))
-            if verbose:
-                print(err_code, err_message)
-
-        log.debug('...flushing complete')
 
 
 def _raw_vals_to_array(raw_vals: str) -> np.array:
