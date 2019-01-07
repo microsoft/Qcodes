@@ -1,4 +1,3 @@
-# QCoDeS driver for the Keysight 344xxA Digital Multimeter
 import textwrap
 import numpy as np
 import logging
@@ -12,11 +11,14 @@ log = logging.getLogger(__name__)
 
 class _Keysight_344xxA(VisaInstrument):
     """
-    Instrument class for Keysight 34460A, 34461A, 34465A and 34470A multimeters.
+    Instrument class for Keysight 34460A, 34461A, 34465A and 34470A
+    multimeters.
 
-    Tested with: 34461A, 34465A.
+    The driver currently only supports using the instrument as a voltmeter
+    for DC measurements.
 
-    The driver currently only supports using the instrument as a voltmeter.
+    This driver makes use of submodules for implementing different
+    subsystems of the instrument.
 
     Attributes:
         model (str): The model number of the instrument
