@@ -1,5 +1,6 @@
 # QCoDeS driver for the Keysight 344xxA Digital Multimeter
 import textwrap
+import warnings
 from functools import partial
 import numpy as np
 import logging
@@ -132,6 +133,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             silent (bool): If True, the connect_message of the instrument
                 is supressed. Default: False
         """
+
+        warnings.warn("This driver is old and will be removed from QCoDeS "
+                      "soon. Please use the Keysight_344xxA classes from the "
+                      "files "
+                      "instrument_drivers/Keysight"
+                          "/Keysight_344xxA_submodules "
+                      "instead.",
+                      UserWarning)
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
