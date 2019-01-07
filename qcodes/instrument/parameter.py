@@ -1013,11 +1013,7 @@ class ParameterWithSetpoints(Parameter):
         Arguments are passed to the super method
         """
         if isinstance(self.vals, Arrays):
-            consistent = self.validate_consistent_shape()
-            if consistent is False:
-                raise ValueError(f"Inconsistent shape between parameter and "
-                                 f"setpoints for parameter: "
-                                 f"{self.full_name}")
+            self.validate_consistent_shape()
         super().validate(value)
 
 
