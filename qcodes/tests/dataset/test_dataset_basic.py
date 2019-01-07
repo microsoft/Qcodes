@@ -82,10 +82,9 @@ def test_dataset_read_only_properties(dataset):
                        'run_timestamp_raw', 'completed_timestamp_raw',
                        'snapshot', 'snapshot_raw']
 
+    # It is not expected to be possible to set readonly properties
     for prop in read_only_props:
-        with pytest.raises(AttributeError, match="can't set attribute",
-                           message=f"It is not expected to be possible to set "
-                                   f"property {prop!r}"):
+        with pytest.raises(AttributeError, match="can't set attribute"):
             setattr(dataset, prop, True)
 
 
