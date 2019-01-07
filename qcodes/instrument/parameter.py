@@ -988,8 +988,8 @@ class ParameterWithSetpoints(Parameter):
         setpoints_shape = tuple(setpoints_shape_list)
 
         if output_shape is None:
-            raise ValueError("Trying to verify shape but output "
-                             "does not have any shape")
+            raise ValueError(f"Trying to validate shape but parameter "
+                             f"{self.name} does not define a shape")
         if None in output_shape or None in setpoints_shape:
             raise ValueError(f"One or more dimensions have unknown shape "
                              f"when comparing output: {output_shape} to "
