@@ -984,7 +984,10 @@ class ParameterWithSetpoints(Parameter):
                                  f"with Arrays validator. {sp.name} is "
                                  f"a setpoint vector but does not have an "
                                  f"Arrays validator")
-            setpoints_shape_list.extend(sp.vals.shape)
+            if sp.vals.shape is not None:
+                setpoints_shape_list.extend(sp.vals.shape)
+            else:
+                setpoints_shape_list.append(sp.vals.shape)
         setpoints_shape = tuple(setpoints_shape_list)
 
         if output_shape is None:
