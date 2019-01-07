@@ -9,6 +9,136 @@ from qcodes import VisaInstrument, InstrumentChannel
 log = logging.getLogger(__name__)
 
 
+class Trigger(InstrumentChannel):
+    """Implements triggering parameters and methods of Keysight 344xxA."""
+
+    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
+        super(Trigger, self).__init__(parent, name, **kwargs)
+
+        if self.parent.model in ['34465A', '34470A']:
+            _max_trigger_count = 1e9
+        else:
+            _max_trigger_count = 1e6
+
+        self.add_parameter('count',
+                           label='Trigger Count',
+                           set_cmd='TRIGger:COUNt {}',
+                           get_cmd='TRIGger:COUNt?',
+                           get_parser=float,
+                           vals=vals.MultiType(
+                               vals.Numbers(1, _max_trigger_count),
+                               vals.Enum('MIN', 'MAX', 'DEF', 'INF')),
+                           docstring=textwrap.dedent("""\
+            Selects the number of triggers that are accepted by the 
+            instrument before returning to the "idle" trigger state.
+
+            You can use the specified trigger count in conjunction with 
+            `sample_count`. In this case, the number of measurements 
+            returned is the sample count multiplied by the trigger count.
+
+            A variable trigger count is not available from the front panel. 
+            However, when you return to remote control of the instrument, 
+            the trigger count returns to the previous value you selected."""))
+
+        self.add_parameter('delay',
+                           label='Trigger Delay',
+                           unit='s',
+                           set_cmd='TRIGger:DELay {}',
+                           get_cmd='TRIGger:DELay?',
+                           vals=vals.MultiType(vals.Numbers(0, 3600),
+                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=float,
+                           docstring=textwrap.dedent("""\
+            Sets the delay between the trigger signal and the first 
+            measurement. This may be useful in applications where you want 
+            to allow the input to settle before taking a measurement or for 
+            pacing a burst of measurements.
+
+            Step size for DC measurements is approximately 1 µs. For AC 
+            measurements, step size depends on AC bandwidth.
+
+            Selecting a specific trigger delay disables the automatic 
+            trigger delay."""))
+
+        self.add_parameter('auto_delay_enabled',
+                           label='Auto Trigger Delay Enabled',
+                           set_cmd='TRIGger:DELay:AUTO {}',
+                           get_cmd='TRIGger:DELay:AUTO?',
+                           get_parser=int,
+                           val_mapping={True: 1, False: 0},
+                           docstring=textwrap.dedent("""\
+            Disables or enables automatic trigger delay. If enabled, 
+            the instrument determines the delay based on function, range, 
+            and integration time or bandwidth.
+
+            Selecting a specific trigger delay using `trigger.delay` disables 
+            the automatic trigger delay."""))
+
+        self.add_parameter('slope',
+                           label='Trigger Slope',
+                           set_cmd='TRIGger:SLOPe {}',
+                           get_cmd='TRIGger:SLOPe?',
+                           vals=vals.Enum('POS', 'NEG'))
+
+        if self.parent.model in ['34465A', '34470A'] and self.parent.has_DIG:
+            self.add_parameter('level',
+                               label='Trigger Level',
+                               unit='V',
+                               set_cmd='TRIGger:LEVel {}',
+                               get_cmd='TRIGger:LEVel?',
+                               get_parser=float,
+                               vals=vals.MultiType(
+                                   vals.Numbers(-1000, 1000),
+                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               docstring=textwrap.dedent("""\
+                Sets the level on which a trigger occurs when level 
+                triggering is enabled (`trigger.source` set to "INT").
+
+                Note that for 100 mV to 100 V ranges and autorange is off, 
+                the trigger level can only be set within ±120% of the 
+                range."""))
+
+        _trigger_source_docstring = textwrap.dedent("""\
+            Selects the trigger source for measurements.
+
+            IMMediate: The trigger signal is always present. When you place 
+                the instrument in the "wait-for-trigger" state, the trigger is 
+                issued immediately.
+
+            BUS: The instrument is triggered by `trigger.force` method of this 
+                driver once the DMM is in the "wait-for-trigger" state.
+
+            EXTernal: The instrument accepts hardware triggers applied to 
+                the rear-panel Ext Trig input and takes the specified number 
+                of measurements (`sample_count`), each time a TTL pulse 
+                specified by `trigger.slope` is received. If the 
+                instrument receives an external trigger before it is ready, 
+                it buffers one trigger.""")
+        _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
+
+        if self.parent.model in ['34465A', '34470A'] and self.parent.has_DIG:
+            _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
+            # extra empty lines are needed for readability of the docstring
+            _trigger_source_docstring += textwrap.dedent("""\
+
+
+            INTernal: Provides level triggering capability. To trigger on a 
+                level on the input signal, select INTernal for the source, 
+                and set the level and slope with the `trigger.level` and 
+                `trigger.slope` parameters.""")
+
+        self.add_parameter('source',
+                           label='Trigger Source',
+                           set_cmd='TRIGger:SOURce {}',
+                           get_cmd='TRIGger:SOURce?',
+                           vals=_trigger_source_vals,
+                           docstring=_trigger_source_docstring)
+
+    def force(self) -> None:
+        """Triggers the instrument if `trigger.source` is "BUS"."""
+        self.write('*TRG')
+
+
 class Display(InstrumentChannel):
     """Implements interaction with the display of Keysight 344xxA."""
 
@@ -228,127 +358,6 @@ class _Keysight_344xxA(VisaInstrument):
                   integration time."""))
 
         ####################################
-        # TRIGGERING
-
-        if self.model in ['34465A', '34470A']:
-            _max_trigger_count = 1e9
-        else:
-            _max_trigger_count = 1e6
-
-        self.add_parameter('trigger_count',
-                           label='Trigger Count',
-                           set_cmd='TRIGger:COUNt {}',
-                           get_cmd='TRIGger:COUNt?',
-                           get_parser=float,
-                           vals=vals.MultiType(
-                               vals.Numbers(1, _max_trigger_count),
-                               vals.Enum('MIN', 'MAX', 'DEF', 'INF')),
-                           docstring=textwrap.dedent("""\
-            Selects the number of triggers that are accepted by the 
-            instrument before returning to the "idle" trigger state.
-
-            You can use the specified trigger count in conjunction with 
-            `sample_count`. In this case, the number of measurements 
-            returned is the sample count multiplied by the trigger count.
-
-            A variable trigger count is not available from the front panel. 
-            However, when you return to remote control of the instrument, 
-            the trigger count returns to the previous value you selected."""))
-
-        self.add_parameter('trigger_delay',
-                           label='Trigger Delay',
-                           unit='s',
-                           set_cmd='TRIGger:DELay {}',
-                           get_cmd='TRIGger:DELay?',
-                           vals=vals.MultiType(vals.Numbers(0, 3600),
-                                               vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=float,
-                           docstring=textwrap.dedent("""\
-            Sets the delay between the trigger signal and the first 
-            measurement. This may be useful in applications where you want 
-            to allow the input to settle before taking a measurement or for 
-            pacing a burst of measurements.
-            
-            Step size for DC measurements is approximately 1 µs. For AC 
-            measurements, step size depends on AC bandwidth.
-            
-            Selecting a specific trigger delay disables the automatic 
-            trigger delay."""))
-
-        self.add_parameter('auto_trigger_delay_enabled',
-                           label='Auto Trigger Delay Enabled',
-                           set_cmd='TRIGger:DELay:AUTO {}',
-                           get_cmd='TRIGger:DELay:AUTO?',
-                           get_parser=int,
-                           val_mapping={True: 1, False: 0},
-                           docstring=textwrap.dedent("""\
-            Disables or enables automatic trigger delay. If enabled, 
-            the instrument determines the delay based on function, range, 
-            and integration time or bandwidth.
-            
-            Selecting a specific trigger delay using `trigger_delay` disables 
-            the automatic trigger delay."""))
-
-        self.add_parameter('trigger_slope',
-                           label='Trigger Slope',
-                           set_cmd='TRIGger:SLOPe {}',
-                           get_cmd='TRIGger:SLOPe?',
-                           vals=vals.Enum('POS', 'NEG'))
-
-        if self.model in ['34465A', '34470A'] and self.has_DIG:
-            self.add_parameter('trigger_level',
-                               label='Trigger Level',
-                               unit='V',
-                               set_cmd='TRIGger:LEVel {}',
-                               get_cmd='TRIGger:LEVel?',
-                               vals=vals.MultiType(
-                                   vals.Numbers(-1000, 1000),
-                                   vals.Enum('MIN', 'MAX', 'DEF')),
-                               docstring=textwrap.dedent("""\
-                Sets the level on which a trigger occurs when level 
-                triggering is enabled (`trigger_source set to "INT").
-                
-                Note that for 100 mV to 100 V ranges and autorange is off, 
-                the trigger level can only be set within ±120% of the 
-                range."""))
-
-        _trigger_source_docstring = textwrap.dedent("""\
-            Selects the trigger source for measurements.
-            
-            IMMediate: The trigger signal is always present. When you place 
-                the instrument in the "wait-for-trigger" state, the trigger is 
-                issued immediately.
-                
-            BUS: The instrument is triggered by `trigger` method of this 
-                driver once the DMM is in the "wait-for-trigger" state.
-            
-            EXTernal: The instrument accepts hardware triggers applied to 
-                the rear-panel Ext Trig input and takes the specified number 
-                of measurements (`sample_count`), each time a TTL pulse 
-                specified by `trigger_slope` is received. If the 
-                instrument receives an external trigger before it is ready, 
-                it buffers one trigger.""")
-        _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
-
-        if self.model in ['34465A', '34470A'] and self.has_DIG:
-            _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
-            # extra empty lines are needed for readability of the docstring
-            _trigger_source_docstring += textwrap.dedent("""\
-            
-            
-            INTernal: Provides level triggering capability. To trigger on a 
-                level on the input signal, select INTernal for the source, 
-                and set the level and slope with the `trigger_level` and 
-                `trigger_slope` parameters.""")
-
-        self.add_parameter('trigger_source',
-                           label='Trigger Source',
-                           set_cmd='TRIGger:SOURce {}',
-                           get_cmd='TRIGger:SOURce?',
-                           vals=_trigger_source_vals,
-                           docstring=_trigger_source_docstring)
-
-        ####################################
         # SAMPLING
 
         if self.model in ['34465A', '34470A']:
@@ -495,6 +504,7 @@ class _Keysight_344xxA(VisaInstrument):
         # Submodules
 
         self.add_submodule('display', Display(self, 'display'))
+        self.add_submodule('trigger', Trigger(self, 'trigger'))
 
         ####################################
         # Connect message
@@ -627,10 +637,6 @@ class _Keysight_344xxA(VisaInstrument):
         """
         self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
         self.range.get()
-
-    def force_trigger(self) -> None:
-        """Triggers the instrument if `trigger_source` is "BUS"."""
-        self.write('*TRG')
 
     def error(self) -> Tuple[int, str]:
         """
