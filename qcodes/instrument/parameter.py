@@ -973,14 +973,17 @@ class ParameterWithSetpoints(Parameter):
         """
 
         if not isinstance(self.vals, Arrays):
-            raise ValueError("Can only validate shapes for Array "
-                             "Parameters")
+            raise ValueError(f"Can only validate shapes for parameters "
+                             f"with Arrays validator. {self.name} does "
+                             f"not have an Arrays validator.")
         output_shape = self.vals.shape
         setpoints_shape_list: List[int] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
-                raise ValueError("Can only validate shapes for Array "
-                                 "Parameters.")
+                raise ValueError(f"Can only validate shapes for parameters "
+                                 f"with Arrays validator. {sp.name} is "
+                                 f"a setpoint vector but does not have an "
+                                 f"Arrays validator")
             setpoints_shape_list.extend(sp.vals.shape)
         setpoints_shape = tuple(setpoints_shape_list)
 
