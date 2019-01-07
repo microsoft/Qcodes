@@ -139,6 +139,108 @@ class Trigger(InstrumentChannel):
         self.write('*TRG')
 
 
+class Sample(InstrumentChannel):
+    """Implements sampling parameters of Keysight 344xxA."""
+
+    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
+        super(Sample, self).__init__(parent, name, **kwargs)
+
+        if self.parent.model in ['34465A', '34470A']:
+            _max_sample_count = 1e9
+        else:
+            _max_sample_count = 1e6
+
+        self.add_parameter('count',
+                           label='Sample Count',
+                           set_cmd='SAMPle:COUNt {}',
+                           get_cmd='SAMPle:COUNt?',
+                           vals=vals.MultiType(
+                               vals.Numbers(1, _max_sample_count),
+                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=int,
+                           docstring=textwrap.dedent("""\
+            Specifies the number of measurements (samples) the instrument 
+            takes per trigger.
+
+            MAX selects 1 billion readings. However, when pretrigger is 
+            selected, the maximum is 50,000 readings (without the MEM 
+            option) or 2,000,000 readings (with the MEM option)"""))
+
+        if self.parent.has_DIG:
+            self.add_parameter('pretrigger_count',
+                               label='Sample Pretrigger Count',
+                               set_cmd='SAMPle:COUNt:PRETrigger {}',
+                               get_cmd='SAMPle:COUNt:PRETrigger?',
+                               vals=vals.MultiType(
+                                   vals.Numbers(0, 2e6 - 1),
+                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               get_parser=int,
+                               docstring=textwrap.dedent("""\
+                Allows collection of the data being digitized the trigger. 
+                Reserves memory for pretrigger samples up to the specified 
+                num. of pretrigger samples."""))
+
+        if self.parent.model in ['34465A', '34470A']:
+            self.add_parameter('source',
+                               label='Sample Timing Source',
+                               set_cmd='SAMPle:SOURce {}',
+                               get_cmd='SAMPle:SOURce?',
+                               vals=vals.Enum('IMM', 'TIM'),
+                               docstring=('Determines sampling time, '
+                                          'immediate or using `sample.timer`'))
+
+        self.add_parameter('timer',
+                           label='Sample Timer',
+                           set_cmd='SAMPle:TIMer {}',
+                           get_cmd='SAMPle:TIMer?',
+                           unit='s',
+                           vals=vals.MultiType(vals.Numbers(0, 3600),
+                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=float,
+                           docstring=textwrap.dedent("""\
+            The value is rounded by the instrument to the nearest step. For DC 
+            measurements, the step size is 1 µs. For AC measurements, 
+            it is AC bandwidth dependent.
+
+            Special values are: MIN - recommended minimum, MAX - maximum, 
+            DEF - default. In order to obtain the actual value of the 
+            parameter that gets set when setting it to one of these special 
+            values, just call the get method of the parameter, or use 
+            corresponding parameters in this driver, 
+            like `sample.timer_minimum`.
+
+            Specifying a value that is between the absolute minimum (assumes 
+            no range changes) and the recommended minimum value, 
+            may generate a timing violation error when making measurements.
+
+            Applying a value less than the absolute minimum will generate an 
+            error."""))
+
+        self.add_parameter('timer_minimum',
+                           label='Minimal recommended sample time',
+                           get_cmd='SAMPle:TIMer? MIN',
+                           get_parser=float,
+                           unit='s',
+                           docstring=textwrap.dedent("""\
+            This value is measurement dependent. It depends on such things 
+            as the integration time, autozero on or off, autorange on or 
+            off, and the measurement range. Basically, the minimum is 
+            automatically determined by the instrument so that the sample 
+            interval is always greater than the sampling time.
+
+            Since the minimum value changes depending on configuration, a 
+            command order dependency exists. You must completely configure 
+            the measurement before setting the sample timer to minimum, 
+            or you may generate an error. A complete configuration includes 
+            such things as math statistics or scaling.
+
+            When using autorange, the minimum value is the recommended value, 
+            not the absolute minimum value. With autorange enabled, minimum 
+            value is calculated assuming a single range change will occur 
+            for every measurement (not multiple ranges, just one range up or 
+            down per measurement)."""))
+
+
 class Display(InstrumentChannel):
     """Implements interaction with the display of Keysight 344xxA."""
 
@@ -358,104 +460,6 @@ class _Keysight_344xxA(VisaInstrument):
                   integration time."""))
 
         ####################################
-        # SAMPLING
-
-        if self.model in ['34465A', '34470A']:
-            _max_sample_count = 1e9
-        else:
-            _max_sample_count = 1e6
-
-        self.add_parameter('sample_count',
-                           label='Sample Count',
-                           set_cmd='SAMPle:COUNt {}',
-                           get_cmd='SAMPle:COUNt?',
-                           vals=vals.MultiType(
-                               vals.Numbers(1, _max_sample_count),
-                               vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=int,
-                           docstring=textwrap.dedent("""\
-            Specifies the number of measurements (samples) the instrument 
-            takes per trigger.
-            
-            MAX selects 1 billion readings. However, when pretrigger is 
-            selected, the maximum is 50,000 readings (without the MEM 
-            option) or 2,000,000 readings (with the MEM option)"""))
-
-        if self.has_DIG:
-            self.add_parameter('sample_count_pretrigger',
-                               label='Sample Pretrigger Count',
-                               set_cmd='SAMPle:COUNt:PRETrigger {}',
-                               get_cmd='SAMPle:COUNt:PRETrigger?',
-                               vals=vals.MultiType(
-                                   vals.Numbers(0, 2e6-1),
-                                   vals.Enum('MIN', 'MAX', 'DEF')),
-                               get_parser=int,
-                               docstring=textwrap.dedent("""\
-                Allows collection of the data being digitized the trigger. 
-                Reserves memory for pretrigger samples up to the specified 
-                num. of pretrigger samples."""))
-
-        if self.model in ['34465A', '34470A']:
-            self.add_parameter('sample_source',
-                               label='Sample Timing Source',
-                               set_cmd='SAMPle:SOURce {}',
-                               get_cmd='SAMPle:SOURce?',
-                               vals=vals.Enum('IMM', 'TIM'),
-                               docstring=('Determines sampling time, '
-                                          'immediate or using sample_timer'))
-
-        self.add_parameter('sample_timer',
-                           label='Sample Timer',
-                           set_cmd='SAMPle:TIMer {}',
-                           get_cmd='SAMPle:TIMer?',
-                           unit='s',
-                           vals=vals.MultiType(vals.Numbers(0, 3600),
-                                               vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=float,
-                           docstring=textwrap.dedent("""\
-            The value is rounded by the instrument to the nearest step. For DC 
-            measurements, the step size is 1 µs. For AC measurements, 
-            it is AC bandwidth dependent.
-            
-            Special values are: MIN - recommended minimum, MAX - maximum, 
-            DEF - default. In order to obtain the actual value of the 
-            parameter that gets set when setting it to one of these special 
-            values, just call the get method of the parameter, or use 
-            corresponding parameters in this driver, 
-            like `sample_timer_minimum`.
-
-            Specifying a value that is between the absolute minimum (assumes 
-            no range changes) and the recommended minimum value, 
-            may generate a timing violation error when making measurements.
-            
-            Applying a value less than the absolute minimum will generate an 
-            error."""))
-
-        self.add_parameter('sample_timer_minimum',
-                           label='Minimal recommended sample time',
-                           get_cmd='SAMPle:TIMer? MIN',
-                           get_parser=float,
-                           unit='s',
-                           docstring=textwrap.dedent("""\
-            This value is measurement dependent. It depends on such things 
-            as the integration time, autozero on or off, autorange on or 
-            off, and the measurement range. Basically, the minimum is 
-            automatically determined by the instrument so that the sample 
-            interval is always greater than the sampling time.
-            
-            Since the minimum value changes depending on configuration, a 
-            command order dependency exists. You must completely configure 
-            the measurement before setting the sample timer to minimum, 
-            or you may generate an error. A complete configuration includes 
-            such things as math statistics or scaling.
-            
-            When using autorange, the minimum value is the recommended value, 
-            not the absolute minimum value. With autorange enabled, minimum 
-            value is calculated assuming a single range change will occur 
-            for every measurement (not multiple ranges, just one range up or 
-            down per measurement)."""))
-
-        ####################################
         # Aperture parameters
 
         if self.model in ['34465A', '34470A']:
@@ -505,6 +509,7 @@ class _Keysight_344xxA(VisaInstrument):
 
         self.add_submodule('display', Display(self, 'display'))
         self.add_submodule('trigger', Trigger(self, 'trigger'))
+        self.add_submodule('sample', Sample(self, 'sample'))
 
         ####################################
         # Connect message
