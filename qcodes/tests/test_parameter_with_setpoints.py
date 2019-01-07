@@ -61,7 +61,6 @@ def test_verification_inconsistent_shape():
 
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
-    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()))
 
     param_with_diff_lenght = ParameterWithSetpoints('param_1',
                                                     get_cmd=lambda:
@@ -71,17 +70,24 @@ def test_verification_inconsistent_shape():
                                                         shape=(n_points_2,)))
 
     # inconsistent shapes
-    with pytest.raises(ValueError, match=r'Shape of output is not consistent '
-                                         r'with setpoints\. Output is shape '
-                                         r'\(20,\) and setpoints are shape '
-                                         r'\(10,\)'):
+    expected_err_msg = (r'Shape of output is not consistent '
+                        r'with setpoints. Output is shape '
+                        r'\(20,\) and setpoints are shape '
+                        r'\(10,\)')
+    with pytest.raises(ValueError, match=expected_err_msg):
         param_with_diff_lenght.validate_consistent_shape()
-    with pytest.raises(ValueError, match=r'Shape of output is not consistent '
-                                         r'with setpoints\. Output is shape '
-                                         r'\(20,\) and setpoints are shape '
-                                         r'\(10,\)'):
+    with pytest.raises(ValueError, match=expected_err_msg):
         param_with_diff_lenght.validate(param_with_diff_lenght.get())
 
+
+def test_verification_wrong_validator():
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1,)))
     # output is not consistent with validator
     param_with_wrong_validator = ParameterWithSetpoints('param_2',
                                                         get_cmd=lambda:
@@ -101,18 +107,37 @@ def test_verification_inconsistent_shape():
                                          r'Parameter: param_2'):
         param_with_wrong_validator.validate(param_with_wrong_validator())
 
+def test_verification_no_validator():
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1,)))
     # output does not have a validator
     param_without_validator = ParameterWithSetpoints('param_3',
                                                      get_cmd=lambda:
                                                      rand(n_points_1()),
                                                      setpoints=(setpoints_1,))
 
-    with pytest.raises(ValueError, match=r"Can only validate shapes for "
-                                         r"parameters with Arrays validator. "
-                                         r"param_3 does not"):
+    expected_err_msg = (r"Can only validate shapes for "
+                        r"parameters with Arrays validator. "
+                        r"param_3 does not")
+    with pytest.raises(ValueError, match=expected_err_msg):
         param_without_validator.validate_consistent_shape()
+    # this does not raise as the shape is only validated for arrays
+    param_without_validator.validate(param_without_validator.get())
 
+
+def test_verification_sp_no_validator():
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
     # setpoints do not have a validator
+    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()))
     param_sp_without_validator = ParameterWithSetpoints('param_4',
                                                         get_cmd=lambda:
                                                         rand(n_points_2()),
@@ -122,7 +147,32 @@ def test_verification_inconsistent_shape():
                                                             shape=(
                                                                 n_points_1,)))
 
-    with pytest.raises(ValueError, match=r"Can only validate shapes for "
-                                         r"parameters with Arrays validator. "
-                                         r"setpoints_2 is a setpoint"):
+    expected_err_msg = (r"Can only validate shapes for "
+                        r"parameters with Arrays validator. "
+                        r"setpoints_2 is a setpoint")
+    with pytest.raises(ValueError, match=expected_err_msg):
         param_sp_without_validator.validate_consistent_shape()
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_validator.validate(param_sp_without_validator.get())
+
+
+def test_verification_without_shape():
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1,)))
+    param_without_shape = ParameterWithSetpoints('param_5',
+                                                 get_cmd=lambda:
+                                                 rand(n_points_1()),
+                                                 setpoints=(setpoints_1,),
+                                                 vals=vals.Arrays())
+    expected_err_msg = (r"Trying to validate shape but "
+                        r"parameter param_5 does not "
+                        r"define a shape")
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_without_shape.validate_consistent_shape()
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_without_shape.validate(param_without_shape.get())
