@@ -47,6 +47,44 @@ def test_validation_shapes():
     param_with_setpoints_2.validate(param_with_setpoints_2.get())
 
 
+def test_setpoints_non_parameter_raises():
+
+    """
+    Test that putting some random function as a setpoint parameter will
+    raise as expected.
+    """
+
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+
+
+    err_msg = (r"Setpoints is of type <class 'function'> "
+               r"expcected a QCoDeS parameter")
+    with pytest.raises(TypeError, match=err_msg):
+        param_with_setpoints_1 = ParameterWithSetpoints('param_1',
+                                                        get_cmd=lambda:
+                                                        rand(n_points_1()),
+                                                        setpoints=(
+                                                        lambda x: x,),
+                                                        vals=vals.Arrays(
+                                                            shape=(
+                                                                n_points_1,)))
+
+    param_with_setpoints_1 = ParameterWithSetpoints('param_1',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1()),
+                                                    vals=vals.Arrays(
+                                                        shape=(
+                                                            n_points_1,)))
+
+    with pytest.raises(TypeError, match=err_msg):
+        param_with_setpoints_1.setpoints = (lambda x: x,)
+
+
+
 def test_validation_inconsistent_shape():
     """
     Parameters with shapes inconsistent with their setpoints should not
