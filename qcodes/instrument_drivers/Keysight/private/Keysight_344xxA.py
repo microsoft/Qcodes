@@ -730,7 +730,7 @@ class _Keysight_344xxA(VisaInstrument):
         self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
         self.range.get()
 
-    def trigger(self) -> None:
+    def force_trigger(self) -> None:
         """Triggers the instrument if `trigger_source` is "BUS"."""
         self.write('*TRG')
 
