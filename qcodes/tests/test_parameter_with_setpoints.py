@@ -1,15 +1,11 @@
 from numpy.random import rand
 import pytest
 
-
 from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter
 import qcodes.utils.validators as vals
 
 
-
-
-
-def test_verification_shapes():
+def test_validation_shapes():
     """
     Test that various parameters with setpoints and shape combinations
     validate correctly.
@@ -22,9 +18,9 @@ def test_verification_shapes():
     n_points_2.set(20)
 
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
-                          vals=vals.Arrays(shape=(n_points_1,)))
+                            vals=vals.Arrays(shape=(n_points_1,)))
     setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()),
-                          vals=vals.Arrays(shape=(n_points_2,)))
+                            vals=vals.Arrays(shape=(n_points_2,)))
 
     param_with_setpoints_1 = ParameterWithSetpoints('param_1',
                                                     get_cmd=lambda:
@@ -51,8 +47,11 @@ def test_verification_shapes():
     param_with_setpoints_2.validate(param_with_setpoints_2.get())
 
 
-def test_verification_inconsistent_shape():
-
+def test_validation_inconsistent_shape():
+    """
+    Parameters with shapes inconsistent with their setpoints should not
+    validate
+    """
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
     n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
@@ -80,7 +79,11 @@ def test_verification_inconsistent_shape():
         param_with_diff_lenght.validate(param_with_diff_lenght.get())
 
 
-def test_verification_wrong_validator():
+def test_validation_wrong_validator():
+    """
+    If the validator does not match the actual content the validation should
+    fail
+    """
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
     n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
@@ -107,12 +110,14 @@ def test_verification_wrong_validator():
                                          r'Parameter: param_2'):
         param_with_wrong_validator.validate(param_with_wrong_validator())
 
-def test_verification_no_validator():
+
+def test_validation_no_validator():
+    """
+    If a parameter does not use array validators it cannot be validated.
+    """
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
-    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
     n_points_1.set(10)
-    n_points_2.set(20)
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
     # output does not have a validator
@@ -130,11 +135,13 @@ def test_verification_no_validator():
     param_without_validator.validate(param_without_validator.get())
 
 
-def test_verification_sp_no_validator():
-    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+def test_validation_sp_no_validator():
+    """
+    If the setpoints do not have an Arrays validator validation
+    will fail.
+    """
     n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
-    n_points_1.set(10)
     n_points_2.set(20)
     # setpoints do not have a validator
     setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()))
@@ -145,7 +152,7 @@ def test_verification_sp_no_validator():
                                                             setpoints_2,),
                                                         vals=vals.Arrays(
                                                             shape=(
-                                                                n_points_1,)))
+                                                                n_points_2,)))
 
     expected_err_msg = (r"Can only validate shapes for "
                         r"parameters with Arrays validator. "
@@ -156,12 +163,13 @@ def test_verification_sp_no_validator():
         param_sp_without_validator.validate(param_sp_without_validator.get())
 
 
-def test_verification_without_shape():
+def test_validation_without_shape():
+    """
+    If the Arrays validator does not have a shape the validation will fail
+    """
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
-    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
 
     n_points_1.set(10)
-    n_points_2.set(20)
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
     param_without_shape = ParameterWithSetpoints('param_5',
@@ -176,3 +184,87 @@ def test_verification_without_shape():
         param_without_shape.validate_consistent_shape()
     with pytest.raises(ValueError, match=expected_err_msg):
         param_without_shape.validate(param_without_shape.get())
+
+
+def test_validation_without_sp_shape():
+    """
+    If the setpoints validator has no shape the validation will fail
+    """
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays())
+    param_sp_without_shape = ParameterWithSetpoints('param_6',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1()),
+                                                    setpoints=(setpoints_1,),
+                                                    vals=vals.Arrays(
+                                                        shape=(
+                                                            n_points_1,)))
+    expected_err_msg = (r"One or more dimensions have unknown shape "
+                        r"when comparing output: \(10,\) to setpoints: "
+                        r"\(None,\)")
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_shape.validate_consistent_shape()
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_shape.validate(param_sp_without_shape.get())
+
+
+def test_validation_one_dim_missing():
+    """
+    If one or more dims of the output does not have a shape the validation
+    will fail.
+    """
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1, n_points_2)))
+    param_sp_without_shape = ParameterWithSetpoints('param_6',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1()),
+                                                    setpoints=(setpoints_1,),
+                                                    vals=vals.Arrays(
+                                                        shape=(
+                                                            n_points_1, None)))
+    expected_err_msg = (r"One or more dimensions have unknown shape "
+                        r"when comparing output: \(10, None\) to setpoints: "
+                        r"\(10, 20\)")
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_shape.validate_consistent_shape()
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_shape.validate(param_sp_without_shape.get())
+
+
+def test_validation_one_sp_dim_missing():
+    """
+    If one or more setpoint validators has no shape the validation will fail.
+    """
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1, None)))
+    param_sp_without_shape = ParameterWithSetpoints('param_6',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1()),
+                                                    setpoints=(setpoints_1,),
+                                                    vals=vals.Arrays(
+                                                        shape=(
+                                                            n_points_1,
+                                                            n_points_2)))
+    expected_err_msg = (r"One or more dimensions have unknown shape "
+                        r"when comparing output: \(10, 20\) to setpoints: "
+                        r"\(10, None\)")
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_shape.validate_consistent_shape()
+    with pytest.raises(ValueError, match=expected_err_msg):
+        param_sp_without_shape.validate(param_sp_without_shape.get())
