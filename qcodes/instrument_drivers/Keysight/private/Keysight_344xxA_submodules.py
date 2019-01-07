@@ -4,9 +4,52 @@ import logging
 from typing import Tuple
 
 import qcodes.utils.validators as vals
-from qcodes import VisaInstrument
+from qcodes import VisaInstrument, InstrumentChannel
 
 log = logging.getLogger(__name__)
+
+
+class Display(InstrumentChannel):
+    """Implements interaction with the display of Keysight 344xxA."""
+
+    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
+        super(Display, self).__init__(parent, name, **kwargs)
+
+        self.add_parameter('enabled',
+                           label='Display enabled',
+                           set_cmd='DISPlay:STATe {}',
+                           get_cmd='DISPlay:STATe?',
+                           val_mapping={True: 1, False: 0},
+                           docstring=textwrap.dedent("""\
+            Disables or enables the front panel display. When disabled, 
+            the display dims, and all annunciators are disabled. However, 
+            the screen remains on.
+
+            Disabling the display improves command execution speed from the 
+            remote interface and provides basic security.
+
+            Displaying text with `display.text` parameter will work even 
+            when the display is disabled."""))
+
+        self.add_parameter('text',
+                           label='Display text',
+                           set_cmd='DISPLAY:TEXT "{}"',
+                           get_cmd='DISPLAY:TEXT?',
+                           get_parser=lambda s: s.strip('"'),
+                           vals=vals.Strings(),
+                           docstring=textwrap.dedent("""\
+            Displays the given text on the screen. Specifying empty string 
+            moves the display back to its normal state. The same can be 
+            achieved by calling `display.clear`."""))
+
+    def clear(self) -> None:
+        """
+        Clear text from display. Depending on the display being
+        enabled/disabled, this either returns to display's normal state or
+        leaves it black, respectively.
+        """
+        self.write('DISPLay:TEXT:CLEar')
+        self.text.get()  # also update the parameter value
 
 
 class _Keysight_344xxA(VisaInstrument):
@@ -155,33 +198,6 @@ class _Keysight_344xxA(VisaInstrument):
                            get_cmd='SENSe:VOLTage:DC:RANGe:AUTO?',
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF'))
-
-        self.add_parameter('display_enabled',
-                           label='Display enabled',
-                           set_cmd='DISPlay:STATe {}',
-                           get_cmd='DISPlay:STATe?',
-                           val_mapping={True: 1, False: 0},
-                           docstring=textwrap.dedent("""\
-            Disables or enables the front panel display. When disabled, 
-            the display dims, and all annunciators are disabled. However, 
-            the screen remains on.
-            
-            Disabling the display improves command execution speed from the 
-            remote interface and provides basic security.
-            
-            Displaying text with `display_text` parameter will work even 
-            when the display is disabled."""))
-
-        self.add_parameter('display_text',
-                           label='Display text',
-                           set_cmd='DISPLAY:TEXT "{}"',
-                           get_cmd='DISPLAY:TEXT?',
-                           get_parser=lambda s: s.strip('"'),
-                           vals=vals.Strings(),
-                           docstring=textwrap.dedent("""\
-            Displays the given text on the screen. Specifying empty string 
-            moves the display back to its normal state. The same can be 
-            achieved by calling `display_clear`."""))
 
         self.add_parameter('autozero',
                            label='Autozero',
@@ -476,6 +492,11 @@ class _Keysight_344xxA(VisaInstrument):
                 mode."""))
 
         ####################################
+        # Submodules
+
+        self.add_submodule('display', Display(self, 'display'))
+
+        ####################################
         # Connect message
 
         if not silent:
@@ -500,15 +521,6 @@ class _Keysight_344xxA(VisaInstrument):
 
     def reset(self) -> None:
         self.write('*RST')
-
-    def display_clear(self) -> None:
-        """
-        Clear text from display. Depending on the display being
-        enabled/disabled, this either returns to display's normal state or
-        leaves it black, respectively.
-        """
-        self.write('DISPLay:TEXT:CLEar')
-        self.display_text.get()  # also update the parameter value
 
     def abort_measurement(self) -> None:
         """
