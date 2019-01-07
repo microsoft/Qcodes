@@ -307,7 +307,7 @@ class DataSaver:
             found_parameters.append(setpointparam.full_name)
             if setpointparam.full_name not in self.parameters.keys():
                 raise RuntimeError(f'{setpointparam.full_name} '
-                                   f'which is a setpoint parameter for'
+                                   f'which is a setpoint parameter for '
                                    f'{parameter.full_name} is not registered!')
         output_grids = np.meshgrid(*setpoint_data, indexing='ij')
         for name, grid in zip(setpoint_names, output_grids):
