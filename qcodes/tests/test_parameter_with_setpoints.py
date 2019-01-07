@@ -37,11 +37,11 @@ def test_validation_shapes():
                                                     get_cmd=lambda:
                                                     rand(n_points_1(),
                                                          n_points_2()),
-                                                    setpoints=(setpoints_1,
-                                                               setpoints_2),
                                                     vals=vals.Arrays(
                                                         shape=(n_points_1,
                                                                n_points_2)))
+
+    param_with_setpoints_2.setpoints = (setpoints_1, setpoints_2)
     # 2d
     param_with_setpoints_2.validate_consistent_shape()
     param_with_setpoints_2.validate(param_with_setpoints_2.get())
