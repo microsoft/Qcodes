@@ -1,109 +1,13 @@
 # QCoDeS driver for the Keysight 344xxA Digital Multimeter
 import textwrap
-from functools import partial
 import numpy as np
 import logging
 from typing import Tuple
 
-from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
-from qcodes.utils.deprecate import deprecate
 from qcodes import VisaInstrument
-from pyvisa import VisaIOError
 
 log = logging.getLogger(__name__)
-
-
-class ArrayMeasurement(ArrayParameter):
-    """
-    Class to return several values. Really represents a measurement routine.
-    """
-
-    def __init__(self, name, shape=(1,), *args, **kwargs):
-
-        super().__init__(name, shape=shape, *args, **kwargs)
-
-        self.label = ''
-        self.unit = ''
-        self.properly_prepared = False
-
-    @deprecate(reason='the use of this ArrayParameter is limiting as it '
-                      'represents only a single way of performing '
-                      'measurements and performs preparations that are not '
-                      'generally applicable',
-               alternative='driver methods like `fetch` and `read` (together '
-                           'with other methods and parameters) and custom '
-                           'functions and parameters implemented on top of '
-                           'them')
-    def prepare(self):
-        """
-        Prepare the measurement, create the setpoints.
-
-        There is some randomness in the measurement times.
-        """
-
-        inst = self._instrument
-
-        N = inst.sample_count()
-
-        # ensure correct instrument settings
-        inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
-        inst.trigger_count(1)
-        inst.trigger_delay(0)
-        inst.sample_source('TIM')
-        inst.autorange('OFF')
-        if inst.has_DIG:
-            inst.sample_count_pretrigger(0)
-
-        if inst.trigger_source() is None:
-            raise ValueError('Trigger source unspecified! Please set '
-                             "trigger_source to 'INT' or 'EXT'.")
-
-        # Final step
-        self.time_per_point = inst.sample_timer_minimum()
-        inst.sample_timer(self.time_per_point)
-
-        self.setpoints = (tuple(np.linspace(0, N*self.time_per_point, N)),)
-        self.shape = (N,)
-
-        self.properly_prepared = True
-
-    def get_raw(self):
-
-        if not self.properly_prepared:
-            raise ValueError('ArrayMeasurement not properly_prepared. '
-                             'Please run prepare().')
-
-        N = self._instrument.sample_count()
-        log.debug("Acquiring {} samples.".format(N))
-
-        # Ensure that the measurement doesn't time out
-        # TODO (WilliamHPNielsen): What if we wait really long for a trigger?
-        old_timeout = self._instrument.visa_handle.timeout
-        self._instrument.visa_handle.timeout = N*1000*1.2*self.time_per_point
-        self._instrument.visa_handle.timeout += old_timeout
-
-        # Turn off the display to increase measurement speed
-        self._instrument.display_text('Acquiring {} samples'.format(N))
-
-        self._instrument.init_measurement()
-        try:
-            rawvals = self._instrument.ask('FETCH?')
-        except VisaIOError:
-            rawvals = None
-            log.error('Could not pull data from DMM. Perhaps no trigger?')
-
-        self._instrument.visa_handle.timeout = old_timeout
-
-        # parse the acquired values
-        try:
-            numvals = np.array(list(map(float, rawvals.split(','))))
-        except AttributeError:
-            numvals = None
-
-        self._instrument.display_clear()
-
-        return numvals
 
 
 class _Keysight_344xxA(VisaInstrument):
@@ -436,8 +340,7 @@ class _Keysight_344xxA(VisaInstrument):
 
         self.add_parameter('sample_count',
                            label='Sample Count',
-                           set_cmd=partial(self._set_databuffer_setpoints,
-                                           'SAMPle:COUNt {}'),
+                           set_cmd='SAMPle:COUNt {}',
                            get_cmd='SAMPle:COUNt?',
                            vals=vals.MultiType(
                                vals.Numbers(1, _max_sample_count),
@@ -524,12 +427,6 @@ class _Keysight_344xxA(VisaInstrument):
             value is calculated assuming a single range change will occur 
             for every measurement (not multiple ranges, just one range up or 
             down per measurement)."""))
-
-        ####################################
-        # The array parameter
-
-        self.add_parameter('data_buffer',
-                           parameter_class=ArrayMeasurement)
 
         ####################################
         # Aperture parameters
@@ -664,14 +561,6 @@ class _Keysight_344xxA(VisaInstrument):
         raw_vals: str = self.ask('READ?')
         return _raw_vals_to_array(raw_vals)
 
-    def _set_databuffer_setpoints(self, cmd, value):
-        """
-        set_cmd for all databuffer-setpoint related parameters
-        """
-
-        self.data_buffer.properly_prepared = False
-        self.write(cmd.format(value))
-
     def _set_apt_time(self, value):
         self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
 
@@ -680,9 +569,6 @@ class _Keysight_344xxA(VisaInstrument):
 
     def _set_NPLC(self, value):
         self.write('SENSe:VOLTage:DC:NPLC {:f}'.format(value))
-
-        # This will change data_buffer setpoints (timebase)
-        self.data_buffer.properly_prepared = False
 
         # resolution settings change with NPLC
         self.resolution.get()
