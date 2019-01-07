@@ -379,6 +379,7 @@ class _Keysight_344xxA(VisaInstrument):
                                unit='V',
                                set_cmd='TRIGger:LEVel {}',
                                get_cmd='TRIGger:LEVel?',
+                               get_parser=float,
                                vals=vals.MultiType(
                                    vals.Numbers(-1000, 1000),
                                    vals.Enum('MIN', 'MAX', 'DEF')),
