@@ -388,11 +388,6 @@ class _Keysight_344xxA(VisaInstrument):
             Setting the integration time also sets the measurement 
             resolution."""))
 
-        self.add_parameter('volt',
-                           get_cmd=self._get_voltage,
-                           label='Voltage',
-                           unit='V')
-
         self.add_parameter('range',
                            get_cmd='SENSe:VOLTage:DC:RANGe?',
                            get_parser=float,
@@ -510,6 +505,14 @@ class _Keysight_344xxA(VisaInstrument):
         self.add_submodule('display', Display(self, 'display'))
         self.add_submodule('trigger', Trigger(self, 'trigger'))
         self.add_submodule('sample', Sample(self, 'sample'))
+
+        ####################################
+        # Measuring parameter
+
+        self.add_parameter('volt',
+                           get_cmd=self._get_voltage,
+                           label='Voltage',
+                           unit='V')
 
         ####################################
         # Connect message
