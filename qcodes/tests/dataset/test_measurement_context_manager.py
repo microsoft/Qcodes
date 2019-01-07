@@ -19,7 +19,7 @@ from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import atomic_transaction
-from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.parameter import ArrayParameter, Parameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 # pylint: disable=unused-import
@@ -1060,6 +1060,30 @@ def test_datasaver_scalar_parameter_with_setpoints(channel_array_instrument,
         [51])
     assert subdata['dummy_channel_inst_ChanA_dummy_start'] == np.array([0])
 
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_missing_reg_raises(
+        channel_array_instrument,
+        DAC):
+    chan = channel_array_instrument.A
+    param = chan.dummy_scalar_parameter_with_setpoints
+
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    myparam = Parameter('foo', set_cmd=None)
+    myparam.set(1)
+    setpoints = (param.setpoints[0], myparam)
+    param.setpoints = setpoints
+
+    # Now for a real measurement
+    with meas.run() as datasaver:
+        with pytest.raises(RuntimeError, match=r'foo which is a setpoint '
+                                               r'parameter for dummy_channel_'
+                                               r'inst_ChanA_dummy_scalar_'
+                                               r'parameter_with_setpoints '
+                                               r'is not registered!'):
+            datasaver.add_result((param, param()))
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
