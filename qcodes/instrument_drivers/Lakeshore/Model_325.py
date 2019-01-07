@@ -22,7 +22,7 @@ def read_curve_file(curve_file: TextIO) -> dict:
     def split_data_line(line: str, parser: type = str) -> List[str]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
-    def strip(strings: Iterable[str]) -> Tuple:
+    def strip(strings: Iterable[str]) -> Tuple[str]:
         return tuple(s.strip() for s in strings)
 
     lines = iter(curve_file.readlines())
