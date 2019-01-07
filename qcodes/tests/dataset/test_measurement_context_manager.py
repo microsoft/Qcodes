@@ -359,6 +359,7 @@ def test_setting_write_period(wp):
         with meas.run() as datasaver:
             assert datasaver.write_period == float(wp)
 
+
 @pytest.mark.usefixtures("experiment")
 def test_method_chaining(DAC):
     meas = (
@@ -371,6 +372,7 @@ def test_method_chaining(DAC):
             .add_after_run((lambda: None), ())
             .add_subscriber((lambda values, idx, state: None), state=[])
     )
+
 
 @pytest.mark.usefixtures("experiment")
 @settings(deadline=None)
@@ -1014,7 +1016,8 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         assert len(data[0]) == 1
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
-    subdata = datadict['dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
+    subdata = datadict[
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
     assert_allclose(subdata['dummy_channel_inst_ChanA_dummy_sp_axis'],
                     np.linspace(chan.dummy_start(),
                                 chan.dummy_stop(),
@@ -1023,6 +1026,39 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     assert_allclose(subdata['dummy_channel_inst_ChanA_'
                             'dummy_parameter_with_setpoints'],
                     np.random.rand(n))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_scalar_parameter_with_setpoints(channel_array_instrument,
+                                                   DAC):
+    chan = channel_array_instrument.A
+    param = chan.dummy_scalar_parameter_with_setpoints
+
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_start'
+
+    assert meas.parameters[str(param)].depends_on == dependency_name
+    assert meas.parameters[str(param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+    with meas.run() as datasaver:
+        datasaver.add_result((param, param()))
+    assert datasaver.points_written == 1
+
+    ds = load_by_id(datasaver.run_id)
+    data = ds.get_parameter_data()
+    assert len(data) == 1
+    subdata = data[
+        'dummy_channel_inst_ChanA_dummy_scalar_parameter_with_setpoints']
+    assert len(subdata) == 2
+    assert subdata[
+               'dummy_channel_inst_ChanA_dummy_scalar_parameter_with_setpoints'] == np.array(
+        [51])
+    assert subdata['dummy_channel_inst_ChanA_dummy_start'] == np.array([0])
 
 
 @settings(max_examples=5, deadline=None)

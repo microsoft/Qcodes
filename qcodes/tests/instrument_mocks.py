@@ -9,6 +9,7 @@ from qcodes.utils.validators import Numbers, Arrays
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints, GeneratedSetPoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+import random
 
 log = logging.getLogger(__name__)
 
@@ -186,6 +187,14 @@ class DummyChannel(InstrumentChannel):
                            setpoints=(self.dummy_sp_axis,),
                            vals=Arrays(shape=(self.dummy_n_points,)),
                            parameter_class=DummyParameterWithSetpoints1D)
+
+        self.add_parameter(name='dummy_scalar_parameter_with_setpoints',
+                           label='Dummy Scalar Parameter with Setpoints',
+                           unit='some other unit',
+                           setpoints=(self.dummy_start,),
+                           vals=Numbers(),
+                           get_cmd=lambda: 51,
+                           parameter_class=ParameterWithSetpoints)
 
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
