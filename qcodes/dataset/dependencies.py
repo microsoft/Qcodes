@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from qcodes.dataset.param_spec import ParamSpec
 
@@ -38,6 +38,33 @@ class InterDependencies:
         ser = {}
         ser['paramspecs'] = tuple(ps.serialize() for ps in self.paramspecs)
         return ser
+
+    # also: method to check for cycles (and other invalid stuff)
+
+    @staticmethod
+    def _are_dependencies_met(*params) -> bool:
+        """
+        Determine whether all dependencies are met, i.e. that for every
+        parameter that has dependencies, those dependencies are also present
+        """
+        needed: List[str] = []
+        present: List[str] = []
+
+        for param in params:
+            if param.name in needed:
+                needed.remove(param.name)
+            present.append(param.name)
+            param_deps = [sp for sp in param.depends_on.split(', ')
+                          if sp != '']
+            param_infs = [sp for sp in param.inferred_from.split(', ')
+                          if sp != '']
+            for must_have in [param_deps, param_infs]:
+                needed += [sp for sp in must_have if sp not in present]
+
+        if len(needed) > 0:
+            return False
+        else:
+            return True
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
