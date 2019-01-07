@@ -130,8 +130,6 @@ class _Keysight_344xxA(VisaInstrument):
             address (str): Visa-resolvable instrument address.
             silent (bool): If True, the connect_message of the instrument
                 is supressed. Default: False
-        Returns:
-            _Keysight_344xxA
         """
 
         super().__init__(name, address, terminator='\n', **kwargs)
