@@ -78,7 +78,7 @@ class DataSaver:
             self._dataset.subscribe_from_config(subscriber)
 
         self.write_period = float(write_period)
-        self.parameters = parameters
+        self.parameters: Dict[str, ParamSpec] = parameters
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
         self._last_save_time = monotonic()
@@ -437,7 +437,7 @@ class Runner:
             self.subscribers = subscribers
         self.experiment = experiment
         self.station = station
-        self.parameters = parameters
+        self.parameters: Dict[str, ParamSpec] = parameters
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
         self.write_period = float(write_period) \
