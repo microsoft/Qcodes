@@ -146,7 +146,7 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
             raise RuntimeError('You may not specify `data_lim` and `data_array` '
                                'at the same time. Please refer to the docstring of '
                                '`apply_color_scale_limits for details:\n\n`'
-                               + apply_color_scale_limits.__doc__)
+                               + str(apply_color_scale_limits.__doc__))
         else:
             data_lim = cast(Tuple[float, float], tuple(sorted(data_lim)))
     # if `None` is provided in the new limits don't change this limit
@@ -173,8 +173,8 @@ def apply_color_scale_limits(colorbar: matplotlib.pyplot.colorbar,
 
 def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
                            data_array: Optional[np.ndarray]=None,
-                           cutoff_percentile: Optional[Union[Tuple[
-                               Number, Number], Number]]=DEFAULT_PERCENTILE,
+                           cutoff_percentile: Union[Tuple[
+                               Number, Number], Number]=DEFAULT_PERCENTILE,
                            color_over: Optional[Any]=DEFAULT_COLOR_OVER,
                            color_under: Optional[Any]=DEFAULT_COLOR_UNDER
                            ) -> None:
