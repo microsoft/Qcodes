@@ -1,7 +1,9 @@
 from typing import Tuple
 
+from qcodes.instrument.base import AbstractInstrument
 
-class KeysightErrorQueueMixin:
+
+class KeysightErrorQueueMixin(AbstractInstrument):
     """
     Mixin class for visa instruments that happen to implement an error queue.
 

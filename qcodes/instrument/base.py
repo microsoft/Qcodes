@@ -3,6 +3,7 @@ import time
 import warnings
 import weakref
 import logging
+from abc import ABC
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
@@ -10,10 +11,11 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
 import numpy as np
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
+    from qcodes.logger.instrument_logger import get_instrument_logger, \
+        InstrumentLoggerAdapter
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from qcodes.logger.instrument_logger import get_instrument_logger
 from .parameter import Parameter, _BaseParameter
 from .function import Function
 
@@ -372,7 +374,15 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 p.validate(value)
 
 
-class Instrument(InstrumentBase):
+class AbstractInstrument(ABC):
+    """ABC that is useful for defining mixin classes for Instrument class"""
+    log: InstrumentLoggerAdapter = None  # for logging from instrument
+
+    def ask(self, cmd: str) -> str:
+        pass
+
+
+class Instrument(InstrumentBase, AbstractInstrument):
 
     """
     Base class for all QCodes instruments.
