@@ -16,7 +16,7 @@ class Trigger(InstrumentChannel):
     def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
         super(Trigger, self).__init__(parent, name, **kwargs)
 
-        if self.parent.model in ['34465A', '34470A']:
+        if self.parent.is_34465A_34470A:
             _max_trigger_count = 1e9
         else:
             _max_trigger_count = 1e6
@@ -81,7 +81,7 @@ class Trigger(InstrumentChannel):
                            get_cmd='TRIGger:SLOPe?',
                            vals=vals.Enum('POS', 'NEG'))
 
-        if self.parent.model in ['34465A', '34470A'] and self.parent.has_DIG:
+        if self.parent.is_34465A_34470A and self.parent.has_DIG:
             self.add_parameter('level',
                                label='Trigger Level',
                                unit='V',
@@ -117,7 +117,7 @@ class Trigger(InstrumentChannel):
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
-        if self.parent.model in ['34465A', '34470A'] and self.parent.has_DIG:
+        if self.parent.is_34465A_34470A and self.parent.has_DIG:
             _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
@@ -146,7 +146,7 @@ class Sample(InstrumentChannel):
     def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs):
         super(Sample, self).__init__(parent, name, **kwargs)
 
-        if self.parent.model in ['34465A', '34470A']:
+        if self.parent.is_34465A_34470A:
             _max_sample_count = 1e9
         else:
             _max_sample_count = 1e6
@@ -181,7 +181,7 @@ class Sample(InstrumentChannel):
                 Reserves memory for pretrigger samples up to the specified 
                 num. of pretrigger samples."""))
 
-        if self.parent.model in ['34465A', '34470A']:
+        if self.parent.is_34465A_34470A:
             self.add_parameter('source',
                                label='Sample Timing Source',
                                set_cmd='SAMPle:SOURce {}',
@@ -318,6 +318,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         idn = self.IDN.get()
         self.model = idn['model']
+
+        self.is_34465A_34470A = self.model in ['34465A', '34470A']
 
         ####################################
         # Instrument specifications
@@ -458,7 +460,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Aperture parameters
 
-        if self.model in ['34465A', '34470A']:
+        if self.is_34465A_34470A:
             # Define the extreme aperture time values for the 34465A and 34470A
             utility_freq = self.line_frequency()
             if utility_freq == 50:
@@ -607,7 +609,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.resolution.get()
 
         # setting NPLC switches off aperture mode
-        if self.model in ['34465A', '34470A']:
+        if self.is_34465A_34470A:
             self.aperture_mode.get()
 
     def _set_range(self, value):

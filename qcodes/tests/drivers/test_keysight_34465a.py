@@ -26,6 +26,10 @@ def test_has_dig_option(driver):
     assert True is driver.has_DIG
 
 
+def test_model_flag(driver):
+    assert True is driver.is_34465A_34470A
+
+
 def test_NPLC(driver):
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
