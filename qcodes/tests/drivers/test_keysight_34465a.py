@@ -43,3 +43,12 @@ def test_set_get_autorange(driver):
     driver.autorange.set('OFF')
     ar = driver.autorange.get()
     assert ar == 'OFF'
+
+
+def test_display_text(driver):
+    assert "" == driver.display.text()
+
+    driver.display.text("qwe")
+    assert "qwe" == driver.display.text()
+
+    driver.display.clear()
