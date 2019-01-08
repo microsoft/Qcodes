@@ -122,7 +122,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name: str, submodule:  Union['InstrumentBase', 'ChannelList']) -> None:
+    def add_submodule(self, name: str,
+                      submodule:  Union['InstrumentBase',
+                                        'ChannelList']) -> None:
         """
         Bind one submodule to this instrument.
 
@@ -411,9 +413,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     shared_kwargs = ()
 
-    _all_instruments = {} # type: Dict[str, weakref.ref[Instrument]]
+    _all_instruments: Dict[str, weakref.ref] = {}
     _type = None
-    _instances = [] # type: List[weakref.ref]
+    _instances: List[weakref.ref] = []
 
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
@@ -450,7 +452,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts = [] # type: List[Optional[str]]
+            idparts: List[Optional[str]] = []
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -638,7 +640,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
                     'Instrument {} is {} but {} was requested'.format(
                         name, type(ins), instrument_class))
 
-        return ins
+        return cast('Instrument', ins)
 
     @staticmethod
     def exist(name: str, instrument_class: Optional[type]=None) -> bool:

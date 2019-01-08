@@ -419,7 +419,7 @@ class DataSet(Sized):
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
     def completed_timestamp(self,
-                            fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
+                            fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
@@ -431,7 +431,7 @@ class DataSet(Sized):
         completed_timestamp_raw = self.completed_timestamp_raw
 
         if completed_timestamp_raw:
-            completed_timestamp = time.strftime(
+            completed_timestamp: Optional[str] = time.strftime(
                 fmt, time.localtime(completed_timestamp_raw))
         else:
             completed_timestamp = None

@@ -31,7 +31,8 @@ def validate_all(*args, context: str='') -> None:
         validator.validate(value, 'argument ' + str(i) + context)
 
 
-def range_str(min_val: Union[float, int], max_val: Union[float, int],
+def range_str(min_val: Optional[Union[float, int]],
+              max_val: Optional[Union[float, int]],
               name: str) -> str:
     """
     utility to represent ranges in Validator repr's
