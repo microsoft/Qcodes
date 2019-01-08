@@ -213,7 +213,9 @@ class MercuryiPS(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, visalib=None,
-                 field_limits: Optional[Callable]=None,
+                 field_limits: Optional[Callable[[float,
+                                                  float,
+                                                  float], bool]]=None,
                  **kwargs) -> None:
         """
         Args:
@@ -353,8 +355,8 @@ class MercuryiPS(VisaInstrument):
         valid_vec = FieldVector()
         valid_vec.copy(self._target_vector)
         valid_vec.set_component(**{coordinate: target})
-
-        if not self._field_limits(*valid_vec.get_components('x', 'y', 'z')):
+        components = valid_vec.get_components('x', 'y', 'z')
+        if not self._field_limits(*components):
             raise ValueError(f'Cannot set {coordinate} target to {target}, '
                              'that would violate the field_limits. ')
 
