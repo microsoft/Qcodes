@@ -1,7 +1,8 @@
 import pytest
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.Keysight.Keysight_34465A import Keysight_34465A
+from qcodes.instrument_drivers.Keysight.Keysight_34465A_submodules import \
+    Keysight_34465A
 visalib = sims.__file__.replace('__init__.py', 'Keysight_34465A.yaml@sim')
 
 
