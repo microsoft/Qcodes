@@ -294,20 +294,20 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     subsystems of the instrument.
 
     Attributes:
-        model (str): The model number of the instrument
-        NPLC_list (list): A list of the available Power Line Cycle settings
-        ranges (list): A list of the available voltage ranges
+        model: The model number of the instrument
+        NPLC_list: A list of the available Power Line Cycle settings
+        ranges: A list of the available voltage ranges
     """
 
-    def __init__(self, name, address, silent=False,
+    def __init__(self, name: str, address: str, silent: bool=False,
                  **kwargs):
         """
         Create an instance of the instrument.
 
         Args:
-            name (str): Name used by QCoDeS. Appears in the DataSet
-            address (str): Visa-resolvable instrument address.
-            silent (bool): If True, the connect_message of the instrument
+            name: Name used by QCoDeS. Appears in the DataSet
+            address: Visa-resolvable instrument address.
+            silent: If True, the connect_message of the instrument
                 is supressed. Default: False
         """
 
