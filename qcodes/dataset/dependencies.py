@@ -42,11 +42,12 @@ class InterDependencies:
     # also: method to check for cycles (and other invalid stuff)
 
     @staticmethod
-    def _are_dependencies_met(*params) -> bool:
+    def _missing_dependencies(*params: ParamSpec) -> List[str]:
         """
-        Determine whether all dependencies are met, i.e. that for every
-        parameter that has dependencies, those dependencies are also present
+        Return a list of the names of the missing dependencies paramspecs
+        (including both depends_on and inferred_from)
         """
+
         needed: List[str] = []
         present: List[str] = []
 
@@ -61,10 +62,22 @@ class InterDependencies:
             for must_have in [param_deps, param_infs]:
                 needed += [sp for sp in must_have if sp not in present]
 
+        return needed
+
+    @staticmethod
+    def _are_dependencies_met(*params: ParamSpec) -> bool:
+        """
+        Determine whether all dependencies are met, i.e. that for every
+        parameter that has dependencies, those dependencies are also present
+        """
+        needed = InterDependencies._missing_dependencies(*params)
+
         if len(needed) > 0:
             return False
         else:
             return True
+
+    def validate_subset()
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
