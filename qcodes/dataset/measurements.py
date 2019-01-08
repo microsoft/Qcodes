@@ -756,8 +756,8 @@ class Measurement:
 
     def _register_parameter_with_setpoints(self,
                                            parameter: ParameterWithSetpoints,
-                                           setpoints: setpoints_type,
-                                           basis: setpoints_type,
+                                           setpoints: Optional[setpoints_type],
+                                           basis: Optional[setpoints_type],
                                            paramtype: str) -> None:
         """
         Register an ParameterWithSetpoints and the setpoints belonging to the
