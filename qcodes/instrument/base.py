@@ -376,7 +376,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
 class AbstractInstrument(ABC):
     """ABC that is useful for defining mixin classes for Instrument class"""
-    log: InstrumentLoggerAdapter = None  # for logging from instrument
+    log: InstrumentLoggerAdapter  # instrument logging
 
     def ask(self, cmd: str) -> str:
         pass
