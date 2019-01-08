@@ -395,7 +395,7 @@ class _BaseParameter(Metadatable):
                     else:
                         value /= self.scale
 
-                if self.val_mapping is not None:
+                if self.inverse_val_mapping is not None:
                     if value in self.inverse_val_mapping:
                         value = self.inverse_val_mapping[value]
                     else:
