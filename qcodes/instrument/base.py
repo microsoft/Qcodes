@@ -11,11 +11,11 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
 import numpy as np
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
-    from qcodes.logger.instrument_logger import get_instrument_logger, \
-        InstrumentLoggerAdapter
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
+from qcodes.logger.instrument_logger import get_instrument_logger
 from .parameter import Parameter, _BaseParameter
 from .function import Function
 
