@@ -970,7 +970,7 @@ class ParameterWithSetpoints(Parameter):
                                 f" expcected a QCoDeS parameter")
         self._setpoints = setpoints
 
-    def validate_consistent_shape(self):
+    def validate_consistent_shape(self) -> None:
         """
         Verifies that the shape of the Array Validator of the parameter
         is consistent with the Validator of the Setpoints. This requires that
@@ -1008,7 +1008,6 @@ class ParameterWithSetpoints(Parameter):
             raise ValueError(f"Shape of output is not consistent with "
                              f"setpoints. Output is shape {output_shape} and "
                              f"setpoints are shape {setpoints_shape}")
-        return True
 
     def validate(self, value: ParamDataType) -> None:
         """
