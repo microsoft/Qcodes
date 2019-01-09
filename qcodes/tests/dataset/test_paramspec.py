@@ -9,7 +9,6 @@ import hypothesis.strategies as hst
 from qcodes.dataset.param_spec import ParamSpec
 
 
-@hst.defines_strategy
 def valid_identifier(**kwargs):
     """Return a strategy which generates a valid Python Identifier"""
     if 'min_size' not in kwargs:
