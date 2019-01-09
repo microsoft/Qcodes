@@ -40,6 +40,16 @@ Drivers
 
     driver_examples/*
 
+Writing Drivers
+---------------
+
+.. include:: writing drivers/readme.txt
+
+.. toctree::
+    :glob:
+
+    writing drivers/*
+
 Logging
 --------
 
