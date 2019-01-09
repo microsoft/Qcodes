@@ -64,11 +64,11 @@ class ParamSpec:
         return deepcopy(self._depends_on)
 
     @property
-    def inferred_from(self):
+    def inferred_from(self) -> str:
         return ', '.join(self._inferred_from)
 
     @property
-    def depends_on(self):
+    def depends_on(self) -> str:
         return ', '.join(self._depends_on)
 
     def copy(self) -> 'ParamSpec':
