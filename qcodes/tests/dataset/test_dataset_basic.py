@@ -127,7 +127,7 @@ def test_load_by_id_for_none():
         _ = load_by_id(None)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=6)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
