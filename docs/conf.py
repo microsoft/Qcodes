@@ -384,7 +384,8 @@ if any([re.match("\s*api\s*", l) for l in index_rst_lines]):
 # we mock modules that for one reason or another is not
 # there when generating the docs
 autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils',
-                        'keysightSD1', 'cffi', 'spirack', 'clr']
+                        'keysightSD1', 'cffi', 'spirack', 'clr', 'win32com',
+                        'win32com.client', 'pythoncom']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

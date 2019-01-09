@@ -12,7 +12,9 @@ from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
                                         connect, transaction,
                                         get_last_experiment, get_experiments,
                                         get_experiment_name_from_experiment_id,
-                                        get_sample_name_from_experiment_id)
+                                        get_runid_from_expid_and_counter,
+                                        get_sample_name_from_experiment_id,
+                                        ConnectionPlus)
 from qcodes.dataset.sqlite_base import new_experiment as ne
 from qcodes.dataset.database import get_DB_location, get_DB_debug
 
@@ -25,13 +27,16 @@ class Experiment(Sized):
                  exp_id: Optional[int]=None,
                  name: Optional[str]=None,
                  sample_name: Optional[str]=None,
-                 format_string: str="{}-{}-{}") -> None:
+                 format_string: str="{}-{}-{}",
+                 conn: Optional[ConnectionPlus]=None) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
 
         Args:
-            path_to_db: The path of the database file to create in/load from
+            path_to_db: The path of the database file to create in/load from.
+              If a conn is passed together with path_to_db, an exception is
+              raised
             exp_id: The id of the experiment to load
             name: The name of the experiment to create. Ignored if exp_id is
               not None
@@ -39,9 +44,18 @@ class Experiment(Sized):
               is not None
             format_string: The format string used to name result-tables.
               Ignored if exp_id is not None.
+            conn: connection to the database. If not supplied, the constructor
+              first tries to use path_to_db to figure out where to connect to.
+              If path_to_db is not supplied either, a new connection
+              to the DB file specified in the config is made
         """
+
+        if path_to_db is not None and conn is not None:
+            raise ValueError('Received BOTH conn and path_to_db. Please '
+                             'provide only one or the other.')
+
         self._path_to_db = path_to_db or get_DB_location()
-        self.conn = connect(self.path_to_db, get_DB_debug())
+        self.conn = conn or connect(self.path_to_db, get_DB_debug())
 
         max_id = len(get_experiments(self.conn))
 
@@ -113,7 +127,8 @@ class Experiment(Sized):
             values: the values to associate with the parameters
             metadata: the metadata to associate with the dataset
         """
-        return new_data_set(name, self.exp_id, specs, values, metadata)
+        return new_data_set(name, self.exp_id, specs, values, metadata,
+                            conn=self.conn)
 
     def data_set(self, counter: int) -> DataSet:
         """
@@ -125,14 +140,16 @@ class Experiment(Sized):
         Returns:
             the dataset
         """
-        return load_by_counter(counter, self.exp_id)
+        run_id = get_runid_from_expid_and_counter(self.conn, self.exp_id,
+                                                  counter)
+        return DataSet(run_id=run_id, conn=self.conn)
 
     def data_sets(self) -> List[DataSet]:
         """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
         data_sets = []
         for run in runs:
-            data_sets.append(load_by_id(run['run_id']))
+            data_sets.append(load_by_id(run['run_id'], conn=self.conn))
         return data_sets
 
     def last_data_set(self) -> DataSet:
@@ -185,8 +202,9 @@ def experiments()->List[Experiment]:
 
 
 def new_experiment(name: str,
-                   sample_name: str,
-                   format_string: Optional[str] = "{}-{}-{}") -> Experiment:
+                   sample_name: Optional[str],
+                   format_string: str = "{}-{}-{}",
+                   conn: Optional[ConnectionPlus]=None) -> Experiment:
     """
     Create a new experiment (in the database file from config)
 
@@ -195,11 +213,15 @@ def new_experiment(name: str,
         sample_name: the name of the current sample
         format_string: basic format string for table-name
             must contain 3 placeholders.
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
     Returns:
         the new experiment
     """
+    conn = conn or connect(get_DB_location())
     return Experiment(name=name, sample_name=sample_name,
-                      format_string=format_string)
+                      format_string=format_string,
+                      conn=conn)
 
 
 def load_experiment(exp_id: int) -> Experiment:
@@ -231,7 +253,8 @@ def load_last_experiment() -> Experiment:
 
 
 def load_experiment_by_name(name: str,
-                            sample: Optional[str] = None) -> Experiment:
+                            sample: Optional[str] = None,
+                            conn: Optional[ConnectionPlus]=None) -> Experiment:
     """
     Try to load experiment with the specified name.
 
@@ -241,6 +264,8 @@ def load_experiment_by_name(name: str,
     Args:
         name: the name of the experiment
         sample: the name of the sample
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         the requested experiment
@@ -248,7 +273,8 @@ def load_experiment_by_name(name: str,
     Raises:
         ValueError if the name is not unique and sample name is None.
     """
-    conn = connect(get_DB_location())
+    conn = conn or connect(get_DB_location())
+
     if sample:
         sql = """
         SELECT
@@ -283,31 +309,34 @@ def load_experiment_by_name(name: str,
         raise ValueError(f"Many experiments matching your request"
                          f" found:\n{_repr_str}")
     else:
-        e = Experiment(exp_id=rows[0]['exp_id'])
+        e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
     return e
 
 
 def load_or_create_experiment(experiment_name: str,
-                              sample_name: Optional[str] = None
-                              ) -> Experiment:
+                              sample_name: Optional[str] = None,
+                              conn: Optional[ConnectionPlus]=None)->Experiment:
     """
     Find and return an experiment with the given name and sample name,
     or create one if not found.
 
     Args:
-        experiment_name
-            Name of the experiment to find or create
-        sample_name
-            Name of the sample
+        experiment_name: Name of the experiment to find or create
+        sample_name: Name of the sample
+        conn: Connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         The found or created experiment
     """
+    conn = conn or connect(get_DB_location())
     try:
-        experiment = load_experiment_by_name(experiment_name, sample_name)
+        experiment = load_experiment_by_name(experiment_name, sample_name,
+                                             conn=conn)
     except ValueError as exception:
         if "Experiment not found" in str(exception):
-            experiment = new_experiment(experiment_name, sample_name)
+            experiment = new_experiment(experiment_name, sample_name,
+                                        conn=conn)
         else:
             raise exception
     return experiment

@@ -8,7 +8,7 @@ Rough linkages:
 
 In **bold** the containing class creates this object. In *italics* the
 container just holds this object (or class) as a default for derivatives
-to use. Normal text the container includes and uses this object.
+to use. Normal text shows the container includes and uses of this object.
 
 -  Station
 -  Instrument: IPInstrument, VisaInstrument, MockInstrument
