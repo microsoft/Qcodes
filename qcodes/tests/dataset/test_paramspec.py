@@ -23,12 +23,14 @@ def valid_identifier(**kwargs):
 # This strategy generates a dict of kwargs needed to instantiate a valid
 # ParamSpec object
 valid_paramspec_kwargs = hst.fixed_dictionaries(
-    {'name': valid_identifier(min_size=1),
+    {'name': valid_identifier(min_size=1, max_size=6),
      'paramtype': hst.sampled_from(['numeric', 'array', 'text']),
-     'label': hst.one_of(hst.none(), hst.text()),
-     'unit': hst.one_of(hst.none(), hst.text()),
-     'depends_on': hst.lists(hst.text(min_size=1), min_size=0),
-     'inferred_from': hst.lists(hst.text(min_size=1), min_size=0)
+     'label': hst.one_of(hst.none(), hst.text(min_size=0, max_size=6)),
+     'unit': hst.one_of(hst.none(), hst.text(min_size=0, max_size=2)),
+     'depends_on': hst.lists(hst.text(min_size=1, max_size=3),
+                             min_size=0, max_size=3),
+     'inferred_from': hst.lists(hst.text(min_size=1, max_size=3),
+                                min_size=0, max_size=3)
      })
 
 
@@ -239,7 +241,7 @@ def test_hash(paramspecs):
 def test_hash_with_deferred_and_inferred_as_paramspecs(
         paramspecs, add_to_1_inf, add_to_1_dep, add_to_2_inf, add_to_2_dep):
     """
-    Test that hashing works if 'inferred_from' and/or 'depend_on' contain
+    Test that hashing works if 'inferred_from' and/or 'depends_on' contain
     actual ParamSpec instances and not just strings.
     """
     assume(add_to_1_inf or add_to_1_dep or add_to_2_inf or add_to_2_dep)
