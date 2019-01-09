@@ -2,11 +2,12 @@ import logging
 import re
 
 import pytest
+
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.Keysight.Keysight_34465A_submodules import \
     Keysight_34465A
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.tests.common import error_caused_by
+
 
 visalib = sims.__file__.replace('__init__.py', 'Keysight_34465A.yaml@sim')
 
