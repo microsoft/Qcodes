@@ -49,3 +49,10 @@ Logging
     logging/*
 
 
+Legacy examples
+---------------
+
+.. toctree::
+    :glob:
+
+    legacy/*
