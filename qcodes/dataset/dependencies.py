@@ -1,6 +1,10 @@
-from typing import Dict, Any, Set, Union
+from typing import Dict, Any, Set, Union, List
 
 from qcodes.dataset.param_spec import ParamSpec
+
+# We define a heap of custom exceptions since the validation offered in this
+# module will be used inside higher-level user-facing modules that will
+# catch and reraise these exceptions with more context
 
 
 class UnknownParameterError(Exception):
@@ -12,6 +16,14 @@ class MissingDependencyError(Exception):
 
 
 class DuplicateParameterError(Exception):
+    pass
+
+
+class NestedDependencyError(Exception):
+    pass
+
+
+class NestedInferenceError(Exception):
     pass
 
 
@@ -63,7 +75,7 @@ class InterDependencies:
         input.
         """
 
-        needed = set()
+        needed: Set[str] = set()
         present = set()
 
         for param in params:
@@ -95,11 +107,48 @@ class InterDependencies:
         else:
             return True
 
+    @staticmethod
+    def _validate_dependency_levels(*params: ParamSpec) -> None:
+        """
+        Validate that all setpoints and inferred_froms are valid, meaning that
+        there is only one level of each, and that inferred_froms don't have
+        setpoints
+        """
+        # We assume below that no dependencies are missing, so first we
+        # validate that
+
+        missing = InterDependencies._missing_dependencies(*params)
+        if missing != set():
+            raise MissingDependencyError(f'Missing parameter(s): {missing}')
+
+        param_dict = dict(zip((p.name for p in params), params))
+
+        for paramspec in params:
+            deps = [sp for sp in paramspec.depends_on.split(', ') if sp != '']
+            infs = [inf for inf in paramspec.inferred_from.split(', ')
+                    if inf != '']
+            for dep in deps:
+                if param_dict[dep].depends_on != '':
+                    raise NestedDependencyError(
+                            f'Setpoint {dep} has setpoints: '
+                            f'{param_dict[dep].depends_on}')
+            for inf in infs:
+                if param_dict[inf].depends_on != '':
+                    raise NestedDependencyError(
+                            f'Inferred-from parameter {inf} has setpoints: '
+                            f'{param_dict[inf].depends_on}')
+                if param_dict[inf].inferred_from != '':
+                    raise NestedInferenceError(
+                            f'Inferred-from parameter {inf} is itself '
+                            f'inferred from: {param_dict[inf].inferred_from}')
+
+
     def validate_subset(self, *params: Union[str, ParamSpec]) -> None:
         """
         Validate that the given input is a valid subset of the parameters
         of this instance. A valid subset is a non-strict subset that has no
-        missing dependencies.
+        missing dependencies and that adheres to the graph rules for how
+        parameters can be interlinked
         """
 
         error_unknown_param: bool = False
@@ -107,7 +156,7 @@ class InterDependencies:
         # Step 1: validate that all params are known to this instance
         # (and turn all strings into paramspecs for further validation)
 
-        paramspecs = []
+        paramspecs: List[ParamSpec] = []
         for param in params:
             if isinstance(param, str):
                 if not param in (p.name for p in self.paramspecs):
@@ -138,10 +187,9 @@ class InterDependencies:
                                            '{duplicates}')
 
         # Step 3: validate that there are no missing dependencies
+        # and that all dependency levels are 1 at most
 
-        missing = self._missing_dependencies(*paramspecs)
-        if missing != set():
-            raise MissingDependencyError(f'Missing parameter(s): {missing}')
+        self._validate_dependency_levels(*paramspecs)
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':

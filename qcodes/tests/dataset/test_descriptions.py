@@ -39,6 +39,25 @@ def some_paramspecs():
                               unit='V', depends_on=[second['ps1']])
     groups[2] = second
 
+    # an invalid group with nested inference and nested dependencies
+    third = {}
+    third['ps1'] = ParamSpec('ps1', paramtype='numeric', label='RAW', unit='V')
+    third['ps2'] = ParamSpec('ps2', paramtype='numeric', label='Cooked',
+                             unit='V', inferred_from=[third['ps1']])
+    # this is invalid: nested inference
+    third['ps3'] = ParamSpec('ps3', paramtype='numeric',
+                             label='Overcooked', unit='V',
+                             inferred_from=[third['ps2']])
+    third['ps4'] = ParamSpec('ps4', paramtype='text', label='independent',
+                             unit='s')
+    third['ps5'] = ParamSpec('ps5', paramtype='array', label='dependent',
+                             unit='Hz', depends_on=[third['ps4']])
+    # this is invalid: nested dependencies
+    third['ps6'] = ParamSpec('ps6', paramtype='numeric',
+                             label='overly attached', unit='baby',
+                             depends_on=[third['ps5']])
+    groups[3] = third
+
     return groups
 
 

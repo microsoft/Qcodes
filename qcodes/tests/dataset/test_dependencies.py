@@ -3,7 +3,9 @@ import pytest
 from qcodes.dataset.dependencies import (InterDependencies,
                                          UnknownParameterError,
                                          MissingDependencyError,
-                                         DuplicateParameterError)
+                                         DuplicateParameterError,
+                                         NestedDependencyError,
+                                         NestedInferenceError)
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -54,6 +56,53 @@ def test_are_dependencies_met(some_paramspecs):
     assert adm(ps1, ps6, ps5, ps3, ps2, ps4)
 
 
+def test_validate_dependency_levels(some_paramspecs):
+
+    # A valid group
+
+    ps1 = some_paramspecs[1]['ps1']
+    ps2 = some_paramspecs[1]['ps2']
+    ps3 = some_paramspecs[1]['ps3']
+    ps4 = some_paramspecs[1]['ps4']
+    ps5 = some_paramspecs[1]['ps5']
+    ps6 = some_paramspecs[1]['ps6']
+
+    vdl = InterDependencies._validate_dependency_levels
+
+    vdl()
+    vdl(ps1)
+    vdl(ps1, ps1)
+    vdl(ps1, ps2, ps3, ps4)
+    vdl(ps1, ps3)
+    vdl(ps1, ps3, ps2)
+    vdl(ps5, ps4, ps3, ps2, ps1)
+    vdl(ps1, ps6, ps5, ps3, ps2, ps4)
+    vdl(ps1, ps6, ps5, ps3, ps2, ps4, ps1, ps2)
+
+    # An invalid group
+
+    ps1 = some_paramspecs[3]['ps1']
+    ps2 = some_paramspecs[3]['ps2']
+    ps3 = some_paramspecs[3]['ps3']
+    ps4 = some_paramspecs[3]['ps4']
+    ps5 = some_paramspecs[3]['ps5']
+    ps6 = some_paramspecs[3]['ps6']
+
+    vdl(ps1, ps2)
+    vdl(ps4, ps5)
+
+    with pytest.raises(NestedInferenceError):
+        vdl(ps1, ps2, ps3)
+
+    with pytest.raises(MissingDependencyError):
+        vdl(ps3, ps2)
+
+    with pytest.raises(MissingDependencyError):
+        vdl(ps6, ps4)
+
+    with pytest.raises(NestedDependencyError):
+        vdl(ps4, ps5, ps6)
+
 def test_validate_subset(some_paramspecs):
 
     ps1 = some_paramspecs[1]['ps1']
@@ -99,3 +148,27 @@ def test_validate_subset(some_paramspecs):
         idps.validate_subset(ps1, ps2, ps3, 'ps1')
 
     idps.validate_subset(ps1, ps6, ps5, ps3, ps2, ps4)
+
+    # now check that nesting errors are caught
+
+    ps1 = some_paramspecs[3]['ps1']
+    ps2 = some_paramspecs[3]['ps2']
+    ps3 = some_paramspecs[3]['ps3']
+    ps4 = some_paramspecs[3]['ps4']
+    ps5 = some_paramspecs[3]['ps5']
+    ps6 = some_paramspecs[3]['ps6']
+
+    idps = InterDependencies(*some_paramspecs[3].values())
+
+    with pytest.raises(NestedInferenceError):
+        idps.validate_subset(ps1, ps2, ps3)
+
+    with pytest.raises(MissingDependencyError):
+        idps.validate_subset(ps3, ps2)
+
+    with pytest.raises(MissingDependencyError):
+        idps.validate_subset(ps6, ps4)
+
+    with pytest.raises(NestedDependencyError):
+        idps.validate_subset(ps4, ps5, ps6)
+
