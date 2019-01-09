@@ -44,8 +44,13 @@ class ParamSpec:
         inferred_from = [] if inferred_from is None else inferred_from
         depends_on = [] if depends_on is None else depends_on
 
-        self.add_inferred_from(inferred_from)
-        self.add_depends_on(depends_on)
+        self._inferred_from.extend(
+            p.name if isinstance(p, ParamSpec) else p
+            for p in inferred_from)
+
+        self._depends_on.extend(
+            p.name if isinstance(p, ParamSpec) else p
+            for p in depends_on)
 
         if metadata:
             self.metadata = metadata
@@ -57,27 +62,6 @@ class ParamSpec:
     @property
     def depends_on(self):
         return ', '.join(self._depends_on)
-
-    def add_inferred_from(
-            self,
-            inferred_from: Sequence[Union['ParamSpec', str]]) -> None:
-        """
-        Args:
-            inferred_from: the parameters that this parameter is inferred_from
-        """
-        self._inferred_from.extend(
-            p.name if isinstance(p, ParamSpec) else p
-            for p in inferred_from)
-
-    def add_depends_on(self,
-                       depends_on: Sequence[Union['ParamSpec', str]]) -> None:
-        """
-        Args:
-            depends_on: the parameters that this parameter depends on
-        """
-        self._depends_on.extend(
-            p.name if isinstance(p, ParamSpec) else p
-            for p in depends_on)
 
     def copy(self) -> 'ParamSpec':
         """

@@ -131,12 +131,11 @@ alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
     name2=hst.text(min_size=4, alphabet=alphabet),
     name3=hst.text(min_size=4, alphabet=alphabet)
 )
-def test_add_depends_on(name1, name2, name3):
-
-    ps1 = ParamSpec(name1, "numeric")
+def test_depends_on(name1, name2, name3):
     ps2 = ParamSpec(name2, "numeric")
     ps3 = ParamSpec(name3, "numeric")
-    ps1.add_depends_on([ps2, ps3])
+
+    ps1 = ParamSpec(name1, "numeric", depends_on=[ps2, ps3])
 
     assert ps1.depends_on == f"{ps2.name}, {ps3.name}"
 
@@ -146,12 +145,11 @@ def test_add_depends_on(name1, name2, name3):
     name2=hst.text(min_size=4, alphabet=alphabet),
     name3=hst.text(min_size=4, alphabet=alphabet)
 )
-def test_add_inferred_from(name1, name2, name3):
-
-    ps1 = ParamSpec(name1, "numeric")
+def test_inferred_from(name1, name2, name3):
     ps2 = ParamSpec(name2, "numeric")
     ps3 = ParamSpec(name3, "numeric")
-    ps1.add_inferred_from([ps2, ps3])
+
+    ps1 = ParamSpec(name1, "numeric", inferred_from=[ps2, ps3])
 
     assert ps1.inferred_from == f"{ps2.name}, {ps3.name}"
 
