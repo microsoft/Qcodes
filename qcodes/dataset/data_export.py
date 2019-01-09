@@ -238,9 +238,9 @@ def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
     Determine plot type for a 1D plot by inspecting the data
 
     Possible plot types are:
-    * 'bar' - bar plot
-    * 'point' - scatter plot
-    * 'line' - line plot
+    * '1D_bar' - bar plot
+    * '1D_point' - scatter plot
+    * '1D_line' - line plot
 
     Args:
         xpoints: The x-axis values
@@ -252,11 +252,11 @@ def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
 
     if isinstance(xpoints[0], str) and not isinstance(ypoints[0], str):
         if len(xpoints) == len(np.unique(xpoints)):
-            return 'bar'
+            return '1D_bar'
         else:
-            return 'point'
+            return '1D_point'
     if isinstance(xpoints[0], str) or isinstance(ypoints[0], str):
-        return 'point'
+        return '1D_point'
     else:
         return datatype_from_setpoints_1d(xpoints)
 
@@ -267,8 +267,8 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
     provided setpoints.
 
     The type is:
-        * 'point' (scatter plot) when all setpoints are identical
-        * 'line' otherwise
+        * '1D_point' (scatter plot) when all setpoints are identical
+        * '1D_line' otherwise
 
     Args:
         setpoints: The x-axis values
@@ -277,9 +277,9 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
         A string representing the plot type as described above
     """
     if np.allclose(setpoints, setpoints[0]):
-        return 'point'
+        return '1D_point'
     else:
-        return 'line'
+        return '1D_line'
 
 
 def get_2D_plottype(xpoints: np.ndarray,
@@ -289,10 +289,10 @@ def get_2D_plottype(xpoints: np.ndarray,
     Determine plot type for a 2D plot by inspecting the data
 
     Plot types are:
-    * 'grid' - colormap plot for data that is on a grid
-    * 'equidistant' - colormap plot for data that is on equidistant grid
-    * 'scatter' - scatter plot
-    * 'unknown' - returned in case the data did not match any criteria of the
+    * '2D_grid' - colormap plot for data that is on a grid
+    * '2D_equidistant' - colormap plot for data that is on equidistant grid
+    * '2D_scatter' - scatter plot
+    * '2D_unknown' - returned in case the data did not match any criteria of the
     other plot types
 
     Args:
@@ -316,10 +316,11 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     to display the data.
 
     Plot types are:
-    * 'grid' - colormap plot for data that is on a grid
-    * 'equidistant' - colormap plot for data that is on equidistant grid
-    * 'scatter' - scatter plot
-    * 'unknown' - returned in case the data did not match any criteria of the
+    * '2D_point' - all setpoint are the same in each direction; one point
+    * '2D_grid' - colormap plot for data that is on a grid
+    * '2D_equidistant' - colormap plot for data that is on equidistant grid
+    * '2D_scatter' - scatter plot
+    * '2D_unknown' - returned in case the data did not match any criteria of the
     other plot types
 
     Args:
@@ -341,7 +342,7 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     y_all_the_same = np.allclose(ypoints, ypoints[0])
 
     if x_all_the_same or y_all_the_same:
-        return 'point'
+        return '2D_point'
 
     # Now check if this is a simple rectangular sweep,
     # possibly interrupted in the middle of one row
@@ -357,16 +358,16 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
 
     # this is the check that we are on a "simple" grid
     if y_check and x_check:
-        return 'grid'
+        return '2D_grid'
 
     x_check = _all_steps_multiples_of_min_step(xrows)
     y_check = _all_steps_multiples_of_min_step(yrows)
 
     # this is the check that we are on an equidistant grid
     if y_check and x_check:
-        return 'equidistant'
+        return '2D_equidistant'
 
-    return 'unknown'
+    return '2D_unknown'
 
 
 def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray

@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
+from contextlib import contextmanager
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
@@ -35,6 +36,46 @@ SUBPLOTS_OWN_KWARGS.remove('fig_kw')
 FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
 FIGURE_KWARGS.remove('kwargs')
 SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
+
+
+@contextmanager
+def _appropriate_kwargs(plottype: str,
+                        colorbar_present: bool,
+                        **kwargs):
+    """
+    NB: Only to be used inside :meth"`plot_by_id`.
+
+    Context manager to temporarily mutate the plotting kwargs to be appropriate
+    for a specific plottype. This is helpful since :meth:`plot_by_id` may have
+    to generate different kinds of plots (e.g. heatmaps and line plots) and
+    the user may want to specify kwargs only relevant to some of them
+    (e.g. 'cmap', that line plots cannot consume). Those kwargs should then not
+    be passed to all plots, which is what this contextmanager handles.
+
+    Args:
+        plottype: The plot type for which the kwargs should be adjusted
+        colorbar_present: Is there a non-None colorbar in this plot iteration?
+    """
+
+    def linehandler(**kwargs):
+        kwargs.pop('cmap', None)
+        return kwargs
+
+    def heatmaphandler(**kwargs):
+        if not(colorbar_present) and 'cmap' not in kwargs:
+            kwargs['cmap'] = qc.config.plotting.default_color_map
+        return kwargs
+
+    plot_handler_mapping = {'1D_line': linehandler,
+                            '1D_point': linehandler,
+                            '1D_bar': linehandler,
+                            '2D_point': heatmaphandler,
+                            '2D_grid': heatmaphandler,
+                            '2D_scatter': heatmaphandler,
+                            '2D_equidistant': heatmaphandler,
+                            '2D_unknown': heatmaphandler}
+
+    yield plot_handler_mapping[plottype](**kwargs.copy())
 
 
 def plot_by_id(run_id: int,
@@ -138,7 +179,7 @@ def plot_by_id(run_id: int,
     for data, ax, colorbar in zip(alldata, axes, colorbars):
 
         if len(data) == 2:  # 1D PLOTTING
-            log.debug('Plotting by id, doing a 1D plot')
+            log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
             xpoints = data[0]['data']
             ypoints = data[1]['data']
@@ -146,17 +187,23 @@ def plot_by_id(run_id: int,
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
 
-            if plottype == 'line':
+            if plottype == '1D_line':
                 # sort for plotting
                 order = xpoints.argsort()
                 xpoints = xpoints[order]
                 ypoints = ypoints[order]
 
-                ax.plot(xpoints, ypoints, **kwargs)
-            elif plottype == 'point':
-                ax.scatter(xpoints, ypoints, **kwargs)
-            elif plottype == 'bar':
-                ax.bar(xpoints, ypoints, **kwargs)
+                with _appropriate_kwargs(plottype,
+                                         colorbar is not None, **kwargs) as k:
+                    ax.plot(xpoints, ypoints, **k)
+            elif plottype == '1D_point':
+                with _appropriate_kwargs(plottype,
+                                         colorbar is not None, **kwargs) as k:
+                    ax.scatter(xpoints, ypoints, **k)
+            elif plottype == '1D_bar':
+                with _appropriate_kwargs(plottype,
+                                         colorbar is not None, **kwargs) as k:
+                    ax.bar(xpoints, ypoints, **k)
             else:
                 raise ValueError('Unknown plottype. Something is way wrong.')
 
@@ -170,7 +217,7 @@ def plot_by_id(run_id: int,
             ax.set_title(title)
 
         elif len(data) == 3:  # 2D PLOTTING
-            log.debug('Plotting by id, doing a 2D plot')
+            log.debug(f'Doing a 2D plot with kwargs: {kwargs}')
 
             # From the setpoints, figure out which 2D plotter to use
             # TODO: The "decision tree" for what gets plotted how and how
@@ -184,17 +231,17 @@ def plot_by_id(run_id: int,
 
             log.debug(f'Determined plottype: {plottype}')
 
-            how_to_plot = {'grid': plot_on_a_plain_grid,
-                           'equidistant': plot_on_a_plain_grid,
-                           'point': plot_2d_scatterplot,
-                           'unknown': plot_2d_scatterplot}
+            how_to_plot = {'2D_grid': plot_on_a_plain_grid,
+                           '2D_equidistant': plot_on_a_plain_grid,
+                           '2D_point': plot_2d_scatterplot,
+                           '2D_unknown': plot_2d_scatterplot}
             plot_func = how_to_plot[plottype]
 
-            if colorbar is None and 'cmap' not in kwargs:
-                kwargs['cmap'] = qc.config.plotting.default_color_map
-
-            ax, colorbar = plot_func(xpoints, ypoints, zpoints, ax, colorbar,
-                                     **kwargs)
+            with _appropriate_kwargs(plottype,
+                                     colorbar is not None, **kwargs) as k:
+                ax, colorbar = plot_func(xpoints, ypoints, zpoints,
+                                         ax, colorbar,
+                                         **k)
 
             _set_data_axes_labels(ax, data, colorbar)
 
