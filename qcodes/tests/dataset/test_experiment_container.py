@@ -131,10 +131,9 @@ def test_experiment_read_only_properties(experiment):
                        'path_to_db', 'started_at', 'finished_at',
                        'format_string']
 
+    # It is not expected to be possible to set read only properties
     for prop in read_only_props:
-        with pytest.raises(AttributeError, match="can't set attribute",
-                           message=f"It is not expected to be possible to set "
-                                   f"property {prop!r}"):
+        with pytest.raises(AttributeError, match="can't set attribute"):
             setattr(experiment, prop, True)
 
 

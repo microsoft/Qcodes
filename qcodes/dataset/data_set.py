@@ -10,6 +10,7 @@ import logging
 import uuid
 from queue import Queue, Empty
 from time import sleep
+import numpy
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -24,6 +25,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         modify_many_values, insert_values,
                                         insert_many_values,
                                         VALUE, VALUES, get_data,
+                                        get_parameter_data,
                                         get_values,
                                         get_setpoints,
                                         get_metadata,
@@ -38,7 +40,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         update_run_description,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
-                                        ConnectionPlus)
+                                        ConnectionPlus,
+                                        get_non_dependencies)
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 from qcodes.dataset.data_storage_interface import (DataReaderInterface,
@@ -590,7 +593,7 @@ class DataSet(Sized):
         return cast(Union[float, None], md.run_completed)
 
     def completed_timestamp(self,
-                            fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
+                            fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
@@ -602,7 +605,7 @@ class DataSet(Sized):
         completed_timestamp_raw = self.completed_timestamp_raw
 
         if completed_timestamp_raw:
-            completed_timestamp = time.strftime(
+            completed_timestamp: Optional[str] = time.strftime(
                 fmt, time.localtime(completed_timestamp_raw))
         else:
             completed_timestamp = None
@@ -821,6 +824,30 @@ class DataSet(Sized):
 
         return len_before_add
 
+    @staticmethod
+    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
+                             ) -> List[str]:
+        """
+        Validate that the provided parameters have a name and return those
+        names as a list.
+        The Parameters may be a mix of strings, ParamSpecs or ordinary
+        QCoDeS parameters.
+        """
+
+        valid_param_names = []
+        for maybeParam in params:
+            if isinstance(maybeParam, str):
+                valid_param_names.append(maybeParam)
+                continue
+            else:
+                try:
+                    maybeParam = maybeParam.name
+                except Exception as e:
+                    raise ValueError(
+                        "This parameter does not have  a name") from e
+                valid_param_names.append(maybeParam)
+        return valid_param_names
+
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: Optional[int] = None,
@@ -856,18 +883,7 @@ class DataSet(Sized):
             be of the datatypes stored in the database (numeric, array or
             string)
         """
-        valid_param_names = []
-        for maybeParam in params:
-            if isinstance(maybeParam, str):
-                valid_param_names.append(maybeParam)
-                continue
-            else:
-                try:
-                    maybeParam = maybeParam.name
-                except Exception as e:
-                    raise ValueError(
-                        "This parameter does not have  a name") from e
-            valid_param_names.append(maybeParam)
+        valid_param_names = self._validate_parameters(*params)
 
         results_iterator = self.dsi.replay_results(start=start, stop=end)
 
@@ -876,6 +892,52 @@ class DataSet(Sized):
                 for result in results_iterator]
 
         return data
+
+    def get_parameter_data(
+            self,
+            *params: Union[str, ParamSpec, _BaseParameter],
+            start: Optional[int] = None,
+            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+        """
+        Returns the values stored in the DataSet for the specified parameters
+        and their dependencies. If no paramerers are supplied the values will
+        be returned for all parameters that are not them self depdendencies.
+
+        The values are returned as a dictionary with names of the requested
+        parameters as keys and values consisting of dictionaries with the
+        names of the parameters and its dependencies as keys and numpy arrays
+        of the data as values. If some of the parameters are stored as
+        arrays the remaining parameters are expanded to the same shape as these.
+        Apart from this expansion the data returned by this method
+        is the transpose of the date returned by `get_data`.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a list of empty arrays is returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameters to Dict of parameter names
+            to numpy arrays containing the data points of type numeric,
+            array or string.
+        """
+        if len(params) == 0:
+            valid_param_names = get_non_dependencies(self.conn,
+                                                     self.run_id)
+        else:
+            valid_param_names = self._validate_parameters(*params)
+        return get_parameter_data(self.conn, self.table_name, valid_param_names,
+                                  start, end)
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """

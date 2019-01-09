@@ -87,9 +87,10 @@ def extract_param_values(snapshot: Snapshot) -> Dict[ParameterKey, Any]:
 
     return parameters
 
+
 def diff_param_values(left_snapshot: Snapshot,
                       right_snapshot: Snapshot
-                     ) -> ParameterDiff:
+                      ) -> ParameterDiff:
     """
     Given two snapshots, returns the differences between parameter values
     in each.
@@ -114,7 +115,8 @@ def diff_param_values(left_snapshot: Snapshot,
         }
     )
 
-def diff_param_values_by_id(left_id : RunId, right_id : RunId):
+
+def diff_param_values_by_id(left_id: RunId, right_id: RunId) -> ParameterDiff:
     """
     Given the IDs of two datasets, returns the differences between
     parameter values in each of their snapshots.
@@ -122,7 +124,17 @@ def diff_param_values_by_id(left_id : RunId, right_id : RunId):
     # Local import to reduce load time and
     # avoid circular references.
     from qcodes.dataset.data_set import load_by_id
-    return diff_param_values(
-        load_by_id(left_id).snapshot,
-        load_by_id(right_id).snapshot
-    )
+
+    left_snapshot = load_by_id(left_id).snapshot
+    right_snapshot = load_by_id(right_id).snapshot
+
+    if left_snapshot is None or right_snapshot is None:
+        if left_snapshot is None:
+            empty = left_id
+        else:
+            empty = right_id
+        raise RuntimeError(f"Tried to compare two snapshots"
+                           f"but the snapshot of {empty} "
+                           f"is empty.")
+
+    return diff_param_values(left_snapshot, right_snapshot)
