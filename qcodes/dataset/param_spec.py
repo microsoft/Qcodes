@@ -56,6 +56,14 @@ class ParamSpec:
             self.metadata = metadata
 
     @property
+    def inferred_from_(self) -> List[str]:
+        return deepcopy(self._inferred_from)
+
+    @property
+    def depends_on_(self) -> List[str]:
+        return deepcopy(self._depends_on)
+
+    @property
     def inferred_from(self):
         return ', '.join(self._inferred_from)
 

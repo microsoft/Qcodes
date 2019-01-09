@@ -138,6 +138,7 @@ def test_depends_on(name1, name2, name3):
     ps1 = ParamSpec(name1, "numeric", depends_on=[ps2, ps3, 'foo'])
 
     assert ps1.depends_on == f"{ps2.name}, {ps3.name}, foo"
+    assert ps1.depends_on_ == [ps2.name, ps3.name, "foo"]
 
 
 @given(
@@ -152,6 +153,7 @@ def test_inferred_from(name1, name2, name3):
     ps1 = ParamSpec(name1, "numeric", inferred_from=[ps2, ps3, 'bar'])
 
     assert ps1.inferred_from == f"{ps2.name}, {ps3.name}, bar"
+    assert ps1.inferred_from_ == [ps2.name, ps3.name, "bar"]
 
 
 @given(
