@@ -36,21 +36,6 @@ class Keysight_33500B(VisaInstrument):
         def getcmd(channel, setting):
             return 'SOURce{}:'.format(channel) + setting + '?'
 
-        def errorparser(rawmssg):
-            """
-            Parses the error message.
-
-            Args:
-                rawmssg (str): The raw return value of 'SYSTem:ERRor?'
-
-            Returns:
-                tuple (int, str): The error code and the error message.
-            """
-            code = int(rawmssg.split(',')[0])
-            mssg = rawmssg.split(',')[1].strip().replace('"', '')
-
-            return code, mssg
-
         def val_parser(parser, inputstring):
             """
             Parses return values from instrument. Meant to be used when a query
@@ -268,38 +253,7 @@ class Keysight_33500B(VisaInstrument):
                            vals=vals.Enum('ON', 'OFF')
                            )
 
-
-        self.add_parameter('error',
-                           label='Error message',
-                           get_cmd='SYSTem:ERRor?',
-                           get_parser=errorparser
-                           )
-
         self.add_function('force_trigger', call_cmd='*TRG')
 
         if not silent:
             self.connect_message()
-
-    def flush_error_queue(self, verbose=True):
-        """
-        Clear the instrument error queue.
-
-        Args:
-            verbose (Optional[bool]): If true, the error messages are printed.
-                Default: True.
-        """
-
-        log.debug('Flushing error queue...')
-
-        err_code, err_message = self.error()
-        log.debug('    {}, {}'.format(err_code, err_message))
-        if verbose:
-            print(err_code, err_message)
-
-        while err_code != 0:
-            err_code, err_message = self.error()
-            log.debug('    {}, {}'.format(err_code, err_message))
-            if verbose:
-                print(err_code, err_message)
-
-        log.debug('...flushing complete')
