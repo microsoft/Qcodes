@@ -52,6 +52,8 @@ Logging
 Legacy examples
 ---------------
 
+.. include:: legacy/readme.txt
+
 .. toctree::
     :glob:
 
