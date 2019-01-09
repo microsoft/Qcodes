@@ -2,7 +2,6 @@ from typing import Union, Sequence, List, Dict, Any
 from copy import deepcopy
 
 
-
 class ParamSpec:
 
     allowed_types = ['array', 'numeric', 'text']
@@ -19,7 +18,7 @@ class ParamSpec:
             name: name of the parameter
             paramtype: type of the parameter, i.e. the SQL storage class
             label: label of the parameter
-            inferred_from: the parameters that this parameter is inferred_from
+            inferred_from: the parameters that this parameter is inferred from
             depends_on: the parameters that this parameter depends on
         """
         if not isinstance(paramtype, str):
