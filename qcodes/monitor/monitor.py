@@ -45,7 +45,7 @@ from qcodes.instrument.parameter import Parameter
 if sys.version_info.major == 3 and sys.version_info.minor == 6:
     all_tasks = asyncio.Task.all_tasks
 else:
-    all_tasks = asyncio.all_tasks
+    all_tasks = asyncio.all_tasks  # type: ignore
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
