@@ -40,12 +40,21 @@ import websockets
 
 from qcodes.instrument.parameter import Parameter
 
-# all tasks has moved in python 3.7. Once we drop support for 3.6
-# this can be replaced by the else case only.
-if sys.version_info.major == 3 and sys.version_info.minor == 6:
-    all_tasks = asyncio.Task.all_tasks
-else:
-    all_tasks = asyncio.all_tasks  # type: ignore
+
+def _get_all_tasks():
+    # all tasks has moved in python 3.7. Once we drop support for 3.6
+    # this can be replaced by the else case only.
+    # we wrap this in a function to trick mypy into not inspecting it
+    # as there seems to be no good way of writing this code in a way
+    # which keeps mypy happy on both 3.6 and 3.7
+    if sys.version_info.major == 3 and sys.version_info.minor == 6:
+        all_tasks = asyncio.Task.all_tasks
+    else:
+        all_tasks = asyncio.all_tasks
+    return all_tasks
+
+
+all_tasks = _get_all_tasks()
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
