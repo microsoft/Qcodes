@@ -13,8 +13,7 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
 from qcodes.dataset.database import get_DB_location
@@ -128,7 +127,7 @@ def test_load_by_id_for_none():
         _ = load_by_id(None)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=6)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
