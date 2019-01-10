@@ -18,6 +18,7 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.helpers import NumpyJSONEncoder
 import qcodes.config
+from qcodes.dataset.dependencies import InterDependencies
 
 log = logging.getLogger(__name__)
 
@@ -157,16 +158,32 @@ class DataSaver:
                                                   res,
                                                   found_parameters)
 
+        # Validate that only registered parameters are added and that their
+        # dependencies are added too
+
+        found_paramspecs = []
+        for pname in found_parameters:
+            try:
+                found_paramspecs.append(self.parameters[pname])
+            except KeyError:
+                raise ValueError(f'Can not add a result for {pname}, no '
+                                 'such parameter registered in this '
+                                 'measurement.')
+        if not InterDependencies._are_dependencies_met(*found_paramspecs):
+            needed = InterDependencies._missing_dependencies(*found_paramspecs)
+            raise ValueError('Can not add result, need values for the '
+                             f'following parameter(s): {needed}')
+
         for partial_result in res:
             parameter = partial_result[0]
             paramstr = str(parameter)
             value = partial_result[1]
             found_parameters.append(paramstr)
             inserting_this_as_array = False
-            if paramstr not in self._known_parameters:
-                raise ValueError(f'Can not add a result for {paramstr}, no '
-                                 'such parameter registered in this '
-                                 'measurement.')
+            # if paramstr not in self._known_parameters:
+            #     raise ValueError(f'Can not add a result for {paramstr}, no '
+            #                      'such parameter registered in this '
+            #                      'measurement.')
             param_spec = self.parameters[paramstr]
             if param_spec.type == 'array':
                 inserting_as_arrays = True
@@ -205,16 +222,16 @@ class DataSaver:
                                  'str, tuple, list, and np.ndarray is '
                                  'allowed.')
 
-            # Now check for missing setpoints
-            if paramstr in self._known_dependencies.keys():
-                stuffweneed = set(self._known_dependencies[paramstr])
-                stuffwehave = set(found_parameters)
-                if not stuffweneed.issubset(stuffwehave):
-                    raise ValueError('Can not add this result; missing '
-                                     f'setpoint values for {paramstr}:'
-                                     f' {stuffweneed}.'
-                                     f' Values only given for'
-                                     f' {found_parameters}.')
+            # # Now check for missing setpoints
+            # if paramstr in self._known_dependencies.keys():
+            #     stuffweneed = set(self._known_dependencies[paramstr])
+            #     stuffwehave = set(found_parameters)
+            #     if not stuffweneed.issubset(stuffwehave):
+            #         raise ValueError('Can not add this result; missing '
+            #                          f'setpoint values for {paramstr}:'
+            #                          f' {stuffweneed}.'
+            #                          f' Values only given for'
+            #                          f' {found_parameters}.')
 
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
@@ -529,6 +546,7 @@ class Measurement:
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
         self._write_period: Optional[float] = None
         self.name = ''
+        self.idps = InterDependencies()
 
     @property
     def write_period(self) -> float:

@@ -191,6 +191,13 @@ class InterDependencies:
 
         self._validate_dependency_levels(*paramspecs)
 
+    def validate(self) -> None:
+        """
+        Validate that this instance is a valid group of interdependent
+        paramspecs
+        """
+        self.validate_subset(*self.paramspecs)
+
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
         """

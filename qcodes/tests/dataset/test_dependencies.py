@@ -172,3 +172,24 @@ def test_validate_subset(some_paramspecs):
     with pytest.raises(NestedDependencyError):
         idps.validate_subset(ps4, ps5, ps6)
 
+def test_validate(some_paramspecs):
+    """
+    Test the self-validation
+    """
+
+    idps = InterDependencies()
+    idps.validate()
+
+    idps = InterDependencies(*some_paramspecs[1].values())
+    idps.validate()
+
+    idps = InterDependencies(some_paramspecs[1]['ps1'])
+    idps.validate()
+
+    idps = InterDependencies(*some_paramspecs[2].values())
+    idps.validate()
+
+    idps = InterDependencies(*some_paramspecs[3].values())
+    with pytest.raises(NestedInferenceError):
+        idps.validate()
+
