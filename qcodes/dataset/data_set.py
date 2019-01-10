@@ -965,11 +965,12 @@ class DataSet(Sized):
             array or string.
         """
         if len(params) == 0:
-            valid_param_names = get_non_dependencies(self.conn,
+            valid_param_names = get_non_dependencies(self.dsi.reader.conn,
                                                      self.run_id)
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name, valid_param_names,
+        return get_parameter_data(self.dsi.reader.conn,
+                                  self.dsi.reader.table_name, valid_param_names,
                                   start, end)
 
     def get_values(self, param_name: str) -> List[List[Any]]:

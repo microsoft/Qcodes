@@ -222,7 +222,7 @@ def test_is_guid_in_db(empty_temp_db):
 @pytest.mark.filterwarnings("ignore:get_data")
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
-    ref = mut.get_data(ds.conn, ds.table_name, [])
+    ref = mut.get_data(ds.dsi.reader.conn, ds.dsi.reader.table_name, [])
     assert ref == [[]]
 
 
@@ -230,7 +230,8 @@ def test_get_parameter_data(scalar_dataset):
     ds = scalar_dataset
     input_names = ['param_3']
 
-    data = mut.get_parameter_data(ds.conn, ds.table_name, input_names)
+    data = mut.get_parameter_data(ds.dsi.reader.conn,
+                                  ds.dsi.reader.table_name, input_names)
 
     assert len(data.keys()) == len(input_names)
 
@@ -249,12 +250,12 @@ def test_get_parameter_data(scalar_dataset):
 
 def test_get_parameter_data_independent_parameters(standalone_parameters_dataset):
     ds = standalone_parameters_dataset
-    params = mut.get_non_dependencies(ds.conn,
+    params = mut.get_non_dependencies(ds.dsi.reader.conn,
                                       ds.run_id)
     expected_toplevel_params = ['param_1', 'param_2', 'param_3']
     assert params == expected_toplevel_params
 
-    data = mut.get_parameter_data(ds.conn, ds.table_name)
+    data = mut.get_parameter_data(ds.dsi.reader.conn, ds.dsi.reader.table_name)
 
     assert len(data.keys()) == len(expected_toplevel_params)
 
