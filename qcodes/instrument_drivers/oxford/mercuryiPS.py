@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 import re
 import time
@@ -18,10 +17,7 @@ class MercuryiPSArray(MultiParameter):
     """
     def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
         shapes = tuple(() for i in names)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            super().__init__(name, names, shapes, snapshot_value=True,
-                             **kwargs)
+        super().__init__(name, names, shapes, snapshot_value=True, **kwargs)
         self._get = get_cmd
         self._set = set_cmd
         self._instrument = instrument
