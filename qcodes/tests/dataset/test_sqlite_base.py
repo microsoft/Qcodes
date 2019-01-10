@@ -23,8 +23,7 @@ from qcodes.tests.dataset.temporary_databases import \
     empty_temp_db, experiment, dataset
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     standalone_parameters_dataset
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.tests.common import error_caused_by
 # pylint: enable=unused-import
 
 from .helper_functions import verify_data_dict

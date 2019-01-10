@@ -20,7 +20,7 @@ of parameters to monitor:
 monitor = qcodes.Monitor(param1, param2, param3, ...)
 ```
 """
-
+import sys
 import logging
 import os
 import time
@@ -39,6 +39,22 @@ import webbrowser
 import websockets
 
 from qcodes.instrument.parameter import Parameter
+
+
+def _get_all_tasks():
+    # all tasks has moved in python 3.7. Once we drop support for 3.6
+    # this can be replaced by the else case only.
+    # we wrap this in a function to trick mypy into not inspecting it
+    # as there seems to be no good way of writing this code in a way
+    # which keeps mypy happy on both 3.6 and 3.7
+    if sys.version_info.major == 3 and sys.version_info.minor == 6:
+        all_tasks = asyncio.Task.all_tasks
+    else:
+        all_tasks = asyncio.all_tasks
+    return all_tasks
+
+
+all_tasks = _get_all_tasks()
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
@@ -171,7 +187,7 @@ class Monitor(Thread):
         finally:
             log.debug("loop stopped")
             log.debug("Pending tasks at close: %r",
-                      asyncio.Task.all_tasks(self.loop))
+                      all_tasks(self.loop))
             self.loop.close()
             log.debug("loop closed")
             self.loop_is_closed.set()
@@ -200,7 +216,7 @@ class Monitor(Thread):
         await self.loop.create_task(self.server.wait_closed())
         log.debug("stopping loop")
         log.debug("Pending tasks at stop: %r",
-                  asyncio.Task.all_tasks(self.loop))
+                  all_tasks(self.loop))
         self.loop.stop()
 
     def join(self, timeout=None) -> None:
