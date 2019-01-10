@@ -149,7 +149,11 @@ def test_validate_subset(some_paramspecs):
 
     idps.validate_subset(ps1, ps6, ps5, ps3, ps2, ps4)
 
-    # now check that nesting errors are caught
+
+def test_validation_on_init(some_paramspecs):
+    """
+    Test the self-validation at __init__
+    """
 
     ps1 = some_paramspecs[3]['ps1']
     ps2 = some_paramspecs[3]['ps2']
@@ -158,54 +162,30 @@ def test_validate_subset(some_paramspecs):
     ps5 = some_paramspecs[3]['ps5']
     ps6 = some_paramspecs[3]['ps6']
 
-    idps = InterDependencies(*some_paramspecs[3].values())
+    with pytest.raises(NestedInferenceError):
+        InterDependencies(*some_paramspecs[3].values())
 
     with pytest.raises(NestedInferenceError):
-        idps.validate_subset(ps1, ps2, ps3)
+        InterDependencies(ps1, ps2, ps3)
 
     with pytest.raises(MissingDependencyError):
-        idps.validate_subset(ps3, ps2)
+        InterDependencies(ps3, ps2)
 
     with pytest.raises(MissingDependencyError):
-        idps.validate_subset(ps6, ps4)
+        InterDependencies(ps6, ps4)
 
     with pytest.raises(NestedDependencyError):
-        idps.validate_subset(ps4, ps5, ps6)
+        InterDependencies(ps4, ps5, ps6)
 
-def test_validate(some_paramspecs):
-    """
-    Test the self-validation
-    """
+    InterDependencies()
 
-    idps = InterDependencies()
-    idps.validate()
+    InterDependencies(*some_paramspecs[1].values())
 
-    idps = InterDependencies(*some_paramspecs[1].values())
-    idps.validate()
+    InterDependencies(some_paramspecs[1]['ps1'])
 
-    idps = InterDependencies(some_paramspecs[1]['ps1'])
-    idps.validate()
+    InterDependencies(*some_paramspecs[2].values())
 
-    idps = InterDependencies(*some_paramspecs[2].values())
-    idps.validate()
-
-    idps = InterDependencies(*some_paramspecs[3].values())
     with pytest.raises(NestedInferenceError):
-        idps.validate()
+        InterDependencies(*some_paramspecs[3].values())
 
-def test_remove_by_name(some_paramspecs):
-    idps = InterDependencies(*some_paramspecs[1].values())
-
-    idps.remove_by_name('ps1')
-    assert idps.paramspecs == tuple(list(some_paramspecs[1].values())[1:])
-
-    with pytest.raises(MissingDependencyError):
-        idps.validate()
-
-    idps = InterDependencies(*some_paramspecs[1].values())
-    idps.remove_by_name('ps6')
-    assert idps.paramspecs == tuple(list(some_paramspecs[1].values())[:-1])
-
-    with pytest.raises(KeyError):
-        idps.remove_by_name('ps7')
 
