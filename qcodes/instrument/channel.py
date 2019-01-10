@@ -1,5 +1,4 @@
 """ Base class for the channel of an instrument """
-import warnings
 from typing import (
     List, Union, Optional, Dict, Sequence,
     cast, Any
@@ -103,9 +102,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
                  channels: Sequence[InstrumentChannel],
                  param_name: str,
                  *args, **kwargs) -> None:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._channels = channels
         self._param_name = param_name
 
