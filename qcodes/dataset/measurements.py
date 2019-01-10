@@ -18,7 +18,8 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
 from qcodes.utils.helpers import NumpyJSONEncoder
 import qcodes.config
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         MissingDependencyError)
 
 log = logging.getLogger(__name__)
 
@@ -543,10 +544,15 @@ class Measurement:
                                                      MutableMapping]]] = []
         self.experiment = exp
         self.station = station
-        self.parameters: Dict[str, ParamSpec] = OrderedDict()
+        # self.parameters: Dict[str, ParamSpec] = OrderedDict()
         self._write_period: Optional[float] = None
         self.name = ''
         self.idps = InterDependencies()
+
+    @property
+    def parameters(self) -> Dict[str, ParamSpec]:
+        pss = self.idps.paramspecs
+        return dict(zip([ps.name for ps in pss], pss))
 
     @property
     def write_period(self) -> float:
@@ -560,54 +566,6 @@ class Measurement:
         if wp_float < 1e-3:
             raise ValueError('The write period must be at least 1 ms.')
         self._write_period = wp_float
-
-    def _registration_validation(
-            self, name: str, setpoints: Sequence[str] = None,
-            basis: Sequence[str] = None) -> Tuple[List[str], List[str]]:
-        """
-        Helper function to do all the validation in terms of dependencies
-        when adding parameters, e.g. that no setpoints have setpoints etc.
-
-        Called by register_parameter and register_custom_parameter
-
-        Args:
-            name: Name of the parameter to register
-            setpoints: name(s) of the setpoint parameter(s)
-            basis: name(s) of the parameter(s) that this parameter is
-                inferred from
-        """
-
-        # now handle setpoints
-        depends_on = []
-        if setpoints:
-            for sp in setpoints:
-                if sp not in list(self.parameters.keys()):
-                    raise ValueError(f'Unknown setpoint: {sp}.'
-                                     ' Please register that parameter first.')
-                elif sp == name:
-                    raise ValueError('A parameter can not have itself as '
-                                     'setpoint.')
-                elif self.parameters[sp].depends_on != '':
-                    raise ValueError("A parameter's setpoints can not have "
-                                     f"setpoints themselves. {sp} depends on"
-                                     f" {self.parameters[sp].depends_on}")
-                else:
-                    depends_on.append(sp)
-
-        # now handle inferred parameters
-        inf_from = []
-        if basis:
-            for inff in basis:
-                if inff not in list(self.parameters.keys()):
-                    raise ValueError(f'Unknown basis parameter: {inff}.'
-                                     ' Please register that parameter first.')
-                elif inff == name:
-                    raise ValueError('A parameter can not be inferred from'
-                                     'itself.')
-                else:
-                    inf_from.append(inff)
-
-        return depends_on, inf_from
 
     def register_parameter(
             self : T, parameter: _BaseParameter,
@@ -685,19 +643,28 @@ class Measurement:
         else:
             bs_strings = []
 
-        # validate all dependencies
-        depends_on, inf_from = self._registration_validation(name, sp_strings,
-                                                             bs_strings)
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
                               label=label,
                               unit=unit,
-                              inferred_from=inf_from,
-                              depends_on=depends_on)
-        # ensure the correct order
-        if name in self.parameters.keys():
-            self.parameters.pop(name)
-        self.parameters[name] = paramspec
+                              inferred_from=bs_strings,
+                              depends_on=sp_strings)
+
+        # to allow users to re-add an already registered paramspec
+        # (to e.g. update its label)
+        if name in self.parameters:
+            ps_to_kill = self.parameters[name]
+            modified_paramspecs = list(self.idps.paramspecs)
+            modified_paramspecs.remove(ps_to_kill)
+            paramspecs = tuple(modified_paramspecs)
+        else:
+            paramspecs = self.idps.paramspecs
+
+        # This line will raise if new_idps are not valid and hence not
+        # mutate the measurement object's state
+        new_idps = InterDependencies(*paramspecs, paramspec)
+        self.idps = new_idps
+
         log.info(f'Registered {name} in the Measurement.')
 
         return self
@@ -708,7 +675,7 @@ class Measurement:
                                  basis: setpoints_type,
                                  paramtype: str, ) -> None:
         """
-        Register an Array paramter and the setpoints belonging to the
+        Register an ArrayParameter and the setpoints belonging to that
         ArrayParameter
         """
         name = str(parameter)
@@ -728,10 +695,12 @@ class Measurement:
             else:
                 spunit = ''
 
-            sp = ParamSpec(name=spname, paramtype=paramtype,
-                           label=splabel, unit=spunit)
-
-            self.parameters[spname] = sp
+            self._register_parameter(name=spname,
+                                     label=splabel,
+                                     unit=spunit,
+                                     paramtype=paramtype,
+                                     setpoints=[],
+                                     basis=[])
 
             my_setpoints += [spname]
 
@@ -776,10 +745,12 @@ class Measurement:
                     else:
                         spunit = ''
 
-                    sp = ParamSpec(name=spname, paramtype=paramtype,
-                                   label=splabel, unit=spunit)
-
-                    self.parameters[spname] = sp
+                    self._register_parameter(name=spname,
+                                             paramtype=paramtype,
+                                             label=splabel,
+                                             unit=spunit,
+                                             setpoints=[],
+                                             basis=[])
                     my_setpoints += [spname]
 
             setpoints_lists.append(my_setpoints)
@@ -841,15 +812,17 @@ class Measurement:
                      'registered.')
             return
 
-        for name, paramspec in self.parameters.items():
-            if param in paramspec.depends_on:
-                raise ValueError(f'Can not unregister {param}, it is a '
-                                 f'setpoint for {name}')
-            if param in paramspec.inferred_from:
-                raise ValueError(f'Can not unregister {param}, it is a '
-                                 f'basis for {name}')
+        ps_to_kill = self.parameters[param]
+        modified_paramspecs = list(self.idps.paramspecs)
+        modified_paramspecs.remove(ps_to_kill)
 
-        self.parameters.pop(param)
+        try:
+            new_idps = InterDependencies(*modified_paramspecs)
+        except MissingDependencyError as e:
+            raise ValueError(f'Can not unregister {param}, that would lead '
+                             'to inconsistent dependencies') from e
+
+        self.idps = new_idps
         log.info(f'Removed {param} from Measurement.')
 
     def add_before_run(self : T, func: Callable, args: tuple) -> T:

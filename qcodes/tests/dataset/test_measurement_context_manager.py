@@ -26,6 +26,9 @@ from qcodes.dataset.data_set import load_by_id
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
 from qcodes.tests.test_station import set_default_station_to_none
+from qcodes.dataset.dependencies import (NestedDependencyError,
+                                         NestedInferenceError,
+                                         MissingDependencyError)
 
 
 @pytest.fixture  # scope is "function" per default
@@ -167,10 +170,16 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.type == 'numeric'
 
     for parameter in parameters:
-        with pytest.raises(ValueError):
-            meas.register_parameter(my_param, setpoints=(parameter,))
-        with pytest.raises(ValueError):
-            meas.register_parameter(my_param, basis=(parameter,))
+        if parameter == my_param:
+            with pytest.raises(NestedDependencyError):
+                meas.register_parameter(my_param, setpoints=(parameter,))
+            with pytest.raises(NestedInferenceError):
+                meas.register_parameter(my_param, basis=(parameter,))
+        else:
+            with pytest.raises(MissingDependencyError):
+                meas.register_parameter(my_param, setpoints=(parameter,))
+            with pytest.raises(MissingDependencyError):
+                meas.register_parameter(my_param, basis=(parameter,))
 
     meas.register_parameter(DAC.ch2)
     meas.register_parameter(DMM.v1)
@@ -190,7 +199,7 @@ def test_register_parameter_numbers(DAC, DMM):
 
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2, setpoints=(DAC.ch1,))
-    with pytest.raises(ValueError):
+    with pytest.raises(NestedDependencyError):
         meas.register_parameter(DMM.v1, setpoints=(DAC.ch2,))
 
 
@@ -222,10 +231,10 @@ def test_register_custom_parameter(DAC):
     assert meas.parameters[name].unit == newunit
     assert meas.parameters[name].label == newlabel
 
-    with pytest.raises(ValueError):
+    with pytest.raises(MissingDependencyError):
         meas.register_custom_parameter(name, label, unit,
                                        setpoints=(DAC.ch1,))
-    with pytest.raises(ValueError):
+    with pytest.raises(MissingDependencyError):
         meas.register_custom_parameter(name, label, unit,
                                        basis=(DAC.ch2,))
 
