@@ -30,7 +30,7 @@ def scalar_dataset(dataset):
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
-    dataset.mark_complete()
+    dataset.mark_completed()
     yield dataset
 
 
@@ -46,7 +46,8 @@ def array_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
 
 
 @pytest.fixture(scope="function",
@@ -62,7 +63,8 @@ def multi_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
 
 
 @pytest.fixture(scope="function")
@@ -82,7 +84,8 @@ def array_in_scalar_dataset(experiment):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
 
 
 @pytest.fixture(scope="function")
@@ -102,7 +105,8 @@ def array_in_scalar_dataset_unrolled(experiment):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
 
 
 @pytest.fixture(scope="function",
@@ -123,7 +127,8 @@ def array_in_str_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
 
 
 @pytest.fixture
@@ -146,5 +151,5 @@ def standalone_parameters_dataset(dataset):
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
-    dataset.mark_complete()
+    dataset.mark_completed()
     yield dataset
