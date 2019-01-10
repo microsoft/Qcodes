@@ -140,12 +140,15 @@ class FrequencySweep(ArrayParameter):
         self.instrument._trace_updated = True
 
     def get_raw(self) -> np.ndarray:
+        if self.instrument is None:
+            raise RuntimeError("No instrument is attached to"
+                               "'FrequencySweep'")
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("'FrequencySweep' is only implemented"
                                "for 'SignalHound_USB_SA124B'")
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
-        data = self._instrument._get_sweep_data()
+        data = self.instrument._get_sweep_data()
         sleep(2*self.instrument.sleep_time.get())
         return data
 
@@ -451,6 +454,7 @@ class SignalHound_USB_SA124B(Instrument):
         # the third argument to saInitiate is a flag that is
         # currently not used
         err = self.dll.saInitiate(self.deviceHandle, mode, 0)
+        extrainfo: Optional[str] = None
         if err == saStatus.saInvalidParameterErr:
             extrainfo = """
                  In real-time mode, this value may be returned if the span
@@ -467,8 +471,6 @@ class SignalHound_USB_SA124B(Instrument):
              """
         elif err == saStatus.saBandwidthErr:
             extrainfo = 'RBW is larger than your span. (Sweep Mode)!'
-        else:
-            extrainfo = None
         self.check_for_error(err, 'saInitiate', extrainfo)
 
         self._parameters_synced = True
@@ -520,11 +522,11 @@ class SignalHound_USB_SA124B(Instrument):
         log.info('Stopping acquisition')
 
         err = self.dll.saAbort(self.deviceHandle)
+        extrainfo: Optional[str] = None
         if err == saStatus.saDeviceNotConfiguredErr:
             extrainfo = 'Device was already idle! Did you call abort ' \
                         'without ever calling initiate()'
-        else:
-            extrainfo = None
+
         self.check_for_error(err, 'saAbort', extrainfo)
 
     def preset(self) -> None:
@@ -666,7 +668,7 @@ class SignalHound_USB_SA124B(Instrument):
             log.info(msg)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
-        output = {}
+        output: Dict[str, Optional[str]] = {}
         output['vendor'] = 'Signal Hound'
         output['model'] = self._get_device_type()
         serialnumber = ct.c_int32()
