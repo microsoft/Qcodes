@@ -193,3 +193,19 @@ def test_validate(some_paramspecs):
     with pytest.raises(NestedInferenceError):
         idps.validate()
 
+def test_remove_by_name(some_paramspecs):
+    idps = InterDependencies(*some_paramspecs[1].values())
+
+    idps.remove_by_name('ps1')
+    assert idps.paramspecs == tuple(list(some_paramspecs[1].values())[1:])
+
+    with pytest.raises(MissingDependencyError):
+        idps.validate()
+
+    idps = InterDependencies(*some_paramspecs[1].values())
+    idps.remove_by_name('ps6')
+    assert idps.paramspecs == tuple(list(some_paramspecs[1].values())[:-1])
+
+    with pytest.raises(KeyError):
+        idps.remove_by_name('ps7')
+

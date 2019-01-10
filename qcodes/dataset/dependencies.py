@@ -198,6 +198,16 @@ class InterDependencies:
         """
         self.validate_subset(*self.paramspecs)
 
+    def remove_by_name(self, param_name: str) -> None:
+        """
+        Remove the paramspec with the given name from this instance
+        """
+        names = [ps.name for ps in self.paramspecs]
+        dict_of_paramspecs = dict(zip(names, self.paramspecs))
+        dict_of_paramspecs.pop(param_name)
+        self.paramspecs = tuple(dict_of_paramspecs.values())
+
+
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies':
         """
