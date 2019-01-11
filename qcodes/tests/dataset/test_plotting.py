@@ -3,8 +3,14 @@ from hypothesis import given, example, assume
 from hypothesis.strategies import text, sampled_from, floats, lists, data, \
     one_of, just
 
+import qcodes as qc
 from qcodes.dataset.plotting import _make_rescaled_ticks_and_units, \
     _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
+
+from qcodes.dataset.plotting import plot_by_id, _appropriate_kwargs
+from qcodes.dataset.measurements import Measurement
+from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 
 @given(param_name=text(min_size=1, max_size=10),
@@ -83,3 +89,61 @@ def test_rescaled_ticks_and_units(scale, unit,
     # also test the fact that "{:g}" is used in ticks formatter function
     assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
+
+def test_plot_by_id_line_and_heatmap(experiment):
+    """
+    Test that line plots and heatmaps can be plotted together
+    """
+    inst = DummyInstrument('dummy', gates=['s1', 'm1', 's2', 'm2'])
+
+    inst.m1.get = np.random.randn
+    inst.m2.get = lambda: np.random.randint(0, 5)
+
+    meas = Measurement()
+    meas.register_parameter(inst.s1)
+    meas.register_parameter(inst.s2)
+    meas.register_parameter(inst.m2, setpoints=(inst.s1, inst.s2) )
+    meas.register_parameter(inst.m1, setpoints=(inst.s1,))
+
+    with meas.run() as datasaver:
+        for outer in range(10):
+            datasaver.add_result((inst.s1, outer),
+                                (inst.m1, inst.m1()))
+            for inner in range(10):
+                datasaver.add_result((inst.s1, outer),
+                                    (inst.s2, inner),
+                                    (inst.m2, inst.m2()))
+
+    dataid = datasaver.run_id
+    plot_by_id(dataid)
+    plot_by_id(dataid, cmap='bone')
+
+
+def test_appropriate_kwargs():
+
+    kwargs = {'cmap': 'bone'}
+    check = kwargs.copy()
+
+    with _appropriate_kwargs('1D_line', False, **kwargs) as ap_kwargs:
+        assert ap_kwargs == {}
+
+    assert kwargs == check
+
+    with _appropriate_kwargs('1D_point', False, **kwargs) as ap_kwargs:
+        assert ap_kwargs == {}
+
+    assert kwargs == check
+
+    with _appropriate_kwargs('1D_bar', False, **kwargs) as ap_kwargs:
+        assert ap_kwargs == {}
+
+    assert kwargs == check
+
+    with _appropriate_kwargs('2D_grid', False, **kwargs) as ap_kwargs:
+        assert ap_kwargs == kwargs
+
+    assert kwargs == check
+
+    with _appropriate_kwargs('2D_point', False, **{}) as ap_kwargs:
+        assert len(ap_kwargs) == 1
+        assert ap_kwargs['cmap'] == qc.config.plotting.default_color_map
