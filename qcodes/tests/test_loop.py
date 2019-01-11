@@ -11,7 +11,7 @@ from qcodes.station import Station
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.parameter import Parameter, MultiParameter
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import LogCapture
+from qcodes.logger.logger import LogCapture
 
 from .instrument_mocks import MultiGetter, DummyInstrument
 

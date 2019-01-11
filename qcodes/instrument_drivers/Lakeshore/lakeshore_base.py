@@ -208,7 +208,10 @@ class BaseOutput(InstrumentChannel):
         i = bisect(self.range_limits.get_latest(), temperature)
         # there is a `+1` because `self.RANGES` includes `'off'` as the first
         # value.
-        self.output_range(self.INVERSE_RANGES[i+1])
+        orange = self.INVERSE_RANGES[i+1] # this is `output range` not the fruit
+        self.log.debug(f'setting output range from temperature '
+                       f'({temperature} K) to {orange}.')
+        self.output_range(orange)
         return self.output_range()
 
     def set_setpoint_and_range(self, temperature: float):

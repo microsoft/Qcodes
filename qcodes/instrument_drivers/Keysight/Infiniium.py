@@ -67,7 +67,7 @@ class RawTrace(ArrayParameter):
         # make this on a per channel basis?
         self._instrument._parent.trace_ready = True
 
-    def get(self):
+    def get_raw(self):
         # when get is called the setpoints have to be known already
         # (saving data issue). Therefor create additional prepare function that
         # queries for the size.

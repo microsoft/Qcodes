@@ -330,12 +330,12 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
-        log.debug(f'Starting blocking ramp of {self.name} to {value}')
+        self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
         while self.ramping_state() == 'ramping':
             self._sleep(0.3)
         self._sleep(2.0)
         state = self.ramping_state()
-        log.debug(f'Finished blocking ramp')
+        self.log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
         if state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -685,7 +685,7 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
-        log.debug("Checking whether fields can be set")
+        self.log.debug("Checking whether fields can be set")
 
         # Check if exceeding the global field limit
         if not self._verify_safe_setpoint(values):
@@ -701,7 +701,7 @@ class AMI430_3D(Instrument):
 
         # Now that we know we can proceed, call the individual instruments
 
-        log.debug("Field values OK, proceeding")
+        self.log.debug("Field values OK, proceeding")
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
