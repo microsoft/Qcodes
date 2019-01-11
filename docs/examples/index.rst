@@ -43,12 +43,12 @@ Drivers
 Writing Drivers
 ---------------
 
-.. include:: writing drivers/readme.txt
+.. include:: writing_drivers/readme.txt
 
 .. toctree::
     :glob:
 
-    writing drivers/*
+    writing_drivers/*
 
 Logging
 --------
