@@ -2296,7 +2296,6 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           name,
                                                           guid,
                                                           parameters)
-        print(f"create run {run_id}")
         if metadata:
             add_meta_data(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
