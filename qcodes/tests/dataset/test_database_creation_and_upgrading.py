@@ -4,7 +4,6 @@ from copy import deepcopy
 import logging
 import tempfile
 import json
-from typing import TYPE_CHECKING
 
 import pytest
 
@@ -15,6 +14,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 # pylint: disable=unused-import
+from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
@@ -32,27 +32,9 @@ from qcodes.dataset.sqlite_base import (connect,
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
-if TYPE_CHECKING:
-    from _pytest._code.code import ExceptionInfo
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
-
-
-def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
-    """
-    Helper function to figure out whether an exception was caused by another
-    exception with the message provided.
-
-    Args:
-        excinfo: the output of with pytest.raises() as excinfo
-        cause: the error message or a substring of it
-    """
-    chain = excinfo.getrepr().chain
-    cause_found = False
-    for link in chain:
-        cause_found = cause_found or cause in str(link[1])
-    return cause_found
 
 
 @contextmanager
