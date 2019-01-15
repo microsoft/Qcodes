@@ -30,7 +30,7 @@ class DG1062Burst(InstrumentChannel):
             "polarity",
             get_cmd=f":SOUR{channel}:BURS:GATE:POL?",
             set_cmd=f":SOUR{channel}:BURS:GATE:POL {{}}",
-            vals=vals.Enum("NOR", "INV")
+            vals=vals.Enum("NORM", "INV")
         )
 
         self.add_parameter(
