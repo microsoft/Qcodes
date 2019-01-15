@@ -35,7 +35,7 @@ class DG1062Burst(InstrumentChannel):
 
         self.add_parameter(
             "period",
-            get_cmd=f":SOUR{channel}:BURS:INT:PER ?",
+            get_cmd=f":SOUR{channel}:BURS:INT:PER?",
             set_cmd=f":SOUR{channel}:BURS:INT:PER {{}}",
             vals=vals.MultiType(
                 vals.Numbers(min_value=3E-6, max_value=500),
