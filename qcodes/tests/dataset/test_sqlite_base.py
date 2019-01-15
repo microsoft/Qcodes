@@ -273,6 +273,10 @@ def test_is_run_id_in_db(empty_temp_db):
 
 
 def test_atomic_creation(experiment):
+    """"
+    Test that dataset creation is atomic. Test for
+    https://github.com/QCoDeS/Qcodes/issues/1444
+    """
     def just_throw(*args):
         raise RuntimeError("This breaks adding metadata")
 
@@ -283,7 +287,8 @@ def test_atomic_creation(experiment):
         x = ParamSpec('x', 'numeric')
         t = ParamSpec('t', 'numeric')
         y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError,
+                           match="Rolling back due to unhandled exception")as e:
             mut.create_run(experiment.conn,
                            experiment.exp_id,
                            name='testrun',
@@ -291,7 +296,12 @@ def test_atomic_creation(experiment):
                            parameters=[x, t,
                                        y],
                            metadata={'a': 1})
-
+    assert error_caused_by(e, "This breaks adding metadata")
+    # since we are starting from an empty database and the above transaction
+    # should be rolled back there should be no runs in the run table
+    runs = mut.transaction(experiment.conn,
+                           'SELECT run_id FROM runs').fetchall()
+    assert len(runs) == 0
     mut.create_run(experiment.conn,
                    experiment.exp_id,
                    name='testrun',
@@ -299,3 +309,7 @@ def test_atomic_creation(experiment):
                    parameters=[x, t,
                                y],
                    metadata={'a': 1})
+    runs = mut.transaction(experiment.conn,
+                           'SELECT run_id FROM runs').fetchall()
+    assert len(runs) == 1
+
