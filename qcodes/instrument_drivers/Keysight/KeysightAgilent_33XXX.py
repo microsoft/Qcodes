@@ -5,6 +5,8 @@ from typing import Union
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument
+from qcodes.instrument_drivers.Keysight.private.error_handling import \
+    KeysightErrorQueueMixin
 
 log = logging.getLogger(__name__)
 
@@ -273,7 +275,7 @@ class SyncChannel(InstrumentChannel):
                                vals=vals.Enum(1, 2))
 
 
-class WaveformGenerator_33XXX(VisaInstrument):
+class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
     """
     QCoDeS driver for the Keysight/Agilent 33XXX series of
     waveform generators
@@ -312,21 +314,6 @@ class WaveformGenerator_33XXX(VisaInstrument):
 
         self.num_channels = no_of_channels[self.model]
 
-        def errorparser(rawmssg):
-            """
-            Parses the error message.
-
-            Args:
-                rawmssg (str): The raw return value of 'SYSTem:ERRor?'
-
-            Returns:
-                tuple (int, str): The error code and the error message.
-            """
-            code = int(rawmssg.split(',')[0])
-            mssg = rawmssg.split(',')[1].strip().replace('"', '')
-
-            return code, mssg
-
         for i in range(1, self.num_channels+1):
             channel = OutputChannel(self, 'ch{}'.format(i), i)
             self.add_submodule('ch{}'.format(i), channel)
@@ -334,39 +321,9 @@ class WaveformGenerator_33XXX(VisaInstrument):
         sync = SyncChannel(self, 'sync')
         self.add_submodule('sync', sync)
 
-        self.add_parameter('error',
-                           label='Error message',
-                           get_cmd='SYSTem:ERRor?',
-                           get_parser=errorparser
-                           )
-
         self.add_function('force_trigger', call_cmd='*TRG')
 
         self.add_function('sync_channel_phases', call_cmd='PHAS:SYNC')
 
         if not silent:
             self.connect_message()
-
-    def flush_error_queue(self, verbose=True):
-        """
-        Clear the instrument error queue.
-
-        Args:
-            verbose (Optional[bool]): If true, the error messages are printed.
-                Default: True.
-        """
-
-        log.debug('Flushing error queue...')
-
-        err_code, err_message = self.error()
-        log.debug('    {}, {}'.format(err_code, err_message))
-        if verbose:
-            print(err_code, err_message)
-
-        while err_code != 0:
-            err_code, err_message = self.error()
-            log.debug('    {}, {}'.format(err_code, err_message))
-            if verbose:
-                print(err_code, err_message)
-
-        log.debug('...flushing complete')

@@ -301,6 +301,9 @@ class DataSaver:
         """
         sp_names = parameter.setpoint_full_names
         fallback_sp_name = f"{parameter.full_name}_setpoint"
+        if parameter.setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
         self._unbundle_setpoints_from_param(parameter, sp_names,
                                             fallback_sp_name,
                                             parameter.setpoints,
@@ -376,6 +379,9 @@ class DataSaver:
             found_parameters: The list of all parameters that we know of by now
               This is modified in place with new parameters found here.
         """
+        if parameter.setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
         for i in range(len(parameter.shapes)):
             shape = parameter.shapes[i]
             res.append((parameter.names[i], data[i]))
@@ -555,7 +561,7 @@ class Measurement:
         return dict(zip([ps.name for ps in pss], pss))
 
     @property
-    def write_period(self) -> float:
+    def write_period(self) -> Optional[float]:
         return self._write_period
 
     @write_period.setter
@@ -624,10 +630,10 @@ class Measurement:
         return self
 
     def _register_parameter(self : T, name: str,
-                            label: str,
-                            unit: str,
-                            setpoints: setpoints_type,
-                            basis: setpoints_type,
+                            label: Optional[str],
+                            unit: Optional[str],
+                            setpoints: Optional[setpoints_type],
+                            basis: Optional[setpoints_type],
                             paramtype: str) -> T:
         """
         Generate ParamSpecs and register them for an individual parameter
@@ -671,8 +677,8 @@ class Measurement:
 
     def _register_arrayparameter(self,
                                  parameter: ArrayParameter,
-                                 setpoints: setpoints_type,
-                                 basis: setpoints_type,
+                                 setpoints: Optional[setpoints_type],
+                                 basis: Optional[setpoints_type],
                                  paramtype: str, ) -> None:
         """
         Register an ArrayParameter and the setpoints belonging to that
@@ -713,8 +719,8 @@ class Measurement:
 
     def _register_multiparameter(self,
                                  multiparameter: MultiParameter,
-                                 setpoints: setpoints_type,
-                                 basis: setpoints_type,
+                                 setpoints: Optional[setpoints_type],
+                                 basis: Optional[setpoints_type],
                                  paramtype: str) -> None:
         """
         Find the individual multiparameter components and their setpoints
