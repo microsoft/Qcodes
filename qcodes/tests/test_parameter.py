@@ -676,11 +676,9 @@ class SimpleMultiParam(MultiParameter):
 
 
 class SettableMulti(SimpleMultiParam):
-    # this is not fully suported - just created to raise a warning in the test below.
-    # We test that the warning is raised
     def set_raw(self, v):
         print("Calling set")
-        self.v = v
+        self._return_val = v
 
 
 class TestMultiParameter(TestCase):
@@ -786,9 +784,13 @@ class TestMultiParameter(TestCase):
         self.assertFalse(hasattr(p, 'set'))
         # We allow creation of Multiparameters with set to support
         # instruments that already make use of them.
-        with self.assertWarns(UserWarning):
-            SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                          name, names, shapes)
+
+        p = SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]], name, names, shapes)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertTrue(hasattr(p, 'set'))
+        value_to_set = [2, [1, 5, 2], [[8, 2], [4, 9]]]
+        p.set(value_to_set)
+        assert p.get() == value_to_set
 
     def test_full_name_s(self):
         name = 'mixed_dimensions'
