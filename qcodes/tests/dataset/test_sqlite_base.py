@@ -4,6 +4,7 @@
 from sqlite3 import OperationalError
 import tempfile
 import os
+from contextlib import contextmanager
 
 import pytest
 import hypothesis.strategies as hst
@@ -30,6 +31,17 @@ from qcodes.tests.common import error_caused_by
 from .helper_functions import verify_data_dict
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
+
+
+@contextmanager
+def shadow_conn(path_to_db: str):
+    """
+    Simple context manager to create a connection for testing and
+    close it on exit
+    """
+    conn = mut.connect(path_to_db)
+    yield conn
+    conn.close()
 
 
 def test_path_to_dbfile():
@@ -277,6 +289,7 @@ def test_atomic_creation(experiment):
     Test that dataset creation is atomic. Test for
     https://github.com/QCoDeS/Qcodes/issues/1444
     """
+
     def just_throw(*args):
         raise RuntimeError("This breaks adding metadata")
 
@@ -302,6 +315,13 @@ def test_atomic_creation(experiment):
     runs = mut.transaction(experiment.conn,
                            'SELECT run_id FROM runs').fetchall()
     assert len(runs) == 0
+    with shadow_conn(experiment.path_to_db) as new_conn:
+        runs = mut.transaction(new_conn,
+                               'SELECT run_id FROM runs').fetchall()
+        assert len(runs) == 0
+
+    # if the above was not correctly rolled back we
+    # expect the next creation of a run to fail
     mut.create_run(experiment.conn,
                    experiment.exp_id,
                    name='testrun',
@@ -309,7 +329,12 @@ def test_atomic_creation(experiment):
                    parameters=[x, t,
                                y],
                    metadata={'a': 1})
+
     runs = mut.transaction(experiment.conn,
                            'SELECT run_id FROM runs').fetchall()
     assert len(runs) == 1
 
+    with shadow_conn(experiment.path_to_db) as new_conn:
+        runs = mut.transaction(new_conn,
+                               'SELECT run_id FROM runs').fetchall()
+        assert len(runs) == 1
