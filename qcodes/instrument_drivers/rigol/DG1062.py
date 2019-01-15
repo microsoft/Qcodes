@@ -110,7 +110,7 @@ class DG1062Channel(InstrumentChannel):
 
     waveform_params = {
         waveform: ["freq", "ampl", "offset", "phase"] for waveform in
-        ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER"]
+        ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER", "PULS"]
     }
 
     waveform_params["DC"] = ["freq", "ampl", "offset"]
