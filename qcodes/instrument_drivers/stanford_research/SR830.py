@@ -572,7 +572,7 @@ class SR830(VisaInstrument):
 
     def _change_sensitivity(self, dn):
         _ = self.sensitivity.get()
-        n = self.sensitivity.raw_value
+        n = int(self.sensitivity.raw_value)
         if self.input_config() in ['a', 'a-b']:
             n_to = self._N_TO_VOLT
         else:

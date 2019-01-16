@@ -129,6 +129,8 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         Find the smallest channel number not yet occupied. An optional keyword
         `greeting` is extracted from the kwargs. The default is "Hello"
         """
+        if parent is None:
+            raise RuntimeError("SimpleTestChannel needs a parent instrument")
         channels_str = parent.channel_catalog()
         existing_channels = [int(i) for i in channels_str.split(",")]
 
