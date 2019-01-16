@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import time
 import io
+import warnings
 from typing import (Any, List, Optional, Tuple, Union, Dict, cast, Callable,
                     Sequence, DefaultDict)
 import itertools
@@ -1161,6 +1162,30 @@ def length(conn: ConnectionPlus,
         return _len
 
 
+def _build_data_query( table_name: str,
+             columns: List[str],
+             start: Optional[int] = None,
+             end: Optional[int] = None,
+             ) -> str:
+
+    _columns = ",".join(columns)
+    query = f"""
+            SELECT {_columns}
+            FROM "{table_name}"
+            """
+
+    start_specified = start is not None
+    end_specified = end is not None
+
+    where = ' WHERE' if start_specified or end_specified else ''
+    start_condition = f' rowid >= {start}' if start_specified else ''
+    end_condition = f' rowid <= {end}' if end_specified else ''
+    and_ = ' AND' if start_specified and end_specified else ''
+
+    query += where + start_condition + and_ + end_condition
+    return query
+
+
 def get_data(conn: ConnectionPlus,
              table_name: str,
              columns: List[str],
@@ -1182,27 +1207,95 @@ def get_data(conn: ConnectionPlus,
     Returns:
         the data requested in the format of list of rows of values
     """
-    _columns = ",".join(columns)
-
-    query = f"""
-            SELECT {_columns}
-            FROM "{table_name}"
-            """
-
-    start_specified = start is not None
-    end_specified = end is not None
-
-    where = ' WHERE' if start_specified or end_specified else ''
-    start_condition = f' rowid >= {start}' if start_specified else ''
-    end_condition = f' rowid <= {end}' if end_specified else ''
-    and_ = ' AND' if start_specified and end_specified else ''
-
-    query += where + start_condition + and_ + end_condition
-
+    if len(columns) == 0:
+        warnings.warn(
+            'get_data: requested data without specifying parameters/columns.'
+            'Returning empty list.'
+        )
+        return [[]]
+    query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
 
     return res
+
+
+def get_parameter_data(conn: ConnectionPlus,
+                       table_name: str,
+                       columns: Sequence[str]=(),
+                       start: Optional[int]=None,
+                       end: Optional[int]=None) -> \
+        Dict[str, Dict[str, np.ndarray]]:
+    """
+    Get data for one or more parameters and its dependencies. The data
+    is returned as numpy arrays within 2 layers of nested dicts. The keys of
+    the outermost dict are the requested parameters and the keys of the second
+    level are the loaded parameters (requested parameter followed by its
+    dependencies). Start and End  sllows one to specify a range of rows
+    (1-based indexing, both ends are included).
+
+    Note that this assumes that all array type parameters have the same length.
+    This should always be the case for a parameter and its dependencies.
+
+    Note that all numeric data will at the moment be returned as floating point
+    values.
+
+    Args:
+        conn: database connection
+        table_name: name of the table
+        columns: list of columns
+        start: start of range; if None, then starts from the top of the table
+        end: end of range; if None, then ends at the bottom of the table
+    """
+    sql = """
+    SELECT run_id FROM runs WHERE result_table_name = ?
+    """
+    c = atomic_transaction(conn, sql, table_name)
+    run_id = one(c, 'run_id')
+
+    output = {}
+    if len(columns) == 0:
+        columns = get_non_dependencies(conn, run_id)
+
+    # loop over all the requested parameters
+    for output_param in columns:
+        # find all the dependencies of this param
+        paramspecs = get_parameter_dependencies(conn, output_param, run_id)
+        param_names = [param.name for param in paramspecs]
+        types = [param.type for param in paramspecs]
+
+        res = get_data(conn, table_name, param_names, start=start, end=end)
+        # if we have array type parameters expand all other parameters
+        # to arrays
+        if 'array' in types and ('numeric' in types or 'text' in types):
+            first_array_element = types.index('array')
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in res:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.float)
+                    # todo should we handle int/float types here
+                    # we would in practice have to perform another
+                    # loop to check that all elements of a given can be cast to
+                    # int without loosing precision before choosing an integer
+                    # representation of the array
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=f'U{strlen}')
+
+        # Benchmarking shows that transposing the data with python types is
+        # faster than transposing the data using np.array.transpose
+        res_t = list(map(list, zip(*res)))
+        output[output_param] = {name: np.array(column_data)
+                         for name, column_data
+                         in zip(param_names, res_t)}
+    return output
 
 
 def get_values(conn: ConnectionPlus,
@@ -1363,7 +1456,7 @@ def get_layout(conn: ConnectionPlus,
 
     Args:
         conn: The database connection
-        run_id: The run_id as in the runs table
+        layout_id: The run_id as in the layouts table
 
     Returns:
         A dict with name, label, and unit
@@ -1442,7 +1535,63 @@ def get_dependencies(conn: ConnectionPlus,
     return res
 
 
+def get_non_dependencies(conn: ConnectionPlus,
+                         run_id: int) -> List[str]:
+    """
+    Return all parameters for a given run that are not dependencies of
+    other parameters.
+
+    Args:
+        conn: connection to the database
+        run_id: The run_id of the run in question
+
+    Returns:
+        A list of the parameter names.
+    """
+    parameters = get_parameters(conn, run_id)
+    maybe_independent = []
+    dependent = []
+    dependencies: List[str] = []
+
+    for param in parameters:
+        if len(param.depends_on) == 0:
+            maybe_independent.append(param.name)
+        else:
+            dependent.append(param.name)
+            dependencies.extend(param.depends_on.split(', '))
+
+    independent_set = set(maybe_independent) - set(dependencies)
+    dependent_set = set(dependent)
+    result = independent_set.union(dependent_set)
+    return sorted(list(result))
+
+
 # Higher level Wrappers
+
+
+def get_parameter_dependencies(conn: ConnectionPlus, param: str,
+                              run_id: int) -> List[ParamSpec]:
+    """
+    Given a parameter name return a list of ParamSpecs where the first
+    element is the ParamSpec of the given parameter and the rest of the
+    elements are ParamSpecs of its dependencies.
+
+    Args:
+        conn: connection to the database
+        param: the name of the parameter to look up
+        run_id: run_id: The run_id of the run in question
+
+    Returns:
+        List of ParameterSpecs of the parameter followed by its dependencies.
+    """
+    layout_id = get_layout_id(conn, param, run_id)
+    deps = get_dependencies(conn, layout_id)
+    parameters = [get_paramspec(conn, run_id, param)]
+
+    for dep in deps:
+        depinfo = get_layout(conn, dep[0])
+        parameters.append(get_paramspec(conn, run_id, depinfo['name']))
+    return parameters
 
 
 def new_experiment(conn: ConnectionPlus,
@@ -2141,15 +2290,16 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - formatted_name: the name of the newly created table
     """
 
-    run_counter, formatted_name, run_id = _insert_run(conn,
-                                                      exp_id,
-                                                      name,
-                                                      guid,
-                                                      parameters)
-    if metadata:
-        add_meta_data(conn, run_id, metadata)
-    _update_experiment_run_counter(conn, exp_id, run_counter)
-    _create_run_table(conn, formatted_name, parameters, values)
+    with atomic(conn):
+        run_counter, formatted_name, run_id = _insert_run(conn,
+                                                          exp_id,
+                                                          name,
+                                                          guid,
+                                                          parameters)
+        if metadata:
+            add_meta_data(conn, run_id, metadata)
+        _update_experiment_run_counter(conn, exp_id, run_counter)
+        _create_run_table(conn, formatted_name, parameters, values)
 
     return run_counter, run_id, formatted_name
 

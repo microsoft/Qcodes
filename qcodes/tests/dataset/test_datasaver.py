@@ -84,9 +84,9 @@ def test_numpy_types():
 
 
 @pytest.mark.usefixtures("experiment")
-@given(numeric_type=hst.sampled_from([int, float, np.int8, np.int16, np.int32,
-                                      np.int64, np.float16, np.float32,
-                                      np.float64]))
+@pytest.mark.parametrize('numeric_type',
+                         [int, float, np.int8, np.int16, np.int32, np.int64,
+                          np.float16, np.float32, np.float64])
 def test_saving_numeric_values_as_text(numeric_type):
     """
     Test the saving numeric values into 'text' parameter raises an exception

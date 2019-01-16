@@ -16,7 +16,7 @@ from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
-from qcodes.tests.dataset.test_database_creation_and_upgrading import error_caused_by
+from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
 from qcodes.tests.instrument_mocks import DummyInstrument

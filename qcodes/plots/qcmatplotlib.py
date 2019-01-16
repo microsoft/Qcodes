@@ -2,8 +2,8 @@
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
-from collections import Mapping
-from collections import Sequence
+from collections.abc import Mapping
+from collections.abc import Sequence
 from functools import partial
 from copy import deepcopy
 

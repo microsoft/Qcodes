@@ -2,7 +2,7 @@ numpy==1.15.*
 matplotlib==3.0.*
 pyqtgraph==0.10.0
 PyVISA==1.9.1
-h5py==2.8.0
+h5py==2.9.0
 PyQt5==5.9.*
 QtPy
 jsonschema
