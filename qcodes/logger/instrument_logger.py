@@ -100,23 +100,33 @@ def filter_instrument(instrument: Union['InstrumentBase',
         >>>     v = dmm2.v()  # not logged
 
     Args:
+        instrument: The instrument or sequence of instruments to enable
+            messages from.
         level: level to set the handlers to
         handler: single or sequence of handlers which to change
     """
+    handlers: Sequence[logging.Handler]
     if handler is None:
-        handler = (get_console_handler(),)
-    if not isinstance(handler, collections.abc.Sequence):
-        handler = (handler,)
+        myhandler = get_console_handler()
+        if myhandler is None:
+            raise RuntimeError("Trying to filter instrument but no handler "
+                               "defined. Did you forget to call "
+                               "`start_logger` before?")
+        handlers = (myhandler,)
+    elif not isinstance(handler, collections.abc.Sequence):
+        handlers = (handler,)
+    else:
+        handlers = handler
 
     instrument_filter = InstrumentFilter(instrument)
-    for h in handler:
+    for h in handlers:
         h.addFilter(instrument_filter)
     try:
         if level is not None:
-            with handler_level(level, handler):
+            with handler_level(level, handlers):
                 yield
         else:
             yield
     finally:
-        for h in handler:
+        for h in handlers:
             h.removeFilter(instrument_filter)
