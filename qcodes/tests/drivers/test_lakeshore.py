@@ -5,12 +5,15 @@ from functools import wraps
 from contextlib import suppress
 import time
 
-from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
+from qcodes.instrument.base import InstrumentBase
+from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
 
 log = logging.getLogger(__name__)
+
+VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
 
 class MockVisaInstrument:
@@ -23,6 +26,7 @@ class MockVisaInstrument:
         # and seen by itself with this class definition it does not make sense
         # to call __init__ on the super()
         super().__init__(*args, **kwargs)  # type: ignore
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
@@ -52,7 +56,7 @@ class MockVisaInstrument:
         cmd_str = cmd_parts[0].upper()
         if cmd_str in self.cmds:
             args = ''.join(cmd_parts[1:])
-            log.debug(f'Calling query on instrument Mock {self.name}: '
+            self.visa_log.debug(f'Query: '
                       f'{cmd} for command {cmd_str} with args {args}')
             self.cmds[cmd_str](args)
         else:
@@ -63,10 +67,10 @@ class MockVisaInstrument:
         query_str = query_parts[0].upper()
         if query_str in self.queries:
             args = ''.join(query_parts[1:])
-            log.debug(f'Calling query on instrument Mock {self.name}: '
+            self.visa_log.debug(f'Query: '
                       f'{query} for command {query_str} with args {args}')
             response = self.queries[query_str](args)
-            log.debug(f"Got mock instrument response: {response}")
+            self.visa_log.debug(f"Response: {response}")
             return response
         else:
             super().ask_raw(query)

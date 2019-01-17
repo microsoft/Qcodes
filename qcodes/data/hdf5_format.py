@@ -97,7 +97,7 @@ class HDF5Format(Formatter):
             set_arrays = [s.decode() for s in set_arrays]
             # else:
             #     set_arrays = ()
-            vals = dat_arr.value[:, 0]
+            vals = dat_arr[:, 0]
             if 'shape' in dat_arr.attrs.keys():
                 # extend with NaN if needed
                 esize = np.prod(dat_arr.attrs['shape'])
@@ -428,9 +428,9 @@ class HDF5Format(Formatter):
                                                               item)
                 else:  # item either a group or a dataset
                     if 'list_type' not in item.attrs:
-                        data_dict[key] = item.value
+                        data_dict[key] = item[...]
                     else:
-                        data_dict[key] = list(item.value)
+                        data_dict[key] = list(item[...])
             for key, item in h5_group.attrs.items():
                 if type(item) is str:
                     # Extracts "None" as an exception as h5py does not support
