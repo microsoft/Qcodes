@@ -234,12 +234,15 @@ def console_level(level: LevelType):
     handler.
     Example:
         >>> with logger.console_level(level=logging.DEBUG):
-        >>>     root_logger.debug('this is now visible)
+        >>>     root_logger.debug('this is now visible')
 
     Args:
         level: level to set the console handler to
     """
     global console_handler
+    if console_handler is None:
+        raise RuntimeError("Console handler is None. Cannot set the level"
+                           " on it")
     with handler_level(level, handler=console_handler):
         yield
 
