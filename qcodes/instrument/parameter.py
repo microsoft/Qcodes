@@ -62,7 +62,7 @@ import collections
 import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
-    Dict, Any, Sized, Iterable, cast, Type
+    Dict, Any, Sized, Iterable, cast, Type, Tuple
 from functools import partial, wraps
 import numpy
 from qcodes.utils.helpers import abstractmethod
@@ -1910,3 +1910,41 @@ class ScaledParameter(Parameter):
 
         self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
+
+
+def expand_setpoints_helper(parameter: ParameterWithSetpoints,
+                            update_setpoints_from_inst: bool = True) -> List[
+        Tuple[_BaseParameter, numpy.ndarray]]:
+    """
+
+
+
+    Args:
+        parameter: A ParameterWithSetpoints to be acquired
+        update_setpoints_from_inst:
+    Returns:
+
+    """
+    if not isinstance(parameter, ParameterWithSetpoints):
+        raise TypeError(
+            f"Expanding setpoints only works for ParameterWithSetpoints."
+            f"Supplied a {type(parameter)}")
+    res = []
+    found_parameters = []
+    setpoint_params = []
+    setpoint_names = []
+    setpoint_data = []
+    for setpointparam in parameter.setpoints:
+        if update_setpoints_from_inst:
+            these_setpoints = setpointparam.get()
+        else:
+            these_setpoints = setpointparam.get_latest()
+        setpoint_names.append(setpointparam.full_name)
+        setpoint_params.append(setpointparam)
+        setpoint_data.append(these_setpoints)
+        found_parameters.append(setpointparam.full_name)
+    output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
+    for param, grid in zip(setpoint_params, output_grids):
+        res.append((param, grid))
+    res.append((parameter, parameter.get()))
+    return res
