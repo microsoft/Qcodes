@@ -1020,7 +1020,7 @@ class ParameterWithSetpoints(Parameter):
                              f"setpoints. Output is shape {output_shape} and "
                              f"setpoints are shape {setpoints_shape}")
         log.info(f"For parameter {self.full_name} verified "
-                    f"that {output_shape} matches {setpoints_shape}")
+                 f"that {output_shape} matches {setpoints_shape}")
 
     def validate(self, value: ParamDataType) -> None:
         """
