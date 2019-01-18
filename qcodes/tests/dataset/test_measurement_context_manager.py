@@ -22,6 +22,7 @@ from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter, Parameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+from qcodes.instrument.parameter import expand_setpoints_helper
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -1004,7 +1005,7 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         # we seed the random number generator
         # so we can test that we get the expected numbers
         np.random.seed(random_seed)
-        datasaver.add_result((param, param()))
+        datasaver.add_result(*expand_setpoints_helper(param))
     assert datasaver.points_written == n
 
     expected_params = ('dummy_channel_inst_ChanA_dummy_sp_axis',
@@ -1046,7 +1047,7 @@ def test_datasaver_scalar_parameter_with_setpoints(channel_array_instrument,
 
     # Now for a real measurement
     with meas.run() as datasaver:
-        datasaver.add_result((param, param()))
+        datasaver.add_result(*expand_setpoints_helper(param))
     assert datasaver.points_written == 1
 
     ds = load_by_id(datasaver.run_id)
@@ -1078,12 +1079,11 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
 
     # Now for a real measurement
     with meas.run() as datasaver:
-        with pytest.raises(RuntimeError, match=r'foo which is a setpoint '
-                                               r'parameter for dummy_channel_'
-                                               r'inst_ChanA_dummy_scalar_'
-                                               r'parameter_with_setpoints '
-                                               r'is not registered!'):
-            datasaver.add_result((param, param()))
+        with pytest.raises(ValueError, match=r'Can not add a result for foo, '
+                                               r'no such parameter registered '
+                                               r'in this measurement.'):
+            datasaver.add_result(*expand_setpoints_helper(param))
+
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
