@@ -83,6 +83,9 @@ Number = Union[float, int]
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
 
+
+log = logging.getLogger(__name__)
+
 class _SetParamContext:
     """
     This class is returned by the set method of parameters
@@ -527,7 +530,7 @@ class _BaseParameter(Metadatable):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                logging.warning(
+                log.warning(
                     'cannot sweep {} from {} to {} - jumping.'.format(
                         self.name, start_value, value))
                 return []
@@ -1016,6 +1019,8 @@ class ParameterWithSetpoints(Parameter):
             raise ValueError(f"Shape of output is not consistent with "
                              f"setpoints. Output is shape {output_shape} and "
                              f"setpoints are shape {setpoints_shape}")
+        log.info(f"For parameter {self.full_name} verified "
+                    f"that {output_shape} matches {setpoints_shape}")
 
     def validate(self, value: ParamDataType) -> None:
         """
