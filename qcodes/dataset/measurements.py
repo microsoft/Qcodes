@@ -158,10 +158,6 @@ class DataSaver:
                     self._unbundle_arrayparameter(parameter,
                                                   res,
                                                   found_parameters)
-                elif isinstance(parameter, ParameterWithSetpoints):
-                    self._unbundle_parameter_with_setpoints(parameter,
-                                                            res,
-                                                            found_parameters)
 
         for partial_result in res:
             parameter = partial_result[0]
