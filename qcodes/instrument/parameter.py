@@ -963,14 +963,14 @@ class ParameterWithSetpoints(Parameter):
         super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
                          snapshot_value=snapshot_value, **kwargs)
         if setpoints is None:
-            self._setpoints: Sequence[_BaseParameter] = []
+            self.setpoints: Sequence[_BaseParameter] = []
         else:
             self.setpoints = setpoints
 
         self._validate_on_get = True
 
     @property
-    def setpoints(self):
+    def setpoints(self) -> Sequence[_BaseParameter]:
         return self._setpoints
 
     @setpoints.setter
