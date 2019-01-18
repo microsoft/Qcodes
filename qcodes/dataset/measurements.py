@@ -767,19 +767,19 @@ class Measurement:
         """
         name = str(parameter)
         my_setpoints = list(setpoints) if setpoints else []
-        for setpoints in parameter.setpoints:
-            if not isinstance(setpoints, Parameter):
+        for sp in parameter.setpoints:
+            if not isinstance(sp, Parameter):
                 raise RuntimeError("The setpoints of a "
                                    "ParameterWithSetpoints "
                                    "must be a Parameter")
-            spname = setpoints.full_name
-            splabel = setpoints.label
-            spunit = setpoints.unit
+            spname = sp.full_name
+            splabel = sp.label
+            spunit = sp.unit
 
-            sp = ParamSpec(name=spname, paramtype=paramtype,
-                           label=splabel, unit=spunit)
+            spparamspec = ParamSpec(name=spname, paramtype=paramtype,
+                                    label=splabel, unit=spunit)
 
-            self.parameters[spname] = sp
+            self.parameters[spname] = spparamspec
 
             my_setpoints += [spname]
 
