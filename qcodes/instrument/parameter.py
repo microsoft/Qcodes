@@ -265,6 +265,7 @@ class _BaseParameter(Metadatable):
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
+        self._validate_on_get = False
 
     @abstractmethod
     def get_raw(self):
@@ -409,7 +410,7 @@ class _BaseParameter(Metadatable):
                             value = self.inverse_val_mapping[int(value)]
                         except (ValueError, KeyError):
                             raise KeyError("'{}' not in val_mapping".format(value))
-                self._save_val(value)
+                self._save_val(value, validate=self._validate_on_get)
                 return value
             except Exception as e:
                 e.args = e.args + ('getting {}'.format(self),)
@@ -949,14 +950,21 @@ class ParameterWithSetpoints(Parameter):
     In all other ways this is identical to  :class:`Parameter` See the
     documentation of :class:`Parameter` for more details.
     """
-    def __init__(self, *args,
-                 setpoints: Optional[Sequence[_BaseParameter]]=None,
+
+    def __init__(self, name: str, *,
+                 vals: Validator = None,
+                 setpoints: Optional[Sequence[_BaseParameter]] = None,
+                 snapshot_get: bool = False,
+                 snapshot_value: bool = False,
                  **kwargs) -> None:
+        super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
+                         snapshot_value=snapshot_value, **kwargs)
         if setpoints is None:
             self._setpoints: Sequence[_BaseParameter] = []
         else:
             self.setpoints = setpoints
-        super().__init__(*args, **kwargs)
+
+        self._validate_on_get = True
 
     @property
     def setpoints(self):
