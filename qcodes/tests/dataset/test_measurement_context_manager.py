@@ -23,6 +23,7 @@ from qcodes.instrument.parameter import ArrayParameter, Parameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
 from qcodes.instrument.parameter import expand_setpoints_helper
+from qcodes.utils.validators import Arrays
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -1030,58 +1031,31 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
 
 
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_scalar_parameter_with_setpoints(channel_array_instrument,
-                                                   DAC):
-    chan = channel_array_instrument.A
-    param = chan.dummy_scalar_parameter_with_setpoints
-
-    meas = Measurement()
-    meas.register_parameter(param)
-
-    assert len(meas.parameters) == 2
-    dependency_name = 'dummy_channel_inst_ChanA_dummy_start'
-
-    assert meas.parameters[str(param)].depends_on == dependency_name
-    assert meas.parameters[str(param)].type == 'numeric'
-    assert meas.parameters[dependency_name].type == 'numeric'
-
-    # Now for a real measurement
-    with meas.run() as datasaver:
-        datasaver.add_result(*expand_setpoints_helper(param))
-    assert datasaver.points_written == 1
-
-    ds = load_by_id(datasaver.run_id)
-    data = ds.get_parameter_data()
-    assert len(data) == 1
-    subdata = data[
-        'dummy_channel_inst_ChanA_dummy_scalar_parameter_with_setpoints']
-    assert len(subdata) == 2
-    assert subdata[
-               'dummy_channel_inst_ChanA_dummy_scalar_parameter_with_setpoints'] == np.array(
-        [51])
-    assert subdata['dummy_channel_inst_ChanA_dummy_start'] == np.array([0])
-
-
-@pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_missing_reg_raises(
         channel_array_instrument,
         DAC):
+    """
+    Test that if for whatever reason the setpoints are changed between
+    registering and adding this raises correctly
+    """
     chan = channel_array_instrument.A
-    param = chan.dummy_scalar_parameter_with_setpoints
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(11)
+    chan.dummy_start(0)
+    chan.dummy_stop(10)
 
+    old_setpoints = param.setpoints
+    param.setpoints = ()
     meas = Measurement()
     meas.register_parameter(param)
 
-    myparam = Parameter('foo', set_cmd=None)
-    myparam.set(1)
-    setpoints = (param.setpoints[0], myparam)
-    param.setpoints = setpoints
-
-    # Now for a real measurement
+    param.setpoints = old_setpoints
     with meas.run() as datasaver:
-        with pytest.raises(ValueError, match=r'Can not add a result for foo, '
-                                               r'no such parameter registered '
-                                               r'in this measurement.'):
+        with pytest.raises(ValueError, match=r'Can not add a result for dummy_'
+                                             r'channel_inst_ChanA_dummy_'
+                                             r'sp_axis,'
+                                             r' no such parameter registered '
+                                             r'in this measurement.'):
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
