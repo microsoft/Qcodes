@@ -1002,7 +1002,7 @@ class ParameterWithSetpoints(Parameter):
                              f"with Arrays validator. {self.name} does "
                              f"not have an Arrays validator.")
         output_shape = self.vals.shape
-        setpoints_shape_list: List[Optional[int]] = []
+        setpoints_shape_list: List[Optional[Union[int, Callable[[], int]]]] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
                 raise ValueError(f"Can only validate shapes for parameters "

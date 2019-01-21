@@ -14,7 +14,7 @@ BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
 numbertypes = Union[float, int, np.floating, np.integer]
-
+shape_tuple_type = Optional[Tuple[Union[int, TCallable[[], int]], ...]]
 
 def validate_all(*args, context: str = '') -> None:
     """
@@ -518,7 +518,10 @@ class Arrays(Validator):
                           collections.abc.Sequence) and shape is not None:
             raise ValueError(f"Shape must be a sequence (List, Tuple ...) "
                              f"got a {type(shape)}")
-        self._shape = shape
+        self._shape: shape_tuple_type = None
+        if shape is not None:
+            self._shape = tuple(shape)
+
 
     @property
     def valid_values(self) -> Tuple[np.ndarray]:
@@ -531,7 +534,7 @@ class Arrays(Validator):
             return (val_arr,)
 
     @property
-    def shape(self) -> Optional[Tuple[int, ...]]:
+    def shape(self) -> shape_tuple_type:
         return self._shape
 
     @property
