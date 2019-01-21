@@ -960,6 +960,14 @@ class ParameterWithSetpoints(Parameter):
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
                  **kwargs) -> None:
+
+        if not isinstance(vals, Arrays):
+            raise ValueError(f"A ParameterWithSetpoints must have an Arrays "
+                             f"validator got {type(vals)}")
+        if vals.shape is None:
+            raise RuntimeError("A ParameterWithSetpoints must have a shape "
+                               "defined for its validator.")
+
         super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
                          snapshot_value=snapshot_value, **kwargs)
         if setpoints is None:
