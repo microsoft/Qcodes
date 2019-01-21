@@ -1933,18 +1933,19 @@ class ScaledParameter(Parameter):
         self._wrapped_parameter.set(instrument_value)
 
 
-def expand_setpoints_helper(parameter: ParameterWithSetpoints,
-                            update_setpoints_from_inst: bool = True) -> List[
+def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
         Tuple[_BaseParameter, numpy.ndarray]]:
     """
-
-
+    A helper function that takes a :class:`.ParameterWithSetpoints` and
+    acquires the parameter along with it's setpoints. The data is returned
+    in a format prepared to insert into the dataset.
 
     Args:
-        parameter: A ParameterWithSetpoints to be acquired
-        update_setpoints_from_inst:
-    Returns:
+        parameter: A ParameterWithSetpoints to be acquired and expanded
 
+    Returns:
+        A list of tuples of parameters and values for the specified parameter
+        and its setpoints.
     """
     if not isinstance(parameter, ParameterWithSetpoints):
         raise TypeError(
@@ -1956,10 +1957,7 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints,
     setpoint_names = []
     setpoint_data = []
     for setpointparam in parameter.setpoints:
-        if update_setpoints_from_inst:
-            these_setpoints = setpointparam.get()
-        else:
-            these_setpoints = setpointparam.get_latest()
+        these_setpoints = setpointparam.get()
         setpoint_names.append(setpointparam.full_name)
         setpoint_params.append(setpointparam)
         setpoint_data.append(these_setpoints)
