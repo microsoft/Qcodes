@@ -111,8 +111,9 @@ def test_validation_inconsistent_shape():
     # inconsistent shapes
     expected_err_msg = (r'Shape of output is not consistent '
                         r'with setpoints. Output is shape '
-                        r'\(20,\) and setpoints are shape '
-                        r'\(10,\)')
+                        r'\(<qcodes.instrument.parameter.Parameter: n_points_2 at [0-9]+>,\) '
+                        r'and setpoints are shape '
+                        r'\(<qcodes.instrument.parameter.Parameter: n_points_1 at [0-9]+>,\)')
     with pytest.raises(ValueError, match=expected_err_msg):
         param_with_diff_lenght.validate_consistent_shape()
     with pytest.raises(ValueError, match=expected_err_msg):
@@ -240,7 +241,8 @@ def test_validation_without_sp_shape():
                                                         shape=(
                                                             n_points_1,)))
     expected_err_msg = (r"One or more dimensions have unknown shape "
-                        r"when comparing output: \(10,\) to setpoints: "
+                        r"when comparing output: \(<qcodes.instrument.parameter"
+                        r".Parameter: n_points_1 at [0-9]+>,\) to setpoints: "
                         r"\(None,\)")
     with pytest.raises(ValueError, match=expected_err_msg):
         param_sp_without_shape.validate_consistent_shape()
@@ -268,8 +270,8 @@ def test_validation_one_dim_missing():
                                                         shape=(
                                                             n_points_1, None)))
     expected_err_msg = (r"One or more dimensions have unknown shape "
-                        r"when comparing output: \(10, None\) to setpoints: "
-                        r"\(10, 20\)")
+                        r"when comparing output: \(<qcodes.instrument.parameter.Parameter: n_points_1 at [0-9]+>, None\) to setpoints: "
+                        r"\(<qcodes.instrument.parameter.Parameter: n_points_1 at [0-9]+>, <qcodes.instrument.parameter.Parameter: n_points_2 at [0-9]+>\)")
     with pytest.raises(ValueError, match=expected_err_msg):
         param_sp_without_shape.validate_consistent_shape()
     with pytest.raises(ValueError, match=expected_err_msg):
@@ -296,8 +298,8 @@ def test_validation_one_sp_dim_missing():
                                                             n_points_1,
                                                             n_points_2)))
     expected_err_msg = (r"One or more dimensions have unknown shape "
-                        r"when comparing output: \(10, 20\) to setpoints: "
-                        r"\(10, None\)")
+                        r"when comparing output: \(<qcodes.instrument.parameter.Parameter: n_points_1 at [0-9]+>, <qcodes.instrument.parameter.Parameter: n_points_2 at [0-9]+>\) to setpoints: "
+                        r"\(<qcodes.instrument.parameter.Parameter: n_points_1 at [0-9]+>, None\)")
     with pytest.raises(ValueError, match=expected_err_msg):
         param_sp_without_shape.validate_consistent_shape()
     with pytest.raises(ValueError, match=expected_err_msg):
