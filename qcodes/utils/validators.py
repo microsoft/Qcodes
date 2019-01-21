@@ -516,7 +516,7 @@ class Arrays(Validator):
             raise TypeError('max_value must be a number bigger than min_value')
         if not isinstance(shape,
                           collections.abc.Sequence) and shape is not None:
-            raise ValueError(f"Shape must be a sequence (List, Tuple ...)"
+            raise ValueError(f"Shape must be a sequence (List, Tuple ...) "
                              f"got a {type(shape)}")
         self._shape = shape
 
