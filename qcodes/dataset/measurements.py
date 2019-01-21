@@ -293,25 +293,6 @@ class DataSaver:
                                             parameter.setpoints,
                                             res, found_parameters)
 
-    def _unbundle_parameter_with_setpoints(self,
-                                           parameter: ParameterWithSetpoints,
-                                           res: List[res_type],
-                                           found_parameters: List[str]) -> None:
-        setpoint_names = []
-        setpoint_data = []
-        for setpointparam in parameter.setpoints:
-            these_setpoints = setpointparam.get()
-            setpoint_names.append(setpointparam.full_name)
-            setpoint_data.append(these_setpoints)
-            found_parameters.append(setpointparam.full_name)
-            if setpointparam.full_name not in self.parameters.keys():
-                raise RuntimeError(f'{setpointparam.full_name} '
-                                   f'which is a setpoint parameter for '
-                                   f'{parameter.full_name} is not registered!')
-        output_grids = np.meshgrid(*setpoint_data, indexing='ij')
-        for name, grid in zip(setpoint_names, output_grids):
-            res.append((name, grid))
-
     def _unbundle_setpoints_from_param(self, parameter: _BaseParameter,
                                        sp_names: Sequence[str],
                                        fallback_sp_name: str,
