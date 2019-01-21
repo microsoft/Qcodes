@@ -210,7 +210,7 @@ class SignalHound_USB_SA124B(Instrument):
                            )
         self.add_parameter('npts',
                            label='Number of Points',
-                           get_cmd=None,
+                           get_cmd=self._get_npts,
                            set_cmd=False,
                            docstring='Number of points in frequency sweep.')
         self.add_parameter('avg',
@@ -331,16 +331,16 @@ class SignalHound_USB_SA124B(Instrument):
                            unit='Hz',
                            get_cmd=self._get_freq_axis,
                            set_cmd=False,
-                           vals=vals.Arrays(),
+                           vals=vals.Arrays(shape=(self.npts,)),
                            snapshot_value=False
                            )
         self.add_parameter('freq_sweep',
                            label='Power',
                            unit='depends on mode',
-                           get_cmd=self._get_averaged_sweep_data,
+                           get_cmd=self._get_sweep_data,
                            set_cmd=False,
                            parameter_class=ParameterWithSetpoints,
-                           vals=vals.Arrays(),
+                           vals=vals.Arrays(shape=(self.npts,)),
                            setpoints=(self.frequency_axis,),
                            snapshot_value=False)
 
@@ -387,6 +387,12 @@ class SignalHound_USB_SA124B(Instrument):
                                                ct.POINTER(ct.c_int)]
         self.dll.saGetFirmwareString.argtypes = [ct.c_int,
                                                  ct.c_char_p]
+
+    def _get_npts(self) -> int:
+        if not self._parameters_synced:
+            self.sync_parameters()
+        sweep_info = self.QuerySweep()
+        return sweep_info[0]
 
     def _update_trace(self) -> None:
         """
@@ -606,7 +612,6 @@ class SignalHound_USB_SA124B(Instrument):
                                         ct.pointer(start_freq),
                                         ct.pointer(stepsize))
         self.check_for_error(err, 'saQuerySweepInfo')
-
         return sweep_len.value, start_freq.value, stepsize.value
 
     def _get_sweep_data(self) -> np.ndarray:
@@ -707,6 +712,8 @@ class SignalHound_USB_SA124B(Instrument):
         return output
 
     def _get_freq_axis(self) -> np.ndarray:
+        if not self._parameters_synced:
+            self.sync_parameters()
         sweep_len, start_freq, stepsize = self.QuerySweep()
         end_freq = start_freq + stepsize*(sweep_len-1)
         freq_points = np.linspace(start_freq, end_freq, sweep_len)
