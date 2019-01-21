@@ -28,6 +28,8 @@ def test_validation_shapes():
                                                     setpoints=(setpoints_1,),
                                                     vals=vals.Arrays(
                                                         shape=(n_points_1,)))
+    assert "<Arrays, shape: (<qcodes.instrument.parameter." \
+           "Parameter: n_points_1 at" in param_with_setpoints_1.__doc__
 
     # the two shapes are the same so validation works
     param_with_setpoints_1.validate_consistent_shape()
