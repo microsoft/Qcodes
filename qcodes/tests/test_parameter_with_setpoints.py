@@ -315,14 +315,19 @@ def test_expand_setpoints():
 
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
     n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+    n_points_3 = Parameter('n_points_3', set_cmd=None, vals=vals.Ints())
 
     n_points_1.set(10)
     n_points_2.set(20)
+    n_points_3.set(15)
 
     setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: np.arange(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
     setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: np.arange(n_points_2()),
                             vals=vals.Arrays(shape=(n_points_2,)))
+    setpoints_3 = Parameter('setpoints_3', get_cmd=lambda: np.arange(n_points_3()),
+                            vals=vals.Arrays(shape=(n_points_3,)))
+
 
     param_with_setpoints_1 = ParameterWithSetpoints('param_1',
                                                     get_cmd=lambda:
@@ -359,3 +364,34 @@ def test_expand_setpoints():
     # the second set of setpoints should be repeated along the first axis
     for i in range(sp2.shape[0]):
         np.testing.assert_array_equal(sp2[i, :], np.arange(sp1.shape[1]))
+
+
+    param_with_setpoints_3 = ParameterWithSetpoints('param_2',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1(),
+                                                         n_points_2(),
+                                                         n_points_3()),
+                                                    vals=vals.Arrays(
+                                                        shape=(n_points_1,
+                                                               n_points_2,
+                                                               n_points_3)))
+    param_with_setpoints_3.setpoints = (setpoints_1, setpoints_2, setpoints_3)
+    data = expand_setpoints_helper(param_with_setpoints_3)
+    assert len(data) == 4
+    assert data[0][1].shape == data[1][1].shape
+    assert data[0][1].shape == data[2][1].shape
+    assert data[0][1].shape == data[3][1].shape
+
+    sp1 = data[0][1]
+    for i in range(sp1.shape[1]):
+        for j in range(sp1.shape[2]):
+            np.testing.assert_array_equal(sp1[:, i, j], np.arange(sp1.shape[0]))
+    sp2 = data[1][1]
+    for i in range(sp2.shape[0]):
+        for j in range(sp2.shape[2]):
+            np.testing.assert_array_equal(sp2[i, :, j], np.arange(sp2.shape[1]))
+
+    sp3 = data[2][1]
+    for i in range(sp3.shape[0]):
+        for j in range(sp3.shape[1]):
+            np.testing.assert_array_equal(sp3[i, j, :], np.arange(sp3.shape[2]))
