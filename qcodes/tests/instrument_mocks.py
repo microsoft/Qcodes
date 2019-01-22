@@ -7,7 +7,7 @@ import numpy as np
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers, Arrays
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
-    ArrayParameter, ParameterWithSetpoints, GeneratedSetPoints
+    ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 import random
 
@@ -353,6 +353,22 @@ class ArraySetPointParam(ArrayParameter):
         item = np.ones(5) + 1
         self._save_val(item)
         return item
+
+
+class GeneratedSetPoints(Parameter):
+    """
+    A parameter that generates a setpoint array from start, stop and num points
+    parameters.
+    """
+    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._startparam = startparam
+        self._stopparam = stopparam
+        self._numpointsparam = numpointsparam
+
+    def get_raw(self):
+        return np.linspace(self._startparam(), self._stopparam(),
+                              self._numpointsparam())
 
 
 class DummyParameterWithSetpoints1D(ParameterWithSetpoints):

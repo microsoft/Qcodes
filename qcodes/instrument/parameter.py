@@ -1043,22 +1043,6 @@ class ParameterWithSetpoints(Parameter):
         super().validate(value)
 
 
-class GeneratedSetPoints(Parameter):
-    """
-    A parameter that generates a setpoint array from start, stop and num points
-    parameters.
-    """
-    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._startparam = startparam
-        self._stopparam = stopparam
-        self._numpointsparam = numpointsparam
-
-    def get_raw(self):
-        return numpy.linspace(self._startparam(), self._stopparam(),
-                              self._numpointsparam())
-
-
 class ArrayParameter(_BaseParameter):
     """
     A gettable parameter that returns an array of values.
