@@ -319,9 +319,9 @@ def test_expand_setpoints():
     n_points_1.set(10)
     n_points_2.set(20)
 
-    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: np.arange(n_points_1()),
                             vals=vals.Arrays(shape=(n_points_1,)))
-    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()),
+    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: np.arange(n_points_2()),
                             vals=vals.Arrays(shape=(n_points_2,)))
 
     param_with_setpoints_1 = ParameterWithSetpoints('param_1',
@@ -355,7 +355,7 @@ def test_expand_setpoints():
     sp2 = data[1][1]
     # the first set of setpoints should be repeated along the second axis
     for i in range(sp1.shape[1]):
-        np.testing.assert_array_equal(sp1[:, 0], sp1[:, i])
+        np.testing.assert_array_equal(sp1[:, i], np.arange(sp1.shape[0]))
     # the second set of setpoints should be repeated along the first axis
     for i in range(sp2.shape[0]):
-        np.testing.assert_array_equal(sp2[0, :], sp2[i, :])
+        np.testing.assert_array_equal(sp2[i, :], np.arange(sp1.shape[1]))
