@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.utils.validators import Numbers, Arrays
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
@@ -58,25 +58,31 @@ class MockParabola(Instrument):
         Adds an -x term to add a corelation between the parameters.
         '''
         return ((self.x.get()**2 + self.y.get()**2 +
-                self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
-                self.noise.get()*np.random.rand(1))
+                 self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
+                 self.noise.get()*np.random.rand(1))
 
 
-class MockMetaParabola(Instrument):
+class MockMetaParabola(InstrumentBase):
     '''
     Test for a meta instrument, has a tunable gain knob
+
+    Unlike a MockParabola, a MockMetaParabola does not have a connection, or
+    access to ask_raw/write_raw, i.e. it would not be connected to a real instrument.
+
+    It is also not tracked in the global _all_instruments list, but is still
+    snapshottable in a station.
     '''
 
     def __init__(self, name, mock_parabola_inst, **kw):
+        """
+        Create a new MockMetaParabola, connected to an existing MockParabola instance.
+        """
         super().__init__(name, **kw)
         self.mock_parabola_inst = mock_parabola_inst
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
-            self.add_parameter(parname, unit='a.u.',
-                               parameter_class=Parameter,
-                               vals=Numbers(), initial_value=0,
-                               get_cmd=None, set_cmd=None)
+            self.parameters[parname] = getattr(mock_parabola_inst, parname)
         self.add_parameter('gain', parameter_class=Parameter,
                            initial_value=1,
                            get_cmd=None, set_cmd=None)
