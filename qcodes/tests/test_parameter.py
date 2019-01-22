@@ -259,6 +259,12 @@ class TestParameter(TestCase):
         p(44.5)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
+        # Test error conditions
+        with self.assertLogs(level='WARN'):
+            self.assertEqual(p.get_ramp_values("A", 1), [])
+        with self.assertRaises(RuntimeError):
+            p.get_ramp_values((1, 2, 3), 1)
+
     def test_scale_raw_value(self):
         p = Parameter(name='test_scale_raw_value', set_cmd=None)
         p(42)

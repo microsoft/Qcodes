@@ -1,12 +1,17 @@
 """
 Test suite for  instument.*
 """
-import weakref
-from unittest import TestCase
-from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from .instrument_mocks import DummyInstrument, MockParabola
-from qcodes.instrument.parameter import Parameter
+
 import gc
+import weakref
+import io
+import contextlib
+
+from unittest import TestCase
+from ..instrument.base import Instrument, InstrumentBase, find_or_create_instrument
+from ..instrument.parameter import Parameter
+from .instrument_mocks import DummyInstrument, MockParabola, MockMetaParabola
+
 
 
 class TestInstrument(TestCase):
@@ -65,10 +70,10 @@ class TestInstrument(TestCase):
 
     def test_add_remove_f_p(self):
         with self.assertRaises(KeyError):
-                self.instrument.add_parameter('dac1', get_cmd='foo')
+            self.instrument.add_parameter('dac1', get_cmd='foo')
         self.instrument.add_function('function', call_cmd='foo')
         with self.assertRaises(KeyError):
-                self.instrument.add_function('function', call_cmd='foo')
+            self.instrument.add_function('function', call_cmd='foo')
 
         self.instrument.add_function('dac1', call_cmd='foo')
         # test custom __get_attr__
@@ -124,6 +129,37 @@ class TestInstrument(TestCase):
         self.assertEqual(42,
                          snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
+    def test_meta_instrument(self):
+        mock_instrument = MockMetaParabola("mock_parabola", self.instrument2)
+
+        # Check that the mock instrument can return values
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola())
+        mock_instrument.x(1)
+        mock_instrument.y(2)
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola())
+        self.assertNotEqual(mock_instrument.parabola(), 0)
+
+        # Add a scaling factor
+        mock_instrument.gain(2)
+        self.assertEqual(mock_instrument.parabola(), self.instrument2.parabola()*2)
+
+        # Check snapshots
+        snap = mock_instrument.snapshot(update=True)
+        self.assertIn("parameters", snap)
+        self.assertIn("gain", snap["parameters"])
+        self.assertEqual(snap["parameters"]["gain"]["value"], 2)
+
+        # Check printable snapshot
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            mock_instrument.print_readable_snapshot()
+        readable_snap = f.getvalue()
+
+        # Line length satisfied
+        self.assertTrue(all(len(line) <= 80 for line in readable_snap.splitlines()))
+        # Gain is included in output with correct value
+        self.assertRegex(readable_snap, r"gain[ \t]+:[ \t]+2")
 
 
 class TestFindOrCreateInstrument(TestCase):
