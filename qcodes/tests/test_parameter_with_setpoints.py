@@ -1,7 +1,9 @@
+import numpy as np
 from numpy.random import rand
 import pytest
 
-from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter
+from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter,\
+    expand_setpoints_helper
 import qcodes.utils.validators as vals
 
 
@@ -304,3 +306,56 @@ def test_validation_one_sp_dim_missing():
         param_sp_without_shape.validate_consistent_shape()
     with pytest.raises(ValueError, match=expected_err_msg):
         param_sp_without_shape.validate(param_sp_without_shape.get())
+
+
+def test_expand_setpoints():
+    """
+    Test that the setpoints expannder helper function works correctly
+    """
+
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1,)))
+    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: rand(n_points_2()),
+                            vals=vals.Arrays(shape=(n_points_2,)))
+
+    param_with_setpoints_1 = ParameterWithSetpoints('param_1',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1()),
+                                                    setpoints=(setpoints_1,),
+                                                    vals=vals.Arrays(
+                                                        shape=(n_points_1,)))
+
+    data = expand_setpoints_helper(param_with_setpoints_1)
+
+    assert len(data) == 2
+    assert len(data[0][1]) == len(data[1][1])
+
+    param_with_setpoints_2 = ParameterWithSetpoints('param_2',
+                                                    get_cmd=lambda:
+                                                    rand(n_points_1(),
+                                                         n_points_2()),
+                                                    vals=vals.Arrays(
+                                                        shape=(n_points_1,
+                                                               n_points_2)))
+    param_with_setpoints_2.setpoints = (setpoints_1, setpoints_2)
+
+    data = expand_setpoints_helper(param_with_setpoints_2)
+
+    assert len(data) == 3
+    assert data[0][1].shape == data[1][1].shape
+    assert data[0][1].shape == data[2][1].shape
+
+    sp1 = data[0][1]
+    sp2 = data[1][1]
+    # the first set of setpoints should be repeated along the second axis
+    for i in range(sp1.shape[1]):
+        np.testing.assert_array_equal(sp1[:, 0], sp1[:, i])
+    # the second set of setpoints should be repeated along the first axis
+    for i in range(sp2.shape[0]):
+        np.testing.assert_array_equal(sp2[0, :], sp2[i, :])
