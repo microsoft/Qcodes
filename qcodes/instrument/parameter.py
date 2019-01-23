@@ -520,9 +520,8 @@ class _BaseParameter(Metadatable):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                logging.warning(
-                    'cannot sweep {} from {} to {} - jumping.'.format(
-                        self.name, start_value, value))
+                logging.warning('cannot sweep %s from %r to %r - jumping.',
+                                self.name, start_value, value)
                 return []
 
             # drop the initial value, we're already there
@@ -851,7 +850,7 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str_ask = instrument.ask if instrument else None
+                exec_str_ask = getattr(instrument, "ask", None) if instrument else None
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
@@ -859,7 +858,7 @@ class Parameter(_BaseParameter):
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)# type: Callable
             else:
-                exec_str_write = instrument.write if instrument else None
+                exec_str_write = getattr(instrument, "write", None) if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
             self.set = self._wrap_set(self.set_raw)
 
@@ -1593,10 +1592,10 @@ class StandardParameter(Parameter):
                  delay=0, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         super().__init__(name, instrument=instrument,
-                 get_cmd=get_cmd, get_parser=get_parser,
-                 set_cmd=set_cmd, set_parser=set_parser,
-                 post_delay=delay, step=step, max_val_age=max_val_age,
-                 vals=vals, val_mapping=val_mapping, **kwargs)
+                         get_cmd=get_cmd, get_parser=get_parser,
+                         set_cmd=set_cmd, set_parser=set_parser,
+                         post_delay=delay, step=step, max_val_age=max_val_age,
+                         vals=vals, val_mapping=val_mapping, **kwargs)
         warnings.warn('`StandardParameter` is deprecated, '
                         'use `Parameter` instead. {}'.format(self))
 
