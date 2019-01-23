@@ -22,6 +22,8 @@ def empty_temp_db():
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
         if os.environ.get('QCODES_SQL_DEBUG'):
             qc.config["core"]["db_debug"] = True
+        else:
+            qc.config["core"]["db_debug"] = False
         initialise_database()
         yield
 
