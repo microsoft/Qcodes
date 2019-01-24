@@ -762,7 +762,7 @@ class Measurement:
 
             self.parameters[spname] = spparamspec
 
-            my_setpoints += [spname]
+            my_setpoints.append(spname)
 
         self._register_parameter(name,
                                  parameter.label,
