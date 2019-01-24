@@ -562,7 +562,7 @@ class _BaseParameter(Metadatable):
         return self._step
 
     @step.setter
-    def step(self, step: Number):
+    def step(self, step: Optional[Number]):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
