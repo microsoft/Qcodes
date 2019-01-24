@@ -7,6 +7,27 @@ from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter,\
 import qcodes.utils.validators as vals
 
 
+@pytest.fixture()
+def parameters():
+    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
+    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
+    n_points_3 = Parameter('n_points_3', set_cmd=None, vals=vals.Ints())
+
+    n_points_1.set(10)
+    n_points_2.set(20)
+    n_points_3.set(15)
+
+    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: np.arange(n_points_1()),
+                            vals=vals.Arrays(shape=(n_points_1,)))
+    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: np.arange(n_points_2()),
+                            vals=vals.Arrays(shape=(n_points_2,)))
+    setpoints_3 = Parameter('setpoints_3', get_cmd=lambda: np.arange(n_points_3()),
+                            vals=vals.Arrays(shape=(n_points_3,)))
+    yield (n_points_1, n_points_2, n_points_3,
+           setpoints_1, setpoints_2, setpoints_3)
+
+
+
 def test_validation_shapes():
     """
     Test that various parameters with setpoints and shape combinations
@@ -308,26 +329,13 @@ def test_validation_one_sp_dim_missing():
         param_sp_without_shape.validate(param_sp_without_shape.get())
 
 
-def test_expand_setpoints():
+def test_expand_setpoints_1c(parameters):
     """
     Test that the setpoints expander helper function works correctly
     """
 
-    n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
-    n_points_2 = Parameter('n_points_2', set_cmd=None, vals=vals.Ints())
-    n_points_3 = Parameter('n_points_3', set_cmd=None, vals=vals.Ints())
-
-    n_points_1.set(10)
-    n_points_2.set(20)
-    n_points_3.set(15)
-
-    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: np.arange(n_points_1()),
-                            vals=vals.Arrays(shape=(n_points_1,)))
-    setpoints_2 = Parameter('setpoints_2', get_cmd=lambda: np.arange(n_points_2()),
-                            vals=vals.Arrays(shape=(n_points_2,)))
-    setpoints_3 = Parameter('setpoints_3', get_cmd=lambda: np.arange(n_points_3()),
-                            vals=vals.Arrays(shape=(n_points_3,)))
-
+    n_points_1, n_points_2, n_points_3, \
+    setpoints_1, setpoints_2, setpoints_3 = parameters
 
     param_with_setpoints_1 = ParameterWithSetpoints('param_1',
                                                     get_cmd=lambda:
@@ -340,6 +348,12 @@ def test_expand_setpoints():
 
     assert len(data) == 2
     assert len(data[0][1]) == len(data[1][1])
+
+
+def test_expand_setpoints_2d(parameters):
+
+    n_points_1, n_points_2, n_points_3, \
+    setpoints_1, setpoints_2, setpoints_3 = parameters
 
     param_with_setpoints_2 = ParameterWithSetpoints('param_2',
                                                     get_cmd=lambda:
@@ -365,6 +379,11 @@ def test_expand_setpoints():
     for i in range(sp2.shape[0]):
         np.testing.assert_array_equal(sp2[i, :], np.arange(sp1.shape[1]))
 
+
+def test_expand_setpoints_3d(parameters):
+
+    n_points_1, n_points_2, n_points_3, \
+        setpoints_1, setpoints_2, setpoints_3 = parameters
 
     param_with_setpoints_3 = ParameterWithSetpoints('param_2',
                                                     get_cmd=lambda:
