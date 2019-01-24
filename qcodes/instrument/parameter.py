@@ -568,7 +568,7 @@ class _BaseParameter(Metadatable):
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
-        If None stepping will not be used.
+        If step is None stepping will not be used.
 
         Args:
             step: A positive number or None, the largest change
