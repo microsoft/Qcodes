@@ -568,17 +568,18 @@ class _BaseParameter(Metadatable):
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        If None stepping will not be used.
 
         Args:
-            step (Union[int, float]): A positive number, the largest change
+            step: A positive number or None, the largest change
                 allowed in one call. All but the final change will attempt to
                 change by +/- step exactly
 
         Raises:
-            TypeError: if step is not numeric
+            TypeError: if step is not numeric or None
             ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
+            TypeError:  if step is not integer or None for an integer parameter
+            TypeError: if step is not a number on None
         """
         if step is None:
             self._step: Optional[Number] = step
