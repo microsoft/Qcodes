@@ -1035,8 +1035,8 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
         channel_array_instrument,
         DAC):
     """
-    Test that if for whatever reason the setpoints are changed between
-    registering and adding this raises correctly
+    Test that if for whatever reason new setpoints are added after
+    registering but before adding this raises correctly
     """
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -1056,6 +1056,38 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
                                              r'sp_axis,'
                                              r' no such parameter registered '
                                              r'in this measurement.'):
+            datasaver.add_result(*expand_setpoints_helper(param))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_reg_but_missing(
+        channel_array_instrument,
+        DAC):
+    """
+    Test that if for whatever reason the setpoints are removed between
+    registering and adding this raises correctly
+    """
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(11)
+    chan.dummy_start(0)
+    chan.dummy_stop(10)
+
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    param.setpoints = ()
+
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError, match=r"Shape of output is not"
+                                             r" consistent with setpoints."
+                                             r" Output is shape "
+                                             r"\(<qcodes.instrument.parameter."
+                                             r"Parameter: dummy_n_points at "
+                                             r"[0-9]+>,\) and setpoints are "
+                                             r"shape \(\)', 'getting dummy_"
+                                             r"channel_inst_ChanA_dummy_"
+                                             r"parameter_with_setpoints"):
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
