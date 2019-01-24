@@ -392,7 +392,8 @@ class SignalHound_USB_SA124B(Instrument):
         if not self._parameters_synced:
             self.sync_parameters()
         sweep_info = self.QuerySweep()
-        return sweep_info[0]
+        sweep_len = sweep_info[0]
+        return sweep_len
 
     def _update_trace(self) -> None:
         """
