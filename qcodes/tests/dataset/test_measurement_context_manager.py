@@ -1120,13 +1120,11 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
                                              r"missing setpoint values for "
                                              r"dummy_channel_inst_ChanA_dummy_"
                                              r"parameter_with_setpoints: "
-                                             r"\{'dummy_channel_inst_ChanA_"
-                                             r"dummy_sp_axis', 'someparam'\}"
-                                             r". Values only given for \['"
-                                             r"dummy_channel_inst_ChanA_dummy_sp_axis', "
+                                             r"\['dummy_channel_inst_ChanA_"
+                                             r"dummy_sp_axis', 'someparam'\]"
+                                             r". Values only given for \["
                                              r"'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints', "
-                                             r"'dummy_channel_inst_ChanA_dummy_sp_axis', "
-                                             r"'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints'\]."):
+                                             r"'dummy_channel_inst_ChanA_dummy_sp_axis'\]"):
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
