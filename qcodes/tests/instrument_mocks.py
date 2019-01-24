@@ -380,7 +380,7 @@ class GeneratedSetPoints(Parameter):
 class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     """
     Dummy parameter that returns data with a shape based on the
-    `n_points` parameter in the instrument.
+    `dummy_n_points` parameter in the instrument.
     """
 
     def get_raw(self):
