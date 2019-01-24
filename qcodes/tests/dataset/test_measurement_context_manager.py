@@ -1009,7 +1009,7 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         datasaver.add_result(*expand_setpoints_helper(param))
     assert datasaver.points_written == n
 
-    expected_params = ('dummy_channel_inst_ChanA_dummy_sp_axis',
+    expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
     ds = load_by_id(datasaver.run_id)
     for param in expected_params:
@@ -1020,7 +1020,7 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     assert len(datadict) == 1
     subdata = datadict[
         'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
-    assert_allclose(subdata['dummy_channel_inst_ChanA_dummy_sp_axis'],
+    assert_allclose(subdata[dependency_name],
                     np.linspace(chan.dummy_start(),
                                 chan.dummy_stop(),
                                 chan.dummy_n_points()))
