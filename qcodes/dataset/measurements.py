@@ -214,9 +214,9 @@ class DataSaver:
                 if not stuffweneed.issubset(stuffwehave):
                     raise ValueError('Can not add this result; missing '
                                      f'setpoint values for {paramstr}:'
-                                     f' {stuffweneed}.'
+                                     f' {sorted(stuffweneed)}.'
                                      f' Values only given for'
-                                     f' {found_parameters}.')
+                                     f' {sorted(stuffwehave)}.')
 
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
