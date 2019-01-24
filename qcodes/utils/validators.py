@@ -529,16 +529,16 @@ class Arrays(Validator):
         if shape is None:
             return (np.array([self._min_value]),)
         else:
-            val_arr = np.empty(self.shape_evaluated)
+            val_arr = np.empty(self.shape)
             val_arr.fill(self._min_value)
             return (val_arr,)
 
     @property
-    def shape(self) -> shape_tuple_type:
+    def shape_unevaluated(self) -> shape_tuple_type:
         return self._shape
 
     @property
-    def shape_evaluated(self) -> Optional[Tuple[int, ...]]:
+    def shape(self) -> Optional[Tuple[int, ...]]:
         if self._shape is None:
             return None
         shape_array = []
@@ -560,7 +560,7 @@ class Arrays(Validator):
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
         if self.shape is not None:
-            shape = self.shape_evaluated
+            shape = self.shape
             if np.shape(value) != shape:
                 raise ValueError(
                     f'{repr(value)} does not have expected shape {shape},'

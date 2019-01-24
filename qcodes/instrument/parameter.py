@@ -1005,7 +1005,7 @@ class ParameterWithSetpoints(Parameter):
             raise ValueError(f"Can only validate shapes for parameters "
                              f"with Arrays validator. {self.name} does "
                              f"not have an Arrays validator.")
-        output_shape = self.vals.shape
+        output_shape = self.vals.shape_unevaluated
         setpoints_shape_list: List[Optional[Union[int, Callable[[], int]]]] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
@@ -1014,9 +1014,9 @@ class ParameterWithSetpoints(Parameter):
                                  f"a setpoint vector but does not have an "
                                  f"Arrays validator")
             if sp.vals.shape is not None:
-                setpoints_shape_list.extend(sp.vals.shape)
+                setpoints_shape_list.extend(sp.vals.shape_unevaluated)
             else:
-                setpoints_shape_list.append(sp.vals.shape)
+                setpoints_shape_list.append(sp.vals.shape_unevaluated)
         setpoints_shape = tuple(setpoints_shape_list)
 
         if output_shape is None:
