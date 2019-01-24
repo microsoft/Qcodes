@@ -968,7 +968,7 @@ class ParameterWithSetpoints(Parameter):
         if not isinstance(vals, Arrays):
             raise ValueError(f"A ParameterWithSetpoints must have an Arrays "
                              f"validator got {type(vals)}")
-        if vals.shape is None:
+        if vals.shape_unevaluated is None:
             raise RuntimeError("A ParameterWithSetpoints must have a shape "
                                "defined for its validator.")
 
