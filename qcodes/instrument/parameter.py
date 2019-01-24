@@ -988,7 +988,7 @@ class ParameterWithSetpoints(Parameter):
     @setpoints.setter
     def setpoints(self, setpoints: Sequence[_BaseParameter]):
         for setpointarray in setpoints:
-            if not isinstance(setpointarray, _BaseParameter):
+            if not isinstance(setpointarray, Parameter):
                 raise TypeError(f"Setpoints is of type {type(setpointarray)}"
                                 f" expcected a QCoDeS parameter")
         self._setpoints = setpoints
