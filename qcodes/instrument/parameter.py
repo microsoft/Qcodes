@@ -1940,16 +1940,12 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
             f"Expanding setpoints only works for ParameterWithSetpoints."
             f"Supplied a {type(parameter)}")
     res = []
-    found_parameters = []
     setpoint_params = []
-    setpoint_names = []
     setpoint_data = []
     for setpointparam in parameter.setpoints:
         these_setpoints = setpointparam.get()
-        setpoint_names.append(setpointparam.full_name)
         setpoint_params.append(setpointparam)
         setpoint_data.append(these_setpoints)
-        found_parameters.append(setpointparam.full_name)
     output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
     for param, grid in zip(setpoint_params, output_grids):
         res.append((param, grid))
