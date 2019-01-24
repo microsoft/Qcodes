@@ -14,7 +14,8 @@ BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
 numbertypes = Union[float, int, np.floating, np.integer]
-shape_tuple_type = Optional[Tuple[Union[int, TCallable[[], int]], ...]]
+shape_type = Union[int, TCallable[[], int]]
+shape_tuple_type = Optional[Tuple[shape_type, ...]]
 
 def validate_all(*args, context: str = '') -> None:
     """
@@ -500,8 +501,7 @@ class Arrays(Validator):
 
     def __init__(self, min_value: numbertypes = -float("inf"),
                  max_value: numbertypes = float("inf"),
-                 shape: TSequence[
-                     Union[int, TCallable[[], int]]] = None) -> None:
+                 shape: TSequence[shape_type] = None) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
