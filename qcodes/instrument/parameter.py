@@ -951,8 +951,8 @@ class ParameterWithSetpoints(Parameter):
 
     In most cases this will probably be a parameter that returns an array.
     It is expected that the setpoint arrays are 1D arrays such that the
-    combined shape of the parameter. E.G if parameter is of shape (m,n)
-    self.setpoints is a list of parameters of shape (m,) and (n,)
+    combined shape of the parameter e.g. if parameter is of shape (m,n)
+    `setpoints` is a list of parameters of shape (m,) and (n,)
 
     In all other ways this is identical to  :class:`Parameter` See the
     documentation of :class:`Parameter` for more details.
