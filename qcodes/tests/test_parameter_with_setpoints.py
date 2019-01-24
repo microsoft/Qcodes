@@ -310,7 +310,7 @@ def test_validation_one_sp_dim_missing():
 
 def test_expand_setpoints():
     """
-    Test that the setpoints expannder helper function works correctly
+    Test that the setpoints expander helper function works correctly
     """
 
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
