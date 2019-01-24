@@ -1937,7 +1937,7 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     """
     if not isinstance(parameter, ParameterWithSetpoints):
         raise TypeError(
-            f"Expanding setpoints only works for ParameterWithSetpoints."
+            f"Expanding setpoints only works for ParameterWithSetpoints. "
             f"Supplied a {type(parameter)}")
     res = []
     setpoint_params = []
