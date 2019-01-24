@@ -1060,12 +1060,13 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
 
 
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_reg_but_missing(
+def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
         channel_array_instrument,
         DAC):
     """
     Test that if for whatever reason the setpoints are removed between
-    registering and adding this raises correctly
+    registering and adding this raises correctly. This tests tests that
+    the parameter validator correctly asserts this.
     """
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -1088,6 +1089,44 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
                                              r"shape \(\)', 'getting dummy_"
                                              r"channel_inst_ChanA_dummy_"
                                              r"parameter_with_setpoints"):
+            datasaver.add_result(*expand_setpoints_helper(param))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_reg_but_missing(
+        channel_array_instrument,
+        DAC):
+    """
+    Test that if for whatever reason the setpoints are removed between
+    registering and adding this raises correctly. This tests that
+    the add parameter logic correctly notices a missing dependency
+    """
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(11)
+    chan.dummy_start(0)
+    chan.dummy_stop(10)
+
+    someparam = Parameter('someparam', vals=Arrays(shape=(10,)))
+    old_setpoints = param.setpoints
+    param.setpoints = (old_setpoints[0], someparam)
+
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    param.setpoints = old_setpoints
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError, match=r"Can not add this result; "
+                                             r"missing setpoint values for "
+                                             r"dummy_channel_inst_ChanA_dummy_"
+                                             r"parameter_with_setpoints: "
+                                             r"\{'dummy_channel_inst_ChanA_"
+                                             r"dummy_sp_axis', 'someparam'\}"
+                                             r". Values only given for \['"
+                                             r"dummy_channel_inst_ChanA_dummy_sp_axis', "
+                                             r"'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints', "
+                                             r"'dummy_channel_inst_ChanA_dummy_sp_axis', "
+                                             r"'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints'\]."):
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
