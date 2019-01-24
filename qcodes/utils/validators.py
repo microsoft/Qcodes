@@ -590,9 +590,9 @@ class Arrays(Validator):
         minv = self._min_value if math.isfinite(self._min_value) else None
         maxv = self._max_value if math.isfinite(self._max_value) else None
         # we don't want the repr to execute any deferred shape argument
-        # so we directly use _shape
+        # so we use shape_unevaluated
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
-                                              self.shape)
+                                              self.shape_unevaluated)
 
 
 
