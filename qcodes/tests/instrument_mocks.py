@@ -5,9 +5,11 @@ import logging
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import MultiParameter, Parameter, ArrayParameter
+from qcodes.utils.validators import Numbers, Arrays
+from qcodes.instrument.parameter import MultiParameter, Parameter, \
+    ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+import random
 
 log = logging.getLogger(__name__)
 
@@ -155,6 +157,43 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
+        self.add_parameter('dummy_start',
+                           initial_value=0,
+                           unit='some unit',
+                           label='f start',
+                           vals=Numbers(0, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_stop',
+                           unit='some unit',
+                           label='f stop',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_n_points',
+                           unit='',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_sp_axis',
+                           unit='some unit',
+                           label='Dummy sp axis',
+                           parameter_class=GeneratedSetPoints,
+                           startparam=self.dummy_start,
+                           stopparam=self.dummy_stop,
+                           numpointsparam=self.dummy_n_points,
+                           vals=Arrays(shape=(self.dummy_n_points,)))
+
+        self.add_parameter(name='dummy_parameter_with_setpoints',
+                           label='Dummy Parameter with Setpoints',
+                           unit='some other unit',
+                           setpoints=(self.dummy_sp_axis,),
+                           vals=Arrays(shape=(self.dummy_n_points,)),
+                           parameter_class=DummyParameterWithSetpoints1D)
+
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
 
@@ -290,6 +329,7 @@ class MultiScalarParam(MultiParameter):
         self._save_val(items)
         return items
 
+
 class ArraySetPointParam(ArrayParameter):
     """
     Arrayparameter which only purpose it to test that units, setpoints
@@ -319,6 +359,33 @@ class ArraySetPointParam(ArrayParameter):
         item = np.ones(5) + 1
         self._save_val(item)
         return item
+
+
+class GeneratedSetPoints(Parameter):
+    """
+    A parameter that generates a setpoint array from start, stop and num points
+    parameters.
+    """
+    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._startparam = startparam
+        self._stopparam = stopparam
+        self._numpointsparam = numpointsparam
+
+    def get_raw(self):
+        return np.linspace(self._startparam(), self._stopparam(),
+                              self._numpointsparam())
+
+
+class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
+    """
+    Dummy parameter that returns data with a shape based on the
+    `dummy_n_points` parameter in the instrument.
+    """
+
+    def get_raw(self):
+        npoints = self.instrument.dummy_n_points()
+        return np.random.rand(npoints)
 
 
 def setpoint_generator(*sp_bases):
