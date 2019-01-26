@@ -487,7 +487,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert 3 == _latest_available_version()
+    assert 4 == _latest_available_version()
 
 
 @pytest.mark.parametrize('version', VERSIONS)
