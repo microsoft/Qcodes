@@ -723,6 +723,74 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 
+@upgrader
+def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 3 to version 4. This really
+    repeats the version 3 upgrade as it originally had a bug in
+    the inferred annotation. This has since been fixes so rerun
+    the upgrade.
+    """
+
+    no_of_runs_query = "SELECT max(run_id) FROM runs"
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = no_of_runs or 0
+
+    # If one run fails, we want the whole upgrade to roll back, hence the
+    # entire upgrade is one atomic transaction
+
+    with atomic(conn) as conn:
+
+        result_tables = _2to3_get_result_tables(conn)
+        layout_ids_all = _2to3_get_layout_ids(conn)
+        indeps_all = _2to3_get_indeps(conn)
+        deps_all = _2to3_get_deps(conn)
+        layouts = _2to3_get_layouts(conn)
+        dependencies = _2to3_get_dependencies(conn)
+
+        pbar = tqdm(range(1, no_of_runs+1))
+        pbar.set_description("Upgrading database")
+
+        for run_id in pbar:
+
+            if run_id in layout_ids_all:
+
+                result_table_name = result_tables[run_id]
+                layout_ids = list(layout_ids_all[run_id])
+                if run_id in indeps_all:
+                    independents = tuple(indeps_all[run_id])
+                else:
+                    independents = ()
+                if run_id in deps_all:
+                    dependents = tuple(deps_all[run_id])
+                else:
+                    dependents = ()
+
+                paramspecs = _2to3_get_paramspecs(conn,
+                                                  layout_ids,
+                                                  layouts,
+                                                  dependencies,
+                                                  dependents,
+                                                  independents,
+                                                  result_table_name)
+
+                interdeps = InterDependencies(*paramspecs.values())
+                desc = RunDescriber(interdeps=interdeps)
+                json_str = desc.to_json()
+
+            else:
+
+                json_str = RunDescriber(InterDependencies()).to_json()
+
+            sql = f"""
+                   UPDATE runs
+                   SET run_description = ?
+                   WHERE run_id == ?
+                   """
+            cur = conn.cursor()
+            cur.execute(sql, (json_str, run_id))
+            log.debug(f"Upgrade in transition, run number {run_id}: OK")
+
 def _latest_available_version() -> int:
     """Return latest available database schema version"""
     return len(_UPGRADE_ACTIONS)
