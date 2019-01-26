@@ -1,6 +1,7 @@
 # Generate version 3 database files for qcodes' test suite to consume
 
 import os
+import shutil
 import numpy as np
 
 # NB: it's important that we do not import anything from qcodes before we
@@ -187,11 +188,26 @@ def generate_DB_file_with_some_runs_having_not_run_descriptions():
     conn.commit()  # just to be sure
 
 
+def generate_upgraded_v2_runs():
+    """
+    Generate some runs by upgradeing from v2 db. This
+    is needed since the bug we want to test against is in
+    the v2 to v3 upgrade and not in v3 it self.
+    This requires the v2 generation to be run before this one
+    """
+    import qcodes.dataset.sqlite_base as sqlite_base
+    v2fixture_path = os.path.join(fixturepath, 'version2', 'some_runs.db')
+    v3fixturepath = os.path.join(fixturepath, 'version3', 'some_runs_upgraded_2.db')
+    shutil.copy2(v2fixture_path, v3fixturepath)
+    sqlite_base.connect(v3fixturepath)
+
+
 if __name__ == '__main__':
 
     gens = (generate_empty_DB_file,
             generate_DB_file_with_some_runs_having_not_run_descriptions,
-            generate_DB_file_with_some_runs)
+            generate_DB_file_with_some_runs,
+            generate_upgraded_v2_runs)
 
     # pylint: disable=E1101
     utils.checkout_to_old_version_and_run_generators(version=3, gens=gens)
