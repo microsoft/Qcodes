@@ -256,7 +256,7 @@ class DG1062Channel(InstrumentChannel):
         waveform_str = self.parent.ask_raw(f":SOUR{self.channel}:APPL?")
         parts = waveform_str.strip("\"").split(",")
 
-        current_waveform = parts[0]
+        current_waveform = self.waveform_translate[parts[0]]
         param_vals = [current_waveform] + [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
