@@ -201,6 +201,10 @@ class DG1062Channel(InstrumentChannel):
             )
 
             setattr(self, waveform.lower(), f)
+            
+        # Retreive current waveform from device
+        self.waveform()
+
 
     def apply(self, **kwargs: Dict) ->None:
         """
