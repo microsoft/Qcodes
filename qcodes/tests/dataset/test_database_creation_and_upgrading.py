@@ -23,6 +23,7 @@ from qcodes.dataset.sqlite_base import (connect,
                                         update_GUIDs,
                                         get_db_version_and_newest_available_version,
                                         get_user_version,
+                                        set_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
                                         perform_db_upgrade_1_to_2,
@@ -353,6 +354,20 @@ def test_update_existing_guids(caplog):
         guid_comps_5 = parse_guid(ds5.guid)
         assert guid_comps_5['location'] == old_loc
         assert guid_comps_5['work_station'] == old_ws
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_cannot_connect_to_newer_db():
+    conn = connect(qc.config["core"]["db_location"],
+                   qc.config["core"]["db_debug"])
+    current_version = get_user_version(conn)
+    set_user_version(conn, current_version+1)
+    conn.close()
+    err_msg = f'is version {current_version + 1} but this version of QCoDeS ' \
+        f'supports up to version {current_version}'
+    with pytest.raises(RuntimeError, match=err_msg):
+        conn = connect(qc.config["core"]["db_location"],
+                       qc.config["core"]["db_debug"])
 
 
 def test_latest_available_version():

@@ -322,7 +322,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def connect(name: str, debug: bool = False,
-            version: int=-1) -> ConnectionPlus:
+            version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -349,6 +349,14 @@ def connect(name: str, debug: bool = False,
 
     sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     conn = ConnectionPlus(sqlite3_conn)
+
+    latest_supported_version = _latest_available_version()
+    db_version = get_user_version(conn)
+
+    if db_version > latest_supported_version:
+        raise RuntimeError(f"Database {name} is version {db_version} but this "
+                           f"version of QCoDeS supports up to "
+                           f"version {latest_supported_version}")
 
     # sqlite3 options
     conn.row_factory = sqlite3.Row
@@ -2290,15 +2298,16 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - formatted_name: the name of the newly created table
     """
 
-    run_counter, formatted_name, run_id = _insert_run(conn,
-                                                      exp_id,
-                                                      name,
-                                                      guid,
-                                                      parameters)
-    if metadata:
-        add_meta_data(conn, run_id, metadata)
-    _update_experiment_run_counter(conn, exp_id, run_counter)
-    _create_run_table(conn, formatted_name, parameters, values)
+    with atomic(conn):
+        run_counter, formatted_name, run_id = _insert_run(conn,
+                                                          exp_id,
+                                                          name,
+                                                          guid,
+                                                          parameters)
+        if metadata:
+            add_meta_data(conn, run_id, metadata)
+        _update_experiment_run_counter(conn, exp_id, run_counter)
+        _create_run_table(conn, formatted_name, parameters, values)
 
     return run_counter, run_id, formatted_name
 
