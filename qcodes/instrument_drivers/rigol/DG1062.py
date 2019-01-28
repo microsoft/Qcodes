@@ -116,6 +116,12 @@ class DG1062Channel(InstrumentChannel):
     waveform_params["DC"] = ["freq", "ampl", "offset"]
     waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
+    """
+    Responses from the machine don't always match the name to set the function, hence a translater
+    """
+    waveform_translate = {"HARM":"HARM", "NOISE":"NOIS", "RAMP":"RAMP", "SIN":"SIN", 
+                          "SQU":"SQU", "TRI":"TRI", "USER":"USER", "PULSE":"PULS"}
+    
     waveforms = list(waveform_params.keys())
 
     def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
