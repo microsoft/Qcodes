@@ -102,7 +102,6 @@ class DG1062Burst(InstrumentChannel):
         """
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
 
-
 class DG1062Channel(InstrumentChannel):
 
     min_impedance = 1
@@ -145,8 +144,8 @@ class DG1062Channel(InstrumentChannel):
             self.add_parameter(
                 param,
                 unit=unit,
-                set_cmd=partial(self._set_waveform_param, param),
                 get_cmd=partial(self._get_waveform_param, param),
+                set_cmd=partial(self._set_waveform_param, param),
             )
 
         self.add_parameter(
@@ -166,8 +165,8 @@ class DG1062Channel(InstrumentChannel):
                 ),
                 vals.Enum("INF", "MIN", "MAX", "HighZ")
             ),
-            set_parser=lambda value: "INF" if value == "HighZ" else value,
             get_parser=lambda value: "HighZ"
+            set_parser=lambda value: "INF" if value == "HighZ" else value,
             if float(value) > DG1062Channel.max_impedance else float(value)
         )
 
@@ -188,8 +187,8 @@ class DG1062Channel(InstrumentChannel):
 
         self.add_parameter(
             "state",
-            set_cmd=f"OUTPUT{channel}:STATE {{}}",
             get_cmd=f"OUTPUT{channel}:STATE?",
+            set_cmd=f"OUTPUT{channel}:STATE {{}}",
         )
         
         self.add_parameter(
@@ -198,7 +197,6 @@ class DG1062Channel(InstrumentChannel):
             set_cmd=self._set_duty_cycle,
             vals=vals.Numbers(min_value=1, max_value=99)
         )
-
 
         burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
         self.add_submodule("burst", burst)
@@ -213,12 +211,10 @@ class DG1062Channel(InstrumentChannel):
                 docstring="Args: " + ", ".join(self.waveform_params[waveform]),
                 waveform=waveform
             )
-
             setattr(self, waveform.lower(), f)
             
         # Retreive current waveform from device
         self.waveform()
-
 
     def apply(self, **kwargs: Dict) ->None:
         """
