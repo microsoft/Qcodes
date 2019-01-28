@@ -300,7 +300,32 @@ class DG1062Channel(InstrumentChannel):
         string += ",".join(
             ["{:7e}".format(params_dict[param]) for param in param_names])
         self.parent.write_raw(string)
+        
+    def _get_duty_cycle(self):
+        """
+        Simple function to extract the duty cycle after checking waveform
+        """
+        self.waveform()
+        wf = self.waveform.get_latest()
 
+        if wf == 'PULS' or wf == 'SQU':
+            duty_cycle = self.parent.ask_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC?")
+        else:
+            raise ValueError(f"Can not read duty cycle for current function: {wf}")
+
+        return duty_cycle
+
+    def _set_duty_cycle(self,duty_cycle):
+        """
+        Simple function to set the duty cycle after checking waveform
+        """
+        self.waveform()
+        wf = self.waveform.get_latest()
+
+        if wf == 'PULS' or wf == 'SQU':
+            self.parent.write_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC {duty_cycle}")
+        else:
+            raise ValueError(f"Can not set duty cycle for current function: {wf}")
 
 class DG1062(VisaInstrument):
     """
