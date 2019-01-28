@@ -191,6 +191,14 @@ class DG1062Channel(InstrumentChannel):
             set_cmd=f"OUTPUT{channel}:STATE {{}}",
             get_cmd=f"OUTPUT{channel}:STATE?",
         )
+        
+        self.add_parameter(
+            "dcycle",
+            get_cmd=self._get_duty_cycle,
+            set_cmd=self._set_duty_cycle,
+            vals=vals.Numbers(min_value=1, max_value=99)
+        )
+
 
         burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
         self.add_submodule("burst", burst)
