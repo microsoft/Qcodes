@@ -102,7 +102,6 @@ class DG1062Burst(InstrumentChannel):
         """
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
 
-
 class DG1062Channel(InstrumentChannel):
 
     min_impedance = 1
@@ -116,6 +115,12 @@ class DG1062Channel(InstrumentChannel):
     waveform_params["DC"] = ["freq", "ampl", "offset"]
     waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
+    """
+    Responses from the machine don't always match the name to set the function, hence a translater
+    """
+    waveform_translate = {"HARM":"HARM", "NOISE":"NOIS", "RAMP":"RAMP", "SIN":"SIN", 
+                          "SQU":"SQU", "TRI":"TRI", "USER":"USER", "PULSE":"PULS"}
+    
     waveforms = list(waveform_params.keys())
 
     def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
@@ -139,8 +144,8 @@ class DG1062Channel(InstrumentChannel):
             self.add_parameter(
                 param,
                 unit=unit,
-                set_cmd=partial(self._set_waveform_param, param),
                 get_cmd=partial(self._get_waveform_param, param),
+                set_cmd=partial(self._set_waveform_param, param),
             )
 
         self.add_parameter(
@@ -160,8 +165,8 @@ class DG1062Channel(InstrumentChannel):
                 ),
                 vals.Enum("INF", "MIN", "MAX", "HighZ")
             ),
-            set_parser=lambda value: "INF" if value == "HighZ" else value,
             get_parser=lambda value: "HighZ"
+            set_parser=lambda value: "INF" if value == "HighZ" else value,
             if float(value) > DG1062Channel.max_impedance else float(value)
         )
 
@@ -182,8 +187,15 @@ class DG1062Channel(InstrumentChannel):
 
         self.add_parameter(
             "state",
-            set_cmd=f"OUTPUT{channel}:STATE {{}}",
             get_cmd=f"OUTPUT{channel}:STATE?",
+            set_cmd=f"OUTPUT{channel}:STATE {{}}",
+        )
+        
+        self.add_parameter(
+            "dcycle",
+            get_cmd=self._get_duty_cycle,
+            set_cmd=self._set_duty_cycle,
+            vals=vals.Numbers(min_value=1, max_value=99)
         )
 
         burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
@@ -199,8 +211,10 @@ class DG1062Channel(InstrumentChannel):
                 docstring="Args: " + ", ".join(self.waveform_params[waveform]),
                 waveform=waveform
             )
-
             setattr(self, waveform.lower(), f)
+            
+        # Retreive current waveform from device
+        self.waveform()
 
     def apply(self, **kwargs: Dict) ->None:
         """
@@ -246,7 +260,7 @@ class DG1062Channel(InstrumentChannel):
         waveform_str = self.parent.ask_raw(f":SOUR{self.channel}:APPL?")
         parts = waveform_str.strip("\"").split(",")
 
-        current_waveform = parts[0]
+        current_waveform = self.waveform_translate[parts[0]]
         param_vals = [current_waveform] + [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
@@ -290,7 +304,32 @@ class DG1062Channel(InstrumentChannel):
         string += ",".join(
             ["{:7e}".format(params_dict[param]) for param in param_names])
         self.parent.write_raw(string)
+        
+    def _get_duty_cycle(self):
+        """
+        Simple function to extract the duty cycle after checking waveform
+        """
+        self.waveform()
+        wf = self.waveform.get_latest()
 
+        if wf == 'PULS' or wf == 'SQU':
+            duty_cycle = self.parent.ask_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC?")
+        else:
+            raise ValueError(f"Can not read duty cycle for current function: {wf}")
+
+        return duty_cycle
+
+    def _set_duty_cycle(self,duty_cycle):
+        """
+        Simple function to set the duty cycle after checking waveform
+        """
+        self.waveform()
+        wf = self.waveform.get_latest()
+
+        if wf == 'PULS' or wf == 'SQU':
+            self.parent.write_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC {duty_cycle}")
+        else:
+            raise ValueError(f"Can not set duty cycle for current function: {wf}")
 
 class DG1062(VisaInstrument):
     """
