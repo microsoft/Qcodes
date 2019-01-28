@@ -107,7 +107,7 @@ Instrument
 
    Function
    Parameter
-   StandardParameter
+   ParameterWithSetpoints
    ArrayParameter
    MultiParameter
    ManualParameter
@@ -115,6 +115,7 @@ Instrument
    SweepValues
    combine
    CombinedParameter
+   qcodes.instrument.parameter.expand_setpoints_helper
 
 
    Instrument
