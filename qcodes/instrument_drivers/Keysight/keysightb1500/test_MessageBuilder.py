@@ -11,6 +11,28 @@ def b1500() -> MessageBuilder:
     yield MessageBuilder()
 
 
+def test_str_conversion_mixin():
+    from enum import IntEnum
+    from qcodes.instrument_drivers.Keysight.keysightb1500.constants \
+        import StrConvertableIntEnumMixin
+    class MyIntEnum(StrConvertableIntEnumMixin, IntEnum):
+        ONE = 1
+        TWO = 2
+
+    assert '1' == str(MyIntEnum.ONE)
+
+
+def test_as_csv():
+    from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder \
+        import as_csv
+
+    assert '1' == as_csv([1])
+
+    assert '1,2,3' == as_csv([1, 2, 3])
+
+    assert '1,2' == as_csv([c.ChNr.SLOT_01_CH1, c.ChNr.SLOT_02_CH1])
+
+
 class TestMessageBuilder:
     def skip(self):
         pytest.skip("not implemented yet")
@@ -655,8 +677,13 @@ class TestMessageBuilder:
         self.skip()
 
     def test_mm(self, b1500):
-        # assert '' == b1500.().message
-        self.skip()
+        assert 'MM 1,1' == \
+               b1500.mm(mode=c.MM.Mode.SPOT,
+                        channels=[c.ChNr.SLOT_01_CH1]).message
+
+        assert 'MM 2,1,3' == b1500.mm(mode=c.MM.Mode.STAIRCASE_SWEEP,
+                                      channels=[c.ChNr.SLOT_01_CH1,
+                                                c.ChNr.SLOT_03_CH1]).message
 
     def test_msc(self, b1500):
         # assert '' == b1500.().message

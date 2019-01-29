@@ -6,6 +6,13 @@ class StrEnum(str, Enum):
 
 
 # Common Enum definitions
+class StrConvertableIntEnumMixin:
+    """
+    Return str(integer value of the IntEnum instance) on conversion to string.
+    """
+    def __str__(self):
+        return f"{self._value_}"
+
 
 class SlotNr(IntEnum):
     ALL = 0
@@ -22,7 +29,7 @@ class SlotNr(IntEnum):
     SLOT10 = 10
 
 
-class ChNr(IntEnum):
+class ChNr(StrConvertableIntEnumMixin, IntEnum):
     SLOT_01_CH1 = 1
     SLOT_02_CH1 = 2
     SLOT_03_CH1 = 3
@@ -51,7 +58,7 @@ class Abort(IntEnum):
     ENABLED = 2
 
 
-class TriggerPort(IntEnum):
+class TriggerPort(StrConvertableIntEnumMixin, IntEnum):
     EXT_TRIG_IN = -1
     EXT_TRIG_OUT = -2
     DIO_1 = 1
@@ -87,7 +94,6 @@ class LinearSweepMode(IntEnum):
 class APIVersion(IntEnum):
     B1500 = 0
     CLASSIC = 1
-
 
 
 class VOutputRange(IntEnum):
@@ -306,7 +312,7 @@ class BGI:
 
 
 class BGV:
-    pass # TODO remove
+    pass  # TODO remove
     # SearchMode = BinarySearchMode
 
 
@@ -325,12 +331,12 @@ class BSM:
 
 class BSSI:
     pass  # TODO remove
-    #Polarity = Polarity
+    # Polarity = Polarity
 
 
 class BSSV:
     pass  # TODO remove
-    #Polarity = Polarity
+    # Polarity = Polarity
 
 
 class BSVM:
@@ -356,17 +362,18 @@ class CMM:
 
 class CORRQuery:
     pass  # TODO remove
-    #Corr = CalibrationType
+    # Corr = CalibrationType
 
 
 class CORRST:
     pass  # TODO remove
-    #Corr = CalibrationType
+    # Corr = CalibrationType
 
 
 class DCORR:
     pass  # TODO remove
-    #Corr = CalibrationType
+
+    # Corr = CalibrationType
 
     class Mode(IntEnum):
         Cp_G = 100
@@ -733,6 +740,7 @@ class MM:
 
 class MSC:
     pass  # TODO remove
+
     # Abort = Abort
 
     class Post(IntEnum):
