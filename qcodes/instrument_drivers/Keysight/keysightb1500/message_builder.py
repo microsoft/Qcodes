@@ -1183,7 +1183,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def cl(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def cl(self,
+           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CL'
         elif len(channels) > 15:
@@ -1216,7 +1217,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def cn(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def cn(self,
+           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CN'
         elif len(channels) > 15:
@@ -1227,7 +1229,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def cnx(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def cnx(self,
+            channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CNX'
         elif len(channels) > 15:
@@ -1434,7 +1437,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def dz(self, channels: List[Union[Union[enums.ChNr, int], int]]) -> MessageBuilder:
+    def dz(self, channels: List[Union[enums.ChNr, int]] = None) -> \
+            MessageBuilder:
         if channels is None:
             cmd = 'DZ'
         elif len(channels) > 15:
@@ -1498,7 +1502,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def ercmaio(self, cmhl=None, acgs=None, bias=None, corr=None) -> MessageBuilder:
+    def ercmaio(self, cmhl=None, acgs=None, bias=None,
+                corr=None) -> MessageBuilder:
         if cmhl is None:
             cmd = f'ERCMAIO'
         elif acgs is None:
@@ -1904,7 +1909,7 @@ class MessageBuilder:
 
     def fl(self,
            enable_filter: bool,
-           channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         """
 
         :param enable_filter:
@@ -1977,7 +1982,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def in_(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def in_(self,
+            channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2233,7 +2239,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def mcc(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def mcc(self,
+            channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2393,7 +2400,7 @@ class MessageBuilder:
 
     def mm(self,
            mode: enums.MM.Mode,
-           channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         """
 
         :param mode:
@@ -2966,7 +2973,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def rz(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def rz(self,
+           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -3167,7 +3175,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def spupd(self, channels: List[Union[Union[enums.ChNr, int], int]] = None) -> MessageBuilder:
+    def spupd(self,
+              channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
         """
 
         :param channels:
