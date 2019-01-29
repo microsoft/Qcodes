@@ -244,11 +244,7 @@ class TestHDF5_Format(TestCase):
         # closing before file is written should not raise error
         self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
-        fp2 = fp[:-5]+'_2.hdf5'
-        copy(fp, fp2)
-        # Raises an error because the file was still open
-        with self.assertRaises(OSError):
-            F2 = h5py.File(fp2)
+
         # Attaching the formatter like this should not be neccesary
         data.formatter = self.formatter
         data.finalize()
