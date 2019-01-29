@@ -1427,7 +1427,7 @@ class MessageBuilder:
             cmd = f'DV {chnum}, {v_range}, {voltage}'
         elif comp_polarity is None:
             cmd = f'DV {chnum}, {v_range}, {voltage}, {i_comp}'
-        elif v_range is None:
+        elif i_range is None:
             cmd = f'DV {chnum}, {v_range}, {voltage}, {i_comp}, ' \
                   f'{comp_polarity}'
         else:
