@@ -218,16 +218,10 @@ class TestHDF5_Format(TestCase):
         data = DataSet1D(location=self.loc_provider, name='test_closing')
         self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
-        fp2 = fp[:-5]+'_2.hdf5'
-        copy(fp, fp2)
-        # Raises an error because the file was open and not flushed
-        # This tests if this way of testing works
-        with self.assertRaises(OSError):
-            F2 = h5py.File(fp2)
         self.formatter.close_file(data)
         fp3 = fp[:-5]+'_3.hdf5'
         copy(fp, fp3)
-        # Should now not raise an error because the file was properly closed
+        # Should not raise an error because the file was properly closed
         F3 = h5py.File(fp3)
 
     def test_dataset_flush_after_write(self):
