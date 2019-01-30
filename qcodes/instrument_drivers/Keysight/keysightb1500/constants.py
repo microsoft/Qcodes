@@ -5,15 +5,6 @@ class StrEnum(str, Enum):
     pass
 
 
-# Common Enum definitions
-class StrConvertableIntEnumMixin:
-    """
-    Return str(integer value of the IntEnum instance) on conversion to string.
-    """
-    def __str__(self):
-        return f"{self._value_}"
-
-
 class SlotNr(IntEnum):
     ALL = 0
     MAINFRAME = 11
@@ -29,7 +20,7 @@ class SlotNr(IntEnum):
     SLOT10 = 10
 
 
-class ChNr(StrConvertableIntEnumMixin, IntEnum):
+class ChNr(IntEnum):
     SLOT_01_CH1 = 1
     SLOT_02_CH1 = 2
     SLOT_03_CH1 = 3
@@ -58,7 +49,7 @@ class Abort(IntEnum):
     ENABLED = 2
 
 
-class TriggerPort(StrConvertableIntEnumMixin, IntEnum):
+class TriggerPort(IntEnum):
     EXT_TRIG_IN = -1
     EXT_TRIG_OUT = -2
     DIO_1 = 1

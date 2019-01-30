@@ -14,7 +14,7 @@ def as_csv(l, sep=','):
     :param l: Iterable
     :return:
     """
-    return sep.join(str(x) for x in l)
+    return sep.join(format(x) for x in l)
 
 
 def final_command(f):

@@ -11,16 +11,6 @@ def b1500() -> MessageBuilder:
     yield MessageBuilder()
 
 
-def test_str_conversion_mixin():
-    from enum import IntEnum
-    from qcodes.instrument_drivers.Keysight.keysightb1500.constants \
-        import StrConvertableIntEnumMixin
-    class MyIntEnum(StrConvertableIntEnumMixin, IntEnum):
-        ONE = 1
-        TWO = 2
-
-    assert '1' == str(MyIntEnum.ONE)
-
 
 def test_as_csv():
     from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder \
