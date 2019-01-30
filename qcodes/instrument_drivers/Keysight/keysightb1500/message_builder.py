@@ -1358,11 +1358,11 @@ class MessageBuilder:
            comp_polarity: enums.CompliancePolarityMode = None,
            v_range: enums.VOutputRange = None) -> MessageBuilder:
         if v_comp is None:
-            cmd = f'DI {chnum}, {i_range}, {current}'
+            cmd = f'DI {chnum},{i_range},{current}'
         elif comp_polarity is None:
-            cmd = f'DI {chnum}, {i_range}, {current}, {v_comp}'
+            cmd = f'DI {chnum},{i_range},{current},{v_comp}'
         elif v_range is None:
-            cmd = f'DI {chnum}, {i_range}, {current}, {v_comp}, ' \
+            cmd = f'DI {chnum},{i_range},{current},{v_comp},' \
                   f'{comp_polarity}'
         else:
             cmd = f'DI {chnum},{i_range},{current},{v_comp},{comp_polarity},' \
@@ -1424,11 +1424,11 @@ class MessageBuilder:
            comp_polarity: enums.CompliancePolarityMode = None,
            i_range: enums.IOutputRange = None) -> MessageBuilder:
         if i_comp is None:
-            cmd = f'DV {chnum}, {v_range}, {voltage}'
+            cmd = f'DV {chnum},{v_range},{voltage}'
         elif comp_polarity is None:
-            cmd = f'DV {chnum}, {v_range}, {voltage}, {i_comp}'
+            cmd = f'DV {chnum},{v_range},{voltage},{i_comp}'
         elif i_range is None:
-            cmd = f'DV {chnum}, {v_range}, {voltage}, {i_comp}, ' \
+            cmd = f'DV {chnum},{v_range},{voltage},{i_comp},' \
                   f'{comp_polarity}'
         else:
             cmd = f'DV {chnum},{v_range},{voltage},{i_comp},{comp_polarity},' \
@@ -2960,7 +2960,7 @@ class MessageBuilder:
     def ru(self,
            start: int,
            stop: int) -> MessageBuilder:
-        cmd = f'RU {start}, {stop}'
+        cmd = f'RU {start},{stop}'
 
         self._msg.append(cmd)
         return self
