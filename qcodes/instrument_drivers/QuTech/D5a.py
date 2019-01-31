@@ -65,7 +65,8 @@ class D5a(Instrument):
 
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
 
-        self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero)
+        self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero,
+                          docstring='Reset all dacs to zero voltage. no ramping is performed.')
 
         if self._mV:
             self._gain = 1e3
