@@ -272,7 +272,7 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def write_metadata(self, data_set, io_manager=None, location=None, read_first=True, flush = True):
+    def write_metadata(self, data_set, io_manager=None, location=None, read_first=True):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
 
@@ -292,8 +292,7 @@ class HDF5Format(Formatter):
 
         # flush ensures buffers are written to disk
         # (useful for ensuring openable by other files)
-        if flush:
-            data_set._h5_base_group.file.flush()
+        data_set._h5_base_group.file.flush()
 
     def _read_list_group(self, entry_point, list_type):
         d = {}
