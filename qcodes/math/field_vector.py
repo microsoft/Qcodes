@@ -39,24 +39,25 @@ class FieldVector(object):
                 (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
                 values for meaningful computation
         """
-        self._x = x
-        self._y = y
-        self._z = z
+        self._x = float(x) if x is not None else None
+        self._y = float(y) if y is not None else None
+        self._z = float(z) if z is not None else None
 
-        self._r = r
+        self._r = float(r) if r is not None else None
         if theta is not None:
             self._theta = np.radians(theta)
         else:
-            self._theta = theta
+            self._theta = float(theta)
 
         if phi is not None:
             self._phi = np.radians(phi)
         else:
-            self._phi = phi
+            self._phi = float(phi)
 
-        self._rho = rho
+        self._rho = float(rho) if rho is not None else None
 
         self._compute_unknowns()
+        
 
     def _set_attribute_value(self, attr_name, value):
         if value is None:
@@ -211,7 +212,7 @@ class FieldVector(object):
         else:
             value = items[0][1]
 
-        setattr(self, "_" + component_name, value)
+        setattr(self, "_" + component_name, float(value))
 
         groups = [["x", "y", "z"], ["r", "theta", "phi"], ["phi", "rho", "z"]]
 
