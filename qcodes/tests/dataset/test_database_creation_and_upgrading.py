@@ -4,7 +4,6 @@ from copy import deepcopy
 import logging
 import tempfile
 import json
-from typing import TYPE_CHECKING
 
 import pytest
 
@@ -15,6 +14,7 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.database import (initialise_database,
                                      initialise_or_create_database_at)
 # pylint: disable=unused-import
+from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment,
                                                       temporarily_copied_DB)
@@ -23,6 +23,7 @@ from qcodes.dataset.sqlite_base import (connect,
                                         update_GUIDs,
                                         get_db_version_and_newest_available_version,
                                         get_user_version,
+                                        set_user_version,
                                         atomic_transaction,
                                         perform_db_upgrade_0_to_1,
                                         perform_db_upgrade_1_to_2,
@@ -32,27 +33,9 @@ from qcodes.dataset.sqlite_base import (connect,
 from qcodes.dataset.guids import parse_guid
 import qcodes.tests.dataset
 
-if TYPE_CHECKING:
-    from _pytest._code.code import ExceptionInfo
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
-
-
-def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
-    """
-    Helper function to figure out whether an exception was caused by another
-    exception with the message provided.
-
-    Args:
-        excinfo: the output of with pytest.raises() as excinfo
-        cause: the error message or a substring of it
-    """
-    chain = excinfo.getrepr().chain
-    cause_found = False
-    for link in chain:
-        cause_found = cause_found or cause in str(link[1])
-    return cause_found
 
 
 @contextmanager
@@ -371,6 +354,20 @@ def test_update_existing_guids(caplog):
         guid_comps_5 = parse_guid(ds5.guid)
         assert guid_comps_5['location'] == old_loc
         assert guid_comps_5['work_station'] == old_ws
+
+
+@pytest.mark.usefixtures("empty_temp_db")
+def test_cannot_connect_to_newer_db():
+    conn = connect(qc.config["core"]["db_location"],
+                   qc.config["core"]["db_debug"])
+    current_version = get_user_version(conn)
+    set_user_version(conn, current_version+1)
+    conn.close()
+    err_msg = f'is version {current_version + 1} but this version of QCoDeS ' \
+        f'supports up to version {current_version}'
+    with pytest.raises(RuntimeError, match=err_msg):
+        conn = connect(qc.config["core"]["db_location"],
+                       qc.config["core"]["db_debug"])
 
 
 def test_latest_available_version():

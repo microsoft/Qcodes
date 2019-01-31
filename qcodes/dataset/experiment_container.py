@@ -202,8 +202,8 @@ def experiments()->List[Experiment]:
 
 
 def new_experiment(name: str,
-                   sample_name: str,
-                   format_string: Optional[str]="{}-{}-{}",
+                   sample_name: Optional[str],
+                   format_string: str = "{}-{}-{}",
                    conn: Optional[ConnectionPlus]=None) -> Experiment:
     """
     Create a new experiment (in the database file from config)
