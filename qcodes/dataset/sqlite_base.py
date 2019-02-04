@@ -617,22 +617,15 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
 
         inferred_from_list: List[str] = []
         depends_on: List[str] = []
-        # first possibility: another parameter depends on this parameter
-        if layout_id in indeps:
-            if inferred_from != '':
-                inferred_from_list = inferred_from.split(', ')
 
-        # second possibility: this parameter depends on another parameter
-        elif layout_id in deps:
-
+        # this parameter depends on another parameter
+        if layout_id in deps:
             setpoints = dependencies[layout_id]
             depends_on = [paramspecs[idp].name for idp in setpoints]
-            if inferred_from != '':
-                inferred_from_list = inferred_from.split(', ')
-        # third possibility: no dependencies
-        else:
-            if inferred_from != '':
-                inferred_from_list = inferred_from.split(', ')
+
+        if inferred_from != '':
+            inferred_from_list = inferred_from.split(', ')
+
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
                               label=label, unit=unit,
