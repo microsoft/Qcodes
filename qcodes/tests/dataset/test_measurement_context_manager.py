@@ -1554,12 +1554,12 @@ def test_load_legacy_files_2D():
     run_ids = import_dat_file(full_location)
     run_id = run_ids[0]
     data = load_by_id(run_id)
-    assert data.parameters == 'ch1,ch2,voltage'
+    assert data.parameters == 'dac_ch1_set,dac_ch2_set,dmm_voltage'
     assert data.number_of_results == 36
-    expected_names = ['ch1', 'ch2', 'voltage']
+    expected_names = ['dac_ch1_set', 'dac_ch2_set', 'dmm_voltage']
     expected_labels = ['Gate ch1', 'Gate ch2', 'Gate voltage']
     expected_units = ['V', 'V', 'V']
-    expected_depends_on = ['', '', 'ch1, ch2']
+    expected_depends_on = ['', '', 'dac_ch1_set, dac_ch2_set']
     for i, parameter in enumerate(data.get_parameters()):
         assert parameter.name == expected_names[i]
         assert parameter.label == expected_labels[i]
@@ -1580,12 +1580,12 @@ def test_load_legacy_files_1D():
     run_ids = import_dat_file(full_location)
     run_id = run_ids[0]
     data = load_by_id(run_id)
-    assert data.parameters == 'ch1,voltage'
+    assert data.parameters == 'dac_ch1_set,dmm_voltage'
     assert data.number_of_results == 201
-    expected_names = ['ch1', 'voltage']
+    expected_names = ['dac_ch1_set', 'dmm_voltage']
     expected_labels = ['Gate ch1', 'Gate voltage']
     expected_units = ['V', 'V']
-    expected_depends_on = ['', 'ch1']
+    expected_depends_on = ['', 'dac_ch1_set']
     for i, parameter in enumerate(data.get_parameters()):
         assert parameter.name == expected_names[i]
         assert parameter.label == expected_labels[i]
