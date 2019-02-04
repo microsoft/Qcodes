@@ -713,7 +713,7 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
 def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
     """
     Perform the upgrade from version 3 to version 4. This really
-    repeats the version 3 upgrade as it originally had a bug in
+    repeats the version 3 upgrade as it originally had two bugs in
     the inferred annotation. This has since been fixes so rerun
     the upgrade.
     """
