@@ -298,6 +298,13 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        assert p5.inferred_from == 'p0'
+        assert p5.inferred_from_ == ['p0']
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
 
 def test_perfrom_upgrade_v3_to_v4_fixes():
     """
@@ -421,6 +428,14 @@ def test_perfrom_upgrade_v3_to_v4_fixes():
         assert p4.inferred_from_ == []
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
+
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        assert p5.inferred_from == 'p0'
+        assert p5.inferred_from_ == ['p0']
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
 
 
 
