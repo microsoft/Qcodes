@@ -49,7 +49,6 @@ script:
       python generate_version_2.py
       python generate_version_3.py
       cd $TRAVIS_BUILD_DIR
-      cd ../../../..
       pip uninstall -y qcodes
       pip install .
     - cd qcodes
