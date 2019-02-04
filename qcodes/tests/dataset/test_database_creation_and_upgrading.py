@@ -380,6 +380,16 @@ def test_perfrom_upgrade_v3_to_v4_fixes():
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
+        p5 = [p for p in idp.paramspecs if p.name == 'p5'][0]
+        assert p5.depends_on == ''
+        assert p5.depends_on_ == []
+        # the 2 lines below are wrong due to the incorrect upgrade from
+        # db version 2 to 3. Here the interdep is missing
+        assert p5.inferred_from == ''
+        assert p5.inferred_from_ == []
+        assert p5.label == "Parameter 5"
+        assert p5.unit == "unit 5"
+
         perform_db_upgrade_3_to_4(conn)
 
         c = atomic_transaction(conn, sql)
