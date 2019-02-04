@@ -45,7 +45,8 @@ class ParamSpec:
 
         if isinstance(inferred_from, str):
             raise ValueError(f"ParamSpec {self.name} got "
-                             f"string {inferred_from} it needs a "
+                             f"string {inferred_from} as inferred_from. "
+                             f"It needs a "
                              f"Sequence of ParamSpecs or strings")
         self._inferred_from.extend(
             p.name if isinstance(p, ParamSpec) else p
@@ -53,7 +54,7 @@ class ParamSpec:
 
         if isinstance(depends_on, str):
             raise ValueError(f"ParamSpec {self.name} got "
-                             f"string {depends_on} it needs a "
+                             f"string {depends_on} as depends_on. It needs a "
                              f"Sequence of ParamSpecs or strings")
         self._depends_on.extend(
             p.name if isinstance(p, ParamSpec) else p
