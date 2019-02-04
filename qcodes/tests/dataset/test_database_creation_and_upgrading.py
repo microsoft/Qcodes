@@ -260,36 +260,50 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
         assert p0.depends_on == ''
+        assert p0.depends_on_ == []
         assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
         p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
         assert p1.depends_on == ''
+        assert p1.depends_on_ == []
         assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
         p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
         assert p2.depends_on == ''
+        assert p2.depends_on_ == []
         assert p2.inferred_from == 'p0'
+        assert p2.inferred_from_ == ['p0']
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
         p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
         assert p3.depends_on == ''
+        assert p3.depends_on_ == []
         assert p3.inferred_from == 'p1, p0'
+        assert p3.inferred_from_ == ['p1', 'p0']
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
         p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
         assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
         assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
 
 def test_perfrom_upgrade_v3_to_v4_fixes():
+    """
+    Test that a db that was upgraded from v2 to v3 with a buggy
+    version will be corrected when upgraded to v4.
+    """
 
     v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
 
@@ -317,31 +331,45 @@ def test_perfrom_upgrade_v3_to_v4_fixes():
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
         assert p0.depends_on == ''
+        assert p0.depends_on_ == []
         assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
         p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
         assert p1.depends_on == ''
+        assert p1.depends_on_ == []
         assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
         p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
         assert p2.depends_on == ''
+        assert p2.depends_on_ == []
+        # the 2 lines below are wrong due to the incorrect upgrade from
+        # db version 2 to 3
         assert p2.inferred_from == 'p, 0'
+        assert p2.inferred_from_ == ['p', '0']
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
         p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
         assert p3.depends_on == ''
+        assert p3.depends_on_ == []
+        # the 2 lines below are wrong due to the incorrect upgrade from
+        # db version 2 to 3
         assert p3.inferred_from == 'p, 1, ,,  , p, 0'
+        assert p3.inferred_from_ == ['p', '1', ',', ' ', 'p', '0']
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
         p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
         assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
         assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
@@ -356,31 +384,41 @@ def test_perfrom_upgrade_v3_to_v4_fixes():
 
         p0 = [p for p in idp.paramspecs if p.name == 'p0'][0]
         assert p0.depends_on == ''
+        assert p0.depends_on_ == []
         assert p0.inferred_from == ''
+        assert p0.inferred_from_ == []
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
         p1 = [p for p in idp.paramspecs if p.name == 'p1'][0]
         assert p1.depends_on == ''
+        assert p1.depends_on_ == []
         assert p1.inferred_from == ''
+        assert p1.inferred_from_ == []
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
         p2 = [p for p in idp.paramspecs if p.name == 'p2'][0]
         assert p2.depends_on == ''
+        assert p2.depends_on_ == []
         assert p2.inferred_from == 'p0'
+        assert p2.inferred_from_ == ['p0']
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
         p3 = [p for p in idp.paramspecs if p.name == 'p3'][0]
         assert p3.depends_on == ''
+        assert p3.depends_on_ == []
         assert p3.inferred_from == 'p1, p0'
+        assert p3.inferred_from_ == ['p1', 'p0']
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
         p4 = [p for p in idp.paramspecs if p.name == 'p4'][0]
         assert p4.depends_on == 'p2, p3'
+        assert p4.depends_on_ == ['p2', 'p3']
         assert p4.inferred_from == ''
+        assert p4.inferred_from_ == []
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
