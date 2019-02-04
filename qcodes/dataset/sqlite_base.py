@@ -630,7 +630,9 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
             if inferred_from != '':
                 inferred_from_list = inferred_from.split(', ')
         # third possibility: no dependencies
-
+        else:
+            if inferred_from != '':
+                inferred_from_list = inferred_from.split(', ')
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
                               label=label, unit=unit,
