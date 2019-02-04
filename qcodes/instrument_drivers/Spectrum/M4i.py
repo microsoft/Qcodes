@@ -611,7 +611,7 @@ class M4i(Instrument):
         return data * input_range / resolution
 
     def initialize_channels(self, channels=None, mV_range=1000, input_path=0,
-                            termination=0, coupling=0, compensation=None, memsize=2**12):
+                            termination=0, coupling=0, compensation=None, memsize=2**12, pretrigger_memsize = None):
         """ Setup channels of the digitizer for simple readout using Parameters
 
         The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
@@ -621,9 +621,13 @@ class M4i(Instrument):
             mV_range, input_path, termination, coupling, compensation: passed
                 to the set_channel_settings function
             memsize (int): memory size to use for simple channel readout
+            pretrigger_memsize (None or int): pretrigger memory size to use. If None calculate a default value
         """
         allchannels = 0
         self._channel_memsize = memsize
+        if pretrigger_memsize is None:
+            pretrigger_memsize = 16
+        self._channel_pretrigger_memsize = pretrigger_memsize
         self.data_memory_size(memsize)
         if channels is None:
             channels = range(4)
@@ -655,7 +659,7 @@ class M4i(Instrument):
         """
         if memsize is None:
             memsize = self._channel_memsize
-        posttrigger_size = 16 * int((memsize / 2) // 16)
+        posttrigger_size = memsize - self._channel_pretrigger_memsize
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
         cx = self._channel_mask()
         self.enable_channels(cx)
