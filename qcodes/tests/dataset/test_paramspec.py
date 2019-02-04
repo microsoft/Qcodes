@@ -47,7 +47,7 @@ def version_0_serializations():
                  'paramtype': 'array',
                  'label': 'My Array ParamSpec',
                  'unit': 'Ars',
-                 'inferred_from': ['p1', 'p2' ],
+                 'inferred_from': ['p1', 'p2'],
                  'depends_on': []})
     return sers
 
@@ -141,6 +141,11 @@ def test_depends_on(name1, name2, name3):
     assert ps1.depends_on == f"{ps2.name}, {ps3.name}, foo"
     assert ps1.depends_on_ == [ps2.name, ps3.name, "foo"]
 
+    with pytest.raises(ValueError,
+                       match=f"ParamSpec {name1} got string foo as depends_on. "
+                       "It needs a Sequence of ParamSpecs or strings"):
+        ParamSpec(name1, "numeric", depends_on='foo')
+
 
 @given(
     name1=hst.text(min_size=4, alphabet=alphabet),
@@ -155,6 +160,12 @@ def test_inferred_from(name1, name2, name3):
 
     assert ps1.inferred_from == f"{ps2.name}, {ps3.name}, bar"
     assert ps1.inferred_from_ == [ps2.name, ps3.name, "bar"]
+
+    with pytest.raises(ValueError,
+                       match=f"ParamSpec {name1} got string foo as "
+                       f"inferred_from. "
+                       "It needs a Sequence of ParamSpecs or strings"):
+        ParamSpec(name1, "numeric", inferred_from='foo')
 
 
 @given(
