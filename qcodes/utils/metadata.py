@@ -22,7 +22,7 @@ ParameterDict = Dict[ParameterKey, T]
 RunId = NewType('RunId', int)
 
 class Metadatable:
-    def __init__(self, metadata=None):
+    def __init__(self, metadata=None, **kwargs):
         self.metadata = {}
         self.load_metadata(metadata or {})
 
