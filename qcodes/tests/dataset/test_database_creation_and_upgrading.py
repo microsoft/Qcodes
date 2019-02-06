@@ -125,7 +125,8 @@ def test_perform_actual_upgrade_0_to_1():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=0) as conn:
 
@@ -183,7 +184,8 @@ def test_perform_actual_upgrade_2_to_3_empty():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -212,7 +214,8 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -227,7 +230,8 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the"
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -319,7 +323,8 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the"
+                    " https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
 
@@ -449,10 +454,9 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
         assert p5.unit == "unit 5"
 
 
-def test_perform_upgrade_v3_to_v4_fixes():
+def test_perform_upgrade_v3_to_v4():
     """
-    Test that a db that was upgraded from v2 to v3 with a buggy
-    version will be corrected when upgraded to v4.
+    Test that a db upgrade from v2 to v4 works correctly.
     """
 
     v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
@@ -461,7 +465,8 @@ def test_perform_upgrade_v3_to_v4_fixes():
 
     if not os.path.exists(dbname_old):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
 
@@ -529,6 +534,7 @@ def test_perform_upgrade_v3_to_v4_fixes():
         assert p5.inferred_from_ == ['p0']
         assert p5.label == "Parameter 5"
         assert p5.unit == "unit 5"
+
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_update_existing_guids(caplog):
@@ -643,7 +649,8 @@ def test_getting_db_version(version):
 
     if not os.path.exists(dbname):
         pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
 
     (db_v, new_v) = get_db_version_and_newest_available_version(dbname)
 
