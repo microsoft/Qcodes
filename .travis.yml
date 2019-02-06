@@ -41,12 +41,14 @@ script:
     - |
       pip uninstall -y qcodes
       pip install -e .
-      cd qcodes/tests/dataset/legacy_DB_generation
+      cd ..
+      git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
+      cd qcodes_generate_test_db
       python generate_version_0.py
       python generate_version_1.py
       python generate_version_2.py
       python generate_version_3.py
-      cd ../../../..
+      cd $TRAVIS_BUILD_DIR
       pip uninstall -y qcodes
       pip install .
     - cd qcodes
