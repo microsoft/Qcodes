@@ -66,7 +66,7 @@ class MessageBuilder:
         self._msg = CommandList()
 
     @property
-    def message(self) -> MessageBuilder:
+    def message(self) -> str:
         joined = str(self._msg)
         if len(joined) > 250:
             warnings.warn(f"Command is too long ({len(joined)}>256-termchars) "

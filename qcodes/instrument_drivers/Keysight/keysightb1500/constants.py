@@ -4,6 +4,9 @@ from enum import Enum, IntEnum, IntFlag
 class StrEnum(str, Enum):
     pass
 
+class InstrClass(StrEnum):
+    SMU = 'SMU'
+    CMU = 'CMU'
 
 class SlotNr(IntEnum):
     ALL = 0

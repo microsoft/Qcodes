@@ -38,6 +38,8 @@ devices:
       - q: "*RST"
       - q: "*IDN?"
         r: "Agilent Technologies,B1500A,0,A.04.03.2010.0130"
+      - q: "UNT? 0"
+        r: "B1517A,0;B1517A,0;B1520A,0;0,0;0,0;B1530A,0;0,0;0,0;0,0;0,0"
 
 resources:
   GPIB::1::INSTR:
