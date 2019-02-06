@@ -718,7 +718,7 @@ def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
     resulting in the parameter being marked inferred_from for each char
     in the inferred_from variable and inferred_from was not handled
     correctly for parameters that were neither dependencies nor dependent on
-    other parameters. Both have since been fixes so rerun the upgrade.
+    other parameters. Both have since been fixed so rerun the upgrade.
     """
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
