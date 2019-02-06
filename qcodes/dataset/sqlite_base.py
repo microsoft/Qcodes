@@ -606,7 +606,7 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
     # depend, then the dependent ParamSpecs and finally the rest
 
     for layout_id in list(indeps) + list(deps) + list(the_rest):
-        (name, label, unit, inferred_from) = layouts[layout_id]
+        (name, label, unit, inferred_from_str) = layouts[layout_id]
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
@@ -615,7 +615,7 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
                 paramtype = row['type']
                 break
 
-        inferred_from_list: List[str] = []
+        inferred_from: List[str] = []
         depends_on: List[str] = []
 
         # this parameter depends on another parameter
@@ -623,14 +623,14 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
             setpoints = dependencies[layout_id]
             depends_on = [paramspecs[idp].name for idp in setpoints]
 
-        if inferred_from != '':
-            inferred_from_list = inferred_from.split(', ')
+        if inferred_from_str != '':
+            inferred_from = inferred_from_str.split(', ')
 
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
                               label=label, unit=unit,
                               depends_on=depends_on,
-                              inferred_from=inferred_from_list)
+                              inferred_from=inferred_from)
         paramspecs[layout_id] = paramspec
 
     return paramspecs
