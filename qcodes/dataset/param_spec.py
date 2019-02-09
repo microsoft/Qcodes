@@ -43,10 +43,19 @@ class ParamSpec:
         inferred_from = [] if inferred_from is None else inferred_from
         depends_on = [] if depends_on is None else depends_on
 
+        if isinstance(inferred_from, str):
+            raise ValueError(f"ParamSpec {self.name} got "
+                             f"string {inferred_from} as inferred_from. "
+                             f"It needs a "
+                             f"Sequence of ParamSpecs or strings")
         self._inferred_from.extend(
             p.name if isinstance(p, ParamSpec) else p
             for p in inferred_from)
 
+        if isinstance(depends_on, str):
+            raise ValueError(f"ParamSpec {self.name} got "
+                             f"string {depends_on} as depends_on. It needs a "
+                             f"Sequence of ParamSpecs or strings")
         self._depends_on.extend(
             p.name if isinstance(p, ParamSpec) else p
             for p in depends_on)
