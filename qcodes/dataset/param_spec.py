@@ -1,4 +1,4 @@
-from typing import Union, Sequence, List, Dict, Any
+from typing import Union, Sequence, List, Dict, Any, Optional
 from copy import deepcopy
 
 
@@ -6,7 +6,11 @@ class ParamSpecBase:
 
     allowed_types = ['array', 'numeric', 'text']
 
-    def __init__(self, name: str, paramtype: str, label: str='', unit: str=''):
+    def __init__(self,
+                 name: str,
+                 paramtype: str,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None):
         """
         Args:
             name: name of the parameter
@@ -28,8 +32,8 @@ class ParamSpecBase:
 
         self.name = name
         self.type = paramtype.lower()
-        self.label = label
-        self.unit = unit
+        self.label = label or ''
+        self.unit = unit or ''
 
     def sql_repr(self):
         return f"{self.name} {self.type}"
@@ -98,8 +102,8 @@ class ParamSpec(ParamSpecBase):
 
     def __init__(self, name: str,
                  paramtype: str,
-                 label: str='',
-                 unit: str='',
+                 label: Optional[str]=None,
+                 unit: Optional[str]=None,
                  inferred_from: Sequence[Union['ParamSpec', str]]=None,
                  depends_on: Sequence[Union['ParamSpec', str]]=None,
                  **metadata) -> None:

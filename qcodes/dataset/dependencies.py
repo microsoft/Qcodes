@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Sequence
+from typing import Dict, Any, Tuple, Sequence, Optional
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
@@ -19,9 +19,12 @@ class InterDependencies_:
                    5: ValueError('ParamSpecTree can not have cycles')}
 
     def __init__(self,
-                 dependencies: ParamSpecTree = {},
-                 inferences: ParamSpecTree = {},
+                 dependencies: Optional[ParamSpecTree] = None,
+                 inferences: Optional[ParamSpecTree] = None,
                  standalones: Tuple[ParamSpecBase, ...] = ()):
+
+        dependencies = dependencies or {}
+        inferences = inferences or {}
 
         deps_code = self.validate_paramspectree(dependencies)
         if not deps_code == 0:
