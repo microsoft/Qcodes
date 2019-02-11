@@ -1,8 +1,8 @@
 from typing import Dict, Any, Tuple, Sequence
 
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
-ParamSpecTree = Dict[ParamSpec, Tuple[ParamSpec, ...]]
+ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 
 
 class InterDependencies_:
@@ -21,7 +21,7 @@ class InterDependencies_:
     def __init__(self,
                  dependencies: ParamSpecTree = {},
                  inferences: ParamSpecTree = {},
-                 standalones: Tuple[ParamSpec, ...] = ()):
+                 standalones: Tuple[ParamSpecBase, ...] = ()):
 
         deps_code = self.validate_paramspectree(dependencies)
         if not deps_code == 0:
@@ -34,7 +34,7 @@ class InterDependencies_:
             raise ValueError('Invalid inferences') from e
 
         for ps in standalones:
-            if not isinstance(ps, ParamSpec):
+            if not isinstance(ps, ParamSpecBase):
                 e = TypeError('Standalones must be a sequence of ParamSpecs')
                 raise ValueError('Invalid standalones') from e
 
@@ -66,12 +66,12 @@ class InterDependencies_:
             return 1
 
         for key, values in paramspectree.items():
-            if not isinstance(key, ParamSpec):
+            if not isinstance(key, ParamSpecBase):
                 return 2
             if not isinstance(values, tuple):
                 return 3
             for value in values:
-                if not isinstance(value, ParamSpec):
+                if not isinstance(value, ParamSpecBase):
                     return 4
 
         # check for cycles

@@ -2,25 +2,19 @@ from typing import Union, Sequence, List, Dict, Any
 from copy import deepcopy
 
 
-class ParamSpec:
+class ParamSpecBase:
 
     allowed_types = ['array', 'numeric', 'text']
 
-    def __init__(self, name: str,
-                 paramtype: str,
-                 label: str=None,
-                 unit: str=None,
-                 inferred_from: Sequence[Union['ParamSpec', str]]=None,
-                 depends_on: Sequence[Union['ParamSpec', str]]=None,
-                 **metadata) -> None:
+    def __init__(self, name: str, paramtype: str, label: str='', unit: str=''):
         """
         Args:
             name: name of the parameter
             paramtype: type of the parameter, i.e. the SQL storage class
             label: label of the parameter
-            inferred_from: the parameters that this parameter is inferred from
-            depends_on: the parameters that this parameter depends on
+            unit: The unit of the parameter
         """
+
         if not isinstance(paramtype, str):
             raise ValueError('Paramtype must be a string.')
         if paramtype.lower() not in self.allowed_types:
@@ -34,8 +28,91 @@ class ParamSpec:
 
         self.name = name
         self.type = paramtype.lower()
-        self.label = '' if label is None else label
-        self.unit = '' if unit is None else unit
+        self.label = label
+        self.unit = unit
+
+    def sql_repr(self):
+        return f"{self.name} {self.type}"
+
+    def __repr__(self):
+        return (f"ParamSpecBase('{self.name}', '{self.type}', '{self.label}', "
+                f"'{self.unit}'")
+
+    def __eq__(self, other):
+        if not isinstance(other, ParamSpecBase):
+            return False
+        attrs = ['name', 'type', 'label', 'unit']
+        for attr in attrs:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+        return True
+
+    def __hash__(self) -> int:
+        """
+        Allow ParamSpecBases in data structures that use hashing (e.g. sets)
+        """
+        attrs = ['name', 'type', 'label', 'unit']
+
+
+        # First, get the hash of the tuple with all the relevant attributes
+        all_attr_tuple_hash = hash(
+            tuple(getattr(self, attr) for attr in attrs)
+        )
+        hash_value = all_attr_tuple_hash
+
+        # Then, XOR it with the individual hashes of all relevant attributes
+        for attr in attrs:
+            hash_value = hash_value ^ hash(getattr(self, attr))
+
+        return hash_value
+
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Write the ParamSpec as a dictionary
+        """
+        output: Dict[str, Any] = {}
+        output['name'] = self.name
+        output['paramtype'] = self.type
+        output['label'] = self.label
+        output['unit'] = self.unit
+
+        return output
+
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+        """
+        Create a ParamSpec instance of the current version
+        from a serialized ParamSpec of some version
+
+        The version changes must be implemented as a series of transformations
+        of the serialized dict.
+        """
+
+        return ParamSpecBase(name=ser['name'],
+                             paramtype=ser['paramtype'],
+                             label=ser['label'],
+                             unit=ser['unit'])
+
+
+class ParamSpec(ParamSpecBase):
+
+    def __init__(self, name: str,
+                 paramtype: str,
+                 label: str='',
+                 unit: str='',
+                 inferred_from: Sequence[Union['ParamSpec', str]]=None,
+                 depends_on: Sequence[Union['ParamSpec', str]]=None,
+                 **metadata) -> None:
+        """
+        Args:
+            name: name of the parameter
+            paramtype: type of the parameter, i.e. the SQL storage class
+            label: label of the parameter
+            inferred_from: the parameters that this parameter is inferred from
+            depends_on: the parameters that this parameter depends on
+        """
+
+        super().__init__(name, paramtype, label, unit)
 
         self._inferred_from: List[str] = []
         self._depends_on: List[str] = []
@@ -87,9 +164,6 @@ class ParamSpec:
                          deepcopy(self._inferred_from),
                          deepcopy(self._depends_on))
 
-    def sql_repr(self):
-        return f"{self.name} {self.type}"
-
     def __repr__(self):
         return (f"ParamSpec('{self.name}', '{self.type}', '{self.label}', "
                 f"'{self.unit}', inferred_from={self._inferred_from}, "
@@ -129,11 +203,7 @@ class ParamSpec:
         """
         Write the ParamSpec as a dictionary
         """
-        output: Dict[str, Any] = {}
-        output['name'] = self.name
-        output['paramtype'] = self.type
-        output['label'] = self.label
-        output['unit'] = self.unit
+        output = super().serialize()
         output['inferred_from'] = self._inferred_from
         output['depends_on'] = self._depends_on
 
