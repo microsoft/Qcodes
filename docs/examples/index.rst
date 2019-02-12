@@ -40,6 +40,16 @@ Drivers
 
     driver_examples/*
 
+Writing Drivers
+---------------
+
+.. include:: writing_drivers/readme.txt
+
+.. toctree::
+    :glob:
+
+    writing_drivers/*
+
 Logging
 --------
 
@@ -49,3 +59,12 @@ Logging
     logging/*
 
 
+Legacy examples
+---------------
+
+.. include:: legacy/readme.txt
+
+.. toctree::
+    :glob:
+
+    legacy/*

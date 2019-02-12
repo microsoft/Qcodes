@@ -7,6 +7,8 @@ import importlib
 import logging
 import uuid
 from queue import Queue, Empty
+import numpy
+import pandas as pd
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -22,6 +24,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         modify_many_values, insert_values,
                                         insert_many_values,
                                         VALUE, VALUES, get_data,
+                                        get_parameter_data,
                                         get_values,
                                         get_setpoints,
                                         get_metadata,
@@ -30,10 +33,14 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_experiment_name_from_experiment_id,
                                         get_sample_name_from_experiment_id,
                                         get_guid_from_run_id,
+                                        get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
-                                        run_exists)
+                                        run_exists, remove_trigger,
+                                        make_connection_plus_from,
+                                        ConnectionPlus,
+                                        get_non_dependencies)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -41,6 +48,8 @@ from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
 import qcodes.config
+
+log = logging.getLogger(__name__)
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -109,6 +118,7 @@ class _Subscriber(Thread):
             self.callback = functools.partial(callback, **callback_kwargs)
 
         self.callback_id = f"callback{self._id}"
+        self.trigger_id = f"sub{self._id}"
 
         conn = dataSet.conn
 
@@ -117,7 +127,7 @@ class _Subscriber(Thread):
         parameters = dataSet.get_parameters()
         sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
         sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER sub{self._id}
+        CREATE TRIGGER {self.trigger_id}
             AFTER INSERT ON '{self.table_name}'
         BEGIN
             SELECT {self.callback_id}({sql_param_list});
@@ -182,9 +192,18 @@ class _Subscriber(Thread):
 
 
 class DataSet(Sized):
+
+    # the "persistent traits" are the attributes/properties of the DataSet
+    # that are NOT tied to the representation of the DataSet in any particular
+    # database
+    persistent_traits = ('name', 'guid', 'number_of_results',
+                         'parameters', 'paramspecs', 'exp_name', 'sample_name',
+                         'completed', 'snapshot', 'run_timestamp_raw',
+                         'description', 'completed_timestamp_raw', 'metadata')
+
     def __init__(self, path_to_db: str=None,
                  run_id: Optional[int]=None,
-                 conn=None,
+                 conn: Optional[ConnectionPlus]=None,
                  exp_id=None,
                  name: str=None,
                  specs: SPECS=None,
@@ -220,7 +239,8 @@ class DataSet(Sized):
                              "This is not allowed.")
         self._path_to_db = path_to_db or get_DB_location()
 
-        self.conn = conn or connect(self.path_to_db)
+        self.conn = make_connection_plus_from(conn) if conn is not None else \
+            connect(self.path_to_db)
 
         self._run_id = run_id
         self._debug = False
@@ -350,6 +370,34 @@ class DataSet(Sized):
     def metadata(self) -> Dict:
         return self._metadata
 
+    def the_same_dataset_as(self, other: 'DataSet') -> bool:
+        """
+        Check if two datasets correspond to the same run by comparing
+        all their persistent traits. Note that this method
+        does not compare the data itself.
+
+        This function raises if the GUIDs match but anything else doesn't
+
+        Args:
+            other: the dataset to compare self to
+        """
+
+        if not isinstance(other, DataSet):
+            return False
+
+        guids_match = self.guid == other.guid
+
+        for attr in DataSet.persistent_traits:
+            if getattr(self, attr) != getattr(other, attr):
+                if guids_match:
+                    raise RuntimeError('Critical inconsistency detected! '
+                                       'The two datasets have the same GUID,'
+                                       f' but their "{attr}" differ.')
+                else:
+                    return False
+
+        return True
+
     def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
         """
         Returns run timestamp in a human-readable format
@@ -372,7 +420,7 @@ class DataSet(Sized):
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
 
     def completed_timestamp(self,
-                            fmt: str="%Y-%m-%d %H:%M:%S") -> Union[str, None]:
+                            fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
@@ -384,7 +432,7 @@ class DataSet(Sized):
         completed_timestamp_raw = self.completed_timestamp_raw
 
         if completed_timestamp_raw:
-            completed_timestamp = time.strftime(
+            completed_timestamp: Optional[str] = time.strftime(
                 fmt, time.localtime(completed_timestamp_raw))
         else:
             completed_timestamp = None
@@ -474,9 +522,23 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        add_meta_data(self.conn, self.run_id, {tag: metadata})
-        # `add_meta_data` does not commit, hence we commit here:
-        self.conn.commit()
+        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        with atomic(self.conn) as conn:
+            add_meta_data(conn, self.run_id, {tag: metadata})
+
+    def add_snapshot(self, snapshot: str, overwrite: bool=False) -> None:
+        """
+        Adds a snapshot to this run
+
+        Args:
+            snapshot: the raw JSON dump of the snapshot
+            overwrite: force overwrite an existing snapshot
+        """
+        if self.snapshot is None or overwrite:
+            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+        elif self.snapshot is not None and not overwrite:
+            log.warning('This dataset already has a snapshot. Use overwrite'
+                        '=True to overwrite that')
 
     @property
     def started(self) -> bool:
@@ -575,6 +637,8 @@ class DataSet(Sized):
                            values)
         return len_before_add
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.')
     def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
         """
         Modify a logically single result of existing parameters
@@ -599,12 +663,15 @@ class DataSet(Sized):
             if param not in self.paramspecs.keys():
                 raise ValueError(f'No such parameter: {param}.')
 
-        with atomic(self.conn) as self.conn:
-            modify_values(self.conn, self.table_name, index,
+        with atomic(self.conn) as conn:
+            modify_values(conn, self.table_name, index,
                           list(results.keys()),
                           list(results.values())
                           )
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
+               alternative='modify_result')
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
         """
@@ -640,13 +707,16 @@ class DataSet(Sized):
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
 
-        with atomic(self.conn) as self.conn:
-            modify_many_values(self.conn,
+        with atomic(self.conn) as conn:
+            modify_many_values(conn,
                                self.table_name,
                                start_index,
                                flattened_keys,
                                flattened_values)
 
+    @deprecate(reason='it is an experimental functionality, and is likely '
+                      'to be removed soon.',
+               alternative='add_parameter, add_result, add_results')
     def add_parameter_values(self, spec: ParamSpec, values: VALUES):
         """
         Add a parameter to the DataSet and associates result values with the
@@ -667,11 +737,35 @@ class DataSet(Sized):
                     len(values)
                 ))
 
-        with atomic(self.conn) as self.conn:
-            add_parameter(self.conn, self.table_name, spec)
+        with atomic(self.conn) as conn:
+            add_parameter(conn, self.table_name, spec)
             # now add values!
             results = [{spec.name: value} for value in values]
             self.add_results(results)
+
+    @staticmethod
+    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
+                             ) -> List[str]:
+        """
+        Validate that the provided parameters have a name and return those
+        names as a list.
+        The Parameters may be a mix of strings, ParamSpecs or ordinary
+        QCoDeS parameters.
+        """
+
+        valid_param_names = []
+        for maybeParam in params:
+            if isinstance(maybeParam, str):
+                valid_param_names.append(maybeParam)
+                continue
+            else:
+                try:
+                    maybeParam = maybeParam.name
+                except Exception as e:
+                    raise ValueError(
+                        "This parameter does not have  a name") from e
+                valid_param_names.append(maybeParam)
+        return valid_param_names
 
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
@@ -708,21 +802,120 @@ class DataSet(Sized):
             be of the datatypes stored in the database (numeric, array or
             string)
         """
-        valid_param_names = []
-        for maybeParam in params:
-            if isinstance(maybeParam, str):
-                valid_param_names.append(maybeParam)
-                continue
-            else:
-                try:
-                    maybeParam = maybeParam.name
-                except Exception as e:
-                    raise ValueError(
-                        "This parameter does not have  a name") from e
-            valid_param_names.append(maybeParam)
-        data = get_data(self.conn, self.table_name, valid_param_names,
+        valid_param_names = self._validate_parameters(*params)
+        return get_data(self.conn, self.table_name, valid_param_names,
                         start, end)
-        return data
+
+    def get_parameter_data(
+            self,
+            *params: Union[str, ParamSpec, _BaseParameter],
+            start: Optional[int] = None,
+            end: Optional[int] = None) -> Dict[str, Dict[str, numpy.ndarray]]:
+        """
+        Returns the values stored in the DataSet for the specified parameters
+        and their dependencies. If no paramerers are supplied the values will
+        be returned for all parameters that are not them self dependencies.
+
+        The values are returned as a dictionary with names of the requested
+        parameters as keys and values consisting of dictionaries with the
+        names of the parameters and its dependencies as keys and numpy arrays
+        of the data as values. If some of the parameters are stored as
+        arrays the remaining parameters are expanded to the same shape as these.
+        Apart from this expansion the data returned by this method
+        is the transpose of the date returned by `get_data`.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a list of empty arrays is returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameters to Dict of parameter names
+            to numpy arrays containing the data points of type numeric,
+            array or string.
+        """
+        if len(params) == 0:
+            valid_param_names = get_non_dependencies(self.conn,
+                                                     self.run_id)
+        else:
+            valid_param_names = self._validate_parameters(*params)
+        return get_parameter_data(self.conn, self.table_name, valid_param_names,
+                                  start, end)
+
+    def get_data_as_pandas_dataframe(self,
+                                     *params: Union[str,
+                                                    ParamSpec,
+                                                    _BaseParameter],
+                                     start: Optional[int] = None,
+                                     end: Optional[int] = None) -> \
+            Dict[str, pd.DataFrame]:
+        """
+        Returns the values stored in the DataSet for the specified parameters
+        and their dependencies as a dict of :py:class:`pandas.DataFrame`\s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        Each DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the dataset that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame`\s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to
+            :py:class:`pandas.DataFrame`\s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+        """
+        dfs = {}
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+        for name, subdict in datadict.items():
+            keys = list(subdict.keys())
+            if len(keys) == 0:
+                dfs[name] = pd.DataFrame()
+                continue
+            if len(keys) == 1:
+                index = None
+            elif len(keys) == 2:
+                index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
+            else:
+                index = pd.MultiIndex.from_arrays(
+                    tuple(subdict[key].ravel() for key in keys[1:]),
+                    names=keys[1:])
+            df = pd.DataFrame(subdict[keys[0]].ravel(), index=index,
+                              columns=[keys[0]])
+            dfs[name] = df
+        return dfs
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """
@@ -804,15 +997,12 @@ class DataSet(Sized):
         """
         Remove subscriber with the provided uuid
         """
-        with atomic(self.conn) as self.conn:
-            self._remove_trigger(uuid)
+        with atomic(self.conn) as conn:
             sub = self.subscribers[uuid]
+            remove_trigger(conn, sub.trigger_id)
             sub.schedule_stop()
             sub.join()
             del self.subscribers[uuid]
-
-    def _remove_trigger(self, name):
-        transaction(self.conn, f"DROP TRIGGER IF EXISTS {name};")
 
     def unsubscribe_all(self):
         """
@@ -820,9 +1010,9 @@ class DataSet(Sized):
         """
         sql = "select * from sqlite_master where type = 'trigger';"
         triggers = atomic_transaction(self.conn, sql).fetchall()
-        with atomic(self.conn) as self.conn:
+        with atomic(self.conn) as conn:
             for trigger in triggers:
-                self._remove_trigger(trigger['name'])
+                remove_trigger(conn, trigger['name'])
             for sub in self.subscribers.values():
                 sub.schedule_stop()
                 sub.join()
@@ -848,14 +1038,16 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(run_id: int) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load dataset by run id
 
-    Lookup is performed in the database file that is specified in the config.
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
 
     Args:
         run_id: run id of the dataset
+        conn: connection to the database to load from
 
     Returns:
         dataset with the given run id
@@ -863,11 +1055,43 @@ def load_by_id(run_id: int) -> DataSet:
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
 
-    d = DataSet(path_to_db=get_DB_location(), run_id=run_id)
+    conn = conn or connect(get_DB_location())
+
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 
-def load_by_counter(counter: int, exp_id: int) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
+    """
+    Load a dataset by its GUID
+
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
+
+    Args:
+        guid: guid of the dataset
+        conn: connection to the database to load from
+
+    Returns:
+        dataset with the given guid
+
+    Raises:
+        NameError if no run with the given GUID exists in the database
+        RuntimeError if several runs with the given GUID are found
+    """
+    conn = conn or connect(get_DB_location())
+
+    # this function raises a RuntimeError if more than one run matches the GUID
+    run_id = get_runid_from_guid(conn, guid)
+
+    if run_id == -1:
+        raise NameError(f'No run with GUID: {guid} found in database.')
+
+    return DataSet(run_id=run_id, conn=conn)
+
+
+def load_by_counter(counter: int, exp_id: int,
+                    conn: Optional[ConnectionPlus]=None) -> DataSet:
     """
     Load a dataset given its counter in a given experiment
 
@@ -876,11 +1100,13 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
+        conn: connection to the database to load from. If not provided, a
+          connection to the DB file specified in the config is made
 
     Returns:
         dataset of the given counter in the given experiment
     """
-    conn = connect(get_DB_location())
+    conn = conn or connect(get_DB_location())
     sql = """
     SELECT run_id
     FROM
@@ -891,9 +1117,8 @@ def load_by_counter(counter: int, exp_id: int) -> DataSet:
     """
     c = transaction(conn, sql, counter, exp_id)
     run_id = one(c, 'run_id')
-    conn.close()
 
-    d = DataSet(get_DB_location(), run_id=run_id)
+    d = DataSet(conn=conn, run_id=run_id)
     return d
 
 

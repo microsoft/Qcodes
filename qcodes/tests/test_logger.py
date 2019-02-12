@@ -17,6 +17,9 @@ def remove_root_handlers():
     for handler in handlers:
         handler.close()
         root_logger.removeHandler(handler)
+    logger.logger.file_handler = None
+    logger.logger.console_handler = None
+
 
 @pytest.fixture
 def model372():
@@ -38,6 +41,34 @@ def model372():
         yield inst
     finally:
         inst.close()
+
+
+@pytest.fixture()
+def AMI430_3D():
+    from qcodes.instrument.ip_to_visa import AMI430_VISA
+    from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
+    import qcodes.instrument.sims as sims
+    import numpy as np
+    visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
+    mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
+                        terminator='\n', port=1)
+    mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
+                        terminator='\n', port=1)
+    mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
+                        terminator='\n', port=1)
+    field_limit = [
+        lambda x, y, z: x == 0 and y == 0 and z < 3,
+        lambda x, y, z: np.linalg.norm([x, y, z]) < 2
+    ]
+    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    try:
+        yield driver, mag_x, mag_y, mag_z
+    finally:
+        driver.close()
+        mag_x.close()
+        mag_y.close()
+        mag_z.close()
+
 
 def test_get_log_file_name():
     fp = logger.logger.get_log_file_name().split(os.sep)
@@ -66,7 +97,16 @@ def test_start_logger_twice():
     logger.start_logger()
     handlers = logging.getLogger().handlers
     # there is always one logger registered from pytest
-    assert len(logging.getLogger().handlers) == 2+1
+    assert len(handlers) == 2+1
+
+
+@pytest.mark.usefixtures("remove_root_handlers")
+def test_set_level_without_starting_raises():
+    with pytest.raises(RuntimeError):
+        with logger.console_level('DEBUG'):
+            pass
+    # there is always one logger registered from pytest
+    assert len(logging.getLogger().handlers) == 1
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
@@ -83,27 +123,11 @@ def test_handler_level():
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_filter_instrument():
-    from qcodes.instrument.ip_to_visa import AMI430_VISA
-    from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
-    import qcodes.instrument.sims as sims
-    import numpy as np
+def test_filter_instrument(AMI430_3D):
+
+    driver, mag_x, mag_y, mag_z = AMI430_3D
 
     logger.start_logger()
-
-    visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
-    mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    field_limit = [
-        lambda x, y, z: x == 0 and y == 0 and z < 3,
-        lambda x, y, z: np.linalg.norm([x, y, z]) < 2
-    ]
-
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
 
     # filter one instrument
     driver.cartesian((0, 0, 0))
@@ -135,6 +159,19 @@ def test_filter_instrument():
         any_y |= has_y
     assert any_x
     assert any_y
+
+
+@pytest.mark.usefixtures("remove_root_handlers")
+def test_filter_without_started_logger_raises(AMI430_3D):
+
+    driver, mag_x, mag_y, mag_z = AMI430_3D
+
+    # filter one instrument
+    driver.cartesian((0, 0, 0))
+    with pytest.raises(RuntimeError):
+        with logger.filter_instrument(mag_x):
+            pass
+
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe():

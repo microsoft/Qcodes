@@ -62,17 +62,17 @@ import collections
 import warnings
 import enum
 from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
-    Dict, Any, Sized, Iterable, cast, Type
+    Dict, Any, Sized, Iterable, cast, Type, Tuple
 from functools import partial, wraps
 import numpy
-
+from qcodes.utils.helpers import abstractmethod
 
 from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr,
                                   warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Ints, Strings, Enum
+from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -80,7 +80,11 @@ if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
 Number = Union[float, int]
+# for now the type the parameter may contain is not restricted at all
+ParamDataType = Any
 
+
+log = logging.getLogger(__name__)
 
 class _SetParamContext:
     """
@@ -112,16 +116,16 @@ class _BaseParameter(Metadatable):
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
-        name (str): the local name of the parameter. Must be a valid
+        name: the local name of the parameter. Must be a valid
             identifier, ie no spaces or special characters or starting with a
             number. If this parameter is part of an Instrument or Station,
             this should match how it will be referenced from that parent,
             ie ``instrument.name`` or ``instrument.parameters[name]``
 
-        instrument (Optional[Instrument]): the instrument this parameter
+        instrument: the instrument this parameter
             belongs to, if any
 
-        snapshot_get (Optional[bool]): False prevents any update to the
+        snapshot_get: False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
@@ -182,18 +186,16 @@ class _BaseParameter(Metadatable):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    get_raw = None  # type: Optional[Callable]
-    set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
-                 step: Optional[Union[int, float]]=None,
+                 step: Optional[Number]=None,
                  scale: Optional[Union[Number, Iterable[Number]]]=None,
                  offset: Optional[Union[Number, Iterable[Number]]]=None,
-                 inter_delay: Union[int, float]=0,
-                 post_delay: Union[int, float]=0,
+                 inter_delay: Number=0,
+                 post_delay: Number=0,
                  val_mapping: Optional[dict]=None,
                  get_parser: Optional[Callable]=None,
                  set_parser: Optional[Callable]=None,
@@ -239,22 +241,23 @@ class _BaseParameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest = {'value': None, 'ts': None, 'raw_value': None}
+        self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
+            {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw') and self.get_raw is not None:
+        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
+                          'define get_raw in your subclass instead.')
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw') and self.set_raw is not None:
+        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
                           'be directly accessible. It is recommended to '
-                          'define set_raw in your subclass instead.' )
+                          'define set_raw in your subclass instead.')
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
@@ -265,8 +268,20 @@ class _BaseParameter(Metadatable):
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
+        # should we call validate when getting data. default to False
+        # intended to be changed in a subclass if you want the subclass
+        # to perform a validation on get
+        self._validate_on_get = False
 
-    def __str__(self):
+    @abstractmethod
+    def get_raw(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_raw(self, value):
+        raise NotImplementedError
+
+    def __str__(self) -> str:
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
@@ -274,7 +289,7 @@ class _BaseParameter(Metadatable):
         else:
             return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return named_repr(self)
 
     def __call__(self, *args, **kwargs):
@@ -291,8 +306,9 @@ class _BaseParameter(Metadatable):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict[str, Any]:
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Sequence[str] = None) -> \
+            Dict[str, Any]:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -339,24 +355,25 @@ class _BaseParameter(Metadatable):
 
         return state
 
-    def _save_val(self, value, validate=False):
+    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
         """
         Update latest
         """
         if validate:
             self.validate(value)
         if (self.get_parser is None and
-            self.set_parser is None and
-            self.val_mapping is None and
-            self.scale is None and
-            self.offset is None):
-                self.raw_value = value
+                self.set_parser is None and
+                self.val_mapping is None and
+                self.scale is None and
+                self.offset is None):
+            self.raw_value = value
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
 
-    def _wrap_get(self, get_function):
+    def _wrap_get(self, get_function: Callable[..., ParamDataType]) ->\
+            Callable[..., ParamDataType]:
         @wraps(get_function)
-        def get_wrapper(*args, **kwargs):
+        def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             try:
                 # There might be cases where a .get also has args/kwargs
                 value = get_function(*args, **kwargs)
@@ -370,11 +387,11 @@ class _BaseParameter(Metadatable):
                     # offset values
                     if isinstance(self.offset, collections.abc.Iterable):
                         # offset contains multiple elements, one for each value
-                        value = tuple(value - offset for value, offset
+                        value = tuple(val - offset for val, offset
                                       in zip(value, self.offset))
                     elif isinstance(value, collections.abc.Iterable):
                         # Use single offset for all values
-                        value = tuple(value - self.offset for value in value)
+                        value = tuple(val - self.offset for val in value)
                     else:
                         value -= self.offset
 
@@ -383,15 +400,15 @@ class _BaseParameter(Metadatable):
                     # Scale values
                     if isinstance(self.scale, collections.abc.Iterable):
                         # Scale contains multiple elements, one for each value
-                        value = tuple(value / scale for value, scale
+                        value = tuple(val / scale for val, scale
                                       in zip(value, self.scale))
                     elif isinstance(value, collections.abc.Iterable):
                         # Use single scale for all values
-                        value = tuple(value / self.scale for value in value)
+                        value = tuple(val / self.scale for val in value)
                     else:
                         value /= self.scale
 
-                if self.val_mapping is not None:
+                if self.inverse_val_mapping is not None:
                     if value in self.inverse_val_mapping:
                         value = self.inverse_val_mapping[value]
                     else:
@@ -399,7 +416,7 @@ class _BaseParameter(Metadatable):
                             value = self.inverse_val_mapping[int(value)]
                         except (ValueError, KeyError):
                             raise KeyError("'{}' not in val_mapping".format(value))
-                self._save_val(value)
+                self._save_val(value, validate=self._validate_on_get)
                 return value
             except Exception as e:
                 e.args = e.args + ('getting {}'.format(self),)
@@ -407,9 +424,10 @@ class _BaseParameter(Metadatable):
 
         return get_wrapper
 
-    def _wrap_set(self, set_function):
+    def _wrap_set(self, set_function: Callable[..., None]) -> \
+            Callable[..., None]:
         @wraps(set_function)
-        def set_wrapper(value, **kwargs):
+        def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
                 self.validate(value)
 
@@ -485,9 +503,9 @@ class _BaseParameter(Metadatable):
         return set_wrapper
 
     def get_ramp_values(self, value: Union[float, int, Sized],
-                        step: Union[float, int]=None) -> List[Union[float,
-                                                                    int,
-                                                                    Sized]]:
+                        step: Number = None) -> List[Union[float,
+                                                           int,
+                                                           Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -503,7 +521,8 @@ class _BaseParameter(Metadatable):
             return [value]
         else:
             if isinstance(value, collections.abc.Sized) and len(value) > 1:
-                raise RuntimeError("Don't know how to step a parameter with more than one value")
+                raise RuntimeError("Don't know how to step a parameter"
+                                   " with more than one value")
             if self.get_latest() is None:
                 self.get()
             start_value = self.get_latest()
@@ -514,15 +533,15 @@ class _BaseParameter(Metadatable):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                logging.warning(
-                    'cannot sweep {} from {} to {} - jumping.'.format(
-                        self.name, start_value, value))
+                log.warning(
+                    'cannot sweep %s from %r to %r - jumping.',
+                                self.name, start_value, value)
                 return []
 
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
 
-    def validate(self, value):
+    def validate(self, value: ParamDataType) -> None:
         """
         Validate value
 
@@ -539,30 +558,31 @@ class _BaseParameter(Metadatable):
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def step(self):
+    def step(self) -> Optional[Number]:
         return self._step
 
     @step.setter
-    def step(self, step: Union[int, float]):
+    def step(self, step: Optional[Number]):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        If step is None stepping will not be used.
 
         Args:
-            step (Union[int, float]): A positive number, the largest change
+            step: A positive number or None, the largest change
                 allowed in one call. All but the final change will attempt to
                 change by +/- step exactly
 
         Raises:
-            TypeError: if step is not numeric
+            TypeError: if step is not numeric or None
             ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
+            TypeError:  if step is not integer or None for an integer parameter
+            TypeError: if step is not a number on None
         """
         if step is None:
-            self._step = step # type: Optional[Union[float, int]]
+            self._step: Optional[Number] = step
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -577,12 +597,12 @@ class _BaseParameter(Metadatable):
             self._step = step
 
     @property
-    def post_delay(self):
+    def post_delay(self) -> Number:
         """Delay time after *start* of set operation, for each set"""
         return self._post_delay
 
     @post_delay.setter
-    def post_delay(self, post_delay):
+    def post_delay(self, post_delay: Number) -> None:
         """
         Configure this parameter with a delay after the *start* of every set
         operation.
@@ -612,12 +632,12 @@ class _BaseParameter(Metadatable):
         self._post_delay = post_delay
 
     @property
-    def inter_delay(self):
+    def inter_delay(self) -> Number:
         """Delay time between consecutive set operations"""
         return self._inter_delay
 
     @inter_delay.setter
-    def inter_delay(self, inter_delay):
+    def inter_delay(self, inter_delay: Number) -> None:
         """
         Configure this parameter with a delay between set operations.
 
@@ -643,7 +663,7 @@ class _BaseParameter(Metadatable):
         self._inter_delay = inter_delay
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return "_".join(self.name_parts)
 
     def set_validator(self, vals):
@@ -845,7 +865,7 @@ class Parameter(_BaseParameter):
                                       'when max_val_age is set')
                 self.get_raw = lambda: self._latest['raw_value']
             else:
-                exec_str_ask = instrument.ask if instrument else None
+                exec_str_ask = getattr(instrument, "ask", None) if instrument else None
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
             self.get = self._wrap_get(self.get_raw)
 
@@ -853,7 +873,7 @@ class Parameter(_BaseParameter):
             if set_cmd is None:
                 self.set_raw = partial(self._save_val, validate=False)# type: Callable
             else:
-                exec_str_write = instrument.write if instrument else None
+                exec_str_write = getattr(instrument, "write", None) if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write)# type: Callable
             self.set = self._wrap_set(self.set_raw)
 
@@ -921,6 +941,110 @@ class Parameter(_BaseParameter):
         """
         return SweepFixedValues(self, start=start, stop=stop,
                                 step=step, num=num)
+
+
+class ParameterWithSetpoints(Parameter):
+    """
+    A parameter that has associated setpoints. The setpoints is nothing
+    more than a list of other parameters that describe the values, names
+    and units of the setpoint axis for this parameter.
+
+    In most cases this will probably be a parameter that returns an array.
+    It is expected that the setpoint arrays are 1D arrays such that the
+    combined shape of the parameter e.g. if parameter is of shape (m,n)
+    `setpoints` is a list of parameters of shape (m,) and (n,)
+
+    In all other ways this is identical to  :class:`Parameter` See the
+    documentation of :class:`Parameter` for more details.
+    """
+
+    def __init__(self, name: str, *,
+                 vals: Validator = None,
+                 setpoints: Optional[Sequence[_BaseParameter]] = None,
+                 snapshot_get: bool = False,
+                 snapshot_value: bool = False,
+                 **kwargs) -> None:
+
+        if not isinstance(vals, Arrays):
+            raise ValueError(f"A ParameterWithSetpoints must have an Arrays "
+                             f"validator got {type(vals)}")
+        if vals.shape_unevaluated is None:
+            raise RuntimeError("A ParameterWithSetpoints must have a shape "
+                               "defined for its validator.")
+
+        super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
+                         snapshot_value=snapshot_value, **kwargs)
+        if setpoints is None:
+            self.setpoints: Sequence[_BaseParameter] = []
+        else:
+            self.setpoints = setpoints
+
+        self._validate_on_get = True
+
+    @property
+    def setpoints(self) -> Sequence[_BaseParameter]:
+        return self._setpoints
+
+    @setpoints.setter
+    def setpoints(self, setpoints: Sequence[_BaseParameter]):
+        for setpointarray in setpoints:
+            if not isinstance(setpointarray, Parameter):
+                raise TypeError(f"Setpoints is of type {type(setpointarray)}"
+                                f" expcected a QCoDeS parameter")
+        self._setpoints = setpoints
+
+    def validate_consistent_shape(self) -> None:
+        """
+        Verifies that the shape of the Array Validator of the parameter
+        is consistent with the Validator of the Setpoints. This requires that
+        both the setpoints and the actual parameters have validators
+        of type Arrays with a defined shape.
+        """
+
+        if not isinstance(self.vals, Arrays):
+            raise ValueError(f"Can only validate shapes for parameters "
+                             f"with Arrays validator. {self.name} does "
+                             f"not have an Arrays validator.")
+        output_shape = self.vals.shape_unevaluated
+        setpoints_shape_list: List[Optional[Union[int, Callable[[], int]]]] = []
+        for sp in self.setpoints:
+            if not isinstance(sp.vals, Arrays):
+                raise ValueError(f"Can only validate shapes for parameters "
+                                 f"with Arrays validator. {sp.name} is "
+                                 f"a setpoint vector but does not have an "
+                                 f"Arrays validator")
+            if sp.vals.shape_unevaluated is not None:
+                setpoints_shape_list.extend(sp.vals.shape_unevaluated)
+            else:
+                setpoints_shape_list.append(sp.vals.shape_unevaluated)
+        setpoints_shape = tuple(setpoints_shape_list)
+
+        if output_shape is None:
+            raise ValueError(f"Trying to validate shape but parameter "
+                             f"{self.name} does not define a shape")
+        if None in output_shape or None in setpoints_shape:
+            raise ValueError(f"One or more dimensions have unknown shape "
+                             f"when comparing output: {output_shape} to "
+                             f"setpoints: {setpoints_shape}")
+
+        if output_shape != setpoints_shape:
+            raise ValueError(f"Shape of output is not consistent with "
+                             f"setpoints. Output is shape {output_shape} and "
+                             f"setpoints are shape {setpoints_shape}")
+        log.info(f"For parameter {self.full_name} verified "
+                 f"that {output_shape} matches {setpoints_shape}")
+
+    def validate(self, value: ParamDataType) -> None:
+        """
+        Overwrites the standard `validate` to also check the
+        the parameter has consistent shape with it's setpoints.
+        This only makes sense if the parameter has an Arrays validator
+
+        Arguments are passed to the super method
+        """
+        if isinstance(self.vals, Arrays):
+            self.validate_consistent_shape()
+        super().validate(value)
 
 
 class ArrayParameter(_BaseParameter):
@@ -1213,10 +1337,6 @@ class MultiParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if hasattr(self, 'set'):
-            # TODO (alexcjohnson): can we support, ala Combine?
-            warnings.warn('MultiParameters do not support set at this time.')
-
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])
 
@@ -1278,8 +1398,8 @@ class MultiParameter(_BaseParameter):
     @property
     def short_names(self):
         """
-        short_names is indentical to names i.e. the names of the paramter parts
-        but does not add the intrument name.
+        short_names is identical to names i.e. the names of the parameter
+        parts but does not add the instrument name.
 
         It exists for consistency with instruments and other parameters.
         """
@@ -1363,6 +1483,13 @@ class GetLatest(DelegateAttributes):
                 return self.parameter.get()
             else:
                 return state['value']
+
+    def get_timestamp(self) -> datetime:
+        """
+        Return the age of the latest parameter value.
+        """
+        state = self.parameter._latest
+        return state["ts"]
 
     def __call__(self):
         return self.get()
@@ -1584,10 +1711,10 @@ class StandardParameter(Parameter):
                  delay=0, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         super().__init__(name, instrument=instrument,
-                 get_cmd=get_cmd, get_parser=get_parser,
-                 set_cmd=set_cmd, set_parser=set_parser,
-                 post_delay=delay, step=step, max_val_age=max_val_age,
-                 vals=vals, val_mapping=val_mapping, **kwargs)
+                         get_cmd=get_cmd, get_parser=get_parser,
+                         set_cmd=set_cmd, set_parser=set_parser,
+                         post_delay=delay, step=step, max_val_age=max_val_age,
+                         vals=vals, val_mapping=val_mapping, **kwargs)
         warnings.warn('`StandardParameter` is deprecated, '
                         'use `Parameter` instead. {}'.format(self))
 
@@ -1792,3 +1919,35 @@ class ScaledParameter(Parameter):
 
         self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
+
+
+def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
+        Tuple[_BaseParameter, numpy.ndarray]]:
+    """
+    A helper function that takes a :class:`.ParameterWithSetpoints` and
+    acquires the parameter along with it's setpoints. The data is returned
+    in a format prepared to insert into the dataset.
+
+    Args:
+        parameter: A ParameterWithSetpoints to be acquired and expanded
+
+    Returns:
+        A list of tuples of parameters and values for the specified parameter
+        and its setpoints.
+    """
+    if not isinstance(parameter, ParameterWithSetpoints):
+        raise TypeError(
+            f"Expanding setpoints only works for ParameterWithSetpoints. "
+            f"Supplied a {type(parameter)}")
+    res = []
+    setpoint_params = []
+    setpoint_data = []
+    for setpointparam in parameter.setpoints:
+        these_setpoints = setpointparam.get()
+        setpoint_params.append(setpointparam)
+        setpoint_data.append(these_setpoints)
+    output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
+    for param, grid in zip(setpoint_params, output_grids):
+        res.append((param, grid))
+    res.append((parameter, parameter.get()))
+    return res

@@ -623,6 +623,12 @@ class TestArrays(TestCase):
         for vval in val.valid_values:
             val.validate(vval)
 
+    def test_shape_non_sequence_raises(self):
+        with self.assertRaises(ValueError):
+            m = Arrays(shape=5)
+        with self.assertRaises(ValueError):
+            m = Arrays(shape=lambda: 10)
+
 
 class TestLists(TestCase):
 

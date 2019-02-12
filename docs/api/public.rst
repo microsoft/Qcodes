@@ -95,7 +95,9 @@ DataSet
     qcodes.dataset.database.initialise_database
     qcodes.dataset.database.initialise_or_create_database_at
 
+    qcodes.dataset.data_set.DataSet
     qcodes.dataset.data_set.load_by_id
+    qcodes.dataset.data_set.load_by_guid
 
     qcodes.dataset.plotting.plot_by_id
 
@@ -107,7 +109,7 @@ Instrument
 
    Function
    Parameter
-   StandardParameter
+   ParameterWithSetpoints
    ArrayParameter
    MultiParameter
    ManualParameter
@@ -115,6 +117,7 @@ Instrument
    SweepValues
    combine
    CombinedParameter
+   qcodes.instrument.parameter.expand_setpoints_helper
 
 
    Instrument
