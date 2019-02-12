@@ -45,12 +45,12 @@ class FieldVector(object):
 
         self._r = float(r) if r is not None else None
         if theta is not None:
-            self._theta = float(np.radians(theta)
+            self._theta = float(np.radians(theta))
         else:
             self._theta = None
 
         if phi is not None:
-            self._phi = float(np.radians(phi)
+            self._phi = float(np.radians(phi))
         else:
             self._phi = None
 
