@@ -11,12 +11,17 @@ class InterDependencies_:
     internal relations to each other
     """
 
-    error_codes = {1: TypeError('ParamSpecTree must be a dict'),
-                   2: TypeError('ParamSpecTree must have ParamSpecs as keys'),
-                   3: TypeError('ParamSpecTree must have tuple values'),
-                   4: TypeError('ParamSpecTree can only have tuples of '
-                                'ParamSpecs as values'),
-                   5: ValueError('ParamSpecTree can not have cycles')}
+    error_codes = {1: {'error': TypeError,
+                       'message': 'ParamSpecTree must be a dict'},
+                   2: {'error': TypeError,
+                       'message': 'ParamSpecTree must have ParamSpecs as keys'},
+                   3: {'error': TypeError,
+                       'message': 'ParamSpecTree must have tuple values'},
+                   4: {'error': TypeError,
+                       'message': ('ParamSpecTree can only have tuples of '
+                                   'ParamSpecs as values')},
+                   5: {'error': ValueError,
+                       'message': 'ParamSpecTree can not have cycles'}}
 
     def __init__(self,
                  dependencies: Optional[ParamSpecTree] = None,
@@ -28,22 +33,39 @@ class InterDependencies_:
 
         deps_code = self.validate_paramspectree(dependencies)
         if not deps_code == 0:
-            e = self.error_codes[deps_code]
-            raise ValueError('Invalid dependencies') from e
+            err = self.error_codes[deps_code]
+            self._raise_from(ValueError, 'Invalid dependencies',
+                             err['error'], err['message'])
 
         inffs_code = self.validate_paramspectree(inferences)
         if not inffs_code == 0:
-            e = self.error_codes[inffs_code]
-            raise ValueError('Invalid inferences') from e
+            err = self.error_codes[inffs_code]
+            self._raise_from(ValueError, 'Invalid inferences',
+                             err['error'], err['message'])
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                e = TypeError('Standalones must be a sequence of ParamSpecs')
-                raise ValueError('Invalid standalones') from e
+                err = {'error': TypeError,
+                       'message': ('Standalones must be a sequence of '
+                                   'ParamSpecs')}
+                self._raise_from(ValueError, 'Invalid standalones',
+                                 err['error'], err['message'])
 
         self.dependencies = dependencies
         self.inferences = inferences
         self.standalones = standalones
+
+    @staticmethod
+    def _raise_from(new_error: Exception, new_mssg: str,
+                    old_error: Exception, old_mssg: str) -> None:
+        """
+        Helper function to raise an error with a cause in a way that our test
+        suite can digest
+        """
+        try:
+            raise old_error(old_mssg)
+        except old_error as e:
+            raise new_error(new_mssg) from e
 
     @staticmethod
     def validate_paramspectree(paramspectree: ParamSpecTree) -> int:
