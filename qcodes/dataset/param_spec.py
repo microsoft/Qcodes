@@ -213,6 +213,16 @@ class ParamSpec(ParamSpecBase):
 
         return output
 
+    def base_version(self) -> ParamSpecBase:
+        """
+        Return a ParamSpecBase object with the same name, paramtype, label
+        and unit as this ParamSpec
+        """
+        return ParamSpecBase(name=self.name,
+                             paramtype=self.type,
+                             label=self.label,
+                             unit=self.unit)
+
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
         """
