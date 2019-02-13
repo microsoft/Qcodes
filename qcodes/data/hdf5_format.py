@@ -290,6 +290,10 @@ class HDF5Format(Formatter):
         metadata_group = data_set._h5_base_group.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
+        # flush ensures buffers are written to disk
+        # (useful for ensuring openable by other files)
+        data_set._h5_base_group.file.flush()
+
     def _read_list_group(self, entry_point, list_type):
         d = {}
         self.read_dict_from_hdf5(data_dict=d,
