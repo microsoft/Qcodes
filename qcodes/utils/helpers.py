@@ -46,6 +46,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
         "__dtype__" containing value "complex"
         * object with a `_JSONEncoder` method get converted the return value of
         that method
+        * objects which support the pickle protocol get converted using the
+        data provided by that protocol
         * other objects which cannot be serialized get converted to their
         string representation (suing the `str` function)
         """
@@ -70,8 +72,16 @@ class NumpyJSONEncoder(json.JSONEncoder):
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
             except TypeError:
-                # we cannot convert the object to JSON, just take a string
-                s = str(obj)
+                # See if the object supports the pickle protocol.
+                # If so, we should be able to use that to serialize.
+                if hasattr(obj, '__getnewargs__'):
+                    return {
+                        '__class__': type(obj).__name__,
+                        '__args__': obj.__getnewargs__()
+                    }
+                else:
+                    # we cannot convert the object to JSON, just take a string
+                    s = str(obj)
             return s
 
 
@@ -654,3 +664,16 @@ def partial_with_docstring(func, docstring, **kwargs):
     inner.__doc__ = docstring
 
     return inner
+
+
+def abstractmethod(funcobj):
+    """A decorator indicating abstract methods.
+
+    This is heavily inspired by the decorator of the same name in
+    the ABC standard library. But we make our own version because
+    we actually want to allow the class with the abstract method to be
+    instantiated and we will use this property to detect if the
+    method is abstract and should be overwritten.
+    """
+    funcobj.__qcodes_is_abstract_method__ = True
+    return funcobj

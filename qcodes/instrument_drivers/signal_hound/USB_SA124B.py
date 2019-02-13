@@ -5,12 +5,14 @@ import logging
 from enum import IntEnum
 from typing import Dict, Union, Optional, Any, Tuple
 
-from qcodes import Instrument, ArrayParameter, Parameter, validators as vals
+from qcodes.instrument.base import Instrument
+import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import Parameter, ArrayParameter, \
+    ParameterWithSetpoints
 
 log = logging.getLogger(__name__)
 
 number = Union[int, float]
-
 
 class TraceParameter(Parameter):
     """
@@ -140,12 +142,15 @@ class FrequencySweep(ArrayParameter):
         self.instrument._trace_updated = True
 
     def get_raw(self) -> np.ndarray:
+        if self.instrument is None:
+            raise RuntimeError("No instrument is attached to"
+                               "'FrequencySweep'")
         if not isinstance(self.instrument, SignalHound_USB_SA124B):
             raise RuntimeError("'FrequencySweep' is only implemented"
                                "for 'SignalHound_USB_SA124B'")
         if not self.instrument._trace_updated:
             raise RuntimeError('trace not updated, run configure to update')
-        data = self._instrument._get_sweep_data()
+        data = self.instrument._get_sweep_data()
         sleep(2*self.instrument.sleep_time.get())
         return data
 
@@ -205,7 +210,7 @@ class SignalHound_USB_SA124B(Instrument):
                            )
         self.add_parameter('npts',
                            label='Number of Points',
-                           get_cmd=None,
+                           get_cmd=self._get_npts,
                            set_cmd=False,
                            docstring='Number of points in frequency sweep.')
         self.add_parameter('avg',
@@ -320,6 +325,25 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Enum('log-scale', 'lin-scale',
                                           'log-full-scale', 'lin-full-scale'),
                            parameter_class=ScaleParameter)
+
+        self.add_parameter('frequency_axis',
+                           label='Frequency',
+                           unit='Hz',
+                           get_cmd=self._get_freq_axis,
+                           set_cmd=False,
+                           vals=vals.Arrays(shape=(self.npts,)),
+                           snapshot_value=False
+                           )
+        self.add_parameter('freq_sweep',
+                           label='Power',
+                           unit='depends on mode',
+                           get_cmd=self._get_sweep_data,
+                           set_cmd=False,
+                           parameter_class=ParameterWithSetpoints,
+                           vals=vals.Arrays(shape=(self.npts,)),
+                           setpoints=(self.frequency_axis,),
+                           snapshot_value=False)
+
         self.openDevice()
         self.configure()
 
@@ -363,6 +387,13 @@ class SignalHound_USB_SA124B(Instrument):
                                                ct.POINTER(ct.c_int)]
         self.dll.saGetFirmwareString.argtypes = [ct.c_int,
                                                  ct.c_char_p]
+
+    def _get_npts(self) -> int:
+        if not self._parameters_synced:
+            self.sync_parameters()
+        sweep_info = self.QuerySweep()
+        sweep_len = sweep_info[0]
+        return sweep_len
 
     def _update_trace(self) -> None:
         """
@@ -451,6 +482,7 @@ class SignalHound_USB_SA124B(Instrument):
         # the third argument to saInitiate is a flag that is
         # currently not used
         err = self.dll.saInitiate(self.deviceHandle, mode, 0)
+        extrainfo: Optional[str] = None
         if err == saStatus.saInvalidParameterErr:
             extrainfo = """
                  In real-time mode, this value may be returned if the span
@@ -467,8 +499,6 @@ class SignalHound_USB_SA124B(Instrument):
              """
         elif err == saStatus.saBandwidthErr:
             extrainfo = 'RBW is larger than your span. (Sweep Mode)!'
-        else:
-            extrainfo = None
         self.check_for_error(err, 'saInitiate', extrainfo)
 
         self._parameters_synced = True
@@ -520,11 +550,11 @@ class SignalHound_USB_SA124B(Instrument):
         log.info('Stopping acquisition')
 
         err = self.dll.saAbort(self.deviceHandle)
+        extrainfo: Optional[str] = None
         if err == saStatus.saDeviceNotConfiguredErr:
             extrainfo = 'Device was already idle! Did you call abort ' \
                         'without ever calling initiate()'
-        else:
-            extrainfo = None
+
         self.check_for_error(err, 'saAbort', extrainfo)
 
     def preset(self) -> None:
@@ -583,7 +613,6 @@ class SignalHound_USB_SA124B(Instrument):
                                         ct.pointer(start_freq),
                                         ct.pointer(stepsize))
         self.check_for_error(err, 'saQuerySweepInfo')
-
         return sweep_len.value, start_freq.value, stepsize.value
 
     def _get_sweep_data(self) -> np.ndarray:
@@ -666,7 +695,7 @@ class SignalHound_USB_SA124B(Instrument):
             log.info(msg)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
-        output = {}
+        output: Dict[str, Optional[str]] = {}
         output['vendor'] = 'Signal Hound'
         output['model'] = self._get_device_type()
         serialnumber = ct.c_int32()
@@ -682,6 +711,14 @@ class SignalHound_USB_SA124B(Instrument):
         self.check_for_error(err, 'saGetFirmwareString')
         output['firmware'] = fw_version.value.decode('ascii')
         return output
+
+    def _get_freq_axis(self) -> np.ndarray:
+        if not self._parameters_synced:
+            self.sync_parameters()
+        sweep_len, start_freq, stepsize = self.QuerySweep()
+        end_freq = start_freq + stepsize*(sweep_len-1)
+        freq_points = np.linspace(start_freq, end_freq, sweep_len)
+        return freq_points
 
 
 class Constants:
