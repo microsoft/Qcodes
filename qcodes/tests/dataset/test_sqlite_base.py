@@ -228,8 +228,8 @@ def test_get_parameter_data(scalar_dataset):
     expected_values = {}
     expected_values['param_3'] = [np.arange(10000 * a, 10000 * a + 1000)
                                   for a in range(4)]
-    verify_data_dict(data, input_names, expected_names, expected_shapes,
-                     expected_values)
+    verify_data_dict(data, None, input_names, expected_names,
+                     expected_shapes, expected_values)
 
 
 def test_get_parameter_data_independent_parameters(
@@ -260,7 +260,7 @@ def test_get_parameter_data_independent_parameters(
     expected_values['param_3'] = [np.arange(30000, 30000 + 1000),
                                   np.arange(0, 1000)]
 
-    verify_data_dict(data, expected_toplevel_params, expected_names,
+    verify_data_dict(data, None, expected_toplevel_params, expected_names,
                      expected_shapes, expected_values)
 
 

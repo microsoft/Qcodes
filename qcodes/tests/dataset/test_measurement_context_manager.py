@@ -19,9 +19,11 @@ from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.sqlite_base import atomic_transaction
-from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.parameter import ArrayParameter, Parameter
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.data_set import load_by_id
+from qcodes.instrument.parameter import expand_setpoints_helper
+from qcodes.utils.validators import Arrays
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment)
@@ -359,6 +361,7 @@ def test_setting_write_period(wp):
         with meas.run() as datasaver:
             assert datasaver.write_period == float(wp)
 
+
 @pytest.mark.usefixtures("experiment")
 def test_method_chaining(DAC):
     meas = (
@@ -371,6 +374,7 @@ def test_method_chaining(DAC):
             .add_after_run((lambda: None), ())
             .add_subscriber((lambda values, idx, state: None), state=[])
     )
+
 
 @pytest.mark.usefixtures("experiment")
 @settings(deadline=None)
@@ -977,6 +981,154 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
 
 
 @settings(max_examples=5, deadline=None)
+@given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints(channel_array_instrument,
+                                            DAC, n):
+    random_seed = 1
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(n)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    assert meas.parameters[str(param)].depends_on == dependency_name
+    assert meas.parameters[str(param)].type == 'numeric'
+    assert meas.parameters[dependency_name].type == 'numeric'
+
+    # Now for a real measurement
+    with meas.run() as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
+        datasaver.add_result(*expand_setpoints_helper(param))
+    assert datasaver.points_written == n
+
+    expected_params = (dependency_name,
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
+    ds = load_by_id(datasaver.run_id)
+    for param in expected_params:
+        data = ds.get_data(param)
+        assert len(data) == n
+        assert len(data[0]) == 1
+    datadict = ds.get_parameter_data()
+    assert len(datadict) == 1
+    subdata = datadict[
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
+    assert_allclose(subdata[dependency_name],
+                    np.linspace(chan.dummy_start(),
+                                chan.dummy_stop(),
+                                chan.dummy_n_points()))
+    np.random.seed(random_seed)
+    assert_allclose(subdata['dummy_channel_inst_ChanA_'
+                            'dummy_parameter_with_setpoints'],
+                    np.random.rand(n))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_missing_reg_raises(
+        channel_array_instrument,
+        DAC):
+    """
+    Test that if for whatever reason new setpoints are added after
+    registering but before adding this raises correctly
+    """
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(11)
+    chan.dummy_start(0)
+    chan.dummy_stop(10)
+
+    old_setpoints = param.setpoints
+    param.setpoints = ()
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    param.setpoints = old_setpoints
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError, match=r'Can not add a result for dummy_'
+                                             r'channel_inst_ChanA_dummy_'
+                                             r'sp_axis,'
+                                             r' no such parameter registered '
+                                             r'in this measurement.'):
+            datasaver.add_result(*expand_setpoints_helper(param))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
+        channel_array_instrument,
+        DAC):
+    """
+    Test that if for whatever reason the setpoints are removed between
+    registering and adding this raises correctly. This tests tests that
+    the parameter validator correctly asserts this.
+    """
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(11)
+    chan.dummy_start(0)
+    chan.dummy_stop(10)
+
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    param.setpoints = ()
+
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError, match=r"Shape of output is not"
+                                             r" consistent with setpoints."
+                                             r" Output is shape "
+                                             r"\(<qcodes.instrument.parameter."
+                                             r"Parameter: dummy_n_points at "
+                                             r"[0-9]+>,\) and setpoints are "
+                                             r"shape \(\)', 'getting dummy_"
+                                             r"channel_inst_ChanA_dummy_"
+                                             r"parameter_with_setpoints"):
+            datasaver.add_result(*expand_setpoints_helper(param))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_reg_but_missing(
+        channel_array_instrument,
+        DAC):
+    """
+    Test that if for whatever reason the setpoints are removed between
+    registering and adding this raises correctly. This tests that
+    the add parameter logic correctly notices a missing dependency
+    """
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints
+    chan.dummy_n_points(11)
+    chan.dummy_start(0)
+    chan.dummy_stop(10)
+
+    someparam = Parameter('someparam', vals=Arrays(shape=(10,)))
+    old_setpoints = param.setpoints
+    param.setpoints = (old_setpoints[0], someparam)
+
+    meas = Measurement()
+    meas.register_parameter(param)
+
+    param.setpoints = old_setpoints
+    with meas.run() as datasaver:
+        with pytest.raises(ValueError, match=r"Can not add this result; "
+                                             r"missing setpoint values for "
+                                             r"dummy_channel_inst_ChanA_dummy_"
+                                             r"parameter_with_setpoints: "
+                                             r"\['dummy_channel_inst_ChanA_"
+                                             r"dummy_sp_axis', 'someparam'\]"
+                                             r". Values only given for \["
+                                             r"'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints', "
+                                             r"'dummy_channel_inst_ChanA_dummy_sp_axis'\]"):
+            datasaver.add_result(*expand_setpoints_helper(param))
+
+
+@settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N):
@@ -1402,12 +1554,12 @@ def test_load_legacy_files_2D():
     run_ids = import_dat_file(full_location)
     run_id = run_ids[0]
     data = load_by_id(run_id)
-    assert data.parameters == 'ch1,ch2,voltage'
+    assert data.parameters == 'dac_ch1_set,dac_ch2_set,dmm_voltage'
     assert data.number_of_results == 36
-    expected_names = ['ch1', 'ch2', 'voltage']
+    expected_names = ['dac_ch1_set', 'dac_ch2_set', 'dmm_voltage']
     expected_labels = ['Gate ch1', 'Gate ch2', 'Gate voltage']
     expected_units = ['V', 'V', 'V']
-    expected_depends_on = ['', '', 'ch1, ch2']
+    expected_depends_on = ['', '', 'dac_ch1_set, dac_ch2_set']
     for i, parameter in enumerate(data.get_parameters()):
         assert parameter.name == expected_names[i]
         assert parameter.label == expected_labels[i]
@@ -1428,12 +1580,12 @@ def test_load_legacy_files_1D():
     run_ids = import_dat_file(full_location)
     run_id = run_ids[0]
     data = load_by_id(run_id)
-    assert data.parameters == 'ch1,voltage'
+    assert data.parameters == 'dac_ch1_set,dmm_voltage'
     assert data.number_of_results == 201
-    expected_names = ['ch1', 'voltage']
+    expected_names = ['dac_ch1_set', 'dmm_voltage']
     expected_labels = ['Gate ch1', 'Gate voltage']
     expected_units = ['V', 'V']
-    expected_depends_on = ['', 'ch1']
+    expected_depends_on = ['', 'dac_ch1_set']
     for i, parameter in enumerate(data.get_parameters()):
         assert parameter.name == expected_names[i]
         assert parameter.label == expected_labels[i]

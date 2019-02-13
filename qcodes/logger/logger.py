@@ -89,7 +89,7 @@ def get_level_code(level: Union[str, int]) -> int:
         # bug:
         # >>> import logging
         # >>> print(logging.getLevelName('DEBUG'))
-        return logging.getLevelName(level)  # type: ignore
+        return logging.getLevelName(level)
     else:
         raise RuntimeError('get_level_code: '
                            f'Cannot to convert level {level} of type '

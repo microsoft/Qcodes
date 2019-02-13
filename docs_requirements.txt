@@ -6,3 +6,4 @@ ipython
 jupyter
 scipy
 pandas
+xarray
