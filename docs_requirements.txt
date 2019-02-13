@@ -1,7 +1,9 @@
-sphinx>=1.7.2,!=1.7.7
+sphinx==1.8.3
 sphinx_rtd_theme
-sphinxcontrib-jsonschema
-nbconvert
+sphinx-jsonschema
+nbsphinx
 ipython
 jupyter
 scipy
+pandas
+xarray

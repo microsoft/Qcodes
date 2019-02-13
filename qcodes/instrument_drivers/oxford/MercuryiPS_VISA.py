@@ -2,6 +2,7 @@ import time
 from functools import partial
 from typing import Dict, Union, Optional, Callable, List, cast
 import logging
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -69,6 +70,13 @@ class MercurySlavePS(InstrumentChannel):
 
         super().__init__(parent, name)
         self.uid = UID
+
+        # The firmware update from 2.5 -> 2.6 changed the command
+        # syntax slightly
+        if LooseVersion(self.root_instrument.firmware) >= LooseVersion('2.6'):
+            self.psu_string = "SPSU"
+        else:
+            self.psu_string = "PSU"
 
         self.add_parameter('voltage',
                            label='Output voltage',
@@ -175,9 +183,8 @@ class MercurySlavePS(InstrumentChannel):
         Returns:
             The response. Cf. MercuryiPS.ask for how much is returned
         """
+        dressed_cmd = f"READ:DEV:{self.uid}:{self.psu_string}:{get_cmd}"
 
-        dressed_cmd = '{}:{}:{}:{}:{}'.format('READ', 'DEV', self.uid, 'PSU',
-                                              get_cmd)
         resp = self._parent.ask(dressed_cmd)
 
         return resp
@@ -189,15 +196,14 @@ class MercurySlavePS(InstrumentChannel):
         Args:
             set_cmd: raw string for the command, e.g. 'SIG:FSET'
         """
-        dressed_cmd = '{}:{}:{}:{}:{}:{}'.format('SET', 'DEV', self.uid, 'PSU',
-                                                 set_cmd, value)
+        dressed_cmd = f"SET:DEV:{self.uid}:{self.psu_string}:{set_cmd}:{value}"
         # the instrument always very verbosely responds
         # the return value of `ask`
         # holds the value reported back by the instrument
         self._parent.ask(dressed_cmd)
 
-        # TODO: we could use the opportunity to check that we did set/ achieve
-        # the intended value
+        # TODO: we could use the opportunity to check that we did set/achieve
+        #  the intended value
 
 
 class MercuryiPS(VisaInstrument):
@@ -207,7 +213,9 @@ class MercuryiPS(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str, visalib=None,
-                 field_limits: Optional[Callable]=None,
+                 field_limits: Optional[Callable[[float,
+                                                  float,
+                                                  float], bool]]=None,
                  **kwargs) -> None:
         """
         Args:
@@ -243,6 +251,8 @@ class MercuryiPS(VisaInstrument):
         # to ensure a correct snapshot, we must wrap the get function
         self.IDN.get = self.IDN._wrap_get(self._idn_getter)
 
+        self.firmware = self.IDN()['firmware']
+
         # TODO: Query instrument to ensure which PSUs are actually present
         for grp in ['GRPX', 'GRPY', 'GRPZ']:
             psu_name = grp
@@ -256,10 +266,12 @@ class MercuryiPS(VisaInstrument):
                                           y=self.GRPY.field(),
                                           z=self.GRPZ.field())
 
-        for coord in ['x', 'y', 'z', 'r', 'theta', 'phi', 'rho']:
+        for coord, unit in zip(
+                ['x', 'y', 'z', 'r', 'theta',   'phi',     'rho'],
+                ['T', 'T', 'T', 'T', 'degrees', 'degrees', 'T']):
             self.add_parameter(name=f'{coord}_target',
                                label=f'{coord.upper()} target field',
-                               unit='T',
+                               unit=unit,
                                get_cmd=partial(self._get_component, coord),
                                set_cmd=partial(self._set_target, coord))
 
@@ -268,10 +280,49 @@ class MercuryiPS(VisaInstrument):
                                unit='T',
                                get_cmd=partial(self._get_measured, [coord]))
 
+        # FieldVector-valued parameters #
+
+        self.add_parameter(name="field_target",
+                           label="target field",
+                           unit="T",
+                           get_cmd=self._get_target_field,
+                           set_cmd=self._set_target_field)
+
+        self.add_parameter(name="field_measured",
+                           label="measured field",
+                           unit="T",
+                           get_cmd=self._get_field)
+
+        self.add_parameter(name="field_ramp_rate",
+                           label="ramp rate",
+                           unit="T/s",
+                           get_cmd=self._get_ramp_rate,
+                           set_cmd=self._set_ramp_rate)
+
         self.connect_message()
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
+
+    def _get_target_field(self) -> FieldVector:
+        return FieldVector(
+            **{
+                coord: self._get_component(coord)
+                for coord in 'xyz'
+            }
+        )
+
+    def _get_ramp_rate(self) -> FieldVector:
+        return FieldVector(
+            x=self.GRPX.field_ramp_rate(),
+            y=self.GRPY.field_ramp_rate(),
+            z=self.GRPZ.field_ramp_rate(),
+        )
+
+    def _set_ramp_rate(self, rate: FieldVector) -> None:
+        self.GRPX.field_ramp_rate(rate.x)
+        self.GRPY.field_ramp_rate(rate.y)
+        self.GRPZ.field_ramp_rate(rate.z)
 
     def _get_measured(self, coordinates: List[str]) -> Union[float,
                                                              List[float]]:
@@ -288,6 +339,13 @@ class MercuryiPS(VisaInstrument):
         else:
             return meas_field.get_components(*coordinates)
 
+    def _get_field(self) -> FieldVector:
+        return FieldVector(
+            x=self.x_measured(),
+            y=self.y_measured(),
+            z=self.z_measured()
+        )
+
     def _set_target(self, coordinate: str, target: float) -> None:
         """
         The function to set a target value for a coordinate, i.e. the set_cmd
@@ -297,8 +355,8 @@ class MercuryiPS(VisaInstrument):
         valid_vec = FieldVector()
         valid_vec.copy(self._target_vector)
         valid_vec.set_component(**{coordinate: target})
-
-        if not self._field_limits(*valid_vec.get_components('x', 'y', 'z')):
+        components = valid_vec.get_components('x', 'y', 'z')
+        if not self._field_limits(*components):
             raise ValueError(f'Cannot set {coordinate} target to {target}, '
                              'that would violate the field_limits. ')
 
@@ -309,6 +367,10 @@ class MercuryiPS(VisaInstrument):
         cartesian_targ = self._target_vector.get_components('x', 'y', 'z')
         for targ, slave in zip(cartesian_targ, self.submodules.values()):
             slave.field_target(targ)
+
+    def _set_target_field(self, field: FieldVector) -> None:
+        for coord in 'xyz':
+            self._set_target(coord, field[coord])
 
     def _idn_getter(self) -> Dict[str, str]:
         """
@@ -322,8 +384,6 @@ class MercuryiPS(VisaInstrument):
 
         idn_dict = {'model': resps[2], 'vendor': resps[1],
                     'serial': resps[3], 'firmware': resps[4]}
-
-        # idn_string = ','.join([resps[2], resps[1], resps[3], resps[4]])
 
         return idn_dict
 
@@ -355,6 +415,18 @@ class MercuryiPS(VisaInstrument):
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
 
+    def is_ramping(self) -> bool:
+        """
+        Returns True if any axis has a ramp status that is either 'TO SET' or
+        'TO ZERO'
+        """
+        ramping_statuus = ['TO SET', 'TO ZERO']
+        is_x_ramping = self.GRPX.ramp_status() in ramping_statuus
+        is_y_ramping = self.GRPY.ramp_status() in ramping_statuus
+        is_z_ramping = self.GRPZ.ramp_status() in ramping_statuus
+
+        return is_x_ramping or is_y_ramping or is_z_ramping
+
     def set_new_field_limits(self, limit_func: Callable) -> None:
         """
         Assign a new field limit function to the driver
@@ -372,7 +444,7 @@ class MercuryiPS(VisaInstrument):
 
         self._field_limits = limit_func
 
-    def ramp(self, mode: str) -> None:
+    def ramp(self, mode: str="safe") -> None:
         """
         Ramp the fields to their present target value
 
@@ -413,7 +485,7 @@ class MercuryiPS(VisaInstrument):
         """
 
         visalog.debug(f"Writing to instrument {self.name}: {cmd}")
-        resp = self.visa_handle.ask(cmd)
+        resp = self.visa_handle.query(cmd)
         visalog.debug(f"Got instrument response: {resp}")
 
         if 'INVALID' in resp:

@@ -4,10 +4,12 @@ import logging
 
 import numpy as np
 
-from qcodes.instrument.base import Instrument
-from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import MultiParameter, Parameter, ArrayParameter
+from qcodes.instrument.base import Instrument, InstrumentBase
+from qcodes.utils.validators import Numbers, Arrays
+from qcodes.instrument.parameter import MultiParameter, Parameter, \
+    ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+import random
 
 log = logging.getLogger(__name__)
 
@@ -56,25 +58,31 @@ class MockParabola(Instrument):
         Adds an -x term to add a corelation between the parameters.
         '''
         return ((self.x.get()**2 + self.y.get()**2 +
-                self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
-                self.noise.get()*np.random.rand(1))
+                 self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
+                 self.noise.get()*np.random.rand(1))
 
 
-class MockMetaParabola(Instrument):
+class MockMetaParabola(InstrumentBase):
     '''
     Test for a meta instrument, has a tunable gain knob
+
+    Unlike a MockParabola, a MockMetaParabola does not have a connection, or
+    access to ask_raw/write_raw, i.e. it would not be connected to a real instrument.
+
+    It is also not tracked in the global _all_instruments list, but is still
+    snapshottable in a station.
     '''
 
     def __init__(self, name, mock_parabola_inst, **kw):
+        """
+        Create a new MockMetaParabola, connected to an existing MockParabola instance.
+        """
         super().__init__(name, **kw)
         self.mock_parabola_inst = mock_parabola_inst
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
-            self.add_parameter(parname, unit='a.u.',
-                               parameter_class=Parameter,
-                               vals=Numbers(), initial_value=0,
-                               get_cmd=None, set_cmd=None)
+            self.parameters[parname] = getattr(mock_parabola_inst, parname)
         self.add_parameter('gain', parameter_class=Parameter,
                            initial_value=1,
                            get_cmd=None, set_cmd=None)
@@ -95,7 +103,7 @@ class MockMetaParabola(Instrument):
 
 class DummyInstrument(Instrument):
 
-    def __init__(self, name='dummy', gates=['dac1', 'dac2', 'dac3'], **kwargs):
+    def __init__(self, name='dummy', gates=('dac1', 'dac2', 'dac3'), **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
@@ -140,8 +148,51 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_multi_parameter',
                            parameter_class=MultiSetPointParam)
 
+        self.add_parameter(name='dummy_scalar_multi_parameter',
+                           parameter_class=MultiScalarParam)
+
+        self.add_parameter(name='dummy_2d_multi_parameter',
+                           parameter_class=Multi2DSetPointParam)
+
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
+
+        self.add_parameter('dummy_start',
+                           initial_value=0,
+                           unit='some unit',
+                           label='f start',
+                           vals=Numbers(0, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_stop',
+                           unit='some unit',
+                           label='f stop',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_n_points',
+                           unit='',
+                           vals=Numbers(1, 1e3),
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('dummy_sp_axis',
+                           unit='some unit',
+                           label='Dummy sp axis',
+                           parameter_class=GeneratedSetPoints,
+                           startparam=self.dummy_start,
+                           stopparam=self.dummy_stop,
+                           numpointsparam=self.dummy_n_points,
+                           vals=Arrays(shape=(self.dummy_n_points,)))
+
+        self.add_parameter(name='dummy_parameter_with_setpoints',
+                           label='Dummy Parameter with Setpoints',
+                           unit='some other unit',
+                           setpoints=(self.dummy_sp_axis,),
+                           vals=Arrays(shape=(self.dummy_n_points,)),
+                           parameter_class=DummyParameterWithSetpoints1D)
 
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
@@ -217,6 +268,68 @@ class MultiSetPointParam(MultiParameter):
         self._save_val(items)
         return items
 
+
+class Multi2DSetPointParam(MultiParameter):
+    """
+    Multiparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+
+    def __init__(self, instrument=None, name='testparameter'):
+        shapes = ((5, 3), (5, 3))
+        names = ('this', 'that')
+        labels = ('this label', 'that label')
+        units = ('this unit', 'that unit')
+        sp_base_1 = tuple(np.linspace(5, 9, 5))
+        sp_base_2 = tuple(np.linspace(9, 11, 3))
+        array_setpoints = setpoint_generator(sp_base_1, sp_base_2)
+        setpoints = (array_setpoints, array_setpoints)
+        setpoint_names = (('this_setpoint', 'that_setpoint'),
+                          ('this_setpoint', 'that_setpoint'))
+        setpoint_labels = (('this setpoint', 'that setpoint'),
+                           ('this setpoint', 'that setpoint'))
+        setpoint_units = (('this setpointunit',
+                           'that setpointunit'),
+                          ('this setpointunit',
+                           'that setpointunit'))
+        super().__init__(name, names, shapes,
+                         instrument=instrument,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get_raw(self):
+        items = (np.zeros((5, 3)), np.ones((5, 3)))
+        self._save_val(items)
+        return items
+
+
+class MultiScalarParam(MultiParameter):
+    """
+    Multiparameter whos elements are scalars i.e. similar to
+    Parameter with no setpoints etc.
+    """
+    def __init__(self, instrument=None, name='multiscalarparameter'):
+        shapes = ((), ())
+        names = ('thisparam', 'thatparam')
+        labels = ('thisparam label', 'thatparam label')
+        units = ('thisparam unit', 'thatparam unit')
+        setpoints = ((), ())
+        super().__init__(name, names, shapes,
+                         instrument=instrument,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints)
+
+    def get_raw(self):
+        items = (0, 1)
+        self._save_val(items)
+        return items
+
+
 class ArraySetPointParam(ArrayParameter):
     """
     Arrayparameter which only purpose it to test that units, setpoints
@@ -246,3 +359,53 @@ class ArraySetPointParam(ArrayParameter):
         item = np.ones(5) + 1
         self._save_val(item)
         return item
+
+
+class GeneratedSetPoints(Parameter):
+    """
+    A parameter that generates a setpoint array from start, stop and num points
+    parameters.
+    """
+    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._startparam = startparam
+        self._stopparam = stopparam
+        self._numpointsparam = numpointsparam
+
+    def get_raw(self):
+        return np.linspace(self._startparam(), self._stopparam(),
+                              self._numpointsparam())
+
+
+class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
+    """
+    Dummy parameter that returns data with a shape based on the
+    `dummy_n_points` parameter in the instrument.
+    """
+
+    def get_raw(self):
+        npoints = self.instrument.dummy_n_points()
+        return np.random.rand(npoints)
+
+
+def setpoint_generator(*sp_bases):
+    """
+    Helper function to generate setpoints in the format that ArrayParameter
+    (and MultiParameter) expects
+
+    Args:
+        *sp_bases:
+
+    Returns:
+
+    """
+    setpoints = []
+    for i, sp_base in enumerate(sp_bases):
+        if i == 0:
+            setpoints.append(sp_base)
+        else:
+            repeats = [len(sp) for sp in sp_bases[:i]]
+            repeats.append(1)
+            setpoints.append(np.tile(sp_base, repeats))
+
+    return tuple(setpoints)

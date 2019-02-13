@@ -1,11 +1,11 @@
 from collections import OrderedDict
-from typing import List, Union, Callable, Dict, Any
+from typing import List, Union, Callable, Dict, Any, Optional
 
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes import Instrument
 
 
-class GroupParameter(_BaseParameter):
+class GroupParameter(Parameter):
     """
     Group parameter is a `Parameter` which value can be set or gotten only
     together with other group parameters. This happens when an instrument
@@ -27,13 +27,24 @@ class GroupParameter(_BaseParameter):
         instrument
             instrument that this parameter belongs to; this instrument is
             used by the group to call its get and set commands
+
+        **kwargs:
+            All kwargs used by the Parameter class, except set_cmd and get_cmd
     """
 
-    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
+    def __init__(self,
+                 name: str,
+                 instrument: Optional['Instrument'] = None,
+                 **kwargs
+                 ) -> None:
+
+        if "set_cmd" in kwargs or "get_cmd" in kwargs:
+            raise ValueError("A GroupParameter does not use 'set_cmd' or "
+                             "'get_cmd' kwarg")
+
         self.group: Union[Group, None] = None
         super().__init__(name, instrument=instrument, **kwargs)
 
-        self.set_raw = lambda value: self.group.set(self, value)
         self.set = self._wrap_set(self.set_raw)
 
         self.get_raw = lambda result=None: result if result is not None \
@@ -42,8 +53,17 @@ class GroupParameter(_BaseParameter):
         self.get = self._wrap_get(self.get_raw)
 
     def _get_raw_value(self) -> Any:
+        if self.group is None:
+            raise RuntimeError("Trying to get Group value but no "
+                               "group defined")
         self.group.update()
         return self.raw_value
+
+    def set_raw(self, value: Any) -> None:
+        if self.group is None:
+            raise RuntimeError("Trying to set Group value but no "
+                               "group defined")
+        self.group.set(self, value)
 
 
 class Group:
@@ -178,7 +198,12 @@ class Group:
         calling_dict = {name: p.raw_value
                         for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = value
+        if self.set_cmd is None:
+            raise RuntimeError("Calling set but no `set_cmd` defined")
         command_str = self.set_cmd.format(**calling_dict)
+        if self.instrument is None:
+            raise RuntimeError("Trying to set GroupParameter not attached "
+                               "to any instrument.")
         self.instrument.write(command_str)
 
     def update(self):

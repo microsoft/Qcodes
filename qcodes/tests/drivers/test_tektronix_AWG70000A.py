@@ -37,7 +37,7 @@ def strip_outer_tags(sml: str) -> str:
 @pytest.fixture(scope='function')
 def awg2():
     awg2_sim = AWG70002A('awg2_sim',
-                         address='GPIB0::2::65535::INSTR',
+                         address='GPIB0::2::INSTR',
                          visalib=visalib)
     yield awg2_sim
 

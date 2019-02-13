@@ -9,7 +9,7 @@ from os.path import expanduser
 from pathlib import Path
 
 import jsonschema
-from typing import Dict
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ BASE_SCHEMA = {
 }
 
 
-class Config():
+class Config:
     """
     QCoDeS config system
 
@@ -39,21 +39,21 @@ class Config():
         config_file_name(str): Name of config file
         schema_file_name(str): Name of schema file
 
-        default_file_name(str):Filene name of default config
-        schema_default_file_name(str):Filene name of default schema
+        default_file_name(str):Filename of default config
+        schema_default_file_name(str):Filename of default schema
 
-        home_file_name(str):Filene name of home config
-        schema_home_file_name(str):Filene name of home schema
+        home_file_name(str):Filename of home config
+        schema_home_file_name(str):Filename of home schema
 
-        env_file_name(str):Filene name of env config
-        schema_env_file_name(str):Filene name of env schema
+        env_file_name(str):Filename of env config
+        schema_env_file_name(str):Filename of env schema
 
-        cwd_file_name(str):Filene name of cwd config
-        schema_cwd_file_name(str):Filene name of cwd schema
+        cwd_file_name(str):Filename of cwd config
+        schema_cwd_file_name(str):Filename of cwd schema
 
-        current_config(dict): Vaild config values
-        current_schema(dict): Validators and desciptions of config values
-        current_config_path(path): Path of the currently loaded config
+        current_config(dict): Valid config values
+        current_schema(dict): Validators and descriptions of config values
+        current_config_path(path): Path of the last loaded config file
 
     """
 
@@ -63,6 +63,7 @@ class Config():
     # get abs path of packge config file
     default_file_name = pkgr.resource_filename(__name__, config_file_name)
     current_config_path = default_file_name
+    _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
     schema_default_file_name = pkgr.resource_filename(__name__,
@@ -91,69 +92,95 @@ class Config():
     _diff_config: Dict[str, dict] = {}
     _diff_schema: Dict[str, dict] = {}
 
-    def __init__(self, path=None):
+    def __init__(self, path: str=None) -> None:
+        """
+        Args:
+            path: Optional path to directory
+             containing a `qcodesrc.json` config file
+        """
         self.config_file_path = path
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()
 
-    def load_default(self):
+    def load_default(self) -> Tuple[dict, dict]:
         defaults = self.load_config(self.default_file_name)
         defaults_schema = self.load_config(self.schema_default_file_name)
         self.validate(defaults, defaults_schema)
         return defaults, defaults_schema
 
-    def update_config(self, path=None):
+    def update_config(self, path: str=None) -> dict:
         """
-        Load defaults updates with config file in path
-        (or cwd, env or home if path not specified) and validates.
-        A  configuration file must be called qcodesrc.json
-        A schema file must be called schema.json
+        Load defaults updates with cwd, env, home and the path specified
+        and validates.
+        A configuration file must be called qcodesrc.json
+        A schema file must be called qcodesrc_schema.json
         Configuration files (and their schema) are loaded and updated from the
-        default directories in the following order:
+        directories in the following order:
 
             - default json config file from the repository
             - user json config in user home directory
             - user json config in $QCODES_CONFIG
             - user json config in current working directory
+            - user json file in the path specified
 
         If a key/value is not specified in the user configuration the default
-        is used.  Configs are validated after every update.
-        Validation is also performed against a user provied schema if it's
+        is used. Key/value pairs loaded later will take preference over those
+        loaded earlier.
+        Configs are validated after every update.
+        Validation is also performed against a user provided schema if it's
         found in the directory.
+
+        Args:
+            path: Optional path to directory containing a `qcodesrc.json`
+            config file
         """
         config = copy.deepcopy(self.defaults)
         self.current_schema = copy.deepcopy(self.defaults_schema)
-        self.config_file_path = path or self.config_file_path
+
+        self._loaded_config_files = [self.default_file_name]
+
+        self._update_config_from_file(self.home_file_name,
+                                      self.schema_home_file_name,
+                                      config)
+        self._update_config_from_file(self.env_file_name,
+                                      self.schema_env_file_name,
+                                      config)
+        self._update_config_from_file(self.cwd_file_name,
+                                      self.schema_cwd_file_name,
+                                      config)
+        if path is not None:
+            self.config_file_path = path
         if self.config_file_path is not None:
-            config_file = os.path.join(self.config_file_path, self.config_file_name)
-            schema_file = config_file.replace(self.config_file_name,
-                                              self.schema_file_name)
-            path_config = self.load_config(config_file)
-            config = update(config, path_config)
-            self.validate(config, self.current_schema,
-                          schema_file)
-        else:
-            if os.path.isfile(self.home_file_name):
-                home_config = self.load_config(self.home_file_name)
-                config = update(config, home_config)
-                self.validate(config, self.current_schema,
-                              self.schema_home_file_name)
-
-            if os.path.isfile(self.env_file_name):
-                env_config = self.load_config(self.env_file_name)
-                config = update(config, env_config)
-                self.validate(config, self.current_schema,
-                              self.schema_env_file_name)
-
-            if os.path.isfile(self.cwd_file_name):
-                cwd_config = self.load_config(self.cwd_file_name)
-                config = update(config, cwd_config)
-                self.validate(config, self.current_schema,
-                              self.schema_cwd_file_name)
-
+            config_file = os.path.join(self.config_file_path,
+                                       self.config_file_name)
+            schema_file = os.path.join(self.config_file_path,
+                                       self.schema_file_name)
+            self._update_config_from_file(config_file, schema_file, config)
+        if config is None:
+            raise RuntimeError("Could not load config from any of the "
+                               "expected locations.")
         self.current_config = config
+        self.current_config_path = self._loaded_config_files[-1]
 
         return config
+
+    def _update_config_from_file(self, file_path, schema, config):
+        """
+
+        Args:
+            file_path: Path to `qcodesrc.json` config file
+            schema: Path to `qcodesrc_schema.json` to be used
+            config: Config dictionary to be updated.
+
+        Returns:
+
+        """
+        if os.path.isfile(file_path):
+            self._loaded_config_files.append(file_path)
+            my_config = self.load_config(file_path)
+            config = update(config, my_config)
+            self.validate(config, self.current_schema,
+                          schema)
 
     def validate(self, json_config=None, schema=None, extra_schema_path=None):
         """
@@ -273,9 +300,9 @@ class Config():
                 props["user"] = {}
             props.get("user").update(schema_entry)
 
-    def load_config(self, path):
+    @staticmethod
+    def load_config(path):
         """ Load a config JSON file
-        As a side effect it records which file is loaded
 
         Args:
             path(str): path to the config file
@@ -290,7 +317,6 @@ class Config():
         logger.debug(f'Loading config from {path}')
 
         config = DotDict(config)
-        self.current_config_path = path
         return config
 
     def save_config(self, path):
@@ -331,16 +357,24 @@ class Config():
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
-    def describe(self, name):
+    def describe(self, name: str) -> str:
         """
         Describe a configuration entry
 
         Args:
-            name (str): name of entry to describe
+            name: name of entry to describe in 'dotdict' notation,
+              e.g. name="user.scriptfolder"
         """
         val = self.current_config
+        if val is None:
+            raise RuntimeError(f"Config is empty, cannot describe entry.")
+        if self.current_schema is None:
+            raise RuntimeError("No schema found, cannot describe entry.")
         sch = self.current_schema["properties"]
         for key in name.split('.'):
+            if val is None:
+                raise RuntimeError(f"Cannot describe {name} Some part of it "
+                                   f"is null")
             val = val[key]
             if sch.get(key):
                 sch = sch[key]
@@ -368,8 +402,10 @@ class Config():
 
     def __repr__(self):
         old = super().__repr__()
-        base = """Current values: \n {} \n Current path: \n {} \n {}"""
-        return base.format(self.current_config, self.current_config_path, old)
+        output = (f"Current values: \n {self.current_config} \n"
+                  f"Current paths: \n {self._loaded_config_files} \n"
+                  f"{old}")
+        return output
 
 
 class DotDict(dict):
@@ -418,7 +454,7 @@ class DotDict(dict):
 
 def update(d, u):
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = update(d.get(k, {}), v)
             d[k] = r
         else:

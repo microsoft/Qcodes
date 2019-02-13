@@ -6,29 +6,57 @@
 #
 # Distributed under terms of the MIT license.
 """
-Monitor a set of parameter in a background thread
-stream opuput over websocket
-"""
+Monitor a set of parameters in a background thread
+stream output over websocket
 
-import asyncio
+To start monitor, run this file, or if qcodes is installed as a module:
+```
+% python -m qcodes.monitor.monitor
+```
+
+Add parameters to monitor in your measurement by creating a new monitor with a list
+of parameters to monitor:
+```
+monitor = qcodes.Monitor(param1, param2, param3, ...)
+```
+"""
+import sys
 import logging
 import os
 import time
 import json
+from contextlib import suppress
+from typing import Dict, Any, Optional
+from collections import defaultdict
+
+import asyncio
+from asyncio import CancelledError
+from threading import Thread, Event
+
 import http.server
 import socketserver
 import webbrowser
-import datetime
-from copy import deepcopy
-from contextlib import suppress
-
-from threading import Thread
-from typing import Dict, Any
-from asyncio import CancelledError
-import functools
-
 import websockets
 
+from qcodes.instrument.parameter import Parameter
+
+
+def _get_all_tasks():
+    # all tasks has moved in python 3.7. Once we drop support for 3.6
+    # this can be replaced by the else case only.
+    # we wrap this in a function to trick mypy into not inspecting it
+    # as there seems to be no good way of writing this code in a way
+    # which keeps mypy happy on both 3.6 and 3.7
+    if sys.version_info.major == 3 and sys.version_info.minor == 6:
+        all_tasks = asyncio.Task.all_tasks
+    else:
+        all_tasks = asyncio.all_tasks
+    return all_tasks
+
+
+all_tasks = _get_all_tasks()
+
+WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
 
 log = logging.getLogger(__name__)
@@ -39,65 +67,70 @@ def _get_metadata(*parameters) -> Dict[str, Any]:
     Return a dict that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
-    ts = time.time()
-    # group meta data by instrument if any
-    metas = {} # type: Dict
+    metadata_timestamp = time.time()
+    # group metadata by instrument
+    metas = defaultdict(list) # type: dict
     for parameter in parameters:
-        _meta = getattr(parameter, "_latest", None)
-        if _meta:
-            meta = deepcopy(_meta)
+        # Get the latest value from the parameter, respecting the max_val_age parameter
+        meta: Dict[str, Optional[str]] = {}
+        meta["value"] = str(parameter.get_latest())
+        if parameter.get_latest.get_timestamp() is not None:
+            meta["ts"] = parameter.get_latest.get_timestamp().timestamp()
         else:
-            raise ValueError("Input is not a parameter; Refusing to proceed")
-        # convert to string
-        meta['value'] = str(meta['value'])
-        if isinstance(meta["ts"], datetime.datetime):
-            meta["ts"] = time.mktime(meta["ts"].timetuple())
+            meta["ts"] = None
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
-        # find the base instrument in case this is a channel parameter
-        baseinst = parameter._instrument
-        while hasattr(baseinst, '_parent'):
-            baseinst = baseinst._parent
-        accumulator = metas.get(str(baseinst), [])
-        accumulator.append(meta)
-        metas[str(baseinst)] = accumulator
+
+        # find the base instrument that this parameter belongs to
+        baseinst = parameter.root_instrument
+        if baseinst is None:
+            metas["Unbound Parameter"].append(meta)
+        else:
+            metas[str(baseinst)].append(meta)
+
+    # Create list of parameters, grouped by instrument
     parameters_out = []
     for instrument in metas:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
         parameters_out.append(temp)
-    state = {"ts": ts, "parameters": parameters_out}
+
+    state = {"ts": metadata_timestamp, "parameters": parameters_out}
     return state
 
 
 def _handler(parameters, interval: int):
-
-    async def serverFunc(websocket, path):
+    """
+    Return the websockets server handler
+    """
+    async def server_func(websocket, _):
+        """
+        Create a websockets handler that sends parameter values to a listener
+        every "interval" seconds
+        """
         while True:
             try:
+                # Update the parameter values
                 try:
                     meta = _get_metadata(*parameters)
-                except ValueError as e:
-                    log.exception(e)
+                except ValueError:
+                    log.exception("Error getting parameters")
                     break
-                log.debug(f"sending.. to {websocket}")
-                try:
-                    await websocket.send(json.dumps(meta))
-                # mute browser disconnects
-                except websockets.exceptions.ConnectionClosed as e:
-                    log.debug(e)
+                log.debug("sending.. to %r", websocket)
+                await websocket.send(json.dumps(meta))
+                # Wait for interval seconds and then send again
                 await asyncio.sleep(interval)
-            except CancelledError:
-                log.debug("Got CancelledError")
+            except (CancelledError, websockets.exceptions.ConnectionClosed):
+                log.debug("Got CancelledError or ConnectionClosed", exc_info=True)
                 break
+        log.debug("Closing websockets connection")
 
-        log.debug("Stopping Websocket handler")
-
-    return serverFunc
-
+    return server_func
 
 class Monitor(Thread):
+    """
+    QCodes Monitor - WebSockets server to monitor qcodes parameters
+    """
     running = None
-    server = None
 
     def __init__(self, *parameters, interval=1):
         """
@@ -107,12 +140,31 @@ class Monitor(Thread):
             *parameters: Parameters to monitor
             interval: How often one wants to refresh the values
         """
-        # let the thread start
-        time.sleep(0.01)
         super().__init__()
+
+        # Check that all values are valid parameters
+        for parameter in parameters:
+            if not isinstance(parameter, Parameter):
+                raise TypeError(f"We can only monitor QCodes Parameters, not {type(parameter)}")
+
         self.loop = None
+        self.server = None
         self._parameters = parameters
-        self._monitor(*parameters, interval=interval)
+        self.loop_is_closed = Event()
+        self.server_is_started = Event()
+        self.handler = _handler(parameters, interval=interval)
+
+        log.debug("Start monitoring thread")
+        if Monitor.running:
+            # stop the old server
+            log.debug("Stopping and restarting server")
+            Monitor.running.stop()
+        self.start()
+
+        # Wait until the loop is running
+        self.server_is_started.wait(timeout=5)
+        if not self.server_is_started.is_set():
+            raise RuntimeError("Failed to start server")
         Monitor.running = self
 
     def run(self):
@@ -121,32 +173,33 @@ class Monitor(Thread):
         """
         log.debug("Running Websocket server")
         self.loop = asyncio.new_event_loop()
-        self.loop_is_closed = False
         asyncio.set_event_loop(self.loop)
         try:
-            server_start = websockets.serve(self.handler, '127.0.0.1', 5678)
+            server_start = websockets.serve(self.handler, '127.0.0.1',
+                                            WEBSOCKET_PORT, close_timeout=1)
             self.server = self.loop.run_until_complete(server_start)
+            self.server_is_started.set()
             self.loop.run_forever()
-        except OSError as e:
+        except OSError:
             # The code above may throw an OSError
             # if the socket cannot be bound
-            log.exception(e)
+            log.exception("Server could not be started")
         finally:
             log.debug("loop stopped")
-            log.debug("Pending tasks at close: {}".format(
-                asyncio.Task.all_tasks(self.loop)))
+            log.debug("Pending tasks at close: %r",
+                      all_tasks(self.loop))
             self.loop.close()
-            while not self.loop.is_closed():
-                log.debug("waiting for loop to stop and close")
-                time.sleep(0.01)
-            self.loop_is_closed = True
             log.debug("loop closed")
+            self.loop_is_closed.set()
 
     def update_all(self):
-        for p in self._parameters:
+        """
+        Update all parameters in the monitor
+        """
+        for parameter in self._parameters:
             # call get if it can be called without arguments
             with suppress(TypeError):
-                p.get()
+                parameter.get()
 
     def stop(self) -> None:
         """
@@ -157,12 +210,13 @@ class Monitor(Thread):
         Monitor.running = None
 
     async def __stop_server(self):
-        log.debug("asking server to close")
+        log.debug("asking server %r to close", self.server)
         self.server.close()
         log.debug("waiting for server to close")
         await self.loop.create_task(self.server.wait_closed())
         log.debug("stopping loop")
-        log.debug("Pending tasks at stop: {}".format(asyncio.Task.all_tasks(self.loop)))
+        log.debug("Pending tasks at stop: %r",
+                  all_tasks(self.loop))
         self.loop.stop()
 
     def join(self, timeout=None) -> None:
@@ -171,15 +225,20 @@ class Monitor(Thread):
         joining avoiding a potential deadlock.
         """
         log.debug("Shutting down server")
+        if not self.is_alive():
+            # we run this check before trying to run to prevent a cryptic
+            # error message
+            log.debug("monitor is dead")
+            return
         try:
             asyncio.run_coroutine_threadsafe(self.__stop_server(), self.loop)
-        except RuntimeError as e:
+        except RuntimeError:
             # the above may throw a runtime error if the loop is already
             # stopped in which case there is nothing more to do
             log.exception("Could not close loop")
-        while not self.loop_is_closed:
-            log.debug("waiting for loop to stop and close")
-            time.sleep(0.01)
+        self.loop_is_closed.wait(timeout=5)
+        if not self.loop_is_closed.is_set():
+            raise RuntimeError("Failed to join loop")
         log.debug("Loop reported closed")
         super().join(timeout=timeout)
         log.debug("Monitor Thread has joined")
@@ -200,47 +259,17 @@ class Monitor(Thread):
         """
         webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
-    def _monitor(self, *parameters, interval=1):
-        self.handler = _handler(parameters, interval=interval)
-        # TODO (giulioungaretti) read from config
-
-        log.debug("Start monitoring thread")
-
-        if Monitor.running:
-            # stop the old server
-            log.debug("Stopping and restarting server")
-            Monitor.running.stop()
-
-        self.start()
-
-        # let the thread start
-        time.sleep(0.01)
-        log.debug("Start monitoring server")
-
-
-class Server():
-
-    def __init__(self, port=3000):
-        self.port = port
-        self.handler = http.server.SimpleHTTPRequestHandler
-        self.httpd = socketserver.TCPServer(("", self.port), self.handler)
-        self.static_dir = os.path.join(os.path.dirname(__file__), 'dist')
-
-    def run(self):
-        os.chdir(self.static_dir)
-        log.debug("serving directory %s", self.static_dir)
-        log.info("Open browser at http://localhost::{}".format(self.port))
-        self.httpd.serve_forever()
-
-    def stop(self):
-        self.httpd.shutdown()
-
-
 if __name__ == "__main__":
-    server = Server(SERVER_PORT)
-    print("Open browser at http://localhost:{}".format(server.port))
+    # If this file is run, create a simple webserver that serves a simple website
+    # that can be used to view monitored parameters.
+    STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
+    os.chdir(STATIC_DIR)
     try:
-        webbrowser.open("http://localhost:{}".format(server.port))
-        server.run()
+        log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
+        with socketserver.TCPServer(("", SERVER_PORT),
+                                    http.server.SimpleHTTPRequestHandler) as httpd:
+            log.debug("serving directory %s", STATIC_DIR)
+            webbrowser.open("http://localhost:{}".format(SERVER_PORT))
+            httpd.serve_forever()
     except KeyboardInterrupt:
-        exit()
+        log.info("Shutting Down HTTP Server")

@@ -3,7 +3,7 @@ import logging
 from time import monotonic
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
-                    MutableMapping, MutableSequence, Optional, Any)
+                    MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
 from numbers import Number
 
@@ -11,14 +11,23 @@ import numpy as np
 
 import qcodes as qc
 from qcodes import Station
-from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, Parameter
+from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
+    Parameter, MultiParameter, ParameterWithSetpoints
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
+from qcodes.utils.helpers import NumpyJSONEncoder
+import qcodes.config
 
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
+scalar_res_types = Union[str, int, float, np.dtype]
+res_type = Tuple[Union[_BaseParameter, str],
+                 Union[scalar_res_types, np.ndarray,
+                       Sequence[scalar_res_types]]]
+setpoints_type = Sequence[Union[str, _BaseParameter]]
+numeric_types = Union[float, int]
 
 
 class ParameterTypeError(Exception):
@@ -27,8 +36,10 @@ class ParameterTypeError(Exception):
 
 def is_number(thing: Any) -> bool:
     """
-    Test if an object can be converted to a number
+    Test if an object can be converted to a number UNLESS it is a string
     """
+    if isinstance(thing, str):
+        return False
     try:
         float(thing)
         return True
@@ -38,22 +49,37 @@ def is_number(thing: Any) -> bool:
 
 class DataSaver:
     """
-    The class used byt the Runner context manager to handle the
-    datasaving to the database
+    The class used by the Runner context manager to handle the datasaving to
+    the database.
     """
 
     default_callback: Optional[dict] = None
 
-    def __init__(self, dataset: DataSet, write_period: float,
+    def __init__(self, dataset: DataSet, write_period: numeric_types,
                  parameters: Dict[str, ParamSpec]) -> None:
         self._dataset = dataset
-        if DataSaver.default_callback is not None and 'run_tables_subscription_callback' in DataSaver.default_callback:
-            callback = DataSaver.default_callback['run_tables_subscription_callback']
-            min_wait = DataSaver.default_callback['run_tables_subscription_min_wait']
-            min_count = DataSaver.default_callback['run_tables_subscription_min_count']
+        if DataSaver.default_callback is not None \
+                and 'run_tables_subscription_callback' \
+                    in DataSaver.default_callback:
+            callback = DataSaver.default_callback[
+                'run_tables_subscription_callback']
+            min_wait = DataSaver.default_callback[
+                'run_tables_subscription_min_wait']
+            min_count = DataSaver.default_callback[
+                'run_tables_subscription_min_count']
             snapshot = dataset.get_metadata('snapshot')
-            self._dataset.subscribe(callback, min_wait= min_wait, min_count= min_count, state={}, callback_kwargs={'run_id': self._dataset.run_id, 'snapshot': snapshot })
-        self.write_period = write_period
+            self._dataset.subscribe(callback,
+                                    min_wait=min_wait,
+                                    min_count=min_count,
+                                    state={},
+                                    callback_kwargs={'run_id':
+                                                         self._dataset.run_id,
+                                                     'snapshot': snapshot})
+        default_subscribers = qcodes.config.subscription.default_subscribers
+        for subscriber in default_subscribers:
+            self._dataset.subscribe_from_config(subscriber)
+
+        self.write_period = float(write_period)
         self.parameters = parameters
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
@@ -61,12 +87,10 @@ class DataSaver:
         self._known_dependencies: Dict[str, List[str]] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
-                self._known_dependencies.update({str(param):
-                                                parspec.depends_on.split(', ')})
+                self._known_dependencies.update(
+                    {str(param): parspec.depends_on.split(', ')})
 
-    def add_result(self,
-                   *res_tuple: Tuple[Union[_BaseParameter, str],
-                                     Union[str, int, float, np.dtype, np.ndarray]])-> None:
+    def add_result(self, *res_tuple: res_type) -> None:
         """
         Add a result to the measurement results. Represents a measurement
         point in the space of measurement parameters, e.g. in an experiment
@@ -90,8 +114,10 @@ class DataSaver:
         are not unraveled but stored directly for improved performance.
 
         Args:
-            res: a dictionary with keys that are parameter names and items
-                that are the corresponding values at this measurement point.
+            res_tuple: a tuple with the first element being the parameter name
+                and the second element is the corresponding value(s) at this
+                measurement point. The function takes as many tuples as there
+                are results.
 
         Raises:
             ValueError: if a parameter name not registered in the parent
@@ -99,29 +125,54 @@ class DataSaver:
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
-        res = list(res_tuple)  # ArrayParameters cause us to mutate the results
+        res: List[res_type] = []
 
-        # we iterate through the input twice in order to allow users to call
+        # we iterate through the input twice. First we find any array and
+        # multiparameters that needs to be unbundled and collect the names
+        # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
-        # Also, we pre-check that array dimensions are compatible before
-        # proceeding.
         input_size = 1
-        params = []
+        found_parameters: List[str] = []
         inserting_as_arrays = False
         inserting_unrolled_array = False
+
+        for partial_result in res_tuple:
+            parameter = partial_result[0]
+            if isinstance(parameter, MultiParameter):
+                # unpack parameters and potential setpoints from MultiParameter
+                # unlike regular Parameters and ArrayParameters we don't want
+                # to add the parameter it self only its components.
+                data = partial_result[1]
+                self._unbundle_multiparameter(parameter,
+                                              data,
+                                              res,
+                                              found_parameters)
+            else:
+                res.append(partial_result)
+                paramstr = str(parameter)
+                found_parameters.append(paramstr)
+                # unpack setpoints from array parameters and add them
+                # to the res list
+                if isinstance(parameter, ArrayParameter):
+                    self._unbundle_arrayparameter(parameter,
+                                                  res,
+                                                  found_parameters)
+
         for partial_result in res:
             parameter = partial_result[0]
-            paramstr = str(partial_result[0])
+            paramstr = str(parameter)
             value = partial_result[1]
-            params.append(paramstr)
+            found_parameters.append(paramstr)
+            inserting_this_as_array = False
             if paramstr not in self._known_parameters:
                 raise ValueError(f'Can not add a result for {paramstr}, no '
                                  'such parameter registered in this '
                                  'measurement.')
-            param_spec = self.parameters[str(partial_result[0])]
+            param_spec = self.parameters[paramstr]
             if param_spec.type == 'array':
                 inserting_as_arrays = True
+                inserting_this_as_array = True
             if any(isinstance(value, typ) for typ in array_like_types):
 
                 value = cast(np.ndarray, partial_result[1])
@@ -135,65 +186,38 @@ class DataSaver:
                                      f'and {array_size}')
                 else:
                     input_size = array_size
-            elif is_number(value) or isinstance(value, str):
-                pass
+            elif is_number(value):
+                if inserting_this_as_array:
+                    raise ValueError("Trying to insert into an ArrayType with "
+                                     "a scalar value")
+                if param_spec.type == 'text':
+                    raise ValueError(f"It is not possible to save a numeric "
+                                     f"value for parameter {paramstr!r} "
+                                     f"because its type class is "
+                                     f"'text', not 'numeric'.")
+            elif isinstance(value, str):
+                if param_spec.type != 'text':
+                    raise ValueError(f"It is not possible to save a string "
+                                     f"value for parameter {paramstr!r} "
+                                     f"because its type class is "
+                                     f"{param_spec.type!r}, not 'text'.")
             else:
                 raise ValueError('Wrong value type received. '
                                  f'Got {type(value)}, but only int, float, '
                                  'str, tuple, list, and np.ndarray is '
                                  'allowed.')
 
-            # TODO (WilliamHPNielsen): The following code block is ugly and
-            # brittle and should be enough to convince us to abandon the
-            # design of ArrayParameters (possibly) containing (some of) their
-            # setpoints
-            setpoint_axes = []
-            setpoint_meta = []
-            if isinstance(parameter, ArrayParameter):
-                if parameter.setpoints is None:
-                    raise RuntimeError("Got an array parameter without "
-                                       "setpoints. Cannot handle this")
-
-                else:
-                    for i, sps in enumerate(parameter.setpoints):
-                        inst_name = getattr(parameter._instrument, 'name', '')
-                        sp_name_parts = []
-                        if inst_name is not None:
-                            sp_name_parts.append(inst_name)
-                        if parameter.setpoint_names is not None:
-                            sp_name_parts.append(parameter.setpoint_names[i])
-                        spname = '_'.join(sp_name_parts)
-                        if f'{paramstr}_setpoint' in self.parameters.keys() \
-                                or spname in self.parameters.keys():
-                            sps = np.array(sps)
-                            while sps.ndim > 1:
-                                sps = sps[0]
-                            setpoint_meta.append({'paramstr': paramstr,
-                                                  'spname': spname})
-                            setpoint_axes.append(sps)
-                        else:
-                            raise RuntimeError('No setpoints registered for '
-                                               f'ArrayParameter {paramstr}!')
-                    output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
-                    for grid, meta in zip(output_grids, setpoint_meta):
-                        if not inserting_as_arrays:
-                            grid = grid.ravel()
-                        if f'{meta["paramstr"]}_setpoint' in self.parameters.keys():
-                            res.append((f'{meta["paramstr"]}_setpoint', grid))
-                        elif meta['spname'] in self.parameters.keys():
-                            res.append((meta['spname'], grid))
-
-        # Now check for missing setpoints
-        for partial_result in res:
-            param = str(partial_result[0])
-            if param in self._known_dependencies.keys():
-                stuffweneed = set(self._known_dependencies[param])
-                stuffwehave = set(params)
+            # Now check for missing setpoints
+            if paramstr in self._known_dependencies.keys():
+                stuffweneed = set(self._known_dependencies[paramstr])
+                stuffwehave = set(found_parameters)
                 if not stuffweneed.issubset(stuffwehave):
                     raise ValueError('Can not add this result; missing '
-                                     f'setpoint values for {param}:'
-                                     f' {stuffweneed}.'
-                                     f' Values only given for {params}.')
+                                     f'setpoint values for {paramstr}:'
+                                     f' {sorted(stuffweneed)}.'
+                                     f' Values only given for'
+                                     f' {sorted(stuffwehave)}.')
+
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
                                "in array from and as numeric. This is not "
@@ -201,19 +225,34 @@ class DataSaver:
         elif inserting_as_arrays:
             input_size = 1
 
+        self._append_results(res, input_size)
+
+        if monotonic() - self._last_save_time > self.write_period:
+            self.flush_data_to_database()
+            self._last_save_time = monotonic()
+
+    def _append_results(self, res: Sequence[res_type],
+                        input_size: int) -> None:
+        """
+        A private method to add the data to actual queue of data to be written.
+
+        Args:
+            res: A sequence of the data to be added
+            input_size: The length of the data to be added. 1 if its
+                to be inserted as arrays.
+        """
         for index in range(input_size):
             res_dict = {}
             for partial_result in res:
-                param_spec = self.parameters[str(partial_result[0])]
+                param = str(partial_result[0])
+                value = partial_result[1]
+                param_spec = self.parameters[param]
                 if param_spec.type == 'array' and index == 0:
-                    res_dict[str(partial_result[0])] = partial_result[1]
+                    res_dict[param] = value
                 elif param_spec.type != 'array':
-                    param = str(partial_result[0])
-                    value = partial_result[1]
                     # For compatibility with the old Loop, setpoints are
                     # tuples of numbers (usually tuple(np.linspace(...))
-                    if hasattr(value, '__len__') and not(isinstance(value,
-                                                                    str)):
+                    if hasattr(value, '__len__') and not isinstance(value, str):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
                             # this is significantly faster than atleast_1d
@@ -230,11 +269,122 @@ class DataSaver:
             if len(res_dict) > 0:
                 self._results.append(res_dict)
 
-        if monotonic() - self._last_save_time > self.write_period:
-            self.flush_data_to_database()
-            self._last_save_time = monotonic()
+    def _unbundle_arrayparameter(self,
+                                 parameter: ArrayParameter,
+                                 res: List[res_type],
+                                 found_parameters: List[str]) -> None:
+        """
+        Extract the setpoints from an ArrayParameter and add them to results
+         as a regular parameter tuple.
 
-    def flush_data_to_database(self):
+        Args:
+            parameter: The ArrayParameter to extract setpoints from.
+            res: The result list to add to. Note that this is modified inplace
+            found_parameters: The list of all parameters that we know of by now
+              Note that this is modified in place.
+        """
+        sp_names = parameter.setpoint_full_names
+        fallback_sp_name = f"{parameter.full_name}_setpoint"
+        if parameter.setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
+        self._unbundle_setpoints_from_param(parameter, sp_names,
+                                            fallback_sp_name,
+                                            parameter.setpoints,
+                                            res, found_parameters)
+
+    def _unbundle_setpoints_from_param(self, parameter: _BaseParameter,
+                                       sp_names: Sequence[str],
+                                       fallback_sp_name: str,
+                                       setpoints: Sequence,
+                                       res: List[res_type],
+                                       found_parameters: List[str]):
+        """
+        Private function to unbundle setpoints from an ArrayParameter or
+        a subset of a MultiParameter.
+
+        Args:
+            parameter:
+            sp_names: Names of the setpoint axes
+            fallback_sp_name: Fallback name for setpoints in case sp_names
+              is None. The axis num is appended to this name to ensure all
+              setpoint axes names are unique.
+            setpoints: The actual setpoints i.e. `parameter.setpoints` for an
+              ArrayParameter and `parameter.setpoints[i]` for a MultiParameter
+            res: The result list the unpacked setpoints are added too.
+              Note that this will be modified in place.
+            found_parameters: The list of all parameters that we know of by now
+              This is modified in place with new parameters found here.
+        """
+        setpoint_axes = []
+        setpoint_meta = []
+        if setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
+
+        for i, sps in enumerate(setpoints):
+            if sp_names is not None:
+                spname = sp_names[i]
+            else:
+                spname = f'{fallback_sp_name}_{i}'
+
+            if spname not in self.parameters.keys():
+                raise RuntimeError('No setpoints registered for '
+                                   f'{type(parameter)} {parameter.full_name}!')
+            sps = np.array(sps)
+            while sps.ndim > 1:
+                # The outermost setpoint axis or an nD param is nD
+                # but the innermost is 1D. In all cases we just need
+                # the axis along one dim, the innermost one.
+                sps = sps[0]
+
+            setpoint_meta.append(spname)
+            found_parameters.append(spname)
+            setpoint_axes.append(sps)
+
+        output_grids = np.meshgrid(*setpoint_axes, indexing='ij')
+        for grid, meta in zip(output_grids, setpoint_meta):
+            res.append((meta, grid))
+
+    def _unbundle_multiparameter(self,
+                                 parameter: MultiParameter,
+                                 data: Union[tuple, list, np.ndarray],
+                                 res: List[res_type],
+                                 found_parameters: List[str]) -> None:
+        """
+        Extract the subarrays and setpoints from an MultiParameter and
+        add them to res as a regular parameter tuple.
+
+        Args:
+            parameter: The MultiParameter to extract from
+            data: The acquired data for this parameter
+            res: The result list that the unpacked data and setpoints
+              is added too. Note that this will be modified in place.
+            found_parameters: The list of all parameters that we know of by now
+              This is modified in place with new parameters found here.
+        """
+        if parameter.setpoints is None:
+            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+                               f"without setpoints. Cannot handle this.")
+        for i in range(len(parameter.shapes)):
+            shape = parameter.shapes[i]
+            res.append((parameter.names[i], data[i]))
+            if shape != ():
+                # array parameter like part of the multiparameter
+                # need to find setpoints too
+                fallback_sp_name = f'{parameter.full_names[i]}_setpoint'
+
+                if parameter.setpoint_full_names[i] is not None:
+                    sp_names = parameter.setpoint_full_names[i]
+                else:
+                    sp_names = None
+
+                self._unbundle_setpoints_from_param(parameter, sp_names,
+                                                    fallback_sp_name,
+                                                    parameter.setpoints[i],
+                                                    res, found_parameters)
+
+    def flush_data_to_database(self) -> None:
         """
         Write the in-memory results to the database.
         """
@@ -250,11 +400,11 @@ class DataSaver:
             log.debug('No results to flush')
 
     @property
-    def run_id(self):
+    def run_id(self) -> int:
         return self._dataset.run_id
 
     @property
-    def points_written(self):
+    def points_written(self) -> int:
         return self._dataset.number_of_results
 
     @property
@@ -265,6 +415,7 @@ class DataSaver:
 class Runner:
     """
     Context manager for the measurement.
+
     Lives inside a Measurement and should never be instantiated
     outside a Measurement.
 
@@ -272,15 +423,16 @@ class Runner:
     to the database. Additionally, it may perform experiment bootstrapping
     and clean-up after the measurement.
     """
+
     def __init__(
             self, enteractions: List, exitactions: List,
-            experiment: Experiment=None, station: Station=None,
-            write_period: float=None,
-            parameters: Dict[str, ParamSpec]=None,
-            name: str='',
+            experiment: Experiment = None, station: Station = None,
+            write_period: numeric_types = None,
+            parameters: Dict[str, ParamSpec] = None,
+            name: str = '',
             subscribers: Sequence[Tuple[Callable,
                                         Union[MutableSequence,
-                                              MutableMapping]]]=None) -> None:
+                                              MutableMapping]]] = None) -> None:
 
         self.enteractions = enteractions
         self.exitactions = exitactions
@@ -296,7 +448,8 @@ class Runner:
         self.parameters = parameters
         # here we use 5 s as a sane default, but that value should perhaps
         # be read from some config file
-        self.write_period = write_period if write_period is not None else 5
+        self.write_period = float(write_period) \
+            if write_period is not None else 5.0
         self.name = name if name else 'results'
 
     def __enter__(self) -> DataSaver:
@@ -320,8 +473,8 @@ class Runner:
             station = self.station
 
         if station:
-            self.ds.add_metadata('snapshot',
-                                 json.dumps({'station': station.snapshot()}))
+            self.ds.add_snapshot(json.dumps({'station': station.snapshot()},
+                                            cls=NumpyJSONEncoder))
 
         if self.parameters is not None:
             for paramspec in self.parameters.values():
@@ -360,26 +513,21 @@ class Runner:
         self.ds.unsubscribe_all()
 
 
+
+T = TypeVar('T', bound='Measurement')
 class Measurement:
     """
     Measurement procedure container
 
-    Attributes:
-        name (str): The name of this measurement/run. Is used by the dataset
-            to give a name to the results_table.
+    Args:
+        exp: Specify the experiment to use. If not given
+            the default one is used.
+        station: The QCoDeS station to snapshot. If not given, the
+            default one is used.
     """
-    def __init__(self, exp: Optional[Experiment]=None,
-                 station: Optional[qc.Station]=None) -> None:
-        """
-        Init
 
-        Args:
-            exp: Specify the experiment to use. If not given
-                the default one is used.
-            station: The QCoDeS station to snapshot. If not given, the
-                default one is used.
-        """
-        self.exp = exp
+    def __init__(self, exp: Optional[Experiment] = None,
+                 station: Optional[qc.Station] = None) -> None:
         self.exitactions: List[Tuple[Callable, Sequence]] = []
         self.enteractions: List[Tuple[Callable, Sequence]] = []
         self.subscribers: List[Tuple[Callable, Union[MutableSequence,
@@ -387,25 +535,25 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.parameters: Dict[str, ParamSpec] = OrderedDict()
-        self._write_period: Optional[Number] = None
+        self._write_period: Optional[float] = None
         self.name = ''
 
     @property
-    def write_period(self):
+    def write_period(self) -> Optional[float]:
         return self._write_period
 
     @write_period.setter
-    def write_period(self, wp: Number) -> None:
+    def write_period(self, wp: numeric_types) -> None:
         if not isinstance(wp, Number):
             raise ValueError('The write period must be a number (of seconds).')
-        wp_float = cast(float, wp)
+        wp_float = float(wp)
         if wp_float < 1e-3:
             raise ValueError('The write period must be at least 1 ms.')
-        self._write_period = wp
+        self._write_period = wp_float
 
     def _registration_validation(
-            self, name: str, setpoints: Sequence[str]=None,
-            basis: Sequence[str]=None) -> Tuple[List[str], List[str]]:
+            self, name: str, setpoints: Sequence[str] = None,
+            basis: Sequence[str] = None) -> Tuple[List[str], List[str]]:
         """
         Helper function to do all the validation in terms of dependencies
         when adding parameters, e.g. that no setpoints have setpoints etc.
@@ -449,23 +597,22 @@ class Measurement:
                 else:
                     inf_from.append(inff)
 
-        return (depends_on, inf_from)
+        return depends_on, inf_from
 
     def register_parameter(
-            self, parameter: _BaseParameter,
-            setpoints: Sequence[_BaseParameter]=None,
-            basis: Sequence[_BaseParameter]=None,
-            paramtype: str='numeric') -> None:
+            self : T, parameter: _BaseParameter,
+            setpoints: setpoints_type = None,
+            basis: setpoints_type = None,
+            paramtype: str = 'numeric') -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
 
-        TODO: Does not handle metadata yet
-
         Args:
             parameter: The parameter to add
-            setpoints: The setpoints for this parameter. If this parameter
-                is a setpoint, it should be left blank
+            setpoints: The Parameter representing the setpoints for this
+                parameter. If this parameter is a setpoint,
+                it should be left blank
             basis: The parameters that this parameter is inferred from. If
                 this parameter is not inferred from any other parameters,
                 this should be left blank.
@@ -485,55 +632,49 @@ class Measurement:
         # we also use the name below, but perhaps is is better to have
         # a more robust Parameter2String function?
         name = str(parameter)
-        my_setpoints: Optional[Sequence[Union[str, _BaseParameter]]]
         if isinstance(parameter, ArrayParameter):
-            my_setpoints = list(setpoints) if setpoints else []
-            for i in range(len(parameter.shape)):
-                spname_parts = []
-                if parameter.instrument is not None:
-                    inst_name = parameter.instrument.name
-                    if inst_name is not None:
-                        spname_parts.append(inst_name)
-                if parameter.setpoint_names is not None:
-                    spname_parts.append(parameter.setpoint_names[i])
-                if len(spname_parts) > 0:
-                    spname = '_'.join(spname_parts)
-                else:
-                    spname = f'{name}_setpoint'
-                if parameter.setpoint_labels:
-                    splabel = parameter.setpoint_labels[i]
-                else:
-                    splabel = ''
-                if parameter.setpoint_units:
-                    spunit = parameter.setpoint_units[i]
-                else:
-                    spunit = ''
-
-                sp = ParamSpec(name=spname, paramtype=paramtype,
-                               label=splabel, unit=spunit)
-
-                self.parameters[spname] = sp
-
-                my_setpoints += [spname]
+            self._register_arrayparameter(parameter,
+                                          setpoints,
+                                          basis,
+                                          paramtype)
+        elif isinstance(parameter, ParameterWithSetpoints):
+            self._register_parameter_with_setpoints(parameter,
+                                                    setpoints,
+                                                    basis,
+                                                    paramtype)
+        elif isinstance(parameter, MultiParameter):
+            self._register_multiparameter(parameter,
+                                          setpoints,
+                                          basis,
+                                          paramtype,
+                                          )
+        elif isinstance(parameter, Parameter):
+            self._register_parameter(name,
+                                     parameter.label,
+                                     parameter.unit,
+                                     setpoints,
+                                     basis, paramtype)
         else:
-            my_setpoints = setpoints
+            raise RuntimeError("Does not know how to register a parameter"
+                               f"of type {type(parameter)}")
 
-        # We currently treat ALL parameters as 'numeric' and fail to add them
-        # to the dataset if they can not be unraveled to fit that description
-        # (except strings, we just let those through)
-        # this is indeed a limitation, but a sane one. We might loosen that
-        # requirement later and start saving binary blobs with the datasaver,
-        # but for now binary blob saving is referred to using the DataSet
-        # API directly
-        parameter = cast(Union[Parameter, ArrayParameter], parameter)
+        return self
 
-        label = parameter.label
-        unit = parameter.unit
+    def _register_parameter(self : T, name: str,
+                            label: Optional[str],
+                            unit: Optional[str],
+                            setpoints: Optional[setpoints_type],
+                            basis: Optional[setpoints_type],
+                            paramtype: str) -> T:
+        """
+        Generate ParamSpecs and register them for an individual parameter
+        """
 
-        if my_setpoints is not None:
-            sp_strings = [str(sp) for sp in my_setpoints]
+        if setpoints is not None:
+            sp_strings = [str(sp) for sp in setpoints]
         else:
             sp_strings = []
+
         if basis is not None:
             bs_strings = [str(bs) for bs in basis]
         else:
@@ -542,27 +683,150 @@ class Measurement:
         # validate all dependencies
         depends_on, inf_from = self._registration_validation(name, sp_strings,
                                                              bs_strings)
-
         paramspec = ParamSpec(name=name,
                               paramtype=paramtype,
                               label=label,
                               unit=unit,
                               inferred_from=inf_from,
                               depends_on=depends_on)
-
         # ensure the correct order
         if name in self.parameters.keys():
             self.parameters.pop(name)
-
         self.parameters[name] = paramspec
         log.info(f'Registered {name} in the Measurement.')
 
+        return self
+
+    def _register_arrayparameter(self,
+                                 parameter: ArrayParameter,
+                                 setpoints: Optional[setpoints_type],
+                                 basis: Optional[setpoints_type],
+                                 paramtype: str, ) -> None:
+        """
+        Register an Array paramter and the setpoints belonging to the
+        ArrayParameter
+        """
+        name = str(parameter)
+        my_setpoints = list(setpoints) if setpoints else []
+        for i in range(len(parameter.shape)):
+            if parameter.setpoint_full_names is not None and \
+                    parameter.setpoint_full_names[i] is not None:
+                spname = parameter.setpoint_full_names[i]
+            else:
+                spname = f'{name}_setpoint_{i}'
+            if parameter.setpoint_labels:
+                splabel = parameter.setpoint_labels[i]
+            else:
+                splabel = ''
+            if parameter.setpoint_units:
+                spunit = parameter.setpoint_units[i]
+            else:
+                spunit = ''
+
+            sp = ParamSpec(name=spname, paramtype=paramtype,
+                           label=splabel, unit=spunit)
+
+            self.parameters[spname] = sp
+
+            my_setpoints += [spname]
+
+        self._register_parameter(name,
+                                 parameter.label,
+                                 parameter.unit,
+                                 my_setpoints,
+                                 basis,
+                                 paramtype)
+
+    def _register_parameter_with_setpoints(self,
+                                           parameter: ParameterWithSetpoints,
+                                           setpoints: Optional[setpoints_type],
+                                           basis: Optional[setpoints_type],
+                                           paramtype: str) -> None:
+        """
+        Register an ParameterWithSetpoints and the setpoints belonging to the
+        Parameter
+        """
+        name = str(parameter)
+        my_setpoints = list(setpoints) if setpoints else []
+        for sp in parameter.setpoints:
+            if not isinstance(sp, Parameter):
+                raise RuntimeError("The setpoints of a "
+                                   "ParameterWithSetpoints "
+                                   "must be a Parameter")
+            spname = sp.full_name
+            splabel = sp.label
+            spunit = sp.unit
+
+            spparamspec = ParamSpec(name=spname, paramtype=paramtype,
+                                    label=splabel, unit=spunit)
+
+            self.parameters[spname] = spparamspec
+
+            my_setpoints.append(spname)
+
+        self._register_parameter(name,
+                                 parameter.label,
+                                 parameter.unit,
+                                 my_setpoints,
+                                 basis,
+                                 paramtype)
+
+    def _register_multiparameter(self,
+                                 multiparameter: MultiParameter,
+                                 setpoints: Optional[setpoints_type],
+                                 basis: Optional[setpoints_type],
+                                 paramtype: str) -> None:
+        """
+        Find the individual multiparameter components and their setpoints
+        and register these
+        """
+        setpoints_lists = []
+        for i in range(len(multiparameter.shapes)):
+            shape = multiparameter.shapes[i]
+            name = multiparameter.full_names[i]
+            if shape is ():
+                my_setpoints = setpoints
+            else:
+                my_setpoints = list(setpoints) if setpoints else []
+                for j in range(len(shape)):
+                    if multiparameter.setpoint_full_names is not None and \
+                            multiparameter.setpoint_full_names[i] is not None:
+                        spname = multiparameter.setpoint_full_names[i][j]
+                    else:
+                        spname = f'{name}_setpoint_{j}'
+                    if multiparameter.setpoint_labels is not None and \
+                            multiparameter.setpoint_labels[i] is not None:
+                        splabel = multiparameter.setpoint_labels[i][j]
+                    else:
+                        splabel = ''
+                    if multiparameter.setpoint_units is not None and \
+                            multiparameter.setpoint_units[i] is not None:
+                        spunit = multiparameter.setpoint_units[i][j]
+                    else:
+                        spunit = ''
+
+                    sp = ParamSpec(name=spname, paramtype=paramtype,
+                                   label=splabel, unit=spunit)
+
+                    self.parameters[spname] = sp
+                    my_setpoints += [spname]
+
+            setpoints_lists.append(my_setpoints)
+
+        for i, setpoints in enumerate(setpoints_lists):
+            self._register_parameter(multiparameter.names[i],
+                                     multiparameter.labels[i],
+                                     multiparameter.units[i],
+                                     setpoints,
+                                     basis,
+                                     paramtype)
+
     def register_custom_parameter(
-            self, name: str,
-            label: str=None, unit: str=None,
-            basis: Sequence[Union[str, _BaseParameter]]=None,
-            setpoints: Sequence[Union[str, _BaseParameter]]=None,
-            paramtype: str='numeric') -> None:
+            self : T, name: str,
+            label: str = None, unit: str = None,
+            basis: setpoints_type = None,
+            setpoints: setpoints_type = None,
+            paramtype: str = 'numeric') -> T:
         """
         Register a custom parameter with this measurement
 
@@ -580,34 +844,15 @@ class Measurement:
                 are the setpoints of this parameter
             paramtype: type of the parameter, i.e. the SQL storage class
         """
-
-        # validate dependencies
-        if setpoints:
-            sp_strings = [str(sp) for sp in setpoints]
-        else:
-            sp_strings = []
-        if basis:
-            bs_strings = [str(bs) for bs in basis]
-        else:
-            bs_strings = []
-
-        # validate all dependencies
-        depends_on, inf_from = self._registration_validation(name, sp_strings,
-                                                             bs_strings)
-
-        parspec = ParamSpec(name=name, paramtype=paramtype,
-                            label=label, unit=unit,
-                            inferred_from=inf_from,
-                            depends_on=depends_on)
-
-        # ensure the correct order
-        if name in self.parameters.keys():
-            self.parameters.pop(name)
-
-        self.parameters[name] = parspec
+        return self._register_parameter(name,
+                                        label,
+                                        unit,
+                                        setpoints,
+                                        basis,
+                                        paramtype)
 
     def unregister_parameter(self,
-                             parameter: Union[_BaseParameter, str]) -> None:
+                             parameter: setpoints_type) -> None:
         """
         Remove a custom/QCoDeS parameter from the dataset produced by
         running this measurement
@@ -636,7 +881,7 @@ class Measurement:
         self.parameters.pop(param)
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self, func: Callable, args: tuple) -> None:
+    def add_before_run(self : T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -652,7 +897,9 @@ class Measurement:
 
         self.enteractions.append((func, args))
 
-    def add_after_run(self, func: Callable, args: tuple) -> None:
+        return self
+
+    def add_after_run(self : T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -668,24 +915,25 @@ class Measurement:
 
         self.exitactions.append((func, args))
 
-    def add_subscriber(self,
+        return self
+
+    def add_subscriber(self : T,
                        func: Callable,
-                       state: Union[MutableSequence, MutableMapping]) -> None:
+                       state: Union[MutableSequence, MutableMapping]) -> T:
         """
         Add a subscriber to the dataset of the measurement.
 
         Args:
-            name: The name of the subscriber.
             func: A function taking three positional arguments: a list of
                 tuples of parameter values, an integer, a mutable variable
                 (list or dict) to hold state/writes updates to.
             state: The variable to hold the state.
         """
-        # TODO: Should we protect users from registering two subscribers
-        # with the same state?
         self.subscribers.append((func, state))
 
-    def run(self):
+        return self
+
+    def run(self) -> Runner:
         """
         Returns the context manager for the experimental run
         """
