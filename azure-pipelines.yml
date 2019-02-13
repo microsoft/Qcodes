@@ -20,6 +20,7 @@ jobs:
           packageSpecs: 'python=3.6'
           updateConda: true
       - script: |
+          conda --version
           conda env update -n qcodes -f environment.yml
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
