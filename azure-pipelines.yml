@@ -20,6 +20,9 @@ jobs:
           packageSpecs: 'python=3.6'
           updateConda: true
       - script: |
+          conda init cmd.exe
+        displayName: "Conda setup"
+      - script: |
           conda --version
           dir c:\users\vssadministrator\.conda\envs\qcodes\DLLs
           conda env update -n qcodes -f environment.yml
