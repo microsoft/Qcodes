@@ -322,7 +322,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def connect(name: str, debug: bool = False,
-            version: int=-1) -> ConnectionPlus:
+            version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -349,6 +349,14 @@ def connect(name: str, debug: bool = False,
 
     sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     conn = ConnectionPlus(sqlite3_conn)
+
+    latest_supported_version = _latest_available_version()
+    db_version = get_user_version(conn)
+
+    if db_version > latest_supported_version:
+        raise RuntimeError(f"Database {name} is version {db_version} but this "
+                           f"version of QCoDeS supports up to "
+                           f"version {latest_supported_version}")
 
     # sqlite3 options
     conn.row_factory = sqlite3.Row
@@ -598,7 +606,7 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
     # depend, then the dependent ParamSpecs and finally the rest
 
     for layout_id in list(indeps) + list(deps) + list(the_rest):
-        (name, label, unit, inferred_from) = layouts[layout_id]
+        (name, label, unit, inferred_from_str) = layouts[layout_id]
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
@@ -607,34 +615,23 @@ def _2to3_get_paramspecs(conn: ConnectionPlus,
                 paramtype = row['type']
                 break
 
-        # first possibility: another parameter depends on this parameter
-        if layout_id in indeps:
-            paramspec = ParamSpec(name=name, paramtype=paramtype,
-                                  label=label, unit=unit,
-                                  inferred_from=inferred_from)
-            paramspecs[layout_id] = paramspec
+        inferred_from: List[str] = []
+        depends_on: List[str] = []
 
-        # second possibility: this parameter depends on another parameter
-        elif layout_id in deps:
-
+        # this parameter depends on another parameter
+        if layout_id in deps:
             setpoints = dependencies[layout_id]
             depends_on = [paramspecs[idp].name for idp in setpoints]
 
-            paramspec = ParamSpec(name=name,
-                                  paramtype=paramtype,
-                                  label=label, unit=unit,
-                                  depends_on=depends_on,
-                                  inferred_from=inferred_from)
-            paramspecs[layout_id] = paramspec
+        if inferred_from_str != '':
+            inferred_from = inferred_from_str.split(', ')
 
-        # third possibility: no dependencies
-        else:
-            paramspec = ParamSpec(name=name,
-                                  paramtype=paramtype,
-                                  label=label, unit=unit,
-                                  depends_on=[],
-                                  inferred_from=[])
-            paramspecs[layout_id] = paramspec
+        paramspec = ParamSpec(name=name,
+                              paramtype=paramtype,
+                              label=label, unit=unit,
+                              depends_on=depends_on,
+                              inferred_from=inferred_from)
+        paramspecs[layout_id] = paramspec
 
     return paramspecs
 
@@ -711,6 +708,77 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
             cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
+
+@upgrader
+def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 3 to version 4. This really
+    repeats the version 3 upgrade as it originally had two bugs in
+    the inferred annotation. inferred_from was passed incorrectly
+    resulting in the parameter being marked inferred_from for each char
+    in the inferred_from variable and inferred_from was not handled
+    correctly for parameters that were neither dependencies nor dependent on
+    other parameters. Both have since been fixed so rerun the upgrade.
+    """
+
+    no_of_runs_query = "SELECT max(run_id) FROM runs"
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = no_of_runs or 0
+
+    # If one run fails, we want the whole upgrade to roll back, hence the
+    # entire upgrade is one atomic transaction
+
+    with atomic(conn) as conn:
+
+        result_tables = _2to3_get_result_tables(conn)
+        layout_ids_all = _2to3_get_layout_ids(conn)
+        indeps_all = _2to3_get_indeps(conn)
+        deps_all = _2to3_get_deps(conn)
+        layouts = _2to3_get_layouts(conn)
+        dependencies = _2to3_get_dependencies(conn)
+
+        pbar = tqdm(range(1, no_of_runs+1))
+        pbar.set_description("Upgrading database")
+
+        for run_id in pbar:
+
+            if run_id in layout_ids_all:
+
+                result_table_name = result_tables[run_id]
+                layout_ids = list(layout_ids_all[run_id])
+                if run_id in indeps_all:
+                    independents = tuple(indeps_all[run_id])
+                else:
+                    independents = ()
+                if run_id in deps_all:
+                    dependents = tuple(deps_all[run_id])
+                else:
+                    dependents = ()
+
+                paramspecs = _2to3_get_paramspecs(conn,
+                                                  layout_ids,
+                                                  layouts,
+                                                  dependencies,
+                                                  dependents,
+                                                  independents,
+                                                  result_table_name)
+
+                interdeps = InterDependencies(*paramspecs.values())
+                desc = RunDescriber(interdeps=interdeps)
+                json_str = desc.to_json()
+
+            else:
+
+                json_str = RunDescriber(InterDependencies()).to_json()
+
+            sql = f"""
+                   UPDATE runs
+                   SET run_description = ?
+                   WHERE run_id == ?
+                   """
+            cur = conn.cursor()
+            cur.execute(sql, (json_str, run_id))
+            log.debug(f"Upgrade in transition, run number {run_id}: OK")
 
 def _latest_available_version() -> int:
     """Return latest available database schema version"""
@@ -2290,15 +2358,16 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - formatted_name: the name of the newly created table
     """
 
-    run_counter, formatted_name, run_id = _insert_run(conn,
-                                                      exp_id,
-                                                      name,
-                                                      guid,
-                                                      parameters)
-    if metadata:
-        add_meta_data(conn, run_id, metadata)
-    _update_experiment_run_counter(conn, exp_id, run_counter)
-    _create_run_table(conn, formatted_name, parameters, values)
+    with atomic(conn):
+        run_counter, formatted_name, run_id = _insert_run(conn,
+                                                          exp_id,
+                                                          name,
+                                                          guid,
+                                                          parameters)
+        if metadata:
+            add_meta_data(conn, run_id, metadata)
+        _update_experiment_run_counter(conn, exp_id, run_counter)
+        _create_run_table(conn, formatted_name, parameters, values)
 
     return run_counter, run_id, formatted_name
 
