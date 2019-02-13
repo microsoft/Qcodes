@@ -286,8 +286,7 @@ class MercuryiPS(VisaInstrument):
                                docstring='A safe ramp for each coordinate',
                                get_cmd=partial(self._get_component, coord),
                                set_cmd=partial(self._set_target_and_ramp, 
-                                               coordinate=coord, 
-                                               mode='safe'))
+                                               coord, 'safe'))
             
             if coord in ['r', 'theta', 'phi', 'rho']:
                 self.add_parameter(name=f'{coord}_simulramp',
@@ -297,8 +296,7 @@ class MercuryiPS(VisaInstrument):
                                              'combined coordinate',
                                    get_cmd=partial(self._get_component, coord),
                                    set_cmd=partial(self._set_target_and_ramp, 
-                                                   coordinate=coord, 
-                                                   mode='simul_block'))
+                                                   coord, 'simul_block'))
 
         # FieldVector-valued parameters #
 
