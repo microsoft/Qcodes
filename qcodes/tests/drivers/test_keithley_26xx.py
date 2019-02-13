@@ -4,7 +4,7 @@ from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import \
     Keithley_2600
 
 import qcodes.instrument.sims as sims
-visalib = sims.__file__.replace('__init__.py', 'keithley_2600.yaml@sim')
+visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
 
 
 @pytest.fixture(scope='module')
