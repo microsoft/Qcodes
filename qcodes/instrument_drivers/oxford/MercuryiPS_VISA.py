@@ -280,26 +280,25 @@ class MercuryiPS(VisaInstrument):
                                unit=unit,
                                get_cmd=partial(self._get_measured, [coord]))
 
-
             self.add_parameter(name=f'{coord}_ramp',
                                label=f'{coord.upper()} ramp field',
                                unit=unit,
                                docstring='A safe ramp for each coordinate',
                                get_cmd=partial(self._get_component, coord),
-                               set_cmd=lambda x, y=coord:
-                                            (self._set_target(y, x),
-                                             self.ramp('safe')))
+                               set_cmd=partial(self._set_target_and_ramp, 
+                                               coordinate=coord, 
+                                               mode='safe'))
             
             if coord in ['r', 'theta', 'phi', 'rho']:
                 self.add_parameter(name=f'{coord}_simulramp',
                                    label=f'{coord.upper()} ramp field',
                                    unit=unit,
-                                   docstring='A simultaneous ramp for a combined'
-                                                'coordinate',
+                                   docstring='A simultaneous blocking ramp for a '
+                                             'combined coordinate',
                                    get_cmd=partial(self._get_component, coord),
-                                   set_cmd=lambda x, y=coord: 
-                                                (self._set_target(y, x),
-                                                 self.ramp('simul_block')))
+                                   set_cmd=partial(self._set_target_and_ramp, 
+                                                   coordinate=coord, 
+                                                   mode='simul_block'))
 
         # FieldVector-valued parameters #
 
@@ -522,6 +521,11 @@ class MercuryiPS(VisaInstrument):
         'safe': self._ramp_safely,
         'simul_block':self._ramp_simultaneously_blocking}[mode]()
 
+    def _set_target_and_ramp(self, coordinate: str, mode: str, target: float) -> None:
+        """Convenient method to combine setting target and ramping"""
+        self._set_target(coordinate, target)
+        self.ramp(mode)
+    
     def ask(self, cmd: str) -> str:
         """
         Since Oxford Instruments implement their own version of a SCPI-like
