@@ -277,8 +277,22 @@ class MercuryiPS(VisaInstrument):
 
             self.add_parameter(name=f'{coord}_measured',
                                label=f'{coord.upper()} measured field',
-                               unit='T',
+                               unit=unit,
                                get_cmd=partial(self._get_measured, [coord]))
+
+            self.add_parameter(name=f'{coord}_saferamp',
+                               label=f'{coord.upper()} ramp field',
+                               unit=unit,
+                               get_cmd=partial(self._get_component, coord),
+                               set_cmd=lambda x, y=coord: (self._set_target(y, x),
+                                                           self.ramp('safe')))
+
+            self.add_parameter(name=f'{coord}_simulramp',
+                               label=f'{coord.upper()} ramp field',
+                               unit=unit,
+                               get_cmd=partial(self._get_component, coord),
+                               set_cmd=lambda x, y=coord: (self._set_target(y, x),
+                                                           self.ramp('simul')))
 
         # FieldVector-valued parameters #
 
@@ -299,88 +313,7 @@ class MercuryiPS(VisaInstrument):
                            get_cmd=self._get_ramp_rate,
                            set_cmd=self._set_ramp_rate)
 
-
-        self.add_parameter('theta_saferamp',
-						   label='Theta',
-						   unit='degrees',
-						   set_cmd=self._theta_saferamp_set,
-						   get_cmd=self._theta_saferamp_get)
-		
-        self.add_parameter('r_saferamp',
-						   label='B_Radius',
-						   unit='T',
-						   set_cmd=self._r_saferamp_set,
-						   get_cmd=self._r_saferamp_get)
-
-        self.add_parameter('r_simulramp',
-						   label='B_Radius',
-						   unit='T',
-						   set_cmd=self._r_simulramp_set,
-						   get_cmd=self._r_simulramp_get)
-
-        self.add_parameter('phi_saferamp',
-						   label='Phi',
-						   unit='degrees',
-						   set_cmd=self._phi_saferamp_set,
-						   get_cmd=self._phi_saferamp_get)
-
         self.connect_message()
-
-    def _theta_saferamp_set(self, target):
-        """
-		Set the theta target and ramp to it
-		"""
-        self.theta_target(target)
-        self.ramp(mode='safe')
-        self.theta_measured()
-
-    def _theta_saferamp_get(self):
-        """
-        Get the measured theta
-        """
-        return self.theta_measured()
-
-    def _r_saferamp_set(self, target):
-        """
-        Set the radius target and ramp to it
-        """
-        self.r_target(target)
-        self.ramp(mode='safe')
-        self.r_measured()
-
-    def _r_saferamp_get(self):
-        """
-        Get the measured radius
-        """
-        return self.r_measured()
-
-    def _r_simulramp_set(self, target):
-        """
-        Set the radius target and ramp to it
-        """
-        self.r_target(target)
-        self.ramp(mode='simul_block')
-        self.r_measured()
-
-    def _r_simulramp_get(self):
-        """
-        Get the measured radius
-        """
-        return self.r_measured()
-
-    def _phi_saferamp_set(self, target):
-        """
-        Set the theta target and ramp to it
-        """
-        self.phi_target(target)
-        self.ramp(mode='safe')
-        self.phi_measured()
-
-    def _phi_saferamp_get(self):
-        """
-        Get the measured theta
-        """
-        return self.phi_measured()
 
     def _get_component(self, coordinate: str) -> float:
         return self._target_vector.get_components(coordinate)[0]
@@ -483,13 +416,14 @@ class MercuryiPS(VisaInstrument):
         ramp rates. NOTE: there is NO guarantee that this does not take you
         out of your safe region. Use with care. This function is BLOCKING.
         """
-        for slave in self.submodules.values():
-            slave.ramp_to_target()
+        self._ramp_simultaneously()
 
-        for slave in np.array(list(self.submodules.values())):
+        for slave in self.submodules.values():
             # wait for the ramp to finish, we don't car about the order
             while slave.ramp_status() == 'TO SET':
                 time.sleep(0.1)
+
+        self.update_field()
 
     def _ramp_safely(self) -> None:
         """
@@ -509,6 +443,16 @@ class MercuryiPS(VisaInstrument):
             else:
                 while slave.ramp_status() == 'TO SET':
                     time.sleep(0.1)
+
+        self.update_field()
+
+    def update_field(self) -> None:
+        """
+        Update all the field components.
+        """
+        coords = ['x', 'y', 'z', 'r', 'theta', 'phi', 'rho']
+        meas_field = self._get_field()
+        [getattr(self,f'{i}_measured').get() for i in coords]
 
     def is_ramping(self) -> bool:
         """
@@ -544,12 +488,13 @@ class MercuryiPS(VisaInstrument):
         Ramp the fields to their present target value
 
         Args:
-            mode: how to ramp, either 'simul' or 'safe'. In 'simul' mode,
-              the fields are ramping simultaneously in a non-blocking mode.
-              There is no safety check that the safe zone is not exceeded. In
-              'safe' mode, the fields are ramped one-by-one in a blocking way
-              that ensures that the total field stays within the safe region
-              (provided that this region is convex).
+            mode: how to ramp, either 'simul', 'simul-block' or 'safe'. In
+              'simul' and 'simul-block' mode, the fields are ramping
+              simultaneously in a non-blocking mode and blocking mode,
+              respectively. There is no safety check that the safe zone is not
+              exceeded. In 'safe' mode, the fields are ramped one-by-one in a
+              blocking way that ensures that the total field stays within the
+              safe region (provided that this region is convex).
         """
         if mode not in ['simul', 'safe', 'simul_block']:
             raise ValueError('Invalid ramp mode. Please provide either "simul"'
@@ -567,8 +512,8 @@ class MercuryiPS(VisaInstrument):
 
         # then the actual ramp
         {'simul': self._ramp_simultaneously,
-            'safe': self._ramp_safely,
-            'simul_block':self._ramp_simultaneously_blocking}[mode]()
+        'safe': self._ramp_safely,
+        'simul_block':self._ramp_simultaneously_blocking}[mode]()
 
     def ask(self, cmd: str) -> str:
         """
