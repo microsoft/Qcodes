@@ -21,6 +21,7 @@ jobs:
           updateConda: true
       - script: |
           conda --version
+          dir c:\users\vssadministrator\.conda\envs\qcodes\DDLs
           conda env update -n qcodes -f environment.yml
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
