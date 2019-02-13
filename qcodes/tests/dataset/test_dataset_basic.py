@@ -13,8 +13,7 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
 from qcodes.dataset.database import get_DB_location
@@ -29,7 +28,8 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
-from .helper_functions import verify_data_dict
+pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
+from qcodes.tests.dataset.helper_functions import verify_data_dict
 
 n_experiments = 0
 
@@ -128,7 +128,7 @@ def test_load_by_id_for_none():
         _ = load_by_id(None)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=6)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
@@ -781,13 +781,13 @@ def test_get_parameter_data(scalar_dataset, start, end):
     input_names = ['param_3']
 
     expected_names = {}
-    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
-                                 'param_3']
+    expected_names['param_3'] = ['param_3', 'param_0', 'param_1', 'param_2']
     expected_shapes = {}
     expected_shapes['param_3'] = [(10**3, )]*4
     expected_values = {}
-    expected_values['param_3'] = [np.arange(10000*a, 10000*a+1000)
-                                  for a in range(4)]
+    expected_values['param_3'] = [np.arange(30000, 31000)] + \
+                                 [np.arange(10000*a, 10000*a+1000)
+                                  for a in range(3)]
 
     start, end = limit_data_to_start_end(start, end, input_names,
                                          expected_names, expected_shapes,
@@ -1032,16 +1032,23 @@ def parameter_test_helper(ds, toplevel_names,
                           end=None):
 
     data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
+    dataframe = ds.get_data_as_pandas_dataframe(*toplevel_names,
+                                                start=start,
+                                                end=end)
+
     all_data = ds.get_parameter_data(start=start, end=end)
+    all_dataframe = ds.get_data_as_pandas_dataframe(start=start, end=end)
 
     all_parameters = list(all_data.keys())
     assert set(data.keys()).issubset(set(all_parameters))
+    assert list(data.keys()) == list(dataframe.keys())
     assert len(data.keys()) == len(toplevel_names)
+    assert len(dataframe.keys()) == len(toplevel_names)
 
-    verify_data_dict(data, toplevel_names, expected_names, expected_shapes,
-                     expected_values)
-    verify_data_dict(all_data, toplevel_names, expected_names, expected_shapes,
-                     expected_values)
+    verify_data_dict(data, dataframe, toplevel_names, expected_names,
+                     expected_shapes, expected_values)
+    verify_data_dict(all_data, all_dataframe, toplevel_names, expected_names,
+                     expected_shapes, expected_values)
 
     # Now lets remove a random element from the list
     # We do this one by one until there is only one element in the list
@@ -1055,8 +1062,11 @@ def parameter_test_helper(ds, toplevel_names,
 
         subset_data = ds.get_parameter_data(*subset_names,
                                             start=start, end=end)
-        verify_data_dict(subset_data, subset_names, expected_names,
-                         expected_shapes, expected_values)
+        subset_dataframe = ds.get_data_as_pandas_dataframe(*subset_names,
+                                                           start=start,
+                                                           end=end)
+        verify_data_dict(subset_data, subset_dataframe, subset_names,
+                         expected_names, expected_shapes, expected_values)
 
 
 def limit_data_to_start_end(start, end, input_names, expected_names,
