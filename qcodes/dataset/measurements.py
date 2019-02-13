@@ -12,7 +12,7 @@ import numpy as np
 import qcodes as qc
 from qcodes import Station
 from qcodes.instrument.parameter import ArrayParameter, _BaseParameter, \
-    Parameter, MultiParameter
+    Parameter, MultiParameter, ParameterWithSetpoints
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.data_set import DataSet
@@ -22,8 +22,10 @@ import qcodes.config
 log = logging.getLogger(__name__)
 
 array_like_types = (tuple, list, np.ndarray)
+scalar_res_types = Union[str, int, float, np.dtype]
 res_type = Tuple[Union[_BaseParameter, str],
-                 Union[str, int, float, np.dtype, np.ndarray]]
+                 Union[scalar_res_types, np.ndarray,
+                       Sequence[scalar_res_types]]]
 setpoints_type = Sequence[Union[str, _BaseParameter]]
 numeric_types = Union[float, int]
 
@@ -212,9 +214,9 @@ class DataSaver:
                 if not stuffweneed.issubset(stuffwehave):
                     raise ValueError('Can not add this result; missing '
                                      f'setpoint values for {paramstr}:'
-                                     f' {stuffweneed}.'
+                                     f' {sorted(stuffweneed)}.'
                                      f' Values only given for'
-                                     f' {found_parameters}.')
+                                     f' {sorted(stuffwehave)}.')
 
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
@@ -635,6 +637,11 @@ class Measurement:
                                           setpoints,
                                           basis,
                                           paramtype)
+        elif isinstance(parameter, ParameterWithSetpoints):
+            self._register_parameter_with_setpoints(parameter,
+                                                    setpoints,
+                                                    basis,
+                                                    paramtype)
         elif isinstance(parameter, MultiParameter):
             self._register_multiparameter(parameter,
                                           setpoints,
@@ -722,6 +729,40 @@ class Measurement:
             self.parameters[spname] = sp
 
             my_setpoints += [spname]
+
+        self._register_parameter(name,
+                                 parameter.label,
+                                 parameter.unit,
+                                 my_setpoints,
+                                 basis,
+                                 paramtype)
+
+    def _register_parameter_with_setpoints(self,
+                                           parameter: ParameterWithSetpoints,
+                                           setpoints: Optional[setpoints_type],
+                                           basis: Optional[setpoints_type],
+                                           paramtype: str) -> None:
+        """
+        Register an ParameterWithSetpoints and the setpoints belonging to the
+        Parameter
+        """
+        name = str(parameter)
+        my_setpoints = list(setpoints) if setpoints else []
+        for sp in parameter.setpoints:
+            if not isinstance(sp, Parameter):
+                raise RuntimeError("The setpoints of a "
+                                   "ParameterWithSetpoints "
+                                   "must be a Parameter")
+            spname = sp.full_name
+            splabel = sp.label
+            spunit = sp.unit
+
+            spparamspec = ParamSpec(name=spname, paramtype=paramtype,
+                                    label=splabel, unit=spunit)
+
+            self.parameters[spname] = spparamspec
+
+            my_setpoints.append(spname)
 
         self._register_parameter(name,
                                  parameter.label,
