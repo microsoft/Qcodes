@@ -10,7 +10,7 @@ from qcodes.utils.deprecate import deprecate
 
 @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
            alternative="`qcodes.utils.logger.logfile_to_dataframe`")
-def logfile_to_dataframe(logfile: Optional[str]=None,
+def logfile_to_dataframe(logfile: str,
                          columns: Optional[List[str]]=None,
                          separator: Optional[str]=None) -> pd.DataFrame:
 

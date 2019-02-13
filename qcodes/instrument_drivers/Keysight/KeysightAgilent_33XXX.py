@@ -5,6 +5,8 @@ from typing import Union
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument
+from qcodes.instrument_drivers.Keysight.private.error_handling import \
+    KeysightErrorQueueMixin
 
 log = logging.getLogger(__name__)
 
@@ -127,6 +129,13 @@ class OutputChannel(InstrumentChannel):
                            unit='%',
                            vals=vals.Numbers(0, 100)
                            )
+
+        self.add_parameter('pulse_width',
+                           label="Channel {} pulse width".format(channum),
+                           set_cmd='SOURce{}:FUNCtion:PULSE:WIDTh {{}}'.format(channum),
+                           get_cmd='SOURce{}:FUNCtion:PULSE:WIDTh?'.format(channum),
+                           get_parser=float,
+                           unit='S')
 
         # TRIGGER MENU
         self.add_parameter('trigger_source',
@@ -266,7 +275,7 @@ class SyncChannel(InstrumentChannel):
                                vals=vals.Enum(1, 2))
 
 
-class WaveformGenerator_33XXX(VisaInstrument):
+class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
     """
     QCoDeS driver for the Keysight/Agilent 33XXX series of
     waveform generators
@@ -290,31 +299,20 @@ class WaveformGenerator_33XXX(VisaInstrument):
         # TODO: Fill out this dict with all models
         no_of_channels = {'33210A': 1,
                           '33250A': 1,
+                          '33511B': 1,
+                          '33512B': 2,
                           '33522B': 2,
                           '33622A': 2
                           }
 
         self._max_freqs = {'33210A': 10e6,
+                           '33511B': 20e6,
+                           '33512B': 20e6,
                            '33250A': 80e6,
                            '33522B': 30e6,
                            '33622A': 120e6}
 
         self.num_channels = no_of_channels[self.model]
-
-        def errorparser(rawmssg):
-            """
-            Parses the error message.
-
-            Args:
-                rawmssg (str): The raw return value of 'SYSTem:ERRor?'
-
-            Returns:
-                tuple (int, str): The error code and the error message.
-            """
-            code = int(rawmssg.split(',')[0])
-            mssg = rawmssg.split(',')[1].strip().replace('"', '')
-
-            return code, mssg
 
         for i in range(1, self.num_channels+1):
             channel = OutputChannel(self, 'ch{}'.format(i), i)
@@ -323,39 +321,9 @@ class WaveformGenerator_33XXX(VisaInstrument):
         sync = SyncChannel(self, 'sync')
         self.add_submodule('sync', sync)
 
-        self.add_parameter('error',
-                           label='Error message',
-                           get_cmd='SYSTem:ERRor?',
-                           get_parser=errorparser
-                           )
-
         self.add_function('force_trigger', call_cmd='*TRG')
 
         self.add_function('sync_channel_phases', call_cmd='PHAS:SYNC')
 
         if not silent:
             self.connect_message()
-
-    def flush_error_queue(self, verbose=True):
-        """
-        Clear the instrument error queue.
-
-        Args:
-            verbose (Optional[bool]): If true, the error messages are printed.
-                Default: True.
-        """
-
-        log.debug('Flushing error queue...')
-
-        err_code, err_message = self.error()
-        log.debug('    {}, {}'.format(err_code, err_message))
-        if verbose:
-            print(err_code, err_message)
-
-        while err_code != 0:
-            err_code, err_message = self.error()
-            log.debug('    {}, {}'.format(err_code, err_message))
-            if verbose:
-                print(err_code, err_message)
-
-        log.debug('...flushing complete')

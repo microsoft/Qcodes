@@ -34,6 +34,9 @@ class PNASweep(ArrayParameter):
 
     @property # type: ignore
     def setpoints(self) -> Sequence: # type: ignore
+        if self._instrument is None:
+            raise RuntimeError("Cannot return setpoints if not attached "
+                               "to instrument")
         start = self._instrument.root_instrument.start()
         stop = self._instrument.root_instrument.stop()
         return (np.linspace(start, stop, self.shape[0]),)
@@ -65,6 +68,8 @@ class FormattedSweep(PNASweep):
         self.memory = memory
 
     def get_raw(self) -> Sequence[float]:
+        if self._instrument is None:
+            raise RuntimeError("Cannot get data without instrument")
         root_instr = self._instrument.root_instrument
         # Check if we should run a new sweep
         if root_instr.auto_sweep():

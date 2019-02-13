@@ -65,7 +65,8 @@ class D5a(Instrument):
 
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
 
-        self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero)
+        self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero,
+                          docstring='Reset all dacs to zero voltage. No ramping is performed.')
 
         if self._mV:
             self._gain = 1e3
@@ -88,7 +89,8 @@ class D5a(Instrument):
 
             self.add_parameter('stepsize{}'.format(i + 1),
                                get_cmd=partial(self.d5a.get_stepsize, i),
-                               unit='V')
+                               unit='V',
+                               docstring='Returns the smallest voltage step of the DAC.')
 
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),

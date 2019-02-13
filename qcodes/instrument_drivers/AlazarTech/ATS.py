@@ -151,6 +151,7 @@ class AlazarTech_ATS(Instrument):
                  dll_path: str=None, **kwargs) -> None:
         super().__init__(name, **kwargs)
         self.api = AlazarATSAPI(dll_path or self.dll_path)
+
         self._parameters_synced = False
         self._handle = self.api.get_board_by_system_id(system_id, board_id)
 
