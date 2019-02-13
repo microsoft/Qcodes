@@ -284,7 +284,7 @@ class MercuryiPS(VisaInstrument):
             self.add_parameter(name=f'{coord}_ramp',
                                label=f'{coord.upper()} ramp field',
                                unit=unit,
-                               docstring='A safe ramp for each coordinate'
+                               docstring='A safe ramp for each coordinate',
                                get_cmd=partial(self._get_component, coord),
                                set_cmd=lambda x, y=coord:
                                             (self._set_target(y, x),
@@ -295,11 +295,11 @@ class MercuryiPS(VisaInstrument):
                                    label=f'{coord.upper()} ramp field',
                                    unit=unit,
                                    docstring='A simultaneous ramp for a combined'
-                                                'coordinate'
+                                                'coordinate',
                                    get_cmd=partial(self._get_component, coord),
                                    set_cmd=lambda x, y=coord: 
                                                 (self._set_target(y, x),
-                                                 self.ramp('simul')))
+                                                 self.ramp('simul_block')))
 
         # FieldVector-valued parameters #
 
