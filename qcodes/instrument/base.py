@@ -3,6 +3,7 @@ import time
 import warnings
 import weakref
 import logging
+from abc import ABC
 from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
     TYPE_CHECKING, cast, Type
 
@@ -10,6 +11,7 @@ from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
 import numpy as np
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
@@ -120,7 +122,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name: str, submodule:  Union['InstrumentBase', 'ChannelList']) -> None:
+    def add_submodule(self, name: str,
+                      submodule:  Union['InstrumentBase',
+                                        'ChannelList']) -> None:
         """
         Bind one submodule to this instrument.
 
@@ -372,7 +376,15 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 p.validate(value)
 
 
-class Instrument(InstrumentBase):
+class AbstractInstrument(ABC):
+    """ABC that is useful for defining mixin classes for Instrument class"""
+    log: 'InstrumentLoggerAdapter'  # instrument logging
+
+    def ask(self, cmd: str) -> str:
+        pass
+
+
+class Instrument(InstrumentBase, AbstractInstrument):
 
     """
     Base class for all QCodes instruments.
@@ -401,9 +413,9 @@ class Instrument(InstrumentBase):
 
     shared_kwargs = ()
 
-    _all_instruments = {} # type: Dict[str, weakref.ref[Instrument]]
+    _all_instruments: Dict[str, weakref.ref] = {}
     _type = None
-    _instances = [] # type: List[weakref.ref]
+    _instances: List[weakref.ref] = []
 
     def __init__(self, name: str,
                  metadata: Optional[Dict]=None, **kwargs) -> None:
@@ -440,7 +452,7 @@ class Instrument(InstrumentBase):
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts = [] # type: List[Optional[str]]
+            idparts: List[Optional[str]] = []
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -628,7 +640,7 @@ class Instrument(InstrumentBase):
                     'Instrument {} is {} but {} was requested'.format(
                         name, type(ins), instrument_class))
 
-        return ins
+        return cast('Instrument', ins)
 
     @staticmethod
     def exist(name: str, instrument_class: Optional[type]=None) -> bool:

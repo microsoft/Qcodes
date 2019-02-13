@@ -1,4 +1,4 @@
-sphinx==1.7.9
+sphinx==1.8.3
 sphinx_rtd_theme
 sphinx-jsonschema
 nbsphinx
@@ -6,3 +6,4 @@ ipython
 jupyter
 scipy
 pandas
+xarray

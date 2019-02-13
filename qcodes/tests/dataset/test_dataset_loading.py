@@ -3,13 +3,19 @@ from math import floor
 
 import pytest
 
-from qcodes.dataset.data_set import (new_data_set, load_by_id, load_by_counter,
+from qcodes.dataset.data_set import (DataSet,
+                                     new_data_set,
+                                     load_by_guid,
+                                     load_by_id,
+                                     load_by_counter,
                                      ParamSpec)
 from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.experiment_container import new_experiment
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
+# pylint: disable=unused-import
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
 
 @pytest.mark.usefixtures("experiment")
@@ -178,3 +184,16 @@ def test_get_data_by_id_order(dataset):
     data_dict = {el['name']: el['data'] for el in data[1]}
     assert data_dict['indep1'] == 1
     assert data_dict['indep2'] == 2
+
+
+@pytest.mark.usefixtures('experiment')
+def test_load_by_guid(some_paramspecs):
+    paramspecs = some_paramspecs[2]
+    ds = DataSet()
+    ds.add_parameter(paramspecs['ps1'])
+    ds.add_parameter(paramspecs['ps2'])
+    ds.add_result({'ps1': 1, 'ps2': 2})
+
+    loaded_ds = load_by_guid(ds.guid)
+
+    assert loaded_ds.the_same_dataset_as(ds)
