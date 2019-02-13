@@ -25,13 +25,13 @@ jobs:
       - script: |
           conda --version
           conda env update -n qcodes -f environment.yml
-          conda activate qcodes
+          CALL conda.bat activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
         displayName: "Installation"
       - script: |
-          conda activate qcodes
+          CALL conda.bat activate qcodes
           mypy qcodes
         displayName: "mypy"
       - script: |
