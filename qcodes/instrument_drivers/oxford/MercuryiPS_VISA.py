@@ -280,19 +280,26 @@ class MercuryiPS(VisaInstrument):
                                unit=unit,
                                get_cmd=partial(self._get_measured, [coord]))
 
-            self.add_parameter(name=f'{coord}_saferamp',
-                               label=f'{coord.upper()} ramp field',
-                               unit=unit,
-                               get_cmd=partial(self._get_component, coord),
-                               set_cmd=lambda x, y=coord: (self._set_target(y, x),
-                                                           self.ramp('safe')))
 
-            self.add_parameter(name=f'{coord}_simulramp',
+            self.add_parameter(name=f'{coord}_ramp',
                                label=f'{coord.upper()} ramp field',
                                unit=unit,
+                               docstring='A safe ramp for each coordinate'
                                get_cmd=partial(self._get_component, coord),
-                               set_cmd=lambda x, y=coord: (self._set_target(y, x),
-                                                           self.ramp('simul')))
+                               set_cmd=lambda x, y=coord:
+                                            (self._set_target(y, x),
+                                             self.ramp('safe')))
+            
+            if coord in ['r', 'theta', 'phi', 'rho']:
+                self.add_parameter(name=f'{coord}_simulramp',
+                                   label=f'{coord.upper()} ramp field',
+                                   unit=unit,
+                                   docstring='A simultaneous ramp for a combined'
+                                                'coordinate'
+                                   get_cmd=partial(self._get_component, coord),
+                                   set_cmd=lambda x, y=coord: 
+                                                (self._set_target(y, x),
+                                                 self.ramp('simul')))
 
         # FieldVector-valued parameters #
 
