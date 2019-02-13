@@ -1,4 +1,4 @@
-name: "QCoDeS CI"
+name: "QCoDeS CI - $(BuildId)"
 
 trigger:
   branches:
