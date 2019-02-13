@@ -419,7 +419,7 @@ class MercuryiPS(VisaInstrument):
         self._ramp_simultaneously()
 
         for slave in self.submodules.values():
-            # wait for the ramp to finish, we don't car about the order
+            # wait for the ramp to finish, we don't care about the order
             while slave.ramp_status() == 'TO SET':
                 time.sleep(0.1)
 
