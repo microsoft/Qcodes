@@ -3,8 +3,6 @@ sudo: required
 dist: xenial
 notifications:
   email: false
-    # send all notifcations to slack
-  slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
 cache: pip
 
@@ -19,6 +17,7 @@ python:
 branches:
   only:
     - master
+    - DataStorageInterface
 
 # command to install dependencies and qcodes
 # We want to fail early if there is an installation problem, so
@@ -32,7 +31,7 @@ install:
 
 before_script: # configure a headless display to test plot generation
     - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
+    - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
     - sleep 3 # give xvfb some time to start
 
 script:
@@ -42,11 +41,14 @@ script:
     - |
       pip uninstall -y qcodes
       pip install -e .
-      cd qcodes/tests/dataset/legacy_DB_generation
+      cd ..
+      git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
+      cd qcodes_generate_test_db
       python generate_version_0.py
       python generate_version_1.py
       python generate_version_2.py
-      cd ../../../..
+      python generate_version_3.py
+      cd $TRAVIS_BUILD_DIR
       pip uninstall -y qcodes
       pip install .
     - cd qcodes

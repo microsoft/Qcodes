@@ -3,10 +3,9 @@ Tests for `qcodes.utils.plotting`.
 """
 
 from pytest import fixture
-import numpy as np
+
 from matplotlib import pyplot as plt
 
-from qcodes.dataset.param_spec import ParamSpec
 # we only need `dataset` here, but pytest does not discover the dependencies
 # by itself so we also need to import all the fixtures this one is dependent
 # on
@@ -16,36 +15,8 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
 
 from qcodes.tests.test_config import default_config
 from qcodes.dataset.plotting import plot_by_id
+from .dataset_generators import dataset_with_outliers_generator
 import qcodes.config
-
-def dataset_with_outliers_generator(ds, data_offset=5, low_outlier=-3,
-                 high_outlier=1, background_noise=True):
-    x = ParamSpec('x', 'numeric', label='Flux', unit='e^2/hbar')
-    t = ParamSpec('t', 'numeric', label='Time', unit='s')
-    z = ParamSpec('z', 'numeric', label='Majorana number', unit='Anyon',
-                depends_on=[x, t])
-    ds.add_parameter(x)
-    ds.add_parameter(t)
-    ds.add_parameter(z)
-
-    npoints = 50
-    xvals = np.linspace(0, 1, npoints)
-    tvals = np.linspace(0, 1, npoints)
-    for counter, xv in enumerate(xvals):
-        if background_noise and (
-            counter < round(npoints/2.3) or counter > round(npoints/1.8)):
-            data = np.random.rand(npoints)-data_offset
-        else:
-            data = xv * np.linspace(0,1,npoints)
-        if counter == round(npoints/1.9):
-            data[round(npoints/1.9)] = high_outlier
-        if counter == round(npoints/2.1):
-            data[round(npoints/2.5)] = low_outlier
-        ds.add_results([{'x': xv, 't': tv, 'z': z}
-                            for z, tv in zip(data, tvals)])
-    ds.mark_complete()
-    return ds
-
 
 @fixture(scope='function')
 def dataset_with_data_outside_iqr_high_outlier(dataset):
