@@ -48,7 +48,7 @@ jobs:
           python generate_version_1.py
           python generate_version_2.py
           python generate_version_3.py
-        displayName: "Generate db fixtures"
+        displayName: "Generate db fixtures "
       - script: |
           CALL activate qcodes
           cd qcodes
