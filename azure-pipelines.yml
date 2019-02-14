@@ -11,25 +11,14 @@ jobs:
       vmImage: "vs2017-win2016"
 
     steps:
-      # Conda Environment
-      # Create and activate a Conda environment.
-      # Starting from conda 4.6.3 this activation is not
-      # sufficient and breaks the sqlite3 module.
-      # We must therefore activate the conda env in
-      # each shell script below.
-      # see https://github.com/Microsoft/azure-pipelines-tasks/issues/8504
-      - task: CondaEnvironment@1
-        inputs:
-          createCustomEnvironment: true
-          environmentName: qcodes
-          packageSpecs: 'python=3.6'
-          updateConda: true
+      - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+          displayName: "Add conda to PATH"
       - script: |
           conda init cmd.exe
         displayName: "Conda setup"
       - script: |
           conda --version
-          conda env update -n qcodes -f environment.yml
+          conda env create --file environment.yml
           CALL activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
