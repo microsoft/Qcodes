@@ -40,7 +40,7 @@ class ParamSpecBase:
 
     def __repr__(self):
         return (f"ParamSpecBase('{self.name}', '{self.type}', '{self.label}', "
-                f"'{self.unit}'")
+                f"'{self.unit}')")
 
     def __eq__(self, other):
         if not isinstance(other, ParamSpecBase):
