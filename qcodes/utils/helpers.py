@@ -672,7 +672,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified on_val/off_val which are to be sent to the
-    intrument. This value mapping is such that, when inverted,
+    instrument. This value mapping is such that, when inverted,
     on_val/off_val are mapped to boolean True/False.
     """
     return OrderedDict([('On', on_val),
