@@ -675,16 +675,20 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     instrument. This value mapping is such that, when inverted,
     on_val/off_val are mapped to boolean True/False.
     """
-    return OrderedDict([('On', on_val),
-                       ('ON', on_val),
-                       ('on', on_val),
-                       ('1', on_val),
-                       (True, on_val),
-                       ('Off', off_val),
-                       ('OFF', off_val),
-                       ('off', off_val),
-                       ('0', off_val),
-                       (False, off_val)])
+    # Here are the lists of inputs which "reasonably" mean the same as
+    # "on"/"off" (note that True/False values will be added below, and they
+    # will always be added)
+    ons  = ('On',  'ON',  'on',  '1', 1)
+    offs = ('Off', 'OFF', 'off', '0', 0)
+
+    # This ensures that True/False values are always added and are added at
+    # the end of on/off inputs, so that after inversion True/False will be
+    # the remaining keys in the inverted value mapping dictionary
+    ons = ons + (True,)
+    offs = offs + (False,)
+
+    return OrderedDict([(on, on_val) for on in ons]
+                       + [(off, off_val) for off in offs])
 
 
 def abstractmethod(funcobj):
