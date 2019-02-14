@@ -142,7 +142,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
         self.connect_message()
 
     def on(self):
-        self.set('status', 'on')
+        self.status('on')
 
     def off(self):
-        self.set('status', 'off')
+        self.status('off')
