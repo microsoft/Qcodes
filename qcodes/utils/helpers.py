@@ -667,7 +667,8 @@ def partial_with_docstring(func, docstring, **kwargs):
     return inner
 
 
-def create_on_off_val_mapping(on_val=True, off_val=False):
+def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
+                              ) -> Dict:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified on_val/off_val which are to be sent to the
