@@ -55,7 +55,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='RF Output',
                            get_cmd=':OUTP:STAT?',
                            set_cmd=':OUTP:STAT {}',
-                           val_mapping=create_on_off_val_map(on_val='1', off_val='0'))
+                           val_mapping=create_on_off_val_mapping(on_val='1',
+                                                                 off_val='0'))
         self.add_parameter('IQ_state',
                            label='IQ Modulation',
                            get_cmd=':IQ:STAT?',
@@ -66,7 +67,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='Pulse Modulation',
                            get_cmd=':SOUR:PULM:STAT?',
                            set_cmd=':SOUR:PULM:STAT {}',
-                           val_mapping=create_on_off_val_map(on_val='1', off_val='0'))
+                           val_mapping=create_on_off_val_mapping(on_val='1',
+                                                                 off_val='0'))
         self.add_parameter('pulsemod_source',
                            label='Pulse Modulation Source',
                            get_cmd='SOUR:PULM:SOUR?',
@@ -107,7 +109,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='IQ Impairments',
                            get_cmd=':SOUR:IQ:IMP:STAT?',
                            set_cmd=':SOUR:IQ:IMP:STAT {}',
-                           val_mapping=create_on_off_val_map(on_val='1', off_val='0'))
+                           val_mapping=create_on_off_val_mapping(on_val='1',
+                                                                 off_val='0'))
         self.add_parameter('I_offset',
                            label='I Offset',
                            get_cmd='SOUR:IQ:IMP:LEAK:I?',
