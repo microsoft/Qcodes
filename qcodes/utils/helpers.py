@@ -678,14 +678,14 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons  = ('On',  'ON',  'on',  '1', 1)
-    offs = ('Off', 'OFF', 'off', '0', 0)
+    ons_  = ('On',  'ON',  'on',  '1', 1)
+    offs_ = ('Off', 'OFF', 'off', '0', 0)
 
     # This ensures that True/False values are always added and are added at
     # the end of on/off inputs, so that after inversion True/False will be
     # the remaining keys in the inverted value mapping dictionary
-    ons = ons + (True,)
-    offs = offs + (False,)
+    ons = ons_ + (True,)
+    offs = offs_ + (False,)
 
     return OrderedDict([(on, on_val) for on in ons]
                        + [(off, off_val) for off in offs])
