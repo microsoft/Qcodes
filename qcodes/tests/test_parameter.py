@@ -17,6 +17,7 @@ from qcodes.instrument.parameter import (
     InstrumentRefParameter, ScaledParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Numbers
 
 
@@ -950,6 +951,37 @@ class TestStandardParam(TestCase):
 
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
+
+    def test_on_off_val_mapping(self):
+        instrument_value_for_on = 'on_'
+        instrument_value_for_off = 'off_'
+
+        parameter_return_value_for_on = True
+        parameter_return_value_for_off = False
+
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      val_mapping=create_on_off_val_mapping(
+                          on_val=instrument_value_for_on,
+                          off_val=instrument_value_for_off))
+
+        test_data = [(instrument_value_for_on,
+                      parameter_return_value_for_on,
+                      ('On', 'on', 'ON', 1, True)),
+                     (instrument_value_for_off,
+                      parameter_return_value_for_off,
+                      ('Off', 'off', 'OFF', 0, False))]
+
+        for instr_value, parameter_return_value, inputs in test_data:
+            for inp in inputs:
+                # Setting parameter with any of the `inputs` is allowed
+                p(inp)
+                # For any value from the `inputs`, what gets send to the
+                # instrument is on_val/off_val which are specified in
+                # `create_on_off_val_mapping`
+                self.assertEqual(self._p, instr_value)
+                # When getting a value of the parameter, only specific
+                # values are returned instead of `inputs`
+                self.assertEqual(p(), parameter_return_value)
 
 
 class TestManualParameterValMapping(TestCase):
