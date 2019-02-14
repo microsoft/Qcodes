@@ -61,8 +61,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            label='IQ Modulation',
                            get_cmd=':IQ:STAT?',
                            set_cmd=':IQ:STAT {}',
-                           get_parser=self.get_parser_on_off,
-                           set_parser=self.set_parser_on_off)
+                           val_mapping=create_on_off_val_mapping(on_val='1',
+                                                                 off_val='0'))
         self.add_parameter('pulsemod_state',
                            label='Pulse Modulation',
                            get_cmd=':SOUR:PULM:STAT?',
