@@ -108,6 +108,11 @@ class _SetParamContext:
         self._parameter.set(self._original_value)
 
 
+def invert_val_mapping(val_mapping: Dict) -> Dict:
+    """Inverts the value mapping dictionary for allowed parameter values"""
+    return {v: k for k, v in val_mapping.items()}
+
+
 class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
@@ -233,7 +238,7 @@ class _BaseParameter(Metadatable):
         if val_mapping is None:
             self.inverse_val_mapping = None
         else:
-            self.inverse_val_mapping = {v: k for k, v in val_mapping.items()}
+            self.inverse_val_mapping = invert_val_mapping(val_mapping)
 
         self.get_parser = get_parser
         self.set_parser = set_parser
