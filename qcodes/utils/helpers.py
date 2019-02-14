@@ -669,8 +669,10 @@ def partial_with_docstring(func, docstring, **kwargs):
 
 def create_on_off_val_mapping(on_val=True, off_val=False):
     """
-    Val map which maps readonable on/off inputs to the specified on/off_vals
-    to be sent to the intrument and if inverted maps these back to bools.
+    Returns a value mapping which maps inputs which reasonably mean "on"/"off"
+    to the specified on_val/off_val which are to be sent to the
+    intrument. This value mapping is such that, when inverted,
+    on_val/off_val are mapped to boolean True/False.
     """
     return OrderedDict([('On', on_val),
                        ('ON', on_val),
