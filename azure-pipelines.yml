@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-          displayName: "Add conda to PATH"
+        displayName: "Add conda to PATH"
       - script: |
           conda update -n base conda
           conda init cmd.exe
