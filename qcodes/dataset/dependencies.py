@@ -1,4 +1,5 @@
-from typing import Dict, Any, Tuple, Sequence, Optional, FrozenSet, List
+from typing import (Dict, Any, Tuple, Sequence, Optional, FrozenSet, List,
+                    cast, Type)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
@@ -34,30 +35,34 @@ class InterDependencies_:
         deps_code = self.validate_paramspectree(dependencies)
         if not deps_code == 0:
             err = self.error_codes[deps_code]
+            old_error = cast(type, err['error'])
+            old_mssg = cast(str, err['message'])
             self._raise_from(ValueError, 'Invalid dependencies',
-                             err['error'], err['message'])
+                             old_error, old_mssg)
 
         inffs_code = self.validate_paramspectree(inferences)
         if not inffs_code == 0:
             err = self.error_codes[inffs_code]
+            old_error = cast(type, err['error'])
+            old_mssg = cast(str, err['message'])
             self._raise_from(ValueError, 'Invalid inferences',
-                             err['error'], err['message'])
+                             old_error, old_mssg)
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                err = {'error': TypeError,
-                       'message': ('Standalones must be a sequence of '
-                                   'ParamSpecs')}
+                error: type = TypeError
+                message: str = ('Standalones must be a sequence of '
+                                'ParamSpecs')
                 self._raise_from(ValueError, 'Invalid standalones',
-                                 err['error'], err['message'])
+                                 error, message)
 
         self.dependencies: ParamSpecTree = dependencies
         self.inferences: ParamSpecTree = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
 
     @staticmethod
-    def _raise_from(new_error: Exception, new_mssg: str,
-                    old_error: Exception, old_mssg: str) -> None:
+    def _raise_from(new_error: Type[Exception], new_mssg: str,
+                    old_error: Type[Exception], old_mssg: str) -> None:
         """
         Helper function to raise an error with a cause in a way that our test
         suite can digest
