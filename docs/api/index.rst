@@ -16,6 +16,7 @@ QCoDeS API
    math
    monitor
    station
+   utils
 
 Legacy API
 ----------
