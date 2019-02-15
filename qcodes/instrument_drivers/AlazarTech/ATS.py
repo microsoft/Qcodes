@@ -4,19 +4,13 @@ import numpy as np
 import time
 import os
 import warnings
-import sys
-import asyncio
-import concurrent
 
-from threading import Lock
-from functools import partial
-from typing import List, Dict, Union, Tuple, Sequence, Awaitable, Optional
+from typing import List, Dict, Union, Tuple, Sequence
 from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, BOARD_NAMES
-from qcodes.utils.async_utils import sync
 from .utils import TraceParameter
 
 logger = logging.getLogger(__name__)
@@ -61,57 +55,21 @@ class AlazarTech_ATS(Instrument):
     channels = 2
 
     @classmethod
-    async def find_boards_async(cls, dll_path: str = None) -> List[dict]:
+    def find_boards(cls, dll_path: str = None) -> List[dict]:
         api = AlazarATSAPI(dll_path or cls.dll_path)
 
-        system_count = await api.num_of_systems_async()
+        system_count = api.num_of_systems()
         boards = []
         for system_id in range(1, system_count + 1):
-            board_count = await api.boards_in_system_by_system_id_async(system_id)
+            board_count = api.boards_in_system_by_system_id(system_id)
             for board_id in range(1, board_count + 1):
-                boards.append(await cls.get_board_info_async(api, system_id, board_id))
+                boards.append(cls.get_board_info(api, system_id, board_id))
         return boards
-
-    @classmethod
-    def find_boards(cls, dll_path: str=None) -> List[dict]:
-        """
-        Find Alazar boards connected
-
-        Args:
-            dll_path: (string) path of the Alazar driver dll
-
-        Returns:
-            list: list of board info for each connected board
-        """
-        return sync(cls.find_boards_async(dll_path))
 
     # TODO(nataliejpg) this needs fixing..., dll can't be a string
     @classmethod
     def get_board_info(cls, api: AlazarATSAPI, system_id: int,
                        board_id: int) -> Dict[str, Union[str, int]]:
-        """
-        Get the information from a connected Alazar board
-
-        Args:
-            dll (CDLL): CTypes CDLL
-            system_id: id of the Alazar system
-            board_id: id of the board within the alazar system
-
-        Return:
-
-            Dictionary containing
-
-                - system_id
-                - board_id
-                - board_kind (as string)
-                - max_samples
-                - bits_per_sample
-        """
-        return sync(cls.get_board_info_async(api, system_id, board_id))
-
-    @classmethod
-    async def get_board_info_async(cls, api: AlazarATSAPI, system_id: int,
-                                   board_id: int) -> Dict[str, Union[str, int]]:
         """
         Get the information from a connected Alazar board
 
@@ -138,7 +96,7 @@ class AlazarTech_ATS(Instrument):
         handle = board._handle
         board_kind = api._board_names[api.get_board_kind(handle)]
 
-        max_s, bps = await board._get_channel_info_async(handle)
+        max_s, bps = board._get_channel_info(handle)
         return {
             'system_id': system_id,
             'board_id': board_id,
@@ -463,19 +421,19 @@ class AlazarTech_ATS(Instrument):
         )
         return max_s.value, bps.value
 
-    async def _get_channel_info_async(self, handle: int) -> Tuple[int, int]:
+    def _get_channel_info(self, handle: int) -> Tuple[int, int]:
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        await self.api.get_channel_info_async(
+        self.api.get_channel_info(
             handle,
             ctypes.byref(max_s),
             ctypes.byref(bps)
         )
         return max_s.value, bps.value
 
-    async def allocate_and_post_buffer(self, sample_type, n_bytes) -> "Buffer":
+    def allocate_and_post_buffer(self, sample_type, n_bytes) -> "Buffer":
         buffer = Buffer(sample_type, n_bytes)
-        await self.api.post_async_buffer_async(
+        self.api.post_async_buffer(
             self._handle, ctypes.cast(
                 buffer.addr, ctypes.c_void_p), buffer.size_bytes
         )
@@ -515,34 +473,6 @@ class AlazarTech_ATS(Instrument):
         Returns:
             Whatever is given by acquisition_controller.post_acquire method
         """
-        loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.async_acquire(
-            mode=mode,
-            samples_per_record=samples_per_record,
-            records_per_buffer=records_per_buffer,
-            buffers_per_acquisition=buffers_per_acquisition,
-            channel_selection=channel_selection,
-            transfer_offset=transfer_offset,
-            external_startcapture=external_startcapture,
-            enable_record_headers=enable_record_headers,
-            alloc_buffers=alloc_buffers,
-            fifo_only_streaming=fifo_only_streaming,
-            interleave_samples=interleave_samples,
-            get_processed_data=get_processed_data,
-            allocated_buffers=alloc_buffers,
-            buffer_timeout=buffer_timeout,
-            acquisition_controller=acquisition_controller
-        ))
-
-    async def async_acquire(self, mode=None, samples_per_record=None,
-                            records_per_buffer=None, buffers_per_acquisition=None,
-                            channel_selection=None, transfer_offset=None,
-                            external_startcapture=None, enable_record_headers=None,
-                            alloc_buffers=None, fifo_only_streaming=None,
-                            interleave_samples=None, get_processed_data=None,
-                            allocated_buffers=None, buffer_timeout=None,
-                            acquisition_controller=None):
-
         # region set parameters from args
         start_func = time.perf_counter()
         if self._parameters_synced == False:
@@ -581,7 +511,7 @@ class AlazarTech_ATS(Instrument):
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = samples_per_record
-            await self.api.set_record_size_async(
+            self.api.set_record_size(
                 self._handle, pretriggersize,
                 post_trigger_size
             )
@@ -599,7 +529,7 @@ class AlazarTech_ATS(Instrument):
         if mode == 'NPT':
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
-            await self.api.before_async_read_async(
+            self.api.before_async_read(
                 self._handle, self.channel_selection.raw_value,
                 self.transfer_offset.raw_value,
                 samples_per_record,
@@ -620,7 +550,7 @@ class AlazarTech_ATS(Instrument):
                 self.records_per_buffer.set(1)
             records_per_buffer = self.records_per_buffer.raw_value
 
-            await self.api.before_async_read_async(
+            self.api.before_async_read(
                 self._handle, self.channel_selection.raw_value,
                 self.transfer_offset.raw_value, samples_per_buffer,
                 records_per_buffer, buffers_per_acquisition,
@@ -628,7 +558,7 @@ class AlazarTech_ATS(Instrument):
             )
 
         # bytes per sample
-        _, bps = await self._get_channel_info_async(self._handle)
+        _, bps = self._get_channel_info(self._handle)
         # TODO(JHN) Why +7 I guess its to do ceil division?
         bytes_per_sample = (bps + 7) // 8
         # bytes per record
@@ -661,23 +591,16 @@ class AlazarTech_ATS(Instrument):
 
         # post buffers to Alazar
         try:
-            # NB: gather does not ensure that the tasks complete in the same order,
-            #     but it does guarantee that the sequence of results is in the same
-            #     order as the sequence of tasks, irrespective of when each task
-            #     completes.
-            #     We use this to make sure that we can begin allocating the next
-            #     buffer while each buffer is being posted.
-            for buf in await asyncio.gather(*(
-                self.allocate_and_post_buffer(sample_type, bytes_per_buffer)
-                for _ in range(allocated_buffers)
-            )):
+            for _ in range(allocated_buffers)
+                buf = self.allocate_and_post_buffer(sample_type,
+                                                    bytes_per_buffer)
                 self.buffer_list.append(buf)
 
             # -----start capture here-----
             acquisition_controller.pre_start_capture()
             start = time.perf_counter()  # Keep track of when acquisition started
             # call the startcapture method
-            await self.api.start_capture_async(self._handle)
+            self.api.start_capture(self._handle)
             acquisition_controller.pre_acquire()
 
             # buffer handling from acquisition
@@ -691,9 +614,10 @@ class AlazarTech_ATS(Instrument):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
-                await self.api.wait_async_buffer_complete_async(
-                    self._handle, ctypes.cast(
-                        buf.addr, ctypes.c_void_p), buffer_timeout
+                self.api.wait_async_buffer_complete(
+                    self._handle,
+                    ctypes.cast(buf.addr, ctypes.c_void_p),
+                    buffer_timeout
                 )
 
                 acquisition_controller.buffer_done_callback(buffers_completed)
@@ -703,9 +627,10 @@ class AlazarTech_ATS(Instrument):
                 if buffer_recycling:
                     acquisition_controller.handle_buffer(
                         buf.buffer, buffers_completed)
-                    await self.api.post_async_buffer_async(
-                        self._handle, ctypes.cast(
-                            buf.addr, ctypes.c_void_p), buf.size_bytes
+                    self.api.post_async_buffer(
+                        self._handle,
+                        ctypes.cast(buf.addr, ctypes.c_void_p),
+                        buf.size_bytes
                     )
                 buffers_completed += 1
                 bytes_transferred += buf.size_bytes
@@ -713,7 +638,7 @@ class AlazarTech_ATS(Instrument):
         finally:
             # stop measurement here
             done_capture = time.perf_counter()
-            await self.api.abort_async_read_async(self._handle)
+            self.api.abort_async_read(self._handle)
 
         # If we made it here, we should have completed all buffers.
         assert buffers_completed == self.buffers_per_acquisition.get()
@@ -772,8 +697,6 @@ class AlazarTech_ATS(Instrument):
 
         # return result
         return acquisition_controller.post_acquire()
-
-    async_acquire.__doc__ = acquire.__doc__
 
     def _set_if_present(self, param_name: str, value: Union[int, str, float]) -> None:
         if value is not None:
@@ -1068,20 +991,6 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
-
-    async def handle_buffer_async(self, buffer, buffer_number=None):
-        """
-        This method should store or process the information that is contained
-        in the buffers obtained during the acquisition.
-
-        Args:
-            buffer: np.array with the data from the Alazar card
-            buffer_number: counter for which buffer we are handling
-
-        Returns:
-            something, it is ignored in any case
-        """
-        return self.handle_buffer(buffer, buffer_number=buffer_number)
 
     def post_acquire(self):
         """
