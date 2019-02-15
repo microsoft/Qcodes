@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Sequence, Optional, Set
+from typing import Dict, Any, Tuple, Sequence, Optional, FrozenSet, List
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
@@ -53,7 +53,7 @@ class InterDependencies_:
 
         self.dependencies: ParamSpecTree = dependencies
         self.inferences: ParamSpecTree = inferences
-        self.standalones: Set[ParamSpecBase] = set(standalones)
+        self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
 
     @staticmethod
     def _raise_from(new_error: Exception, new_mssg: str,
@@ -168,7 +168,7 @@ def old_to_new(idps: InterDependencies) -> InterDependencies_:
     dependencies = {}
     inferences = {}
     standalones_mut = []
-    root_paramspecs = []
+    root_paramspecs: List[ParamSpecBase] = []
 
     for ps in idps.paramspecs:
         deps = tuple(namedict[n].base_version() for n in ps.depends_on_)
@@ -182,8 +182,7 @@ def old_to_new(idps: InterDependencies) -> InterDependencies_:
         if len(deps) == len(inffs) == 0:
             standalones_mut.append(ps.base_version())
 
-    standalones = (set(standalones_mut)
-                       .difference(set(root_paramspecs)))
+    standalones = tuple(set(standalones_mut).difference(set(root_paramspecs)))
 
     idps_ = InterDependencies_(dependencies=dependencies,
                                inferences=inferences,
