@@ -591,7 +591,7 @@ class AlazarTech_ATS(Instrument):
 
         # post buffers to Alazar
         try:
-            for _ in range(allocated_buffers)
+            for _ in range(allocated_buffers):
                 buf = self.allocate_and_post_buffer(sample_type,
                                                     bytes_per_buffer)
                 self.buffer_list.append(buf)
