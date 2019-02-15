@@ -1,4 +1,4 @@
-from typing import Dict, Any, Tuple, Sequence, Optional
+from typing import Dict, Any, Tuple, Sequence, Optional, Set
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
@@ -51,9 +51,9 @@ class InterDependencies_:
                 self._raise_from(ValueError, 'Invalid standalones',
                                  err['error'], err['message'])
 
-        self.dependencies = dependencies
-        self.inferences = inferences
-        self.standalones = standalones
+        self.dependencies: ParamSpecTree = dependencies
+        self.inferences: ParamSpecTree = inferences
+        self.standalones: Set[ParamSpecBase] = set(standalones)
 
     @staticmethod
     def _raise_from(new_error: Exception, new_mssg: str,
@@ -102,7 +102,7 @@ class InterDependencies_:
         # check for cycles
 
         roots = set(paramspectree.keys())
-        leafs = set(ps for tup in paramspectree.items() for ps in tup)
+        leafs = set(ps for tup in paramspectree.values() for ps in tup)
 
         if roots.intersection(leafs) != set():
             return 5
@@ -155,3 +155,38 @@ class InterDependencies:
         paramspecs = [ParamSpec.deserialize(sps) for sps in ser['paramspecs']]
         idp = cls(*paramspecs)
         return idp
+
+
+def old_to_new(idps: InterDependencies) -> InterDependencies_:
+    """
+    Create a new InterDependencies_ object (new style) from an existing
+    InterDependencies object (old style). Leaves the original object unchanged.
+    Incidentally, this function can serve as a validator of the original object
+    """
+    namedict: Dict[str, ParamSpec] = {ps.name: ps for ps in idps.paramspecs}
+
+    dependencies = {}
+    inferences = {}
+    standalones_mut = []
+    root_paramspecs = []
+
+    for ps in idps.paramspecs:
+        deps = tuple(namedict[n].base_version() for n in ps.depends_on_)
+        inffs = tuple(namedict[n].base_version() for n in ps.inferred_from_)
+        if len(deps) > 0:
+            dependencies.update({ps.base_version(): deps})
+            root_paramspecs += list(deps)
+        if len(inffs) > 0:
+            inferences.update({ps.base_version(): inffs})
+            root_paramspecs += list(inffs)
+        if len(deps) == len(inffs) == 0:
+            standalones_mut.append(ps.base_version())
+
+    standalones = (set(standalones_mut)
+                       .difference(set(root_paramspecs)))
+
+    idps_ = InterDependencies_(dependencies=dependencies,
+                               inferences=inferences,
+                               standalones=standalones)
+    return idps_
+
