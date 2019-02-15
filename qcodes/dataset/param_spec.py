@@ -83,7 +83,7 @@ class ParamSpecBase:
         return output
 
     @classmethod
-    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpec':
+    def deserialize(cls, ser: Dict[str, Any]) -> 'ParamSpecBase':
         """
         Create a ParamSpec instance of the current version
         from a serialized ParamSpec of some version
