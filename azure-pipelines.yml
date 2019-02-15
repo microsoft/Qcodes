@@ -18,9 +18,9 @@ jobs:
           conda init cmd.exe powershell
         displayName: "Conda setup"
       - script: |
-          CALL C:\Miniconda\condabin\conda_hook.bat
           conda --version
           conda env create --file environment.yml
+          CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
