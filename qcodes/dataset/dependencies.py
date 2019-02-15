@@ -4,6 +4,7 @@ from typing import (Dict, Any, Tuple, Sequence, Optional, FrozenSet, List,
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
+ErrorTuple = Tuple[Type[Exception], str]
 
 
 class InterDependencies_:
@@ -11,18 +12,6 @@ class InterDependencies_:
     Object containing a group of ParamSpecs and the information about their
     internal relations to each other
     """
-
-    error_codes = {1: {'error': TypeError,
-                       'message': 'ParamSpecTree must be a dict'},
-                   2: {'error': TypeError,
-                       'message': 'ParamSpecTree must have ParamSpecs as keys'},
-                   3: {'error': TypeError,
-                       'message': 'ParamSpecTree must have tuple values'},
-                   4: {'error': TypeError,
-                       'message': ('ParamSpecTree can only have tuples of '
-                                   'ParamSpecs as values')},
-                   5: {'error': ValueError,
-                       'message': 'ParamSpecTree can not have cycles'}}
 
     def __init__(self,
                  dependencies: Optional[ParamSpecTree] = None,
@@ -32,21 +21,17 @@ class InterDependencies_:
         dependencies = dependencies or {}
         inferences = inferences or {}
 
-        deps_code = self.validate_paramspectree(dependencies)
-        if not deps_code == 0:
-            err = self.error_codes[deps_code]
-            old_error = cast(type, err['error'])
-            old_mssg = cast(str, err['message'])
+        deps_error = self.validate_paramspectree(dependencies)
+        if not deps_error is None:
+            old_error = cast(type, deps_error[0])
             self._raise_from(ValueError, 'Invalid dependencies',
-                             old_error, old_mssg)
+                             old_error, deps_error[1])
 
-        inffs_code = self.validate_paramspectree(inferences)
-        if not inffs_code == 0:
-            err = self.error_codes[inffs_code]
-            old_error = cast(type, err['error'])
-            old_mssg = cast(str, err['message'])
+        inffs_error = self.validate_paramspectree(inferences)
+        if not inffs_error is None:
+            old_error = cast(type, inffs_error[0])
             self._raise_from(ValueError, 'Invalid inferences',
-                             old_error, old_mssg)
+                             old_error, inffs_error[1])
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
@@ -73,36 +58,32 @@ class InterDependencies_:
             raise new_error(new_mssg) from e
 
     @staticmethod
-    def validate_paramspectree(paramspectree: ParamSpecTree) -> int:
+    def validate_paramspectree(
+        paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
         ParamSpecTree must not have any cycles.
 
         Returns:
-            An error code describing what is wrong with the tree (or 0, if the
-            tree is valid).
-            1: The passed tree is not a dict
-            2: The dict's keys are not all ParamSpecs
-            3: The dict's values are not all tuples
-            4: The dict's values are tuples containing something that
-            is not a ParamSpec
-            5: There is at least one ParamSpec that is present as a key and
-            inside a value (i.e there is a cycle in the tree)
+            A tuple with an exception type and an error message or None, if
+            the paramtree is valid
         """
 
         # Validate the type
 
         if not isinstance(paramspectree, dict):
-            return 1
+            return (TypeError, 'ParamSpecTree must be a dict')
 
         for key, values in paramspectree.items():
             if not isinstance(key, ParamSpecBase):
-                return 2
+                return (TypeError, 'ParamSpecTree must have ParamSpecs as keys')
             if not isinstance(values, tuple):
-                return 3
+                return (TypeError, 'ParamSpecTree must have tuple values')
             for value in values:
                 if not isinstance(value, ParamSpecBase):
-                    return 4
+                    return (TypeError,
+                            ('ParamSpecTree can only have tuples of '
+                             'ParamSpecs as values'))
 
         # check for cycles
 
@@ -110,9 +91,9 @@ class InterDependencies_:
         leafs = set(ps for tup in paramspectree.values() for ps in tup)
 
         if roots.intersection(leafs) != set():
-            return 5
+            return (ValueError, 'ParamSpecTree can not have cycles')
 
-        return 0
+        return None
 
 
 class InterDependencies:
