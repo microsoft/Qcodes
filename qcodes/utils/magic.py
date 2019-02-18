@@ -36,40 +36,38 @@ class QCoDeSMagic(Magics):
         Delays can be provided in a loop by adding `-d {delay}` after `for`
 
         The following options can be passed along with the measurement name
-        (e.g. %%measurement -px -d data_name {measurement_name}):
+        (e.g. ``%%measurement -px -d data_name {measurement_name})``::
+
             -p : print transformed code
             -x : Do not execute code
             -d <dataset_name> : Use custom name for dataset
             -l <loop_name> : Use custom name for Loop
 
-        An example for a loop cell is as follows:
+        An example for a loop cell is as follows::
 
-        %%measurement {-options} {measurement_name}
-        for {sweep_vals}:
-            {measure_parameter1}
-            {measure_parameter2}
-            for -d 1 {sweep_vals2}:
-                {measure_parameter3}
+            %%measurement {-options} {measurement_name}
+            for {sweep_vals}:
+                {measure_parameter1}
+                {measure_parameter2}
+                for -d 1 {sweep_vals2}:
+                    {measure_parameter3}
 
-        {Additional code}
-        ```
+            ...
 
-        which will be internally transformed to:
+        which will be internally transformed to::
 
-        ```
-        import qcodes
-        loop = qcodes.Loop({sweep_vals}).each(
-            {measure_parameter1},
-            {measure_parameter2},
-            qcodes.Loop({sweep_vals2}, delay=1).each(
-                {measure_parameter3}))
-        data = loop.get_data_set(name={measurement_name})
+            import qcodes
+            loop = qcodes.Loop({sweep_vals}).each(
+                {measure_parameter1},
+                {measure_parameter2},
+                qcodes.Loop({sweep_vals2}, delay=1).each(
+                    {measure_parameter3}))
+            data = loop.get_data_set(name={measurement_name})
 
-        {Additional code}
-        ```
+            ...
 
-        An explicit example of the line `for {sweep_vals}:` could be
-        `for sweep_parameter.sweep(0, 42, step=1):`
+        An explicit example of the line ``for {sweep_vals}:`` could be
+        ``for sweep_parameter.sweep(0, 42, step=1):``
 
         """
 
@@ -145,6 +143,7 @@ class QCoDeSMagic(Magics):
 def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
     """
     Registers a iPython magic class
+
     Args:
         cls: magic class to register
         magic_commands (List): list of magic commands within the class to
