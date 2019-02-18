@@ -45,6 +45,15 @@ class InterDependencies_:
         self.inferences: ParamSpecTree = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
 
+        self._id_to_paramspec: Dict[int, ParamSpecBase] = {}
+        for tree in (self.dependencies, self.inferences):
+            for ps, ps_tup in tree.items():
+                self._id_to_paramspec.update({hash(ps): ps})
+                self._id_to_paramspec.update({hash(pst): pst for pst in ps_tup})
+        for ps in self.standalones:
+            self._id_to_paramspec.update({hash(ps): ps})
+        self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
+
     @staticmethod
     def _raise_from(new_error: Type[Exception], new_mssg: str,
                     old_error: Type[Exception], old_mssg: str) -> None:
