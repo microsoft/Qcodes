@@ -18,11 +18,7 @@ channel
 .. automodule:: qcodes.instrument.channel
    :members:
 
-group_parameter
----------------
 
-.. automodule:: qcodes.instrument.group_parameter
-   :members:
 
 ip
 --
@@ -34,13 +30,6 @@ ip_to_visa
 ----------
 
 .. automodule:: qcodes.instrument.ip_to_visa
-   :members:
-
-
-parameter
----------
-
-.. automodule:: qcodes.instrument.parameter
    :members:
 
 

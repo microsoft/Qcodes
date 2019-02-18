@@ -12,6 +12,7 @@ QCoDeS API
    config
    dataset
    instrument
+   parameters
    logger
    math
    monitor
