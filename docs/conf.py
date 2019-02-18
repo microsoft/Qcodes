@@ -365,22 +365,16 @@ intersphinx_mapping = {
     'py': ('https://pylib.readthedocs.io/en/stable/', None)
 }
 
-# try to limit  auto summary and extensive auto doc only to the
-# api part of the docs
-autoclass_content = "init"
-autosummary_generate = False
-autodoc_default_flags = []
 
-with open("index.rst") as f:
-    index_rst_lines = f.readlines()
-
-if any([re.match("\s*api\s*", l) for l in index_rst_lines]):
-    autoclass_content = "both"
-    # classes should include both the
-    # class' and the __init__ method's docstring
-    autosummary_generate = True
-    autodoc_default_flags = ['members', 'undoc-members',
-                             'inherited-members', 'show-inheritance' ]
+autoclass_content = "both"
+# classes should include both the
+# class' and the __init__ method's docstring
+autosummary_generate = True
+autodoc_member_order = 'bysource'
+autodoc_default_options = {'members': '',
+                           'undoc-members': True,
+                           'inherited-members': True,
+                           'show-inheritance': True}
 
 # we mock modules that for one reason or another is not
 # there when generating the docs
