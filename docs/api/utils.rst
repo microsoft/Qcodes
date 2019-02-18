@@ -1,9 +1,7 @@
 .. _utils_api :
 
-Parameter API
-=============
-
-TODO: Write some introduction about parameters.
+Utils API
+=========
 
 
 command
