@@ -123,6 +123,7 @@ devices:
           - q: ":AGND:CHAN:ENAB (@{ch_id}0101)"
           - q: ":COUP:PORT:DET"
           - q: ":CLOS (@00248)"
+          - q: ":CLOS (@00345,01109)"
           - q: ":CLOS (@01012)"
           - q: ":OPEN (@00248)"
           - q: ":OPEN (@00322)"

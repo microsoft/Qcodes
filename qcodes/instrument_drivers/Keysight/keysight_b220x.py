@@ -4,6 +4,7 @@ from functools import wraps
 
 from qcodes import VisaInstrument
 from qcodes.utils.validators import MultiType, Ints, Enum, Lists
+from typing import List, Tuple
 
 
 def post_execution_status_poll(func):
@@ -189,6 +190,10 @@ class KeysightB220X(VisaInstrument):
 
         self.write(f":CLOS (@{self._card:01d}{input_ch:02d}{output_ch:02d})")
 
+    def connect_paths(self, paths: List[Tuple[int, int]]):
+        channel_list_str = self.to_channel_list(paths)
+        self.write(f":CLOS {channel_list_str}")
+
     @post_execution_status_poll
     def disconnect(self, input_ch, output_ch):
         """Disconnect given Input/Output pair.
@@ -338,3 +343,8 @@ class KeysightB220X(VisaInstrument):
                   r'?:[,\)\r\n]|$))'
         return {(int(match['input']), int(match['output'])) for match in
                 re.finditer(pattern, channel_list)}
+
+    def to_channel_list(self, paths: List[Tuple[int, int]]):
+        l = [f'{self._card:01d}{i:02d}{o:02d}' for i, o in paths]
+        channel_list = f"(@{','.join(l)})"
+        return channel_list
