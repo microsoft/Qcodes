@@ -1,50 +1,64 @@
 """
-Measured and/or controlled parameters
+The Parameter module implements Parameter interface
+that are the basis of measurements and control within QCoDeS.
 
 Anything that you want to either measure or control within QCoDeS should
 satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from _BaseParameter (except
+All parameter classes are subclassed from :class:`._BaseParameter` (except
 CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
 
-This file defines four classes of parameters:
+This module defines four classes of parameters as well as some more specialized
+ones:
 
-- ``Parameter`` is the base class for scalar-valued parameters.
+- :class:`.Parameter` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
 
-    1. As an ``Instrument`` parameter that sends/receives commands. Provides a
-       standardized interface to construct strings to pass to the
-       instrument's ``write`` and ``ask`` methods
+    1. As an :class:`.Instrument` parameter that sends/receives commands.
+       Provides a standardized interface to construct strings to pass to the
+       :meth:`.Instrument.write` and :meth:`.Instrument.ask` methods
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
 
     Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
-    settable parameter as the swept variable in a ``Loop``.
+    settable parameter as the swept variable in a :class:`qcodes.loops.Loop`.
     The get/set functionality can be modified.
 
-- ``ArrayParameter`` is a base class for array-valued parameters, ie anything
-    for which each ``get`` call returns an array of values that all have the
-    same type and meaning. Currently not settable, only gettable. Can be used
-    in ``Measure``, or in ``Loop`` - in which case these arrays are nested
-    inside the loop's setpoint array. To use, provide a ``get`` method that
-    returns an array or regularly-shaped sequence, and describe that array in
-    ``super().__init__``.
+- :class:`.ParameterWithSetpoints` is intended for array-values parameters.
+    This Parameter class is intended for anything where a call to the instrument
+    returns an array of values.
+    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
+    gives more detailed examples of how this parameter can be used.
+    :class:`.ParameterWithSetpoints` is supported in a
+    :class:`qcodes.dataset.measurements.Measurement` but not supported in the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurement types.
 
-- ``MultiParameter`` is the base class for multi-valued parameters. Currently
-    not settable, only gettable, but can return an arbitrary collection of
-    scalar and array values and can be used in ``Measure`` or ``Loop`` to
-    feed data to a ``DataSet``. To use, provide a ``get`` method
+- :class:`.ArrayParameter` is an older base class for array-valued parameters.
+    For any new driver we strongly recommend using
+    :class:`.ParameterWithSetpoints` which is both more flexible and
+    significantly easier to use. This Parameter is intended for anything for
+    which each ``get`` call returns an array of values that all have the same
+    type and meaning. Currently not settable, only gettable. Can be used in a
+    :class:`qcodes.dataset.measurements.Measurement`
+    as well as in the legacy :class:`qcodes.loops.Loop`
+    and :class:`qcodes.measure.Measure` measurements - in which case
+    these arrays are nested inside the loop's setpoint array. To use, provide a
+    ``get`` method that returns an array or regularly-shaped sequence, and
+    describe that array in ``super().__init__``.
+
+- :class:`.MultiParameter` is the base class for multi-valued parameters.
+    Currently not settable, only gettable, but can return an arbitrary
+    collection of scalar and array values and can be used in
+    :class:`qcodes.dataset.measurements.Measurement` as well as the
+    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    measurements. To use, provide a ``get`` method
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
-
-    ``CombinedParameter`` Combines several parameters into a ``MultiParameter``.
-    can be easily used via the ``combine`` function.
-    Note that it is not yet a subclass of BaseParameter.
-
 
 """
 
@@ -86,16 +100,19 @@ ParamDataType = Any
 
 log = logging.getLogger(__name__)
 
+
 class _SetParamContext:
     """
-    This class is returned by the set method of parameters
+    This class is returned by the ``set_to`` method of parameters
 
     Example usage:
+
     >>> v = dac.voltage()
     >>> with dac.voltage.set_to(-1):
         ...     # Do stuff with the DAC output set to -1 V.
         ...
     >>> assert abs(dac.voltage() - v) <= tolerance
+
     """
     def __init__(self, parameter):
         self._parameter = parameter
@@ -1062,7 +1079,7 @@ class ArrayParameter(_BaseParameter):
     Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns an array.
-    This method is automatically wrapped to provide a ``.get``` method.
+    This method is automatically wrapped to provide a ``.get`` method.
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -1252,7 +1269,7 @@ class MultiParameter(_BaseParameter):
     Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
-    values. This method is automatically wrapped to provide a ``.get``` method.
+    values. This method is automatically wrapped to provide a ``.get`` method.
     When used in a ``Loop`` or ``Measure`` operation, each of these
     values will be entered into a different ``DataArray``. The constructor
     args describe what data we expect from each ``.get`` call and how it
@@ -1781,7 +1798,6 @@ class ScaledParameter(Parameter):
     class Role(enum.Enum):
         GAIN = enum.auto()
         DIVISION = enum.auto()
-
 
     def __init__(self,
                  output: Parameter,
