@@ -1,7 +1,8 @@
 import pytest
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.Keysight.Keysight_34465A import Keysight_34465A
+from qcodes.instrument_drivers.Keysight.Keysight_34465A_submodules import \
+    Keysight_34465A
 visalib = sims.__file__.replace('__init__.py', 'Keysight_34465A.yaml@sim')
 
 
@@ -19,6 +20,14 @@ def driver():
 def test_init(driver):
     idn = driver.IDN()
     assert idn['vendor'] == 'Keysight'
+
+
+def test_has_dig_option(driver):
+    assert True is driver.has_DIG
+
+
+def test_model_flag(driver):
+    assert True is driver.is_34465A_34470A
 
 
 def test_NPLC(driver):
@@ -42,3 +51,12 @@ def test_set_get_autorange(driver):
     driver.autorange.set('OFF')
     ar = driver.autorange.get()
     assert ar == 'OFF'
+
+
+def test_display_text(driver):
+    assert "" == driver.display.text()
+
+    driver.display.text("qwe")
+    assert "qwe" == driver.display.text()
+
+    driver.display.clear()

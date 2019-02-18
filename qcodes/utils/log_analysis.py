@@ -5,8 +5,12 @@ from typing import Optional, List
 import pandas as pd
 from pandas.core.series import Series
 
+from qcodes.utils.deprecate import deprecate
 
-def logfile_to_dataframe(logfile: Optional[str]=None,
+
+@deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+           alternative="`qcodes.utils.logger.logfile_to_dataframe`")
+def logfile_to_dataframe(logfile: str,
                          columns: Optional[List[str]]=None,
                          separator: Optional[str]=None) -> pd.DataFrame:
 
@@ -29,6 +33,8 @@ def logfile_to_dataframe(logfile: Optional[str]=None,
     return dataframe
 
 
+@deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+           alternative="`qcodes.utils.logger.time_difference`")
 def time_difference(firsttimes: Series,
                     secondtimes: Series,
                     use_first_series_labels: bool=True) -> Series:

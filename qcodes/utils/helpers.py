@@ -12,8 +12,11 @@ from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
 from functools import partial
+from collections import OrderedDict
 
 import numpy as np
+
+from qcodes.utils.deprecate import deprecate
 
 
 _tprint_times= {} # type: Dict[str, float]
@@ -44,6 +47,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
         "__dtype__" containing value "complex"
         * object with a `_JSONEncoder` method get converted the return value of
         that method
+        * objects which support the pickle protocol get converted using the
+        data provided by that protocol
         * other objects which cannot be serialized get converted to their
         string representation (suing the `str` function)
         """
@@ -68,8 +73,16 @@ class NumpyJSONEncoder(json.JSONEncoder):
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
             except TypeError:
-                # we cannot convert the object to JSON, just take a string
-                s = str(obj)
+                # See if the object supports the pickle protocol.
+                # If so, we should be able to use that to serialize.
+                if hasattr(obj, '__getnewargs__'):
+                    return {
+                        '__class__': type(obj).__name__,
+                        '__args__': obj.__getnewargs__()
+                    }
+                else:
+                    # we cannot convert the object to JSON, just take a string
+                    s = str(obj)
             return s
 
 
@@ -312,6 +325,8 @@ class LogCapture():
 
     """
 
+    @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+               alternative="`qcodes.utils.logger.LogCapture`")
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
@@ -568,19 +583,35 @@ def add_to_spyder_UMR_excludelist(modulename: str):
     nothing if Spyder is not found.
     TODO is there a better way to detect if we are in spyder?
     """
-
-
     if any('SPYDER' in name for name in os.environ):
+
+        sitecustomize_found = False
         try:
             from spyder.utils.site import sitecustomize
-            excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
-                                              '').split(',')
-            if modulename not in excludednamelist:
-                log.info("adding {} to excluded modules".format(modulename))
-                excludednamelist.append(modulename)
-                sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
         except ImportError:
             pass
+        else:
+            sitecustomize_found = True
+        if sitecustomize_found is False:
+            try:
+                from spyder_kernels.customize import spydercustomize as sitecustomize # type: ignore
+
+            except ImportError:
+                pass
+            else:
+                print("found kernels site")
+                sitecustomize_found = True
+
+        if sitecustomize_found is False:
+            return
+
+        excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                          '').split(',')
+        if modulename not in excludednamelist:
+            log.info("adding {} to excluded modules".format(modulename))
+            excludednamelist.append(modulename)
+            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
+            os.environ['SPY_UMR_NAMELIST'] = ','.join(excludednamelist)
 
 
 @contextmanager
@@ -634,3 +665,41 @@ def partial_with_docstring(func, docstring, **kwargs):
     inner.__doc__ = docstring
 
     return inner
+
+
+def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
+                              ) -> Dict:
+    """
+    Returns a value mapping which maps inputs which reasonably mean "on"/"off"
+    to the specified on_val/off_val which are to be sent to the
+    instrument. This value mapping is such that, when inverted,
+    on_val/off_val are mapped to boolean True/False.
+    """
+    # Here are the lists of inputs which "reasonably" mean the same as
+    # "on"/"off" (note that True/False values will be added below, and they
+    # will always be added)
+    ons_  = ('On',  'ON',  'on',  '1', 1)
+    offs_ = ('Off', 'OFF', 'off', '0', 0)
+
+    # This ensures that True/False values are always added and are added at
+    # the end of on/off inputs, so that after inversion True/False will be
+    # the remaining keys in the inverted value mapping dictionary
+    ons = ons_ + (True,)
+    offs = offs_ + (False,)
+
+    return OrderedDict([(on, on_val) for on in ons]
+                       + [(off, off_val) for off in offs])
+
+
+def abstractmethod(funcobj):
+    """A decorator indicating abstract methods.
+
+    This is heavily inspired by the decorator of the same name in
+    the ABC standard library. But we make our own version because
+    we actually want to allow the class with the abstract method to be
+    instantiated and we will use this property to detect if the
+    method is abstract and should be overwritten.
+    """
+    funcobj.__qcodes_is_abstract_method__ = True
+    return funcobj
+
