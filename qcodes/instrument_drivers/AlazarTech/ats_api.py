@@ -19,12 +19,12 @@ HANDLE = U32
 logger = logging.getLogger(__name__)
 
 TApi = TypeVar("TApi", bound="AlazarATSAPI")
-ReturnCode = NewType('ReturnCode', ctypes.c_uint)
+ReturnCode = NewType('ReturnCode', int)
 
 
 ## CONSTANTS ##
 
-ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(ctypes.c_uint(code)): msg for code, msg in {
+ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
     513: 'ApiFailed',
     514: 'ApiAccessDenied',
     515: 'ApiDmaChannelUnavailable',
@@ -161,7 +161,10 @@ BOARD_NAMES = {
 API_SUCCESS = 512
 
 
-def check_error_code(return_code: ctypes.c_uint, func, arguments) -> None:
+def check_error_code(return_code_c: ctypes.c_uint, func, arguments
+                     ) -> None:
+    return_code = int(return_code_c.value)
+
     if (return_code != API_SUCCESS) and (return_code != 518):
         # TODO(damazter) (C) log error
         argrepr = repr(arguments)
