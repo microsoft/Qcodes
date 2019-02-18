@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from qcodes.dataset.dependencies import (InterDependencies,
@@ -13,8 +15,10 @@ def some_paramspecbases():
 
     psb1 = ParamSpecBase('psb1', paramtype='text', label='blah', unit='')
     psb2 = ParamSpecBase('psb2', paramtype='array', label='', unit='V')
+    psb3 = ParamSpecBase('psb3', paramtype='array', label='', unit='V')
+    psb4 = ParamSpecBase('psb4', paramtype='numeric', label='number', unit='')
 
-    return (psb1, psb2)
+    return (psb1, psb2, psb3, psb4)
 
 
 def test_wrong_input_raises():
@@ -29,7 +33,7 @@ def test_wrong_input_raises():
 
 def test_init_validation_raises(some_paramspecbases):
 
-    (ps1, ps2) = some_paramspecbases
+    (ps1, ps2, _, _) = some_paramspecbases
 
     invalid_trees = ([ps1, ps2],
                      {'ps1': 'ps2'},
@@ -61,6 +65,28 @@ def test_init_validation_raises(some_paramspecbases):
 
     assert error_caused_by(ei, cause='Standalones must be a sequence of '
                                      'ParamSpecs')
+
+
+def test_serialize(some_paramspecbases):
+
+    def tester(idps):
+        ser = idps.serialize()
+        json.dumps(ser)
+        idps_deser = InterDependencies_.deserialize(ser)
+        assert idps == idps_deser
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps = InterDependencies_(standalones=(ps1, ps2),
+                              dependencies={ps3: (ps4,)})
+    tester(idps)
+
+    idps = InterDependencies_(standalones=(ps1, ps2, ps3, ps4))
+    tester(idps)
+
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                              inferences={ps2: (ps4,), ps3: (ps4,)})
+    tester(idps)
 
 
 def test_old_to_new(some_paramspecs):

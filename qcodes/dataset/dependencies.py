@@ -104,6 +104,67 @@ class InterDependencies_:
 
         return None
 
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Write out this object as a dictionary
+        """
+        # TODO: perhaps we'd eventually like something more human-readable than
+        # hex(hash(paramspecbase)) as a key in 'parameters'?
+        output: Dict[str, Any] = {}
+        output['parameters'] = {hex(key): value.serialize() for key, value in
+                                self._id_to_paramspec.items()}
+
+        trees = ['dependencies', 'inferences']
+        for tree in trees:
+            output[tree] = {}
+            for key, value in getattr(self, tree).items():
+                ps_id = hex(self._paramspec_to_id[key])
+                ps_ids = [hex(self._paramspec_to_id[ps]) for ps in value]
+                output[tree].update({ps_id: ps_ids})
+
+        output['standalones'] = [hex(self._paramspec_to_id[ps]) for ps in
+                                 self.standalones]
+
+        return output
+
+    @classmethod
+    def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
+        """
+        Construct an InterDependencies_ object from a serialization of such
+        an object
+        """
+        params = ser['parameters']
+        deps = {}
+        for key, value in ser['dependencies'].items():
+            deps_key = ParamSpecBase.deserialize(params[key])
+            deps_vals = tuple(ParamSpecBase.deserialize(params[val]) for
+                              val in value)
+            deps.update({deps_key: deps_vals})
+
+        inffs = {}
+        for key, value in ser['inferences'].items():
+            inffs_key = ParamSpecBase.deserialize(params[key])
+            inffs_vals = tuple(ParamSpecBase.deserialize(params[val]) for
+                              val in value)
+            inffs.update({inffs_key: inffs_vals})
+
+        stdls = tuple(ParamSpecBase.deserialize(params[ps_id]) for
+                      ps_id in ser['standalones'])
+
+        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+
+    def __eq__(self, other):
+        if not isinstance(other, InterDependencies_):
+            return False
+        if not self.dependencies == other.dependencies:
+            return False
+        if not self.inferences == other.inferences:
+            return False
+        if not self.standalones == other.standalones:
+            return False
+
+        return True
+
 
 class InterDependencies:
     """
