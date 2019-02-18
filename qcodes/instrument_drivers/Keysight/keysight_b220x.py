@@ -194,6 +194,10 @@ class KeysightB220X(VisaInstrument):
         channel_list_str = self.to_channel_list(paths)
         self.write(f":CLOS {channel_list_str}")
 
+    def disconnect_paths(self, paths: List[Tuple[int, int]]):
+        channel_list_str = self.to_channel_list(paths)
+        self.write(f":OPEN {channel_list_str}")
+
     @post_execution_status_poll
     def disconnect(self, input_ch, output_ch):
         """Disconnect given Input/Output pair.

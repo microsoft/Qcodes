@@ -91,11 +91,17 @@ def test_connections(uut):
 def test_to_channel_list(uut):
     assert '(@00345,01109)' == uut.to_channel_list([(3, 45), (11, 9)])
 
+
 def test_connect_paths(uut):
-    # uut.disconnect_all()
+    uut.disconnect_all()
     uut.connect_paths([(3, 45), (11, 9)])
     assert 0 == uut.get_status()
-    # assert {(2, 48), (10, 12)} == uut.connections()
+
+
+def test_disconnect_paths(uut):
+    uut.connect_paths([(3, 45), (11, 9)])
+    uut.disconnect_paths([(3, 45), (11, 9)])
+    assert 0 == uut.get_status()
 
 
 def test_disconnect_all(uut):
@@ -287,4 +293,3 @@ class TestParseChannelList:
 
             assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
                 unpadded)
-
