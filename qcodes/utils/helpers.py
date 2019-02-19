@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from asyncio import iscoroutinefunction
 from inspect import signature
 from functools import partial
+from collections import OrderedDict
 
 import numpy as np
 
@@ -666,6 +667,30 @@ def partial_with_docstring(func, docstring, **kwargs):
     return inner
 
 
+def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
+                              ) -> Dict:
+    """
+    Returns a value mapping which maps inputs which reasonably mean "on"/"off"
+    to the specified on_val/off_val which are to be sent to the
+    instrument. This value mapping is such that, when inverted,
+    on_val/off_val are mapped to boolean True/False.
+    """
+    # Here are the lists of inputs which "reasonably" mean the same as
+    # "on"/"off" (note that True/False values will be added below, and they
+    # will always be added)
+    ons_  = ('On',  'ON',  'on',  '1', 1)
+    offs_ = ('Off', 'OFF', 'off', '0', 0)
+
+    # This ensures that True/False values are always added and are added at
+    # the end of on/off inputs, so that after inversion True/False will be
+    # the remaining keys in the inverted value mapping dictionary
+    ons = ons_ + (True,)
+    offs = offs_ + (False,)
+
+    return OrderedDict([(on, on_val) for on in ons]
+                       + [(off, off_val) for off in offs])
+
+
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
 
@@ -677,3 +702,4 @@ def abstractmethod(funcobj):
     """
     funcobj.__qcodes_is_abstract_method__ = True
     return funcobj
+
