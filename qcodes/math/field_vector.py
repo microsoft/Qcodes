@@ -8,7 +8,7 @@ representation immediately.
 
 import numpy as np
 
-from typing import Union, Type, TypeVar
+from typing import Union, Type, TypeVar, Optional
 NormOrder = Union[str, float]
 T = TypeVar('T', bound='FieldVector')
 
@@ -17,48 +17,46 @@ class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
 
-    def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
-                 rho=None):
+    def __init__(self, 
+                 x: Optional[float] = None, 
+                 y: Optional[float] = None, 
+                 z: Optional[float] = None,
+                 r: Optional[float] = None, 
+                 theta: Optional[float] = None,
+                 phi: Optional[float] = None,
+                 rho: Optional[float] = None):
         """
-        Parameters:
-            x (float, optional): represents the norm of the projection of the
-                                    vector along the x-axis
-            y (float, optional): represents the norm of the projection of the
-                                    vector along the y-axis
-            z (float, optional): represents the norm of the projection of the
-                                    vector along the z-axis
-            r (float, optional): represents the norm of the vector
-            theta (float, optional): represents the angle of the vector with
-                                        respect to the positive z-axis
-            rho (float, optional): represents the norm of the projection of the
-                                    vector on to the xy-plane
-            phi (float, optional): represents the angle of rho with respect to
-                                        the positive x-axis
-
-        Note: All inputs are optional, however the user needs to either give
-                (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
-                values for meaningful computation
+        All arguments are optional, however the user needs to provide
+        one of the following combinations for a meaningful computation:
+        (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
+        values.
+        
+        Args:
+            x: represents the norm of the projection 
+                of the vector along the x-axis
+            y: represents the norm of the projection 
+                of the vector along the y-axis
+            z: represents the norm of the projection 
+                of the vector along the z-axis
+            r: represents the norm of the vector
+            theta: represents the angle of the vector
+                with respect to the positive z-axis
+            rho: represents the norm of the projection 
+                of the vector on to the xy-plane
+            phi: represents the angle of rho 
+                with respect to the positive x-axis       
         """
         self._x = float(x) if x is not None else None
         self._y = float(y) if y is not None else None
         self._z = float(z) if z is not None else None
 
         self._r = float(r) if r is not None else None
-        if theta is not None:
-            self._theta = float(np.radians(theta))
-        else:
-            self._theta = None
-
-        if phi is not None:
-            self._phi = float(np.radians(phi))
-        else:
-            self._phi = None
-
+        self._theta = float(np.radians(theta)) if theta is not None else None
+        self._phi = float(np.radians(phi)) if phi is not None else None
         self._rho = float(rho) if rho is not None else None
 
         self._compute_unknowns()
         
-
     def _set_attribute_value(self, attr_name, value):
         if value is None:
             return
@@ -83,7 +81,7 @@ class FieldVector(object):
 
     @staticmethod
     def _cartesian_to_other(x, y, z):
-        """ Convert a cartesian set of coordinates to values of interest."""
+        """Convert a cartesian set of coordinates to values of interest."""
         if any([i is None for i in [x, y, z]]):
             return None
 
@@ -300,7 +298,7 @@ class FieldVector(object):
     # NB: we disable the pylint warning here so that we can match
     #     NumPy's naming convention for the norm method.
     def norm(self,
-             ord: NormOrder=2  # pylint: disable=redefined-builtin
+             ord: NormOrder = 2  # pylint: disable=redefined-builtin
              ) -> float:
         """
         Returns the norm of this field vector. See np.norm
@@ -309,7 +307,7 @@ class FieldVector(object):
         return np.linalg.norm([self.x, self.y, self.z], ord=ord)
 
     def distance(self, other,
-                 ord: NormOrder=2  # pylint: disable=redefined-builtin
+                 ord: NormOrder = 2  # pylint: disable=redefined-builtin
                  ) -> float:
         return (self - other).norm(ord=ord)
 
