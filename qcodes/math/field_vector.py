@@ -312,32 +312,32 @@ class FieldVector(object):
         return (self - other).norm(ord=ord)
 
     @property
-    def x(self) -> float:
+    def x(self) -> Optional[float]:
         return self._x
 
     @property
-    def y(self) -> float:
+    def y(self) -> Optional[float]:
         return self._y
 
     @property
-    def z(self) -> float:
+    def z(self) -> Optional[float]:
         return self._z
 
     @property
-    def rho(self) -> float:
+    def rho(self) -> Optional[float]:
         return self._rho
 
     @property
-    def theta(self) -> float:
-        return np.degrees(self._theta)
+    def theta(self) -> Optional[float]:
+        return float(np.degrees(self._theta))
 
     @property
-    def r(self) -> float:
+    def r(self) -> Optional[float]:
         return self._r
 
     @property
-    def phi(self) -> float:
-        return np.degrees(self._phi)
+    def phi(self) -> Optional[float]:
+        return float(np.degrees(self._phi))
 
     # Representation Methods #
 
