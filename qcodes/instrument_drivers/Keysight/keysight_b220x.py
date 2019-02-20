@@ -4,10 +4,10 @@ from functools import wraps
 
 from qcodes import VisaInstrument
 from qcodes.utils.validators import MultiType, Ints, Enum, Lists
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 
-def post_execution_status_poll(func):
+def post_execution_status_poll(func: Callable) -> Callable:
     """
     Generates a decorator that clears the instrument's status registers
     before executing the actual call and reads the status register after the
