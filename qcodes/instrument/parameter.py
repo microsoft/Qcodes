@@ -253,16 +253,20 @@ class _BaseParameter(Metadatable):
         if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
             self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
-            warnings.warn('Wrapping get method, original get method will not '
-                          'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.')
+            warnings.warn(f'Wrapping get method of parameter: {self.full_name},'
+                          f' original get method will not '
+                          f'be directly accessible. It is recommended to '
+                          f'define get_raw in your subclass instead. '
+                          f'Overwriting get will be an error in the future.')
             self.get = self._wrap_get(self.get)
         if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
             self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
-            warnings.warn('Wrapping set method, original set method will not '
-                          'be directly accessible. It is recommended to '
-                          'define set_raw in your subclass instead.')
+            warnings.warn(f'Wrapping set method of parameter: {self.full_name}, '
+                          f'original set method will not '
+                          f'be directly accessible. It is recommended to '
+                          f'define set_raw in your subclass instead. '
+                          f'Overwriting set will be an error in the future.')
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
