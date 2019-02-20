@@ -848,7 +848,8 @@ class AlazarParameter(Parameter):
             provided
     """
     def __init__(self, name=None, label=None, unit=None, instrument=None,
-                 value=None, byte_to_value_dict=None, vals=None):
+                 value=None, byte_to_value_dict=None, vals=None,
+                 **kwargs):
         if vals is None:
             if byte_to_value_dict is None:
                 vals = validators.Anything()
@@ -857,7 +858,7 @@ class AlazarParameter(Parameter):
                 vals = validators.Enum(*byte_to_value_dict.values())
 
         super().__init__(name=name, label=label, unit=unit, vals=vals,
-                         instrument=instrument)
+                         instrument=instrument, **kwargs)
         self.instrument = instrument
         self._byte = None
         self._uptodate_flag = False
