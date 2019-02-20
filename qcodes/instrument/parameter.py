@@ -592,7 +592,7 @@ class _BaseParameter(Metadatable):
         Raises:
             TypeError: If the value is of the wrong type.
             ValueError: If the value is outside the bounds specified by the
-            validator.
+               validator.
         """
         if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
