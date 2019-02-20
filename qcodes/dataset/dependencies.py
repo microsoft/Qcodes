@@ -1,4 +1,4 @@
-from typing import (Dict, Any, Tuple, Sequence, Optional, FrozenSet, List,
+from typing import (Dict, Any, Tuple, Optional, FrozenSet, List,
                     cast, Type)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec

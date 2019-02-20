@@ -7,7 +7,6 @@ from qcodes.dataset.dependencies import (InterDependencies,
                                          old_to_new)
 from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.tests.common import error_caused_by
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
 
 @pytest.fixture
