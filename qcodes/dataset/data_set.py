@@ -257,7 +257,9 @@ class DataSet(Sized):
 
         else:
             # Actually perform all the side effects needed for the creation
-            # of a new dataset
+            # of a new dataset. Note that a dataset is created (in the DB)
+            # with no parameters; they are written to disk when the dataset
+            # is marked as started
             if exp_id is None:
                 if len(get_experiments(self.conn)) > 0:
                     exp_id = get_last_experiment(self.conn)
@@ -268,7 +270,9 @@ class DataSet(Sized):
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
-                                       specs, values, metadata)
+                                       parameters=None,
+                                       values=values,
+                                       metadata=metadata)
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
             self._completed = False
@@ -330,14 +334,23 @@ class DataSet(Sized):
 
     @property
     def parameters(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "parameters", "run_id", self.run_id)
+        if self.pristine:
+            psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+            return ','.join(psnames)
+        else:
+            return select_one_where(self.conn, "runs",
+                                    "parameters", "run_id", self.run_id)
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
-        params = self.get_parameters()
-        param_names = [p.name for p in params]
-        return dict(zip(param_names, params))
+        if self.pristine:
+            params = self.description.interdeps.paramspecs
+            param_names = [ps.name for ps in params]
+            return dict(zip(param_names, params))
+        else:
+            params = self.get_parameters()
+            param_names = [p.name for p in params]
+            return dict(zip(param_names, params))
 
     @property
     def exp_id(self) -> int:
@@ -447,14 +460,6 @@ class DataSet(Sized):
                                     "run_id", self.run_id)
         return RunDescriber.from_json(desc_str)
 
-    def _perform_start_actions(self) -> None:
-        """
-        Perform the actions that must take place once the run has been started
-        """
-        # So far it is only one action: write down the run_description
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
-
     def toggle_debug(self):
         """
         Toggle debug mode, if debug mode is on all the queries made are
@@ -470,8 +475,14 @@ class DataSet(Sized):
         added to the DataSet in a sequence matching their internal
         dependencies, i.e. first independent parameters, next other
         independent parameters inferred from the first ones, and finally
-        the dependent parameters
+        the dependent parameters. Note that adding parameters to the DataSet
+        does not reflect in the DB file until the DataSet is marked as started
         """
+
+        if not self.pristine:
+            raise ValueError('Can not add parameters to a DataSet that has '
+                             'been started.')
+
         if self.parameters:
             old_params = self.parameters.split(',')
         else:
@@ -497,8 +508,6 @@ class DataSet(Sized):
                 raise ValueError('Can not have parameter '
                                  f'{spec.name} depend on {dp}, '
                                  'no such parameter in this DataSet')
-
-        add_parameter(self.conn, self.table_name, spec)
 
         desc = self.description
         desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
@@ -558,10 +567,35 @@ class DataSet(Sized):
         if value:
             mark_run_complete(self.conn, self.run_id)
 
+    def mark_started(self) -> None:
+        """
+        Mark this dataset as started. A dataset that has been started can not
+        have its parameters modified.
+
+        Calling this on an already started DataSet is a NOOP.
+        """
+        if not self._started:
+            self._perform_start_actions()
+            self._started = True
+
+    def _perform_start_actions(self) -> None:
+        """
+        Perform the actions that must take place once the run has been started
+        """
+
+        for spec in self.description.interdeps.paramspecs:
+            add_parameter(self.conn, self.table_name, spec)
+
+        update_run_description(self.conn, self.run_id,
+                               self.description.to_json())
+
     def mark_complete(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
+        if self.pristine:
+            raise ValueError('Can not mark DataSet as complete before it has '
+                             'been marked as started.')
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
@@ -586,9 +620,14 @@ class DataSet(Sized):
         It is an error to add results to a completed DataSet.
         """
 
-        if not self.started:
-            self._perform_start_actions()
-            self._started = True
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
+
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
 
         # TODO: Make this check less fugly
         for param in results.keys():
@@ -599,9 +638,6 @@ class DataSet(Sized):
                         raise ValueError(f'Can not add result for {param}, '
                                          f'since this depends on {dep}, '
                                          'which is not being added.')
-
-        if self.completed:
-            raise CompletedError
 
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
@@ -628,9 +664,15 @@ class DataSet(Sized):
         It is an error to add results to a completed DataSet.
         """
 
-        if not self.started:
-            self._perform_start_actions()
-            self._started = True
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
+
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
+
 
         expected_keys = frozenset.union(*[frozenset(d) for d in results])
         values = [[d.get(k, None) for k in expected_keys] for d in results]
