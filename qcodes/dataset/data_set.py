@@ -507,10 +507,6 @@ class DataSet(Sized):
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
 
-    @deprecate(reason=None, alternative="DataSet.add_parameter")
-    def add_parameters(self, specs: SPECS) -> None:
-        add_parameter(self.conn, self.table_name, *specs)
-
     def add_metadata(self, tag: str, metadata: Any):
         """
         Adds metadata to the DataSet. The metadata is stored under the
@@ -636,112 +632,6 @@ class DataSet(Sized):
         insert_many_values(self.conn, self.table_name, list(expected_keys),
                            values)
         return len_before_add
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.')
-    def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
-        """
-        Modify a logically single result of existing parameters
-
-        Args:
-            index: zero-based index of the result to be modified.
-            results: dictionary of updates with name of a parameter as the
-               key and the value to associate as the value.
-
-        It is an error to modify a result at an index less than zero or
-        beyond the end of the DataSet.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-
-        It is an error to modify a result in a completed DataSet.
-        """
-        if self.completed:
-            raise CompletedError
-
-        for param in results.keys():
-            if param not in self.paramspecs.keys():
-                raise ValueError(f'No such parameter: {param}.')
-
-        with atomic(self.conn) as conn:
-            modify_values(conn, self.table_name, index,
-                          list(results.keys()),
-                          list(results.values())
-                          )
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.',
-               alternative='modify_result')
-    def modify_results(self, start_index: int,
-                       updates: List[Dict[str, VALUES]]):
-        """
-        Modify a sequence of results in the DataSet.
-
-        Args:
-            index: zero-based index of the result to be modified.
-            results: sequence of dictionares of updates with name of a
-                parameter as the key and the value to associate as the value.
-
-
-        It is an error to modify a result at an index less than zero or
-        beyond the end of the DataSet.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-
-        It is an error to modify a result in a completed DataSet.
-        """
-        if self.completed:
-            raise CompletedError
-
-        keys = [list(val.keys()) for val in updates]
-        flattened_keys = [item for sublist in keys for item in sublist]
-
-        mod_params = set(flattened_keys)
-        old_params = set(self.paramspecs.keys())
-        if not mod_params.issubset(old_params):
-            raise ValueError('Can not modify values for parameter(s) '
-                             f'{mod_params.difference(old_params)}, '
-                             'no such parameter(s) in the dataset.')
-
-        values = [list(val.values()) for val in updates]
-        flattened_values = [item for sublist in values for item in sublist]
-
-        with atomic(self.conn) as conn:
-            modify_many_values(conn,
-                               self.table_name,
-                               start_index,
-                               flattened_keys,
-                               flattened_values)
-
-    @deprecate(reason='it is an experimental functionality, and is likely '
-                      'to be removed soon.',
-               alternative='add_parameter, add_result, add_results')
-    def add_parameter_values(self, spec: ParamSpec, values: VALUES):
-        """
-        Add a parameter to the DataSet and associates result values with the
-        new parameter.
-
-        If the DataSet is not empty, then the count of provided values must
-        equal the current count of results in the DataSet, or an error will
-        be raised.
-
-        It is an error to add parameters to a completed DataSet.
-        """
-        # first check that the len of values (if dataset is not empty)
-        # is the right size i.e. the same as the dataset
-        if len(self) > 0:
-            if len(values) != len(self):
-                raise ValueError("Need to have {} values but got {}.".format(
-                    len(self),
-                    len(values)
-                ))
-
-        with atomic(self.conn) as conn:
-            add_parameter(conn, self.table_name, spec)
-            # now add values!
-            results = [{spec.name: value} for value in values]
-            self.add_results(results)
 
     @staticmethod
     def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
