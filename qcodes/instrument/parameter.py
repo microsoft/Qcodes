@@ -605,7 +605,7 @@ class _BaseParameter(Metadatable):
     @property
     def step(self) -> Optional[Number]:
         """
-        Stepsize that this Parameter uses steps during set operations.
+        Stepsize that this Parameter uses during set operation.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
