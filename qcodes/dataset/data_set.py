@@ -347,11 +347,11 @@ class DataSet(Sized):
     def paramspecs(self) -> Dict[str, ParamSpec]:
         if self.pristine:
             params = self.description.interdeps.paramspecs
-            param_names = [ps.name for ps in params]
+            param_names = tuple(ps.name for ps in params)
             return dict(zip(param_names, params))
         else:
-            params = self.get_parameters()
-            param_names = [p.name for p in params]
+            params = tuple(self.get_parameters())
+            param_names = tuple(p.name for p in params)
             return dict(zip(param_names, params))
 
     @property
