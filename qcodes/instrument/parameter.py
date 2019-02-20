@@ -24,17 +24,13 @@ ones:
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
 
-    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
-    settable parameter as the swept variable in a :class:`qcodes.loops.Loop`.
-    The get/set functionality can be modified.
-
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
     returns an array of values.
     `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
     gives more detailed examples of how this parameter can be used.
     :class:`.ParameterWithSetpoints` is supported in a
-    :class:`qcodes.dataset.measurements.Measurement` but not supported in the
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
     legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
@@ -301,10 +297,28 @@ class _BaseParameter(Metadatable):
 
     @abstractmethod
     def get_raw(self):
+        """
+        ``get_raw`` is called to perform the actual data acquisition from the
+        instrument. This method should either be overwritten to perform the
+        desired operation or alternatively for :class:`.Parameter` a
+        suitable method is automatically generated if ``get_cmd`` is supplied
+        to the parameter constructor.
+        The method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def set_raw(self, value):
+        """
+        ``set_raw`` is called to perform the actual setting of a parameter on
+        the instrument. This method should either be overwritten to perform the
+        desired operation or alternatively for :class:`.Parameter` a
+        suitable method is automatically generated if ``set_cmd`` is supplied
+        to the parameter constructor.
+        The method is automatically wrapped to
+        provide a ``set`` method on the parameter instance.
+        """
         raise NotImplementedError
 
     def __str__(self) -> str:
@@ -536,6 +550,7 @@ class _BaseParameter(Metadatable):
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
         It can even be overridden by a generator.
+
         Args:
             value: target value
             step: maximum step size
@@ -569,11 +584,15 @@ class _BaseParameter(Metadatable):
 
     def validate(self, value: ParamDataType) -> None:
         """
-        Validate value
+        Validate the value supplied.
 
         Args:
-            value (any): value to validate
+            value: value to validate
 
+        Raises:
+            TypeError: If the value is of the wrong type.
+            ValueError: If the value is outside the bounds specified by the
+            validator.
         """
         if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
@@ -585,6 +604,16 @@ class _BaseParameter(Metadatable):
 
     @property
     def step(self) -> Optional[Number]:
+        """
+        Stepsize that this Parameter uses steps during set operations.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
+        If step is None stepping will not be used.
+
+        :getter: Returns the current stepsize.
+        :setter: Sets the value of the step.
+        """
         return self._step
 
     @step.setter
@@ -690,13 +719,19 @@ class _BaseParameter(Metadatable):
 
     @property
     def full_name(self) -> str:
+        """
+        Name of the parameter including the name of the instrument and
+        submodule that the parameter may be bound to.
+        """
         return "_".join(self.name_parts)
 
     def set_validator(self, vals):
         """
-            Deprecated Set a validator `vals` for this parameter.
-                Args:
-                    vals (Validator):  validator to set
+        Deprecated Set a validator `vals` for this parameter.
+        Replace the `vals` method directly instead.
+
+        Args:
+            vals (Validator):  validator to set
 
         """
         warnings.warn(
@@ -746,6 +781,9 @@ class _BaseParameter(Metadatable):
 
     @property
     def name_parts(self) -> List[str]:
+        """
+        List of the parts that make up the full name of this parameter
+        """
         if self.instrument is not None:
             name_parts = getattr(self.instrument, 'name_parts', [])
             if name_parts == []:
@@ -780,9 +818,10 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit ``get_raw``/``set_raw`` method.
-       This enables more advanced functionality. The ``get_raw`` and
-       ``set_raw`` methods are automatically wrapped to provide ``get`` and
+    2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw` method.
+
+       This enables more advanced functionality. The :meth:`get_raw` and
+       :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
     Parameters have a ``.get_latest`` method that simply returns the most
@@ -955,7 +994,7 @@ class Parameter(_BaseParameter):
 
         Returns:
             SweepFixedValues: collection of parameter values to be
-                iterated over
+            iterated over
 
         Examples:
             >>> sweep(0, 10, num=5)
@@ -1009,6 +1048,14 @@ class ParameterWithSetpoints(Parameter):
 
     @property
     def setpoints(self) -> Sequence[_BaseParameter]:
+        """
+        Sequence of parameters to use as setpoints for this parameter.
+
+        :getter: Returns a list of parameters currently used for setpoints.
+        :setter: Sets the parameters to be used as setpoints from a sequence.
+            The combined shape of the parameters supplied must be consistent
+            with the data shape of the data returned from get on the parameter.
+        """
         return self._setpoints
 
     @setpoints.setter
@@ -1062,9 +1109,11 @@ class ParameterWithSetpoints(Parameter):
 
     def validate(self, value: ParamDataType) -> None:
         """
-        Overwrites the standard `validate` to also check the
-        the parameter has consistent shape with it's setpoints.
-        This only makes sense if the parameter has an Arrays validator
+        Overwrites the standard
+        :meth:`validate <qcodes.instrument.parameter._BaseParameter.validate>`
+        to also check the the parameter has consistent shape with its
+        setpoints. This only makes sense if the parameter has an Arrays
+        validator
 
         Arguments are passed to the super method
         """
