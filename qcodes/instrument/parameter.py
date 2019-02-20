@@ -727,7 +727,7 @@ class _BaseParameter(Metadatable):
 
     def set_validator(self, vals):
         """
-        Deprecated Set a validator `vals` for this parameter.
+        (Deprecated) Set a validator `vals` for this parameter.
         Replace the `vals` method directly instead.
 
         Args:
