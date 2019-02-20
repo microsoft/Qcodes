@@ -190,10 +190,12 @@ class KeysightB220X(VisaInstrument):
 
         self.write(f":CLOS (@{self._card:01d}{input_ch:02d}{output_ch:02d})")
 
+    @post_execution_status_poll
     def connect_paths(self, paths: List[Tuple[int, int]]):
         channel_list_str = self.to_channel_list(paths)
         self.write(f":CLOS {channel_list_str}")
 
+    @post_execution_status_poll
     def disconnect_paths(self, paths: List[Tuple[int, int]]):
         channel_list_str = self.to_channel_list(paths)
         self.write(f":OPEN {channel_list_str}")
