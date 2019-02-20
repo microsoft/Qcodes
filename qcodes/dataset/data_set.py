@@ -35,6 +35,7 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_guid_from_run_id,
                                         get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
+                                        get_run_description,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
                                         run_exists, remove_trigger,
@@ -251,9 +252,10 @@ class DataSet(Sized):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
-            self._started = self.number_of_results > 0
             self._description = self._get_run_description_from_db()
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
+            empty_desc = RunDescriber(InterDependencies())
+            self._started = not(self._description == empty_desc)
 
         else:
             # Actually perform all the side effects needed for the creation
@@ -456,8 +458,7 @@ class DataSet(Sized):
         """
         Look up the run_description from the database
         """
-        desc_str = select_one_where(self.conn, "runs", "run_description",
-                                    "run_id", self.run_id)
+        desc_str = get_run_description(self.conn, self.run_id)
         return RunDescriber.from_json(desc_str)
 
     def toggle_debug(self):

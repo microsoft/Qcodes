@@ -2372,6 +2372,14 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
     return run_counter, run_id, formatted_name
 
 
+def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
+    """
+    Return the (JSON string) run description of the specified run
+    """
+    return select_one_where(conn, "runs", "run_description",
+                            "run_id", run_id)
+
+
 def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
