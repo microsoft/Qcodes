@@ -7,7 +7,8 @@ from qcodes.dataset.dependencies import (InterDependencies,
                                          old_to_new)
 from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.tests.common import error_caused_by
-
+# pylint: disable=unused-import
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
 @pytest.fixture
 def some_paramspecbases():
