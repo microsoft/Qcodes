@@ -1110,10 +1110,9 @@ class ParameterWithSetpoints(Parameter):
 
     def validate(self, value: ParamDataType) -> None:
         """
-        Overwrites the standard
-        :meth:`validate <qcodes.instrument.parameter._BaseParameter.validate>`
-        to also check the the parameter has consistent shape with its
-        setpoints. This only makes sense if the parameter has an Arrays
+        Overwrites the standard ``validate`` method to also check the the
+        parameter has consistent shape with its setpoints. This only makes
+        sense if the parameter has an Arrays
         validator
 
         Arguments are passed to the super method
