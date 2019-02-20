@@ -33,6 +33,23 @@ class GettableParam(Parameter):
         return 42
 
 
+class DeprecatedParam(Parameter):
+    """ Parameter that uses deprecated wrapping of get and set"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._value = 42
+        self.set_count = 0
+        self.get_count = 0
+
+    def get(self):
+        self.get_count += 1
+        return self._value
+
+    def set(self, value):
+        self.set_count += 1
+        self._value = value
+
+
 class BookkeepingValidator(vals.Validator):
     """
     Validator that keeps track of what it validates
@@ -1189,3 +1206,44 @@ class TestSetContextManager(TestCase):
         with self.instrument.a.set_to(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2
+
+
+def test_deprecated_param_warns():
+    """
+    Test that creating a parameter that has deprecated get and set still works
+    but raises the correct warnings.
+    """
+
+    with pytest.warns(UserWarning) as record:
+        a = DeprecatedParam(name='foo')
+    assert len(record) == 2
+    assert record[0].message.args[0] == ("Wrapping get method of parameter: "
+                                         "foo, original get method will not be "
+                                         "directly accessible. It is "
+                                         "recommended to define get_raw in "
+                                         "your subclass instead. Overwriting "
+                                         "get will be an error in the future.")
+    assert record[1].message.args[0] == ("Wrapping set method of parameter: "
+                                         "foo, original set method will not be "
+                                         "directly accessible. It is "
+                                         "recommended to define set_raw in "
+                                         "your subclass instead. Overwriting "
+                                         "set will be an error in the future.")
+    # test that get and set are called as expected (not shadowed by wrapper)
+    assert a.get_count == 0
+    assert a.set_count == 0
+    assert a.get() == 42
+    assert a.get_count == 1
+    assert a.set_count == 0
+    a.set(11)
+    assert a.get_count == 1
+    assert a.set_count == 1
+    assert a.get() == 11
+    assert a.get_count == 2
+    assert a.set_count == 1
+    # check that wrapper functionality works e.g stepping is performed correctly
+    a.step = 1
+    a.set(20)
+    assert a.set_count == 1+9
+    assert a.get() == 20
+    assert a.get_count == 3
