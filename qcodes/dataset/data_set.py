@@ -537,6 +537,14 @@ class DataSet(Sized):
                         '=True to overwrite that')
 
     @property
+    def pristine(self) -> bool:
+        return not(self._started or self._completed)
+
+    @property
+    def running(self) -> bool:
+        return self._started and not(self._completed)
+
+    @property
     def started(self) -> bool:
         return self._started
 
