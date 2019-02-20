@@ -17,11 +17,11 @@ class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
 
-    def __init__(self, 
-                 x: Optional[float] = None, 
-                 y: Optional[float] = None, 
+    def __init__(self,
+                 x: Optional[float] = None,
+                 y: Optional[float] = None,
                  z: Optional[float] = None,
-                 r: Optional[float] = None, 
+                 r: Optional[float] = None,
                  theta: Optional[float] = None,
                  phi: Optional[float] = None,
                  rho: Optional[float] = None):
@@ -32,18 +32,18 @@ class FieldVector(object):
         values.
         
         Args:
-            x: represents the norm of the projection 
+            x: represents the norm of the projection
                 of the vector along the x-axis
-            y: represents the norm of the projection 
+            y: represents the norm of the projection
                 of the vector along the y-axis
-            z: represents the norm of the projection 
+            z: represents the norm of the projection
                 of the vector along the z-axis
             r: represents the norm of the vector
             theta: represents the angle of the vector
                 with respect to the positive z-axis
-            rho: represents the norm of the projection 
+            rho: represents the norm of the projection
                 of the vector on to the xy-plane
-            phi: represents the angle of rho 
+            phi: represents the angle of rho
                 with respect to the positive x-axis       
         """
         self._x = float(x) if x is not None else None
@@ -56,7 +56,7 @@ class FieldVector(object):
         self._rho = float(rho) if rho is not None else None
 
         self._compute_unknowns()
-        
+
     def _set_attribute_value(self, attr_name, value):
         if value is None:
             return
