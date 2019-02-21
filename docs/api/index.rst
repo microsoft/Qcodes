@@ -25,5 +25,6 @@ Legacy API
 .. toctree::
    :maxdepth: 4
 
-   plots
    loops
+   data
+   plots

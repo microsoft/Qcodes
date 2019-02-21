@@ -380,7 +380,7 @@ autodoc_default_options = {'members': '',
 # there when generating the docs
 autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils',
                         'keysightSD1', 'cffi', 'spirack', 'clr', 'win32com',
-                        'win32com.client', 'pythoncom', 'slacker']
+                        'win32com.client', 'pythoncom', 'slacker', 'hickle']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
