@@ -103,6 +103,7 @@ def test_run_timestamp_with_default_format():
 
     t_before_data_set = time.time()
     ds = new_data_set("my_first_ds")
+    ds.mark_started()
     t_after_data_set = time.time()
 
     # Note that here we also test the default format of `run_timestamp`
