@@ -1127,8 +1127,18 @@ class ArrayParameter(_BaseParameter):
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
 
+    For new driver we strongly recommend using
+    :class:`.ParameterWithSetpoints` which is both more flexible and
+    significantly easier to use
+
     Subclasses should define a ``.get_raw`` method, which returns an array.
     This method is automatically wrapped to provide a ``.get`` method.
+
+    ArrayParameter can be used in both a
+    :class:`qcodes.dataset.measurements.Measurement`
+    as well as in the legacy :class:`qcodes.loops.Loop`
+    and :class:`qcodes.measure.Measure` measurements
+
     When used in a ``Loop`` or ``Measure`` operation, this will be entered
     into a single ``DataArray``, with extra dimensions added by the ``Loop``.
     The constructor args describe the array we expect from each ``.get`` call
@@ -1137,9 +1147,6 @@ class ArrayParameter(_BaseParameter):
     For now you must specify upfront the array shape, and this cannot change
     from one call to the next. Later we intend to require only that you specify
     the dimension, and the size of each dimension can vary from call to call.
-
-    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -1329,9 +1336,6 @@ class MultiParameter(_BaseParameter):
     ``.get_raw``, and this cannot change from one call to the next. Later we
     intend to require only that you specify the dimension of each item returned,
     and the size of each dimension can vary from call to call.
-
-    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
-    you must explicitly call ``self._save_val(items)`` inside ``.get_raw``.
 
     Args:
         name (str): the local name of the whole parameter. Should be a valid
