@@ -414,16 +414,20 @@ class DataSet(Sized):
 
         return True
 
-    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> str:
+    def run_timestamp(self, fmt: str="%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
 
         The run timestamp is the moment when the measurement for this run
-        started.
+        started. If the run has not yet been started, this function returns
+        None.
 
         Consult with `time.strftime` for information about the format.
         """
-        return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+        if self.run_timestamp_raw is None:
+            return None
+        else:
+            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
     def completed_timestamp_raw(self) -> Union[float, None]:
