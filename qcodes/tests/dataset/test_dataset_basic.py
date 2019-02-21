@@ -77,6 +77,73 @@ def test_has_attributes_after_init():
         getattr(ds, attr)
 
 
+@pytest.mark.usefixtures("experiment")
+def test_dataset_states():
+    """
+    Test the interplay between pristine, started, running, and completed
+    """
+
+    ds = DataSet()
+
+    assert ds.pristine is True
+    assert ds.running is False
+    assert ds.started is False
+    assert ds.completed is False
+
+    with pytest.raises(RuntimeError, match='Can not mark DataSet as complete '
+                                           'before it has '
+                                           'been marked as started.'):
+        ds.mark_complete()
+
+    match = ('This DataSet has not been marked as started. '
+             'Please mark the DataSet as started before '
+             'adding results to it.')
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_result({'x': 1})
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_results([{'x': 1}])
+
+    parameter = ParamSpec(name='single', paramtype='numeric',
+                          label='', unit='N/A')
+    ds.add_parameter(parameter)
+
+    ds.mark_started()
+
+    assert ds.pristine is False
+    assert ds.running is True
+    assert ds.started is True
+    assert ds.completed is False
+
+    match = ('Can not add parameters to a DataSet that has '
+             'been started.')
+
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_parameter(parameter)
+
+    ds.add_result({parameter.name: 1})
+    ds.add_results([{parameter.name: 1}])
+
+    ds.mark_complete()
+
+    assert ds.pristine is False
+    assert ds.running is False
+    assert ds.started is True
+    assert ds.completed is True
+
+    match = ('Can not add parameters to a DataSet that has '
+             'been started.')
+
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_parameter(parameter)
+
+    match = ('This DataSet is complete, no further '
+             'results can be added to it.')
+    with pytest.raises(CompletedError, match=match):
+        ds.add_result({parameter.name: 1})
+    with pytest.raises(CompletedError, match=match):
+        ds.add_results([{parameter.name: 1}])
+
+
 def test_dataset_read_only_properties(dataset):
     read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
                        'number_of_results', 'counter', 'parameters',
@@ -241,8 +308,8 @@ def test_add_paramspec_one_by_one(dataset):
     assert paramspecs == dataset.paramspecs
 
     # Test that is not possible to add any parameter to the dataset
-    with pytest.raises(ValueError, match='Can not add parameters to a '
-                                          'DataSet that has been started.'):
+    with pytest.raises(RuntimeError, match='Can not add parameters to a '
+                                           'DataSet that has been started.'):
         dataset.add_parameter(parameters[0])
 
     assert len(dataset.paramspecs.keys()) == 3

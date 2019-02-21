@@ -482,8 +482,8 @@ class DataSet(Sized):
         """
 
         if not self.pristine:
-            raise ValueError('Can not add parameters to a DataSet that has '
-                             'been started.')
+            raise RuntimeError('Can not add parameters to a DataSet that has '
+                               'been started.')
 
         if self.parameters:
             old_params = self.parameters.split(',')
@@ -615,8 +615,8 @@ class DataSet(Sized):
         Mark dataset as complete and thus read only and notify the subscribers
         """
         if self.pristine:
-            raise ValueError('Can not mark DataSet as complete before it has '
-                             'been marked as started.')
+            raise RuntimeError('Can not mark DataSet as complete before it '
+                               'has been marked as started.')
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
