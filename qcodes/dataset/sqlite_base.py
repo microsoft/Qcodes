@@ -247,7 +247,12 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
         # if the reason was the conversion to float, and, if so, we are sure
         # that we need to return a string
         if "could not convert string to float" in str(e):
-            return str(value, encoding=this_session_default_encoding)
+            try:
+                return str(value, encoding=this_session_default_encoding)
+            except UnicodeDecodeError:
+                out = io.BytesIO(value)
+                out.seek(0)
+                return np.load(out)[0]
         else:
             # otherwise, the exception is forwarded up the stack
             raise e
@@ -274,6 +279,13 @@ def _adapt_float(fl: float) -> Union[float, str]:
     if np.isnan(fl):
         return "nan"
     return float(fl)
+
+
+def _adapt_complex(value: Union[complex, np.complex]) -> sqlite3.Binary:
+    out = io.BytesIO()
+    np.save(out, np.array([value]))
+    out.seek(0)
+    return sqlite3.Binary(out.read())
 
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
@@ -377,6 +389,10 @@ def connect(name: str, debug: bool = False,
 
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
         sqlite3.register_adapter(numpy_float, _adapt_float)
+
+    for complex_type in [complex, np.complex, np.complex64,
+                         np.complex128]:
+        sqlite3.register_adapter(complex_type, _adapt_complex)
 
     if debug:
         conn.set_trace_callback(print)
