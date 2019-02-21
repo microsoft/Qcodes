@@ -68,6 +68,7 @@ def test_load_by_counter():
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
     assert loaded_ds.pristine is False
+    assert loaded_ds.started is True
     assert loaded_ds.running is False
     assert loaded_ds.completed is True
 
@@ -88,6 +89,7 @@ def test_run_timestamp():
 
     t_before_data_set = time.time()
     ds = new_data_set("my_first_ds")
+    ds.mark_started()
     t_after_data_set = time.time()
 
     actual_run_timestamp_raw = ds.run_timestamp_raw

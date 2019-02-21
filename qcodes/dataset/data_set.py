@@ -41,7 +41,8 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
                                         ConnectionPlus,
-                                        get_non_dependencies)
+                                        get_non_dependencies,
+                                        set_run_timestamp)
 
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
@@ -51,6 +52,7 @@ from qcodes.utils.deprecate import deprecate
 import qcodes.config
 
 log = logging.getLogger(__name__)
+
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -254,8 +256,7 @@ class DataSet(Sized):
             self._completed = completed(self.conn, self.run_id)
             self._description = self._get_run_description_from_db()
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
-            empty_desc = RunDescriber(InterDependencies())
-            self._started = not(self._description == empty_desc)
+            self._started = self.run_timestamp_raw is not None
 
         else:
             # Actually perform all the side effects needed for the creation
@@ -368,7 +369,7 @@ class DataSet(Sized):
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def run_timestamp_raw(self) -> float:
+    def run_timestamp_raw(self) -> Optional[float]:
         """
         Returns run timestamp as number of seconds since the Epoch
 
@@ -606,6 +607,8 @@ class DataSet(Sized):
 
         update_run_description(self.conn, self.run_id,
                                self.description.to_json())
+
+        set_run_timestamp(self.conn, self.run_id)
 
     def mark_complete(self) -> None:
         """
