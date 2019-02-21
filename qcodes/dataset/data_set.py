@@ -548,18 +548,35 @@ class DataSet(Sized):
 
     @property
     def pristine(self) -> bool:
+        """
+        Is this DataSet pristine? A pristine DataSet has not yet been started,
+        meaning that parameters can still be added and removed, but results
+        can not be added.
+        """
         return not(self._started or self._completed)
 
     @property
     def running(self) -> bool:
+        """
+        Is this DataSet currently running? A running DataSet has been started,
+        but not yet completed.
+        """
         return self._started and not(self._completed)
 
     @property
     def started(self) -> bool:
+        """
+        Has this DataSet been started? A DataSet not started can not have any
+        results added to it.
+        """
         return self._started
 
     @property
     def completed(self) -> bool:
+        """
+        Is this DataSet completed? A completed DataSet may not be modified in
+        any way.
+        """
         return self._completed
 
     @completed.setter
