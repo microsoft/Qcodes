@@ -144,6 +144,19 @@ def test_dataset_states():
         ds.add_results([{parameter.name: 1}])
 
 
+@pytest.mark.usefixtures('experiment')
+def test_timestamps_are_none():
+    ds = DataSet()
+
+    assert ds.run_timestamp_raw is None
+    assert ds.run_timestamp() is None
+
+    ds.mark_started()
+
+    assert isinstance(ds.run_timestamp_raw, float)
+    assert isinstance(ds.run_timestamp(), str)
+
+
 def test_dataset_read_only_properties(dataset):
     read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
                        'number_of_results', 'counter', 'parameters',
