@@ -392,7 +392,7 @@ def connect(name: str, debug: bool = False,
 
     for complex_type in [complex, np.complex, np.complex64,
                          np.complex128]:
-        sqlite3.register_adapter(complex_type, _adapt_complex)
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
 
     if debug:
         conn.set_trace_callback(print)
