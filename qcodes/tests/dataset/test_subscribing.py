@@ -72,6 +72,7 @@ def test_basic_subscription(dataset, basic_subscriber):
                        unit='Hz', depends_on=[xparam])
     dataset.add_parameter(xparam)
     dataset.add_parameter(yparam)
+    dataset.mark_started()
 
     sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
                                state={})
@@ -146,6 +147,7 @@ def test_subscription_from_config(dataset, basic_subscriber):
                            unit='Hz', depends_on=[xparam])
         dataset.add_parameter(xparam)
         dataset.add_parameter(yparam)
+        dataset.mark_started()
 
         sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
                                    state={})
