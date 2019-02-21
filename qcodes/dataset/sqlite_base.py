@@ -221,6 +221,11 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
+def _convert_complex(text: bytes) -> ndarray:
+    out = io.BytesIO(text)
+    out.seek(0)
+    return np.load(out)[0]
+
 this_session_default_encoding = sys.getdefaultencoding()
 
 
@@ -247,12 +252,7 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
         # if the reason was the conversion to float, and, if so, we are sure
         # that we need to return a string
         if "could not convert string to float" in str(e):
-            try:
-                return str(value, encoding=this_session_default_encoding)
-            except UnicodeDecodeError:
-                out = io.BytesIO(value)
-                out.seek(0)
-                return np.load(out)[0]
+            return str(value, encoding=this_session_default_encoding)
         else:
             # otherwise, the exception is forwarded up the stack
             raise e
@@ -393,6 +393,7 @@ def connect(name: str, debug: bool = False,
     for complex_type in [complex, np.complex, np.complex64,
                          np.complex128]:
         sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
+    sqlite3.register_converter("complex", _convert_complex)
 
     if debug:
         conn.set_trace_callback(print)

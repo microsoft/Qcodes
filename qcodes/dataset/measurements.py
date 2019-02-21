@@ -47,9 +47,11 @@ class ParameterTypeError(Exception):
 
 def is_number(thing: Any) -> bool:
     """
-    Test if an object can be converted to a number UNLESS it is a string
+    Test if an object can be converted to a float UNLESS it is a string or
+    complex.
     """
-    if isinstance(thing, str):
+    if isinstance(thing, (str, complex, np.complex,
+                          np.complex128, np.complex64)):
         return False
     try:
         float(thing)
