@@ -728,7 +728,8 @@ class _BaseParameter(Metadatable):
     def full_name(self) -> str:
         """
         Name of the parameter including the name of the instrument and
-        submodule that the parameter may be bound to.
+        submodule that the parameter may be bound to. The names are separated
+        by underscores, like this: ``instrument_submodule_parameter``.
         """
         return "_".join(self.name_parts)
 
