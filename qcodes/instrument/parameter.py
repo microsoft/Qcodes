@@ -1496,9 +1496,9 @@ class MultiParameter(_BaseParameter):
     @property
     def full_names(self):
         """
-        Name of the parameter including the name of the instrument and
-        submodule that the parameter may be bound to. The names are separated
-        by underscores, like this: ``instrument_submodule_parameter``.
+        Names of the parameter components including the name of the instrument
+        and submodule that the parameter may be bound to. The name parts are
+        separated by underscores, like this: ``instrument_submodule_parameter``.
         """
         inst_name = "_".join(self.name_parts[:-1])
         if inst_name != '':
