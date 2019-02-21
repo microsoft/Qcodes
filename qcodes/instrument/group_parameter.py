@@ -1,6 +1,6 @@
 """
 This module implements a :class:`Group` intended to hold multiple
-parameters that are to be get and set by the same command. The parameters
+parameters that are to be gotten and set by the same command. The parameters
 should be of type :class:`GroupParameter`
 """
 

@@ -606,6 +606,7 @@ class _BaseParameter(Metadatable):
     def step(self) -> Optional[Number]:
         """
         Stepsize that this Parameter uses during set operation.
+        Stepsize must be a positive number or None.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
@@ -613,6 +614,12 @@ class _BaseParameter(Metadatable):
 
         :getter: Returns the current stepsize.
         :setter: Sets the value of the step.
+
+        Raises:
+            TypeError: if step is set to not numeric or None
+            ValueError: if step is set to negative
+            TypeError:  if step is set to not integer or None for an integer parameter
+            TypeError: if step is set to not a number on None
         """
         return self._step
 
@@ -1487,7 +1494,11 @@ class MultiParameter(_BaseParameter):
 
     @property
     def full_names(self):
-        """Include the instrument name with the Parameter names if possible."""
+        """
+        Name of the parameter including the name of the instrument and
+        submodule that the parameter may be bound to. The names are separated
+        by underscores, like this: ``instrument_submodule_parameter``.
+        """
         inst_name = "_".join(self.name_parts[:-1])
         if inst_name != '':
             return [inst_name + '_' + name for name in self.names]
