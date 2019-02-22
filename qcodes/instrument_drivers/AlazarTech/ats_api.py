@@ -196,7 +196,7 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
 
     ## CONSTANTS ##
 
-    _board_names = BOARD_NAMES
+    BOARD_NAMES = BOARD_NAMES
 
     ## SIGNATURES ##
 
