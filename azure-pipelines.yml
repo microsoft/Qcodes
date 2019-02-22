@@ -26,11 +26,17 @@ jobs:
       - bash: |
           sudo conda update -n base conda -y
           sudo conda init bash
-        displayName: "Conda setup"
+        displayName: "Conda setup linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
+      - script: |
+          conda update -n base conda -y
+          conda init bash
+        displayName: "Conda setup windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
           conda --version
           conda env create --file environment.yml
-          conda activate qcodes
+          source activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
@@ -40,7 +46,7 @@ jobs:
           mypy qcodes
         displayName: "mypy"
       - bash: |
-          conda activate qcodes
+          source activate qcodes
           cd ..
           git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
           cd qcodes_generate_test_db
@@ -50,7 +56,7 @@ jobs:
           python generate_version_3.py
         displayName: "Generate db fixtures"
       - bash: |
-          conda activate qcodes
+          source activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
         displayName: "Pytest"
