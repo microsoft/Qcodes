@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
-
+complex_types = Union[complex, np.complex, np.complex64, np.complex128]
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -221,7 +221,7 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def _convert_complex(text: bytes) -> ndarray:
+def _convert_complex(text: bytes) -> complex_types:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)[0]
@@ -281,7 +281,7 @@ def _adapt_float(fl: float) -> Union[float, str]:
     return float(fl)
 
 
-def _adapt_complex(value: Union[complex, np.complex]) -> sqlite3.Binary:
+def _adapt_complex(value: complex_types) -> sqlite3.Binary:
     out = io.BytesIO()
     np.save(out, np.array([value]))
     out.seek(0)
