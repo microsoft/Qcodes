@@ -24,8 +24,8 @@ jobs:
         displayName: "Add conda to PATH on Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
-          conda update -n base conda -y
-          conda init bash
+          sudo conda update -n base conda -y
+          sudo conda init bash
         displayName: "Conda setup"
       - bash: |
           conda --version
