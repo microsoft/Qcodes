@@ -83,7 +83,7 @@ jobs:
           source activate qcodes
           cd docs
           export SPHINXOPTS=-W -v
-          make htmlapi
+          xvfb-run make htmlapi
         condition: eq( variables['Agent.OS'], 'Linux' )
         displayName: "docsbuild linux"
       - task: PublishBuildArtifacts@1
@@ -91,7 +91,6 @@ jobs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
-          condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: Cobertura
