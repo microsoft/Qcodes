@@ -1,7 +1,8 @@
 from .dll_wrapper import DllWrapperMeta, Signature
 from .utils import TraceParameter
 from qcodes.instrument.parameter import Parameter
-from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
+from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, \
+    Sequence, NewType, List, Any
 from functools import partial
 from threading import Lock
 import re
@@ -180,6 +181,10 @@ def check_error_code(return_code_c: ctypes.c_uint, func, arguments
                 return_code, ERROR_CODES[ReturnCode(
                     return_code)], func.__name__,
                 argrepr))
+
+
+def convert_bytes_to_str(output: bytes, func, arguments) -> str:
+    return output.decode()
 
 
 class AlazarATSAPI(object, metaclass=DllWrapperMeta):
@@ -366,6 +371,13 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
             ]
         ),
 
+        "ErrorToText": Signature(
+            return_type=ctypes.c_char_p,
+            argument_types=[
+                U32
+            ]
+        ),
+
         "StartCapture": Signature(
             argument_types=[
                 HANDLE
@@ -418,6 +430,9 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
             if ret_type is ReturnCode:
                 ret_type = ret_type.__supertype__
                 c_func.errcheck = check_error_code
+            elif ret_type in (ctypes.c_char_p, ctypes.c_char, 
+                              ctypes.c_wchar, ctypes.c_wchar_p):
+                c_func.errcheck = convert_bytes_to_str
 
             c_func.restype = ret_type
 
