@@ -698,6 +698,7 @@ class TestDict(TestCase):
 def test_complex(complex_val):
 
     n = ComplexNum()
+    assert str(n) == '<Complex Number>'
     n.validate(complex_val)
     n.validate(np.complex(complex_val))
     n.validate(np.complex64(complex_val))
