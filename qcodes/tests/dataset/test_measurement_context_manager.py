@@ -1660,7 +1660,7 @@ def test_save_complex_num(complex_num_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_wrong_type_raises(complex_num_instrument):
+def test_save_complex_as_num_raises(complex_num_instrument):
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
     meas = Measurement()
@@ -1676,6 +1676,25 @@ def test_save_complex_wrong_type_raises(complex_num_instrument):
         with pytest.raises(ValueError, match=expected_msg):
             datasaver.add_result((setparam, setparam()),
                                  (param, param()))
+
+
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_num_as_complex_raises(complex_num_instrument):
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
+
+    expected_msg = ("It is not possible to save a numeric value for parameter "
+                    "'dummy_channel_inst_complex_num' because its type class "
+                    "is 'complex', not 'numeric'.")
+
+    with meas.run() as datasaver:
+        setparam.set(0)
+        with pytest.raises(ValueError, match=expected_msg):
+            datasaver.add_result((setparam, setparam()),
+                                 (param, setparam()))
 
 
 @pytest.mark.usefixtures("experiment")
