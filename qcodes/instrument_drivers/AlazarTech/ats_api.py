@@ -11,11 +11,12 @@ import concurrent
 import asyncio
 import logging
 import ctypes
+
+
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8
 U32 = ctypes.c_uint32
 HANDLE = U32
-
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,8 @@ ReturnCode = NewType('ReturnCode', int)
 
 
 ## CONSTANTS ##
+
+API_SUCCESS = 512
 
 ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
     513: 'ApiFailed',
@@ -158,8 +161,6 @@ BOARD_NAMES = {
     35: 'ATS9352',
     36: 'ATS9453',
 }
-
-API_SUCCESS = 512
 
 
 def check_error_code(return_code_c: ctypes.c_uint, func, arguments
