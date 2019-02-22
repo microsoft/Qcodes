@@ -482,6 +482,8 @@ class Runner:
         else:
             raise RuntimeError("No parameters supplied")
 
+        self.ds.mark_started()
+
         # register all subscribers
         for (callble, state) in self.subscribers:
             # We register with minimal waiting time.
