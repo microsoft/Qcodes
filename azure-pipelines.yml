@@ -57,7 +57,7 @@ jobs:
       - bash: |
           source activate qcodes
           cd qcodes
-          xvfb-run pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
+          xvfb-run --server-args="-screen 0 1024x768x24" pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
         displayName: "Pytest Linux"
         condition: eq( variables['Agent.OS'], 'Linux' )
       - bash: |
@@ -83,7 +83,7 @@ jobs:
           source activate qcodes
           cd docs
           export SPHINXOPTS=-W -v
-          xvfb-run make htmlapi
+          xvfb-run --server-args="-screen 0 1024x768x24" make htmlapi
         condition: eq( variables['Agent.OS'], 'Linux' )
         displayName: "docsbuild linux"
       - task: PublishBuildArtifacts@1
