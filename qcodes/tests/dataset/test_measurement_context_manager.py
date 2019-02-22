@@ -1659,6 +1659,24 @@ def test_save_complex_num(complex_num_instrument):
     assert_allclose(data_num, np.arange(10) + 1j*np.arange(10))
 
 
+@pytest.mark.usefixtures("experiment")
+def test_save_complex_wrong_type_raises(complex_num_instrument):
+    setparam = complex_num_instrument.setpoint
+    param = complex_num_instrument.complex_num
+    meas = Measurement()
+    meas.register_parameter(setparam, paramtype='numeric')
+    meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
+
+    expected_msg = ("It is not possible to save a complex value for parameter "
+                    "'dummy_channel_inst_complex_num' because its type class "
+                    "is 'numeric', not 'complex'.")
+
+    with meas.run() as datasaver:
+        setparam.set(0)
+        with pytest.raises(ValueError, match=expected_msg):
+            datasaver.add_result((setparam, setparam()),
+                                 (param, param()))
+
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2D():
