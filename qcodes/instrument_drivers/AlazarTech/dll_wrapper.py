@@ -4,20 +4,22 @@ import asyncio
 import concurrent
 import sys
 import re
-
+from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
 from threading import Lock
 from functools import partial
-
-logger = logging.getLogger(__name__)
-
-from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
-TApi = TypeVar("TApi", bound="AlazarATSAPI")
-ReturnCode = NewType('ReturnCode', ctypes.c_uint)
 
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
 
+
+logger = logging.getLogger(__name__)
+
+TApi = TypeVar("TApi", bound="AlazarATSAPI")
+ReturnCode = NewType('ReturnCode', ctypes.c_uint)
+
+
 ## FUNCTIONS ##
+
 
 def api_call_task(lock, c_func, callback, *args):
     with lock:
@@ -25,10 +27,12 @@ def api_call_task(lock, c_func, callback, *args):
     callback()
     return retval
 
+
 def convert_to_camel_case(name):
     # https://stackoverflow.com/a/1176023
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
 
 def normalize_params(*args) -> List[Any]:
     args_out: List[int] = []
@@ -39,13 +43,15 @@ def normalize_params(*args) -> List[Any]:
             args_out.append(arg)
     return args_out
 
+
 def mark_params_as_updated(*args) -> None:
     for arg in args:
         if isinstance(arg, TraceParameter):
             arg._set_updated()
 
-def api_calls(full_name : str, signature : "Signature") -> Tuple[Callable, Callable]:
-    def sync_call(self : TApi, *args) -> signature.return_type:
+
+def api_calls(full_name: str, signature: "Signature") -> Tuple[Callable, Callable]:
+    def sync_call(self: TApi, *args) -> signature.return_type:
         c_func = getattr(self._dll, full_name)
         future = self._executor.submit(
             api_call_task,
@@ -55,7 +61,7 @@ def api_calls(full_name : str, signature : "Signature") -> Tuple[Callable, Calla
         )
         return future.result()
 
-    def async_call(self : TApi, *args) -> signature.return_type:
+    def async_call(self: TApi, *args) -> signature.return_type:
         c_func = getattr(self._dll, full_name)
         task = asyncio.get_event_loop().run_in_executor(
             self._executor,
@@ -70,11 +76,14 @@ def api_calls(full_name : str, signature : "Signature") -> Tuple[Callable, Calla
 
     return sync_call, async_call
 
+
 ## CLASSES ##
 
+
 class Signature(NamedTuple):
-    return_type : Type = ReturnCode
-    argument_types : Sequence[Type] = ()
+    return_type: Type = ReturnCode
+    argument_types: Sequence[Type] = ()
+
 
 class DllWrapperMeta(type):
     def __new__(mcls, name, bases, dct):
@@ -83,7 +92,7 @@ class DllWrapperMeta(type):
         return cls
 
     @classmethod
-    def add_api_calls(mcls, dct : Dict[str, Any]):
+    def add_api_calls(mcls, dct: Dict[str, Any]):
         prefix = dct.get('signature_prefix', '')
         for call_name, signature in dct['signatures'].items():
             c_name = prefix + call_name
