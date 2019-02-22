@@ -17,6 +17,7 @@ def test_string_via_dataset(experiment):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
+    test_set.mark_started()
 
     test_set.add_result({"p": "some text"})
 
@@ -33,6 +34,7 @@ def test_string_via_datasaver(experiment):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
+    test_set.mark_started()
 
     data_saver = DataSaver(
         dataset=test_set, write_period=0, parameters={"p": p})
@@ -90,6 +92,7 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
+    test_set.mark_started()
 
     data_saver = DataSaver(
         dataset=test_set, write_period=0, parameters={"p": p})
@@ -113,6 +116,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
+    test_set.mark_started()
 
     test_set.add_result({"p": 'some text'})
 
