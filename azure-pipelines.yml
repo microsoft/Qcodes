@@ -30,7 +30,6 @@ jobs:
         condition: eq( variables['Agent.OS'], 'Linux' )
       - script: |
           conda update -n base conda -y
-          conda init bash
         displayName: "Conda setup windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - bash: |
@@ -42,7 +41,7 @@ jobs:
           pip install -e .
         displayName: "Installation"
       - bash: |
-          conda activate qcodes
+          source activate qcodes
           mypy qcodes
         displayName: "mypy"
       - bash: |
