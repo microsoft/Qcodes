@@ -1,19 +1,77 @@
+"""Tests for Alazar DLL API
+
+This suite of tests is expected to be executed on a Windows PC with a single 
+Alazar board installed.
+"""
+
+import os
+
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
+from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, \
+    ERROR_CODES
+
+
+def _skip_if_alazar_dll_and_boards_not_installed():
+    if not os.path.exists(AlazarTech_ATS.dll_path + '.dll'):
+        return pytest.mark.skip(
+            "Alazar API DLL was not found in 'AlazarTech_ATS.dll_path'.")
+
+    return pytest.mark.skipif(
+        len(AlazarTech_ATS.find_boards()) != 1,
+        reason='No, or more than one Alazar boards are installed on this PC.')
+
+
+pytestmark = _skip_if_alazar_dll_and_boards_not_installed()
+
+
+# Set the following constants to correct values, they are used in tests below.
+SYSTEM_ID = 1
+BOARD_ID = 1
 
 
 @pytest.fixture
 def alazar():
-    alazar = AlazarTech_ATS('alazar', system_id=2)
+    alazar = AlazarTech_ATS('alazar', system_id=SYSTEM_ID, board_id=BOARD_ID)
     yield alazar
     alazar.close()
 
 
+@pytest.fixture
+def alazar_api():
+    yield AlazarATSAPI(AlazarTech_ATS.dll_path)
+
+
 def test_find_boards():
     boards = AlazarTech_ATS.find_boards()
-    assert isinstance(boards, list)
+    assert len(boards) == 1
+    assert boards[0]['system_id'] == SYSTEM_ID
+    assert boards[0]['board_id'] == BOARD_ID
 
 
-def test_init_alazar(alazar):
-    print(alazar.get_idn())
+def test_get_board_info(alazar_api):
+    info = AlazarTech_ATS.get_board_info(api=alazar_api, 
+                                         system_id=SYSTEM_ID, 
+                                         board_id=BOARD_ID)
+    assert {'system_id', 'board_id', 'board_kind', 
+            'max_samples', 'bits_per_sample'} == set(list(info.keys()))
+    assert info['system_id'] == SYSTEM_ID
+    assert info['board_id'] == BOARD_ID
+
+
+def test_idn(alazar):
+    idn = alazar.get_idn()
+    assert {'firmware', 'model', 'serial', 'vendor', 'CPLD_version', 
+            'driver_version', 'SDK_version', 'latest_cal_date', 'memory_size',
+            'asopc_type', 'pcie_link_speed', 'pcie_link_width', 
+            'bits_per_sample', 'max_samples'
+            } == set(list(idn.keys()))
+    assert idn['vendor'] == 'AlazarTech'
+    assert idn['model'][:3] == 'ATS'
+
+
+def test_error_codes_dict_is_correct(alazar_api):
+    for code, msg in ERROR_CODES.items():
+        real_msg = alazar_api.error_to_text(code)
+        assert real_msg in msg
