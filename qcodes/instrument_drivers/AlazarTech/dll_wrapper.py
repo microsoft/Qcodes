@@ -91,12 +91,12 @@ class DllWrapperMeta(type):
     def add_api_calls(mcls, dct : Dict[str, Any]):
         prefix = dct.get('signature_prefix', '')
         for call_name, signature in dct['signatures'].items():
-            full_name = prefix + call_name
+            c_name = prefix + call_name
             
-            sync_call, async_call = api_calls(full_name, signature)
+            sync_call, async_call = api_calls(c_name, signature)
 
             py_name = convert_to_camel_case(call_name)
-            logger.debug(f"Adding method {py_name} for C func {full_name}.")
+            logger.debug(f"Adding method {py_name} for C func {c_name}.")
             dct[py_name] = sync_call
-            logger.debug(f"Adding async method {py_name}_async for C func {full_name}.")
+            logger.debug(f"Adding async method {py_name}_async for C func {c_name}.")
             dct[py_name + "_async"] = async_call
