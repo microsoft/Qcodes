@@ -315,7 +315,7 @@ class ComplexNum(Validator):
     def validate(self, value: numbertypes, context: str = '') -> None:
         if not isinstance(value, self.validtypes):
             raise TypeError(
-                '{} is not an int or float; {}'.format(repr(value), context))
+                '{} is not complex; {}'.format(repr(value), context))
 
     is_numeric = False  # there is on meaningful way to sweep a complex number
 
