@@ -4,7 +4,8 @@ import pytest
 
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
-                                         old_to_new)
+                                         old_to_new,
+                                         new_to_old)
 from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.tests.common import error_caused_by
 # pylint: disable=unused-import
@@ -138,6 +139,47 @@ def test_old_to_new(some_paramspecs):
     assert idps_new.standalones == set((ps1_base, ps2_base))
     paramspecs = (ps1_base, ps2_base)
     assert idps_new._id_to_paramspec == {_id(ps): ps for ps in paramspecs}
+
+
+def test_new_to_old(some_paramspecbases):
+
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    idps_new = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                                  standalones=(ps4,))
+
+    paramspec1 = ParamSpec(name=ps1.name, paramtype=ps1.type,
+                           label=ps1.label, unit=ps1.unit,
+                           depends_on=[ps2.name, ps3.name])
+    paramspec2 = ParamSpec(name=ps2.name, paramtype=ps2.type,
+                           label=ps2.label, unit=ps2.unit)
+    paramspec3 = ParamSpec(name=ps3.name, paramtype=ps3.type,
+                           label=ps3.label, unit=ps3.unit)
+    paramspec4 = ParamSpec(name=ps4.name, paramtype=ps4.type,
+                           label=ps4.label, unit=ps4.unit)
+    idps_old_expected = InterDependencies(paramspec1, paramspec2,
+                                          paramspec3, paramspec4)
+
+    assert new_to_old(idps_new) == idps_old_expected
+
+    #
+
+    idps_new = InterDependencies_(inferences={ps1: (ps2, ps3)},
+                                  standalones=(ps4,))
+
+    paramspec1 = ParamSpec(name=ps1.name, paramtype=ps1.type,
+                           label=ps1.label, unit=ps1.unit,
+                           inferred_from=[ps2.name, ps3.name])
+    paramspec2 = ParamSpec(name=ps2.name, paramtype=ps2.type,
+                           label=ps2.label, unit=ps2.unit)
+    paramspec3 = ParamSpec(name=ps3.name, paramtype=ps3.type,
+                           label=ps3.label, unit=ps3.unit)
+    paramspec4 = ParamSpec(name=ps4.name, paramtype=ps4.type,
+                           label=ps4.label, unit=ps4.unit)
+    idps_old_expected = InterDependencies(paramspec1, paramspec2,
+                                          paramspec3, paramspec4)
+
+    assert new_to_old(idps_new) == idps_old_expected
 
 
 def test_extend_with_paramspec(some_paramspecs):

@@ -133,6 +133,13 @@ class InterDependencies_:
 
         return output
 
+    @property
+    def paramspecs(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return the ParamSpecBase objects of this instance
+        """
+        return tuple(self._paramspec_to_id.keys())
+
     def _extend_with_paramspec(self, ps: ParamSpec) -> 'InterDependencies_':
         """
         Create a new InterDependencies_ object extended with the provided
@@ -300,3 +307,28 @@ def old_to_new(idps: InterDependencies) -> InterDependencies_:
                                standalones=standalones)
     return idps_
 
+
+def new_to_old(idps: InterDependencies_) -> InterDependencies:
+    """
+    Create a new InterDependencies object (old style) from an existing
+    InterDependencies_ object (new style). Leaves the original object
+    unchanged. Only meant to be used for ensuring backwards-compatibility
+    until we update sqlite_base to forget about ParamSpecs
+    """
+
+    paramspecs: Dict[str, ParamSpec] = {}
+
+    for ps_base in idps._paramspec_to_id.keys():
+        paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,
+                                                   paramtype=ps_base.type,
+                                                   label=ps_base.label,
+                                                   unit=ps_base.unit)})
+
+    for ps, indeps in idps.dependencies.items():
+        for indep in indeps:
+            paramspecs[ps.name]._depends_on.append(indep.name)
+    for ps, inffs in idps.inferences.items():
+        for inff in inffs:
+            paramspecs[ps.name]._inferred_from.append(inff.name)
+
+    return InterDependencies(*tuple(paramspecs.values()))
