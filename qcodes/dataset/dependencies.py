@@ -202,6 +202,12 @@ class InterDependencies_:
 
         return cls(dependencies=deps, inferences=inffs, standalones=stdls)
 
+    def __repr__(self) -> str:
+        rep = (f"InterDependencies_(dependencies={self.dependencies}, "
+               f"inferences={self.inferences}, "
+               f"standalones={self.standalones})")
+        return rep
+
     def __eq__(self, other):
         if not isinstance(other, InterDependencies_):
             return False
