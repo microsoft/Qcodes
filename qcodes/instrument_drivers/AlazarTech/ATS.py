@@ -90,13 +90,17 @@ class AlazarTech_ATS(Instrument):
         """
         # make a temporary instrument for this board, to make it easier
         # to get its info
-        board = cls('temp', system_id=system_id, board_id=board_id,
+        board = cls(f'alazar_temp_{time.perf_counter()}',
+                    system_id=system_id, board_id=board_id,
                     server_name=None)
 
         handle = board._handle
         board_kind = api._board_names[api.get_board_kind(handle)]
 
         max_s, bps = board._get_channel_info(handle)
+
+        board.close()
+
         return {
             'system_id': system_id,
             'board_id': board_id,
