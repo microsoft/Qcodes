@@ -159,8 +159,8 @@ def test_new_to_old(some_paramspecbases):
                            label=ps3.label, unit=ps3.unit)
     paramspec4 = ParamSpec(name=ps4.name, paramtype=ps4.type,
                            label=ps4.label, unit=ps4.unit)
-    idps_old_expected = InterDependencies(paramspec1, paramspec2,
-                                          paramspec3, paramspec4)
+    idps_old_expected = InterDependencies(paramspec2, paramspec3,
+                                          paramspec1, paramspec4)
 
     assert new_to_old(idps_new) == idps_old_expected
 
@@ -178,8 +178,8 @@ def test_new_to_old(some_paramspecbases):
                            label=ps3.label, unit=ps3.unit)
     paramspec4 = ParamSpec(name=ps4.name, paramtype=ps4.type,
                            label=ps4.label, unit=ps4.unit)
-    idps_old_expected = InterDependencies(paramspec1, paramspec2,
-                                          paramspec3, paramspec4)
+    idps_old_expected = InterDependencies(paramspec2, paramspec3,
+                                          paramspec1, paramspec4)
 
     assert new_to_old(idps_new) == idps_old_expected
 

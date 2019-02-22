@@ -1,6 +1,7 @@
 import functools
 import json
-from typing import Any, Dict, List, Optional, Union, Sized, Callable
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
+                    Tuple)
 from threading import Thread
 import time
 import importlib
@@ -10,7 +11,7 @@ from queue import Queue, Empty
 import numpy
 import pandas as pd
 
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         transaction, add_parameter,
@@ -45,7 +46,11 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         set_run_timestamp)
 
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         InterDependencies_,
+                                         old_to_new, new_to_old,
+                                         DependencyError,
+                                         InferenceError)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
@@ -71,6 +76,10 @@ log = logging.getLogger(__name__)
 
 
 SPECS = List[ParamSpec]
+# Transition period type: SpecsOrInterDeps. We will allow both as input to
+# the DataSet constructor for a while, then deprecate SPECS and finally remove
+# the ParamSpec class
+SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 
 
 class CompletedError(RuntimeError):
@@ -209,7 +218,7 @@ class DataSet(Sized):
                  conn: Optional[ConnectionPlus]=None,
                  exp_id=None,
                  name: str=None,
-                 specs: SPECS=None,
+                 specs: Optional[SpecsOrInterDeps] = None,
                  values=None,
                  metadata=None) -> None:
         """
@@ -248,13 +257,23 @@ class DataSet(Sized):
         self._run_id = run_id
         self._debug = False
         self.subscribers: Dict[str, _Subscriber] = {}
+        self._interdeps: InterDependencies_
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
                 raise ValueError(f"Run with run_id {run_id} does not exist in "
                                  f"the database")
             self._completed = completed(self.conn, self.run_id)
-            self._description = self._get_run_description_from_db()
+            run_desc = self._get_run_description_from_db()
+            if run_desc._old_style_deps:
+                # TODO: what if the old run had invalid interdep.s?
+                old_idps: InterDependencies = cast(InterDependencies,
+                                                   run_desc.interdeps)
+                self._interdeps = old_to_new(old_idps)
+            else:
+                new_idps: InterDependencies_ = cast(InterDependencies_,
+                                                    run_desc.interdeps)
+                self._interdeps = new_idps
             self._metadata = get_metadata_from_run_id(self.conn, run_id)
             self._started = self.run_timestamp_raw is not None
 
@@ -280,8 +299,12 @@ class DataSet(Sized):
             self._run_id = run_id
             self._completed = False
             self._started = False
-            specs = specs or []
-            self._description = RunDescriber(InterDependencies(*specs))
+            if isinstance(specs, InterDependencies_):
+                self._interdeps = specs
+            elif specs is not None:
+                self._interdeps = old_to_new(InterDependencies(*specs))
+            else:
+                self._interdeps = InterDependencies_()
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
 
     @property
@@ -345,7 +368,7 @@ class DataSet(Sized):
                                     "parameters", "run_id", self.run_id)
 
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
+    def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
         if self.pristine:
             params = self.description.interdeps.paramspecs
             param_names = tuple(ps.name for ps in params)
@@ -380,7 +403,7 @@ class DataSet(Sized):
 
     @property
     def description(self) -> RunDescriber:
-        return self._description
+        return RunDescriber(interdeps=self._interdeps)
 
     @property
     def metadata(self) -> Dict:
@@ -497,27 +520,28 @@ class DataSet(Sized):
         if spec.name in old_params:
             raise ValueError(f'Duplicate parameter name: {spec.name}')
 
-        inf_from = spec.inferred_from.split(', ')
-        if inf_from == ['']:
-            inf_from = []
-        for ifrm in inf_from:
-            if ifrm not in old_params:
-                raise ValueError('Can not infer parameter '
-                                 f'{spec.name} from {ifrm}, '
-                                 'no such parameter in this DataSet')
+        # inf_from = spec.inferred_from.split(', ')
+        # if inf_from == ['']:
+        #     inf_from = []
+        # for ifrm in inf_from:
+        #     if ifrm not in old_params:
+        #         raise ValueError('Can not infer parameter '
+        #                          f'{spec.name} from {ifrm}, '
+        #                          'no such parameter in this DataSet')
 
-        dep_on = spec.depends_on.split(', ')
-        if dep_on == ['']:
-            dep_on = []
-        for dp in dep_on:
-            if dp not in old_params:
-                raise ValueError('Can not have parameter '
-                                 f'{spec.name} depend on {dp}, '
-                                 'no such parameter in this DataSet')
+        # dep_on = spec.depends_on.split(', ')
+        # if dep_on == ['']:
+        #     dep_on = []
+        # for dp in dep_on:
+        #     if dp not in old_params:
+        #         raise ValueError('Can not have parameter '
+        #                          f'{spec.name} depend on {dp}, '
+        #                          'no such parameter in this DataSet')
 
-        desc = self.description
-        desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
-        self._description = desc
+        # desc = self.description
+        # desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
+        self._interdeps = self._interdeps._extend_with_paramspec(spec)
+
 
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)
@@ -605,8 +629,9 @@ class DataSet(Sized):
         """
         Perform the actions that must take place once the run has been started
         """
+        paramspecs = new_to_old(self._interdeps).paramspecs
 
-        for spec in self.description.interdeps.paramspecs:
+        for spec in paramspecs:
             add_parameter(self.conn, self.table_name, spec)
 
         update_run_description(self.conn, self.run_id,
@@ -653,16 +678,12 @@ class DataSet(Sized):
         if self.completed:
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
-
-        # TODO: Make this check less fugly
-        for param in results.keys():
-            if self.paramspecs[param].depends_on != '':
-                deps = self.paramspecs[param].depends_on.split(', ')
-                for dep in deps:
-                    if dep not in results.keys():
-                        raise ValueError(f'Can not add result for {param}, '
-                                         f'since this depends on {dep}, '
-                                         'which is not being added.')
+        try:
+            parameters = [self._interdeps._id_to_paramspec[name] for name
+                         in results]
+            self._interdeps.validate_subset(parameters)
+        except DependencyError as de:
+            raise ValueError('Can not add result, missing setpoint values') from de
 
         index = insert_values(self.conn, self.table_name,
                               list(results.keys()),
@@ -902,10 +923,12 @@ class DataSet(Sized):
                 setpoints
         """
 
+        paramspec: ParamSpecBase = self._interdeps._id_to_paramspec[param_name]
+
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        if self.paramspecs[param_name].depends_on == '':
+        if paramspec not in self._interdeps.dependencies.keys():
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 
         setpoints = get_setpoints(self.conn, self.table_name, param_name)

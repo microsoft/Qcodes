@@ -159,6 +159,7 @@ class InterDependencies_:
         base_ps = ps.base_version()
 
         old_standalones = set(self.standalones.copy())
+        new_standalones: Tuple[ParamSpecBase, ...]
 
         if len(ps.depends_on_) > 0:
             deps_list = [self._id_to_paramspec[name] for name in ps.depends_on_]
@@ -356,6 +357,21 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
     """
 
     paramspecs: Dict[str, ParamSpec] = {}
+
+    # first the independent parameters
+    for indeps in idps.dependencies.values():
+        for indep in indeps:
+            paramspecs.update({indep.name: ParamSpec(name=indep.name,
+                                                     paramtype=indep.type,
+                                                     label=indep.label,
+                                                     unit=indep.unit)})
+
+    for inffs in idps.inferences.values():
+        for inff in inffs:
+            paramspecs.update({inff.name: ParamSpec(name=inff.name,
+                                                     paramtype=inff.type,
+                                                     label=inff.label,
+                                                     unit=inff.unit)})
 
     for ps_base in idps._paramspec_to_id.keys():
         paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,

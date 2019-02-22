@@ -48,7 +48,14 @@ class RunDescriber:
         """
         Make a RunDescriber object based on a serialized version of it
         """
-        idp = InterDependencies.deserialize(ser['interdependencies'])
+        # We must currently support new and old type InterDep.s objects
+
+        idp: Union[InterDependencies, InterDependencies_]
+
+        if 'paramspecs' in ser['interdependencies'].keys():
+            idp = InterDependencies.deserialize(ser['interdependencies'])
+        else:
+            idp = InterDependencies_.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)
 
         return rundesc
