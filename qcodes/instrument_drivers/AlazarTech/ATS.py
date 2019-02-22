@@ -427,16 +427,6 @@ class AlazarTech_ATS(Instrument):
         )
         return max_s.value, bps.value
 
-    def _get_channel_info(self, handle: int) -> Tuple[int, int]:
-        bps = ctypes.c_uint8(0)  # bps bits per sample
-        max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        self.api.get_channel_info(
-            handle,
-            ctypes.byref(max_s),
-            ctypes.byref(bps)
-        )
-        return max_s.value, bps.value
-
     def allocate_and_post_buffer(self, sample_type, n_bytes) -> "Buffer":
         buffer = Buffer(sample_type, n_bytes)
         self.api.post_async_buffer(
