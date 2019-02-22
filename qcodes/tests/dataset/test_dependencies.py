@@ -109,11 +109,13 @@ def test_old_to_new(some_paramspecs):
     ps5_base = ps5.base_version()
     ps6_base = ps6.base_version()
 
+    _id = idps_new._id
+
     assert idps_new.dependencies == {}
     assert idps_new.inferences == {ps3_base: (ps1_base,)}
     assert idps_new.standalones == set((ps2_base,))
     paramspecs = (ps1_base, ps2_base, ps3_base)
-    assert idps_new._id_to_paramspec == {hash(ps): ps for ps in paramspecs}
+    assert idps_new._id_to_paramspec == {_id(ps): ps for ps in paramspecs}
 
     idps_old = InterDependencies(ps2, ps4, ps1, ps2, ps3, ps5, ps6)
 
@@ -125,7 +127,7 @@ def test_old_to_new(some_paramspecs):
                                    ps4_base: (ps2_base,)}
     assert idps_new.standalones == set()
     paramspecs = (ps1_base, ps2_base, ps3_base, ps4_base, ps5_base, ps6_base)
-    assert idps_new._id_to_paramspec == {hash(ps): ps for ps in paramspecs}
+    assert idps_new._id_to_paramspec == {_id(ps): ps for ps in paramspecs}
 
     idps_old = InterDependencies(ps1, ps2)
 
@@ -135,4 +137,4 @@ def test_old_to_new(some_paramspecs):
     assert idps_new.inferences == {}
     assert idps_new.standalones == set((ps1_base, ps2_base))
     paramspecs = (ps1_base, ps2_base)
-    assert idps_new._id_to_paramspec == {hash(ps): ps for ps in paramspecs}
+    assert idps_new._id_to_paramspec == {_id(ps): ps for ps in paramspecs}

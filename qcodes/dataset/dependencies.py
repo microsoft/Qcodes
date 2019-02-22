@@ -45,14 +45,22 @@ class InterDependencies_:
         self.inferences: ParamSpecTree = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
 
-        self._id_to_paramspec: Dict[int, ParamSpecBase] = {}
+        self._id_to_paramspec: Dict[str, ParamSpecBase] = {}
         for tree in (self.dependencies, self.inferences):
             for ps, ps_tup in tree.items():
-                self._id_to_paramspec.update({hash(ps): ps})
-                self._id_to_paramspec.update({hash(pst): pst for pst in ps_tup})
+                self._id_to_paramspec.update({self._id(ps): ps})
+                self._id_to_paramspec.update({self._id(pst): pst
+                                              for pst in ps_tup})
         for ps in self.standalones:
-            self._id_to_paramspec.update({hash(ps): ps})
+            self._id_to_paramspec.update({self._id(ps): ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
+
+    @staticmethod
+    def _id(ps: ParamSpecBase) -> str:
+        """
+        Function to generate an ID from/for a ParamSpecBase
+        """
+        return ps.name
 
     @staticmethod
     def _raise_from(new_error: Type[Exception], new_mssg: str,
@@ -108,21 +116,19 @@ class InterDependencies_:
         """
         Write out this object as a dictionary
         """
-        # TODO: perhaps we'd eventually like something more human-readable than
-        # hex(hash(paramspecbase)) as a key in 'parameters'?
         output: Dict[str, Any] = {}
-        output['parameters'] = {hex(key): value.serialize() for key, value in
+        output['parameters'] = {key: value.serialize() for key, value in
                                 self._id_to_paramspec.items()}
 
         trees = ['dependencies', 'inferences']
         for tree in trees:
             output[tree] = {}
             for key, value in getattr(self, tree).items():
-                ps_id = hex(self._paramspec_to_id[key])
-                ps_ids = [hex(self._paramspec_to_id[ps]) for ps in value]
+                ps_id = self._paramspec_to_id[key]
+                ps_ids = [self._paramspec_to_id[ps] for ps in value]
                 output[tree].update({ps_id: ps_ids})
 
-        output['standalones'] = [hex(self._paramspec_to_id[ps]) for ps in
+        output['standalones'] = [self._paramspec_to_id[ps] for ps in
                                  self.standalones]
 
         return output
