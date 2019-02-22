@@ -1679,7 +1679,7 @@ def test_save_complex_as_num_raises(complex_num_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num_as_complex_raises(complex_num_instrument):
+def test_save_numeric_as_complex_raises(complex_num_instrument):
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
     meas = Measurement()
