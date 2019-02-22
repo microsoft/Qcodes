@@ -30,7 +30,7 @@ class FieldVector(object):
         one of the following combinations for a meaningful computation:
         (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
         values.
-        
+
         Args:
             x: represents the norm of the projection
                 of the vector along the x-axis
@@ -44,7 +44,7 @@ class FieldVector(object):
             rho: represents the norm of the projection
                 of the vector on to the xy-plane
             phi: represents the angle of rho
-                with respect to the positive x-axis       
+                with respect to the positive x-axis
         """
         self._x = float(x) if x is not None else None
         self._y = float(y) if y is not None else None
