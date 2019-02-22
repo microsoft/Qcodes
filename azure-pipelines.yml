@@ -5,32 +5,43 @@ trigger:
     include:
       - master
 
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+    windows:
+      imageName: 'vs2017-win2016'
+
 jobs:
   - job: "run_the_tests"
     pool:
-      vmImage: "vs2017-win2016"
+      vmImage: $(imageName)
 
     steps:
       - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-        displayName: "Add conda to PATH"
-      - script: |
+        displayName: "Add conda to PATH on Windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
+      - bash: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+        displayName: "Add conda to PATH on Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
+      - bash: |
           conda update -n base conda
-          conda init cmd.exe
+          conda init bash
         displayName: "Conda setup"
-      - script: |
+      - bash: |
           conda --version
           conda env create --file environment.yml
-          CALL activate qcodes
+          conda activate qcodes
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
         displayName: "Installation"
-      - script: |
-          CALL activate qcodes
+      - bash: |
+          conda activate qcodes
           mypy qcodes
         displayName: "mypy"
-      - script: |
-          CALL activate qcodes
+      - bash: |
+          conda activate qcodes
           cd ..
           git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
           cd qcodes_generate_test_db
@@ -39,8 +50,8 @@ jobs:
           python generate_version_2.py
           python generate_version_3.py
         displayName: "Generate db fixtures"
-      - script: |
-          CALL activate qcodes
+      - bash: |
+          conda activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
         displayName: "Pytest"
@@ -55,12 +66,14 @@ jobs:
           REM Turn warnings into errors
           set SPHINXOPTS=-W -v
           make.bat htmlapi
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
         displayName: "docsbuild"
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
+          condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: Cobertura
