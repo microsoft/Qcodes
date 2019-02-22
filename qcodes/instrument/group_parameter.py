@@ -1,3 +1,10 @@
+"""
+This module implements a :class:`Group` intended to hold multiple
+parameters that are to be gotten and set by the same command. The parameters
+should be of type :class:`GroupParameter`
+"""
+
+
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any, Optional
 
@@ -68,8 +75,9 @@ class GroupParameter(Parameter):
 
 class Group:
     """
-    The group combines :class:`.GroupParameter` s that are to be gotten or set via the
-    same command. The command has to be a string, for example, a VISA command.
+    The group combines :class:`.GroupParameter` s that are to be gotten or set
+    via the same command. The command has to be a string, for example,
+    a VISA command.
 
     The `Group`'s methods are used within `GroupParameter` in order to
     properly implement setting and getting of a single parameter in the
@@ -150,10 +158,11 @@ class Group:
     """
     def __init__(self,
                  parameters: List[GroupParameter],
-                 set_cmd: str=None,
-                 get_cmd: str=None,
-                 get_parser: Union[Callable[[str], Dict[str, Any]], None]=None,
-                 separator: str=','
+                 set_cmd: str = None,
+                 get_cmd: str = None,
+                 get_parser: Union[Callable[[str],
+                                            Dict[str, Any]], None] = None,
+                 separator: str = ','
                  ) -> None:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
 
