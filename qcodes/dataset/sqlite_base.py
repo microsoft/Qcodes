@@ -2023,7 +2023,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                guid,
                                formatted_name,
                                run_counter,
-                               time.time(),
+                               None,
                                ",".join([p.name for p in parameters]),
                                False,
                                desc_str)
@@ -2051,7 +2051,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                guid,
                                formatted_name,
                                run_counter,
-                               time.time(),
+                               None,
                                False,
                                desc_str)
     run_id = curr.lastrowid
@@ -2183,6 +2183,36 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
           """
     with atomic(conn) as conn:
         conn.cursor().execute(sql, (description, run_id))
+
+
+def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
+    """
+    Set the run_timestamp for the run with the given run_id. If the
+    run_timestamp has already been set, a RuntimeError is raised.
+    """
+
+    query = """
+            SELECT run_timestamp
+            FROM runs
+            WHERE run_id = ?
+            """
+    cmd = """
+          UPDATE runs
+          SET run_timestamp = ?
+          WHERE run_id = ?
+          """
+
+    with atomic(conn) as conn:
+        c = conn.cursor()
+        timestamp = one(c.execute(query, (run_id,)), 'run_timestamp')
+        if timestamp is not None:
+            raise RuntimeError('Can not set run_timestamp; it has already '
+                               f'been set to: {timestamp}')
+        else:
+            current_time = time.time()
+            c.execute(cmd, (current_time, run_id))
+            log.info(f"Set the run_timestamp of run_id {run_id} to "
+                     f"{current_time}")
 
 
 def add_parameter(conn: ConnectionPlus,
@@ -2372,6 +2402,14 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
     return run_counter, run_id, formatted_name
 
 
+def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
+    """
+    Return the (JSON string) run description of the specified run
+    """
+    return select_one_where(conn, "runs", "run_description",
+                            "run_id", run_id)
+
+
 def get_metadata(conn: ConnectionPlus, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
@@ -2497,7 +2535,7 @@ def get_sample_name_from_experiment_id(
 
 
 def get_run_timestamp_from_run_id(conn: ConnectionPlus,
-                                  run_id: int) -> float:
+                                  run_id: int) -> Optional[float]:
     return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
 
 
