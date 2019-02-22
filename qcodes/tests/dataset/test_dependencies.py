@@ -138,3 +138,43 @@ def test_old_to_new(some_paramspecs):
     assert idps_new.standalones == set((ps1_base, ps2_base))
     paramspecs = (ps1_base, ps2_base)
     assert idps_new._id_to_paramspec == {_id(ps): ps for ps in paramspecs}
+
+
+def test_extend_with_paramspec(some_paramspecs):
+    ps1 = some_paramspecs[1]['ps1']
+    ps2 = some_paramspecs[1]['ps2']
+    ps3 = some_paramspecs[1]['ps3']
+    ps4 = some_paramspecs[1]['ps4']
+    ps5 = some_paramspecs[1]['ps5']
+    ps6 = some_paramspecs[1]['ps6']
+
+    ps1_base = ps1.base_version()
+    ps2_base = ps2.base_version()
+    ps3_base = ps3.base_version()
+    ps4_base = ps4.base_version()
+    ps5_base = ps5.base_version()
+    ps6_base = ps6.base_version()
+
+    idps_bare = InterDependencies_(standalones=(ps1_base,))
+    idps_extended = InterDependencies_(inferences={ps3_base: (ps1_base,)})
+
+    assert idps_bare._extend_with_paramspec(ps3) == idps_extended
+
+    idps_bare = InterDependencies_(standalones=(ps2_base,),
+                                   inferences={ps3_base: (ps1_base,)})
+    idps_extended = InterDependencies_(inferences={ps3_base: (ps1_base,),
+                                                   ps4_base: (ps2_base,)})
+
+    assert idps_bare._extend_with_paramspec(ps4) == idps_extended
+
+    idps_bare = InterDependencies_(standalones=(ps1_base, ps2_base))
+    idps_extended = InterDependencies_(
+                        inferences={ps3_base: (ps1_base,),
+                                    ps4_base: (ps2_base,)},
+                        dependencies={ps5_base: (ps3_base, ps4_base),
+                                      ps6_base: (ps3_base, ps4_base)})
+    assert (idps_bare.
+            _extend_with_paramspec(ps3).
+            _extend_with_paramspec(ps4).
+            _extend_with_paramspec(ps5).
+            _extend_with_paramspec(ps6)) == idps_extended
