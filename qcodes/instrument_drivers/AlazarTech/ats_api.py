@@ -119,7 +119,35 @@ ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
     591: ('ApiNotSupportedInDualChannelMode:Requested number of samples '
           'per channel is too large to fit in on-board memory. Try '
           'reducing number of samples per channel, or switch to '
-          'single channel mode.')
+          'single channel mode.'),
+    592: ('ApiNotSupportedInQuadChannelMode: The requested number of '
+          'samples per channel is too large to fit in onboard memory. '
+          'Try reducing the num'),
+    593: 'ApiFileIoError: A file read or write error occurred.',
+    594: ('ApiInvalidClockFrequency: The requested ADC clock frequency is '
+          'not supported.'),
+    595: 'ApiInvalidSkipTable',
+    596: 'ApiInvalidDspModule',
+    597: 'ApiDESOnlySupportedInSingleChannelMode',
+    598: 'ApiInconsistentChannel',
+    599: 'ApiDspFiniteRecordsPerAcquisition',
+    600: 'ApiNotEnoughNptFooters',
+    601: 'ApiInvalidNptFooter',
+    602: ('ApiOCTIgnoreBadClockNotSupported: OCT ignore bad clock is not '
+          'supported.'),
+    603: ('ApiError: The requested number of records in a single-port '
+          'acquisition exceeds the maximum supported by the digitizer. '
+          'Use dual-ported AutoDMA to acquire more records per acquisition.'),
+    604: ('ApiError: The requested number of records in a single-port '
+          'acquisition exceeds the maximum supported by the digitizer.'),
+    605: ('ApiOCTNoTriggerDetected: No trigger is detected for OCT ignore '
+          'bad clock feature.'),
+    606: ('ApiOCTTriggerTooFast: Trigger detected is too fast for OCT ignore '
+          'bad clock feature.'),
+    607: ('ApiNetworkError: There was an issue related to network. Make sure '
+          'that the network connection and settings are correct.'),
+    608: ('ApiFftSizeTooLarge: The on-FPGA FFT cannot support FFT that '
+          'large. Try reducing the FFT size.'),
 }.items()}
 
 BOARD_NAMES = {
