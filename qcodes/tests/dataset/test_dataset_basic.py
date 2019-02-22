@@ -37,13 +37,15 @@ n_experiments = 0
 def make_shadow_dataset(dataset: DataSet):
     """
     Creates a new DataSet object that points to the same run_id in the same
-    database file as the given dataset object.
+    database file as the given dataset object. Note that for a pristine run,
+    the shadow dataset may be out of sync with its input dataset.
 
     Note that in order to achieve it `path_to_db` because this will create a
     new sqlite3 connection object behind the scenes. This is very useful for
     situations where one needs to assert the underlying modifications to the
     database file.
     """
+
     return DataSet(path_to_db=dataset.path_to_db, run_id=dataset.run_id)
 
 
@@ -73,6 +75,86 @@ def test_has_attributes_after_init():
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_dataset_states():
+    """
+    Test the interplay between pristine, started, running, and completed
+    """
+
+    ds = DataSet()
+
+    assert ds.pristine is True
+    assert ds.running is False
+    assert ds.started is False
+    assert ds.completed is False
+
+    with pytest.raises(RuntimeError, match='Can not mark DataSet as complete '
+                                           'before it has '
+                                           'been marked as started.'):
+        ds.mark_complete()
+
+    match = ('This DataSet has not been marked as started. '
+             'Please mark the DataSet as started before '
+             'adding results to it.')
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_result({'x': 1})
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_results([{'x': 1}])
+
+    parameter = ParamSpec(name='single', paramtype='numeric',
+                          label='', unit='N/A')
+    ds.add_parameter(parameter)
+
+    ds.mark_started()
+
+    assert ds.pristine is False
+    assert ds.running is True
+    assert ds.started is True
+    assert ds.completed is False
+
+    match = ('Can not add parameters to a DataSet that has '
+             'been started.')
+
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_parameter(parameter)
+
+    ds.add_result({parameter.name: 1})
+    ds.add_results([{parameter.name: 1}])
+
+    ds.mark_complete()
+
+    assert ds.pristine is False
+    assert ds.running is False
+    assert ds.started is True
+    assert ds.completed is True
+
+    match = ('Can not add parameters to a DataSet that has '
+             'been started.')
+
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_parameter(parameter)
+
+    match = ('This DataSet is complete, no further '
+             'results can be added to it.')
+    with pytest.raises(CompletedError, match=match):
+        ds.add_result({parameter.name: 1})
+    with pytest.raises(CompletedError, match=match):
+        ds.add_results([{parameter.name: 1}])
+
+
+@pytest.mark.usefixtures('experiment')
+def test_timestamps_are_none():
+    ds = DataSet()
+
+    assert ds.run_timestamp_raw is None
+    assert ds.run_timestamp() is None
+
+    ds.mark_started()
+
+    assert isinstance(ds.run_timestamp_raw, float)
+    assert isinstance(ds.run_timestamp(), str)
 
 
 def test_dataset_read_only_properties(dataset):
@@ -183,6 +265,9 @@ def test_add_paramspec(dataset):
     dataset.add_parameter(parameter_b)
     dataset.add_parameter(parameter_c)
 
+    # write the parameters to disk
+    dataset.mark_started()
+
     # Now retrieve the paramspecs
 
     shadow_ds = make_shadow_dataset(dataset)
@@ -215,6 +300,13 @@ def test_add_paramspec_one_by_one(dataset):
     for parameter in parameters:
         dataset.add_parameter(parameter)
 
+    # test that we can not re-add any parameter already added once
+    for param in parameters:
+        with pytest.raises(ValueError, match=f'Duplicate parameter name: '
+                                             f'{param.name}'):
+            dataset.add_parameter(param)
+
+    dataset.mark_started()
     shadow_ds = make_shadow_dataset(dataset)
 
     paramspecs = shadow_ds.paramspecs
@@ -228,9 +320,9 @@ def test_add_paramspec_one_by_one(dataset):
 
     assert paramspecs == dataset.paramspecs
 
-    # Test that is not possible to add the same parameter again to the dataset
-    with pytest.raises(ValueError, match=f'Duplicate parameter name: '
-                                         f'{parameters[0].name}'):
+    # Test that is not possible to add any parameter to the dataset
+    with pytest.raises(RuntimeError, match='Can not add parameters to a '
+                                           'DataSet that has been started.'):
         dataset.add_parameter(parameters[0])
 
     assert len(dataset.paramspecs.keys()) == 3
@@ -250,6 +342,7 @@ def test_add_data_1d():
     psy = ParamSpec("y", "numeric", depends_on=['x'])
 
     mydataset = new_data_set("test-dataset", specs=[psx, psy])
+    mydataset.mark_started()
 
     expected_x = []
     expected_y = []
@@ -273,7 +366,7 @@ def test_add_data_1d():
     mydataset.mark_complete()
     assert mydataset.completed is True
 
-    with pytest.raises(ValueError):
+    with pytest.raises(CompletedError):
         mydataset.add_result({'y': 500})
 
     with pytest.raises(CompletedError):
@@ -291,6 +384,7 @@ def test_add_data_array():
 
     mydataset = new_data_set("test", specs=[ParamSpec("x", "numeric"),
                                             ParamSpec("y", "array")])
+    mydataset.mark_started()
 
     expected_x = []
     expected_y = []
@@ -324,6 +418,7 @@ def test_adding_too_many_results():
                        unit='Hz', depends_on=[xparam])
     dataset.add_parameter(xparam)
     dataset.add_parameter(yparam)
+    dataset.mark_started()
     n_max = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
 
     vals = np.linspace(0, 1, int(n_max/2)+2)
@@ -337,167 +432,6 @@ def test_adding_too_many_results():
     vals = np.linspace(0, 1, n_max*3)
     results = [{'x': val} for val in vals]
     dataset.add_results(results)
-
-
-def test_modify_results(dataset):
-    xparam = ParamSpec("x", "numeric")
-    dataset.add_parameter(xparam)
-    dataset.add_result({'x': 0})
-    dataset.add_result({'x': 1})
-
-    pytest.deprecated_call(dataset.modify_results, 0, [{'x': [10]}])
-    assert [[10], [1]] == dataset.get_data(xparam)
-
-    pytest.deprecated_call(dataset.modify_results, 1, [{'x': [14]}])
-    assert [[10], [14]] == dataset.get_data(xparam)
-
-    with pytest.raises(RuntimeError,
-                       match='Rolling back due to unhandled exception'):
-        # not sure calling `modify_results` like this is correct, anyway it
-        # is difficult to find out what the call signature for multiple
-        # results is supposed to look like...
-        pytest.deprecated_call(
-            dataset.modify_results, 0, [{'x': [5]}, {'x': [6]}])
-        assert [[5], [6]] == dataset.get_data(xparam)
-
-    pytest.xfail('modify_results does not seem to work for cases where '
-                 'multiple values of multiple parameters need to be changed. '
-                 'Anyway, the signature needs to be revisited, '
-                 'and consequently the correct behavior needs to be '
-                 'implemented and covered with tests.')
-
-
-def test_modify_result(dataset):
-    xparam = ParamSpec("x", "numeric", label="x parameter",
-                       unit='V')
-    yparam = ParamSpec("y", 'numeric', label='y parameter',
-                       unit='Hz', depends_on=[xparam])
-    zparam = ParamSpec("z", 'array', label='z parameter',
-                       unit='sqrt(Hz)', depends_on=[xparam])
-    dataset.add_parameter(xparam)
-    dataset.add_parameter(yparam)
-    dataset.add_parameter(zparam)
-
-    xdata = 0
-    ydata = 1
-    zdata = np.linspace(0, 1, 100)
-
-    dataset.add_result({'x': 0, 'y': 1, 'z': zdata})
-
-    shadow_ds = make_shadow_dataset(dataset)
-
-    try:
-        assert dataset.get_data('x')[0][0] == xdata
-        assert dataset.get_data('y')[0][0] == ydata
-        assert (dataset.get_data('z')[0][0] == zdata).all()
-
-        assert shadow_ds.get_data('x')[0][0] == xdata
-        assert shadow_ds.get_data('y')[0][0] == ydata
-        assert (shadow_ds.get_data('z')[0][0] == zdata).all()
-
-        with pytest.raises(ValueError):
-            pytest.deprecated_call(
-                dataset.modify_result, 0, {' x': 1})
-
-        xdata = 1
-        ydata = 12
-        zdata = np.linspace(0, 1, 99)
-
-        pytest.deprecated_call(dataset.modify_result, 0, {'x': xdata})
-        assert dataset.get_data('x')[0][0] == xdata
-        assert shadow_ds.get_data('x')[0][0] == xdata
-
-        pytest.deprecated_call(dataset.modify_result, 0, {'y': ydata})
-        assert dataset.get_data('y')[0][0] == ydata
-        assert shadow_ds.get_data('y')[0][0] == ydata
-
-        pytest.deprecated_call(dataset.modify_result, 0, {'z': zdata})
-        assert (dataset.get_data('z')[0][0] == zdata).all()
-        assert (shadow_ds.get_data('z')[0][0] == zdata).all()
-
-        dataset.mark_complete()
-
-        with pytest.raises(CompletedError):
-            pytest.deprecated_call(dataset.modify_result, 0, {'x': 2})
-
-    finally:
-        shadow_ds.conn.close()
-
-
-@pytest.mark.xfail(reason='This function does not seem to work the way its '
-                          'docstring suggests. See the test body for more '
-                          'information.')
-def test_add_parameter_values(dataset):
-    n = 2
-    m = n + 1
-
-    xparam = ParamSpec('x', 'numeric')
-    dataset.add_parameter(xparam)
-
-    x_results = [{'x': x} for x in range(n)]
-    dataset.add_results(x_results)
-
-    yparam = ParamSpec("y", "numeric")
-
-    match_str = f'Need to have {n} values but got {m}.'
-    match_str = re.escape(match_str)
-    with pytest.raises(ValueError, match=match_str):
-        pytest.deprecated_call(
-            dataset.add_parameter_values, yparam, [y for y in range(m)])
-
-    yvals = [y for y in range(n)]
-
-    # Unlike what the docstring of the method suggests,
-    # `add_parameter_values` does NOT add a new parameter and values for it
-    # "NEXT TO the columns of values of existing parameters".
-    #
-    # In other words, if the initial state of the table is:
-    #
-    # |   x  |
-    # --------
-    # |   1  |
-    # |   2  |
-    #
-    # then the state of the table after calling `add_parameter_values` is
-    # going to be:
-    #
-    # |   x  |   y  |
-    # ---------------
-    # |   1  | NULL |
-    # |   2  | NULL |
-    # | NULL |  25  |
-    # | NULL |  42  |
-    #
-    # while the docstring suggests the following state:
-    #
-    # |   x  |   y  |
-    # ---------------
-    # |   1  |  25  |
-    # |   2  |  42  |
-    #
-
-    y_expected = [[None]] * n + [[y] for y in yvals]
-    pytest.deprecated_call(
-        dataset.add_parameter_values, yparam, yvals)
-
-    shadow_ds = make_shadow_dataset(dataset)
-
-    try:
-        assert y_expected == dataset.get_data(yparam)
-        assert y_expected == shadow_ds.get_data(yparam)
-
-        dataset.mark_complete()
-
-        # and now let's test that dataset's connection does not commit anymore
-        # when `atomic` is used
-        dataset.add_results([{yparam.name: -2}])
-        y_expected_2 = y_expected + [[-2]]
-
-        assert y_expected_2 == dataset.get_data(yparam)
-        assert y_expected_2 == shadow_ds.get_data(yparam)
-
-    finally:
-        shadow_ds.conn.close()
 
 
 @pytest.mark.usefixtures("dataset")
@@ -551,6 +485,7 @@ def test_numpy_ints(dataset):
     """
     xparam = ParamSpec('x', 'numeric')
     dataset.add_parameter(xparam)
+    dataset.mark_started()
 
     numpy_ints = [
         np.int, np.int8, np.int16, np.int32, np.int64,
@@ -569,6 +504,7 @@ def test_numpy_floats(dataset):
     """
     float_param = ParamSpec('y', 'numeric')
     dataset.add_parameter(float_param)
+    dataset.mark_started()
 
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
@@ -577,10 +513,10 @@ def test_numpy_floats(dataset):
     assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
 
 
-
 def test_numpy_nan(dataset):
     parameter_m = ParamSpec("m", "numeric")
     dataset.add_parameter(parameter_m)
+    dataset.mark_started()
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
@@ -603,6 +539,7 @@ def test_missing_keys(dataset):
     dataset.add_parameter(y)
     dataset.add_parameter(a)
     dataset.add_parameter(b)
+    dataset.mark_started()
 
     def fa(xv):
         return xv + 1
@@ -655,12 +592,12 @@ def test_get_description(experiment, some_paramspecs):
     assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
                                                   paramspecs['ps2']))
 
-    # the run description gets written as the first data point is added,
+    # the run description gets written as the dataset is marked as started,
     # so now no description should be stored in the database
     prematurely_loaded_ds = DataSet(run_id=1)
     assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
 
-    ds.add_result({'ps1': 1, 'ps2': 2})
+    ds.mark_started()
 
     loaded_ds = DataSet(run_id=1)
 
@@ -708,6 +645,7 @@ def test_the_same_dataset_as(some_paramspecs, experiment):
     ds = DataSet()
     ds.add_parameter(paramspecs['ps1'])
     ds.add_parameter(paramspecs['ps2'])
+    ds.mark_started()
     ds.add_result({'ps1': 1, 'ps2': 2})
 
     same_ds_from_load = DataSet(run_id=ds.run_id)
@@ -732,6 +670,7 @@ class TestGetData:
         the tests in this class
         """
         dataset.add_parameter(self.x)
+        dataset.mark_started()
         for xv in self.xvals:
             dataset.add_result({self.x.name: xv})
 
