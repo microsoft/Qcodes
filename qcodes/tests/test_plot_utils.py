@@ -3,7 +3,9 @@ Tests for `qcodes.utils.plotting`.
 """
 
 from pytest import fixture
-
+import matplotlib
+# ensure that matplotlib is headless for CI
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 # we only need `dataset` here, but pytest does not discover the dependencies
