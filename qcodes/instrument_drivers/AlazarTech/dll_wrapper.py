@@ -1,9 +1,4 @@
 import ctypes
-# Define aliases for ctypes that match Alazar's notation.
-U8 = ctypes.c_uint8
-U32 = ctypes.c_uint32
-HANDLE = U32
-
 import logging
 import asyncio
 import concurrent
