@@ -63,13 +63,13 @@ jobs:
       - bash: |
           source activate qcodes
           cd qcodes
-          xvfb-run pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
+          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
         displayName: "Pytest Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishTestResults@1
         condition: always() # this step will always run, even if the pipeline is cancelled
         inputs:
-          testResultsFiles: 'qcodes\test-*.xml'
+          testResultsFiles: 'qcodes/test-*.xml'
           testRunTitle: 'Publish test results'
       - script: |
           CALL activate qcodes
@@ -78,7 +78,14 @@ jobs:
           set SPHINXOPTS=-W -v
           make.bat htmlapi
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
-        displayName: "docsbuild"
+        displayName: "docsbuild windows"
+      - script: |
+          source activate qcodes
+          cd docs
+          export SPHINXOPTS=-W -v
+          make htmlapi
+        condition: eq( variables['Agent.OS'], 'Linux' )
+        displayName: "docsbuild linux"
       - task: PublishBuildArtifacts@1
         inputs:
           pathtoPublish: 'docs/_build/html'
