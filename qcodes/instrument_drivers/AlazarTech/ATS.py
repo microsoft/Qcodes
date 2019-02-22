@@ -151,15 +151,17 @@ class AlazarTech_ATS(Instrument):
                 - 'firmware': as string
                 - 'model': as string
                 - 'serial': board serial number
-                - 'vendor': 'AlazarTech',
+                - 'vendor': 'AlazarTech'
                 - 'CPLD_version': version of the CPLD
                 - 'driver_version': version of the driver dll
                 - 'SDK_version': version of the SDK
                 - 'latest_cal_date': date of the latest calibration (as string)
-                - 'memory_size': size of the memory in samples,
-                - 'asopc_type': type of asopc (as decimal number),
-                - 'pcie_link_speed': the speed of a single pcie link (in GB/s),
+                - 'memory_size': size of the memory in samples
+                - 'asopc_type': type of asopc (as decimal number)
+                - 'pcie_link_speed': the speed of a single pcie link (in GB/s)
                 - 'pcie_link_width': number of pcie links
+                - 'bits_per_sample': number of bits per one sample
+                - 'max_samples': board memory size in samples
         """
         board_kind = BOARD_NAMES[self.api.get_board_kind(self._handle)]
         max_s, bps = self._get_channel_info(self._handle)
