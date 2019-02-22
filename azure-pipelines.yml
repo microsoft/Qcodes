@@ -17,9 +17,6 @@ jobs:
       vmImage: $(imageName)
 
     steps:
-      - bash: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-        condition: eq( variables['Agent.OS'], 'Linux' )
-        displayName: "Setup virtual X server on Linux"
       - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
         displayName: "Add conda to PATH on Windows"
         condition: eq( variables['Agent.OS'], 'Windows_NT' )
@@ -60,8 +57,15 @@ jobs:
       - bash: |
           source activate qcodes
           cd qcodes
-          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
-        displayName: "Pytest"
+          xvfb-run pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
+        displayName: "Pytest Linux"
+        condition: eq( variables['Agent.OS'], 'Linux' )
+      - bash: |
+          source activate qcodes
+          cd qcodes
+          xvfb-run pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc -v
+        displayName: "Pytest Windows"
+        condition: eq( variables['Agent.OS'], 'Windows_NT' )
       - task: PublishTestResults@1
         condition: always() # this step will always run, even if the pipeline is cancelled
         inputs:
