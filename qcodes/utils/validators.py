@@ -301,6 +301,28 @@ class PermissiveInts(Ints):
         super().validate(castvalue, context=context)
 
 
+class ComplexNum(Validator):
+    """
+    A validator for complex numbers
+    """
+
+    validtypes = (complex, np.complex, np.complex64, np.complex128)
+
+    def __init__(self) -> None:
+
+        self._valid_values = ((1+1j), )
+
+    def validate(self, value: numbertypes, context: str = '') -> None:
+        if not isinstance(value, self.validtypes):
+            raise TypeError(
+                '{} is not an int or float; {}'.format(repr(value), context))
+
+    is_numeric = False  # there is on meaningful way to sweep a complex number
+
+    def __repr__(self) -> str:
+        return '<Complex Number>'
+
+
 class Enum(Validator):
     """
     requires one of a provided set of values
