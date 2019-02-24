@@ -2,7 +2,6 @@ from typing import Union, Sequence, List, Dict, Any
 from copy import deepcopy
 
 
-
 class ParamSpec:
 
     allowed_types = ['array', 'numeric', 'text']
@@ -19,7 +18,7 @@ class ParamSpec:
             name: name of the parameter
             paramtype: type of the parameter, i.e. the SQL storage class
             label: label of the parameter
-            inferred_from: the parameters that this parameter is inferred_from
+            inferred_from: the parameters that this parameter is inferred from
             depends_on: the parameters that this parameter depends on
         """
         if not isinstance(paramtype, str):
@@ -44,40 +43,41 @@ class ParamSpec:
         inferred_from = [] if inferred_from is None else inferred_from
         depends_on = [] if depends_on is None else depends_on
 
-        self.add_inferred_from(inferred_from)
-        self.add_depends_on(depends_on)
+        if isinstance(inferred_from, str):
+            raise ValueError(f"ParamSpec {self.name} got "
+                             f"string {inferred_from} as inferred_from. "
+                             f"It needs a "
+                             f"Sequence of ParamSpecs or strings")
+        self._inferred_from.extend(
+            p.name if isinstance(p, ParamSpec) else p
+            for p in inferred_from)
+
+        if isinstance(depends_on, str):
+            raise ValueError(f"ParamSpec {self.name} got "
+                             f"string {depends_on} as depends_on. It needs a "
+                             f"Sequence of ParamSpecs or strings")
+        self._depends_on.extend(
+            p.name if isinstance(p, ParamSpec) else p
+            for p in depends_on)
 
         if metadata:
             self.metadata = metadata
 
     @property
-    def inferred_from(self):
+    def inferred_from_(self) -> List[str]:
+        return deepcopy(self._inferred_from)
+
+    @property
+    def depends_on_(self) -> List[str]:
+        return deepcopy(self._depends_on)
+
+    @property
+    def inferred_from(self) -> str:
         return ', '.join(self._inferred_from)
 
     @property
-    def depends_on(self):
+    def depends_on(self) -> str:
         return ', '.join(self._depends_on)
-
-    def add_inferred_from(
-            self,
-            inferred_from: Sequence[Union['ParamSpec', str]]) -> None:
-        """
-        Args:
-            inferred_from: the parameters that this parameter is inferred_from
-        """
-        self._inferred_from.extend(
-            p.name if isinstance(p, ParamSpec) else p
-            for p in inferred_from)
-
-    def add_depends_on(self,
-                       depends_on: Sequence[Union['ParamSpec', str]]) -> None:
-        """
-        Args:
-            depends_on: the parameters that this parameter depends on
-        """
-        self._depends_on.extend(
-            p.name if isinstance(p, ParamSpec) else p
-            for p in depends_on)
 
     def copy(self) -> 'ParamSpec':
         """
@@ -104,6 +104,26 @@ class ParamSpec:
             if getattr(self, attr) != getattr(other, attr):
                 return False
         return True
+
+    def __hash__(self) -> int:
+        """Allow ParamSpecs in data structures that use hashing (i.e. sets)"""
+        attrs_with_strings = ['name', 'type', 'label', 'unit']
+        attrs_with_lists = ['_inferred_from', '_depends_on']
+
+        # First, get the hash of the tuple with all the relevant attributes
+        all_attr_tuple_hash = hash(
+            tuple(getattr(self, attr) for attr in attrs_with_strings)
+            + tuple(tuple(getattr(self, attr)) for attr in attrs_with_lists)
+        )
+        hash_value = all_attr_tuple_hash
+
+        # Then, XOR it with the individual hashes of all relevant attributes
+        for attr in attrs_with_strings:
+            hash_value = hash_value ^ hash(getattr(self, attr))
+        for attr in attrs_with_lists:
+            hash_value = hash_value ^ hash(tuple(getattr(self, attr)))
+
+        return hash_value
 
     def serialize(self) -> Dict[str, Any]:
         """
