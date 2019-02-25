@@ -585,6 +585,9 @@ class TestArrays(TestCase):
                 m.validate(v)
 
     def test_complex_min_max_raises(self):
+        """
+        Min max is not implemented for complex types
+        """
         with self.assertRaises(TypeError):
             Arrays(min_value=1+1j)
         with self.assertRaises(TypeError):
@@ -599,7 +602,38 @@ class TestArrays(TestCase):
         for dtype in complex_types:
             a.validate(np.arange(10, dtype=dtype))
 
+    def test_complex_subtypes(self):
+        """Test that specifying a specific complex subtype works as expected"""
+        a = Arrays(valid_types=(np.complex64,))
+
+        a.validate(np.arange(10, dtype=np.complex64))
+        with self.assertRaises(TypeError):
+            a.validate(np.arange(10, dtype=np.complex128))
+        a = Arrays(valid_types=(np.complex128,))
+
+        a.validate(np.arange(10, dtype=np.complex128))
+        with self.assertRaises(TypeError):
+            a.validate(np.arange(10, dtype=np.complex64))
+
+    def test_real_subtypes(self):
+        """
+        Test that validating a concrete real type into an array that
+        only support other concrete types raises as expected
+        """
+        types = [np.int8, np.int16, np.int32, np.int64,
+                 np.uint8, np.uint16, np.uint32, np.uint64,
+                 np.float32, np.float64]
+        randint = np.random.randint(0, len(types))
+        mytype = types.pop(randint)
+
+        a = Arrays(valid_types=(mytype,))
+        a.validate(np.arange(10, dtype=mytype))
+        a = Arrays(valid_types=types)
+        with self.assertRaises(TypeError):
+            a.validate(np.arange(10, dtype=mytype))
+
     def test_complex_default_raises(self):
+        """Complex types should not validate by default"""
         complex_types = (complex, np.complex, np.complex_, np.complexfloating,
                          np.complex64, np.complex128)
         a = Arrays()
@@ -608,6 +642,8 @@ class TestArrays(TestCase):
                 a.validate(np.arange(10, dtype=dtype))
 
     def test_default_types(self):
+        """Arrays constructed with all concrete and abstract real number
+        types should validate by default"""
         a = Arrays()
 
         integer_types = (int, np.int, np.int_, np.integer,
