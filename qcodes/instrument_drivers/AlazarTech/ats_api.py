@@ -99,13 +99,13 @@ ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
           'timeout interval. Check your trigger.'),
     580: 'ApiWaitCanceled',
     581: 'ApiBufferTooSmall',
-    582: ('ApiBufferOverflow:rate of acquiring data > rate of '
+    582: ('ApiBufferOverflow: rate of acquiring data > rate of '
           'transferring data to local memory. Try reducing sample rate, '
           'reducing number of enabled channels, increasing size of each '
           'DMA buffer or increase number of DMA buffers.'),
     583: 'ApiInvalidBuffer',
     584: 'ApiInvalidRecordsPerBuffer',
-    585: ('ApiDmaPending:Async I/O operation was successfully started, '
+    585: ('ApiDmaPending: Async I/O operation was successfully started, '
           'it will be completed when sufficient trigger events are '
           'supplied to fill the buffer.'),
     586: ('ApiLockAndProbePagesFailed:Driver or operating system was '
@@ -113,9 +113,9 @@ ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
           'Try reducing buffer size or total number of buffers.'),
     587: 'ApiWaitAbandoned',
     588: 'ApiWaitFailed',
-    589: ('ApiTransferComplete:This buffer is last in the current '
+    589: ('ApiTransferComplete: This buffer is last in the current '
           'acquisition.'),
-    590: 'ApiPllNotLocked:hardware error, contact AlazarTech',
+    590: 'ApiPllNotLocked: hardware error, contact AlazarTech',
     591: ('ApiNotSupportedInDualChannelMode:Requested number of samples '
           'per channel is too large to fit in on-board memory. Try '
           'reducing number of samples per channel, or switch to '
