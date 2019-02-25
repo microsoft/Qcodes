@@ -5,6 +5,7 @@ from sqlite3 import OperationalError
 import tempfile
 import os
 from contextlib import contextmanager
+import time
 
 import pytest
 import hypothesis.strategies as hst
@@ -306,8 +307,7 @@ def test_atomic_creation(experiment):
                            experiment.exp_id,
                            name='testrun',
                            guid=generate_guid(),
-                           parameters=[x, t,
-                                       y],
+                           parameters=[x, t, y],
                            metadata={'a': 1})
     assert error_caused_by(e, "This breaks adding metadata")
     # since we are starting from an empty database and the above transaction
@@ -338,3 +338,25 @@ def test_atomic_creation(experiment):
         runs = mut.transaction(new_conn,
                                'SELECT run_id FROM runs').fetchall()
         assert len(runs) == 1
+
+
+def test_set_run_timestamp(experiment):
+
+    ds = DataSet()
+
+    assert ds.run_timestamp_raw is None
+
+    time_now = time.time()
+    time.sleep(1)  # for slower test platforms
+    mut.set_run_timestamp(ds.conn, ds.run_id)
+
+    assert ds.run_timestamp_raw > time_now
+
+    with pytest.raises(RuntimeError, match="Rolling back due to unhandled "
+                                           "exception") as ei:
+        mut.set_run_timestamp(ds.conn, ds.run_id)
+
+    assert error_caused_by(ei, ("Can not set run_timestamp; it has already "
+                                "been set"))
+
+    ds.conn.close()
