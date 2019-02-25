@@ -584,6 +584,31 @@ class TestArrays(TestCase):
             with self.assertRaises(TypeError):
                 m.validate(v)
 
+    def test_default_types(self):
+        a = Arrays()
+        a.validate(np.arange(10, dtype=int))
+        a.validate(np.arange(10, dtype=np.int))
+        a.validate(np.arange(10, dtype=np.int_))
+        a.validate(np.arange(10, dtype=np.integer))
+        a.validate(np.arange(10, dtype=np.int8))
+        a.validate(np.arange(10, dtype=np.int16))
+        a.validate(np.arange(10, dtype=np.int32))
+        a.validate(np.arange(10, dtype=np.int64))
+        a.validate(np.arange(10, dtype=np.uint))
+        a.validate(np.arange(10, dtype=np.uint8))
+        a.validate(np.arange(10, dtype=np.uint16))
+        a.validate(np.arange(10, dtype=np.uint32))
+        a.validate(np.arange(10, dtype=np.uint64))
+        a.validate(np.arange(10, dtype=float))
+        a.validate(np.arange(10, dtype=np.float))
+        a.validate(np.arange(10, dtype=np.float_))
+        a.validate(np.arange(10, dtype=np.floating))
+        a.validate(np.arange(10, dtype=np.float16))
+        a.validate(np.arange(10, dtype=np.float32))
+        a.validate(np.arange(10, dtype=np.float64))
+
+
+
     def test_min_max(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
         v = np.array([[2, 0], [1, 2]])
