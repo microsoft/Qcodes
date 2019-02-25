@@ -593,38 +593,33 @@ class TestArrays(TestCase):
             Arrays(max_value=1, valid_types=(np.complexfloating,))
 
     def test_complex(self):
+        complex_types = (complex, np.complex, np.complex_, np.complexfloating,
+                      np.complex64, np.complex128)
         a = Arrays(valid_types=(complex, np.complexfloating))
-        a.validate(np.arange(10, dtype=complex))
-        a.validate(np.arange(10, dtype=np.complex))
-        a.validate(np.arange(10, dtype=np.complex_))
-        a.validate(np.arange(10, dtype=np.complexfloating))
-        a.validate(np.arange(10, dtype=np.complex64))
-        a.validate(np.arange(10, dtype=np.complex128))
+        for dtype in complex_types:
+            a.validate(np.arange(10, dtype=dtype))
+
+    def test_complex_default_raises(self):
+        complex_types = (complex, np.complex, np.complex_, np.complexfloating,
+                         np.complex64, np.complex128)
+        a = Arrays()
+        for dtype in complex_types:
+            with self.assertRaises(TypeError):
+                a.validate(np.arange(10, dtype=dtype))
 
     def test_default_types(self):
         a = Arrays()
-        a.validate(np.arange(10, dtype=int))
-        a.validate(np.arange(10, dtype=np.int))
-        a.validate(np.arange(10, dtype=np.int_))
-        a.validate(np.arange(10, dtype=np.integer))
-        a.validate(np.arange(10, dtype=np.int8))
-        a.validate(np.arange(10, dtype=np.int16))
-        a.validate(np.arange(10, dtype=np.int32))
-        a.validate(np.arange(10, dtype=np.int64))
-        a.validate(np.arange(10, dtype=np.uint))
-        a.validate(np.arange(10, dtype=np.uint8))
-        a.validate(np.arange(10, dtype=np.uint16))
-        a.validate(np.arange(10, dtype=np.uint32))
-        a.validate(np.arange(10, dtype=np.uint64))
-        a.validate(np.arange(10, dtype=float))
-        a.validate(np.arange(10, dtype=np.float))
-        a.validate(np.arange(10, dtype=np.float_))
-        a.validate(np.arange(10, dtype=np.floating))
-        a.validate(np.arange(10, dtype=np.float16))
-        a.validate(np.arange(10, dtype=np.float32))
-        a.validate(np.arange(10, dtype=np.float64))
 
+        integer_types = (int, np.int, np.int_, np.integer,
+                         np.int8, np.int16, np.int32, np.int64,
+                         np.uint8, np.uint16, np.uint32, np.uint64)
+        for mytype in integer_types:
+            a.validate(np.arange(10, dtype=mytype))
 
+        float_types = (float, np.float, np.float_, np.floating,
+                       np.float16, np.float32, np.float64)
+        for mytype in float_types:
+            a.validate(np.arange(10, dtype=mytype))
 
     def test_min_max(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
