@@ -526,9 +526,8 @@ class Arrays(Validator):
             real datatyes will be valid.
     """
 
-    real_types = (int, float, np.integer, np.floating)
-    complex_types = (complex, np.complexfloating)
-    supported_types = real_types + complex_types
+    real_types = (np.integer, np.floating)
+    supported_types = real_types + (np.complexfloating,)
 
     def __init__(self, min_value: numbertypes = -float("inf"),
                  max_value: numbertypes = float("inf"),
@@ -550,17 +549,21 @@ class Arrays(Validator):
             raise TypeError("min and max_value is not supported for complex "
                             "types.")
 
-        if isinstance(min_value, self.real_types):
+        if any(np.issubsctype(type(min_value), real_type) for real_type in
+               self.real_types):
             self._min_value = min_value
         else:
             raise TypeError('min_value must be a (real) number and the '
                             'validator must only allow real (non complex) '
                             'data types')
 
-        if isinstance(max_value, self.real_types):
+        if any(np.issubsctype(type(max_value), real_type) for real_type in
+               self.real_types):
             self._max_value = max_value
         else:
-            raise TypeError('max_value must be a (real) number')
+            raise TypeError('max_value must be a (real) number and the '
+                            'validator must only allow real (non complex) '
+                            'data types')
 
         valuesok = max_value > min_value
         if not valuesok:
@@ -612,7 +615,7 @@ class Arrays(Validator):
                 np.issubsctype(value.dtype.type, valid_type) for valid_type in
                 self.valid_types):
             raise TypeError(
-                f'type of {value} is not any of {self.supported_types}'
+                f'type of {value} is not any of {self.valid_types}'
                 f' it is {value.dtype}; {context}')
         if self.shape is not None:
             shape = self.shape
