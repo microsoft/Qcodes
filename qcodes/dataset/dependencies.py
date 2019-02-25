@@ -211,6 +211,7 @@ class InterDependencies_:
         for param in params:
             deps = self.dependencies.get(param, ())
             if set(deps).difference(params):
+                # pylint: disable=unused-variable
                 missing_names = [p.name for p in set(deps).difference(params)]
                 raise DependencyError(f'{param.name} has the following '
                                       'dependencies that are missing: '
@@ -218,6 +219,7 @@ class InterDependencies_:
 
             inffs = self.inferences.get(param, ())
             if set(inffs).difference(params):
+                # pylint: disable=unused-variable
                 missing_names = [p.name for p in set(inffs).difference(params)]
                 raise InferenceError(f'{param.name} has the following '
                                      'inferences that are missing: '
