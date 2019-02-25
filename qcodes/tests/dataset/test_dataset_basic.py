@@ -529,6 +529,7 @@ def test_numpy_inf(dataset):
     """
     parameter_m = ParamSpec("m", "numeric")
     dataset.add_parameter(parameter_m)
+    dataset.mark_started()
 
     data_dict = [{"m": value} for value in [-np.inf, np.inf]]
     dataset.add_results(data_dict)
