@@ -10,7 +10,7 @@ import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, \
-    ERROR_CODES
+    ERROR_CODES, API_SUCCESS
 
 
 def _skip_if_alazar_dll_and_boards_not_installed():
@@ -71,7 +71,19 @@ def test_idn(alazar):
     assert idn['model'][:3] == 'ATS'
 
 
-def test_error_codes_dict_is_correct(alazar_api):
+def test_return_codes_are_correct(alazar_api):
+    """
+    Test correctness of the coded return codes (success, failure, unknowns),
+    and consistency with what `AlazarErrorToText` function returns.
+    """
     for code, msg in ERROR_CODES.items():
         real_msg = alazar_api.error_to_text(code)
         assert real_msg in msg
+    
+    assert alazar_api.error_to_text(API_SUCCESS) == 'ApiSuccess'
+    
+    lower_unknown = API_SUCCESS - 1
+    assert alazar_api.error_to_text(lower_unknown) == 'Unknown'
+    
+    upper_unknown = max(list(ERROR_CODES.keys())) + 1
+    assert alazar_api.error_to_text(upper_unknown) == 'Unknown'
