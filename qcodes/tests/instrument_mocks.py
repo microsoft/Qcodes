@@ -210,6 +210,13 @@ class DummyChannel(InstrumentChannel):
                            set_cmd=None,
                            vals=ComplexNumbers())
 
+        self.add_parameter(name='dummy_parameter_with_setpoints_complex',
+                           label='Dummy Parameter with Setpoints complex',
+                           unit='some other unit',
+                           setpoints=(self.dummy_sp_axis,),
+                           vals=Arrays(shape=(self.dummy_n_points,)),
+                           parameter_class=DummyParameterWithSetpointsComplex)
+
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
 
@@ -377,6 +384,38 @@ class ArraySetPointParam(ArrayParameter):
         return item
 
 
+
+class ComplexArraySetPointParam(ArrayParameter):
+    """
+    Arrayparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+
+    def __init__(self, instrument=None, name='testparameter'):
+        shape = (5,)
+        label = 'this label'
+        unit = 'this unit'
+        sp_base = tuple(np.linspace(5, 9, 5))
+        setpoints = (sp_base,)
+        setpoint_names = ('this_setpoint',)
+        setpoint_labels = ('this setpoint',)
+        setpoint_units = ('this setpointunit',)
+        super().__init__(name,
+                         shape,
+                         instrument,
+                         label=label,
+                         unit=unit,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get_raw(self):
+        item = np.arange(5) - 1j*np.arange(5)
+        self._save_val(item)
+        return item
+
+
 class GeneratedSetPoints(Parameter):
     """
     A parameter that generates a setpoint array from start, stop and num points
@@ -402,6 +441,17 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     def get_raw(self):
         npoints = self.instrument.dummy_n_points()
         return np.random.rand(npoints)
+
+
+class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
+    """
+    Dummy parameter that returns data with a shape based on the
+    `dummy_n_points` parameter in the instrument. Returns Complex values
+    """
+
+    def get_raw(self):
+        npoints = self.instrument.dummy_n_points()
+        return np.random.rand(npoints) + 1j*np.random.rand(npoints)
 
 
 def setpoint_generator(*sp_bases):
