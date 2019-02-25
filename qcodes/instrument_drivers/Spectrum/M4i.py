@@ -17,7 +17,7 @@ import logging
 import numpy as np
 import ctypes as ct
 from functools import partial
-from qcodes.utils.validators import Enum, Numbers, Anything
+from qcodes.utils.validators import Enum, Numbers, Anything, Ints
 from qcodes.instrument.base import Instrument
 
 log = logging.getLogger(__name__)
@@ -31,9 +31,9 @@ try:
         sys.path.append(header_dir)
     import pyspcm
 except (ImportError, OSError) as ex:
-    log.exception(ex)
-    raise ImportError(
-        'to use the M4i driver install the pyspcm module and the M4i libs')
+    info_str = 'to use the M4i driver install the pyspcm module and the M4i libs'
+    log.exception(info_str)
+    raise ImportError(info_str)
 
 #%% Helper functions
 
@@ -382,7 +382,7 @@ class M4i(Instrument):
                            unit='ms',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_TIMEOUT),
-                           docstring='defines the timeout for wait commands')
+                           docstring='defines the timeout for wait commands (in ms)')
 
         # Single acquisition mode memory, pre- and posttrigger (pretrigger = memory size - posttrigger)
         # TODO: improve the validators to make them take into account the
@@ -435,6 +435,15 @@ class M4i(Instrument):
                            vals=Enum(pyspcm.SPC_CM_INTPLL, pyspcm.SPC_CM_QUARTZ2,
                                      pyspcm.SPC_CM_EXTREFCLOCK, pyspcm.SPC_CM_PXIREFCLOCK),
                            docstring='defines the used clock mode or reads out the actual selected one')
+        self.add_parameter('reference_clock',
+                           label='frequency of external reference clock', unit='Hz',
+                           get_cmd=partial(self._param32bit,
+                                           pyspcm.SPC_REFERENCECLOCK),
+                           set_cmd=partial(self._set_param32bit,
+                                           pyspcm.SPC_REFERENCECLOCK),
+                           vals=Ints(),
+                           docstring='defines the frequency of the external reference clock')
+
         self.add_parameter('sample_rate',
                            label='sample rate',
                            get_cmd=partial(self._param32bit,
@@ -583,8 +592,8 @@ class M4i(Instrument):
 
     def active_channels(self):
         """ Return a list with the indices of the active channels """
-        x = bin(self.enable_channels())[2:]
-        return [i for i in range(len(x)) if x[i]]
+        x = bin(self.enable_channels())[2:][::-1]
+        return [i for i in range(len(x)) if int(x[i])]
 
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
@@ -602,7 +611,7 @@ class M4i(Instrument):
         return data * input_range / resolution
 
     def initialize_channels(self, channels=None, mV_range=1000, input_path=0,
-                            termination=0, coupling=0, compensation=None, memsize=2**12):
+                            termination=0, coupling=0, compensation=None, memsize=2**12, pretrigger_memsize = 16):
         """ Setup channels of the digitizer for simple readout using Parameters
 
         The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
@@ -612,9 +621,12 @@ class M4i(Instrument):
             mV_range, input_path, termination, coupling, compensation: passed
                 to the set_channel_settings function
             memsize (int): memory size to use for simple channel readout
+            pretrigger_memsize (int): Pretrigger memory size to use. The default
+                value used is 16, which is the smallest value possible.
         """
         allchannels = 0
         self._channel_memsize = memsize
+        self._channel_pretrigger_memsize = pretrigger_memsize
         self.data_memory_size(memsize)
         if channels is None:
             channels = range(4)
@@ -646,7 +658,7 @@ class M4i(Instrument):
         """
         if memsize is None:
             memsize = self._channel_memsize
-        posttrigger_size = 16 * int((memsize / 2) // 16)
+        posttrigger_size = memsize - self._channel_pretrigger_memsize
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
         cx = self._channel_mask()
         self.enable_channels(cx)

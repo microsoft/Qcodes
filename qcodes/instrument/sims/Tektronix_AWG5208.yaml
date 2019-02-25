@@ -11,6 +11,14 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "QCoDeS, AWG5208, 1000, 0.1"
+    properties:
+      current_directory:
+        default: "\\Users\\OEM\\Documents"
+        getter:
+          q: "MMEMory:CDIRectory?"
+          r: "{}"
+        setter:
+          q: "MMEMory:CDIRectory {}"
 
 resources:
   GPIB::1::INSTR:

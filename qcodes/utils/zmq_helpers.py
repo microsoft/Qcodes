@@ -16,7 +16,7 @@ class UnboundedPublisher:
     def __init__(self,
                  topic: str,
                  interface_or_socket: str="tcp://localhost:5559",
-                 context: zmq.Context = None):
+                 context: zmq.Context = None) -> None:
         """
 
         Args:
@@ -39,6 +39,7 @@ class Publisher(UnboundedPublisher):
     Allows for a publisher that will not use all the memory.
     Tune the timeout and hwm to fit the needs of the situation.
     We start with very permissive defaults:
+
         - 10 seconds linger
         - 2.5 GB cache
 
@@ -49,7 +50,7 @@ class Publisher(UnboundedPublisher):
     def __init__(self, topic: str,
                  interface_or_socket: str="tcp://localhost:5559",
                  timeout: int = _LINGER*10,
-                 hwm: int = _ZMQ_HWM*5,  context: zmq.Context = None):
+                 hwm: int = _ZMQ_HWM*5,  context: zmq.Context = None) -> None:
         """
 
         Args:

@@ -8,7 +8,7 @@ Public
 Classes and Functions
 ---------------------
 
-This page lists the entrypoints to the plubic qcodes API.
+This page lists the entrypoints to the public qcodes API.
 
 .. toctree::
    :maxdepth: 4
@@ -77,7 +77,29 @@ Data
     GNUPlotFormat
     DiskIO
 
+DataSet
+~~~~~~~
 
+.. autosummary::
+   :toctree: generated/
+
+    qcodes.dataset.measurements.Measurement
+    qcodes.dataset.measurements.DataSaver
+
+    qcodes.dataset.experiment_container.Experiment
+    qcodes.dataset.experiment_container.new_experiment
+    qcodes.dataset.experiment_container.load_last_experiment
+    qcodes.dataset.experiment_container.load_experiment_by_name
+    qcodes.dataset.experiment_container.load_or_create_experiment
+
+    qcodes.dataset.database.initialise_database
+    qcodes.dataset.database.initialise_or_create_database_at
+
+    qcodes.dataset.data_set.DataSet
+    qcodes.dataset.data_set.load_by_id
+    qcodes.dataset.data_set.load_by_guid
+
+    qcodes.dataset.plotting.plot_by_id
 
 Instrument
 ~~~~~~~~~~
@@ -87,7 +109,7 @@ Instrument
 
    Function
    Parameter
-   StandardParameter
+   ParameterWithSetpoints
    ArrayParameter
    MultiParameter
    ManualParameter
@@ -95,6 +117,7 @@ Instrument
    SweepValues
    combine
    CombinedParameter
+   qcodes.instrument.parameter.expand_setpoints_helper
 
 
    Instrument
@@ -121,3 +144,5 @@ Utils & misc
    :toctree: generated/
 
    qcodes.utils.validators
+   qcodes.utils.plotting
+   qcodes.logger

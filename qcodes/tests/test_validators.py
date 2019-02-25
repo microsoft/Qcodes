@@ -20,11 +20,6 @@ def a_func():
 
 class TestBaseClass(TestCase):
 
-    def test_instantiate(self):
-        # you cannot instantiate the base class
-        with self.assertRaises(NotImplementedError):
-            Validator()
-
     class BrokenValidator(Validator):
 
         def __init__(self):
@@ -79,7 +74,8 @@ class TestBool(TestCase):
 
     def test_valid_values(self):
         val = Bool()
-        val.validate(val.valid_values[0])
+        for vval in val.valid_values:
+            val.validate(vval)
 
 
 class TestStrings(TestCase):
@@ -180,7 +176,8 @@ class TestStrings(TestCase):
 
     def test_valid_values(self):
         val = Strings()
-        val.validate(val.valid_values[0])
+        for vval in val.valid_values:
+            val.validate(vval)
 
 
 class TestNumbers(TestCase):
@@ -283,6 +280,10 @@ class TestNumbers(TestCase):
             with self.assertRaises(TypeError):
                 Numbers(min_value=val)
 
+    def test_valid_values(self):
+        val = Numbers()
+        for vval in val.valid_values:
+            val.validate(vval)
 
 class TestInts(TestCase):
     ints = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
@@ -366,6 +367,11 @@ class TestInts(TestCase):
             with self.assertRaises((TypeError, OverflowError)):
                 Ints(min_value=val)
 
+    def test_valid_values(self):
+        val = Ints()
+        for vval in val.valid_values:
+            val.validate(vval)
+
 
 class TestPermissiveInts(TestCase):
 
@@ -393,6 +399,11 @@ class TestPermissiveInts(TestCase):
                 with self.assertRaises(TypeError):
                     validator.validate(i)
 
+
+    def test_valid_values(self):
+        val = PermissiveInts()
+        for vval in val.valid_values:
+            val.validate(vval)
 
 class TestEnum(TestCase):
     enums = [
@@ -479,7 +490,8 @@ class TestMultiples(TestCase):
 
         for d in self.divisors:
             n = Multiples(divisor=d)
-            n.validate(n._valid_values[0])
+            for num in n.valid_values:
+                n.validate(num)
 
 
 class TestPermissiveMultiples(TestCase):
@@ -545,15 +557,19 @@ class TestMultiType(TestCase):
 
         self.assertFalse(MultiType(Strings(), Enum(1, 2)).is_numeric)
 
+
     def test_bad(self):
         for args in [[], [1], [Strings(), True]]:
             with self.assertRaises(TypeError):
                 MultiType(*args)
 
     def test_valid_values(self):
-        m = MultiType(Strings(2, 4), Ints(10, 32))
-        for val in m.valid_values:
-            m.validate(val)
+        ms = [MultiType(Strings(2, 4), Ints(10, 32)),
+              MultiType(Ints(), Lists(Ints())),
+              MultiType(Ints(), MultiType(Lists(Ints()), Ints()))]
+        for m in ms:
+            for val in m.valid_values:
+                m.validate(val)
 
 
 class TestArrays(TestCase):
@@ -581,19 +597,37 @@ class TestArrays(TestCase):
 
     def test_shape(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
-        v = np.array([[2, 0], [1, 2], [2, 3]])
-        with self.assertRaises(ValueError):
-            m.validate(v)
 
-        # should pass if no shape specified
+        v1 = np.array([[2, 0], [1, 2]])
+        v2 = np.array([[2, 0], [1, 2], [2, 3]])
+
+        # v1 is the correct shape but v2 is not
+        m.validate(v1)
+        with self.assertRaises(ValueError):
+            m.validate(v2)
+        # both should pass if no shape specified
         m = Arrays(min_value=-5, max_value=50)
-        m.validate(v)
-        v = np.array([[2, 0], [1, 2]])
-        m.validate(v)
+        m.validate(v1)
+        m.validate(v2)
+
+    def test_shape_defered(self):
+        m = Arrays(min_value=-5, max_value=50, shape=(lambda: 2, lambda: 2))
+        v1 = np.array([[2, 5], [3, 7]])
+        m.validate(v1)
+        v2 = np.array([[2, 0], [1, 2], [2, 3]])
+        with self.assertRaises(ValueError):
+            m.validate(v2)
 
     def test_valid_values(self):
         val = Arrays(min_value=-5, max_value=50, shape=(2, 2))
-        val.validate(val.valid_values[0])
+        for vval in val.valid_values:
+            val.validate(vval)
+
+    def test_shape_non_sequence_raises(self):
+        with self.assertRaises(ValueError):
+            m = Arrays(shape=5)
+        with self.assertRaises(ValueError):
+            m = Arrays(shape=lambda: 10)
 
 
 class TestLists(TestCase):
@@ -617,8 +651,9 @@ class TestLists(TestCase):
             l.validate(v2)
 
     def test_valid_values(self):
-        l = Lists(Ints(max_value=10))
-        l.validate(l.valid_values[0])
+        val = Lists(Ints(max_value=10))
+        for vval in val.valid_values:
+            val.validate(vval)
 
 
 class TestCallable(TestCase):
@@ -634,8 +669,9 @@ class TestCallable(TestCase):
             c.validate(test_int)
 
     def test_valid_values(self):
-        c = Callable()
-        c.validate(c.valid_values[0])
+        val = Callable()
+        for vval in val.valid_values:
+            val.validate(vval)
 
 
 class TestDict(TestCase):
@@ -649,5 +685,6 @@ class TestDict(TestCase):
             d.validate(test_int)
 
     def test_valid_values(self):
-        d = Dict()
-        d.validate(d.valid_values[0])
+        val = Dict()
+        for vval in val.valid_values:
+            val.validate(vval)

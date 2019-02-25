@@ -4,7 +4,7 @@ import numpy as np
 from functools import partial
 from math import sqrt
 
-from typing import Callable, List, Union
+from typing import Callable, List, Union, cast
 
 try:
     import zhinst.utils
@@ -215,7 +215,7 @@ class Sweep(MultiParameter):
 
         self._instrument.sweep_correctly_built = True
 
-    def get(self):
+    def get_raw(self):
         """
         Execute the sweeper and return the data corresponding to the
         subscribed signals.
@@ -502,7 +502,7 @@ class Scope(MultiParameter):
         self._instrument.daq.sync()
         self._instrument.scope_correctly_built = True
 
-    def get(self):
+    def get_raw(self):
         """
         Acquire data from the scope.
 
@@ -1243,7 +1243,7 @@ class ZIUHFLI(Instrument):
 
         # A "manual" parameter: a list of the signals for the sweeper
         # to subscribe to
-        self._sweeper_signals = []
+        self._sweeper_signals = [] # type: List[str]
 
         # This is the dictionary keeping track of the sweeper settings
         # These are the default settings
@@ -1629,7 +1629,7 @@ class ZIUHFLI(Instrument):
         setting = 'sample'
         if demod_param not in ['x', 'y', 'R', 'phi']:
             raise RuntimeError("Invalid demodulator parameter")
-        datadict = self._getter(module, number, mode, setting)
+        datadict = cast(dict, self._getter(module, number, mode, setting))
         datadict['R'] = np.abs(datadict['x'] + 1j * datadict['y'])
         datadict['phi'] = np.angle(datadict['x'] + 1j * datadict['y'], deg=True)
         return datadict[demod_param]

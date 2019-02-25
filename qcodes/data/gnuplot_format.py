@@ -7,6 +7,10 @@ import logging
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 from .data_array import DataArray
 from .format import Formatter
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .data_set import DataSet
 
 
 log = logging.getLogger(__name__)
@@ -240,18 +244,23 @@ class GNUPlotFormat(Formatter):
             return labelstr.split()
         else:
             # fields *are* quoted (and escaped)
-            parts = re.split('"\s+"', labelstr[1:-1])
+            parts = re.split('"\\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager, location, force_write=False,
-              write_metadata=True, only_complete=True, filename=None):
+    # this signature is unfortunatly incompatible with the super class
+    # so we have to ignore type errors
+    def write(self,  # type: ignore
+              data_set: 'DataSet',
+              io_manager, location, force_write=False,
+              write_metadata=True, only_complete=True,
+              filename=None):
         """
         Write updates in this DataSet to storage.
 
         Will choose append if possible, overwrite if not.
 
         Args:
-            data_set (DataSet): the data we're storing
+            data_set: the data we're storing
             io_manager (io_manager): the base location to write to
             location (str): the file location within io_manager
             only_complete (bool): passed to match_save_range, answers the
@@ -336,12 +345,13 @@ class GNUPlotFormat(Formatter):
             self.write_metadata(
                 data_set, io_manager=io_manager, location=location)
 
-    def write_metadata(self, data_set, io_manager, location, read_first=True):
+    def write_metadata(self, data_set: 'DataSet', io_manager, location,
+                       read_first=True):
         """
         Write all metadata in this DataSet to storage.
 
         Args:
-            data_set (DataSet): the data we're storing
+            data_set: the data we're storing
 
             io_manager (io_manager): the base location to write to
 
