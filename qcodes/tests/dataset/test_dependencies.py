@@ -5,7 +5,9 @@ import pytest
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
                                          old_to_new,
-                                         new_to_old)
+                                         new_to_old,
+                                         DependencyError,
+                                         InferenceError)
 from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
 from qcodes.tests.common import error_caused_by
 # pylint: disable=unused-import
@@ -220,3 +222,26 @@ def test_extend_with_paramspec(some_paramspecs):
             _extend_with_paramspec(ps4).
             _extend_with_paramspec(ps5).
             _extend_with_paramspec(ps6)) == idps_extended
+
+
+def test_validate_subset(some_paramspecbases):
+
+    ps1, ps2, ps3, ps4 = some_paramspecbases
+
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                              inferences={ps2: (ps4,), ps3: (ps4,)})
+
+    idps.validate_subset((ps4,))
+    idps.validate_subset((ps2, ps4))
+    idps.validate_subset((ps2, ps3, ps4))
+    idps.validate_subset(())
+    idps.validate_subset([])
+
+    with pytest.raises(DependencyError):
+        idps.validate_subset((ps1,))
+
+    with pytest.raises(InferenceError):
+        idps.validate_subset((ps2, ps3))
+
+    with pytest.raises(InferenceError):
+        idps.validate_subset((ps1, ps2, ps3))

@@ -1,10 +1,18 @@
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List,
-                    cast, Type)
+                    cast, Type, Sequence)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ErrorTuple = Tuple[Type[Exception], str]
+
+
+class DependencyError(Exception):
+    pass
+
+
+class InferenceError(Exception):
+    pass
 
 
 class InterDependencies_:
@@ -182,6 +190,37 @@ class InterDependencies_:
                                       standalones=new_standalones)
 
         return new_idps
+
+    def validate_subset(self, parameters: Sequence[ParamSpecBase]) -> None:
+        """
+        Validate that the given parameters form a valid subset of the
+        parameters of this instance, meaning that all the given parameters are
+        actually found in this instance and that there are no missing
+        dependencies/inferences.
+
+        Args:
+            params: The collection of ParamSpecBases to validate
+
+        Raises:
+            DependencyError, if a dependency is missing
+            InferenceError, if an inference is missing
+        """
+        params = set(parameters)
+
+        for param in params:
+            deps = self.dependencies.get(param, ())
+            if set(deps).difference(params):
+                missing_names = [p.name for p in set(deps).difference(params)]
+                raise DependencyError(f'{param.name} has the following '
+                                      'dependencies that are missing: '
+                                      'f{missing_names}')
+
+            inffs = self.inferences.get(param, ())
+            if set(inffs).difference(params):
+                missing_names = [p.name for p in set(inffs).difference(params)]
+                raise InferenceError(f'{param.name} has the following '
+                                     'inferences that are missing: '
+                                     'f{missing_names}')
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
