@@ -4,7 +4,6 @@ import numpy as np
 import time
 import os
 import warnings
-
 from typing import List, Dict, Union, Tuple, Sequence
 from contextlib import contextmanager
 
@@ -12,6 +11,7 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, BOARD_NAMES
 from .utils import TraceParameter
+
 
 logger = logging.getLogger(__name__)
 

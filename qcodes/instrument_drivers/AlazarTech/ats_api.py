@@ -3,12 +3,8 @@ from .utils import TraceParameter
 from qcodes.instrument.parameter import Parameter
 from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, \
     Sequence, NewType, List, Any
-from functools import partial
 from threading import Lock
-import re
-import sys
 import concurrent
-import asyncio
 import logging
 import ctypes
 

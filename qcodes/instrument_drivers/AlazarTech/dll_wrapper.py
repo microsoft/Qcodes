@@ -1,8 +1,5 @@
 import ctypes
 import logging
-import asyncio
-import concurrent
-import sys
 import re
 from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
 from threading import Lock
@@ -55,26 +52,14 @@ def api_calls(full_name: str, signature: "Signature") -> Tuple[Callable, Callabl
         c_func = getattr(self._dll, full_name)
         future = self._executor.submit(
             api_call_task,
-            self._lock, c_func,
+            self._lock, 
+            c_func,
             partial(mark_params_as_updated, *args),
             *normalize_params(*args)
         )
         return future.result()
 
-    def async_call(self: TApi, *args) -> signature.return_type:
-        c_func = getattr(self._dll, full_name)
-        task = asyncio.get_event_loop().run_in_executor(
-            self._executor,
-            partial(
-                api_call_task,
-                self._lock, c_func,
-                partial(mark_params_as_updated, *args),
-                *normalize_params(*args)
-            )
-        )
-        return task
-
-    return sync_call, async_call
+    return sync_call
 
 
 ## CLASSES ##
@@ -97,10 +82,8 @@ class DllWrapperMeta(type):
         for call_name, signature in dct['signatures'].items():
             c_name = prefix + call_name
             
-            sync_call, async_call = api_calls(c_name, signature)
+            api_call = api_calls(c_name, signature)
 
             py_name = convert_to_camel_case(call_name)
             logger.debug(f"Adding method {py_name} for C func {c_name}.")
-            dct[py_name] = sync_call
-            logger.debug(f"Adding async method {py_name}_async for C func {c_name}.")
-            dct[py_name + "_async"] = async_call
+            dct[py_name] = api_call
