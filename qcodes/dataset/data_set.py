@@ -1,7 +1,6 @@
 import functools
 import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
-                    Tuple)
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast)
 from threading import Thread
 import time
 import importlib
@@ -49,8 +48,7 @@ from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_,
                                          old_to_new, new_to_old,
-                                         DependencyError,
-                                         InferenceError)
+                                         DependencyError)
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.utils.deprecate import deprecate
