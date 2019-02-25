@@ -128,7 +128,7 @@ class DataSaver:
         res: List[res_type] = []
 
         # we iterate through the input twice. First we find any array and
-        # multiparameters that needs to be unbundled and collect the names
+        # multiparameters that need to be unbundled and collect the names
         # of all parameters. This also allows users to call
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
@@ -141,8 +141,8 @@ class DataSaver:
             parameter = partial_result[0]
             if isinstance(parameter, MultiParameter):
                 # unpack parameters and potential setpoints from MultiParameter
-                # unlike regular Parameters and ArrayParameters we don't want
-                # to add the parameter it self only its components.
+                # unlike regular Parameters and ArrayParameters, we don't want
+                # to add the parameter itself, but only its components.
                 data = partial_result[1]
                 self._unbundle_multiparameter(parameter,
                                               data,
@@ -352,7 +352,7 @@ class DataSaver:
                                  res: List[res_type],
                                  found_parameters: List[str]) -> None:
         """
-        Extract the subarrays and setpoints from an MultiParameter and
+        Extract the subarrays and setpoints from a MultiParameter and
         add them to res as a regular parameter tuple.
 
         Args:
