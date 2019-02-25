@@ -512,32 +512,60 @@ class MultiType(Validator):
 
 class Arrays(Validator):
     """
-    Validator for numerical numpy arrays
+    Validator for numerical numpy arrays of numeric types (int, float, complex)
+
+    Min and max validation is not supported for complex numbers.
 
     Args:
         min_value:  Min value allowed, default inf.
         max_value: Max value allowed, default inf.
         shape: The shape of the array, tuple of either ints or Callables taking
             no arguments that return the size along that dim as an int.
+        valid_types: Sequence of types that the validator should support. Should
+            be a subset of the supported types or None. If None all supported
+            real datatyes will be valid.
     """
 
-    validtypes = (int, float, np.integer, np.floating)
+    real_types = (int, float, np.integer, np.floating)
+    complex_types = (complex, np.complexfloating)
+    supported_types = real_types + complex_types
 
     def __init__(self, min_value: numbertypes = -float("inf"),
                  max_value: numbertypes = float("inf"),
-                 shape: TSequence[shape_type] = None) -> None:
+                 shape: TSequence[shape_type] = None,
+                 valid_types: Optional[TSequence[type]] = None) -> None:
 
-        if isinstance(min_value, self.validtypes):
+        if valid_types is not None:
+            self.valid_types = valid_types
+        else:
+            self.valid_types = self.real_types
+
+        supports_complex = any(
+            np.issubsctype(my_type, np.complexfloating) for my_type in
+            self.valid_types)
+
+        inf_limits = np.isinf(min_value) and np.isinf(max_value)
+
+        if supports_complex and not inf_limits:
+            raise TypeError("min and max_value is not supported for complex "
+                            "types.")
+
+        if isinstance(min_value, self.real_types):
             self._min_value = min_value
         else:
-            raise TypeError('min_value must be a number')
+            raise TypeError('min_value must be a (real) number and the '
+                            'validator must only allow real (non complex) '
+                            'data types')
 
-        valuesok = max_value > min_value
-
-        if isinstance(max_value, self.validtypes) and valuesok:
+        if isinstance(max_value, self.real_types):
             self._max_value = max_value
         else:
-            raise TypeError('max_value must be a number bigger than min_value')
+            raise TypeError('max_value must be a (real) number')
+
+        valuesok = max_value > min_value
+        if not valuesok:
+            raise TypeError('max_value must be bigger than min_value')
+
         if not isinstance(shape,
                           collections.abc.Sequence) and shape is not None:
             raise ValueError(f"Shape must be a sequence (List, Tuple ...) "
@@ -551,9 +579,9 @@ class Arrays(Validator):
     def valid_values(self) -> Tuple[np.ndarray]:
         shape = self.shape
         if shape is None:
-            return (np.array([self._min_value]),)
+            return (np.array([self._min_value], dtype=self.valid_types[0]),)
         else:
-            val_arr = np.empty(self.shape)
+            val_arr = np.empty(self.shape, dtype=self.valid_types[0])
             val_arr.fill(self._min_value)
             return (val_arr,)
 
@@ -580,9 +608,12 @@ class Arrays(Validator):
             raise TypeError(
                 '{} is not a numpy array; {}'.format(repr(value), context))
 
-        if value.dtype not in self.validtypes:
+        if not any(
+                np.issubsctype(value.dtype.type, valid_type) for valid_type in
+                self.valid_types):
             raise TypeError(
-                '{} is not an int or float; {}'.format(repr(value), context))
+                f'type of {value} is not any of {self.supported_types}'
+                f' it is {value.dtype}; {context}')
         if self.shape is not None:
             shape = self.shape
             if np.shape(value) != shape:
