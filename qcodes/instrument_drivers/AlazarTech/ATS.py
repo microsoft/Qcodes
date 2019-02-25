@@ -874,6 +874,12 @@ class Buffer:
         self._allocated = True
         self.addr = None
         if os.name == 'nt':
+            ctypes.windll.kernel32.VirtualAlloc.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_long,
+                ctypes.c_long,
+                ctypes.c_long
+            ]
             MEM_COMMIT = 0x1000
             PAGE_READWRITE = 0x4
             ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
@@ -895,6 +901,11 @@ class Buffer:
 
         self._allocated = False
         if os.name == 'nt':
+            ctypes.windll.kernel32.VirtualFree.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_long,
+                ctypes.c_long
+            ]
             MEM_RELEASE = 0x8000
             ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
             ctypes.windll.kernel32.VirtualFree(

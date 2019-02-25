@@ -464,16 +464,3 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
                 c_func.errcheck = convert_bytes_to_str
 
             c_func.restype = ret_type
-
-        if sys.platform == 'win32':
-            ctypes.windll.kernel32.VirtualAlloc.argtypes = [
-                ctypes.c_void_p,
-                ctypes.c_long,
-                ctypes.c_long,
-                ctypes.c_long
-            ]
-            ctypes.windll.kernel32.VirtualFree.argtypes = [
-                ctypes.c_void_p,
-                ctypes.c_long,
-                ctypes.c_long
-            ]
