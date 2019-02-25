@@ -584,6 +584,23 @@ class TestArrays(TestCase):
             with self.assertRaises(TypeError):
                 m.validate(v)
 
+    def test_complex_min_max_raises(self):
+        with self.assertRaises(TypeError):
+            Arrays(min_value=1+1j)
+        with self.assertRaises(TypeError):
+            Arrays(max_value=1+1j)
+        with self.assertRaises(TypeError):
+            Arrays(max_value=1, valid_types=(np.complexfloating,))
+
+    def test_complex(self):
+        a = Arrays(valid_types=(complex, np.complexfloating))
+        a.validate(np.arange(10, dtype=complex))
+        a.validate(np.arange(10, dtype=np.complex))
+        a.validate(np.arange(10, dtype=np.complex_))
+        a.validate(np.arange(10, dtype=np.complexfloating))
+        a.validate(np.arange(10, dtype=np.complex64))
+        a.validate(np.arange(10, dtype=np.complex128))
+
     def test_default_types(self):
         a = Arrays()
         a.validate(np.arange(10, dtype=int))
