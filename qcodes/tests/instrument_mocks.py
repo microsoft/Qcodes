@@ -214,7 +214,8 @@ class DummyChannel(InstrumentChannel):
                            label='Dummy Parameter with Setpoints complex',
                            unit='some other unit',
                            setpoints=(self.dummy_sp_axis,),
-                           vals=Arrays(shape=(self.dummy_n_points,)),
+                           vals=Arrays(shape=(self.dummy_n_points,),
+                                       valid_types=(np.complexfloating,)),
                            parameter_class=DummyParameterWithSetpointsComplex)
 
         self.add_function(name='log_my_name',
