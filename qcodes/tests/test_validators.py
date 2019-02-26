@@ -12,6 +12,18 @@ from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      ComplexNumbers)
 
 
+numpy_concrete_ints = (np.int8, np.int16, np.int32, np.int64,
+                       np.uint8, np.uint16, np.uint32, np.uint64)
+numpy_non_concrete_ints = (np.int, np.int_, np.uint, np.integer)
+
+numpy_concrete_floats = (np.float16, np.float32, np.float64)
+numpy_non_concrete_floats = (np.float, np.float_,
+                             np.floating)
+
+numpy_concrete_complex = (np.complex64, np.complex128)
+numpy_non_concrete_complex = (np.complex, np.complex_, np.complexfloating)
+
+
 class AClass:
 
     def method_a(self):
@@ -596,9 +608,9 @@ class TestArrays(TestCase):
             Arrays(max_value=1, valid_types=(np.complexfloating,))
 
     def test_complex(self):
-        complex_types = (complex, np.complex, np.complex_, np.complexfloating,
-                      np.complex64, np.complex128)
-        a = Arrays(valid_types=(complex, np.complexfloating))
+        complex_types = (complex,) + numpy_non_concrete_complex \
+                        + numpy_concrete_complex
+        a = Arrays(valid_types=(np.complexfloating, ))
         for dtype in complex_types:
             a.validate(np.arange(10, dtype=dtype))
 
@@ -620,9 +632,7 @@ class TestArrays(TestCase):
         Test that validating a concrete real type into an array that
         only support other concrete types raises as expected
         """
-        types = [np.int8, np.int16, np.int32, np.int64,
-                 np.uint8, np.uint16, np.uint32, np.uint64,
-                 np.float32, np.float64]
+        types = list(numpy_concrete_ints + numpy_concrete_floats)
         randint = np.random.randint(0, len(types))
         mytype = types.pop(randint)
 
@@ -634,8 +644,8 @@ class TestArrays(TestCase):
 
     def test_complex_default_raises(self):
         """Complex types should not validate by default"""
-        complex_types = (complex, np.complex, np.complex_, np.complexfloating,
-                         np.complex64, np.complex128)
+        complex_types = (complex,) + numpy_non_concrete_complex \
+                        + numpy_concrete_complex
         a = Arrays()
         for dtype in complex_types:
             with self.assertRaises(TypeError):
@@ -657,14 +667,12 @@ class TestArrays(TestCase):
         types should validate by default"""
         a = Arrays()
 
-        integer_types = (int, np.int, np.int_, np.integer,
-                         np.int8, np.int16, np.int32, np.int64,
-                         np.uint8, np.uint16, np.uint32, np.uint64)
+        integer_types = (int,) + numpy_non_concrete_ints + numpy_concrete_ints
         for mytype in integer_types:
             a.validate(np.arange(10, dtype=mytype))
 
-        float_types = (float, np.float, np.float_, np.floating,
-                       np.float16, np.float32, np.float64)
+        float_types = (float,) + numpy_non_concrete_floats \
+                      + numpy_concrete_floats
         for mytype in float_types:
             a.validate(np.arange(10, dtype=mytype))
 
