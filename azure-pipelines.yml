@@ -14,10 +14,6 @@ jobs:
       - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
         displayName: "Add conda to PATH"
       - script: |
-          conda update -n base conda
-          conda init cmd.exe
-        displayName: "Conda setup"
-      - script: |
           conda --version
           conda env create --file environment.yml
           CALL activate qcodes
