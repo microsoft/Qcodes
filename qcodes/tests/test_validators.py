@@ -718,10 +718,16 @@ class TestArrays(TestCase):
         with self.assertRaises(ValueError):
             m.validate(v2)
 
-    def test_valid_values(self):
+    def test_valid_values_with_shape(self):
         val = Arrays(min_value=-5, max_value=50, shape=(2, 2))
         for vval in val.valid_values:
             val.validate(vval)
+
+    def test_valid_values(self):
+        val = Arrays(min_value=-5, max_value=50)
+        for vval in val.valid_values:
+            val.validate(vval)
+
 
     def test_shape_non_sequence_raises(self):
         with self.assertRaises(ValueError):
