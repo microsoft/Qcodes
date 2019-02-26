@@ -662,7 +662,7 @@ class Measurement:
 
         return self
 
-    def _register_parameter(self : T, name: str,
+    def _register_parameter(self: T, name: str,
                             label: Optional[str],
                             unit: Optional[str],
                             setpoints: Optional[setpoints_type],
@@ -705,7 +705,7 @@ class Measurement:
                                  basis: Optional[setpoints_type],
                                  paramtype: str, ) -> None:
         """
-        Register an Array paramter and the setpoints belonging to the
+        Register an Array parameter and the setpoints belonging to that
         ArrayParameter
         """
         name = str(parameter)
@@ -725,10 +725,12 @@ class Measurement:
             else:
                 spunit = ''
 
-            sp = ParamSpec(name=spname, paramtype=paramtype,
-                           label=splabel, unit=spunit)
-
-            self.parameters[spname] = sp
+            self._register_parameter(name=spname,
+                                     paramtype=paramtype,
+                                     label=splabel,
+                                     unit=spunit,
+                                     setpoints=None,
+                                     basis=None)
 
             my_setpoints += [spname]
 
@@ -759,10 +761,12 @@ class Measurement:
             splabel = sp.label
             spunit = sp.unit
 
-            spparamspec = ParamSpec(name=spname, paramtype=paramtype,
-                                    label=splabel, unit=spunit)
-
-            self.parameters[spname] = spparamspec
+            self._register_parameter(name=spname,
+                                     paramtype=paramtype,
+                                     label=splabel,
+                                     unit=spunit,
+                                     setpoints=None,
+                                     basis=None)
 
             my_setpoints.append(spname)
 
@@ -780,7 +784,7 @@ class Measurement:
                                  paramtype: str) -> None:
         """
         Find the individual multiparameter components and their setpoints
-        and register these
+        and register those as individual parameters
         """
         setpoints_lists = []
         for i in range(len(multiparameter.shapes)):
@@ -807,10 +811,13 @@ class Measurement:
                     else:
                         spunit = ''
 
-                    sp = ParamSpec(name=spname, paramtype=paramtype,
-                                   label=splabel, unit=spunit)
+                    self._register_parameter(name=spname,
+                                             paramtype=paramtype,
+                                             label=splabel,
+                                             unit=spunit,
+                                             setpoints=None,
+                                             basis=None)
 
-                    self.parameters[spname] = sp
                     my_setpoints += [spname]
 
             setpoints_lists.append(my_setpoints)
