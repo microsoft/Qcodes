@@ -541,7 +541,7 @@ class Arrays(Validator):
                 is_supported = any(np.issubsctype(mytype, supported_type) for
                                    supported_type in self.supported_types)
                 if not is_supported:
-                    raise TypeError(f"Array Validator only supports numeric"
+                    raise TypeError(f"Array Validator only supports numeric "
                                     f"types: {mytype} is not supported.")
 
             self.valid_types = valid_types
