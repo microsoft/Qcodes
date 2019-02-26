@@ -19,7 +19,7 @@ jobs:
         displayName: "Conda setup"
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
-          conda --version
+          CALL conda --version
           conda env create --file environment.yml
           CALL conda activate qcodes
           pip install -r test_requirements.txt
