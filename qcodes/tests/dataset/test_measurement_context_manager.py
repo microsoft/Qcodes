@@ -1121,6 +1121,56 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
                     expected_data)
 
 
+@settings(max_examples=5, deadline=None)
+@given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
+                                                    DAC, n):
+    random_seed = 1
+    chan = channel_array_instrument.A
+    param = chan.dummy_parameter_with_setpoints_complex
+    chan.dummy_n_points(n)
+    chan.dummy_start(0)
+    chan.dummy_stop(100)
+    meas = Measurement()
+    meas.register_parameter(param, paramtype='array')
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
+
+    assert meas.parameters[str(param)].depends_on == dependency_name
+    assert meas.parameters[str(param)].type == 'array'
+    assert meas.parameters[dependency_name].type == 'array'
+
+    # Now for a real measurement
+    with meas.run() as datasaver:
+        # we seed the random number generator
+        # so we can test that we get the expected numbers
+        np.random.seed(random_seed)
+        datasaver.add_result(*expand_setpoints_helper(param))
+    assert datasaver.points_written == 1
+
+    expected_params = (dependency_name,
+                       'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex')
+    ds = load_by_id(datasaver.run_id)
+    for param in expected_params:
+        data = ds.get_data(param)
+        assert len(data) == 1
+        assert len(data[0]) == 1
+    datadict = ds.get_parameter_data()
+    assert len(datadict) == 1
+    subdata = datadict[
+        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints_complex']
+    assert_allclose(subdata[dependency_name],
+                    np.linspace(chan.dummy_start(),
+                                chan.dummy_stop(),
+                                chan.dummy_n_points()).reshape(1,chan.dummy_n_points()))
+    np.random.seed(random_seed)
+    assert_allclose(subdata['dummy_channel_inst_ChanA_'
+                            'dummy_parameter_with_setpoints_complex'],
+                    (np.random.rand(n) + 1j * np.random.rand(n)).reshape(1,chan.dummy_n_points()))
+
+
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_missing_reg_raises(
