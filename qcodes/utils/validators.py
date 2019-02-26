@@ -541,7 +541,7 @@ class Arrays(Validator):
                 is_supported = any(np.issubsctype(mytype, supported_type) for
                                    supported_type in self.supported_types)
                 if not is_supported:
-                    raise TypeError(f"Array Validator only supports numeric "
+                    raise TypeError(f"Arrays validator only supports numeric "
                                     f"types: {mytype} is not supported.")
 
             self.valid_types = valid_types
@@ -586,15 +586,15 @@ class Arrays(Validator):
         if min_value_is_valid_type or min_value is None:
             self._min_value = min_value
         else:
-            raise TypeError(f'min_value must an instance of the valid types '
-                            f'it is {min_value} of '
+            raise TypeError(f'min_value must an instance of valid_types. '
+                            f'It is {min_value} of '
                             f'type {type(min_value)}')
 
         if max_value_is_valid_type or max_value is None:
             self._max_value = max_value
         else:
-            raise TypeError(f'max_value must an instance of the valid_types '
-                            f'it is {max_value} of '
+            raise TypeError(f'max_value must an instance of valid_types. '
+                            f'It is {max_value} of '
                             f'type {type(max_value)}')
 
         if min_value is not None and max_value is not None:
@@ -678,8 +678,14 @@ class Arrays(Validator):
     is_numeric = True
 
     def __repr__(self) -> str:
-        minv = self._min_value if math.isfinite(self._min_value) else None
-        maxv = self._max_value if math.isfinite(self._max_value) else None
+        if self._min_value is None or not math.isfinite(self._min_value):
+            minv = None
+        else:
+            minv = self._min_value
+        if self._max_value is None or not math.isfinite(self._max_value):
+            maxv = None
+        else:
+            maxv = self._max_value
         # we don't want the repr to execute any deferred shape argument
         # so we use shape_unevaluated
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
