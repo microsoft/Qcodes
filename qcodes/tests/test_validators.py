@@ -691,6 +691,10 @@ class TestArrays(TestCase):
         v = np.array([[2, 0], [1, 2]])
         m.validate(v*100)
 
+    def test_max_smaller_min_raises(self):
+        with self.assertRaises(TypeError):
+            Arrays(min_value=10, max_value=-10)
+
     def test_shape(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
 
