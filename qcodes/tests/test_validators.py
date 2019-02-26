@@ -600,18 +600,16 @@ class TestArrays(TestCase):
         """
         Min max is not implemented for complex types
         """
-        with pytest.raises(TypeError, match=r'min_value must be a \(real\) '
-                                            r'number and the validator must '
-                                            r'only allow real \(non complex\) '
-                                            r'data types'):
+        with pytest.raises(TypeError, match=r"min_value must be a real number\."
+                                            r" It is \(1\+1j\) of type "
+                                            r"<class 'complex'>"):
             Arrays(min_value=1+1j)
-        with pytest.raises(TypeError, match=r'max_value must be a \(real\) '
-                                            r'number and the validator must '
-                                            r'only allow real \(non complex\) '
-                                            r'data types'):
-            Arrays(max_value=1+1j)
-        with pytest.raises(TypeError, match=r'min and max_value is not '
-                                            r'supported for complex types'):
+        with pytest.raises(TypeError, match=r"max_value must be a real number. "
+                                            r"It is \(1\+1j\) of type "
+                                            r"<class 'complex'>"):
+             Arrays(max_value=1+1j)
+        with pytest.raises(TypeError, match=r'Setting min_value or max_value is not '
+                                            r'supported for complex validators'):
             Arrays(max_value=1, valid_types=(np.complexfloating,))
 
     def test_complex(self):

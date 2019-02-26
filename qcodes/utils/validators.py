@@ -530,8 +530,8 @@ class Arrays(Validator):
     real_types = (np.integer, np.floating)
     supported_types = real_types + (np.complexfloating,)
 
-    def __init__(self, min_value: numbertypes = -float("inf"),
-                 max_value: numbertypes = float("inf"),
+    def __init__(self, min_value: Optional[numbertypes] = None,
+                 max_value: Optional[numbertypes] = None,
                  shape: TSequence[shape_type] = None,
                  valid_types: Optional[TSequence[type]] = None) -> None:
 
@@ -552,31 +552,55 @@ class Arrays(Validator):
             np.issubsctype(my_type, np.complexfloating) for my_type in
             self.valid_types)
 
-        inf_limits = np.isinf(min_value) and np.isinf(max_value)
+        limits_given = min_value is not None or max_value is not None
 
-        if supports_complex and not inf_limits:
-            raise TypeError("min and max_value is not supported for complex "
-                            "types.")
+        min_real = any(
+            np.issubsctype(type(min_value), real_type) for real_type in
+            self.real_types)
 
-        if any(np.issubsctype(type(min_value), real_type) for real_type in
-               self.real_types):
+        max_real = any(
+            np.issubsctype(type(max_value), real_type) for real_type in
+            self.real_types)
+
+        if min_value is not None and not min_real:
+            raise TypeError(f"min_value must be a real number. It is "
+                            f"{min_value} of type {type(min_value)}")
+
+        if max_value is not None and not max_real:
+            raise TypeError(f"max_value must be a real number. It is "
+                            f"{max_value} of type {type(max_value)}")
+
+        if supports_complex and limits_given:
+            raise TypeError(
+                "Setting min_value or max_value is not supported for "
+                "complex validators.")
+
+        min_value_is_valid_type = any(
+            np.issubsctype(type(min_value), valid_type) for valid_type in
+            self.valid_types)
+
+        max_value_is_valid_type = any(
+            np.issubsctype(type(max_value), valid_type) for valid_type in
+            self.valid_types)
+
+        if min_value_is_valid_type or min_value is None:
             self._min_value = min_value
         else:
-            raise TypeError('min_value must be a (real) number and the '
-                            'validator must only allow real (non complex) '
-                            'data types')
+            raise TypeError(f'min_value must an instance of the valid types '
+                            f'it is {min_value} of '
+                            f'type {type(min_value)}')
 
-        if any(np.issubsctype(type(max_value), real_type) for real_type in
-               self.real_types):
+        if max_value_is_valid_type or max_value is None:
             self._max_value = max_value
         else:
-            raise TypeError('max_value must be a (real) number and the '
-                            'validator must only allow real (non complex) '
-                            'data types')
+            raise TypeError(f'max_value must an instance of the valid_types '
+                            f'it is {max_value} of '
+                            f'type {type(max_value)}')
 
-        valuesok = max_value > min_value
-        if not valuesok:
-            raise TypeError('max_value must be bigger than min_value')
+        if min_value is not None and max_value is not None:
+            valuesok = max_value > min_value
+            if not valuesok:
+                raise TypeError(f'max_value must be bigger than min_value')
 
         if not isinstance(shape,
                           collections.abc.Sequence) and shape is not None:
@@ -634,7 +658,7 @@ class Arrays(Validator):
                     f' it has shape {np.shape(value)}; {context}')
 
         # Only check if max is not inf as it can be expensive for large arrays
-        if self._max_value != (float("inf")):
+        if self._max_value != (float("inf")) and self._max_value is not None:
             if not (np.max(value) <= self._max_value):
                 raise ValueError(
                     '{} is invalid: all values must be between '
@@ -643,7 +667,7 @@ class Arrays(Validator):
                         self._max_value, context))
 
         # Only check if min is not -inf as it can be expensive for large arrays
-        if self._min_value != (-float("inf")):
+        if self._min_value != (-float("inf")) and self._min_value is not None:
             if not (self._min_value <= np.min(value)):
                 raise ValueError(
                     '{} is invalid: all values must be between '
