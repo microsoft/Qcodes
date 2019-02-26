@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List,
                     cast, Type, Sequence)
 
@@ -49,6 +50,9 @@ class InterDependencies_:
                 self._raise_from(ValueError, 'Invalid standalones',
                                  error, message)
 
+        self._remove_duplicates(dependencies)
+        self._remove_duplicates(inferences)
+
         self.dependencies: ParamSpecTree = dependencies
         self.inferences: ParamSpecTree = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
@@ -62,6 +66,17 @@ class InterDependencies_:
         for ps in self.standalones:
             self._id_to_paramspec.update({self._id(ps): ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
+
+    @staticmethod
+    def _remove_duplicates(tree: ParamSpecTree) -> None:
+        """
+        Helper function to remove duplicate entries from a ParamSpecTree. Will
+        turn {A: (B, B, C)} into {A: (B, C)} or {A: (C, B)} depending on the
+        hash values of B and C. Note that this also fixes the order of the
+        objects inside the tuples (useful for comparisons)
+        """
+        for ps, tup in tree.items():
+            tree[ps] = tuple(set(tup))
 
     @staticmethod
     def _id(ps: ParamSpecBase) -> str:

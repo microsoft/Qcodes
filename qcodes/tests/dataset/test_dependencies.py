@@ -34,6 +34,19 @@ def test_wrong_input_raises():
             InterDependencies(pspecs)
 
 
+def test_init(some_paramspecbases):
+
+    (ps1, ps2, ps3, _) = some_paramspecbases
+
+    idps1 = InterDependencies_(dependencies={ps1: (ps2,)})
+    idps2 = InterDependencies_(dependencies={ps1: (ps2, ps2, ps2)})
+
+    assert idps1 == idps2
+
+    idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
+
+
 def test_init_validation_raises(some_paramspecbases):
 
     (ps1, ps2, _, _) = some_paramspecbases
