@@ -523,7 +523,7 @@ class Arrays(Validator):
         shape: The shape of the array, tuple of either ints or Callables taking
             no arguments that return the size along that dim as an int.
         valid_types: Sequence of types that the validator should support. Should
-            be a subset of the supported types or None. If None all real
+            be a subset of the supported types, or None. If None, all real
             datatypes will validate.
     """
 
