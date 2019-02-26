@@ -841,7 +841,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame`\s is
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame` s is
         returned.
 
         Args:
