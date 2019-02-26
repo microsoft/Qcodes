@@ -826,7 +826,7 @@ class DataSet(Sized):
             Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
-        and their dependencies as a dict of :py:class:`pandas.DataFrame`\s
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
         Each element in the dict is indexed by the names of the requested
         parameters.
 
