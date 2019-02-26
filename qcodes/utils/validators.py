@@ -512,7 +512,8 @@ class MultiType(Validator):
 
 class Arrays(Validator):
     """
-    Validator for numerical numpy arrays of numeric types (int, float, complex)
+    Validator for numerical numpy arrays of numeric types (int, float, complex).
+    By default it validates int and float arrays.
 
     Min and max validation is not supported for complex numbers.
 
@@ -522,8 +523,8 @@ class Arrays(Validator):
         shape: The shape of the array, tuple of either ints or Callables taking
             no arguments that return the size along that dim as an int.
         valid_types: Sequence of types that the validator should support. Should
-            be a subset of the supported types or None. If None all supported
-            real datatyes will be valid.
+            be a subset of the supported types or None. If None all real
+            datatypes will validate.
     """
 
     real_types = (np.integer, np.floating)
@@ -535,6 +536,14 @@ class Arrays(Validator):
                  valid_types: Optional[TSequence[type]] = None) -> None:
 
         if valid_types is not None:
+            for mytype in valid_types:
+
+                is_supported = any(np.issubsctype(mytype, supported_type) for
+                                   supported_type in self.supported_types)
+                if not is_supported:
+                    raise TypeError(f"Array Validator only supports numeric"
+                                    f"types: {mytype} is not supported.")
+
             self.valid_types = valid_types
         else:
             self.valid_types = self.real_types
