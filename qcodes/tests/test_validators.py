@@ -641,6 +641,17 @@ class TestArrays(TestCase):
             with self.assertRaises(TypeError):
                 a.validate(np.arange(10, dtype=dtype))
 
+    def test_text_type_raises(self):
+        """Text types are not supported """
+        with self.assertRaises(TypeError):
+            Arrays(valid_types=(np.dtype('<U5').type,))
+
+    def test_text_array_raises(self):
+        """Test that an array of text raises"""
+        a = Arrays()
+        with self.assertRaises(TypeError):
+            a.validate(np.array(['A', 'BC', 'CDF']))
+
     def test_default_types(self):
         """Arrays constructed with all concrete and abstract real number
         types should validate by default"""
