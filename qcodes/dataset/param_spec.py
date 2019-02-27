@@ -182,8 +182,8 @@ class ParamSpec(ParamSpecBase):
             if getattr(self, string_attr) != getattr(other, string_attr):
                 return False
         for list_attr in list_attrs:
-            ours = sorted(getattr(self, list_attr))
-            theirs = sorted(getattr(other, list_attr))
+            ours = getattr(self, list_attr)
+            theirs = getattr(other, list_attr)
             if ours != theirs:
                 return False
         return True
