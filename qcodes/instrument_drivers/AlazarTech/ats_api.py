@@ -7,7 +7,7 @@ import ctypes
 
 from qcodes.instrument.parameter import Parameter
 from .dll_wrapper import WrappedDll, DllWrapperMeta, Signature
-from .constants import BOARD_NAMES, REGISTER_READING_PWD
+from .constants import BOARD_NAMES, REGISTER_READING_PWD, Capability
 from .utils import TraceParameter
 
 
@@ -30,6 +30,7 @@ class AlazarATSAPI(WrappedDll):
     ## CONSTANTS ##
 
     BOARD_NAMES = BOARD_NAMES
+    Capability = Capability
 
     ## SIGNATURES ##
 
@@ -271,6 +272,29 @@ class AlazarATSAPI(WrappedDll):
                    + str(minor.value) + "."
                    + str(revision.value))
         return sdk_ver
+
+    def query_capability_(self, handle: int, capability: int) -> int:
+        """
+        A more convenient version of `query_capability` method 
+        (`AlazarQueryCapability`).
+        
+        This method hides the fact that the output values in the original
+        function are written to the values of the provided pointers.
+
+        Args:
+            handle: Handle of the board of interest
+            capability: An integer identifier of a capability parameter 
+                (refer to constants defined in ATS API for more info)
+
+        Returns:
+            Value of the requested capability
+        """
+        value = ctypes.c_uint32(0)
+        reserved = 0
+        self.query_capability(
+            handle, capability, reserved, ctypes.byref(value))
+        return value.value
+    
     def read_register_(self, handle: int, offset: int) -> int:
         """
         Read a value from a given register in the Alazars memory.
