@@ -6,8 +6,8 @@ import logging
 import ctypes
 
 from qcodes.instrument.parameter import Parameter
-from .dll_wrapper import DllWrapperMeta, Signature
-from .constants import API_SUCCESS, ERROR_CODES, ReturnCode, BOARD_NAMES
+from .dll_wrapper import WrappedDll, DllWrapperMeta, Signature
+from .constants import BOARD_NAMES
 from .utils import TraceParameter
 
 
@@ -21,36 +21,7 @@ logger = logging.getLogger(__name__)
 TApi = TypeVar("TApi", bound="AlazarATSAPI")
 
 
-def check_error_code(return_code_c: ctypes.c_uint, func, arguments
-                     ) -> None:
-    return_code = int(return_code_c.value)
-
-    if (return_code != API_SUCCESS) and (return_code != 518):
-        argrepr = repr(arguments)
-        if len(argrepr) > 100:
-            argrepr = argrepr[:96] + '...]'
-
-        logger.error(f'Alazar API returned code {return_code} from function '
-                     f'{func.__name__} with args {argrepr}')
-
-        if return_code not in ERROR_CODES:
-            raise RuntimeError(
-                'unknown error {} from function {} with args: {}'.format(
-                    return_code, func.__name__, argrepr))
-        raise RuntimeError(
-            'error {}: {} from function {} with args: {}'.format(
-                return_code, ERROR_CODES[ReturnCode(
-                    return_code)], func.__name__,
-                argrepr))
-
-    return arguments
-
-
-def convert_bytes_to_str(output: bytes, func, arguments) -> str:
-    return output.decode()
-
-
-class AlazarATSAPI(object, metaclass=DllWrapperMeta):
+class AlazarATSAPI(WrappedDll):
     """
     Provides a thread-safe wrapper for the ATS API by
     isolating all calls to the API in a single thread.
@@ -203,34 +174,3 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
 
     ## INSTANCE MEMBERS ##
 
-    _dll: ctypes.CDLL
-    _executor: concurrent.futures.Executor
-
-    # The ATS API DLL is not guaranteed to be thread-safe
-    # This lock guards API calls.
-    _lock: Lock
-
-    def __init__(self, dll_path: str):
-        self._dll = ctypes.cdll.LoadLibrary(dll_path)
-        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        self._lock = Lock()
-        self.__apply_signatures()
-
-    def __apply_signatures(self):
-        """
-        Adds ctypes signatures to all of the functions exposed by the ATS API
-        that we use in this class.
-        """
-        for name, signature in self.signatures.items():
-            c_func = getattr(self._dll, f"{self.signature_prefix}{name}")
-
-            c_func.argtypes = signature.argument_types
-
-            ret_type = signature.return_type
-            if ret_type is ReturnCode:
-                ret_type = ret_type.__supertype__
-                c_func.errcheck = check_error_code
-            elif ret_type in (ctypes.c_char_p, ctypes.c_char, 
-                              ctypes.c_wchar, ctypes.c_wchar_p):
-                c_func.errcheck = convert_bytes_to_str
-            c_func.restype = ret_type
