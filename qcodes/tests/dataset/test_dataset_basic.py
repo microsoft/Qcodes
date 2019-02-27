@@ -279,7 +279,7 @@ def test_add_paramspec(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
-    assert paramspecs['c_param'].inferred_from == 'a_param, b_param'
+    assert set(paramspecs['c_param'].inferred_from_) == {'a_param', 'b_param'}
 
     assert paramspecs == dataset.paramspecs
 
