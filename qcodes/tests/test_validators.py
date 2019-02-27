@@ -1,5 +1,6 @@
 from unittest import TestCase
 import math
+import re
 import numpy as np
 from hypothesis import given
 import hypothesis.strategies as hst
@@ -759,6 +760,11 @@ class TestArrays(TestCase):
             assert str(b) == '<Arrays 1<=v<=2, shape: None>'
             c = Arrays(shape=(2, 2))
             assert str(c) == '<Arrays, shape: (2, 2)>'
+            c = Arrays(shape=(lambda: 2, 2))
+            assert re.match(r"<Arrays, shape: \(<function TestArrays."
+                            r"test_repr.<locals>.<lambda> "
+                            r"at 0x[A-Z0-9]*>, 2\)>", str(c))
+
 
 class TestLists(TestCase):
 
