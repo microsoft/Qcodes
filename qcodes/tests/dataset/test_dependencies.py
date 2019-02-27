@@ -1,4 +1,5 @@
 import json
+import re
 
 import pytest
 
@@ -49,7 +50,9 @@ def test_init(some_paramspecbases):
 
 def test_init_validation_raises(some_paramspecbases):
 
-    (ps1, ps2, _, _) = some_paramspecbases
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
+
+    # First test validation of trees invalid in their own right
 
     invalid_trees = ([ps1, ps2],
                      {'ps1': 'ps2'},
@@ -82,6 +85,15 @@ def test_init_validation_raises(some_paramspecbases):
     assert error_caused_by(ei, cause='Standalones must be a sequence of '
                                      'ParamSpecs')
 
+    # Now test trees that are invalid together
+
+    invalid_trees = [{'deps': {ps1: (ps2, ps3)},
+                      'inffs': {ps2: (ps4, ps1)}}]
+    for inv in invalid_trees:
+        with pytest.raises(ValueError,
+                           match=re.escape("Invalid dependencies/inferences")):
+            InterDependencies_(dependencies=inv['deps'],
+                               inferences=inv['inffs'])
 
 def test_serialize(some_paramspecbases):
 
@@ -287,4 +299,6 @@ def test_extend(some_paramspecbases):
     assert idps_ext == idps_expected
 
     idps = InterDependencies_(dependencies={ps1: (ps2,)})
-    idps_ext = idps.extend(inferences={ps2: (ps1,)})
+    match = re.escape("Invalid dependencies/inferences")
+    with pytest.raises(ValueError, match=match):
+        idps_ext = idps.extend(inferences={ps2: (ps1,)})

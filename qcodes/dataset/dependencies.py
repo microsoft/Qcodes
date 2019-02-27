@@ -42,6 +42,11 @@ class InterDependencies_:
             self._raise_from(ValueError, 'Invalid inferences',
                              old_error, inffs_error[1])
 
+        link_error = self._validate_double_links(dependencies, inferences)
+        if link_error is not None:
+            error, mssg = link_error
+            raise error(mssg)
+
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
                 error: type = TypeError
@@ -132,6 +137,23 @@ class InterDependencies_:
 
         if roots.intersection(leafs) != set():
             return (ValueError, 'ParamSpecTree can not have cycles')
+
+        return None
+
+    @staticmethod
+    def _validate_double_links(tree1: ParamSpecTree,
+                               tree2: ParamSpecTree) -> Optional[ErrorTuple]:
+        """
+        Validate that two trees do not contain double links. A double link
+        is a link between two nodes that exists in both trees. E.g. if the
+        first tree has {A: (B, C)}, the second may not have {B: (A,)} etc.
+        """
+        for ps, tup in tree1.items():
+            for val in tup:
+                if ps in tree2.get(val, ()):
+                    mssg = (f"Invalid dependencies/inferences. {ps} and "
+                            f"{val} have an ill-defined relationship.")
+                    return (ValueError, mssg)
 
         return None
 
