@@ -159,6 +159,9 @@ class DummyChannel(InstrumentChannel):
         self.add_parameter(name='dummy_array_parameter',
                            parameter_class=ArraySetPointParam)
 
+        self.add_parameter(name='dummy_complex_array_parameter',
+                           parameter_class=ComplexArraySetPointParam)
+
         self.add_parameter('dummy_start',
                            initial_value=0,
                            unit='some unit',
