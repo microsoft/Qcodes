@@ -26,10 +26,12 @@ def check_error_code(return_code_c: ctypes.c_uint, func, arguments
     return_code = int(return_code_c.value)
 
     if (return_code != API_SUCCESS) and (return_code != 518):
-        # TODO(damazter) (C) log error
         argrepr = repr(arguments)
         if len(argrepr) > 100:
             argrepr = argrepr[:96] + '...]'
+
+        logger.error(f'Alazar API returned code {return_code} from function '
+                     f'{func.__name__} with args {argrepr}')
 
         if return_code not in ERROR_CODES:
             raise RuntimeError(
