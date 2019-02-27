@@ -31,16 +31,11 @@ class AlazarTech_ATS(Instrument):
 
     status: beta-version
 
-    this driver is written with the ATS9870 in mind
-    updates might/will be necessary for other versions of Alazar cards
-
     Args:
-
-        name: name for this instrument, passed to the base instrument
-        system_id: target system id for this instrument
-        board_id: target board id within the system for this instrument
-        dll_path: string containing the path of the ATS driver dll
-
+        name: name for this instrument
+        system_id: target system id for this board
+        board_id: target board id within the system for this board
+        dll_path: path to the ATS driver dll library file
     """
 
     # override dll_path in your init script or in the board constructor
