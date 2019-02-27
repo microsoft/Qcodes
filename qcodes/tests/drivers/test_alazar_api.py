@@ -87,3 +87,10 @@ def test_return_codes_are_correct(alazar_api):
     
     upper_unknown = max(list(ERROR_CODES.keys())) + 1
     assert alazar_api.error_to_text(upper_unknown) == 'Unknown'
+
+
+def test_get_channel_info_convenient(alazar):
+    bps, max_s = alazar.api.get_channel_info_(alazar._handle)
+    assert isinstance(bps, int)
+    assert isinstance(max_s, int)
+

@@ -177,3 +177,25 @@ class AlazarATSAPI(WrappedDll):
     def get_board_model(self, handle: int) -> str:
         return self.BOARD_NAMES[self.get_board_kind(handle)]
 
+    def get_channel_info_(self, handle: int) -> Tuple[int, int]:
+        """
+        A more convenient version of `get_channel_info` method 
+        (`AlazarGetChannelInfo`).
+        
+        This method hides the fact that the output values in the original
+        function are written to the values of the provided pointers.
+
+        Args:
+            Handle: handle of the board of interest
+        
+        Returns:
+            Tuple of bits per sample and maximum board memory in samples
+        """
+        bps = ctypes.c_uint8(0)  # bps bits per sample
+        max_s = ctypes.c_uint32(0)  # max_s memory size in samples
+        self.get_channel_info(
+            handle,
+            ctypes.byref(max_s),
+            ctypes.byref(bps)
+        )
+        return max_s.value, bps.value

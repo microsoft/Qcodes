@@ -90,6 +90,7 @@ class AlazarTech_ATS(Instrument):
         handle = board._handle
 
         board_model = api.get_board_model(handle)
+        max_s, bps = api.get_channel_info_(handle)
 
         board.close()
 
@@ -409,16 +410,6 @@ class AlazarTech_ATS(Instrument):
         )
         self._parameters_synced = True
 
-    def _get_channel_info(self, handle: int) -> Tuple[int, int]:
-        bps = ctypes.c_uint8(0)  # bps bits per sample
-        max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        self.api.get_channel_info(
-            handle,
-            ctypes.byref(max_s),
-            ctypes.byref(bps)
-        )
-        return max_s.value, bps.value
-
     def allocate_and_post_buffer(self, sample_type, n_bytes) -> "Buffer":
         buffer = Buffer(sample_type, n_bytes)
         self.api.post_async_buffer(
@@ -546,7 +537,7 @@ class AlazarTech_ATS(Instrument):
             )
 
         # bytes per sample
-        _, bps = self._get_channel_info(self._handle)
+        _, bps = self.api.get_channel_info_(self._handle)
         # TODO(JHN) Why +7 I guess its to do ceil division?
         bytes_per_sample = (bps + 7) // 8
         # bytes per record
