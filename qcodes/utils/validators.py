@@ -518,8 +518,10 @@ class Arrays(Validator):
     Min and max validation is not supported for complex numbers.
 
     Args:
-        min_value:  Min value allowed, default inf.
-        max_value: Max value allowed, default inf.
+        min_value:  Min value allowed, default None for which min value
+            check is not performed
+        max_value: Max value allowed, default None for which max value
+            check is not performed
         shape: The shape of the array, tuple of either ints or Callables taking
             no arguments that return the size along that dim as an int.
         valid_types: Sequence of types that the validator should support. Should
@@ -527,8 +529,8 @@ class Arrays(Validator):
             datatypes will validate.
     """
 
-    real_types = (np.integer, np.floating)
-    supported_types = real_types + (np.complexfloating,)
+    __real_types = (np.integer, np.floating)
+    __supported_types = __real_types + (np.complexfloating,)
 
     def __init__(self, min_value: Optional[numbertypes] = None,
                  max_value: Optional[numbertypes] = None,
@@ -539,14 +541,14 @@ class Arrays(Validator):
             for mytype in valid_types:
 
                 is_supported = any(np.issubsctype(mytype, supported_type) for
-                                   supported_type in self.supported_types)
+                                   supported_type in self.__supported_types)
                 if not is_supported:
                     raise TypeError(f"Arrays validator only supports numeric "
                                     f"types: {mytype} is not supported.")
 
             self.valid_types = valid_types
         else:
-            self.valid_types = self.real_types
+            self.valid_types = self.__real_types
 
         supports_complex = any(
             np.issubsctype(my_type, np.complexfloating) for my_type in
@@ -556,11 +558,11 @@ class Arrays(Validator):
 
         min_real = any(
             np.issubsctype(type(min_value), real_type) for real_type in
-            self.real_types)
+            self.__real_types)
 
         max_real = any(
             np.issubsctype(type(max_value), real_type) for real_type in
-            self.real_types)
+            self.__real_types)
 
         if min_value is not None and not min_real:
             raise TypeError(f"min_value must be a real number. It is "
@@ -690,7 +692,6 @@ class Arrays(Validator):
         # so we use shape_unevaluated
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
                                               self.shape_unevaluated)
-
 
 
 class Lists(Validator):
