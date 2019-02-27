@@ -70,23 +70,17 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
 
         'BoardsInSystemBySystemID': Signature(
             return_type=U32,
-            argument_types=[
-                U32
-            ]
+            argument_types=[U32]
         ),
 
         'GetBoardKind': Signature(
             return_type=U32,
-            argument_types=[
-                HANDLE
-            ]
+            argument_types=[HANDLE]
         ),
 
         'GetBoardBySystemID': Signature(
             return_type=HANDLE,
-            argument_types=[
-                U32, U32
-            ]
+            argument_types=[U32, U32]
         ),
 
         'GetDriverVersion': Signature(
@@ -106,145 +100,86 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
         ),
 
         'GetChannelInfo': Signature(
-            argument_types=[
-                HANDLE,
-                ctypes.POINTER(U32),
-                ctypes.POINTER(U8)
-            ]
+            argument_types=[HANDLE, ctypes.POINTER(U32), ctypes.POINTER(U8)]
         ),
 
         'QueryCapability': Signature(
-            argument_types=[
-                HANDLE, U32, U32,
-                ctypes.POINTER(U32)
-            ]
+            argument_types=[HANDLE, U32, U32, ctypes.POINTER(U32)]
         ),
 
         "WaitAsyncBufferComplete": Signature(
-            argument_types=[
-                U32, ctypes.c_void_p, U32
-            ]
+            argument_types=[U32, ctypes.c_void_p, U32]
         ),
 
         "ReadRegister": Signature(
-            argument_types=[
-                U32,
-                U32,
-                ctypes.POINTER(U32),
-                U32
-            ]
+            argument_types=[U32, U32, ctypes.POINTER(U32), U32]
         ),
 
         "WriteRegister": Signature(
-            argument_types=[
-                U32,
-                U32,
-                U32,
-                U32
-            ]
+            argument_types=[U32, U32, U32, U32]
         ),
 
         "BeforeAsyncRead": Signature(
-            argument_types=[
-                U32,
-                U32,
-                ctypes.c_long,
-                U32,
-                U32,
-                U32,
-                U32
-            ]
+            argument_types=[U32, U32, ctypes.c_long, U32, U32, U32, U32]
         ),
 
         "SetCaptureClock": Signature(
-            argument_types=[
-                U32,
-                U32,
-                U32,
-                U32,
-                U32
-            ]
+            argument_types=[U32, U32, U32, U32, U32]
         ),
 
         "SetRecordSize": Signature(
-            argument_types=[
-                HANDLE, U32, U32
-            ]
+            argument_types=[HANDLE, U32, U32]
         ),
 
         "PostAsyncBuffer": Signature(
-            argument_types=[
-                U32,
-                ctypes.c_void_p,
-                U32
-            ]
+            argument_types=[U32, ctypes.c_void_p, U32]
         ),
 
         "AbortAsyncRead": Signature(
-            argument_types=[
-                HANDLE
-            ]
+            argument_types=[HANDLE]
         ),
 
         "GetCPLDVersion": Signature(
-            argument_types=[
-                HANDLE, ctypes.POINTER(U8), ctypes.POINTER(U8)
-            ]
+            argument_types=[HANDLE, ctypes.POINTER(U8), ctypes.POINTER(U8)]
         ),
 
         "InputControl": Signature(
-            argument_types=[
-                HANDLE, U8, U32, U32, U32
-            ]
+            argument_types=[HANDLE, U8, U32, U32, U32]
         ),
 
         "SetBWLimit": Signature(
-            argument_types=[
-                HANDLE, U32, U32
-            ]
+            argument_types=[HANDLE, U32, U32]
         ),
 
         "SetTriggerOperation": Signature(
             argument_types=[
                 HANDLE, U32, U32, U32, U32, U32, U32, U32, U32, U32
-            ]
+                ]
         ),
 
         "SetExternalTrigger": Signature(
-            argument_types=[
-                HANDLE, U32, U32
-            ]
+            argument_types=[HANDLE, U32, U32]
         ),
 
         "SetTriggerDelay": Signature(
-            argument_types=[
-                HANDLE, U32
-            ]
+            argument_types=[HANDLE, U32]
         ),
 
         "SetTriggerTimeOut": Signature(
-            argument_types=[
-                HANDLE, U32
-            ]
+            argument_types=[HANDLE, U32]
         ),
 
         "ConfigureAuxIO": Signature(
-            argument_types=[
-                HANDLE, U32, U32
-            ]
+            argument_types=[HANDLE, U32, U32]
         ),
 
         "ErrorToText": Signature(
             return_type=ctypes.c_char_p,
-            argument_types=[
-                U32
-            ]
+            argument_types=[U32]
         ),
 
         "StartCapture": Signature(
-            argument_types=[
-                HANDLE
-            ]
+            argument_types=[HANDLE]
         )
     }
 
