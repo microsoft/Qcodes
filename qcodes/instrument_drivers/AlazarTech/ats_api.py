@@ -174,3 +174,6 @@ class AlazarATSAPI(WrappedDll):
 
     ## INSTANCE MEMBERS ##
 
+    def get_board_model(self, handle: int) -> str:
+        return self.BOARD_NAMES[self.get_board_kind(handle)]
+

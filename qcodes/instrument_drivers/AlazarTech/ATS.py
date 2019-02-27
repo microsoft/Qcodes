@@ -88,16 +88,15 @@ class AlazarTech_ATS(Instrument):
                     server_name=None)
 
         handle = board._handle
-        board_kind = api.BOARD_NAMES[api.get_board_kind(handle)]
 
-        max_s, bps = board._get_channel_info(handle)
+        board_model = api.get_board_model(handle)
 
         board.close()
 
         return {
             'system_id': system_id,
             'board_id': board_id,
-            'board_kind': board_kind,
+            'board_kind': board_model,
             'max_samples': max_s,
             'bits_per_sample': bps
         }
