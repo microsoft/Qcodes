@@ -106,6 +106,12 @@ def test_get_driver_version_convenient(alazar_api):
     assert isinstance(driver_ver, str)
     assert len(driver_ver.split('.')) == 3
 
+
+def test_get_sdk_version_convenient(alazar_api):
+    sdk_ver = alazar_api.get_sdk_version_()
+    assert isinstance(sdk_ver, str)
+    assert len(sdk_ver.split('.')) == 3
+
 def test_writing_and_reading_registers(alazar):
     """
     The approach is to read the register that includes information about
