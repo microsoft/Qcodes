@@ -41,6 +41,8 @@ def check_error_code(return_code_c: ctypes.c_uint, func, arguments
                     return_code)], func.__name__,
                 argrepr))
 
+    return arguments
+
 
 def convert_bytes_to_str(output: bytes, func, arguments) -> str:
     return output.decode()
