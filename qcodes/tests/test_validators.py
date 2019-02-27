@@ -638,10 +638,10 @@ class TestArrays(TestCase):
             a.validate(np.arange(10, dtype=np.complex64))
 
     def test_min_max_real_ints_raises(self):
-        with pytest.raises(TypeError, match="min_value must an instance "
+        with pytest.raises(TypeError, match="min_value must be an instance "
                                             "of valid_types."):
             Arrays(valid_types=(np.integer,), min_value=1.0)
-        with pytest.raises(TypeError, match="max_value must an instance "
+        with pytest.raises(TypeError, match="max_value must be an instance "
                                             "of valid_types."):
             Arrays(valid_types=(np.integer,), max_value=6.0)
 

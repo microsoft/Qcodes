@@ -588,14 +588,14 @@ class Arrays(Validator):
         if min_value_is_valid_type or min_value is None:
             self._min_value = min_value
         else:
-            raise TypeError(f'min_value must an instance of valid_types. '
+            raise TypeError(f'min_value must be an instance of valid_types. '
                             f'It is {min_value} of '
                             f'type {type(min_value)}')
 
         if max_value_is_valid_type or max_value is None:
             self._max_value = max_value
         else:
-            raise TypeError(f'max_value must an instance of valid_types. '
+            raise TypeError(f'max_value must be an instance of valid_types. '
                             f'It is {max_value} of '
                             f'type {type(max_value)}')
 
