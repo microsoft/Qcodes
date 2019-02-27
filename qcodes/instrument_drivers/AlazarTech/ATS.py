@@ -15,15 +15,13 @@ from .utils import TraceParameter
 
 logger = logging.getLogger(__name__)
 
-# TODO(damazter) (C) logging
-
-# these items are important for generalizing this code to multiple alazar cards
 # TODO(damazter) (W) some alazar cards have a different number of channels :(
 
 # TODO(damazter) (S) tests to do:
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
+# TODO(damazter) (C) logging
 # TODO (natalie) make logging vs print vs nothing decisions
 
 
