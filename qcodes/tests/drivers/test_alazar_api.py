@@ -100,6 +100,12 @@ def test_get_cpld_version_convenient(alazar):
     assert isinstance(cpld_ver, str)
     assert len(cpld_ver.split('.')) == 2
 
+
+def test_get_driver_version_convenient(alazar_api):
+    driver_ver = alazar_api.get_driver_version_()
+    assert isinstance(driver_ver, str)
+    assert len(driver_ver.split('.')) == 3
+
 def test_writing_and_reading_registers(alazar):
     """
     The approach is to read the register that includes information about

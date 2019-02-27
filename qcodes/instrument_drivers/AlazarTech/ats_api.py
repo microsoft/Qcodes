@@ -223,6 +223,31 @@ class AlazarATSAPI(WrappedDll):
         )
         cpld_ver = str(major.value) + "." + str(minor.value)
         return cpld_ver
+
+    def get_driver_version_(self) -> str:
+        """
+        A more convenient version of `get_driver_version` method 
+        (`AlazarGetDriverVersion`).
+        
+        This method hides the fact that the output values in the original
+        function are written to the values of the provided pointers.
+
+        Returns:
+            Version string in the format "<major>.<minor>.<revision>"
+        """
+        major = ctypes.c_uint8(0)
+        minor = ctypes.c_uint8(0)
+        revision = ctypes.c_uint8(0)
+        self.get_driver_version(
+            ctypes.byref(major),
+            ctypes.byref(minor),
+            ctypes.byref(revision)
+        )
+        driver_ver = (str(major.value) + "." 
+                      + str(minor.value) + "."
+                      + str(revision.value))
+        return driver_ver
+
     def read_register_(self, handle: int, offset: int) -> int:
         """
         Read a value from a given register in the Alazars memory.
