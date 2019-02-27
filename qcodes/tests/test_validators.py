@@ -645,6 +645,13 @@ class TestArrays(TestCase):
                                             "of valid_types."):
             Arrays(valid_types=(np.integer,), max_value=6.0)
 
+    def test_min_max_ints_real_raises(self):
+        with pytest.raises(TypeError, match="min_value must an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.floating,), min_value=1)
+        with pytest.raises(TypeError, match="max_value must an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.floating,), max_value=6)
 
     def test_real_subtypes(self):
         """
