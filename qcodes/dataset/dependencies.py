@@ -207,6 +207,48 @@ class InterDependencies_:
 
         return new_idps
 
+    def extend(
+            self,
+            dependencies: Optional[ParamSpecTree] = None,
+            inferences: Optional[ParamSpecTree] = None,
+            standalones: Tuple[ParamSpecBase, ...] = ()) -> 'InterDependencies_':
+        """
+        Create a new InterDependencies_ object that is an extension of this
+        instance with the provided input
+        """
+
+        dependencies = {} if dependencies is None else dependencies
+        inferences = {} if inferences is None else inferences
+
+        # first step: remove parameters from standalones if they no longer
+        # stand alone
+        standalones_mut = set(deepcopy(self.standalones))
+        standalones_mut = (standalones_mut.difference(set(dependencies))
+                                          .difference(set(inferences)))
+        new_standalones = tuple(standalones_mut)
+
+        # then update deps and inffs
+        new_deps = deepcopy(self.dependencies)
+        for ps in set(dependencies).intersection(set(new_deps)):
+            new_deps[ps] = tuple(set(list(new_deps[ps]) +
+                                     list(dependencies[ps])))
+        for ps in set(dependencies).difference(set(new_deps)):
+            new_deps.update({deepcopy(ps): dependencies[ps]})
+
+        new_inffs = deepcopy(self.inferences.copy())
+        for ps in set(inferences).intersection(set(new_inffs)):
+            new_inffs[ps] = tuple(set(list(new_inffs[ps]) +
+                                      list(inferences[ps])))
+        for ps in set(inferences).difference(set(new_inffs)):
+            new_inffs.update({deepcopy(ps): inferences[ps]})
+
+        new_idps =  InterDependencies_(dependencies=new_deps,
+                                       inferences=new_inffs,
+                                       standalones=new_standalones)
+
+        return new_idps
+
+
     def validate_subset(self, parameters: Sequence[ParamSpecBase]) -> None:
         """
         Validate that the given parameters form a valid subset of the

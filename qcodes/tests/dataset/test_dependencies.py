@@ -137,8 +137,8 @@ def test_old_to_new(some_paramspecs):
 
     idps_new = old_to_new(idps_old)
 
-    assert idps_new.dependencies == {ps5_base: (ps3_base, ps4_base),
-                                     ps6_base: (ps3_base, ps4_base)}
+    assert idps_new.dependencies == {ps5_base: tuple(set((ps3_base, ps4_base))),
+                                     ps6_base: tuple(set((ps3_base, ps4_base)))}
     assert idps_new.inferences == {ps3_base: (ps1_base,),
                                    ps4_base: (ps2_base,)}
     assert idps_new.standalones == set()
@@ -258,3 +258,33 @@ def test_validate_subset(some_paramspecbases):
 
     with pytest.raises(InferenceError):
         idps.validate_subset((ps1, ps2, ps3))
+
+
+def test_extend(some_paramspecbases):
+
+    ps1, ps2, ps3, ps4 = some_paramspecbases
+
+    idps = InterDependencies_(standalones=(ps1, ps2))
+
+    idps_ext = idps.extend(dependencies={ps1: (ps3,)})
+    idps_expected = InterDependencies_(standalones=(ps2,),
+                                       dependencies={ps1: (ps3,)})
+    assert idps_ext == idps_expected
+
+    # lazily check that we get brand new objects
+    idps._id_to_paramspec[ps1.name].label = "Something new and awful"
+    idps._id_to_paramspec[ps2.name].unit = "Ghastly unit"
+    assert idps_ext._id_to_paramspec[ps1.name].label == 'blah'
+    assert idps_ext._id_to_paramspec[ps2.name].unit == 'V'
+    # reset the objects that are never supposed to be mutated
+    idps._id_to_paramspec[ps1.name].label = "blah"
+    idps._id_to_paramspec[ps2.name].unit = "V"
+
+
+    idps = InterDependencies_(dependencies={ps1: (ps2,)})
+    idps_ext = idps.extend(dependencies={ps1: (ps2, ps3)})
+    idps_expected = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    assert idps_ext == idps_expected
+
+    idps = InterDependencies_(dependencies={ps1: (ps2,)})
+    idps_ext = idps.extend(inferences={ps2: (ps1,)})
