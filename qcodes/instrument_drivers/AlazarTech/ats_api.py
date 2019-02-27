@@ -1,13 +1,14 @@
-from .dll_wrapper import DllWrapperMeta, Signature
-from .constants import API_SUCCESS, ERROR_CODES, ReturnCode, BOARD_NAMES
-from .utils import TraceParameter
-from qcodes.instrument.parameter import Parameter
 from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, \
     Sequence, NewType, List, Any
 from threading import Lock
 import concurrent
 import logging
 import ctypes
+
+from qcodes.instrument.parameter import Parameter
+from .dll_wrapper import DllWrapperMeta, Signature
+from .constants import API_SUCCESS, ERROR_CODES, ReturnCode, BOARD_NAMES
+from .utils import TraceParameter
 
 
 # Define aliases for ctypes that match Alazar's notation.

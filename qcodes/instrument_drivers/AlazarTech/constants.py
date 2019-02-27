@@ -1,5 +1,6 @@
 from typing import NewType, Dict
 
+
 ReturnCode = NewType('ReturnCode', int)
 
 API_SUCCESS = 512
