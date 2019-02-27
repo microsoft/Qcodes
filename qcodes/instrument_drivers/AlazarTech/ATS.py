@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, BOARD_NAMES
+from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
 from .utils import TraceParameter
 
 
@@ -163,7 +163,7 @@ class AlazarTech_ATS(Instrument):
                 - 'bits_per_sample': number of bits per one sample
                 - 'max_samples': board memory size in samples
         """
-        board_kind = BOARD_NAMES[self.api.get_board_kind(self._handle)]
+        board_kind = self.api.BOARD_NAMES[self.api.get_board_kind(self._handle)]
         max_s, bps = self._get_channel_info(self._handle)
 
         major = ctypes.c_uint8(0)

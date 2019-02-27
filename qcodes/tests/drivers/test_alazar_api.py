@@ -9,8 +9,8 @@ import os
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
-from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, \
-    ERROR_CODES, API_SUCCESS
+from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.instrument_drivers.AlazarTech.constants import ERROR_CODES, API_SUCCESS
 
 
 def _skip_if_alazar_dll_and_boards_not_installed():

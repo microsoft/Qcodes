@@ -47,7 +47,7 @@ def mark_params_as_updated(*args) -> None:
             arg._set_updated()
 
 
-def api_calls(full_name: str, signature: "Signature") -> Tuple[Callable, Callable]:
+def api_calls(full_name: str, signature: "Signature") -> Callable:
     def sync_call(self: TApi, *args) -> signature.return_type:
         c_func = getattr(self._dll, full_name)
         future = self._executor.submit(
