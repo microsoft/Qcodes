@@ -149,8 +149,8 @@ def test_old_to_new(some_paramspecs):
 
     idps_new = old_to_new(idps_old)
 
-    assert idps_new.dependencies == {ps5_base: tuple(set((ps3_base, ps4_base))),
-                                     ps6_base: tuple(set((ps3_base, ps4_base)))}
+    assert idps_new.dependencies == {ps5_base: (ps3_base, ps4_base),
+                                     ps6_base: (ps3_base, ps4_base)}
     assert idps_new.inferences == {ps3_base: (ps1_base,),
                                    ps4_base: (ps2_base,)}
     assert idps_new.standalones == set()

@@ -76,12 +76,15 @@ class InterDependencies_:
     def _remove_duplicates(tree: ParamSpecTree) -> None:
         """
         Helper function to remove duplicate entries from a ParamSpecTree. Will
-        turn {A: (B, B, C)} into {A: (B, C)} or {A: (C, B)} depending on the
-        hash values of B and C. Note that this also fixes the order of the
-        objects inside the tuples (useful for comparisons)
+        turn {A: (B, B, C)} into {A: (B, C)}
         """
+
         for ps, tup in tree.items():
-            tree[ps] = tuple(set(tup))
+            specs = []
+            for p in tup:
+                if p not in specs:
+                    specs.append(p)
+            tree[ps] = tuple(specs)
 
     @staticmethod
     def _id(ps: ParamSpecBase) -> str:
