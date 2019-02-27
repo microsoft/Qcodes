@@ -1,4 +1,5 @@
 from typing import NewType, Dict
+from enum import IntEnum
 
 
 ReturnCode = NewType('ReturnCode', int)
@@ -171,3 +172,22 @@ BOARD_NAMES = {
 
 REGISTER_READING_PWD = 0x32145876
 
+
+# Capability identifiers
+
+GET_SERIAL_NUMBER = 0x10000024
+GET_LATEST_CAL_DATE	= 0x10000026  # date of latest calibration
+MEMORY_SIZE	= 0x1000002A  # board memory size in samples
+ASOPC_TYPE = 0x1000002C
+GET_PCIE_LINK_SPEED = 0x10000030
+GET_PCIE_LINK_WIDTH = 0x10000031
+
+
+class Capability(IntEnum):
+    """Capability identifiers for 'query capability' function"""
+    SERIAL_NUMBER = GET_SERIAL_NUMBER
+    LATEST_CALIBRATION_DATE = GET_LATEST_CAL_DATE
+    MEMORY_SIZE = MEMORY_SIZE
+    ASOPC_TYPE = ASOPC_TYPE
+    PCIE_LINK_SPEED = GET_PCIE_LINK_SPEED
+    PCIE_LINK_WIDTH = GET_PCIE_LINK_WIDTH
