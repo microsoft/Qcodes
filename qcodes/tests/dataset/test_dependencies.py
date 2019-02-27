@@ -302,3 +302,19 @@ def test_extend(some_paramspecbases):
     match = re.escape("Invalid dependencies/inferences")
     with pytest.raises(ValueError, match=match):
         idps_ext = idps.extend(inferences={ps2: (ps1,)})
+
+
+def test_equality_old(some_paramspecs):
+
+    # TODO: make this more fancy with itertools
+
+    ps1 = some_paramspecs[1]['ps1']
+    ps2 = some_paramspecs[1]['ps2']
+    ps3 = some_paramspecs[1]['ps3']
+    ps4 = some_paramspecs[1]['ps4']
+    ps5 = some_paramspecs[1]['ps5']
+    ps6 = some_paramspecs[1]['ps6']
+
+    assert InterDependencies(ps1, ps2, ps3) == InterDependencies(ps3, ps2, ps1)
+    assert InterDependencies(ps1, ps6, ps3) == InterDependencies(ps3, ps6, ps1)
+    assert InterDependencies(ps4, ps5, ps3) == InterDependencies(ps3, ps4, ps5)

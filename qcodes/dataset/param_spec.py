@@ -176,10 +176,15 @@ class ParamSpec(ParamSpecBase):
     def __eq__(self, other):
         if not isinstance(other, ParamSpec):
             return False
-        attrs = ['name', 'type', 'label', 'unit', '_inferred_from',
-                 '_depends_on']
-        for attr in attrs:
-            if getattr(self, attr) != getattr(other, attr):
+        string_attrs = ['name', 'type', 'label', 'unit']
+        list_attrs = ['_inferred_from', '_depends_on']
+        for string_attr in string_attrs:
+            if getattr(self, string_attr) != getattr(other, string_attr):
+                return False
+        for list_attr in list_attrs:
+            ours = sorted(getattr(self, list_attr))
+            theirs = sorted(getattr(other, list_attr))
+            if ours != theirs:
                 return False
         return True
 

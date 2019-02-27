@@ -337,12 +337,24 @@ class InterDependencies_:
         return rep
 
     def __eq__(self, other):
+
+        def sorter(input: Any) -> List[Any]:
+            return sorted(input, key=lambda ps: ps.name)
+
         if not isinstance(other, InterDependencies_):
             return False
-        if not self.dependencies == other.dependencies:
-            return False
-        if not self.inferences == other.inferences:
-            return False
+
+        for dic in ['dependencies', 'inferences']:
+            our_keys = sorter(getattr(self, dic).keys())
+            their_keys = sorter(getattr(other, dic).keys())
+            if our_keys != their_keys:
+                return False
+            for key in our_keys:
+                our_values = sorter(getattr(self, dic)[key])
+                their_values = sorter(getattr(other, dic)[key])
+                if our_values != their_values:
+                    return False
+
         if not self.standalones == other.standalones:
             return False
 
@@ -373,7 +385,13 @@ class InterDependencies:
     def __eq__(self, other) -> bool:
         if not isinstance(other, InterDependencies):
             return False
-        if not self.paramspecs == other.paramspecs:
+        ours = sorted(self.paramspecs, key=lambda ps: ps.name)
+        theirs = sorted(other.paramspecs, key=lambda ps: ps.name)
+        if not ours == theirs:
+            for ps in ours:
+                print(ps)
+            for ps in theirs:
+                print(ps)
             return False
         return True
 
