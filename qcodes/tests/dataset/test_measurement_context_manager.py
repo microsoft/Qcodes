@@ -1363,6 +1363,78 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
             assert datadict['data'].shape == (N * M,)
 
+@settings(max_examples=5, deadline=None)
+@given(N=hst.integers(min_value=5, max_value=500))
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_complex_array_parameters_array(channel_array_instrument, DAC, N):
+    """
+    Test that storing a complex array parameters inside a loop with the sqlite
+    Array type works as expected
+    """
+    meas = Measurement()
+
+    array_param = channel_array_instrument.A.dummy_complex_array_parameter
+
+    meas.register_parameter(array_param, paramtype='array')
+
+    assert len(meas.parameters) == 2
+    dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
+    assert meas.parameters[str(array_param)].depends_on == dependency_name
+    assert meas.parameters[str(array_param)].type == 'array'
+    assert meas.parameters[dependency_name].type == 'array'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1, paramtype='numeric')
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype='array')
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+    dac_datapoints = np.linspace(0, 0.01, N)
+    with meas.run() as datasaver:
+        for set_v in dac_datapoints:
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+    assert datasaver.points_written == N
+    ds = load_by_id(datasaver.run_id)
+
+    data_num = ds.get_data('dummy_dac_ch1')
+    assert len(data_num) == N
+
+    param_name = 'dummy_channel_inst_ChanA_dummy_complex_array_parameter'
+
+    setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
+    data_arrays = ds.get_data(param_name)
+    assert len(setpoint_arrays) == N
+    assert len(data_arrays) == N
+
+    for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
+        assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
+        assert_array_equal(data_arrays[0], np.arange(5) - 1j*np.arange(5))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    # one dependent parameter
+    assert len(datadicts) == 1
+    datadicts = datadicts[0]
+    assert len(datadicts) == len(meas.parameters)
+    for datadict in datadicts:
+        if datadict['name'] == 'dummy_dac_ch1':
+            expected_data = np.repeat(dac_datapoints, M)
+            assert_allclose(datadict['data'], expected_data)
+        if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
+            expected_data = np.tile(np.linspace(5, 9, 5), N)
+            assert_allclose(datadict['data'], expected_data)
+        if datadict['name'] == param_name:
+            ca = np.arange(M) - 1j * np.arange(M)
+            expected_data = np.tile(ca, reps=N)
+            assert_allclose(datadict['data'], expected_data)
+
+
+        assert datadict['data'].shape == (N * M,)
+
 
 def test_datasaver_multidim_array(experiment):  # noqa: F811
     """
