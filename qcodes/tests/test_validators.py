@@ -637,6 +637,15 @@ class TestArrays(TestCase):
                                             r" it is complex64"):
             a.validate(np.arange(10, dtype=np.complex64))
 
+    def test_min_max_real_ints_raises(self):
+        with pytest.raises(TypeError, match="min_value must an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.integer,), min_value=1.0)
+        with pytest.raises(TypeError, match="max_value must an instance "
+                                            "of valid_types."):
+            Arrays(valid_types=(np.integer,), max_value=6.0)
+
+
     def test_real_subtypes(self):
         """
         Test that validating a concrete real type into an array that
@@ -763,7 +772,7 @@ class TestArrays(TestCase):
             c = Arrays(shape=(lambda: 2, 2))
             assert re.match(r"<Arrays, shape: \(<function TestArrays."
                             r"test_repr.<locals>.<lambda> "
-                            r"at 0x[A-Z0-9]*>, 2\)>", str(c))
+                            r"at 0x[a-fA-f0-9]*>, 2\)>", str(c))
 
 
 class TestLists(TestCase):
