@@ -518,26 +518,6 @@ class DataSet(Sized):
         if spec.name in old_params:
             raise ValueError(f'Duplicate parameter name: {spec.name}')
 
-        # inf_from = spec.inferred_from.split(', ')
-        # if inf_from == ['']:
-        #     inf_from = []
-        # for ifrm in inf_from:
-        #     if ifrm not in old_params:
-        #         raise ValueError('Can not infer parameter '
-        #                          f'{spec.name} from {ifrm}, '
-        #                          'no such parameter in this DataSet')
-
-        # dep_on = spec.depends_on.split(', ')
-        # if dep_on == ['']:
-        #     dep_on = []
-        # for dp in dep_on:
-        #     if dp not in old_params:
-        #         raise ValueError('Can not have parameter '
-        #                          f'{spec.name} depend on {dp}, '
-        #                          'no such parameter in this DataSet')
-
-        # desc = self.description
-        # desc.interdeps = InterDependencies(*desc.interdeps.paramspecs, spec)
         self._interdeps = self._interdeps._extend_with_paramspec(spec)
 
 
