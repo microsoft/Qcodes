@@ -665,7 +665,7 @@ class TestArrays(TestCase):
 
     def test_text_type_raises(self):
         """Text types are not supported """
-        with pytest.raises(TypeError, match="Array Validator only supports "
+        with pytest.raises(TypeError, match="Arrays validator only supports "
                                             "numeric types: <class "
                                             "'numpy.str_'> is not supported."):
             Arrays(valid_types=(np.dtype('<U5').type,))
@@ -752,6 +752,13 @@ class TestArrays(TestCase):
         with self.assertRaises(ValueError):
             m = Arrays(shape=lambda: 10)
 
+    def test_repr(self):
+            a = Arrays()
+            assert str(a) == '<Arrays, shape: None>'
+            b = Arrays(min_value=1, max_value=2)
+            assert str(b) == '<Arrays 1<=v<=2, shape: None>'
+            c = Arrays(shape=(2, 2))
+            assert str(c) == '<Arrays, shape: (2, 2)>'
 
 class TestLists(TestCase):
 
