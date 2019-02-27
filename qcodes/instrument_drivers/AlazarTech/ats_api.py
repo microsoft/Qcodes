@@ -206,8 +206,8 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
     _dll: ctypes.CDLL
     _executor: concurrent.futures.Executor
 
-    #: The ATS API DLL is not guaranteed to be thread-safe
-    #: This lock guards API calls.
+    # The ATS API DLL is not guaranteed to be thread-safe
+    # This lock guards API calls.
     _lock: Lock
 
     def __init__(self, dll_path: str):
@@ -223,7 +223,9 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
         """
         for name, signature in self.signatures.items():
             c_func = getattr(self._dll, f"{self.signature_prefix}{name}")
+
             c_func.argtypes = signature.argument_types
+
             ret_type = signature.return_type
             if ret_type is ReturnCode:
                 ret_type = ret_type.__supertype__
@@ -231,5 +233,4 @@ class AlazarATSAPI(object, metaclass=DllWrapperMeta):
             elif ret_type in (ctypes.c_char_p, ctypes.c_char, 
                               ctypes.c_wchar, ctypes.c_wchar_p):
                 c_func.errcheck = convert_bytes_to_str
-
             c_func.restype = ret_type
