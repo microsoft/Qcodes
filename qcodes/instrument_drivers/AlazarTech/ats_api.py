@@ -7,7 +7,7 @@ import ctypes
 
 from qcodes.instrument.parameter import Parameter
 from .dll_wrapper import WrappedDll, DllWrapperMeta, Signature
-from .constants import BOARD_NAMES
+from .constants import BOARD_NAMES, REGISTER_READING_PWD
 from .utils import TraceParameter
 
 
@@ -199,3 +199,41 @@ class AlazarATSAPI(WrappedDll):
             ctypes.byref(bps)
         )
         return max_s.value, bps.value
+
+    def read_register_(self, handle: int, offset: int) -> int:
+        """
+        Read a value from a given register in the Alazars memory.
+
+        A more convenient version of `read_register` method 
+        (`AlazarReadRegister`).
+
+        Args:
+            handle: Handle of the board of interest
+            offset: Offset into the memory to read from
+
+        Returns:
+            The value read as an integer
+        """
+        output = ctypes.c_uint32(0)
+        self.read_register(
+            handle,
+            offset,
+            ctypes.byref(output),
+            ctypes.c_uint32(REGISTER_READING_PWD)
+        )
+        return output.value
+
+    def write_register_(self, handle: int, offset: int, value: int) -> None:
+        """
+        Write a value to a given offset in the Alazars memory.
+
+        A more convenient version of `write_register` method 
+        (`AlazarWriteRegister`).
+
+        Args:
+            handle: Handle of the board of interest
+            offset: The offset in memory to write to
+            value: The value to write
+        """
+        self.write_register(
+            handle, offset, value, ctypes.c_uint32(REGISTER_READING_PWD))

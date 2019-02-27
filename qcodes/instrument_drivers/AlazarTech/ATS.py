@@ -783,40 +783,10 @@ class AlazarTech_ATS(Instrument):
             raise RuntimeError('Invalid channel configuration supplied')
 
     def _read_register(self, offset: int) -> int:
-        """
-        Read a value from a given register in the Alazars memory
-
-        Args:
-            offset: Offset into he memmory to read from
-
-        Returns:
-            The value read as en integer
-        """
-        output = ctypes.c_uint32(0)
-        pwd = ctypes.c_uint32(0x32145876)
-        self.api.read_register(
-            self._handle,
-            offset,
-            ctypes.byref(output),
-            pwd
-        )
-        return output.value
+        return self.api.read_register_(self._handle, offset)
 
     def _write_register(self, offset: int, value: int) -> None:
-        """
-        Write a value to a given offset in the Alazars memory
-
-        Args:
-            offset: The offset to write to
-            value: The value to write
-        """
-        pwd = ctypes.c_uint32(0x32145876)
-        self.api.write_register(
-            self._handle,
-            offset,
-            value,
-            pwd
-        )
+        self.api.write_register_(self._handle, offset, value)
 
 
 class Buffer:

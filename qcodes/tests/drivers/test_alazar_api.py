@@ -94,3 +94,12 @@ def test_get_channel_info_convenient(alazar):
     assert isinstance(bps, int)
     assert isinstance(max_s, int)
 
+
+def test_writing_and_reading_registers(alazar):
+    """
+    The approach is to read the register that includes information about
+    trigger holdoff parameter, and write the same value back to the board.
+    """
+    trigger_holdoff_register_offset = 58
+    orig_val = alazar._read_register(trigger_holdoff_register_offset)
+    alazar._write_register(trigger_holdoff_register_offset, orig_val)
