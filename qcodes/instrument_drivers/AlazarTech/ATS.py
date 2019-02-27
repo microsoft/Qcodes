@@ -9,7 +9,8 @@ from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, \
+    CapabilityHelper
 from .utils import TraceParameter
 
 
@@ -114,14 +115,9 @@ class AlazarTech_ATS(Instrument):
             raise Exception('AlazarTech_ATS not found at '
                             'system {}, board {}'.format(system_id, board_id))
 
-        self.buffer_list: List['Buffer'] = []
+        self.capability = CapabilityHelper(self.api, self._handle)
 
-    def query_capability(self, capability: int) -> int:
-        value = ctypes.c_uint32(0)
-        self.api.query_capability(
-            self._handle, capability, 0, ctypes.byref(value)
-        )
-        return value.value
+        self.buffer_list: List['Buffer'] = []
 
     def get_idn(self) -> dict:
         # TODO this is really Dict[str, Optional[Union[str,int]]]
@@ -138,9 +134,7 @@ class AlazarTech_ATS(Instrument):
         versions. In Alazar DSO this is reported as FPGA Version.
 
         Returns:
-
             Dictionary containing
-
                 - 'firmware': as string
                 - 'model': as string
                 - 'serial': board serial number
@@ -156,71 +150,26 @@ class AlazarTech_ATS(Instrument):
                 - 'bits_per_sample': number of bits per one sample
                 - 'max_samples': board memory size in samples
         """
-        board_kind = self.api.BOARD_NAMES[self.api.get_board_kind(self._handle)]
-        max_s, bps = self._get_channel_info(self._handle)
+        max_s, bps = self.api.get_channel_info_(self._handle)
+        pcie_link_speed = \
+            str(self.capability.query_pcie_link_speed()) + "GB/s"
 
-        major = ctypes.c_uint8(0)
-        minor = ctypes.c_uint8(0)
-        revision = ctypes.c_uint8(0)
-        self.api.get_cpld_version(
-            self._handle,
-            ctypes.byref(major),
-            ctypes.byref(minor)
-        )
-        cpld_ver = str(major.value) + "." + str(minor.value)
-
-        self.api.get_driver_version(
-            ctypes.byref(major),
-            ctypes.byref(minor),
-            ctypes.byref(revision)
-        )
-        driver_ver = str(major.value)+"."+str(minor.value) + \
-            "."+str(revision.value)
-
-        self.api.get_sdk_version(
-            ctypes.byref(major),
-            ctypes.byref(minor),
-            ctypes.byref(revision)
-        )
-        sdk_ver = str(major.value)+"."+str(minor.value)+"."+str(revision.value)
-
-        serial = str(self.query_capability(0x10000024))
-        capability_str = str(self.query_capability(0x10000026))
-        latest_cal_date = (capability_str[0:2] + "-" +
-                           capability_str[2:4] + "-" +
-                           capability_str[4:6])
-
-        memory_size = str(self.query_capability(0x1000002A))
-        asopc_type = self.query_capability(0x1000002C)
-
-        # see the ATS-SDK programmer's guide
-        # about the encoding of the link speed
-        pcie_link_speed = str(self.query_capability(
-            0x10000030) * 2.5 / 10) + "GB/s"
-        pcie_link_width = str(self.query_capability(0x10000031))
-
-        # Alazartech has confirmed in a support mail that this
-        # is the way to get the firmware version
-        firmware_major = (asopc_type >> 16) & 0xff
-        firmware_minor = (asopc_type >> 24) & 0xf
-        # firmware_minor above does not contain any prefixed zeros
-        # but the minor version is always 2 digits.
-        firmware_version = f'{firmware_major}.{firmware_minor:02d}'
-
-        return {'firmware': firmware_version,
-                'model': board_kind,
-                'max_samples': max_s,
-                'bits_per_sample': bps,
-                'serial': serial,
-                'vendor': 'AlazarTech',
-                'CPLD_version': cpld_ver,
-                'driver_version': driver_ver,
-                'SDK_version': sdk_ver,
-                'latest_cal_date': latest_cal_date,
-                'memory_size': memory_size,
-                'asopc_type': asopc_type,
-                'pcie_link_speed': pcie_link_speed,
-                'pcie_link_width': pcie_link_width}
+        return {
+            'firmware': self.capability.query_firmware_version(),
+            'model': self.api.get_board_model(self._handle),
+            'max_samples': max_s,
+            'bits_per_sample': bps,
+            'serial': self.capability.query_serial(),
+            'vendor': 'AlazarTech',
+            'CPLD_version': self.api.get_cpld_version_(self._handle),
+            'driver_version': self.api.get_driver_version_(),
+            'SDK_version': self.api.get_sdk_version_(),
+            'latest_cal_date': self.capability.query_latest_calibration(),
+            'memory_size': str(self.capability.query_memory_size()),
+            'asopc_type': self.capability.query_asopc_type(),
+            'pcie_link_speed': pcie_link_speed,
+            'pcie_link_width': str(self.capability.query_pcie_link_width())
+            }
 
     def config(self,
                clock_source=None, sample_rate=None, clock_edge=None,
