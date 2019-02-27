@@ -1,5 +1,6 @@
 import json
 import re
+from copy import deepcopy
 
 import pytest
 
@@ -36,16 +37,29 @@ def test_wrong_input_raises():
 
 
 def test_init(some_paramspecbases):
+    """
+    Assert that the init functions correctly sets up the object.
+    Assert via the public-facing methods.
+    """
 
-    (ps1, ps2, ps3, _) = some_paramspecbases
+    (ps1, ps2, ps3, ps4) = some_paramspecbases
 
     idps1 = InterDependencies_(dependencies={ps1: (ps2,)})
     idps2 = InterDependencies_(dependencies={ps1: (ps2, ps2, ps2)})
 
     assert idps1 == idps2
+    assert idps1.what_depends_on(ps2) == (ps1,)
+    assert idps1.what_is_inferred_from(ps2) == ()
 
     idps1 = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     idps2 = InterDependencies_(dependencies={ps1: (ps3, ps2)})
+
+    assert idps1.what_depends_on(ps2) == (ps1,)
+    assert idps1.what_depends_on(ps3) == (ps1,)
+
+    idps = InterDependencies_(dependencies={ps1: (ps3, ps2),
+                                            ps4: (ps3,)})
+    assert set(idps.what_depends_on(ps3)) == set((ps1, ps4))
 
 
 def test_init_validation_raises(some_paramspecbases):
@@ -274,7 +288,7 @@ def test_validate_subset(some_paramspecbases):
 
 def test_extend(some_paramspecbases):
 
-    ps1, ps2, ps3, ps4 = some_paramspecbases
+    ps1, ps2, ps3, _ = some_paramspecbases
 
     idps = InterDependencies_(standalones=(ps1, ps2))
 
@@ -292,10 +306,26 @@ def test_extend(some_paramspecbases):
     idps._id_to_paramspec[ps1.name].label = "blah"
     idps._id_to_paramspec[ps2.name].unit = "V"
 
+    idps = InterDependencies_(standalones=(ps2,))
+    idps_ext = idps.extend(dependencies={ps1: (ps2,)})
+    idps_expected = InterDependencies_(dependencies={ps1: (ps2,)})
+    assert idps_ext == idps_expected
 
     idps = InterDependencies_(dependencies={ps1: (ps2,)})
     idps_ext = idps.extend(dependencies={ps1: (ps2, ps3)})
     idps_expected = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    assert idps_ext == idps_expected
+
+    idps = InterDependencies_()
+    idps_ext = idps.extend(standalones=(ps1, ps2))
+    idps_expected = InterDependencies_(standalones=(ps2, ps1))
+    assert idps_ext == idps_expected
+
+    ps_nu = deepcopy(ps1)
+    ps_nu.unit += '/s'
+    idps = InterDependencies_(standalones=(ps1,))
+    idps_ext = idps.extend(standalones=(ps_nu,))
+    idps_expected = InterDependencies_(standalones=(ps_nu, ps1))
     assert idps_ext == idps_expected
 
     idps = InterDependencies_(dependencies={ps1: (ps2,)})
@@ -303,6 +333,35 @@ def test_extend(some_paramspecbases):
     with pytest.raises(ValueError, match=match):
         idps_ext = idps.extend(inferences={ps2: (ps1,)})
 
+
+def test_remove(some_paramspecbases):
+    ps1, ps2, ps3, ps4 = some_paramspecbases
+
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                              inferences={ps2: (ps4, )})
+    idps_rem = idps.remove(ps1)
+    idps_expected = InterDependencies_(inferences={ps2: (ps4,)},
+                                       standalones=(ps3,))
+    assert idps_rem == idps_expected
+
+    for p in [ps4, ps2, ps3]:
+        match = re.escape(f'Cannot remove {p.name}, other parameters')
+        with pytest.raises(ValueError, match=match):
+            idps_rem = idps.remove(p)
+
+    idps = InterDependencies_(dependencies={ps1: (ps3,)},
+                              inferences={ps2: (ps4,)})
+    idps_rem = idps.remove(ps2)
+    idps_expected = InterDependencies_(dependencies={ps1: (ps3,)},
+                                       standalones=(ps4,))
+
+    assert idps_rem == idps_expected
+
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                              standalones=(ps4, ))
+    idps_rem = idps.remove(ps4)
+    idps_expected = InterDependencies_(dependencies={ps1: (ps2, ps3)})
+    assert idps_rem == idps_expected
 
 def test_equality_old(some_paramspecs):
 

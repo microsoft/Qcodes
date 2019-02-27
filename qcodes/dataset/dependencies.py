@@ -62,6 +62,9 @@ class InterDependencies_:
         self.inferences: ParamSpecTree = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
 
+        # The object is now complete, but for convenience, we form some more
+        # private attributes for easy look-up
+
         self._id_to_paramspec: Dict[str, ParamSpecBase] = {}
         for tree in (self.dependencies, self.inferences):
             for ps, ps_tup in tree.items():
@@ -71,6 +74,26 @@ class InterDependencies_:
         for ps in self.standalones:
             self._id_to_paramspec.update({self._id(ps): ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
+
+        self._dependencies_inv: ParamSpecTree = {}
+        indeps: List[ParamSpecBase] = []
+        for indep_tup in self.dependencies.values():
+            for indep in indep_tup:
+                indeps.append(indep)
+        for indep in set(indeps):
+            deps = tuple(ps for ps in self.dependencies
+                         if indep in self.dependencies[ps])
+            self._dependencies_inv[indep] = deps
+
+        self._inferences_inv: ParamSpecTree = {}
+        bases: List[ParamSpecBase] = []
+        for basis_tup in self.inferences.values():
+            for basis in basis_tup:
+                bases.append(basis)
+        for basis in set(bases):
+            inffs = tuple(ps for ps in self.inferences
+                          if basis in self.inferences[ps])
+            self._inferences_inv[basis] = inffs
 
     @staticmethod
     def _remove_duplicates(tree: ParamSpecTree) -> None:
@@ -160,6 +183,44 @@ class InterDependencies_:
 
         return None
 
+    def what_depends_on(self, ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return a tuple of the parameters that depend on the given parameter.
+        Returns an empty tuple if nothing depends on the given parameter
+
+        Args:
+            ps: the parameter to look up
+
+        Raises:
+            ValueError if the parameter is not part of this object
+        """
+        if ps not in self:
+            raise ValueError(f'Unknown parameter: {ps}')
+        try:
+            return self._dependencies_inv[ps]
+        except KeyError:
+            return ()
+
+    def what_is_inferred_from(self,
+                              ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return a tuple of the parameters thatare inferred from the given
+        parameter. Returns an empty tuple if nothing is inferred from the given
+        parameter
+
+        Args:
+            ps: the parameter to look up
+
+        Raises:
+            ValueError if the parameter is not part of this object
+        """
+        if ps not in self:
+            raise ValueError(f'Unknown parameter: {ps}')
+        try:
+            return self._inferences_inv[ps]
+        except KeyError:
+            return ()
+
     def serialize(self) -> Dict[str, Any]:
         """
         Write out this object as a dictionary
@@ -247,10 +308,15 @@ class InterDependencies_:
 
         # first step: remove parameters from standalones if they no longer
         # stand alone
+
+        depended_on = (ps for tup in dependencies.values() for ps in tup)
+        inferred_from = (ps for tup in inferences.values() for ps in tup)
+
         standalones_mut = set(deepcopy(self.standalones))
         standalones_mut = (standalones_mut.difference(set(dependencies))
-                                          .difference(set(inferences)))
-        new_standalones = tuple(standalones_mut)
+                                          .difference(set(inferences))
+                                          .difference(set(depended_on))
+                                          .difference(set(inferred_from)))
 
         # then update deps and inffs
         new_deps = deepcopy(self.dependencies)
@@ -267,12 +333,56 @@ class InterDependencies_:
         for ps in set(inferences).difference(set(new_inffs)):
             new_inffs.update({deepcopy(ps): inferences[ps]})
 
+        # add new standalones
+        new_standalones = tuple(standalones_mut.union(set(standalones)))
+
         new_idps =  InterDependencies_(dependencies=new_deps,
                                        inferences=new_inffs,
                                        standalones=new_standalones)
 
         return new_idps
 
+    def remove(self, parameter: ParamSpecBase) -> 'InterDependencies_':
+        """
+        Create a new InterDependencies_ object that is similar to this
+        instance, but has the given parameter removed.
+        """
+        if parameter not in self:
+            raise ValueError(f'Unknown parameter: {parameter}.')
+
+        if parameter in self._dependencies_inv:
+            raise ValueError(f'Cannot remove {parameter.name}, other '
+                                'parameters depend on it.')
+        if parameter in self._inferences_inv:
+            raise ValueError(f'Cannot remove {parameter.name}, other '
+                                'parameters are inferred from it.')
+
+        if parameter in self.standalones:
+            new_standalones = (deepcopy(self.standalones).
+                               difference({parameter}))
+            new_deps = deepcopy(self.dependencies)
+            new_inffs = deepcopy(self.inferences)
+        elif parameter in self.dependencies or parameter in self.inferences:
+            new_deps = deepcopy(self.dependencies)
+            new_inffs = deepcopy(self.inferences)
+            # figure out whether removing this parameter will make any other
+            # parameters standalone
+            new_standalones_l = []
+            for indep in self.dependencies.get(parameter, []):
+                if not(indep in self._inferences_inv or
+                       indep in self.inferences):
+                    new_standalones_l.append(indep)
+            for basis in self.inferences.get(parameter, []):
+                if not(basis in self._dependencies_inv or
+                       basis in self.dependencies):
+                    new_standalones_l.append(basis)
+            new_deps.pop(parameter, None)
+            new_inffs.pop(parameter, None)
+            new_standalones = tuple(new_standalones_l)
+
+        idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
+                                  standalones=new_standalones)
+        return idps
 
     def validate_subset(self, parameters: Sequence[ParamSpecBase]) -> None:
         """
@@ -363,6 +473,11 @@ class InterDependencies_:
 
         return True
 
+    def __contains__(self, ps: ParamSpecBase) -> bool:
+        return ps in self._paramspec_to_id
+
+    def __getitem__(self, name: str) -> ParamSpecBase:
+        return self._id_to_paramspec[name]
 
 class InterDependencies:
     """

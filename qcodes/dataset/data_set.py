@@ -520,6 +520,15 @@ class DataSet(Sized):
 
         self._interdeps = self._interdeps._extend_with_paramspec(spec)
 
+    def set_interdependencies(self, interdeps: InterDependencies_) -> None:
+        """
+        Overwrite the interdependencies object (which holds all added
+        parameters and their relationships) of this dataset
+        """
+        if not isinstance(interdeps, InterDependencies_):
+            raise TypeError('Wrong input type. Expected InterDepencies_, '
+                            f'got {type(interdeps)}')
+        self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.run_id)

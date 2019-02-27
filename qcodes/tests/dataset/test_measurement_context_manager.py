@@ -1,9 +1,9 @@
-import pytest
-
+import re
 import os
 from time import sleep
 import json
 
+import pytest
 from hypothesis import given, settings
 import hypothesis.strategies as hst
 import numpy as np
@@ -17,7 +17,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.tests.instrument_mocks import DummyInstrument, \
     DummyChannelInstrument, setpoint_generator
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite_base import atomic_transaction
 from qcodes.instrument.parameter import ArrayParameter, Parameter
 from qcodes.dataset.legacy_import import import_dat_file
@@ -146,6 +146,7 @@ def test_register_parameter_numbers(DAC, DMM):
 
     my_param = DAC.ch1
     meas.register_parameter(my_param)
+
     assert len(meas.parameters) == 1
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
@@ -153,14 +154,9 @@ def test_register_parameter_numbers(DAC, DMM):
     assert paramspec.unit == my_param.unit
     assert paramspec.type == 'numeric'
 
-    # registering the same parameter twice should lead
-    # to a replacement/update, but also change the
-    # parameter order behind the scenes
-    # (to allow us to re-register a parameter with new
-    # setpoints)
-
-    my_param.unit = my_param.unit + '/s'
-    meas.register_parameter(my_param)
+    match = re.escape("Parameter already registered in this Measurement.")
+    with pytest.raises(ValueError, match=match):
+        meas.register_parameter(my_param)
     assert len(meas.parameters) == 1
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
@@ -177,16 +173,15 @@ def test_register_parameter_numbers(DAC, DMM):
     meas.register_parameter(DAC.ch2)
     meas.register_parameter(DMM.v1)
     meas.register_parameter(DMM.v2)
+    meas.unregister_parameter(my_param)
     meas.register_parameter(my_param, basis=(DAC.ch2,),
                             setpoints=(DMM.v1, DMM.v2))
 
-    assert list(meas.parameters.keys()) == [str(DAC.ch2),
-                                            str(DMM.v1), str(DMM.v2),
-                                            str(my_param)]
+    assert set(meas.parameters.keys()) == set([str(DAC.ch2),
+                                               str(DMM.v1), str(DMM.v2),
+                                               str(my_param)])
     paramspec = meas.parameters[str(my_param)]
     assert paramspec.name == str(my_param)
-    assert paramspec.inferred_from == ', '.join([str(DAC.ch2)])
-    assert paramspec.depends_on == ', '.join([str(DMM.v1), str(DMM.v2)])
 
     meas = Measurement()
 
@@ -209,7 +204,7 @@ def test_register_custom_parameter(DAC):
     meas.register_custom_parameter(name, label, unit)
 
     assert len(meas.parameters) == 1
-    assert isinstance(meas.parameters[name], ParamSpec)
+    assert isinstance(meas.parameters[name], ParamSpecBase)
     assert meas.parameters[name].unit == unit
     assert meas.parameters[name].label == label
     assert meas.parameters[name].type == 'numeric'
@@ -217,10 +212,11 @@ def test_register_custom_parameter(DAC):
     newunit = 'V^3'
     newlabel = 'cube of the voltage'
 
+    meas.unregister_parameter(name)
     meas.register_custom_parameter(name, newlabel, newunit)
 
     assert len(meas.parameters) == 1
-    assert isinstance(meas.parameters[name], ParamSpec)
+    assert isinstance(meas.parameters[name], ParamSpecBase)
     assert meas.parameters[name].unit == newunit
     assert meas.parameters[name].label == newlabel
 
@@ -235,14 +231,13 @@ def test_register_custom_parameter(DAC):
     meas.register_parameter(DAC.ch2)
     meas.register_custom_parameter('strange_dac')
 
+    meas.unregister_parameter(name)
     meas.register_custom_parameter(name, label, unit,
                                    setpoints=(DAC.ch1, str(DAC.ch2)),
                                    basis=('strange_dac',))
 
     assert len(meas.parameters) == 4
     parspec = meas.parameters[name]
-    assert parspec.inferred_from == 'strange_dac'
-    assert parspec.depends_on == ', '.join([str(DAC.ch1), str(DAC.ch2)])
 
     with pytest.raises(ValueError):
         meas.register_custom_parameter('double dependence',
@@ -275,11 +270,11 @@ def test_unregister_parameter(DAC, DMM):
         meas.unregister_parameter(DMM.v2)
 
     meas.unregister_parameter(DAC.ch1)
-    assert list(meas.parameters.keys()) == [str(DAC.ch2), str(DMM.v1),
-                                            str(DMM.v2)]
+    assert set(meas.parameters.keys()) == set([str(DAC.ch2), str(DMM.v1),
+                                               str(DMM.v2)])
 
     meas.unregister_parameter(DAC.ch2)
-    assert list(meas.parameters.keys()) == [str(DMM.v1), str(DMM.v2)]
+    assert set(meas.parameters.keys()) == set([str(DMM.v1), str(DMM.v2)])
 
     not_parameters = [DAC, DMM, 0.0, 1]
     for notparam in not_parameters:
