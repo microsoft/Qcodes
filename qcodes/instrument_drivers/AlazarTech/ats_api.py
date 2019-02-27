@@ -200,6 +200,29 @@ class AlazarATSAPI(WrappedDll):
         )
         return max_s.value, bps.value
 
+    def get_cpld_version_(self, handle: int) -> str:
+        """
+        A more convenient version of `get_cpld_version` method 
+        (`AlazarGetCPLDVersion`).
+        
+        This method hides the fact that the output values in the original
+        function are written to the values of the provided pointers.
+
+        Args:
+            handle: handle of the board of interest
+        
+        Returns:
+            Version string in the format "<major>.<minor>"
+        """
+        major = ctypes.c_uint8(0)
+        minor = ctypes.c_uint8(0)
+        self.get_cpld_version(
+            handle,
+            ctypes.byref(major),
+            ctypes.byref(minor)
+        )
+        cpld_ver = str(major.value) + "." + str(minor.value)
+        return cpld_ver
     def read_register_(self, handle: int, offset: int) -> int:
         """
         Read a value from a given register in the Alazars memory.

@@ -95,6 +95,11 @@ def test_get_channel_info_convenient(alazar):
     assert isinstance(max_s, int)
 
 
+def test_get_cpld_version_convenient(alazar):
+    cpld_ver = alazar.api.get_cpld_version_(alazar._handle)
+    assert isinstance(cpld_ver, str)
+    assert len(cpld_ver.split('.')) == 2
+
 def test_writing_and_reading_registers(alazar):
     """
     The approach is to read the register that includes information about
