@@ -614,7 +614,7 @@ class DataSet(Sized):
 
         set_run_timestamp(self.conn, self.run_id)
 
-    def mark_complete(self) -> None:
+    def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
@@ -624,6 +624,10 @@ class DataSet(Sized):
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
+
+    @deprecate(alternative='mark_completed')
+    def mark_complete(self):
+        self.mark_completed()
 
     def add_result(self, results: Dict[str, VALUE]) -> int:
         """
