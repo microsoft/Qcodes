@@ -93,7 +93,7 @@ def test_dataset_states():
     with pytest.raises(RuntimeError, match='Can not mark DataSet as complete '
                                            'before it has '
                                            'been marked as started.'):
-        ds.mark_complete()
+        ds.mark_completed()
 
     match = ('This DataSet has not been marked as started. '
              'Please mark the DataSet as started before '
@@ -123,7 +123,7 @@ def test_dataset_states():
     ds.add_result({parameter.name: 1})
     ds.add_results([{parameter.name: 1}])
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     assert ds.pristine is False
     assert ds.running is False
@@ -363,7 +363,7 @@ def test_add_data_1d():
         mydataset.add_result({'y': 500})
 
     assert mydataset.completed is False
-    mydataset.mark_complete()
+    mydataset.mark_completed()
     assert mydataset.completed is True
 
     with pytest.raises(CompletedError):
