@@ -3736,45 +3736,73 @@ class MessageBuilder:
         return self
 
     def wm(self,
-           abort: enums.Abort,
+           abort: Union[bool, enums.Abort],
            post: enums.WM.Post = None) -> MessageBuilder:
-        if post is None:
-            cmd = f'WM {abort}'
+        if type(abort) is bool:
+            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
+        elif type(abort) is enums.Abort:
+            _abort = abort
         else:
-            cmd = f'WM {abort},{post}'
+            raise TypeError
+
+        if post is None:
+            cmd = f'WM {_abort}'
+        else:
+            cmd = f'WM {_abort},{post}'
 
         self._msg.append(cmd)
         return self
 
     def wmacv(self,
-              abort: enums.Abort,
+              abort: Union[bool, enums.Abort],
               post: enums.WMACV.Post = None) -> MessageBuilder:
-        if post is None:
-            cmd = f'WMACV {abort}'
+        if type(abort) is bool:
+            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
+        elif type(abort) is enums.Abort:
+            _abort = abort
         else:
-            cmd = f'WMACV {abort},{post}'
+            raise TypeError
+
+        if post is None:
+            cmd = f'WMACV {_abort}'
+        else:
+            cmd = f'WMACV {_abort},{post}'
 
         self._msg.append(cmd)
         return self
 
     def wmdcv(self,
-              abort: enums.Abort,
+              abort: Union[bool, enums.Abort],
               post: enums.WMDCV.Post = None) -> MessageBuilder:
-        if post is None:
-            cmd = f'WMDCV {abort}'
+        if type(abort) is bool:
+            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
+        elif type(abort) is enums.Abort:
+            _abort = abort
         else:
-            cmd = f'WMDCV {abort},{post}'
+            raise TypeError
+
+        if post is None:
+            cmd = f'WMDCV {_abort}'
+        else:
+            cmd = f'WMDCV {_abort},{post}'
 
         self._msg.append(cmd)
         return self
 
     def wmfc(self,
-             abort: enums.Abort,
+             abort: Union[bool, enums.Abort],
              post: enums.WMFC.Post) -> MessageBuilder:
-        if post is None:
-            cmd = f'WMFC {abort}'
+        if type(abort) is bool:
+            _abort = enums.Abort.ENABLED if abort else enums.Abort.DISABLED
+        elif type(abort) is enums.Abort:
+            _abort = abort
         else:
-            cmd = f'WMFC {abort},{post}'
+            raise TypeError
+
+        if post is None:
+            cmd = f'WMFC {_abort}'
+        else:
+            cmd = f'WMFC {_abort},{post}'
 
         self._msg.append(cmd)
         return self
