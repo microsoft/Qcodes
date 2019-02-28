@@ -175,19 +175,57 @@ REGISTER_READING_PWD = 0x32145876
 
 # Capability identifiers
 
-GET_SERIAL_NUMBER = 0x10000024
-GET_LATEST_CAL_DATE	= 0x10000026  # date of latest calibration
-MEMORY_SIZE	= 0x1000002A  # board memory size in samples
-ASOPC_TYPE = 0x1000002C
-GET_PCIE_LINK_SPEED = 0x10000030
-GET_PCIE_LINK_WIDTH = 0x10000031
-
-
 class Capability(IntEnum):
     """Capability identifiers for 'query capability' function"""
-    SERIAL_NUMBER = GET_SERIAL_NUMBER
-    LATEST_CALIBRATION_DATE = GET_LATEST_CAL_DATE
-    MEMORY_SIZE = MEMORY_SIZE
-    ASOPC_TYPE = ASOPC_TYPE
-    PCIE_LINK_SPEED = GET_PCIE_LINK_SPEED
-    PCIE_LINK_WIDTH = GET_PCIE_LINK_WIDTH
+GET_SERIAL_NUMBER = 0x10000024
+    # Date of the board's latest calibration data as a decimal number with
+    # the format DDMMYY where DD is 1-31, MM is 1-12,
+    # and YY is 00-99 from 2000
+    GET_LATEST_CAL_DATE = 0x10000026
+    # Month of the board's latest calibration date as 
+    # a decimal number with the format MM where M is 1-12
+    GET_LATEST_CAL_DATE_MONTH = 0x1000002D
+    # Day of month of the board's latest calibration date 
+    # as a decimal number with the format DD where DD is 1-31
+    GET_LATEST_CAL_DATE_DAY = 0x1000002E
+    # Year of the board's latest calibration date 
+    # as a decimal number with the format YY where YY is 00-99 from 2000
+    GET_LATEST_CAL_DATE_YEAR = 0x1000002F
+    # On-board memory size in maximum samples per channel in single channel 
+    # mode; see AlazarGetChannelInfo for more information
+    MEMORY_SIZE = 0x1000002A
+    # Board's FPGA signature
+ASOPC_TYPE = 0x1000002C
+    # The PCIe link speed negotiated between a PCIe digitizer board and
+    # the host PCIe bus in 2.5G bits per second units. The PCIe bus uses
+    # 10b/8b encoding, so divide the link speed by 10 to find the link speed
+    # in bytes per second. For example, a link speed of 2.5 Gb/s gives
+    # 250 MB/s per lane. PCIe Gen 2 digitizers such as ATS9360 should receive
+    # 5.0 Gb/s links. PCIe Gen 3 digitizers such as ATS9373 should receive 
+    # 8.0 Gb/s links.
+GET_PCIE_LINK_SPEED = 0x10000030
+    # The PCIe link width in lanes negociated between a PCIe digitizer board
+    # and the host PCIe bus. An ATS9462 should negociate 4 lanes, while the
+    # ATS9325, ATS9350, ATS9351, ATS9360, ATS9373, ATS9440, ATS9850 and
+    # ATS9870 should negociate 8 lanes. If a board obtains fewer lanes, then
+    # the board may be installed in a PCIe slot that does not support
+    # the expected number of lanes. The ideal PCIe bandwidth is the link speed
+    # in bytes per second per lane, multiplied by the link width in lanes.
+    # For example, and ATS9870 that negociates 8 lanes at 250 MB/s per lane
+    # has an ideal bandwidth of 2 GB/s.
+GET_PCIE_LINK_WIDTH = 0x10000031
+    # Board type identifier; see AlazarGetBoardKind for more information
+    BOARD_TYPE = 0x1000002B
+    # Get the maximum number of pre-trigger samples
+    GET_MAX_PRETRIGGER_SAMPLES = 0x10000046
+    # The model of user-programable FPGA device (see also `CPFDevice`)
+    GET_CPF_DEVICE = 0x10000071
+
+
+CPF_DEVICE_EP3SL50 = 1
+CPF_DEVICE_EP3SE260 = 2
+
+
+class CPFDevice(IntEnum):
+    EP3SL50 = CPF_DEVICE_EP3SL50
+    EP3SE260 = CPF_DEVICE_EP3SE260

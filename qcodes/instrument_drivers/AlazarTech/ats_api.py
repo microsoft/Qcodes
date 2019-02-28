@@ -362,11 +362,13 @@ class CapabilityHelper():
     # Convenience and specific methods
     
     def query_serial(self) -> str:
-        return str(self.query(self.CAPABILITIES.SERIAL_NUMBER))
+        return str(self.query(self.CAPABILITIES.GET_SERIAL_NUMBER))
     
     def query_latest_calibration(self) -> str:
         """Query latest calibration date in '12-34-56' format"""
-        date_int = self.query(self.CAPABILITIES.LATEST_CALIBRATION_DATE)
+        # `date_int` is a decimal number with the format DDMMYY where 
+        # DD is 1-31, MM is 1-12, and YY is 00-99 from 2000.
+        date_int = self.query(self.CAPABILITIES.GET_LATEST_CAL_DATE)
         date_str = str(date_int)
         date = date_str[0:2] + "-" + date_str[2:4] + "-" + date_str[4:6]
         return date
@@ -382,13 +384,13 @@ class CapabilityHelper():
         """Query PCIE link speed in GB/s"""
         # See the ATS-SDK programmer's guide about the encoding 
         # of the PCIE link speed.
-        link_speed_int = self.query(self.CAPABILITIES.PCIE_LINK_SPEED)
+        link_speed_int = self.query(self.CAPABILITIES.GET_PCIE_LINK_SPEED)
         link_speed = link_speed_int * 2.5 / 10
         return link_speed
 
     def query_pcie_link_width(self) -> int:
         """Query PCIE link width"""
-        return self.query(self.CAPABILITIES.PCIE_LINK_WIDTH)
+        return self.query(self.CAPABILITIES.GET_PCIE_LINK_WIDTH)
 
     def query_firmware_version(self) -> str:
         """

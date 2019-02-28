@@ -11,7 +11,7 @@ import pytest
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
 from qcodes.instrument_drivers.AlazarTech.constants import ERROR_CODES, \
-    API_SUCCESS, GET_SERIAL_NUMBER
+    API_SUCCESS, Capability
 
 
 def _skip_if_alazar_dll_and_boards_not_installed():
@@ -115,7 +115,7 @@ def test_get_sdk_version_convenient(alazar_api):
 
 
 def test_query_capability_convenient(alazar):
-    cap = GET_SERIAL_NUMBER
+    cap = Capability.GET_SERIAL_NUMBER
     cap_value = alazar.api.query_capability_(alazar._handle, cap)
     assert isinstance(cap_value, int)
 
