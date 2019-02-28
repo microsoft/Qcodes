@@ -20,6 +20,7 @@ def flatten_1D_data_for_plot(rawdata: Sequence[Sequence[Any]]) -> np.ndarray:
 
     Returns:
         A one-dimensional numpy array
+
     """
     dataarray = np.array(rawdata)
     shape = np.shape(dataarray)
@@ -38,6 +39,8 @@ def get_data_by_id(run_id: int) -> List:
 
     Returns:
         a list of lists of dictionaries like this:
+
+    ::
 
         [
           # each element in this list refers
@@ -59,6 +62,7 @@ def get_data_by_id(run_id: int) -> List:
             ],
             ...
         ]
+
     """
 
     data = load_by_id(run_id)

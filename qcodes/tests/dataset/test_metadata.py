@@ -3,8 +3,7 @@ import pytest
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import dataset, experiment, \
     empty_temp_db
-from qcodes.tests.dataset.test_database_creation_and_upgrading \
-    import error_caused_by
+from qcodes.tests.common import error_caused_by
 
 
 def test_get_metadata_from_dataset(dataset):

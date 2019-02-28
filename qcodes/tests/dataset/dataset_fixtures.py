@@ -27,6 +27,7 @@ def scalar_dataset(dataset):
                                        depends_on=params_indep)]
     for p in params:
         dataset.add_parameter(p)
+    dataset.mark_started()
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
@@ -148,6 +149,7 @@ def standalone_parameters_dataset(dataset):
                                        depends_on=params_indep[0:1])]
     for p in params:
         dataset.add_parameter(p)
+    dataset.mark_started()
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])

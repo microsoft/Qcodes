@@ -28,7 +28,7 @@ class Metadatable:
 
     def load_metadata(self, metadata):
         """
-        Load metadata
+        Load metadata into this classes metadata dict.
 
         Args:
             metadata (dict): metadata to load
@@ -39,7 +39,7 @@ class Metadatable:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
-        instead, override snapshot_base.
+        instead, override :meth:`snapshot_base`.
 
         Args:
             update (bool): Passed to snapshot_base

@@ -16,7 +16,7 @@ from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
-from qcodes.tests.dataset.test_database_creation_and_upgrading import error_caused_by
+from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
@@ -69,6 +69,8 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
         for ps in some_paramspecs[2].values():
             source_dataset.add_parameter(ps)
 
+        source_dataset.mark_started()
+
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
@@ -118,6 +120,8 @@ def test_basic_extraction(two_empty_temp_db_connections,
 
     for ps in some_paramspecs[1].values():
         source_dataset.add_parameter(ps)
+
+    source_dataset.mark_started()
 
     for value in range(10):
         result = {ps.name: type_casters[ps.type](value)
@@ -190,6 +194,8 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
         for ps in some_paramspecs[2].values():
             source_dataset.add_parameter(ps)
 
+        source_dataset.mark_started()
+
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
@@ -203,6 +209,8 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
     for ps in some_paramspecs[2].values():
         ds.add_parameter(ps)
+
+    ds.mark_started()
 
     for val in range(10):
         ds.add_result({ps.name: val for ps in some_paramspecs[2].values()})
@@ -285,6 +293,8 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         for ps in some_paramspecs[2].values():
             source_dataset.add_parameter(ps)
 
+        source_dataset.mark_started()
+
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
@@ -300,6 +310,8 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
 
         for ps in some_paramspecs[2].values():
             source_dataset.add_parameter(ps)
+
+        source_dataset.mark_started()
 
         for val in range(10):
             source_dataset.add_result({ps.name: val
@@ -330,6 +342,7 @@ def test_extracting_dataless_run(two_empty_temp_db_connections,
 
     source_ds = DataSet(conn=source_conn)
 
+    source_ds.mark_started()
     source_ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds.run_id)
@@ -354,6 +367,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     source_ds_1_1 = DataSet(conn=source_conn, exp_id=source_exp1.exp_id)
     for ps in some_paramspecs[2].values():
         source_ds_1_1.add_parameter(ps)
+    source_ds_1_1.mark_started()
     source_ds_1_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_1_1.mark_completed()
@@ -362,6 +376,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
     for ps in some_paramspecs[2].values():
         source_ds_2_1.add_parameter(ps)
+    source_ds_2_1.mark_started()
     source_ds_2_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_2_1.mark_completed()
@@ -370,6 +385,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
                             name="customname")
     for ps in some_paramspecs[2].values():
         source_ds_2_2.add_parameter(ps)
+    source_ds_2_2.mark_started()
     source_ds_2_2.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_2_2.mark_completed()
@@ -398,6 +414,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     source_ds_1_1 = DataSet(conn=source_conn, exp_id=source_exp1.exp_id)
     for ps in some_paramspecs[2].values():
         source_ds_1_1.add_parameter(ps)
+    source_ds_1_1.mark_started()
     source_ds_1_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_1_1.mark_completed()
@@ -406,6 +423,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
     for ps in some_paramspecs[2].values():
         source_ds_2_1.add_parameter(ps)
+    source_ds_2_1.mark_started()
     source_ds_2_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_2_1.mark_completed()
@@ -414,6 +432,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
                             name="customname")
     for ps in some_paramspecs[2].values():
         source_ds_2_2.add_parameter(ps)
+    source_ds_2_2.mark_started()
     source_ds_2_2.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds_2_2.mark_completed()
@@ -452,7 +471,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
         with pytest.warns(UserWarning) as warning:
             extract_runs_into_db(fixturepath, target_path, 1)
             expected_mssg = ('Source DB version is 2, but this '
-                             'function needs it to be in version 3. '
+                             'function needs it to be in version 4. '
                              'Run this function again with '
                              'upgrade_source_db=True to auto-upgrade '
                              'the source DB file.')
@@ -466,6 +485,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
 
     for ps in some_paramspecs[2].values():
         source_ds.add_parameter(ps)
+    source_ds.mark_started()
     source_ds.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
     source_ds.mark_completed()
@@ -474,7 +494,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
         with pytest.warns(UserWarning) as warning:
             extract_runs_into_db(source_path, fixturepath, 1)
             expected_mssg = ('Target DB version is 2, but this '
-                             'function needs it to be in version 3. '
+                             'function needs it to be in version 4. '
                              'Run this function again with '
                              'upgrade_target_db=True to auto-upgrade '
                              'the target DB file.')
@@ -506,6 +526,7 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
 
         for ps in some_paramspecs[2].values():
             source_dataset.add_parameter(ps)
+        source_dataset.mark_started()
 
         for val in range(10):
             source_dataset.add_result({ps.name: val
@@ -590,6 +611,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs, request):
     request.addfinalizer(source_ds_1.dsi.reader.conn.close)
     for ps in some_paramspecs[2].values():
         source_ds_1.add_parameter(ps)
+    source_ds_1.mark_started()
     source_ds_1.add_result({ps.name: 2.1
                             for ps in some_paramspecs[2].values()})
     source_ds_1.mark_completed()
@@ -598,6 +620,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs, request):
     request.addfinalizer(source_ds_2.dsi.reader.conn.close)
     for ps in some_paramspecs[2].values():
         source_ds_2.add_parameter(ps)
+    source_ds_2.mark_started()
     source_ds_2.add_result({ps.name: 2.1
                             for ps in some_paramspecs[2].values()})
     # This dataset is NOT marked as completed
@@ -642,6 +665,7 @@ def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs, inst):
     source_ds = DataSet(conn=source_conn)
     for ps in some_paramspecs[2].values():
         source_ds.add_parameter(ps)
+    source_ds.mark_started()
     source_ds.add_result({ps.name: 2.1
                           for ps in some_paramspecs[2].values()})
     source_ds.mark_completed()

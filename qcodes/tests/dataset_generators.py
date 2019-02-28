@@ -10,6 +10,7 @@ def dataset_with_outliers_generator(ds, data_offset=5, low_outlier=-3,
     ds.add_parameter(x)
     ds.add_parameter(t)
     ds.add_parameter(z)
+    ds.mark_started()
 
     npoints = 50
     xvals = np.linspace(0, 1, npoints)

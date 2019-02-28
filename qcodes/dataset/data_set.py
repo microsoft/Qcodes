@@ -11,6 +11,7 @@ import uuid
 from queue import Queue, Empty
 from time import sleep
 import numpy
+import pandas as pd
 
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
@@ -36,12 +37,14 @@ from qcodes.dataset.sqlite_base import (atomic, atomic_transaction,
                                         get_guid_from_run_id,
                                         get_runid_from_guid,
                                         get_run_timestamp_from_run_id,
+                                        get_run_description,
                                         get_completed_timestamp_from_run_id,
                                         update_run_description,
                                         run_exists, remove_trigger,
                                         make_connection_plus_from,
                                         ConnectionPlus,
-                                        get_non_dependencies)
+                                        get_non_dependencies,
+                                        set_run_timestamp)
 from qcodes.dataset.sqlite_storage_interface import (SqliteReaderInterface,
                                                      SqliteWriterInterface)
 from qcodes.dataset.data_storage_interface import (DataReaderInterface,
@@ -58,6 +61,7 @@ import qcodes.config
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 log = logging.getLogger(__name__)
+
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -348,7 +352,7 @@ class DataSet(Sized):
         self._snapshot = run_md.snapshot
         self._metadata = cast(Dict, run_md.tags)
 
-        self._started: bool = self._completed or self.number_of_results > 0
+        self._started: bool = self.run_timestamp_raw is not None
 
     @staticmethod
     def _kwargs_for_create_run(writer: type, **si_kwargs):
@@ -496,14 +500,23 @@ class DataSet(Sized):
 
     @property
     def parameters(self) -> str:
-        idps = self._description.interdeps
-        return ','.join([p.name for p in idps.paramspecs])
+        if self.pristine:
+            psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+            return ','.join(psnames)
+        else:
+            return select_one_where(self.conn, "runs",
+                                    "parameters", "run_id", self.run_id)
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
-        params = self.get_parameters()
-        param_names = [p.name for p in params]
-        return dict(zip(param_names, params))
+        if self.pristine:
+            params = self.description.interdeps.paramspecs
+            param_names = tuple(ps.name for ps in params)
+            return dict(zip(param_names, params))
+        else:
+            params = tuple(self.get_parameters())
+            param_names = tuple(p.name for p in params)
+            return dict(zip(param_names, params))
 
     @property
     def exp_id(self) -> int:
@@ -572,7 +585,8 @@ class DataSet(Sized):
         Returns run timestamp in a human-readable format
 
         The run timestamp is the moment when the measurement for this run
-        started.
+        started. If the run has not yet been started, this function returns
+        None.
 
         Consult with `time.strftime` for information about the format.
         """
@@ -634,17 +648,35 @@ class DataSet(Sized):
         # let data storage interface prepare for storing actual data
         self.dsi.prepare_for_storing_results()
 
+    def _get_run_description_from_db(self) -> RunDescriber:
+        """
+        Look up the run_description from the database
+        """
+        desc_str = get_run_description(self.conn, self.run_id)
+        return RunDescriber.from_json(desc_str)
+
+    def toggle_debug(self):
+        """
+        Toggle debug mode, if debug mode is on all the queries made are
+        echoed back.
+        """
+        self._debug = not self._debug
+        self.conn.close()
+        self.conn = connect(self.path_to_db, self._debug)
+
     def add_parameter(self, spec: ParamSpec):
         """
         Add a parameter to the DataSet. To ensure sanity, parameters must be
         added to the DataSet in a sequence matching their internal
         dependencies, i.e. first independent parameters, next other
         independent parameters inferred from the first ones, and finally
-        the dependent parameters
+        the dependent parameters. Note that adding parameters to the DataSet
+        does not reflect in the DB file until the DataSet is marked as started
         """
-        if self._started:
-            raise RuntimeError('It is not allowed to add parameters to a '
-                               'started run')
+
+        if not self.pristine:
+            raise RuntimeError('Can not add parameters to a DataSet that has '
+                               'been started.')
 
         if self.parameters:
             old_params = self.parameters.split(',')
@@ -713,19 +745,35 @@ class DataSet(Sized):
     @property
     def pristine(self) -> bool:
         """
-        DataSet is in pristine state if it hasn't started and hasn't completed
+        Is this DataSet pristine? A pristine DataSet has not yet been started,
+        meaning that parameters can still be added and removed, but results
+        can not be added.
         """
-        return not self._started and not self.completed
+        return not(self._started or self._completed)
+
 
     @property
     def running(self) -> bool:
         """
-        DataSet is in running state if it has started but hasn't completed
+        Is this DataSet currently running? A running DataSet has been started,
+        but not yet completed.
         """
-        return self._started and not self.completed
+        return self._started and not(self._completed)
+
+    @property
+    def started(self) -> bool:
+        """
+        Has this DataSet been started? A DataSet not started can not have any
+        results added to it.
+        """
+        return self._started
 
     @property
     def completed(self) -> bool:
+        """
+        Is this DataSet completed? A completed DataSet may not be modified in
+        any way.
+        """
         return self._completed
 
     @completed.setter
@@ -735,10 +783,37 @@ class DataSet(Sized):
             self._started = True
             self.dsi.store_meta_data(MetaData(run_completed=time.time()))
 
+    def mark_started(self) -> None:
+        """
+        Mark this dataset as started. A dataset that has been started can not
+        have its parameters modified.
+
+        Calling this on an already started DataSet is a NOOP.
+        """
+        if not self._started:
+            self._perform_start_actions()
+            self._started = True
+
+    def _perform_start_actions(self) -> None:
+        """
+        Perform the actions that must take place once the run has been started
+        """
+
+        for spec in self.description.interdeps.paramspecs:
+            add_parameter(self.conn, self.table_name, spec)
+
+        update_run_description(self.conn, self.run_id,
+                               self.description.to_json())
+
+        set_run_timestamp(self.conn, self.run_id)
+
     def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
+        if self.pristine:
+            raise RuntimeError('Can not mark DataSet as complete before it '
+                               'has been marked as started.')
         self.completed = True
         for sub in self.dsi.writer.subscribers.values():
             sub.done_callback()
@@ -766,10 +841,14 @@ class DataSet(Sized):
 
         It is an error to add results to a completed DataSet.
         """
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
 
-        if not self._started:
-            self._perform_start_actions()
-            self._started = True
+        if self.completed:
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
 
         # TODO: Make this check less fugly
         for param in results.keys():
@@ -780,9 +859,6 @@ class DataSet(Sized):
                         raise ValueError(f'Can not add result for {param}, '
                                          f'since this depends on {dep}, '
                                          'which is not being added.')
-
-        if self.completed:
-            raise CompletedError
 
         self.dsi.store_results(
             {k: [v] for k, v in results.items()})
@@ -805,13 +881,14 @@ class DataSet(Sized):
 
         It is an error to add results to a completed DataSet.
         """
-
-        if not self._started:
-            self._perform_start_actions()
-            self._started = True
+        if self.pristine:
+            raise RuntimeError('This DataSet has not been marked as started. '
+                               'Please mark the DataSet as started before '
+                               'adding results to it.')
 
         if self.completed:
-            raise CompletedError
+            raise CompletedError('This DataSet is complete, no further '
+                                 'results can be added to it.')
 
         expected_keys = tuple(frozenset.union(*[frozenset(d) for d in results]))
         values = [[d.get(k, None) for k in expected_keys] for d in results]
@@ -901,7 +978,7 @@ class DataSet(Sized):
         """
         Returns the values stored in the DataSet for the specified parameters
         and their dependencies. If no paramerers are supplied the values will
-        be returned for all parameters that are not them self depdendencies.
+        be returned for all parameters that are not them self dependencies.
 
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
@@ -939,6 +1016,71 @@ class DataSet(Sized):
         return get_parameter_data(self.dsi.reader.conn,
                                   self.dsi.reader.table_name, valid_param_names,
                                   start, end)
+
+    def get_data_as_pandas_dataframe(self,
+                                     *params: Union[str,
+                                                    ParamSpec,
+                                                    _BaseParameter],
+                                     start: Optional[int] = None,
+                                     end: Optional[int] = None) -> \
+            Dict[str, pd.DataFrame]:
+        """
+        Returns the values stored in the DataSet for the specified parameters
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        Each DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the dataset that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+        """
+        dfs = {}
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+        for name, subdict in datadict.items():
+            keys = list(subdict.keys())
+            if len(keys) == 0:
+                dfs[name] = pd.DataFrame()
+                continue
+            if len(keys) == 1:
+                index = None
+            elif len(keys) == 2:
+                index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
+            else:
+                index = pd.MultiIndex.from_arrays(
+                    tuple(subdict[key].ravel() for key in keys[1:]),
+                    names=keys[1:])
+            df = pd.DataFrame(subdict[keys[0]].ravel(), index=index,
+                              columns=[keys[0]])
+            dfs[name] = df
+        return dfs
 
     def get_values(self, param_name: str) -> List[List[Any]]:
         """

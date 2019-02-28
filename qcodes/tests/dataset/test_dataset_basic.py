@@ -14,8 +14,7 @@ from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies
-from qcodes.tests.dataset.test_database_creation_and_upgrading import \
-    error_caused_by
+from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
 from qcodes.dataset.database import get_DB_location
@@ -30,7 +29,8 @@ from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
-from .helper_functions import verify_data_dict
+pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
+from qcodes.tests.dataset.helper_functions import verify_data_dict
 
 n_experiments = 0
 
@@ -38,7 +38,8 @@ n_experiments = 0
 def make_shadow_dataset(dataset: DataSet):
     """
     Creates a new DataSet object that points to the same run_id in the same
-    database file as the given dataset object.
+    database file as the given dataset object. Note that for a pristine run,
+    the shadow dataset may be out of sync with its input dataset.
 
     Note that in order to achieve it, we pass`path_to_db` because this will
     create a new sqlite3 connection object behind the scenes. This is very
@@ -71,6 +72,86 @@ def test_has_attributes_after_init():
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_dataset_states():
+    """
+    Test the interplay between pristine, started, running, and completed
+    """
+
+    ds = DataSet()
+
+    assert ds.pristine is True
+    assert ds.running is False
+    assert ds.started is False
+    assert ds.completed is False
+
+    with pytest.raises(RuntimeError, match='Can not mark DataSet as complete '
+                                           'before it has '
+                                           'been marked as started.'):
+        ds.mark_complete()
+
+    match = ('This DataSet has not been marked as started. '
+             'Please mark the DataSet as started before '
+             'adding results to it.')
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_result({'x': 1})
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_results([{'x': 1}])
+
+    parameter = ParamSpec(name='single', paramtype='numeric',
+                          label='', unit='N/A')
+    ds.add_parameter(parameter)
+
+    ds.mark_started()
+
+    assert ds.pristine is False
+    assert ds.running is True
+    assert ds.started is True
+    assert ds.completed is False
+
+    match = ('Can not add parameters to a DataSet that has '
+             'been started.')
+
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_parameter(parameter)
+
+    ds.add_result({parameter.name: 1})
+    ds.add_results([{parameter.name: 1}])
+
+    ds.mark_complete()
+
+    assert ds.pristine is False
+    assert ds.running is False
+    assert ds.started is True
+    assert ds.completed is True
+
+    match = ('Can not add parameters to a DataSet that has '
+             'been started.')
+
+    with pytest.raises(RuntimeError, match=match):
+        ds.add_parameter(parameter)
+
+    match = ('This DataSet is complete, no further '
+             'results can be added to it.')
+    with pytest.raises(CompletedError, match=match):
+        ds.add_result({parameter.name: 1})
+    with pytest.raises(CompletedError, match=match):
+        ds.add_results([{parameter.name: 1}])
+
+
+@pytest.mark.usefixtures('experiment')
+def test_timestamps_are_none():
+    ds = DataSet()
+
+    assert ds.run_timestamp_raw is None
+    assert ds.run_timestamp() is None
+
+    ds.mark_started()
+
+    assert isinstance(ds.run_timestamp_raw, float)
+    assert isinstance(ds.run_timestamp(), str)
 
 
 def test_dataset_read_only_properties(dataset):
@@ -123,7 +204,7 @@ def test_load_by_id_for_none():
         _ = load_by_id(None)
 
 
-@settings(deadline=None)
+@settings(deadline=None, max_examples=6)
 @given(experiment_name=hst.text(min_size=1),
        sample_name=hst.text(min_size=1),
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
@@ -178,6 +259,9 @@ def test_add_paramspec(dataset):
     dataset.add_parameter(parameter_b)
     dataset.add_parameter(parameter_c)
 
+    # write the parameters to disk
+    dataset.mark_started()
+
     # Now retrieve the paramspecs
 
     shadow_ds = make_shadow_dataset(dataset)
@@ -210,6 +294,13 @@ def test_add_paramspec_one_by_one(dataset):
     for parameter in parameters:
         dataset.add_parameter(parameter)
 
+    # test that we can not re-add any parameter already added once
+    for param in parameters:
+        with pytest.raises(ValueError, match=f'Duplicate parameter name: '
+                                             f'{param.name}'):
+            dataset.add_parameter(param)
+
+    dataset.mark_started()
     shadow_ds = make_shadow_dataset(dataset)
 
     paramspecs = shadow_ds.paramspecs
@@ -223,9 +314,9 @@ def test_add_paramspec_one_by_one(dataset):
 
     assert paramspecs == dataset.paramspecs
 
-    # Test that is not possible to add the same parameter again to the dataset
-    with pytest.raises(ValueError, match=f'Duplicate parameter name: '
-                                         f'{parameters[0].name}'):
+    # Test that is not possible to add any parameter to the dataset
+    with pytest.raises(RuntimeError, match='Can not add parameters to a '
+                                           'DataSet that has been started.'):
         dataset.add_parameter(parameters[0])
 
     assert len(dataset.paramspecs.keys()) == 3
@@ -245,6 +336,7 @@ def test_add_data_1d():
     psy = ParamSpec("y", "numeric", depends_on=['x'])
 
     mydataset = new_data_set("test-dataset", specs=[psx, psy])
+    mydataset.mark_started()
 
     expected_x = []
     expected_y = []
@@ -268,7 +360,7 @@ def test_add_data_1d():
     mydataset.mark_completed()
     assert mydataset.completed is True
 
-    with pytest.raises(ValueError):
+    with pytest.raises(CompletedError):
         mydataset.add_result({'y': 500})
 
     with pytest.raises(CompletedError):
@@ -286,6 +378,7 @@ def test_add_data_array():
 
     mydataset = new_data_set("test", specs=[ParamSpec("x", "numeric"),
                                             ParamSpec("y", "array")])
+    mydataset.mark_started()
 
     expected_x = []
     expected_y = []
@@ -319,6 +412,7 @@ def test_adding_too_many_results():
                        unit='Hz', depends_on=[xparam])
     dataset.add_parameter(xparam)
     dataset.add_parameter(yparam)
+    dataset.mark_started()
     n_max = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
 
     vals = np.linspace(0, 1, int(n_max/2)+2)
@@ -385,6 +479,7 @@ def test_numpy_ints(dataset):
     """
     xparam = ParamSpec('x', 'numeric')
     dataset.add_parameter(xparam)
+    dataset.mark_started()
 
     numpy_ints = [
         np.int, np.int8, np.int16, np.int32, np.int64,
@@ -403,6 +498,7 @@ def test_numpy_floats(dataset):
     """
     float_param = ParamSpec('y', 'numeric')
     dataset.add_parameter(float_param)
+    dataset.mark_started()
 
     numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
@@ -411,10 +507,10 @@ def test_numpy_floats(dataset):
     assert np.allclose(dataset.get_data("y"), expected_result, atol=1E-8)
 
 
-
 def test_numpy_nan(dataset):
     parameter_m = ParamSpec("m", "numeric")
     dataset.add_parameter(parameter_m)
+    dataset.mark_started()
 
     data_dict = [{"m": value} for value in [0.0, np.nan, 1.0]]
     dataset.add_results(data_dict)
@@ -437,6 +533,7 @@ def test_missing_keys(dataset):
     dataset.add_parameter(y)
     dataset.add_parameter(a)
     dataset.add_parameter(b)
+    dataset.mark_started()
 
     def fa(xv):
         return xv + 1
@@ -489,10 +586,12 @@ def test_get_description(experiment, some_paramspecs):
     assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
                                                   paramspecs['ps2']))
 
+    # the run description gets written as the dataset is marked as started,
+    # so now no description should be stored in the database
     prematurely_loaded_ds = DataSet(run_id=1)
     assert prematurely_loaded_ds.description == desc
 
-    ds.add_result({'ps1': 1, 'ps2': 2})
+    ds.mark_started()
 
     loaded_ds = DataSet(run_id=1)
 
@@ -553,6 +652,7 @@ def test_the_same_dataset_as(some_paramspecs, experiment):
     ds = DataSet()
     ds.add_parameter(paramspecs['ps1'])
     ds.add_parameter(paramspecs['ps2'])
+    ds.mark_started()
     ds.add_result({'ps1': 1, 'ps2': 2})
 
     same_ds_from_load = DataSet(run_id=ds.run_id)
@@ -577,6 +677,7 @@ class TestGetData:
         the tests in this class
         """
         dataset.add_parameter(self.x)
+        dataset.mark_started()
         for xv in self.xvals:
             dataset.add_result({self.x.name: xv})
 
@@ -635,13 +736,13 @@ def test_get_parameter_data(scalar_dataset, start, end):
     input_names = ['param_3']
 
     expected_names = {}
-    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
-                                 'param_3']
+    expected_names['param_3'] = ['param_3', 'param_0', 'param_1', 'param_2']
     expected_shapes = {}
     expected_shapes['param_3'] = [(10**3, )]*4
     expected_values = {}
-    expected_values['param_3'] = [np.arange(10000*a, 10000*a+1000)
-                                  for a in range(4)]
+    expected_values['param_3'] = [np.arange(30000, 31000)] + \
+                                 [np.arange(10000*a, 10000*a+1000)
+                                  for a in range(3)]
 
     start, end = limit_data_to_start_end(start, end, input_names,
                                          expected_names, expected_shapes,
@@ -886,16 +987,23 @@ def parameter_test_helper(ds, toplevel_names,
                           end=None):
 
     data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
+    dataframe = ds.get_data_as_pandas_dataframe(*toplevel_names,
+                                                start=start,
+                                                end=end)
+
     all_data = ds.get_parameter_data(start=start, end=end)
+    all_dataframe = ds.get_data_as_pandas_dataframe(start=start, end=end)
 
     all_parameters = list(all_data.keys())
     assert set(data.keys()).issubset(set(all_parameters))
+    assert list(data.keys()) == list(dataframe.keys())
     assert len(data.keys()) == len(toplevel_names)
+    assert len(dataframe.keys()) == len(toplevel_names)
 
-    verify_data_dict(data, toplevel_names, expected_names, expected_shapes,
-                     expected_values)
-    verify_data_dict(all_data, toplevel_names, expected_names, expected_shapes,
-                     expected_values)
+    verify_data_dict(data, dataframe, toplevel_names, expected_names,
+                     expected_shapes, expected_values)
+    verify_data_dict(all_data, all_dataframe, toplevel_names, expected_names,
+                     expected_shapes, expected_values)
 
     # Now lets remove a random element from the list
     # We do this one by one until there is only one element in the list
@@ -909,8 +1017,11 @@ def parameter_test_helper(ds, toplevel_names,
 
         subset_data = ds.get_parameter_data(*subset_names,
                                             start=start, end=end)
-        verify_data_dict(subset_data, subset_names, expected_names,
-                         expected_shapes, expected_values)
+        subset_dataframe = ds.get_data_as_pandas_dataframe(*subset_names,
+                                                           start=start,
+                                                           end=end)
+        verify_data_dict(subset_data, subset_dataframe, subset_names,
+                         expected_names, expected_shapes, expected_values)
 
 
 def limit_data_to_start_end(start, end, input_names, expected_names,

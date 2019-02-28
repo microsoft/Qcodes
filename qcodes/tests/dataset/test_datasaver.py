@@ -48,6 +48,7 @@ def test_default_callback(experiment):
         test_set = qc.new_data_set("test-dataset")
         test_set.add_snapshot({'station': ''})
         DataSaver(dataset=test_set, write_period=0, parameters={})
+        test_set.mark_started()
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == '{"station": ""}'
         assert CALLBACK_RUN_ID > 0
@@ -67,6 +68,7 @@ def test_numpy_types(experiment):
     p = ParamSpec("p", "numeric")
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
+    test_set.mark_started()
 
     data_saver = DataSaver(
         dataset=test_set, write_period=0, parameters={"p": p})
@@ -82,10 +84,11 @@ def test_numpy_types(experiment):
     assert data == [[2] for _ in range(len(dtypes))]
 
 
-@given(numeric_type=hst.sampled_from([int, float, np.int8, np.int16, np.int32,
-                                      np.int64, np.float16, np.float32,
-                                      np.float64]))
-def test_saving_numeric_values_as_text(experiment, numeric_type):
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize('numeric_type',
+                         [int, float, np.int8, np.int16, np.int32, np.int64,
+                          np.float16, np.float32, np.float64])
+def test_saving_numeric_values_as_text(numeric_type):
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """
@@ -93,6 +96,7 @@ def test_saving_numeric_values_as_text(experiment, numeric_type):
 
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
+    test_set.mark_started()
 
     data_saver = DataSaver(
         dataset=test_set, write_period=0, parameters={"p": p})

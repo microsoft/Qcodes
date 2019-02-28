@@ -248,7 +248,7 @@ def _populate_results_table(source_conn: ConnectionPlus,
 
 
 def _rewrite_timestamps(target_conn: ConnectionPlus, target_run_id: int,
-                        correct_run_timestamp: float,
+                        correct_run_timestamp: Optional[float],
                         correct_completed_timestamp: Optional[float]) -> None:
     """
     Update the timestamp to match the original one
