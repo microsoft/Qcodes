@@ -116,10 +116,13 @@ class DG1062Channel(InstrumentChannel):
     waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
     """
-    Responses from the machine don't always match the name to set the function, hence a translater
+    Responses from the machine don't always match 
+    the name to set the function, hence a translater
     """
-    waveform_translate = {"HARM":"HARM", "NOISE":"NOIS", "RAMP":"RAMP", "SIN":"SIN", 
-                          "SQU":"SQU", "TRI":"TRI", "USER":"USER", "PULSE":"PULS"}
+    waveform_translate = {"HARM" : "HARM", "NOISE" : "NOIS", 
+                            "RAMP" : "RAMP", "SIN" : "SIN", 
+                            "SQU" : "SQU", "TRI" : "TRI", 
+                            "USER" : "USER", "PULSE" : "PULS"}
     
     waveforms = list(waveform_params.keys())
 
@@ -165,9 +168,10 @@ class DG1062Channel(InstrumentChannel):
                 ),
                 vals.Enum("INF", "MIN", "MAX", "HighZ")
             ),
-            get_parser=lambda value: "HighZ"
-            set_parser=lambda value: "INF" if value == "HighZ" else value,
-            if float(value) > DG1062Channel.max_impedance else float(value)
+            get_parser=(lambda value: "HighZ" 
+                            if float(value) > DG1062Channel.max_impedance
+                            else float(value)),
+            set_parser=lambda value: "INF" if value == "HighZ" else value           
         )
 
         self.add_parameter(
@@ -192,10 +196,16 @@ class DG1062Channel(InstrumentChannel):
         )
         
         self.add_parameter(
-            "dcycle",
+            "duty_cycle",
             get_cmd=self._get_duty_cycle,
             set_cmd=self._set_duty_cycle,
-            vals=vals.Numbers(min_value=1, max_value=99)
+            unit="Percentage",
+            vals=vals.Numbers(min_value=1, max_value=99),
+            docstring=('This functions reads/sets the duty ' 
+                        'cycle for a square and pulse wave '
+                        'since these inheret a duty cycle.\n'
+                        'For other waveforms it will give '
+                        'the user an error')
         )
 
         burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
@@ -219,17 +229,14 @@ class DG1062Channel(InstrumentChannel):
     def apply(self, **kwargs: Dict) ->None:
         """
         Public interface to apply a waveform on the channel
-
         Example:
         >>> gd = DG1062("gd", "TCPIP0::169.254.187.99::inst0::INSTR")
         >>> gd.channels[0].apply(waveform="SIN", freq=1E3, ampl=1.0, offset=0, phase=0)
-
         Valid waveforms are: HARM, NOIS, RAMP, SIN, SQU, TRI, USER, DC, ARB
         To find the correct arguments of each waveform we can e.g. do:
         >>> help(gd.channels[0].sin)
         Notice the lower case when accessing the waveform through convenience
         functions.
-
         If not kwargs are given a dictionary with the current waveform
         parameters are returned.
         """
@@ -305,31 +312,29 @@ class DG1062Channel(InstrumentChannel):
             ["{:7e}".format(params_dict[param]) for param in param_names])
         self.parent.write_raw(string)
         
-    def _get_duty_cycle(self):
+    def _get_duty_cycle(self) -> float:
         """
-        Simple function to extract the duty cycle after checking waveform
+        Reads the duty cycle after checking waveform
         """
-        self.waveform()
-        wf = self.waveform.get_latest()
+        wf = self.waveform()
 
-        if wf == 'PULS' or wf == 'SQU':
+        if wf in ['PULS', 'SQU']:
             duty_cycle = self.parent.ask_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC?")
         else:
-            raise ValueError(f"Can not read duty cycle for current function: {wf}")
+            raise ValueError(f"Current function does not contain duty cycle. Current function: {wf}")
 
         return duty_cycle
 
     def _set_duty_cycle(self,duty_cycle):
         """
-        Simple function to set the duty cycle after checking waveform
+        Sets the duty cycle after checking waveform
         """
-        self.waveform()
-        wf = self.waveform.get_latest()
+        wf = self.waveform()
 
-        if wf == 'PULS' or wf == 'SQU':
+        if wf in ['PULS', 'SQU']:
             self.parent.write_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC {duty_cycle}")
         else:
-            raise ValueError(f"Can not set duty cycle for current function: {wf}")
+            raise ValueError(f"Current function does not have duty cycle hence can not set. Current function: {wf}")
 
 class DG1062(VisaInstrument):
     """
