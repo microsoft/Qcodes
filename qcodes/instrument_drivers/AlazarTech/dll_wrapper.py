@@ -1,7 +1,7 @@
 import ctypes
 import logging
 import re
-from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, Sequence, NewType, List, Any
+from typing import TypeVar, Type, Dict, Callable, NamedTuple, Sequence, NewType, List, Any
 from threading import Lock
 import concurrent
 from functools import partial

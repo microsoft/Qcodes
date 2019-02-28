@@ -1,14 +1,9 @@
-from typing import TypeVar, Type, Dict, Tuple, Callable, NamedTuple, \
-    Sequence, NewType, List, Any
-from threading import Lock
-import concurrent
+from typing import TypeVar, Type, Dict, Tuple
 import logging
 import ctypes
 
-from qcodes.instrument.parameter import Parameter
-from .dll_wrapper import WrappedDll, DllWrapperMeta, Signature
+from .dll_wrapper import WrappedDll, Signature
 from .constants import BOARD_NAMES, REGISTER_READING_PWD, Capability
-from .utils import TraceParameter
 
 
 # Define aliases for ctypes that match Alazar's notation.

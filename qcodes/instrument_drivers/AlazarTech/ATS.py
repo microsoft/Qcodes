@@ -1,16 +1,16 @@
 import ctypes
 import logging
-import numpy as np
 import time
 import os
 import warnings
-from typing import List, Dict, Union, Tuple, Sequence
+from typing import List, Dict, Union, Sequence
 from contextlib import contextmanager
+
+import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI, \
-    CapabilityHelper
+from .ats_api import AlazarATSAPI, CapabilityHelper
 from .utils import TraceParameter
 
 
