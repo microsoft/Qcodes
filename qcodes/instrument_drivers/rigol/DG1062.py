@@ -199,7 +199,7 @@ class DG1062Channel(InstrumentChannel):
             "duty_cycle",
             get_cmd=self._get_duty_cycle,
             set_cmd=self._set_duty_cycle,
-            unit="Percentage",
+            unit="%",
             vals=vals.Numbers(min_value=1, max_value=99),
             docstring=('This functions reads/sets the duty ' 
                         'cycle for a square and pulse wave '
