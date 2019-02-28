@@ -31,7 +31,7 @@ def scalar_dataset(dataset):
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
-    dataset.mark_complete()
+    dataset.mark_completed()
     yield dataset
 
 
@@ -148,5 +148,5 @@ def standalone_parameters_dataset(dataset):
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
-    dataset.mark_complete()
+    dataset.mark_completed()
     yield dataset
