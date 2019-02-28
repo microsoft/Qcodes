@@ -705,7 +705,6 @@ class AlazarTech_ATS(Instrument):
         """
         Return the number of channels for a specific channel mask
 
-
         Each single channel is represented by a bitarray with one
         non zero entry i.e. powers of two. All multichannel masks can be
         constructed by summing the single channel ones. However, not all
@@ -717,7 +716,8 @@ class AlazarTech_ATS(Instrument):
         """
         one_channels = tuple(2**i for i in range(16))
         two_channels = (3, 5, 6, 9, 10, 12)
-        four_channels = (255,)
+        four_channels = (15,)
+        eight_channels = (255,)
         sixteen_channels = (65535,)
 
         if byte_rep in one_channels:
@@ -726,6 +726,8 @@ class AlazarTech_ATS(Instrument):
             return 2
         elif byte_rep in four_channels:
             return 4
+        elif byte_rep in eight_channels:
+            return 8
         elif byte_rep in sixteen_channels:
             return 16
         else:
