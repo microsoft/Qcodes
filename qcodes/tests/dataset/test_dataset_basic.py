@@ -1,6 +1,7 @@
 import itertools
 from copy import copy
 import re
+from unittest.mock import patch
 import random
 
 import pytest
@@ -93,7 +94,7 @@ def test_dataset_states():
     with pytest.raises(RuntimeError, match='Can not mark DataSet as complete '
                                            'before it has '
                                            'been marked as started.'):
-        ds.mark_complete()
+        ds.mark_completed()
 
     match = ('This DataSet has not been marked as started. '
              'Please mark the DataSet as started before '
@@ -123,7 +124,7 @@ def test_dataset_states():
     ds.add_result({parameter.name: 1})
     ds.add_results([{parameter.name: 1}])
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     assert ds.pristine is False
     assert ds.running is False
@@ -363,7 +364,7 @@ def test_add_data_1d():
         mydataset.add_result({'y': 500})
 
     assert mydataset.completed is False
-    mydataset.mark_complete()
+    mydataset.mark_completed()
     assert mydataset.completed is True
 
     with pytest.raises(CompletedError):
@@ -712,6 +713,15 @@ class TestGetData:
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
+
+
+def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
+    """Test that the deprecated `mark_complete` calls `mark_completed`"""
+    ds = DataSet()
+
+    with patch.object(ds, 'mark_completed', autospec=True) as mark_completed:
+        pytest.deprecated_call(ds.mark_complete)
+        mark_completed.assert_called_once()
 
 
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
