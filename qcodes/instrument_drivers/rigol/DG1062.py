@@ -119,10 +119,10 @@ class DG1062Channel(InstrumentChannel):
     Responses from the machine don't always match 
     the name to set the function, hence a translater
     """
-    waveform_translate = {"HARM" : "HARM", "NOISE" : "NOIS", 
-                            "RAMP" : "RAMP", "SIN" : "SIN", 
-                            "SQU" : "SQU", "TRI" : "TRI", 
-                            "USER" : "USER", "PULSE" : "PULS"}
+    waveform_translate = {"HARM": "HARM", "NOISE": "NOIS", 
+                          "RAMP": "RAMP", "SIN": "SIN", 
+                          "SQU": "SQU",   "TRI": "TRI", 
+                          "USER": "USER", "PULSE": "PULS"}
     
     waveforms = list(waveform_params.keys())
 
