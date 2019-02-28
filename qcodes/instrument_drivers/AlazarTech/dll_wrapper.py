@@ -14,7 +14,7 @@ from .constants import API_SUCCESS, ERROR_CODES, ReturnCode
 logger = logging.getLogger(__name__)
 
 TApi = TypeVar("TApi", bound="AlazarATSAPI")
-ReturnCode = NewType('ReturnCode', ctypes.c_uint)
+CReturnCode = NewType('CReturnCode', ctypes.c_uint)
 
 
 ## FUNCTIONS ##
@@ -80,8 +80,9 @@ def check_error_code(return_code: int, func, arguments
                     return_code, func.__name__, argrepr))
         raise RuntimeError(
             'error {}: {} from function {} with args: {}'.format(
-                return_code, ERROR_CODES[ReturnCode(
-                    return_code)], func.__name__,
+                return_code, 
+                ERROR_CODES[ReturnCode(return_code)],
+                func.__name__,
                 argrepr))
 
     return arguments
@@ -95,7 +96,7 @@ def convert_bytes_to_str(output: bytes, func, arguments) -> str:
 
 
 class Signature(NamedTuple):
-    return_type: Type = ReturnCode
+    return_type: Type = CReturnCode
     argument_types: Sequence[Type] = ()
 
 
@@ -181,7 +182,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
             c_func.argtypes = signature.argument_types
 
             ret_type = signature.return_type
-            if ret_type is ReturnCode:
+            if ret_type is CReturnCode:
                 ret_type = ret_type.__supertype__
                 c_func.errcheck = check_error_code
             elif ret_type in (ctypes.c_char_p, ctypes.c_char, 
