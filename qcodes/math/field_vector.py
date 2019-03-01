@@ -39,7 +39,7 @@ class FieldVector(object):
                 (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
                 values for meaningful computation
         """
-        self._x: int = x
+        self._x = x
         self._y = y
         self._z = z
 
