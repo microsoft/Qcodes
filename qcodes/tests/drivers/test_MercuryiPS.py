@@ -5,6 +5,7 @@ import numpy as np
 import hypothesis as hst
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
+from qcodes.utils.async_utils import sync
 import qcodes.instrument.sims as sims
 from qcodes.math.field_vector import FieldVector
 
@@ -153,7 +154,8 @@ def test_ramp_safely(driver, x, y, z, caplog):
 
     with caplog.at_level(logging.DEBUG, logger='qcodes.instrument.visa'):
         caplog.clear()
-        driver._ramp_safely()
+        sync(driver._ramp_safely())
         ramp_order = get_ramp_order(caplog.records)
 
     assert ramp_order == list(exp_order)
+
