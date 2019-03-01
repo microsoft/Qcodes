@@ -800,18 +800,21 @@ def test_datasaver_foul_input():
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_unsized_arrays(N):
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+def test_datasaver_unsized_arrays(N, storage_type):
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
 
     meas.register_custom_parameter(name='freqax',
                                    label='Frequency axis',
-                                   unit='Hz')
+                                   unit='Hz',
+                                   paramtype=storage_type)
     meas.register_custom_parameter(name='signal',
                                    label='qubit signal',
                                    unit='Majorana number',
-                                   setpoints=('freqax',))
+                                   setpoints=('freqax',),
+                                   paramtype=storage_type)
     # note that np.array(some_number) is not the same as the number
     # its also not an array with a shape. Check here that we handle it
     # correctly
@@ -832,6 +835,10 @@ def test_datasaver_unsized_arrays(N):
     np.random.seed(0)
     expected_signal = np.random.randn(N)
     expected_freqax = np.linspace(1e6, 2e6, N)
+
+    if storage_type == 'array':
+        expected_freqax = expected_freqax.reshape((N, 1))
+        expected_signal = expected_signal.reshape((N, 1))
 
     assert_allclose(loaded_data['freqax'], expected_freqax)
     assert_allclose(loaded_data['signal'], expected_signal)
