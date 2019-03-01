@@ -929,14 +929,6 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
-            self.add_parameter('signal_output{}_amplitude'.format(sigout),
-                                label='Signal output amplitude',
-                                set_cmd=partial(self._sigout_setter,
-                                                sigout-1, 1, outputamps[sigout]),
-                                get_cmd=partial(self._sigout_getter,
-                                               sigout-1, 1, outputamps[sigout]),
-                                unit='V')
-
             self.add_parameter('signal_output{}_ampdef'.format(sigout),
                                 get_cmd=None, set_cmd=None,
                                 initial_value='Vpk',
@@ -970,16 +962,27 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
-            self.add_parameter('signal_output{}_enable'.format(sigout),
-                                label="Enable signal output's amplitude.",
-                                set_cmd=partial(self._sigout_setter,
-                                                sigout-1, 0,
-                                                outputampenable[sigout]),
-                                get_cmd=partial(self._sigout_getter,
-                                                sigout-1, 0,
-                                                outputampenable[sigout]),
-                                val_mapping={'ON': 1, 'OFF': 0},
-                                vals=vals.Enum('ON', 'OFF') )
+            for sigout in range(1, 9):
+                self.add_parameter('signal_output{}_enable'.format(sigout),
+                                   label="Enable signal output's amplitude.",
+                                   set_cmd=partial(self._sigout_setter,
+                                                   sigout - 1, 0,
+                                                   outputampenable[sigout]),
+                                   get_cmd=partial(self._sigout_getter,
+                                                   sigout - 1, 0,
+                                                   outputampenable[sigout]),
+                                   val_mapping={'ON': 1, 'OFF': 0},
+                                   vals=vals.Enum('ON', 'OFF'))
+
+                self.add_parameter('signal_output{}_amplitude'.format(sigout),
+                                   label='Signal output amplitude',
+                                   set_cmd=partial(self._sigout_setter,
+                                                   sigout - 1, 1,
+                                                   outputamps[sigout]),
+                                   get_cmd=partial(self._sigout_getter,
+                                                   sigout - 1, 1,
+                                                   outputamps[sigout]),
+                                   unit='V')
 
         auxoutputchannels = ChannelList(self, "AUXOutputChannels", AUXOutputChannel,
                                snapshotable=False)
