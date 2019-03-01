@@ -1043,10 +1043,11 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
                     expected_data)
 
 
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_missing_reg_raises(
         channel_array_instrument,
-        DAC):
+        DAC, storage_type):
     """
     Test that if for whatever reason new setpoints are added after
     registering but before adding this raises correctly
@@ -1060,7 +1061,7 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
     old_setpoints = param.setpoints
     param.setpoints = ()
     meas = Measurement()
-    meas.register_parameter(param)
+    meas.register_parameter(param, paramtype=storage_type)
 
     param.setpoints = old_setpoints
     with meas.run() as datasaver:
@@ -1072,10 +1073,11 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
         channel_array_instrument,
-        DAC):
+        DAC, storage_type):
     """
     Test that if for whatever reason the setpoints are removed between
     registering and adding this raises correctly. This tests tests that
@@ -1088,7 +1090,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
     chan.dummy_stop(10)
 
     meas = Measurement()
-    meas.register_parameter(param)
+    meas.register_parameter(param, paramtype=storage_type)
 
     param.setpoints = ()
 
@@ -1105,10 +1107,11 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
             datasaver.add_result(*expand_setpoints_helper(param))
 
 
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_reg_but_missing(
         channel_array_instrument,
-        DAC):
+        DAC, storage_type):
     """
     Test that if for whatever reason the setpoints are removed between
     registering and adding this raises correctly. This tests that
@@ -1125,7 +1128,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
     param.setpoints = (old_setpoints[0], someparam)
 
     meas = Measurement()
-    meas.register_parameter(param)
+    meas.register_parameter(param, paramtype=storage_type)
 
     param.setpoints = old_setpoints
     with meas.run() as datasaver:
@@ -1144,29 +1147,30 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N):
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
+                                          storage_type):
     """
-    Test that storing array parameters inside a loop with the sqlite
-    Array type works as expected
+    Test that storing array parameters inside a loop works as expected
     """
     meas = Measurement()
 
     array_param = channel_array_instrument.A.dummy_array_parameter
 
-    meas.register_parameter(array_param, paramtype='array')
+    meas.register_parameter(array_param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
     assert meas.parameters[str(array_param)].depends_on == dependency_name
-    assert meas.parameters[str(array_param)].type == 'array'
-    assert meas.parameters[dependency_name].type == 'array'
+    assert meas.parameters[str(array_param)].type == storage_type
+    assert meas.parameters[dependency_name].type == storage_type
 
     # Now for a real measurement
 
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1, paramtype='numeric')
-    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype='array')
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype=storage_type)
 
     assert len(meas.parameters) == 3
 
@@ -1176,37 +1180,64 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N):
         for set_v in dac_datapoints:
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
-    assert datasaver.points_written == N
+
+    if storage_type == 'numeric':
+        expected_npoints = N*M
+    elif storage_type == 'array':
+        expected_npoints = N
+
+    assert datasaver.points_written == expected_npoints
     ds = load_by_id(datasaver.run_id)
 
     data_num = ds.get_data('dummy_dac_ch1')
-    assert len(data_num) == N
+    assert len(data_num) == expected_npoints
 
     setpoint_arrays = ds.get_data('dummy_channel_inst_ChanA_this_setpoint')
     data_arrays = ds.get_data('dummy_channel_inst_ChanA_dummy_array_parameter')
-    assert len(setpoint_arrays) == N
-    assert len(data_arrays) == N
+    assert len(setpoint_arrays) == expected_npoints
+    assert len(data_arrays) == expected_npoints
 
-    for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
-        assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
-        assert_array_equal(data_arrays[0], np.array([2., 2., 2., 2., 2.]))
+    data = datasaver.dataset.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
 
-    datadicts = get_data_by_id(datasaver.run_id)
-    # one dependent parameter
-    assert len(datadicts) == 1
-    datadicts = datadicts[0]
-    assert len(datadicts) == len(meas.parameters)
-    for datadict in datadicts:
-        if datadict['name'] == 'dummy_dac_ch1':
-            expected_data = np.repeat(dac_datapoints, M)
-        if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
-            expected_data = np.tile(np.linspace(5, 9, 5), N)
-        if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
-            expected_data = np.empty(N * M)
-            expected_data[:] = 2.
-        assert_allclose(datadict['data'], expected_data)
+    expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
+    expected_sp_data = np.tile(array_param.setpoints[0], N)
+    expected_output = np.array([array_param.get() for _ in range(N)]).reshape(
+        (N * M))
 
-        assert datadict['data'].shape == (N * M,)
+    if storage_type == 'array':
+        expected_dac_data = expected_dac_data.reshape(N, M)
+        expected_sp_data = expected_sp_data.reshape(N, M)
+        expected_output = expected_output.reshape(N, M)
+
+    assert_allclose(data['dummy_dac_ch1'], expected_dac_data)
+    assert_allclose(data['dummy_channel_inst_ChanA_this_setpoint'],
+                    expected_sp_data)
+    assert_allclose(data['dummy_channel_inst_ChanA_dummy_array_parameter'],
+                    expected_output)
+
+    if storage_type == 'array':
+        # for now keep testing the old way of getting data (used by
+        # plot_by_id). Hopefully this will eventually be deprecated
+        for data_arrays, setpoint_array in zip(data_arrays, setpoint_arrays):
+            assert_array_equal(setpoint_array[0], np.linspace(5, 9, 5))
+            assert_array_equal(data_arrays[0], np.array([2., 2., 2., 2., 2.]))
+
+        datadicts = get_data_by_id(datasaver.run_id)
+        # one dependent parameter
+        assert len(datadicts) == 1
+        datadicts = datadicts[0]
+        assert len(datadicts) == len(meas.parameters)
+        for datadict in datadicts:
+            if datadict['name'] == 'dummy_dac_ch1':
+                expected_data = np.repeat(dac_datapoints, M)
+            if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
+                expected_data = np.tile(np.linspace(5, 9, 5), N)
+            if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
+                expected_data = np.empty(N * M)
+                expected_data[:] = 2.
+            assert_allclose(datadict['data'], expected_data)
+
+            assert datadict['data'].shape == (N * M,)
 
 
 def test_datasaver_multidim_array(experiment):  # noqa: F811
