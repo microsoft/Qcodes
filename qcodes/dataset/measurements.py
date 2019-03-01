@@ -176,7 +176,9 @@ class DataSaver:
             if any(isinstance(value, typ) for typ in array_like_types):
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
-                # we want to insert the casted version
+                # we want to always use the np array going forward
+                # note that the actual cast to np array is done
+                # by `np.atleast_1d` not by `cast`
                 res[i] = (parameter, value)
                 array_size = len(value.ravel())
                 if param_spec.type != 'array' and array_size > 1:
