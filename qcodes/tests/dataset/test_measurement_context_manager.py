@@ -869,11 +869,17 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M):
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 def test_datasaver_arrayparams_not_ndarray(SpectrumAnalyzer, DAC, N, M,
                                            param_type, storage_type):
+    """
+    test that data is stored correctly for array parameters that
+    return non numpy arrays
+    """
 
     if param_type == 'list':
         param = SpectrumAnalyzer.listspectrum
     elif param_type == 'tuple':
         param = SpectrumAnalyzer.tuplespectrum
+    else:
+        raise RuntimeError("Invalid storage_type")
 
     meas = Measurement()
 
