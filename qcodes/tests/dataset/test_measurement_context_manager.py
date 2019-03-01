@@ -824,30 +824,34 @@ def test_datasaver_unsized_arrays(N):
             datasaver.add_result(('freqax', myfreq), ('signal', mysignal))
 
     assert datasaver.points_written == N
+    # todo check the data here
 
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M):
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
+                                    storage_type):
     spectrum = SpectrumAnalyzer.spectrum
 
     meas = Measurement()
 
-    meas.register_parameter(spectrum)
+    meas.register_parameter(spectrum, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
     assert meas.parameters[str(spectrum)].depends_on == 'dummy_SA_Frequency'
-    assert meas.parameters[str(spectrum)].type == 'numeric'
-    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+    assert meas.parameters[str(spectrum)].type == storage_type
+    assert meas.parameters['dummy_SA_Frequency'].type == storage_type
 
     # Now for a real measurement
 
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
-    meas.register_parameter(spectrum, setpoints=[DAC.ch1])
+    meas.register_parameter(spectrum, setpoints=[DAC.ch1],
+                            paramtype=storage_type)
 
     assert len(meas.parameters) == 3
 
@@ -858,7 +862,10 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M):
             datasaver.add_result((DAC.ch1, set_v),
                                  (spectrum, spectrum.get()))
 
-    assert datasaver.points_written == N * M
+    if storage_type == 'numeric':
+        assert datasaver.points_written == N * M
+    elif storage_type == 'array':
+        assert datasaver.points_written == N
 
 
 @settings(max_examples=5, deadline=None)
