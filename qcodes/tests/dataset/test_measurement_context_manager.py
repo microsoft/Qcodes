@@ -975,13 +975,15 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     assert len(datadicts) == len(meas.parameters)
     for datadict in datadicts:
         assert datadict['data'].shape == (N * M,)
+    # todo check data here
 
 
 @settings(max_examples=5, deadline=None)
 @given(n=hst.integers(min_value=5, max_value=500))
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints(channel_array_instrument,
-                                            DAC, n):
+                                            DAC, n, storage_type):
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -989,14 +991,14 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     chan.dummy_start(0)
     chan.dummy_stop(100)
     meas = Measurement()
-    meas.register_parameter(param)
+    meas.register_parameter(param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_dummy_sp_axis'
 
     assert meas.parameters[str(param)].depends_on == dependency_name
-    assert meas.parameters[str(param)].type == 'numeric'
-    assert meas.parameters[dependency_name].type == 'numeric'
+    assert meas.parameters[str(param)].type == storage_type
+    assert meas.parameters[dependency_name].type == storage_type
 
     # Now for a real measurement
     with meas.run() as datasaver:
@@ -1004,27 +1006,40 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         # so we can test that we get the expected numbers
         np.random.seed(random_seed)
         datasaver.add_result(*expand_setpoints_helper(param))
-    assert datasaver.points_written == n
+    if storage_type == 'numeric':
+        expected_points_written = n
+    elif storage_type == 'array':
+        expected_points_written = 1
+
+    assert datasaver.points_written == expected_points_written
 
     expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
     ds = load_by_id(datasaver.run_id)
     for param in expected_params:
         data = ds.get_data(param)
-        assert len(data) == n
+        assert len(data) == expected_points_written
         assert len(data[0]) == 1
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
+
     subdata = datadict[
         'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints']
-    assert_allclose(subdata[dependency_name],
-                    np.linspace(chan.dummy_start(),
-                                chan.dummy_stop(),
-                                chan.dummy_n_points()))
+
+    expected_dep_data = np.linspace(chan.dummy_start(),
+                                    chan.dummy_stop(),
+                                    chan.dummy_n_points())
     np.random.seed(random_seed)
+    expected_data = np.random.rand(n)
+    if storage_type == 'array':
+        expected_dep_data = expected_dep_data.reshape((1,
+                                                       chan.dummy_n_points()))
+        expected_data = expected_data.reshape((1, chan.dummy_n_points()))
+
+    assert_allclose(subdata[dependency_name], expected_dep_data)
     assert_allclose(subdata['dummy_channel_inst_ChanA_'
                             'dummy_parameter_with_setpoints'],
-                    np.random.rand(n))
+                    expected_data)
 
 
 @pytest.mark.usefixtures("experiment")
