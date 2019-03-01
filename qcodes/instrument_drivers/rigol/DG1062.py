@@ -116,12 +116,12 @@ class DG1062Channel(InstrumentChannel):
     waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
 
     """
-    Responses from the machine don't always match 
+    Responses from the machine don't always match
     the name to set the function, hence a translater
     """
-    waveform_translate = {"HARM": "HARM", "NOISE": "NOIS", 
-                          "RAMP": "RAMP", "SIN": "SIN", 
-                          "SQU": "SQU",   "TRI": "TRI", 
+    waveform_translate = {"HARM": "HARM", "NOISE": "NOIS",
+                          "RAMP": "RAMP", "SIN": "SIN",
+                          "SQU": "SQU",   "TRI": "TRI",
                           "USER": "USER", "PULSE": "PULS"}
     
     waveforms = list(waveform_params.keys())
@@ -168,10 +168,10 @@ class DG1062Channel(InstrumentChannel):
                 ),
                 vals.Enum("INF", "MIN", "MAX", "HighZ")
             ),
-            get_parser=(lambda value: "HighZ" 
+            get_parser=(lambda value: "HighZ"
                             if float(value) > DG1062Channel.max_impedance
                             else float(value)),
-            set_parser=lambda value: "INF" if value == "HighZ" else value           
+            set_parser=lambda value: "INF" if value == "HighZ" else value
         )
 
         self.add_parameter(
@@ -201,7 +201,7 @@ class DG1062Channel(InstrumentChannel):
             set_cmd=self._set_duty_cycle,
             unit="%",
             vals=vals.Numbers(min_value=1, max_value=99),
-            docstring=('This functions reads/sets the duty ' 
+            docstring=('This functions reads/sets the duty '
                         'cycle for a square and pulse wave '
                         'since these inheret a duty cycle.\n'
                         'For other waveforms it will give '
@@ -311,7 +311,7 @@ class DG1062Channel(InstrumentChannel):
         string += ",".join(
             ["{:7e}".format(params_dict[param]) for param in param_names])
         self.parent.write_raw(string)
-        
+
     def _get_duty_cycle(self) -> float:
         """
         Reads the duty cycle after checking waveform
