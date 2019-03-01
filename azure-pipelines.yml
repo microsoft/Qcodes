@@ -55,6 +55,12 @@ jobs:
         inputs:
           testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
+      - task: PublishCodeCoverageResults@1
+        condition: always() # this step will always run, even if the pipeline is cancelled
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
+          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
@@ -69,8 +75,3 @@ jobs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
-      - task: PublishCodeCoverageResults@1
-        inputs:
-          codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
