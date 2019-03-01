@@ -25,7 +25,7 @@ jobs:
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
-        displayName: "Installation"
+        displayName: "Install environment, qcodes"
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
@@ -48,7 +48,7 @@ jobs:
           CALL conda activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
-        displayName: "Pytest"
+        displayName: "Run pytest"
         condition: succeededOrFailed()
       - task: PublishTestResults@1
         condition: succeededOrFailed()
@@ -56,6 +56,7 @@ jobs:
           testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
+        displayName: "Publish code coverage results"
         condition: succeededOrFailed()
         inputs:
           codeCoverageTool: Cobertura
@@ -68,9 +69,10 @@ jobs:
           REM Turn warnings into errors
           set SPHINXOPTS=-W -v
           make.bat htmlapi
-        displayName: "docsbuild"
+        displayName: "Build docs"
         condition: succeededOrFailed()
       - task: PublishBuildArtifacts@1
+        displayName: "Publish build docs to Azure DevOps"
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
