@@ -817,14 +817,24 @@ def test_datasaver_unsized_arrays(N):
     # correctly
     with meas.run() as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
+        np.random.seed(0)
         signal = np.random.randn(N)
         for i in range(N):
             myfreq = np.array(freqax[i])
+            assert myfreq.shape == ()
             mysignal = np.array(signal[i])
+            assert mysignal.shape == ()
             datasaver.add_result(('freqax', myfreq), ('signal', mysignal))
 
     assert datasaver.points_written == N
-    # todo check the data here
+    loaded_data = datasaver.dataset.get_parameter_data()['signal']
+
+    np.random.seed(0)
+    expected_signal = np.random.randn(N)
+    expected_freqax = np.linspace(1e6, 2e6, N)
+
+    assert_allclose(loaded_data['freqax'], expected_freqax)
+    assert_allclose(loaded_data['signal'], expected_signal)
 
 
 @settings(max_examples=5, deadline=None)
