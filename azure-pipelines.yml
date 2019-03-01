@@ -51,6 +51,7 @@ jobs:
         displayName: "Run pytest"
         condition: succeededOrFailed()
       - task: PublishTestResults@1
+        displayName: "Publish test results"
         condition: succeededOrFailed()
         inputs:
           testResultsFiles: 'qcodes\test-*.xml'
