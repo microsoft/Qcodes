@@ -51,12 +51,12 @@ jobs:
         displayName: "Pytest"
         condition: succeededOrFailed()
       - task: PublishTestResults@1
-        condition: always() # this step will always run, even if the pipeline is cancelled
+        condition: succeededOrFailed()
         inputs:
           testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
-        condition: always() # this step will always run, even if the pipeline is cancelled
+        condition: succeededOrFailed()
         inputs:
           codeCoverageTool: Cobertura
           summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
