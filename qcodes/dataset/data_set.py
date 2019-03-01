@@ -614,7 +614,7 @@ class DataSet(Sized):
 
         set_run_timestamp(self.conn, self.run_id)
 
-    def mark_complete(self) -> None:
+    def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
         """
@@ -624,6 +624,10 @@ class DataSet(Sized):
         self.completed = True
         for sub in self.subscribers.values():
             sub.done_callback()
+
+    @deprecate(alternative='mark_completed')
+    def mark_complete(self):
+        self.mark_completed()
 
     def add_result(self, results: Dict[str, VALUE]) -> int:
         """
@@ -826,7 +830,7 @@ class DataSet(Sized):
             Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the DataSet for the specified parameters
-        and their dependencies as a dict of :py:class:`pandas.DataFrame`\s
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
         Each element in the dict is indexed by the names of the requested
         parameters.
 
@@ -841,7 +845,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame`\s is
+        of the DataSet – then a dict of empty :py:class:`pandas.DataFrame` s is
         returned.
 
         Args:
@@ -856,7 +860,7 @@ class DataSet(Sized):
 
         Returns:
             Dictionary from requested parameter names to
-            :py:class:`pandas.DataFrame`\s with the requested parameter as
+            :py:class:`pandas.DataFrame` s with the requested parameter as
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """

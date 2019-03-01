@@ -50,7 +50,7 @@ def test_default_callback():
         test_set.add_metadata('snapshot', 123)
         DataSaver(dataset=test_set, write_period=0, parameters={})
         test_set.mark_started()
-        test_set.mark_complete()
+        test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == 123
         assert CALLBACK_RUN_ID > 0
         assert CALLBACK_COUNT > 0

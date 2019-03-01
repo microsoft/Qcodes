@@ -74,7 +74,7 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
-        source_dataset.mark_complete()
+        source_dataset.mark_completed()
 
     source_path = path_to_dbfile(source_conn)
     target_path = path_to_dbfile(target_conn)
@@ -126,7 +126,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
     source_dataset.add_metadata('goodness', 'fair')
     source_dataset.add_metadata('test', True)
 
-    source_dataset.mark_complete()
+    source_dataset.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
@@ -190,7 +190,7 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
-        source_dataset.mark_complete()
+        source_dataset.mark_completed()
 
     # make a new experiment with 1 run
 
@@ -206,7 +206,7 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     for val in range(10):
         ds.add_result({ps.name: val for ps in some_paramspecs[2].values()})
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     source_path = path_to_dbfile(source_conn)
     target_path = path_to_dbfile(target_conn)
@@ -289,7 +289,7 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
-        source_dataset.mark_complete()
+        source_dataset.mark_completed()
 
     # make 5 runs in second experiment
 
@@ -307,7 +307,7 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
-        source_dataset.mark_complete()
+        source_dataset.mark_completed()
 
     run_ids = exp_1_run_ids + exp_2_run_ids
     source_exp_ids = np.unique([1, 2])
@@ -333,7 +333,7 @@ def test_extracting_dataless_run(two_empty_temp_db_connections,
 
     source_ds = DataSet(conn=source_conn)
     source_ds.mark_started()
-    source_ds.mark_complete()
+    source_ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds.run_id)
 
@@ -360,7 +360,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     source_ds_1_1.mark_started()
     source_ds_1_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds_1_1.mark_complete()
+    source_ds_1_1.mark_completed()
 
     source_exp2 = Experiment(conn=source_conn)
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
@@ -369,7 +369,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     source_ds_2_1.mark_started()
     source_ds_2_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds_2_1.mark_complete()
+    source_ds_2_1.mark_completed()
     source_ds_2_2 = DataSet(conn=source_conn,
                             exp_id=source_exp2.exp_id,
                             name="customname")
@@ -378,7 +378,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     source_ds_2_2.mark_started()
     source_ds_2_2.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds_2_2.mark_complete()
+    source_ds_2_2.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
@@ -407,7 +407,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     source_ds_1_1.mark_started()
     source_ds_1_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds_1_1.mark_complete()
+    source_ds_1_1.mark_completed()
 
     source_exp2 = Experiment(conn=source_conn)
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
@@ -416,7 +416,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     source_ds_2_1.mark_started()
     source_ds_2_1.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds_2_1.mark_complete()
+    source_ds_2_1.mark_completed()
     source_ds_2_2 = DataSet(conn=source_conn,
                             exp_id=source_exp2.exp_id,
                             name="customname")
@@ -425,7 +425,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     source_ds_2_2.mark_started()
     source_ds_2_2.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds_2_2.mark_complete()
+    source_ds_2_2.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
@@ -478,7 +478,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
     source_ds.mark_started()
     source_ds.add_result({ps.name: 0.0
                               for ps in some_paramspecs[2].values()})
-    source_ds.mark_complete()
+    source_ds.mark_completed()
 
     with raise_if_file_changed(fixturepath):
         with pytest.warns(UserWarning) as warning:
@@ -521,7 +521,7 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
         for val in range(10):
             source_dataset.add_result({ps.name: val
                                        for ps in some_paramspecs[2].values()})
-        source_dataset.mark_complete()
+        source_dataset.mark_completed()
 
     sql = """
           UPDATE experiments
@@ -600,7 +600,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
     source_ds_1.mark_started()
     source_ds_1.add_result({ps.name: 2.1
                             for ps in some_paramspecs[2].values()})
-    source_ds_1.mark_complete()
+    source_ds_1.mark_completed()
 
     source_ds_2 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
     for ps in some_paramspecs[2].values():
@@ -653,7 +653,7 @@ def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs, inst):
     source_ds.mark_started()
     source_ds.add_result({ps.name: 2.1
                           for ps in some_paramspecs[2].values()})
-    source_ds.mark_complete()
+    source_ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, 1)
 
