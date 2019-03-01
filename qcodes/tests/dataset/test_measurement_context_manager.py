@@ -846,11 +846,12 @@ def test_datasaver_unsized_arrays(N, storage_type):
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500),
-       M=hst.integers(min_value=4, max_value=250))
+       M=hst.integers(min_value=4, max_value=250),
+       seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
-                                    storage_type):
+                                    storage_type, seed):
     spectrum = SpectrumAnalyzer.spectrum
 
     meas = Measurement()
@@ -874,6 +875,8 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
 
     spectrum.npts = M
 
+    np.random.seed(seed)
+    # seed the rng so we can get the same results below
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
@@ -883,6 +886,23 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
         assert datasaver.points_written == N * M
     elif storage_type == 'array':
         assert datasaver.points_written == N
+    data = datasaver.dataset.get_parameter_data()['dummy_SA_spectrum']
+
+    np.random.seed(seed)
+    expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
+    expected_freq_axis = np.tile(spectrum.setpoints[0], N)
+    expected_output = np.array([spectrum.get() for _ in range(N)]).reshape(
+        (N * M))
+
+    if storage_type == 'array':
+        expected_dac_data = expected_dac_data.reshape(N, M)
+        expected_freq_axis = expected_freq_axis.reshape(N, M)
+        expected_output = expected_output.reshape(N, M)
+
+    assert_allclose(data['dummy_dac_ch1'], expected_dac_data)
+    assert_allclose(data['dummy_SA_Frequency'], expected_freq_axis)
+    assert_allclose(data['dummy_SA_spectrum'], expected_output)
+
 
 
 @settings(max_examples=5, deadline=None)
