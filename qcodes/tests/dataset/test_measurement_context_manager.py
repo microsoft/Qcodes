@@ -849,11 +849,11 @@ def test_datasaver_unsized_arrays(N, storage_type):
        M=hst.integers(min_value=4, max_value=250),
        seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize("param_type", ['array', 'tuple', 'list'])
+@pytest.mark.parametrize("param_type", ['np_array', 'tuple', 'list'])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
-                                           param_type, storage_type,
-                                           seed):
+                               param_type, storage_type,
+                               seed):
     """
     test that data is stored correctly for array parameters that
     return numpy arrays, lists and tuples. Stored both as arrays and
@@ -866,7 +866,7 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
     elif param_type == 'tuple':
         spectrum = SpectrumAnalyzer.tuplespectrum
         spectrum_name = 'dummy_SA_tuplespectrum'
-    elif param_type == 'array':
+    elif param_type == 'np_array':
         spectrum = SpectrumAnalyzer.spectrum
         spectrum_name = 'dummy_SA_spectrum'
     else:
