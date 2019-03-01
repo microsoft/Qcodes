@@ -865,68 +865,45 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M):
 @given(N=hst.integers(min_value=5, max_value=500),
        M=hst.integers(min_value=4, max_value=250))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_arrayparams_lists(SpectrumAnalyzer, DAC, N, M):
-    lspec = SpectrumAnalyzer.listspectrum
+@pytest.mark.parametrize("param_type", ['tuple', 'list'])
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+def test_datasaver_arrayparams_not_ndarray(SpectrumAnalyzer, DAC, N, M,
+                                           param_type, storage_type):
+
+    if param_type == 'list':
+        param = SpectrumAnalyzer.listspectrum
+    elif param_type == 'tuple':
+        param = SpectrumAnalyzer.tuplespectrum
 
     meas = Measurement()
 
-    meas.register_parameter(lspec)
+    meas.register_parameter(param, paramtype=storage_type)
+
     assert len(meas.parameters) == 2
-    assert meas.parameters[str(lspec)].depends_on == 'dummy_SA_Frequency'
-    assert meas.parameters[str(lspec)].type == 'numeric'
-    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
+    assert meas.parameters[str(param)].depends_on == 'dummy_SA_Frequency'
+    assert meas.parameters[str(param)].type == storage_type
+    assert meas.parameters['dummy_SA_Frequency'].type == storage_type
 
     # Now for a real measurement
 
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
-    meas.register_parameter(lspec, setpoints=[DAC.ch1])
+    meas.register_parameter(param, setpoints=[DAC.ch1], paramtype=storage_type)
 
     assert len(meas.parameters) == 3
 
-    lspec.npts = M
+    param.npts = M
 
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
-                                 (lspec, lspec.get()))
+                                 (param, param.get()))
 
-    assert datasaver.points_written == N * M
-
-
-@settings(max_examples=5, deadline=None)
-@given(N=hst.integers(min_value=5, max_value=500),
-       M=hst.integers(min_value=4, max_value=250))
-@pytest.mark.usefixtures("experiment")
-def test_datasaver_arrayparams_tuples(SpectrumAnalyzer, DAC, N, M):
-    tspec = SpectrumAnalyzer.tuplespectrum
-
-    meas = Measurement()
-
-    meas.register_parameter(tspec)
-    assert len(meas.parameters) == 2
-    assert meas.parameters[str(tspec)].depends_on == 'dummy_SA_Frequency'
-    assert meas.parameters[str(tspec)].type == 'numeric'
-    assert meas.parameters['dummy_SA_Frequency'].type == 'numeric'
-
-    # Now for a real measurement
-
-    meas = Measurement()
-
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(tspec, setpoints=[DAC.ch1])
-
-    assert len(meas.parameters) == 3
-
-    tspec.npts = M
-
-    with meas.run() as datasaver:
-        for set_v in np.linspace(0, 0.01, N):
-            datasaver.add_result((DAC.ch1, set_v),
-                                 (tspec, tspec.get()))
-
-    assert datasaver.points_written == N * M
+    if storage_type == 'numeric':
+        assert datasaver.points_written == N * M
+    elif storage_type == 'array':
+        assert datasaver.points_written == N
 
 
 @settings(max_examples=5, deadline=None)
