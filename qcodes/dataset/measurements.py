@@ -482,6 +482,8 @@ class Runner:
         else:
             raise RuntimeError("No parameters supplied")
 
+        self.ds.mark_started()
+
         # register all subscribers
         for (callble, state) in self.subscribers:
             # We register with minimal waiting time.
@@ -508,7 +510,7 @@ class Runner:
 
         # and finally mark the dataset as closed, thus
         # finishing the measurement
-        self.ds.mark_complete()
+        self.ds.mark_completed()
 
         self.ds.unsubscribe_all()
 
