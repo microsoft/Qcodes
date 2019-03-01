@@ -914,27 +914,28 @@ def test_datasaver_arrayparams_not_ndarray(SpectrumAnalyzer, DAC, N, M,
 
 @settings(max_examples=5, deadline=None)
 @given(N=hst.integers(min_value=5, max_value=500))
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_array_parameters_channel(channel_array_instrument,
-                                            DAC, N):
+                                            DAC, N, storage_type):
     meas = Measurement()
 
     array_param = channel_array_instrument.A.dummy_array_parameter
 
-    meas.register_parameter(array_param)
+    meas.register_parameter(array_param, paramtype=storage_type)
 
     assert len(meas.parameters) == 2
     dependency_name = 'dummy_channel_inst_ChanA_this_setpoint'
     assert meas.parameters[str(array_param)].depends_on == dependency_name
-    assert meas.parameters[str(array_param)].type == 'numeric'
-    assert meas.parameters[dependency_name].type == 'numeric'
+    assert meas.parameters[str(array_param)].type == storage_type
+    assert meas.parameters[dependency_name].type == storage_type
 
     # Now for a real measurement
 
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
-    meas.register_parameter(array_param, setpoints=[DAC.ch1])
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype=storage_type)
 
     assert len(meas.parameters) == 3
 
@@ -944,7 +945,12 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
-    assert datasaver.points_written == N * M
+    if storage_type == 'numeric':
+        n_points_written_expected = N * M
+    elif storage_type == 'array':
+        n_points_written_expected = N
+
+    assert datasaver.points_written == n_points_written_expected
 
     expected_params = ('dummy_dac_ch1',
                        'dummy_channel_inst_ChanA_this_setpoint',
@@ -952,8 +958,9 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     ds = load_by_id(datasaver.run_id)
     for param in expected_params:
         data = ds.get_data(param)
-        assert len(data) == N * M
+        assert len(data) == n_points_written_expected
         assert len(data[0]) == 1
+
     datadicts = get_data_by_id(datasaver.run_id)
     # one dependent parameter
     assert len(datadicts) == 1
