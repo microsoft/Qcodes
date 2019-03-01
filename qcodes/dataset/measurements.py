@@ -1,6 +1,6 @@
 import json
 import logging
-from time import monotonic
+from time import perf_counter
 from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
@@ -83,7 +83,7 @@ class DataSaver:
         self.parameters = parameters
         self._known_parameters = list(parameters.keys())
         self._results: List[dict] = []  # will be filled by addResult
-        self._last_save_time = monotonic()
+        self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
         for param, parspec in parameters.items():
             if parspec.depends_on != '':
@@ -227,9 +227,9 @@ class DataSaver:
 
         self._append_results(res, input_size)
 
-        if monotonic() - self._last_save_time > self.write_period:
+        if perf_counter() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
-            self._last_save_time = monotonic()
+            self._last_save_time = perf_counter()
 
     def _append_results(self, res: Sequence[res_type],
                         input_size: int) -> None:
