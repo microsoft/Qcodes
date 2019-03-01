@@ -17,7 +17,7 @@ class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
 
-    def __init__(self, x: float=None, y=None, z=None, r=None, theta=None, phi=None,
+    def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
                  rho=None):
         """
         Parameters:
