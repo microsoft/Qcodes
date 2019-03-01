@@ -849,10 +849,28 @@ def test_datasaver_unsized_arrays(N, storage_type):
        M=hst.integers(min_value=4, max_value=250),
        seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("param_type", ['array', 'tuple', 'list'])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
-                                    storage_type, seed):
-    spectrum = SpectrumAnalyzer.spectrum
+def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
+                                           param_type, storage_type,
+                                           seed):
+    """
+    test that data is stored correctly for array parameters that
+    return numpy arrays, lists and tuples. Stored both as arrays and
+    numeric
+    """
+
+    if param_type == 'list':
+        spectrum = SpectrumAnalyzer.listspectrum
+        spectrum_name = 'dummy_SA_listspectrum'
+    elif param_type == 'tuple':
+        spectrum = SpectrumAnalyzer.tuplespectrum
+        spectrum_name = 'dummy_SA_tuplespectrum'
+    elif param_type == 'array':
+        spectrum = SpectrumAnalyzer.spectrum
+        spectrum_name = 'dummy_SA_spectrum'
+    else:
+        raise RuntimeError("Invalid storage_type")
 
     meas = Measurement()
 
@@ -868,15 +886,13 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
-    meas.register_parameter(spectrum, setpoints=[DAC.ch1],
-                            paramtype=storage_type)
+    meas.register_parameter(spectrum, setpoints=[DAC.ch1], paramtype=storage_type)
 
     assert len(meas.parameters) == 3
 
     spectrum.npts = M
 
     np.random.seed(seed)
-    # seed the rng so we can get the same results below
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 0.01, N):
             datasaver.add_result((DAC.ch1, set_v),
@@ -886,7 +902,6 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
         assert datasaver.points_written == N * M
     elif storage_type == 'array':
         assert datasaver.points_written == N
-    data = datasaver.dataset.get_parameter_data()['dummy_SA_spectrum']
 
     np.random.seed(seed)
     expected_dac_data = np.repeat(np.linspace(0, 0.01, N), M)
@@ -899,61 +914,11 @@ def test_datasaver_array_parameters(SpectrumAnalyzer, DAC, N, M,
         expected_freq_axis = expected_freq_axis.reshape(N, M)
         expected_output = expected_output.reshape(N, M)
 
+    data = datasaver.dataset.get_parameter_data()[spectrum_name]
+
     assert_allclose(data['dummy_dac_ch1'], expected_dac_data)
     assert_allclose(data['dummy_SA_Frequency'], expected_freq_axis)
-    assert_allclose(data['dummy_SA_spectrum'], expected_output)
-
-
-
-@settings(max_examples=5, deadline=None)
-@given(N=hst.integers(min_value=5, max_value=500),
-       M=hst.integers(min_value=4, max_value=250))
-@pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize("param_type", ['tuple', 'list'])
-@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-def test_datasaver_arrayparams_not_ndarray(SpectrumAnalyzer, DAC, N, M,
-                                           param_type, storage_type):
-    """
-    test that data is stored correctly for array parameters that
-    return non numpy arrays
-    """
-
-    if param_type == 'list':
-        param = SpectrumAnalyzer.listspectrum
-    elif param_type == 'tuple':
-        param = SpectrumAnalyzer.tuplespectrum
-    else:
-        raise RuntimeError("Invalid storage_type")
-
-    meas = Measurement()
-
-    meas.register_parameter(param, paramtype=storage_type)
-
-    assert len(meas.parameters) == 2
-    assert meas.parameters[str(param)].depends_on == 'dummy_SA_Frequency'
-    assert meas.parameters[str(param)].type == storage_type
-    assert meas.parameters['dummy_SA_Frequency'].type == storage_type
-
-    # Now for a real measurement
-
-    meas = Measurement()
-
-    meas.register_parameter(DAC.ch1)
-    meas.register_parameter(param, setpoints=[DAC.ch1], paramtype=storage_type)
-
-    assert len(meas.parameters) == 3
-
-    param.npts = M
-
-    with meas.run() as datasaver:
-        for set_v in np.linspace(0, 0.01, N):
-            datasaver.add_result((DAC.ch1, set_v),
-                                 (param, param.get()))
-
-    if storage_type == 'numeric':
-        assert datasaver.points_written == N * M
-    elif storage_type == 'array':
-        assert datasaver.points_written == N
+    assert_allclose(data[spectrum_name], expected_output)
 
 
 @settings(max_examples=5, deadline=None)
@@ -1012,7 +977,6 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     assert len(datadicts) == len(meas.parameters)
     for datadict in datadicts:
         assert datadict['data'].shape == (N * M,)
-    # todo check data here
 
 
 @settings(max_examples=5, deadline=None)
