@@ -164,7 +164,6 @@ class AlazarATSAPI(WrappedDll):
             logger.debug(
                 f"Loading new ATS API instance for DLL path {dll_path}.")
             new_api = super().__new__(cls)
-            new_api.__init__(dll_path)
             cls.__instances[dll_path] = new_api
             return new_api
 
