@@ -1859,6 +1859,31 @@ def test_save_numeric_as_complex_raises(complex_num_instrument):
                                  (param, setparam()))
 
 
+def test_parameter_inference(channel_array_instrument):
+    chan = channel_array_instrument.channels[0]
+    # default values
+    assert Measurement._infer_paramtype(chan.temperature, None) == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_array_parameter,
+                                        None) == 'array'
+    assert Measurement._infer_paramtype(chan.dummy_parameter_with_setpoints,
+                                        None) == 'array'
+    assert Measurement._infer_paramtype(chan.dummy_multi_parameter,
+                                        None) == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_scalar_multi_parameter,
+                                        None) == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_2d_multi_parameter,
+                                        None) == 'numeric'
+    # overwrite the default with sensible alternatives
+    assert Measurement._infer_paramtype(chan.dummy_array_parameter,
+                                        'numeric') == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_parameter_with_setpoints,
+                                        'numeric') == 'numeric'
+    assert Measurement._infer_paramtype(chan.dummy_multi_parameter,
+                                        'array') == 'array'
+    assert Measurement._infer_paramtype(chan.dummy_2d_multi_parameter,
+                                        'array') == 'array'
+
+
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2D():
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
