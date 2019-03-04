@@ -1330,6 +1330,14 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum(*list(self._samplingrate_codes.keys()))
                             )
 
+        self.add_parameter('scope_samplingrate_float',
+                           label="Scope's sampling rate as float",
+                           set_cmd=partial(self._set_samplingrate_as_float,
+                                           self._samplingrate_codes),
+                           unit='Hz',
+                           get_cmd=partial(self._get_samplingrate_as_float)
+                           )
+
         self.add_parameter('scope_length',
                             label="Length of scope trace (pts)",
                             set_cmd=partial(self._scope_setter, 0, 1,
@@ -2167,6 +2175,23 @@ class ZIUHFLI(Instrument):
                 value = rawvalue
 
         return value
+
+    @staticmethod
+    def _convert_to_float(frequency):
+        converter = {'hz': 'e0', 'khz': 'e3', 'mhz': 'e6', 'ghz': 'e9',
+                     'thz': 'e12'}
+        value, suffix = frequency.split(' ')
+        return float(''.join([value, converter[suffix.lower()]]))
+
+    def _set_samplingrate_as_float(self, samplingrate_codes, frequency):
+        nearest_frequency = min(samplingrate_codes.keys(), key=lambda k: abs(
+            frequency - ZIUHFLI._convert_to_float(k)))
+
+        self.parameters['scope_sampling_rate'](nearest_frequency)
+
+    def _get_samplingrate_as_float(self):
+        frequency = self.parameters['scope_sampling_rate']()
+        return ZIUHFLI._convert_to_float(frequency)
 
     def close(self):
         """
