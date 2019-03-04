@@ -159,7 +159,7 @@ class DataSaver:
                                                   res,
                                                   found_parameters)
 
-        for partial_result in res:
+        for i, partial_result in enumerate(res):
             parameter = partial_result[0]
             paramstr = str(parameter)
             value = partial_result[1]
@@ -174,9 +174,12 @@ class DataSaver:
                 inserting_as_arrays = True
                 inserting_this_as_array = True
             if any(isinstance(value, typ) for typ in array_like_types):
-
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
+                # we want to always use the np array going forward
+                # note that the actual cast to np array is done
+                # by `np.atleast_1d` not by `cast`
+                res[i] = (parameter, value)
                 array_size = len(value.ravel())
                 if param_spec.type != 'array' and array_size > 1:
                     inserting_unrolled_array = True
@@ -217,6 +220,7 @@ class DataSaver:
                                      f' {sorted(stuffweneed)}.'
                                      f' Values only given for'
                                      f' {sorted(stuffwehave)}.')
+
 
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
