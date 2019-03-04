@@ -746,19 +746,7 @@ class Measurement:
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
 
-        # infer the parameter type
-        if isinstance(parameter.vals, vals.Arrays) and paramtype is None:
-            paramtype = 'array'
-        elif isinstance(parameter, ArrayParameter) and paramtype is None:
-            paramtype = 'array'
-        elif isinstance(parameter.vals, vals.Strings) and paramtype is None:
-            paramtype = 'text'
-        # TODO complex case here once support is added
-        # should we try to figure out if parts of a multiparamter are
-        # arrays or something else?
-        # default to numeric as before
-        elif paramtype is None:
-            paramtype = 'numeric'
+        paramtype = self._infer_paramtype(parameter, paramtype)
 
         # now the parameter type must be valid
         if paramtype not in ParamSpec.allowed_types:
@@ -799,6 +787,23 @@ class Measurement:
                                f"of type {type(parameter)}")
 
         return self
+
+    @staticmethod
+    def _infer_paramtype(parameter, paramtype):
+        # infer the parameter type
+        if isinstance(parameter.vals, vals.Arrays) and paramtype is None:
+            paramtype = 'array'
+        elif isinstance(parameter, ArrayParameter) and paramtype is None:
+            paramtype = 'array'
+        elif isinstance(parameter.vals, vals.Strings) and paramtype is None:
+            paramtype = 'text'
+        # TODO complex case here once support is added
+        # should we try to figure out if parts of a multiparamter are
+        # arrays or something else?
+        # default to numeric as before
+        elif paramtype is None:
+            paramtype = 'numeric'
+        return paramtype
 
     def _register_parameter(self: T, name: str,
                             label: Optional[str],
