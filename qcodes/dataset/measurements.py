@@ -789,8 +789,19 @@ class Measurement:
         return self
 
     @staticmethod
-    def _infer_paramtype(parameter, paramtype):
-        # infer the parameter type
+    def _infer_paramtype(parameter: _BaseParameter,
+                         paramtype: Optional[str]) -> str:
+        """
+        Infer the best parameter type to store the parameter supplied.
+
+        Args:
+            parameter: The parameter to to infer the type for
+            paramtype: The initial supplied parameter type or None
+
+        Returns:
+            The inferred parameter type. If a parameter type is supplied this
+            will overwrite the inferred parameter type.
+        """
         if isinstance(parameter.vals, vals.Arrays) and paramtype is None:
             paramtype = 'array'
         elif isinstance(parameter, ArrayParameter) and paramtype is None:
