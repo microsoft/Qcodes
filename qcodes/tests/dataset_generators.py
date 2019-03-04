@@ -27,5 +27,5 @@ def dataset_with_outliers_generator(ds, data_offset=5, low_outlier=-3,
             data[round(npoints/2.5)] = low_outlier
         ds.add_results([{'x': xv, 't': tv, 'z': z}
                             for z, tv in zip(data, tvals)])
-    ds.mark_complete()
+    ds.mark_completed()
     return ds
