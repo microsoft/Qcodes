@@ -50,6 +50,15 @@ class AlazarTech_ATS(Instrument):
 
     @classmethod
     def find_boards(cls, dll_path: str = None) -> List[dict]:
+        """
+        Find connected Alazar boards
+
+        Args:
+            dll_path: path to the Alazar API DLL library
+        
+        Returns:
+            list of board info dictionaries for each connected board
+        """
         api = AlazarATSAPI(dll_path or cls.dll_path)
 
         system_count = api.num_of_systems()
