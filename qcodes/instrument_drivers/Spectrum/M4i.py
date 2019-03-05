@@ -681,7 +681,7 @@ class M4i(Instrument):
 
     def set_channel_settings(self, channel_index, mV_range, input_path, termination, coupling, compensation=None):
         """ Update settings of the specified channel 
-        
+
         Args:
             channel_index (idx): channel to update
             mV_range (float): measurement range for the channel
