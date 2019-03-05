@@ -738,20 +738,8 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        # convert transfer data to numpy array
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample = 2)
 
         self._stop_acquisition()
 
@@ -787,7 +775,16 @@ class M4i(Instrument):
         return {'memsize': memsize, 'numch': numch, 'mV_range': mV_range}
 
     def _transfer_buffer_numpy(self, memsize, numch, bytes_per_sample = 2):
-        """ Transfer buffer to numpy array """
+        """ Transfer buffer to numpy array
+        
+        Args:
+            memsize (int): number of samples to transfer
+            numch (int): number of channels
+            bytes_per_sample (int): specifies the datatype. 2 for int16, 4 for int32
+        Returns:
+            array: transfered data
+        
+        """
         # setup software buffer
         if bytes_per_sample==2:
             buffer_size = ct.c_int16 * memsize * numch
@@ -1011,22 +1008,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        # setup software buffer
-        sizeof32bit = 4
-        buffer_size = ct.c_int32 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-        self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, sizeof32bit * memsize * numch)
-        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-                             pyspcm.M2CMD_DATA_WAITDMA)
-
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int32) / nr_averages
-        self._debug = output
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample = 4)
 
         self._stop_acquisition()
 
