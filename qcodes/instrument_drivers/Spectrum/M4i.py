@@ -680,9 +680,20 @@ class M4i(Instrument):
         return value
 
     def set_channel_settings(self, channel_index, mV_range, input_path, termination, coupling, compensation=None):
+        """ Update settings of the specified channel 
+        
+        Args:
+            channel_index (idx): channel to update
+            mV_range (float): measurement range for the channel
+            input_path (int): input path
+            termination (None or int): If None, then do not update the termination
+            coupling (int): Set the ACDC_coupling
+            compensation (None or int): If None, then do not update the compensation
+        """
         # initialize
         getattr(self, 'input_path_{}'.format(channel_index))(input_path)  # 0: 1 MOhm
-        getattr(self, 'termination_{}'.format(channel_index))(termination)  # 0: DC
+        if termination is not None:
+            getattr(self, 'termination_{}'.format(channel_index))(termination)  # 0: DC
         getattr(self, 'ACDC_coupling_{}'.format(channel_index))(coupling)  # 0: DC
         getattr(self, 'range_channel_{}'.format(channel_index))(mV_range)  # note: set after voltage range
         # can only be used with DC coupling and 50 Ohm path (hf)
