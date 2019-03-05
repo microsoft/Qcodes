@@ -739,7 +739,7 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # convert transfer data to numpy array
-        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample = 2)
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=2)
 
         self._stop_acquisition()
 
@@ -774,21 +774,21 @@ class M4i(Instrument):
 
         return {'memsize': memsize, 'numch': numch, 'mV_range': mV_range}
 
-    def _transfer_buffer_numpy(self, memsize, numch, bytes_per_sample = 2):
+    def _transfer_buffer_numpy(self, memsize, numch, bytes_per_sample=2):
         """ Transfer buffer to numpy array
-        
+
         Args:
             memsize (int): number of samples to transfer
             numch (int): number of channels
             bytes_per_sample (int): specifies the datatype. 2 for int16, 4 for int32
         Returns:
             array: transfered data
-        
+
         """
         # setup software buffer
-        if bytes_per_sample==2:
+        if bytes_per_sample == 2:
             buffer_size = ct.c_int16 * memsize * numch
-        elif bytes_per_sample==4:
+        elif bytes_per_sample == 4:
             buffer_size = ct.c_int32 * memsize * numch
         else:
             raise ValueError('bytes_per_sample should be 2 or 4')
@@ -803,9 +803,9 @@ class M4i(Instrument):
 
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        if bytes_per_sample==2:
+        if bytes_per_sample == 2:
             output = np.frombuffer(data.contents, dtype=ct.c_int16)
-        elif bytes_per_sample==4:
+        elif bytes_per_sample == 4:
             output = np.frombuffer(data.contents, dtype=ct.c_int32)
         else:
             raise ValueError('bytes_per_sample should be 2 or 4')
@@ -881,39 +881,32 @@ class M4i(Instrument):
         return voltages
 
     def single_software_trigger_acquisition_boxcar(self, mV_range, memsize, posttrigger_size):
-                """ Acquire a single data trace with box averaging
-        
-                Args:
-                    mV_range (float): range in mV
-                    memsize (int): size of data trace
-                    posttrigger_size (int): size of data trace after triggering
-                Returns:
-                    voltages (array)
-                """
-                self.card_mode(pyspcm.SPC_REC_STD_BOXCAR)  # single
-        
-        
-                self.segment_size(memsize)
-                self.posttrigger_memory_size(posttrigger_size)
-                self.data_memory_size(memsize*self.box_averages())
-                numch = self._num_channels()
-        
-                print('posttrigger_memory_size: %d->%d' % (posttrigger_size, self.posttrigger_memory_size() ) )
-                print('segment_size %d' % self.segment_size())
-                print('self.data_memory_size() %d' % self.data_memory_size())
-        
-                # start/enable trigger/wait ready
-                self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
-                self.general_command(pyspcm.M2CMD_CARD_START |
-                                     pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
-        
-                output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample = 4)
-                self._debug = output
-                self._stop_acquisition()
-        
-                voltages = self.convert_to_voltage(output, mV_range / 1000) / self.box_averages()
-        
-                return voltages
+        """ Acquire a single data trace with boxcar averaging
+
+        Args:
+            mV_range (float): range in mV
+            memsize (int): size of data trace
+            posttrigger_size (int): size of data trace after triggering
+        Returns:
+            voltages (array)
+        """
+        self.card_mode(pyspcm.SPC_REC_STD_BOXCAR)  # single
+
+        self.segment_size(memsize)
+        self.posttrigger_memory_size(posttrigger_size)
+        self.data_memory_size(memsize * self.box_averages())
+        numch = self._num_channels()
+
+        self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)
+        self.general_command(pyspcm.M2CMD_CARD_START |
+                             pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
+
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=4)
+        self._stop_acquisition()
+
+        voltages = self.convert_to_voltage(output, mV_range / 1000) / self.box_averages()
+
+        return voltages
 
     def single_software_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
         """ Acquire a single data trace
@@ -937,7 +930,6 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         output = self._transfer_buffer_numpy(memsize, numch)
-        self._debug = output
         self._stop_acquisition()
 
         voltages = self.convert_to_voltage(output, mV_range / 1000)
@@ -1008,7 +1000,7 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample = 4)
+        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=4)
 
         self._stop_acquisition()
 
