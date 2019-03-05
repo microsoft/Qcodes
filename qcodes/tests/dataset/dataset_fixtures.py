@@ -35,6 +35,27 @@ def scalar_dataset(dataset):
     yield dataset
 
 
+@pytest.fixture
+def scalar_dataset_with_nulls(dataset):
+    """
+    A very simple dataset. A scalar is varied, and two parameters are measured
+    one by one
+    """
+    sp = ParamSpec('setpoint', 'numeric')
+    val1 = ParamSpec('first_value', 'numeric', depends_on=(sp,))
+    val2 = ParamSpec('second_value', 'numeric', depends_on=(sp,))
+
+    for p in [sp, val1, val2]:
+        dataset.add_parameter(p)
+
+    dataset.mark_started()
+
+    dataset.add_results([{sp.name: 0, val1.name: 1},
+                         {sp.name: 0, val2.name: 2}])
+    dataset.mark_completed()
+    yield dataset
+
+
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
 def array_dataset(experiment, request):
