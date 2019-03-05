@@ -25,7 +25,8 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
-    standalone_parameters_dataset, array_in_scalar_dataset_unrolled
+    standalone_parameters_dataset, array_in_scalar_dataset_unrolled, \
+    varlen_array_in_scalar_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -859,6 +860,46 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
                           expected_values,
                           start,
                           end)
+
+
+def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
+
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'scalarparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+
+    n = 9
+    n_points = (n*(n+1))//2
+
+    scalar_param_values = []
+    setpoint_param_values = []
+    for i in range(1, 10):
+        for j in range(i):
+            setpoint_param_values.append(j)
+            scalar_param_values.append(i)
+
+    np.random.seed(0)
+    test_parameter_values = np.random.rand(n_points)
+    scalar_param_values = np.array(scalar_param_values)
+
+    setpoint_param_values = np.array(setpoint_param_values)
+
+    expected_shapes['testparameter'] = {}
+    expected_shapes['testparameter'] = [(n_points,), (n_points,)]
+    expected_values = {}
+    expected_values['testparameter'] = [
+        test_parameter_values.ravel(),
+        scalar_param_values.ravel(),
+        setpoint_param_values.ravel()]
+
+    parameter_test_helper(varlen_array_in_scalar_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
 
 
 @given(start=hst.one_of(hst.integers(1, 45), hst.none()),
