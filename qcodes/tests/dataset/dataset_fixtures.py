@@ -107,7 +107,6 @@ def varlen_array_in_scalar_dataset(experiment):
         datasaver.dataset.conn.close()
 
 
-
 @pytest.fixture(scope="function")
 def array_in_scalar_dataset_unrolled(experiment):
     meas = Measurement()

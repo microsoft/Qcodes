@@ -863,7 +863,6 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
 
 
 def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
-
     input_names = ['testparameter']
 
     expected_names = {}
@@ -876,7 +875,7 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
 
     scalar_param_values = []
     setpoint_param_values = []
-    for i in range(1, 10):
+    for i in range(1, n + 1):
         for j in range(i):
             setpoint_param_values.append(j)
             scalar_param_values.append(i)
@@ -884,10 +883,8 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
     np.random.seed(0)
     test_parameter_values = np.random.rand(n_points)
     scalar_param_values = np.array(scalar_param_values)
-
     setpoint_param_values = np.array(setpoint_param_values)
 
-    expected_shapes['testparameter'] = {}
     expected_shapes['testparameter'] = [(n_points,), (n_points,)]
     expected_values = {}
     expected_values['testparameter'] = [

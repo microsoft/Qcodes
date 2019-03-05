@@ -887,7 +887,7 @@ class DataSet(Sized):
 
             if subdict[keys[0]].dtype == numpy.dtype('O'):
                 # ravel will not fully unpack a numpy array of arrays
-                # which has dtype object. This can happen if a variable
+                # which are of "object" dtype. This can happen if a variable
                 # length array is stored in the db. We use concatenate to
                 # flatten these
                 mydata = numpy.concatenate(subdict[keys[0]])
