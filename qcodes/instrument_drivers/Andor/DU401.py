@@ -2,7 +2,6 @@ from qcodes import Instrument, Parameter
 from qcodes.utils.validators import Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
 import ctypes
-import time
 
 
 class atmcd64d:
