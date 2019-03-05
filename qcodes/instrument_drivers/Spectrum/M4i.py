@@ -10,7 +10,7 @@
 # Also see: http://spectrum-instrumentation.com/en/m4i-platform-overview
 #
 
-#%%
+# %%
 import os
 import sys
 import logging
@@ -35,7 +35,7 @@ except (ImportError, OSError) as ex:
     log.exception(info_str)
     raise ImportError(info_str)
 
-#%% Helper functions
+# %% Helper functions
 
 
 def szTypeToName(lCardType):
@@ -59,7 +59,7 @@ def szTypeToName(lCardType):
         sName = 'unknown type'
     return sName
 
-#%% Main driver class
+# %% Main driver class
 
 
 class M4i(Instrument):
@@ -612,7 +612,7 @@ class M4i(Instrument):
         return data * input_range / resolution
 
     def initialize_channels(self, channels=None, mV_range=1000, input_path=0,
-                            termination=0, coupling=0, compensation=None, memsize=2**12, pretrigger_memsize = 16):
+                            termination=0, coupling=0, compensation=None, memsize=2**12, pretrigger_memsize=16):
         """ Setup channels of the digitizer for simple readout using Parameters
 
         The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
@@ -670,16 +670,15 @@ class M4i(Instrument):
         value = np.mean(data[:, channel])
         return value
 
-    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation=None):
+    def set_channel_settings(self, channel_index, mV_range, input_path, termination, coupling, compensation=None):
         # initialize
-        getattr(self, 'input_path_{}'.format(i))(input_path)  # 0: 1 MOhm
-        getattr(self, 'termination_{}'.format(i))(termination)  # 0: DC
-        getattr(self, 'ACDC_coupling_{}'.format(i))(coupling)  # 0: DC
-        getattr(self, 'range_channel_{}'.format(i))(
-            mV_range)  # note: set after voltage range
+        getattr(self, 'input_path_{}'.format(channel_index))(input_path)  # 0: 1 MOhm
+        getattr(self, 'termination_{}'.format(channel_index))(termination)  # 0: DC
+        getattr(self, 'ACDC_coupling_{}'.format(channel_index))(coupling)  # 0: DC
+        getattr(self, 'range_channel_{}'.format(channel_index))(mV_range)  # note: set after voltage range
         # can only be used with DC coupling and 50 Ohm path (hf)
         if compensation is not None:
-            getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
+            getattr(self, 'ACDC_offs_compensation_{}'.format(channel_index))(compensation)
 
     def set_ext0_OR_trigger_settings(self, trig_mode, termination, coupling, level0, level1=None):
 
