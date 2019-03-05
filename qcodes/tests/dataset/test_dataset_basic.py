@@ -3,6 +3,7 @@ from copy import copy
 import re
 from unittest.mock import patch
 import random
+from typing import Sequence, Dict, Tuple, Optional
 
 import pytest
 import numpy as np
