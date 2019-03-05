@@ -2,7 +2,7 @@ import json
 import logging
 from time import monotonic
 from collections import OrderedDict
-from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast,
+from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
 from numbers import Number
@@ -410,11 +410,11 @@ class DataSaver:
 
         Before we can enqueue the results, all values of the results dict
         must have the same length. We enqueue each parameter tree seperately,
-        effectively mimicking two calls to add_result.
+        effectively mimicking making one call to add_result per parameter
+        tree.
 
-        Deal with 'numeric' type parameters if a 'numeric' top level parameter
-        has non-scalar shape, its setpoints must be replicated up to meet the
-        shape
+        Deal with 'numeric' type parameters. If a 'numeric' top level parameter
+        has non-scalar shape, it must be unrolled into a list of
         """
 
         interdeps = self._interdeps
@@ -431,21 +431,10 @@ class DataSaver:
             if toplevel_param.type == 'array':
                 res_dict = {ps.name: result_dict[ps] for ps in all_params}
             elif toplevel_param.type == 'numeric':
-                toplevel_shape = np.shape(result_dict[toplevel_param])
-                if toplevel_shape != ():
-                    deps = interdeps.dependencies[toplevel_param]
-                    for dep in deps:
-                        if np.shape(result_dict[dep]) == ():
-                            replicated = [result_dict[dep]
-                                          for _ in range(toplevel_shape[0])]
-                            res_dict.update({dep.name: replicated})
-                        else:
-                            res_dict.update({dep.name: result_dict[dep]})
-                    res_dict.update(
-                        {p.name: res_dict[p]
-                         for p in interdeps.inferences[toplevel_param]})
-                    res_dict.update(
-                        {toplevel_param.name: result_dict[toplevel_param]})
+                res_list = self._finalize_res_dict_numeric(
+                               result_dict, toplevel_param,
+                               inff_params, deps_params)
+                self._results += res_list
             else:
                 res_dict = {ps.name: result_dict[ps] for ps in all_params}
 
@@ -455,6 +444,48 @@ class DataSaver:
                        .intersection(set(result_dict)))
         for param in standalones:
             self._results.append({param.name: result_dict[param]})
+
+    @staticmethod
+    def _finalize_res_dict_numeric(
+        result_dict: Dict[ParamSpecBase, values_type],
+        toplevel_param: ParamSpecBase,
+        inff_params: Set[ParamSpecBase],
+        deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+        """
+        Make a res_dict in the format expected by DataSet.add_results out
+        of the results for a 'numeric' type parameter. This includes
+        replicating and unrolling values as needed
+        """
+        res_list: List[Dict[str, VALUE]] = []
+        all_params = inff_params.union(deps_params).union({toplevel_param})
+
+        toplevel_shape = np.shape(result_dict[toplevel_param])
+        if toplevel_shape == ():
+            # In the case of a scalar, life is simple
+            res_list = [{ps.name: result_dict[ps] for ps in all_params}]
+        else:
+            # We first massage all values into np.arrays of the same
+            # shape
+            flat_results = {}
+            flat_results[toplevel_param] = np.array(result_dict[toplevel_param]).ravel()
+            N = len(flat_results[toplevel_param])
+            for dep in deps_params:
+                if np.shape(result_dict[dep]) == ():
+                    flat_results[dep] = np.ones_like(N)*result_dict[dep]
+                else:
+                    flat_results[dep] = np.array(result_dict[dep]).ravel()
+            for inff in inff_params:
+                if np.shape(result_dict[inff]) == ():
+                    flat_results[inff] = np.ones_like(N)*result_dict[inff]
+                else:
+                    flat_results[inff] = np.array(result_dict[inff]).ravel()
+
+            # And then put everything into the list
+
+            res_list = [{p.name: flat_results[p][ind] for p in all_params}
+                        for ind in range(N)]
+
+        return res_list
 
     def flush_data_to_database(self) -> None:
         """
