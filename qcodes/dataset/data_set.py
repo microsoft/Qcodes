@@ -878,8 +878,8 @@ class DataSet(Sized):
             elif len(keys) == 2:
                 index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
             else:
-                indexdata = tuple(numpy.concatenate(subdict[key]) \
-                                  if subdict[key].dtype == numpy.dtype('O') \
+                indexdata = tuple(numpy.concatenate(subdict[key])
+                                  if subdict[key].dtype == numpy.dtype('O')
                                   else subdict[key].ravel() for key in keys[1:])
                 index = pd.MultiIndex.from_arrays(
                     indexdata,
