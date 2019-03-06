@@ -786,7 +786,7 @@ class M4i(Instrument):
 
         return {'memsize': memsize, 'numch': numch, 'mV_range': mV_range}
 
-    def _transfer_buffer_numpy(self, memsize, numch, bytes_per_sample=2):
+    def _transfer_buffer_numpy(self, memsize: int, numch: int, bytes_per_sample=2) -> np.ndarray:
         """ Transfer buffer to numpy array
 
         Args:
@@ -799,11 +799,13 @@ class M4i(Instrument):
         """
         # setup software buffer
         if bytes_per_sample == 2:
-            buffer_size = ct.c_int16 * memsize * numch
+            sample_ctype = ct.c_int16
         elif bytes_per_sample == 4:
-            buffer_size = ct.c_int32 * memsize * numch
+            sample_ctype = ct.c_int32
         else:
             raise ValueError('bytes_per_sample should be 2 or 4')
+
+        buffer_size = sample_ctype * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
@@ -816,9 +818,9 @@ class M4i(Instrument):
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
         if bytes_per_sample == 2:
-            output = np.frombuffer(data.contents, dtype=ct.c_int16)
+            output = np.frombuffer(data.contents, dtype=sample_ctype)
         elif bytes_per_sample == 4:
-            output = np.frombuffer(data.contents, dtype=ct.c_int32)
+            output = np.frombuffer(data.contents, dtype=sample_ctype)
         else:
             raise ValueError('bytes_per_sample should be 2 or 4')
         return output
@@ -841,7 +843,6 @@ class M4i(Instrument):
 
         self.general_command(pyspcm.M2CMD_CARD_WAITREADY)
         output = self._transfer_buffer_numpy(memsize, numch)
-        self._debug = output
         self._stop_acquisition()
 
         voltages = self.convert_to_voltage(output, mV_range / 1000)
