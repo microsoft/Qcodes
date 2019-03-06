@@ -1,7 +1,5 @@
-import warnings
-
 from qcodes.instrument.parameter import Parameter
-from qcodes.utils import validators
+
 
 class TraceParameter(Parameter):
     """
