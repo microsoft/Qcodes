@@ -4,7 +4,7 @@ from enum import IntEnum, IntFlag
 
 ReturnCode = NewType('ReturnCode', int)
 
-API_SUCCESS: ReturnCode = 512
+API_SUCCESS = ReturnCode(512)
 
 ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
     513: 'ApiFailed',
