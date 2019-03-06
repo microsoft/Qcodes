@@ -13,7 +13,6 @@ from .constants import API_SUCCESS, ERROR_CODES, ReturnCode
 
 logger = logging.getLogger(__name__)
 
-TApi = TypeVar("TApi", bound="AlazarATSAPI")
 CReturnCode = NewType('CReturnCode', ctypes.c_uint)
 
 
@@ -50,7 +49,8 @@ def mark_params_as_updated(*args) -> None:
 
 
 def api_calls(full_name: str, signature: "Signature") -> Callable:
-    def sync_call(self: TApi, *args) -> signature.return_type:
+    def sync_call(self: "WrappedDll", *args
+                 ) -> signature.return_type:  # type: ignore
         c_func = getattr(self._dll, full_name)
         future = self._executor.submit(
             api_call_task,
