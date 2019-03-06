@@ -9,7 +9,7 @@ from .constants import BOARD_NAMES, REGISTER_READING_PWD, Capability
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8
 U32 = ctypes.c_uint32
-HANDLE = U32
+HANDLE = ctypes.c_void_p
 
 logger = logging.getLogger(__name__)
 
