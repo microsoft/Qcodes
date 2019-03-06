@@ -33,8 +33,8 @@ def convert_to_camel_case(name):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def normalize_params(*args) -> List[Any]:
-    args_out: List[int] = []
+def normalize_params(*args: Any) -> List[Any]:
+    args_out: List[Any] = []
     for arg in args:
         if isinstance(arg, Parameter):
             args_out.append(arg.raw_value)
