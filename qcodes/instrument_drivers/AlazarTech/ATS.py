@@ -10,8 +10,9 @@ import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-from .ats_api import AlazarATSAPI, CapabilityHelper
+from .ats_api import AlazarATSAPI
 from .utils import TraceParameter
+from .helpers import CapabilityHelper
 
 
 logger = logging.getLogger(__name__)
