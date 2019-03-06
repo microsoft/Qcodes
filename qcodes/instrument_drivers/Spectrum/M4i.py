@@ -817,12 +817,7 @@ class M4i(Instrument):
 
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        if bytes_per_sample == 2:
-            output = np.frombuffer(data.contents, dtype=sample_ctype)
-        elif bytes_per_sample == 4:
-            output = np.frombuffer(data.contents, dtype=sample_ctype)
-        else:
-            raise ValueError('bytes_per_sample should be 2 or 4')
+        output = np.frombuffer(data.contents, dtype=sample_ctype)
         return output
 
     def retrieve_data(self, trace):
