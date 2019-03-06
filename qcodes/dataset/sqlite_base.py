@@ -1299,8 +1299,10 @@ def get_parameter_data(conn: ConnectionPlus,
     is returned as numpy arrays within 2 layers of nested dicts. The keys of
     the outermost dict are the requested parameters and the keys of the second
     level are the loaded parameters (requested parameter followed by its
-    dependencies). Start and End  sllows one to specify a range of rows
-    (1-based indexing, both ends are included).
+    dependencies). Start and End allows one to specify a range of rows
+    (1-based indexing, both ends are included). Be aware that different
+    parameters that are independent of each other may return a different number
+    of rows.
 
     Note that this assumes that all array type parameters have the same length.
     This should always be the case for a parameter and its dependencies.
@@ -1332,7 +1334,16 @@ def get_parameter_data(conn: ConnectionPlus,
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 
-        res = get_data(conn, table_name, param_names, start=start, end=end)
+        res = get_parameter_tree_values(conn,
+                                        table_name,
+                                        output_param,
+                                        *param_names[1:])
+
+        start = start or 1
+        end = end or len(res)
+
+        res = res[start-1:end]
+
         # if we have array type parameters expand all other parameters
         # to arrays
         if 'array' in types and ('numeric' in types or 'text' in types):
@@ -1363,6 +1374,7 @@ def get_parameter_data(conn: ConnectionPlus,
         output[output_param] = {name: np.array(column_data)
                          for name, column_data
                          in zip(param_names, res_t)}
+
     return output
 
 
