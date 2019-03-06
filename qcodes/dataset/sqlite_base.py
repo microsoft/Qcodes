@@ -1652,7 +1652,8 @@ def get_non_dependencies(conn: ConnectionPlus,
                          run_id: int) -> List[str]:
     """
     Return all parameters for a given run that are not dependencies of
-    other parameters.
+    other parameters, i.e. return the top level parameters of the given
+    run
 
     Args:
         conn: connection to the database
