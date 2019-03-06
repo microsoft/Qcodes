@@ -1335,7 +1335,13 @@ class ZIUHFLI(Instrument):
                            set_cmd=partial(self._set_samplingrate_as_float,
                                            self._samplingrate_codes),
                            unit='Hz',
-                           get_cmd=partial(self._get_samplingrate_as_float)
+                           get_cmd=partial(self._get_samplingrate_as_float),
+                           docstring=""" Set the scope sampling rate with float.
+                             If a sampling rate is set that does not match one 
+                             of the allowed sampling rates, then round to the 
+                             nearest allowed sampling rate. Returns the actual
+                             sampling rate as reported by the parameter 
+                             scope_samplingrate."""
                            )
 
         self.add_parameter('scope_length',
@@ -2187,10 +2193,10 @@ class ZIUHFLI(Instrument):
         nearest_frequency = min(samplingrate_codes.keys(), key=lambda k: abs(
             frequency - ZIUHFLI._convert_to_float(k)))
 
-        self.parameters['scope_sampling_rate'](nearest_frequency)
+        self.scope_samplingrate(nearest_frequency)
 
     def _get_samplingrate_as_float(self):
-        frequency = self.parameters['scope_sampling_rate']()
+        frequency = self.scope_samplingrate()
         return ZIUHFLI._convert_to_float(frequency)
 
     def close(self):
