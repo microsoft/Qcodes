@@ -163,6 +163,21 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     # This executor is used to execute DLL calls.
     _executor: concurrent.futures.Executor
+
+    # Only allow a single instance per DLL path.
+    __instances: Dict[str, "WrappedDll"] = {}
+
+    def __new__(cls: Type["WrappedDll"], dll_path: str) -> "WrappedDll":
+        if dll_path in cls.__instances:
+            logger.debug(
+                f"Found existing ATS API instance for DLL path {dll_path}.")
+            return cls.__instances[dll_path]
+        else:
+            logger.debug(
+                f"Loading new ATS API instance for DLL path {dll_path}.")
+            new_api = super().__new__(cls)
+            cls.__instances[dll_path] = new_api
+            return new_api
  
     def __init__(self, dll_path: str):
         super().__init__()

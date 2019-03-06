@@ -156,23 +156,6 @@ class AlazarATSAPI(WrappedDll):
         )
     }
 
-    ## CLASS MEMBERS ##
-
-    # Only allow a single instance per DLL path.
-    __instances: Dict[str, "AlazarATSAPI"] = {}
-
-    def __new__(cls: Type["AlazarATSAPI"], dll_path: str) -> "AlazarATSAPI":
-        if dll_path in cls.__instances:
-            logger.debug(
-                f"Found existing ATS API instance for DLL path {dll_path}.")
-            return cls.__instances[dll_path]
-        else:
-            logger.debug(
-                f"Loading new ATS API instance for DLL path {dll_path}.")
-            new_api = super().__new__(cls)
-            cls.__instances[dll_path] = new_api
-            return new_api
-
     ## INSTANCE MEMBERS ##
 
     def get_board_model(self, handle: int) -> str:
