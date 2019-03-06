@@ -27,6 +27,7 @@ dependencies:
  - pandas
  - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
  - tqdm
+ - mako
  - pip:
     - websockets>=7.0
     - broadbean>=0.9.1
