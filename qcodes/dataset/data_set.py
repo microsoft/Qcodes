@@ -878,10 +878,22 @@ class DataSet(Sized):
             elif len(keys) == 2:
                 index = pd.Index(subdict[keys[1]].ravel(), name=keys[1])
             else:
+                indexdata = tuple(numpy.concatenate(subdict[key])
+                                  if subdict[key].dtype == numpy.dtype('O')
+                                  else subdict[key].ravel() for key in keys[1:])
                 index = pd.MultiIndex.from_arrays(
-                    tuple(subdict[key].ravel() for key in keys[1:]),
+                    indexdata,
                     names=keys[1:])
-            df = pd.DataFrame(subdict[keys[0]].ravel(), index=index,
+
+            if subdict[keys[0]].dtype == numpy.dtype('O'):
+                # ravel will not fully unpack a numpy array of arrays
+                # which are of "object" dtype. This can happen if a variable
+                # length array is stored in the db. We use concatenate to
+                # flatten these
+                mydata = numpy.concatenate(subdict[keys[0]])
+            else:
+                mydata = subdict[keys[0]].ravel()
+            df = pd.DataFrame(mydata, index=index,
                               columns=[keys[0]])
             dfs[name] = df
         return dfs
