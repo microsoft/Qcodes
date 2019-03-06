@@ -1,13 +1,10 @@
 .. _config_api :
 
-Config
-======
+qcodes.config
+=============
 
-Config API
-
-
-config
-------
+qcodes.config.config
+--------------------
 
 .. automodule:: qcodes.config.config
    :members:

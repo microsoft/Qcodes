@@ -1,27 +1,40 @@
 .. _dataset_api :
 
-Dataset
-=======
-
-Dataset API
+qcodes.dataset
+==============
 
 
-data_export
------------
+.. autosummary::
 
-.. automodule:: qcodes.dataset.data_export
+    qcodes.dataset
+    qcodes.dataset.measurements
+    qcodes.dataset.plotting
+    qcodes.dataset.data_set
+    qcodes.dataset.database_extract_runs
+    qcodes.dataset.legacy_import
+    qcodes.dataset.param_spec
+
+
+.. automodule:: qcodes.dataset
+
+
+qcodes.dataset.measurements
+---------------------------
+
+.. automodule:: qcodes.dataset.measurements
    :members:
 
-data_set
---------
+
+qcodes.dataset.plotting
+-----------------------
+
+.. automodule:: qcodes.dataset.plotting
+   :members:
+
+qcodes.dataset.data_set
+-----------------------
 
 .. automodule:: qcodes.dataset.data_set
-   :members:
-
-database
---------
-
-.. automodule:: qcodes.dataset.database
    :members:
 
 database_extract_runs
@@ -30,72 +43,14 @@ database_extract_runs
 .. automodule:: qcodes.dataset.database_extract_runs
    :members:
 
-
-dependencies
-------------
-
-.. automodule:: qcodes.dataset.dependencies
-   :members:
-
-descriptions
-------------
-
-.. automodule:: qcodes.dataset.descriptions
-   :members:
-
-experiment_container
---------------------
-
-.. automodule:: qcodes.dataset.experiment_container
-   :members:
-
-guids
------
-
-.. automodule:: qcodes.dataset.guids
-   :members:
-
-json_exporter
--------------
-
-.. automodule:: qcodes.dataset.json_exporter
-   :members:
-
-legacy_import
--------------
+qcodes.dataset.legacy_import
+----------------------------
 
 .. automodule:: qcodes.dataset.legacy_import
    :members:
 
-
-measurements
-------------
-
-.. automodule:: qcodes.dataset.measurements
-   :members:
-
-
-param_spec
-----------
+qcodes.dataset.param_spec
+-------------------------
 
 .. automodule:: qcodes.dataset.param_spec
-   :members:
-
-
-plotting
---------
-
-.. automodule:: qcodes.dataset.plotting
-   :members:
-
-sqlite_base
------------
-
-.. automodule:: qcodes.dataset.sqlite_base
-   :members:
-
-sqlite_settings
----------------
-
-.. automodule:: qcodes.dataset.sqlite_settings
    :members:
