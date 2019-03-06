@@ -1,0 +1,2 @@
+# Declare files that will always have LF line endings on checkout.
+ats_api.mako_template text eol=lf
