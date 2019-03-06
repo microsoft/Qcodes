@@ -13,8 +13,6 @@ HANDLE = U32
 
 logger = logging.getLogger(__name__)
 
-TApi = TypeVar("TApi", bound="AlazarATSAPI")
-
 
 class AlazarATSAPI(WrappedDll):
     """
@@ -153,9 +151,9 @@ class AlazarATSAPI(WrappedDll):
     ## CLASS MEMBERS ##
 
     # Only allow a single instance per DLL path.
-    __instances: Dict[str, TApi] = {}
+    __instances: Dict[str, "AlazarATSAPI"] = {}
 
-    def __new__(cls: Type[TApi], dll_path: str) -> TApi:
+    def __new__(cls: Type["AlazarATSAPI"], dll_path: str) -> "AlazarATSAPI":
         if dll_path in cls.__instances:
             logger.debug(
                 f"Found existing ATS API instance for DLL path {dll_path}.")
