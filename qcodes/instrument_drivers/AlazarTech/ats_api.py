@@ -374,7 +374,7 @@ class CapabilityHelper():
     def query_asopc_type(self) -> int:
         return self.query(self.CAPABILITIES.ASOPC_TYPE)
 
-    def query_pcie_link_speed(self) -> int:
+    def query_pcie_link_speed(self) -> float:
         """Query PCIE link speed in GB/s"""
         # See the ATS-SDK programmer's guide about the encoding 
         # of the PCIE link speed.
