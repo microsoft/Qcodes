@@ -1390,6 +1390,51 @@ def get_values(conn: ConnectionPlus,
     return res
 
 
+def get_parameter_tree_values(conn: ConnectionPlus,
+                              result_table_name: str,
+                              toplevel_param_name: str,
+                              *other_param_names) -> List[List[Any]]:
+    """
+    Get the values of one or more columns from a data table. The rows
+    retrieved are the rows where the 'toplevel_param_name' column has
+    non-NULL values, which is useful when retrieving a top level parameter
+    and its setpoints (and inferred_from parameter values)
+
+    Args:
+        conn: Connection to the DB file
+        result_table_name: The result table whence the values are to be
+            retrieved
+        toplevel_param_name: Name of the column that holds the top level
+            parameter
+        other_param_names: Names of additional columns to retrieve
+
+    Returns:
+        A list of list. The outer list index is row number, the inner list
+        index is parameter value (first toplevel_param, then other_param_names)
+    """
+
+    # Note: if we use placeholders for the SELECT part, then we get rows
+    # back that have "?" as all their keys, making further data extraction
+    # impossible
+    #
+    # Also, placeholders seem to be ignored in the WHERE X IS NOT NULL line
+
+    columns = [toplevel_param_name] + list(other_param_names)
+    columns_for_select = ','.join(columns)
+
+    sql = f"""
+          SELECT {columns_for_select}
+          FROM "{result_table_name}"
+          WHERE {toplevel_param_name} IS NOT NULL
+          """
+
+    cursor = conn.cursor()
+    cursor.execute(sql, ())
+    res = many_many(cursor, *columns)
+
+    return res
+
+
 def get_setpoints(conn: ConnectionPlus,
                   table_name: str,
                   param_name: str) -> Dict[str, List[List[Any]]]:
