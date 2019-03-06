@@ -25,7 +25,7 @@ from qcodes.dataset.guids import parse_guid
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
-    scalar_dataset_with_nulls, \
+    scalar_dataset_with_nulls, array_dataset_with_nulls, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
     standalone_parameters_dataset, array_in_scalar_dataset_unrolled
 # pylint: disable=unused-import
@@ -766,6 +766,36 @@ def test_get_scalar_parameter_data_no_nulls(scalar_dataset_with_nulls):
     expected_values['second_value'] = [np.array([2]), np.array([0])]
 
     parameter_test_helper(scalar_dataset_with_nulls,
+                          list(expected_names.keys()),
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
+
+
+def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls):
+
+    types = [p.type for p in array_dataset_with_nulls.paramspecs.values()]
+
+    expected_names = {}
+    expected_names['val1'] = ['val1', 'sp1', 'sp2']
+    expected_names['val2'] = ['val2', 'sp1']
+    expected_shapes = {}
+    expected_values = {}
+
+    if 'array' in types:
+        shape = (1, 5)
+    else:
+        shape = (5,)
+
+    expected_shapes['val1'] = [shape] * 3
+    expected_shapes['val2'] = [shape] * 2
+    expected_values['val1'] = [np.ones(shape),
+                               np.arange(0, 5).reshape(shape),
+                               np.arange(5, 10).reshape(shape)]
+    expected_values['val2'] = [np.zeros(shape),
+                               np.arange(0, 5).reshape(shape)]
+
+    parameter_test_helper(array_dataset_with_nulls,
                           list(expected_names.keys()),
                           expected_names,
                           expected_shapes,

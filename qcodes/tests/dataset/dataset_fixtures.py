@@ -70,6 +70,37 @@ def array_dataset(experiment, request):
     finally:
         datasaver.dataset.conn.close()
 
+@pytest.fixture(scope="function",
+                params=["array", "numeric"])
+def array_dataset_with_nulls(experiment, request):
+    """
+    A dataset where two arrays are measured, one as a function
+    of two other (setpoint) arrays, the other as a function of just one
+    of them
+    """
+    meas = Measurement()
+    meas.register_custom_parameter('sp1', paramtype=request.param)
+    meas.register_custom_parameter('sp2', paramtype=request.param)
+    meas.register_custom_parameter('val1', paramtype=request.param,
+                                   setpoints=('sp1', 'sp2'))
+    meas.register_custom_parameter('val2', paramtype=request.param,
+                                   setpoints=('sp1',))
+
+    with meas.run() as datasaver:
+        sp1_vals = np.arange(0, 5)
+        sp2_vals = np.arange(5, 10)
+        val1_vals = np.ones(5)
+        val2_vals = np.zeros(5)
+        datasaver.add_result(('sp1', sp1_vals),
+                             ('sp2', sp2_vals),
+                             ('val1', val1_vals))
+        datasaver.add_result(('sp1', sp1_vals),
+                             ('val2', val2_vals))
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
+
 
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
