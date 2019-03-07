@@ -6,6 +6,7 @@ qcodes.utils
 
 .. autosummary::
 
+    qcodes.utils
     qcodes.utils.command
     qcodes.utils.deprecate
     qcodes.utils.helpers

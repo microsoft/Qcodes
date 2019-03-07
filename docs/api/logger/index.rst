@@ -6,11 +6,12 @@ qcodes.logger
 
 .. autosummary::
 
+    qcodes.logger
     qcodes.logger.instrument_logger
     qcodes.logger.log_analysis
     qcodes.logger.logger
 
-.. automodule:: qcodes.instrument
+.. automodule:: qcodes.logger
 
 
 .. toctree::

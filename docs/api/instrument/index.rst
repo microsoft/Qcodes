@@ -5,6 +5,7 @@ qcodes.instrument (Instruments)
 
 .. autosummary::
 
+    qcodes.instrument
     qcodes.instrument.visa
     qcodes.instrument.ip
     qcodes.instrument.channel
