@@ -13,7 +13,6 @@ qcodes.utils
     qcodes.utils.magic
     qcodes.utils.metadata
     qcodes.utils.plotting
-    qcodes.utils.slack
     qcodes.utils.threading
     qcodes.utils.validators
     qcodes.utils.zmq_helpers
