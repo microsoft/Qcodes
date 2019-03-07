@@ -16,7 +16,7 @@ QCoDeS API
    :maxdepth: 4
 
    config
-   dataset
+   dataset/index.rst
    instrument
    parameters
    logger
