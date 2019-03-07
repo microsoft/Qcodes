@@ -1,8 +1,3 @@
-.. _config_api :
-
-qcodes.config
-=============
-
 qcodes.config.config
 --------------------
 

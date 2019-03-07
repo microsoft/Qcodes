@@ -1,9 +1,7 @@
 .. _station_api :
 
-Station
-=======
-
-Station API
+qcodes.station
+==============
 
 .. automodule:: qcodes.station
    :members:

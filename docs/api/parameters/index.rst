@@ -15,6 +15,9 @@ qcodes.instrument (Parameters)
     qcodes.instrument.group_parameter.GroupParameter
 
 
+.. automodule:: qcodes.instrument
+
+
 .. toctree::
    :maxdepth: 4
    :hidden:

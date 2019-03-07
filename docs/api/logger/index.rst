@@ -3,7 +3,6 @@
 qcodes.logger
 =============
 
-Logger API
 
 .. autosummary::
 

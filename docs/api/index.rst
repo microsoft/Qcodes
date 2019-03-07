@@ -15,15 +15,15 @@ QCoDeS API
 .. toctree::
    :maxdepth: 4
 
-   config
-   dataset/index.rst
-   instrument/index.rst
-   parameters/index.rst
-   logger/index.rst
-   math
-   monitor
+   config/index
+   dataset/index
+   instrument/index
+   parameters/index
+   logger/index
+   math/index
+   monitor/index
    station
-   utils
+   utils/index
 
 Legacy API
 ----------
