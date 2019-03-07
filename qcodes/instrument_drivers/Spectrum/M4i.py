@@ -17,7 +17,6 @@ import logging
 import numpy as np
 import ctypes as ct
 from functools import partial
-from typing import Any
 
 from qcodes.utils.validators import Enum, Numbers, Anything, Ints
 from qcodes.instrument.base import Instrument
