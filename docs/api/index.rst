@@ -32,5 +32,7 @@ Legacy API
    :maxdepth: 4
 
    loops
-   data
-   plots
+   actions
+   measure
+   data/index
+   plots/index

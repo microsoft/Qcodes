@@ -1,27 +1,12 @@
 .. _loops_api :
 
-Loops
-=====
-
-Loops API
-
-
-Loops
------
+qcodes.loops
+============
 
 .. automodule:: qcodes.loops
    :members:
 
 
-measure
--------
-
-.. automodule:: qcodes.measure
-   :members:
 
 
-actions
--------
 
-.. automodule:: qcodes.actions
-   :members:
