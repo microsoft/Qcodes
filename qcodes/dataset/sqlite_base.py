@@ -1369,7 +1369,7 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # Benchmarking shows that transposing the data with python types is
         # faster than transposing the data using np.array.transpose
-        res_t = list(map(list, zip(*res)))
+        res_t = map(list, zip(*res))
         output[output_param] = {name: np.array(column_data)
                          for name, column_data
                          in zip(param_names, res_t)}
