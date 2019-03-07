@@ -5,8 +5,3 @@ qcodes.loops
 
 .. automodule:: qcodes.loops
    :members:
-
-
-
-
-
