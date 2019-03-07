@@ -1,7 +1,7 @@
 .. _parameter_api :
 
-Parameter API
-=============
+qcodes.instrument (Parameters)
+===============================
 
 .. autosummary::
 
@@ -14,15 +14,10 @@ Parameter API
     qcodes.instrument.group_parameter.Group
     qcodes.instrument.group_parameter.GroupParameter
 
-qcodes.instrument.parameter
----------------------------
 
-.. automodule:: qcodes.instrument.parameter
-   :members:
+.. toctree::
+   :maxdepth: 4
+   :hidden:
 
-
-qcodes.instrument.group_parameter
----------------------------------
-
-.. automodule:: qcodes.instrument.group_parameter
-   :members:
+   parameter
+   group_parameter
