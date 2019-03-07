@@ -1335,8 +1335,9 @@ class ZIUHFLI(Instrument):
                            set_cmd=partial(self._set_samplingrate_as_float,
                                            self._samplingrate_codes),
                            unit='Hz',
-                           get_cmd=partial(self._get_samplingrate_as_float),
-                           docstring=""" Set the scope sampling rate with float.
+                           get_cmd=self._get_samplingrate_as_float,
+                           docstring=""" A numeric representation of the scope's
+                             samplingrate parameter.
                              If a sampling rate is set that does not match one 
                              of the allowed sampling rates, then round to the 
                              nearest allowed sampling rate. Returns the actual
