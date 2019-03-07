@@ -19,7 +19,7 @@ QCoDeS API
    dataset/index.rst
    instrument/index.rst
    parameters/index.rst
-   logger
+   logger/index.rst
    math
    monitor
    station
