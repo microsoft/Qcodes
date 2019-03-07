@@ -7,7 +7,6 @@ qcodes.instrument (Instruments)
 
     qcodes.instrument
     qcodes.instrument.visa
-    qcodes.instrument.ip
     qcodes.instrument.channel
     qcodes.instrument.base
 
@@ -20,6 +19,5 @@ qcodes.instrument (Instruments)
    :hidden:
 
    visa
-   ip
    channel
    base
