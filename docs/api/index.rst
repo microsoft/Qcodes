@@ -17,7 +17,7 @@ QCoDeS API
 
    config
    dataset/index.rst
-   instrument
+   instrument/index.rst
    parameters
    logger
    math
