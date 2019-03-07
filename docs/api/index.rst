@@ -14,6 +14,7 @@ QCoDeS API
 
 .. toctree::
    :maxdepth: 4
+   :includehidden:
 
    config/index
    dataset/index
@@ -30,6 +31,7 @@ Legacy API
 
 .. toctree::
    :maxdepth: 4
+   :includehidden:
 
    loops
    actions
