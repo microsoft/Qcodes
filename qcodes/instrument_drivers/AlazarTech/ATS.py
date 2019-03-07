@@ -13,6 +13,7 @@ from qcodes.instrument.parameter import Parameter
 from .ats_api import AlazarATSAPI
 from .utils import TraceParameter
 from .helpers import CapabilityHelper
+from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR
 
 
 logger = logging.getLogger(__name__)
@@ -724,24 +725,11 @@ class AlazarTech_ATS(Instrument):
         ensure that only the ones supported for a specific card can be
         selected
         """
-        one_channels = tuple(2**i for i in range(16))
-        two_channels = (3, 5, 6, 9, 10, 12)
-        four_channels = (15,)
-        eight_channels = (255,)
-        sixteen_channels = (65535,)
-
-        if byte_rep in one_channels:
-            return 1
-        elif byte_rep in two_channels:
-            return 2
-        elif byte_rep in four_channels:
-            return 4
-        elif byte_rep in eight_channels:
-            return 8
-        elif byte_rep in sixteen_channels:
-            return 16
-        else:
-            raise RuntimeError('Invalid channel configuration supplied')
+        n_ch = NUMBER_OF_CHANNELS_FROM_BYTE_REPR.get(byte_rep, None)
+        if n_ch is None:
+            raise RuntimeError(
+                f'Invalid channel configuration {byte_rep!r} supplied')
+        return n_ch
 
     def _read_register(self, offset: int) -> int:
         return self.api.read_register_(self._handle, offset)

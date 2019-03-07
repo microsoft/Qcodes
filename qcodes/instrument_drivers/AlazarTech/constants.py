@@ -1,4 +1,4 @@
-from typing import NewType, Dict
+from typing import NewType, Dict, Tuple
 from enum import IntEnum, IntFlag
 
 
@@ -168,6 +168,25 @@ BOARD_NAMES = {
     35: 'ATS9352',
     36: 'ATS9453',
 }
+
+
+# See table 4 Input Channel Configurations
+# on page 241 of the Alazar SDK manual
+_NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int]] = {
+    1:  tuple(2**i for i in range(16)),
+    2:  (3, 5, 6, 9, 10, 12),
+    4:  (15,),
+    8:  (255,),
+    16: (65535,)
+    }
+
+# See table 4 Input Channel Configurations
+# on page 241 of the Alazar SDK manual
+NUMBER_OF_CHANNELS_FROM_BYTE_REPR: Dict[int, int] = {
+    byte_repr: n_ch 
+    for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
+    for byte_repr in byte_reprs
+    }
 
 
 REGISTER_READING_PWD = 0x32145876

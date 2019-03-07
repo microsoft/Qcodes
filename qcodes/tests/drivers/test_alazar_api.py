@@ -229,3 +229,22 @@ def test_writing_and_reading_registers(alazar):
     trigger_holdoff_register_offset = 58
     orig_val = alazar._read_register(trigger_holdoff_register_offset)
     alazar._write_register(trigger_holdoff_register_offset, orig_val)
+
+
+def test_get_num_channels():
+    assert 1 == AlazarTech_ATS.get_num_channels(1)
+    assert 1 == AlazarTech_ATS.get_num_channels(8)
+
+    assert 2 == AlazarTech_ATS.get_num_channels(3)
+    assert 2 == AlazarTech_ATS.get_num_channels(10)
+
+    assert 4 == AlazarTech_ATS.get_num_channels(15)
+    assert 8 == AlazarTech_ATS.get_num_channels(255)
+    assert 16 == AlazarTech_ATS.get_num_channels(65535)
+
+    with pytest.raises(RuntimeError, match='0'):
+        AlazarTech_ATS.get_num_channels(0)
+    with pytest.raises(RuntimeError, match='17'):
+        AlazarTech_ATS.get_num_channels(17)
+    with pytest.raises(RuntimeError, match='100'):
+        AlazarTech_ATS.get_num_channels(100)
