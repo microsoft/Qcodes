@@ -5,11 +5,15 @@ Alazar board installed.
 """
 
 import os
+import gc
+import logging
 
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.instrument_drivers.AlazarTech.dll_wrapper import WrappedDll, \
+    DllWrapperMeta
 from qcodes.instrument_drivers.AlazarTech.constants import ERROR_CODES, \
     API_SUCCESS, Capability
 
@@ -42,6 +46,103 @@ def alazar():
 @pytest.fixture
 def alazar_api():
     yield AlazarATSAPI(AlazarTech_ATS.dll_path)
+
+
+def test_wrapped_dll_singleton_behavior(caplog):
+    using_msg = lambda dll_path: (
+        f"Using existing instance for DLL path {dll_path}.")
+    creating_msg = lambda dll_path: (
+        f"Creating new instance for DLL path {dll_path}.")
+    dll_path_1 = 'ntdll.dll'
+    dll_path_3 = 'kernel32.dll'
+
+    assert DllWrapperMeta._instances == {}
+
+    with caplog.at_level(logging.DEBUG):
+        dll_1 = WrappedDll(dll_path_1)
+    assert DllWrapperMeta._instances == {dll_path_1: dll_1}
+    assert caplog.records[-1].message == creating_msg(dll_path_1)
+    caplog.clear()
+
+    with caplog.at_level(logging.DEBUG):
+        dll_2 = WrappedDll(dll_path_1)
+    assert dll_2 is dll_1
+    assert DllWrapperMeta._instances == {dll_path_1: dll_1}
+    assert caplog.records[-1].message == using_msg(dll_path_1)
+    caplog.clear()
+
+    with caplog.at_level(logging.DEBUG):
+        dll_3 = WrappedDll(dll_path_3)
+    assert dll_3 is not dll_1
+    assert dll_3 is not dll_2
+    assert DllWrapperMeta._instances == {dll_path_1: dll_1,
+                                         dll_path_3: dll_3}
+    assert caplog.records[-1].message == creating_msg(dll_path_3)
+    caplog.clear()
+
+    del dll_2
+    gc.collect()
+    assert DllWrapperMeta._instances == {dll_path_1: dll_1,
+                                         dll_path_3: dll_3}
+
+    del dll_1
+    gc.collect()
+    assert DllWrapperMeta._instances == {dll_path_3: dll_3}
+
+    del dll_3
+    gc.collect()
+    assert DllWrapperMeta._instances == {}
+
+
+def test_alazar_api_singleton_behavior(caplog):
+    using_msg = lambda dll_path: (
+        f"Using existing instance for DLL path {dll_path}.")
+    creating_msg = lambda dll_path: (
+        f"Creating new instance for DLL path {dll_path}.")
+
+    assert DllWrapperMeta._instances == {}
+
+    with caplog.at_level(logging.DEBUG):
+        api1 = AlazarATSAPI(AlazarTech_ATS.dll_path)
+    assert DllWrapperMeta._instances == {AlazarTech_ATS.dll_path: api1}
+    assert caplog.records[-1].message == creating_msg(AlazarTech_ATS.dll_path)
+    caplog.clear()
+
+    with caplog.at_level(logging.DEBUG):
+        api2 = AlazarATSAPI(AlazarTech_ATS.dll_path)
+    assert api2 is api1
+    assert DllWrapperMeta._instances == {AlazarTech_ATS.dll_path: api1}
+    assert caplog.records[-1].message == using_msg(AlazarTech_ATS.dll_path)
+    caplog.clear()
+
+    # Indeed, this actually exposes a vulnarability of the setup. As far as 
+    # LoadLibrary from ctypes is concerned, both "..\AlazarApi" and
+    # "..\AlazarApi.dll" would result in the same loaded library with even 
+    # the same `_handle` value. But here we will abuse this in order to create
+    # a new instance of the Alazar API class by using the same DLL file.
+    # This should probably be fixed.
+    dll_path_3 = AlazarTech_ATS.dll_path + '.dll'
+    with caplog.at_level(logging.DEBUG):
+        api3 = AlazarATSAPI(dll_path_3)
+    assert api3 is not api1
+    assert api3 is not api2
+    assert DllWrapperMeta._instances == {AlazarTech_ATS.dll_path: api1,
+                                         dll_path_3: api3}
+    assert caplog.records[-1].message == creating_msg(dll_path_3)
+    caplog.clear()
+
+    del api2
+    gc.collect()
+    assert DllWrapperMeta._instances == {AlazarTech_ATS.dll_path: api1,
+                                         dll_path_3: api3}
+
+    del api1
+    gc.collect()
+    assert DllWrapperMeta._instances == {dll_path_3: api3}
+
+    del api3
+    gc.collect()
+    assert DllWrapperMeta._instances == {}
 
 
 def test_find_boards():

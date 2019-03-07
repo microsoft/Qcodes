@@ -5,6 +5,7 @@ from typing import TypeVar, Type, Dict, Callable, NamedTuple, Sequence, NewType,
 from threading import Lock
 import concurrent
 from functools import partial
+from weakref import WeakValueDictionary
 
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
@@ -124,6 +125,22 @@ class DllWrapperMeta(type):
         cls = super().__new__(mcls, name, bases, dct)
         return cls
 
+    # Only allow a single instance per DLL path.
+    _instances: Dict[str, Any] = WeakValueDictionary()
+
+    def __call__(cls, dll_path: str):
+        api = cls._instances.get(dll_path, None)
+        if api is not None:
+            logger.debug(
+                f"Using existing instance for DLL path {dll_path}.")
+            return api
+        else:
+            logger.debug(
+                f"Creating new instance for DLL path {dll_path}.")
+            new_api = super().__call__(dll_path)  # <- strong reference
+            cls._instances[dll_path] = new_api
+            return new_api
+
     @classmethod
     def add_api_calls(mcls, dct: Dict[str, Any]):
         prefix = dct.get('signature_prefix', '')
@@ -163,21 +180,6 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     # This executor is used to execute DLL calls.
     _executor: concurrent.futures.Executor
-
-    # Only allow a single instance per DLL path.
-    __instances: Dict[str, "WrappedDll"] = {}
-
-    def __new__(cls: Type["WrappedDll"], dll_path: str) -> "WrappedDll":
-        if dll_path in cls.__instances:
-            logger.debug(
-                f"Found existing ATS API instance for DLL path {dll_path}.")
-            return cls.__instances[dll_path]
-        else:
-            logger.debug(
-                f"Loading new ATS API instance for DLL path {dll_path}.")
-            new_api = super().__new__(cls)
-            cls.__instances[dll_path] = new_api
-            return new_api
  
     def __init__(self, dll_path: str):
         super().__init__()
