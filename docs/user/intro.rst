@@ -178,7 +178,7 @@ The key loop running conditions are:
 
 The Loop is responsible for:
   - creating the dataset_ that will be needed to store its data
-  - generating all the metadata for the DataSet. Metadata is intended to describe the system and software configuration to give it context, help reproduce and troubleshoot the experiment, and to aid searching and datamining later. The Loop generates its own metadata, regarding when and how it was run and the Parameters and other actions involved, as well as asking all the Instruments, via a :ref:`station` if possible, for their own metadata and including it.
+  - generating all the metadata for the DataSet. Metadata is intended to describe the system and software configuration to give it context, help reproduce and troubleshoot the experiment, and to aid searching and datamining later. The Loop generates its own metadata, regarding when and how it was run and the Parameters and other actions involved, as well as asking all the Instruments, via a :ref:`station_api` if possible, for their own metadata and including it.
   - sequencing actions: the Loop should have the highest priority and the least overhead of extra responsibilities so that setpoints and actions occur with as fast and reliable timing as possible.
 
 .. state
