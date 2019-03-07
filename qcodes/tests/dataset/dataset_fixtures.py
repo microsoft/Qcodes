@@ -139,6 +139,27 @@ def array_in_scalar_dataset(experiment):
 
 
 @pytest.fixture(scope="function")
+def varlen_array_in_scalar_dataset(experiment):
+    meas = Measurement()
+    scalar_param = Parameter('scalarparam', set_cmd=None)
+    param = ArraySetPointParam()
+    meas.register_parameter(scalar_param)
+    meas.register_parameter(param, setpoints=(scalar_param,),
+                            paramtype='array')
+    np.random.seed(0)
+    with meas.run() as datasaver:
+        for i in range(1, 10):
+            scalar_param.set(i)
+            param.setpoints = (np.arange(i),)
+            datasaver.add_result((scalar_param, scalar_param.get()),
+                                 (param, np.random.rand(i)))
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
+
+
+@pytest.fixture(scope="function")
 def array_in_scalar_dataset_unrolled(experiment):
     meas = Measurement()
     scalar_param = Parameter('scalarparam', set_cmd=None)
