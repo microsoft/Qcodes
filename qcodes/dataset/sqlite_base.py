@@ -1314,7 +1314,8 @@ def get_parameter_data(conn: ConnectionPlus,
     Args:
         conn: database connection
         table_name: name of the table
-        columns: list of columns
+        columns: list of columns. If no columns are provided, all parameters
+            are returned.
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
