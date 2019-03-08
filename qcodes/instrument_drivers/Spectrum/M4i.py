@@ -17,6 +17,7 @@ import logging
 import numpy as np
 import ctypes as ct
 from functools import partial
+from typing import Union, Type
 
 from qcodes.utils.validators import Enum, Numbers, Anything, Ints
 from qcodes.instrument.base import Instrument
@@ -799,8 +800,9 @@ class M4i(Instrument):
 
         """
         # setup software buffer
+        sample_ctype: Union[Type[ct.c_int16], Type[ct.c_int32]]
         if bytes_per_sample == 2:
-            sample_ctype = ct.c_int16 # type: Any
+            sample_ctype = ct.c_int16
         elif bytes_per_sample == 4:
             sample_ctype = ct.c_int32
         else:
