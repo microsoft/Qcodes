@@ -365,7 +365,7 @@ For each folder of code there should be a matching folder in the ``docs\api``
 folder containing an ``index.rst`` file and a ``X.rst`` file for each of
 the ``X.py`` files that are to be documented. For instance assume that you want
 to document ``qcodes.mymodule.a`` where ``mymodule`` is a folder containing an
-``__init__.py`` and an ``a.py`` file. The the ``mymodule`` folder within the ``api``
+``__init__.py`` and an ``a.py`` file. Then the ``mymodule`` folder within the ``api``
 folder should contain an ``index.rst`` file and a ``a.rst`` file.
 
 The ``index.rst`` file should then look like this::
