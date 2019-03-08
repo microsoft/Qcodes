@@ -48,7 +48,7 @@ jobs:
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
           cd qcodes
-          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc --napoleon-docstrings
         displayName: "Run pytest"
         condition: succeededOrFailed()
       - script: |
