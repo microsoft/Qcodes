@@ -74,6 +74,7 @@ jobs:
         condition: succeededOrFailed()
       - task: PublishBuildArtifacts@1
         displayName: "Publish build docs to Azure DevOps"
+        condition: succeededOrFailed()
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
