@@ -49,18 +49,10 @@ def mark_params_as_updated(*args) -> None:
             arg._set_updated()
 
 
-def api_calls(full_name: str, signature: "Signature") -> Callable:
+def api_calls(c_name: str, signature: "Signature") -> Callable:
     def sync_call(self: "WrappedDll", *args
                  ) -> signature.return_type:  # type: ignore
-        c_func = getattr(self._dll, full_name)
-        future = self._executor.submit(
-            api_call_task,
-            self._lock, 
-            c_func,
-            partial(mark_params_as_updated, *args),
-            *normalize_params(*args)
-        )
-        return future.result()
+        return self._sync_dll_call(c_name, *args)
 
     return sync_call
 
@@ -206,3 +198,14 @@ class WrappedDll(metaclass=DllWrapperMeta):
                               ctypes.c_wchar, ctypes.c_wchar_p):
                 c_func.errcheck = convert_bytes_to_str
             c_func.restype = ret_type
+
+    def _sync_dll_call(self, c_name: str, *args: Any) -> Any:
+        c_func = getattr(self._dll, c_name)
+        future = self._executor.submit(
+            api_call_task,
+            self._lock,
+            c_func,
+            partial(mark_params_as_updated, *args),
+            *normalize_params(*args)
+        )
+        return future.result()
