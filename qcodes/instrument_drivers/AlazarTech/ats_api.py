@@ -3,7 +3,7 @@ import logging
 import ctypes
 
 from .dll_wrapper import WrappedDll, Signature
-from .constants import BOARD_NAMES, REGISTER_READING_PWD, Capability
+from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, Capability
 
 
 # Define aliases for ctypes that match Alazar's notation.
@@ -289,7 +289,7 @@ class AlazarATSAPI(WrappedDll):
             handle,
             offset,
             ctypes.byref(output),
-            ctypes.c_uint32(REGISTER_READING_PWD)
+            REGISTER_ACCESS_PASSWORD
         )
         return output.value
 
@@ -306,4 +306,4 @@ class AlazarATSAPI(WrappedDll):
             value: The value to write
         """
         self.write_register(
-            handle, offset, value, ctypes.c_uint32(REGISTER_READING_PWD))
+            handle, offset, value, REGISTER_ACCESS_PASSWORD)
