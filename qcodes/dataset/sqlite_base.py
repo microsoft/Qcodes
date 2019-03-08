@@ -1433,7 +1433,7 @@ def get_parameter_tree_values(conn: ConnectionPlus,
     """
 
     offset = (start - 1) if start is not None else 0
-    limit = (end - start + 1) if end is not None else -1
+    limit = (end - offset) if end is not None else -1
 
     if start is not None and end is not None and start > end:
         limit = 0
