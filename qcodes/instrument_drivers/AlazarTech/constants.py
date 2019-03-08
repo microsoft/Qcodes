@@ -172,7 +172,7 @@ BOARD_NAMES = {
 
 # See table 4 Input Channel Configurations
 # on page 241 of the Alazar SDK manual
-_NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int]] = {
+_NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int, ...]] = {
     1:  tuple(2**i for i in range(16)),
     2:  (3, 5, 6, 9, 10, 12),
     4:  (15,),
