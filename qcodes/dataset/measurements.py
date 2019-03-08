@@ -474,12 +474,12 @@ class DataSaver:
             N = len(flat_results[toplevel_param])
             for dep in deps_params:
                 if np.shape(result_dict[dep]) == ():
-                    flat_results[dep] = np.ones_like(N)*result_dict[dep]
+                    flat_results[dep] = np.repeat(result_dict[dep], N)
                 else:
                     flat_results[dep] = np.array(result_dict[dep]).ravel()
             for inff in inff_params:
                 if np.shape(result_dict[inff]) == ():
-                    flat_results[inff] = np.ones_like(N)*result_dict[inff]
+                    flat_results[inff] = np.repeat(result_dict[dep], N)
                 else:
                     flat_results[inff] = np.array(result_dict[inff]).ravel()
 
