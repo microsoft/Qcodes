@@ -1,3 +1,10 @@
+"""
+The measurement module provides a context manager for registering parameters
+to measure and storing results. The user is expected to mainly interact with it
+using the :class:`.Measurement` class.
+"""
+
+
 import json
 import logging
 from time import monotonic
