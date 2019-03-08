@@ -1,15 +1,23 @@
-from typing import TypeVar, Type, Dict, Tuple
+from typing import Dict, Tuple, Union, NewType, TYPE_CHECKING, Any
 import logging
 import ctypes
+from ctypes import POINTER
 
 from .dll_wrapper import WrappedDll, Signature
-from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, Capability
+from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, Capability, \
+    ReturnCode
 
+# `_BaseParameter` is needed because users may pass instrument parameters
+# that originate from `Instrument.parameters` dictionary which is typed
+# with `_BaseParameter`, not `Parameter`.
+from qcodes.instrument.parameter import _BaseParameter as Parameter
 
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8
 U32 = ctypes.c_uint32
 HANDLE = ctypes.c_void_p
+POINTER_U8 = Any
+POINTER_U32 = Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,130 +33,291 @@ class AlazarATSAPI(WrappedDll):
     BOARD_NAMES = BOARD_NAMES
     Capability = Capability
 
-    ## SIGNATURES ##
+    ## ACTUAL DLL API FUNCTIONS ##
 
     signature_prefix: str = 'Alazar'
-    signatures: Dict[str, Signature] = {
-        'NumOfSystems': Signature(
-            return_type=U32
-        ),
+    signatures: Dict[str, Signature] = {}
 
-        'BoardsInSystemBySystemID': Signature(
-            return_type=U32,
-            argument_types=[U32]
-        ),
+    def set_trigger_time_out(self, 
+                             handle: int, 
+                             timeout_ticks: Union[int, Parameter]
+                            ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetTriggerTimeOut', handle, timeout_ticks)
 
-        'GetBoardKind': Signature(
-            return_type=U32,
-            argument_types=[HANDLE]
-        ),
+    signatures.update({"SetTriggerTimeOut": Signature(
+        argument_types=[HANDLE, U32])})
 
-        'GetBoardBySystemID': Signature(
-            return_type=HANDLE,
-            argument_types=[U32, U32]
-        ),
+    def get_board_kind(self, handle: int) -> int:
+        return self._sync_dll_call('AlazarGetBoardKind', handle)
 
-        'GetDriverVersion': Signature(
-            argument_types=[
-                ctypes.POINTER(U8),
-                ctypes.POINTER(U8),
-                ctypes.POINTER(U8)
-            ]
-        ),
+    signatures.update({'GetBoardKind': Signature(
+        argument_types=[HANDLE],
+        return_type=U32)})
 
-        'GetSDKVersion': Signature(
-            argument_types=[
-                ctypes.POINTER(U8),
-                ctypes.POINTER(U8),
-                ctypes.POINTER(U8)
-            ]
-        ),
+    def get_channel_info(self,
+                         handle: int,
+                         memory_size_in_samples: POINTER_U32,
+                         bits_per_sample: POINTER_U8
+                         ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarGetChannelInfo',
+            handle, memory_size_in_samples, bits_per_sample)
+    
+    signatures.update({'GetChannelInfo': Signature(
+            argument_types=[HANDLE, POINTER(U32), POINTER(U8)])})
+    
+    def get_cpld_version(self,
+                         handle: int,
+                         major: POINTER_U8,
+                         minor: POINTER_U8
+                         ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarGetCPLDVersion', handle, major, minor)
+    
+    signatures.update({"GetCPLDVersion": Signature(
+        argument_types=[HANDLE, POINTER(U8), POINTER(U8)])})
 
-        'GetChannelInfo': Signature(
-            argument_types=[HANDLE, ctypes.POINTER(U32), ctypes.POINTER(U8)]
-        ),
+    def get_driver_version(self,
+                           major: POINTER_U8,
+                           minor: POINTER_U8,
+                           revision: POINTER_U8
+                           ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarGetDriverVersion', major, minor, revision)
+    
+    signatures.update({'GetDriverVersion': Signature(
+            argument_types=[POINTER(U8), POINTER(U8), POINTER(U8)])})
+    
+    def get_sdk_version(self,
+                        major: POINTER_U8,
+                        minor: POINTER_U8,
+                        revision: POINTER_U8
+                        ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarGetSDKVersion', major, minor, revision)
 
-        'QueryCapability': Signature(
-            argument_types=[HANDLE, U32, U32, ctypes.POINTER(U32)]
-        ),
+    signatures.update({'GetSDKVersion': Signature(
+            argument_types=[POINTER(U8), POINTER(U8), POINTER(U8)])})
 
-        "WaitAsyncBufferComplete": Signature(
-            argument_types=[U32, ctypes.c_void_p, U32]
-        ),
+    def query_capability(self,
+                         handle: int,
+                         capability: int,
+                         reserved: int,
+                         value: POINTER_U32
+                         ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarQueryCapability', handle, capability, reserved, value)
+    
+    signatures.update({'QueryCapability': Signature(
+            argument_types=[HANDLE, U32, U32, POINTER(U32)])})
+    
+    def read_register(self,
+                      handle: int,
+                      offset: int,
+                      output: POINTER_U32,
+                      password: int,
+                      ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarReadRegister', handle, offset, output, password)
+    
+    signatures.update({"ReadRegister": Signature(
+            argument_types=[U32, U32, POINTER(U32), U32])})
 
-        "ReadRegister": Signature(
-            argument_types=[U32, U32, ctypes.POINTER(U32), U32]
-        ),
+    def write_register(self,
+                       handle: int,
+                       offset: int,
+                       value: int,
+                       password: int
+                      ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarWriteRegister', handle, offset, value, password)
 
-        "WriteRegister": Signature(
-            argument_types=[U32, U32, U32, U32]
-        ),
+    signatures.update({"WriteRegister": Signature(
+            argument_types=[U32, U32, U32, U32])})
 
-        "BeforeAsyncRead": Signature(
-            argument_types=[U32, U32, ctypes.c_long, U32, U32, U32, U32]
-        ),
+    def num_of_systems(self) -> int:
+        return self._sync_dll_call('AlazarNumOfSystems')
+    
+    signatures.update({'NumOfSystems': Signature(
+            return_type=U32)})
 
-        "SetCaptureClock": Signature(
-            argument_types=[U32, U32, U32, U32, U32]
-        ),
+    def boards_in_system_by_system_id(self, system_id: int) -> int:
+        return self._sync_dll_call(
+            'AlazarBoardsInSystemBySystemID', system_id)
+    
+    signatures.update({'BoardsInSystemBySystemID': Signature(
+        argument_types=[U32], return_type=U32)})
+    
+    def get_board_by_system_id(self, system_id: int, board_id: int) -> int:
+        return self._sync_dll_call(
+            'AlazarGetBoardBySystemID', system_id, board_id)
+    
+    signatures.update({'GetBoardBySystemID': Signature(
+        argument_types=[U32, U32], return_type=HANDLE)})
+    
+    def set_capture_clock(self,
+                          handle: int,
+                          source_id: Union[int, Parameter],
+                          sample_rate_id_or_value: Union[int, Parameter],
+                          edge_id: Union[int, Parameter],
+                          decimation: Union[int, Parameter]
+                          ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetCaptureClock',
+            handle, source_id, sample_rate_id_or_value, edge_id, decimation)
+    
+    signatures.update({"SetCaptureClock": Signature(
+        argument_types=[U32, U32, U32, U32, U32])})
 
-        "SetRecordSize": Signature(
-            argument_types=[HANDLE, U32, U32]
-        ),
+    def input_control(self,
+                      handle: int,
+                      channel_id: Union[int, Parameter],
+                      coupling_id: Union[int, Parameter],
+                      range_id: Union[int, Parameter],
+                      impedance_id: Union[int, Parameter]
+                      ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarInputControl',
+            handle, channel_id, coupling_id, range_id, impedance_id)
+    
+    signatures.update({"InputControl": Signature(
+        argument_types=[HANDLE, U8, U32, U32, U32])})
+    
+    def set_bw_limit(self,
+                      handle: int,
+                      channel_id: Union[int, Parameter],
+                      flag: Union[int, Parameter]
+                      ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetBWLimit', handle, channel_id, flag)
+    
+    signatures.update({"SetBWLimit": Signature(
+        argument_types=[HANDLE, U32, U32])})
 
-        "PostAsyncBuffer": Signature(
-            argument_types=[U32, ctypes.c_void_p, U32]
-        ),
+    def set_trigger_operation(self,
+                              handle: int,
+                              trigger_operation: Union[int, Parameter],
+                              trigger_engine_id_1: Union[int, Parameter],
+                              source_id_1: Union[int, Parameter],
+                              slope_id_1: Union[int, Parameter],
+                              level_1: Union[int, Parameter],
+                              trigger_engine_id_2: Union[int, Parameter],
+                              source_id_2: Union[int, Parameter],
+                              slope_id_2: Union[int, Parameter],
+                              level_2: Union[int, Parameter],
+                              ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetTriggerOperation',
+            handle, trigger_operation,
+            trigger_engine_id_1, source_id_1, slope_id_1, level_1,
+            trigger_engine_id_2, source_id_2, slope_id_2, level_2)
+    
+    signatures.update({"SetTriggerOperation": Signature(
+        argument_types=[
+            HANDLE, U32, U32, U32, U32, U32, U32, U32, U32, U32])})
 
-        "AbortAsyncRead": Signature(
-            argument_types=[HANDLE]
-        ),
+    def set_external_trigger(self,
+                             handle: int,
+                             coupling_id: Union[int, Parameter],
+                             range_id: Union[int, Parameter]
+                             ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetExternalTrigger', handle, coupling_id, range_id)
+    
+    signatures.update({"SetExternalTrigger": Signature(
+        argument_types=[HANDLE, U32, U32])})
 
-        "GetCPLDVersion": Signature(
-            argument_types=[HANDLE, ctypes.POINTER(U8), ctypes.POINTER(U8)]
-        ),
+    def set_trigger_delay(self,
+                          handle: int,
+                          value: Union[int, Parameter]
+                          ) -> ReturnCode:
+        return self._sync_dll_call('AlazarSetTriggerDelay', handle, value)
 
-        "InputControl": Signature(
-            argument_types=[HANDLE, U8, U32, U32, U32]
-        ),
+    signatures.update({"SetTriggerDelay": Signature(
+        argument_types=[HANDLE, U32])})
 
-        "SetBWLimit": Signature(
-            argument_types=[HANDLE, U32, U32]
-        ),
+    def configure_aux_io(self,
+                         handle: int,
+                         mode_id: Union[int, Parameter],
+                         mode_parameter_value: Union[int, Parameter]
+                         ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarConfigureAuxIO', handle, mode_id, mode_parameter_value)
 
-        "SetTriggerOperation": Signature(
-            argument_types=[
-                HANDLE, U32, U32, U32, U32, U32, U32, U32, U32, U32
-                ]
-        ),
+    signatures.update({"ConfigureAuxIO": Signature(
+        argument_types=[HANDLE, U32, U32])})
 
-        "SetExternalTrigger": Signature(
-            argument_types=[HANDLE, U32, U32]
-        ),
+    def set_record_size(self,
+                        handle: int,
+                        pre_trigger_samples: Union[int, Parameter],
+                        post_trigger_samples: Union[int, Parameter]
+                        ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetRecordSize', handle, pre_trigger_samples, post_trigger_samples)
+    
+    signatures.update({"SetRecordSize": Signature(
+        argument_types=[HANDLE, U32, U32])})
 
-        "SetTriggerDelay": Signature(
-            argument_types=[HANDLE, U32]
-        ),
+    def before_async_read(self,
+                          handle: int,
+                          channel_select: int,
+                          transfer_offset: int,
+                          samples_per_record: int,
+                          records_per_buffer: int,
+                          records_per_acquisition: int,
+                          flags: int
+                          ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarBeforeAsyncRead',
+            handle, channel_select, transfer_offset,
+            samples_per_record, records_per_buffer, records_per_acquisition,
+            flags)
+    
+    signatures.update({"BeforeAsyncRead": Signature(
+        argument_types=[U32, U32, ctypes.c_long, U32, U32, U32, U32])})
 
-        "SetTriggerTimeOut": Signature(
-            argument_types=[HANDLE, U32]
-        ),
+    def post_async_buffer(self,
+                          handle: int,
+                          buffer: ctypes.c_void_p,
+                          buffer_length: int
+                          ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
+    
+    signatures.update({"PostAsyncBuffer": Signature(
+        argument_types=[U32, ctypes.c_void_p, U32])})
 
-        "ConfigureAuxIO": Signature(
-            argument_types=[HANDLE, U32, U32]
-        ),
+    def wait_async_buffer_complete(self,
+                                   handle: int,
+                                   buffer: ctypes.c_void_p,
+                                   timeout_in_ms: int
+                                   ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
+    
+    signatures.update({"WaitAsyncBufferComplete": Signature(
+        argument_types=[U32, ctypes.c_void_p, U32])})
 
-        "ErrorToText": Signature(
-            return_type=ctypes.c_char_p,
-            argument_types=[U32]
-        ),
+    def start_capture(self, handle: int) -> ReturnCode:
+        return self._sync_dll_call('AlazarStartCapture', handle)
 
-        "StartCapture": Signature(
-            argument_types=[HANDLE]
-        )
-    }
+    signatures.update({"StartCapture": Signature(
+        argument_types=[HANDLE])})
+    
+    def abort_async_read(self, handle: int) -> ReturnCode:
+        return self._sync_dll_call('AlazarAbortAsyncRead', handle)
+    
+    signatures.update({"AbortAsyncRead": Signature(
+        argument_types=[HANDLE])})
 
-    ## INSTANCE MEMBERS ##
+    def error_to_text(self, return_code: ReturnCode) -> str:
+        return self._sync_dll_call('AlazarErrorToText', return_code)
+
+    signatures.update({"ErrorToText": Signature(
+        argument_types=[U32], return_type=ctypes.c_char_p)})
+
+    ## OTHER API-RELATED METHOD ##
 
     def get_board_model(self, handle: int) -> str:
         return self.BOARD_NAMES[self.get_board_kind(handle)]
