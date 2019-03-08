@@ -819,8 +819,7 @@ class M4i(Instrument):
                              pyspcm.M2CMD_DATA_WAITDMA)
 
         # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(ctype_buffer_type))
-        output = np.frombuffer(data.contents, dtype=sample_ctype)
+        output = np.frombuffer(data_buffer)
         return output
 
     def retrieve_data(self, trace):
