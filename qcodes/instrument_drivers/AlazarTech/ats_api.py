@@ -35,7 +35,6 @@ class AlazarATSAPI(WrappedDll):
 
     ## ACTUAL DLL API FUNCTIONS ##
 
-    signature_prefix: str = 'Alazar'
     signatures: Dict[str, Signature] = {}
 
     def set_trigger_time_out(self, 
@@ -45,13 +44,13 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarSetTriggerTimeOut', handle, timeout_ticks)
 
-    signatures.update({"SetTriggerTimeOut": Signature(
+    signatures.update({"AlazarSetTriggerTimeOut": Signature(
         argument_types=[HANDLE, U32])})
 
     def get_board_kind(self, handle: int) -> int:
         return self._sync_dll_call('AlazarGetBoardKind', handle)
 
-    signatures.update({'GetBoardKind': Signature(
+    signatures.update({'AlazarGetBoardKind': Signature(
         argument_types=[HANDLE],
         return_type=U32)})
 
@@ -64,7 +63,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarGetChannelInfo',
             handle, memory_size_in_samples, bits_per_sample)
     
-    signatures.update({'GetChannelInfo': Signature(
+    signatures.update({'AlazarGetChannelInfo': Signature(
             argument_types=[HANDLE, POINTER(U32), POINTER(U8)])})
     
     def get_cpld_version(self,
@@ -75,7 +74,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarGetCPLDVersion', handle, major, minor)
     
-    signatures.update({"GetCPLDVersion": Signature(
+    signatures.update({"AlazarGetCPLDVersion": Signature(
         argument_types=[HANDLE, POINTER(U8), POINTER(U8)])})
 
     def get_driver_version(self,
@@ -86,7 +85,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarGetDriverVersion', major, minor, revision)
     
-    signatures.update({'GetDriverVersion': Signature(
+    signatures.update({'AlazarGetDriverVersion': Signature(
             argument_types=[POINTER(U8), POINTER(U8), POINTER(U8)])})
     
     def get_sdk_version(self,
@@ -97,7 +96,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarGetSDKVersion', major, minor, revision)
 
-    signatures.update({'GetSDKVersion': Signature(
+    signatures.update({'AlazarGetSDKVersion': Signature(
             argument_types=[POINTER(U8), POINTER(U8), POINTER(U8)])})
 
     def query_capability(self,
@@ -109,7 +108,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarQueryCapability', handle, capability, reserved, value)
     
-    signatures.update({'QueryCapability': Signature(
+    signatures.update({'AlazarQueryCapability': Signature(
             argument_types=[HANDLE, U32, U32, POINTER(U32)])})
     
     def read_register(self,
@@ -121,7 +120,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarReadRegister', handle, offset, output, password)
     
-    signatures.update({"ReadRegister": Signature(
+    signatures.update({"AlazarReadRegister": Signature(
             argument_types=[U32, U32, POINTER(U32), U32])})
 
     def write_register(self,
@@ -133,27 +132,27 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarWriteRegister', handle, offset, value, password)
 
-    signatures.update({"WriteRegister": Signature(
+    signatures.update({"AlazarWriteRegister": Signature(
             argument_types=[U32, U32, U32, U32])})
 
     def num_of_systems(self) -> int:
         return self._sync_dll_call('AlazarNumOfSystems')
     
-    signatures.update({'NumOfSystems': Signature(
+    signatures.update({'AlazarNumOfSystems': Signature(
             return_type=U32)})
 
     def boards_in_system_by_system_id(self, system_id: int) -> int:
         return self._sync_dll_call(
             'AlazarBoardsInSystemBySystemID', system_id)
     
-    signatures.update({'BoardsInSystemBySystemID': Signature(
+    signatures.update({'AlazarBoardsInSystemBySystemID': Signature(
         argument_types=[U32], return_type=U32)})
     
     def get_board_by_system_id(self, system_id: int, board_id: int) -> int:
         return self._sync_dll_call(
             'AlazarGetBoardBySystemID', system_id, board_id)
     
-    signatures.update({'GetBoardBySystemID': Signature(
+    signatures.update({'AlazarGetBoardBySystemID': Signature(
         argument_types=[U32, U32], return_type=HANDLE)})
     
     def set_capture_clock(self,
@@ -167,7 +166,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarSetCaptureClock',
             handle, source_id, sample_rate_id_or_value, edge_id, decimation)
     
-    signatures.update({"SetCaptureClock": Signature(
+    signatures.update({"AlazarSetCaptureClock": Signature(
         argument_types=[U32, U32, U32, U32, U32])})
 
     def input_control(self,
@@ -181,7 +180,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarInputControl',
             handle, channel_id, coupling_id, range_id, impedance_id)
     
-    signatures.update({"InputControl": Signature(
+    signatures.update({"AlazarInputControl": Signature(
         argument_types=[HANDLE, U8, U32, U32, U32])})
     
     def set_bw_limit(self,
@@ -192,7 +191,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarSetBWLimit', handle, channel_id, flag)
     
-    signatures.update({"SetBWLimit": Signature(
+    signatures.update({"AlazarSetBWLimit": Signature(
         argument_types=[HANDLE, U32, U32])})
 
     def set_trigger_operation(self,
@@ -213,7 +212,7 @@ class AlazarATSAPI(WrappedDll):
             trigger_engine_id_1, source_id_1, slope_id_1, level_1,
             trigger_engine_id_2, source_id_2, slope_id_2, level_2)
     
-    signatures.update({"SetTriggerOperation": Signature(
+    signatures.update({"AlazarSetTriggerOperation": Signature(
         argument_types=[
             HANDLE, U32, U32, U32, U32, U32, U32, U32, U32, U32])})
 
@@ -225,7 +224,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarSetExternalTrigger', handle, coupling_id, range_id)
     
-    signatures.update({"SetExternalTrigger": Signature(
+    signatures.update({"AlazarSetExternalTrigger": Signature(
         argument_types=[HANDLE, U32, U32])})
 
     def set_trigger_delay(self,
@@ -234,7 +233,7 @@ class AlazarATSAPI(WrappedDll):
                           ) -> ReturnCode:
         return self._sync_dll_call('AlazarSetTriggerDelay', handle, value)
 
-    signatures.update({"SetTriggerDelay": Signature(
+    signatures.update({"AlazarSetTriggerDelay": Signature(
         argument_types=[HANDLE, U32])})
 
     def configure_aux_io(self,
@@ -245,7 +244,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarConfigureAuxIO', handle, mode_id, mode_parameter_value)
 
-    signatures.update({"ConfigureAuxIO": Signature(
+    signatures.update({"AlazarConfigureAuxIO": Signature(
         argument_types=[HANDLE, U32, U32])})
 
     def set_record_size(self,
@@ -256,7 +255,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarSetRecordSize', handle, pre_trigger_samples, post_trigger_samples)
     
-    signatures.update({"SetRecordSize": Signature(
+    signatures.update({"AlazarSetRecordSize": Signature(
         argument_types=[HANDLE, U32, U32])})
 
     def before_async_read(self,
@@ -274,7 +273,7 @@ class AlazarATSAPI(WrappedDll):
             samples_per_record, records_per_buffer, records_per_acquisition,
             flags)
     
-    signatures.update({"BeforeAsyncRead": Signature(
+    signatures.update({"AlazarBeforeAsyncRead": Signature(
         argument_types=[U32, U32, ctypes.c_long, U32, U32, U32, U32])})
 
     def post_async_buffer(self,
@@ -285,7 +284,7 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
     
-    signatures.update({"PostAsyncBuffer": Signature(
+    signatures.update({"AlazarPostAsyncBuffer": Signature(
         argument_types=[U32, ctypes.c_void_p, U32])})
 
     def wait_async_buffer_complete(self,
@@ -296,25 +295,25 @@ class AlazarATSAPI(WrappedDll):
         return self._sync_dll_call(
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
     
-    signatures.update({"WaitAsyncBufferComplete": Signature(
+    signatures.update({"AlazarWaitAsyncBufferComplete": Signature(
         argument_types=[U32, ctypes.c_void_p, U32])})
 
     def start_capture(self, handle: int) -> ReturnCode:
         return self._sync_dll_call('AlazarStartCapture', handle)
 
-    signatures.update({"StartCapture": Signature(
+    signatures.update({"AlazarStartCapture": Signature(
         argument_types=[HANDLE])})
     
     def abort_async_read(self, handle: int) -> ReturnCode:
         return self._sync_dll_call('AlazarAbortAsyncRead', handle)
     
-    signatures.update({"AbortAsyncRead": Signature(
+    signatures.update({"AlazarAbortAsyncRead": Signature(
         argument_types=[HANDLE])})
 
     def error_to_text(self, return_code: ReturnCode) -> str:
         return self._sync_dll_call('AlazarErrorToText', return_code)
 
-    signatures.update({"ErrorToText": Signature(
+    signatures.update({"AlazarErrorToText": Signature(
         argument_types=[U32], return_type=ctypes.c_char_p)})
 
     ## OTHER API-RELATED METHOD ##

@@ -114,8 +114,6 @@ class WrappedDll(metaclass=DllWrapperMeta):
     This class uses `signatures` dictionary defined in a class attribute
     in order to assign `argtypes` and `restype` atttributes for functions of
     a loaded DLL library (from the `._dll` attribute of the class).
-    If a non-empty `signature_prefix` is set, the function names in the keys
-    of the `signatures` dictionary can omit the common prefix for convenience.
 
     Each function is potentially executed in a different thread (depending on
     what the class sets `_executor` attribute to), hence the class has to
@@ -129,11 +127,10 @@ class WrappedDll(metaclass=DllWrapperMeta):
         dll_path: path to the DLL library to load and wrap
     """
 
-    # These attributes define the generated class methods for DLL calls.
-    signature_prefix: str = ''
+    # This defines ctypes signatures for loaded DLL functions.
     signatures: Dict[str, Signature] = {}
 
-    # This is the DLL library instance
+    # This is the DLL library instance.
     _dll: ctypes.CDLL
 
     # This lock guards DLL calls.
@@ -155,7 +152,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
         that we use in this class.
         """
         for name, signature in self.signatures.items():
-            c_func = getattr(self._dll, f"{self.signature_prefix}{name}")
+            c_func = getattr(self._dll, name)
 
             c_func.argtypes = signature.argument_types
 
