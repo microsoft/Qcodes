@@ -249,6 +249,13 @@ class InterDependencies_:
         """
         return tuple(self._paramspec_to_id.keys())
 
+    @property
+    def names(self) -> Tuple[str, ...]:
+        """
+        Return all the names of the parameters of this instance
+        """
+        return tuple(self._id_to_paramspec.keys())
+
     def _extend_with_paramspec(self, ps: ParamSpec) -> 'InterDependencies_':
         """
         Create a new InterDependencies_ object extended with the provided
