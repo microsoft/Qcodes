@@ -118,7 +118,7 @@ class DllWrapperMeta(type):
         return cls
 
     # Only allow a single instance per DLL path.
-    _instances: Dict[str, Any] = WeakValueDictionary()
+    _instances: WeakValueDictionary = WeakValueDictionary()  # of [str, Any]
 
     def __call__(cls, dll_path: str):
         api = cls._instances.get(dll_path, None)
