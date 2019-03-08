@@ -9,4 +9,3 @@ lxml
 codecov
 asv
 gitpython
-mako
