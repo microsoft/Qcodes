@@ -808,8 +808,8 @@ class M4i(Instrument):
         else:
             raise ValueError('bytes_per_sample should be 2 or 4')
 
-        buffer_size = sample_ctype * memsize * numch
-        data_buffer = (buffer_size)()
+        ctype_buffer_type = sample_ctype * memsize * numch
+        data_buffer = (ctype_buffer_type)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
@@ -819,7 +819,7 @@ class M4i(Instrument):
                              pyspcm.M2CMD_DATA_WAITDMA)
 
         # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
+        data = ct.cast(data_pointer, ct.POINTER(ctype_buffer_type))
         output = np.frombuffer(data.contents, dtype=sample_ctype)
         return output
 
