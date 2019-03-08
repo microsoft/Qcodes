@@ -151,45 +151,9 @@ class DataSaver:
 
         self._enqueue_results(results_dict)
 
-        # self._append_results(res, input_size)
-
         if monotonic() - self._last_save_time > self.write_period:
             self.flush_data_to_database()
             self._last_save_time = monotonic()
-
-    def _append_results(self, res: Sequence[res_type],
-                        input_size: int) -> None:
-        """
-        A private method to add the data to actual queue of data to be written.
-
-        Args:
-            res: A sequence of the data to be added
-            input_size: The length of the data to be added. 1 if its
-                to be inserted as arrays.
-        """
-        for index in range(input_size):
-            res_dict = {}
-            for partial_result in res:
-                param = str(partial_result[0])
-                value = partial_result[1]
-                param_spec = self.parameters[param]
-                if param_spec.type == 'array' and index == 0:
-                    res_dict[param] = value
-                elif param_spec.type != 'array':
-                    # For compatibility with the old Loop, setpoints are
-                    # tuples of numbers (usually tuple(np.linspace(...))
-                    if hasattr(value, '__len__') and not isinstance(value, str):
-                        value = cast(Union[Sequence, np.ndarray], value)
-                        if isinstance(value, np.ndarray):
-                            # we always want to iterate over a 1d array
-                            # ravel unconditionally returns a 1d representation
-                            # both for >1D arrays and for 0D arrays
-                            value = value.ravel()
-                        res_dict[param] = value[index]
-                    else:
-                        res_dict[param] = value
-            if len(res_dict) > 0:
-                self._results.append(res_dict)
 
     def _unpack_partial_result(
         self, partial_result: res_type) -> Dict[ParamSpecBase, values_type]:
