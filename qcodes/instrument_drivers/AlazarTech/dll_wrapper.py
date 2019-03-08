@@ -120,7 +120,14 @@ class DllWrapperMeta(type):
     # Only allow a single instance per DLL path.
     _instances: WeakValueDictionary = WeakValueDictionary()  # of [str, Any]
 
-    def __call__(cls, dll_path: str):
+    # Note: without the 'type: ignore' for the `__call__` method below, mypy
+    # generates 'Signature of "__call__" incompatible with supertype "type"'
+    # error, which is an indicator of Liskov principle violation - subtypes
+    # should not change the method signatures, but we need it here in order to
+    # use the `dll_path` argument which `type` superclass obviously does not
+    # have in its `__call__` method.
+    def __call__(  # type: ignore
+            cls, dll_path: int):
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
