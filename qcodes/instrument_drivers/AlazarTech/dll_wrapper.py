@@ -7,7 +7,7 @@ import concurrent
 from functools import partial
 from weakref import WeakValueDictionary
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import _BaseParameter
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
 from .constants import API_SUCCESS, ERROR_CODES, ReturnCode
 
@@ -36,7 +36,7 @@ def convert_to_camel_case(name):
 def normalize_params(*args: Any) -> List[Any]:
     args_out: List[Any] = []
     for arg in args:
-        if isinstance(arg, Parameter):
+        if isinstance(arg, _BaseParameter):
             args_out.append(arg.raw_value)
         else:
             args_out.append(arg)
