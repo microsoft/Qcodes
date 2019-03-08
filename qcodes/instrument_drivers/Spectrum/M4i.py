@@ -262,7 +262,8 @@ class M4i(Instrument):
         # converting ADC samples to voltage values
         self.add_parameter('ADC_to_voltage',
                            label='ADC to voltage',
-                           get_cmd=partial(self._param32bit, pyspcm.SPC_MIINST_MAXADCVALUE),
+                           get_cmd=partial(self._param32bit,
+                                           pyspcm.SPC_MIINST_MAXADCVALUE),
                            docstring='contains the decimal code (in LSB) of the ADC full scale value')
 
         self.add_parameter('box_averages',
@@ -693,15 +694,20 @@ class M4i(Instrument):
             compensation (None or int): If None, then do not update the compensation
         """
         # initialize
-        getattr(self, 'input_path_{}'.format(channel_index))(input_path)  # 0: 1 MOhm
+        getattr(self, 'input_path_{}'.format(channel_index))(
+            input_path)  # 0: 1 MOhm
         if termination is not None:
-            getattr(self, 'termination_{}'.format(channel_index))(termination)  # 0: DC
+            getattr(self, 'termination_{}'.format(
+                channel_index))(termination)  # 0: DC
         if coupling is not None:
-            getattr(self, 'ACDC_coupling_{}'.format(channel_index))(coupling)  # 0: DC
-        getattr(self, 'range_channel_{}'.format(channel_index))(mV_range)  # note: set after voltage range
+            getattr(self, 'ACDC_coupling_{}'.format(
+                channel_index))(coupling)  # 0: DC
+        getattr(self, 'range_channel_{}'.format(channel_index))(
+            mV_range)  # note: set after voltage range
         # can only be used with DC coupling and 50 Ohm path (hf)
         if compensation is not None:
-            getattr(self, 'ACDC_offs_compensation_{}'.format(channel_index))(compensation)
+            getattr(self, 'ACDC_offs_compensation_{}'.format(
+                channel_index))(compensation)
 
     def set_ext0_OR_trigger_settings(self, trig_mode, termination, coupling, level0, level1=None):
 
@@ -753,7 +759,8 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # convert transfer data to numpy array
-        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=2)
+        output = self._transfer_buffer_numpy(
+            memsize, numch, bytes_per_sample=2)
 
         self._stop_acquisition()
 
@@ -912,10 +919,12 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=4)
+        output = self._transfer_buffer_numpy(
+            memsize, numch, bytes_per_sample=4)
         self._stop_acquisition()
 
-        voltages = self.convert_to_voltage(output, mV_range / 1000) / self.box_averages()
+        voltages = self.convert_to_voltage(
+            output, mV_range / 1000) / self.box_averages()
 
         return voltages
 
@@ -1011,7 +1020,8 @@ class M4i(Instrument):
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
-        output = self._transfer_buffer_numpy(memsize, numch, bytes_per_sample=4)
+        output = self._transfer_buffer_numpy(
+            memsize, numch, bytes_per_sample=4)
 
         self._stop_acquisition()
 
