@@ -21,7 +21,7 @@ def test_string_via_dataset(experiment):
 
     test_set.add_result({"p": "some text"})
 
-    test_set.mark_complete()
+    test_set.mark_completed()
 
     assert test_set.get_data("p") == [["some text"]]
 
@@ -120,7 +120,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
 
     test_set.add_result({"p": 'some text'})
 
-    test_set.mark_complete()
+    test_set.mark_completed()
 
     try:
         assert [['some text']] == test_set.get_data("p")

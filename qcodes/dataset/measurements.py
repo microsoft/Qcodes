@@ -1,3 +1,10 @@
+"""
+The measurement module provides a context manager for registering parameters
+to measure and storing results. The user is expected to mainly interact with it
+using the :class:`.Measurement` class.
+"""
+
+
 import json
 import logging
 from time import monotonic
@@ -174,13 +181,9 @@ class DataSaver:
                     if hasattr(value, '__len__') and not isinstance(value, str):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
-                            # this is significantly faster than atleast_1d
-                            # espcially for non 0D arrays
-                            # because we already know that this is a numpy
-                            # array and just one numpy array. atleast_1d
-                            # performs additional checks.
-                            if value.ndim == 0:
-                                value = value.reshape(1)
+                            # we always want to iterate over a 1d array
+                            # ravel unconditionally returns a 1d representation
+                            # both for >1D arrays and for 0D arrays
                             value = value.ravel()
                         res_dict[param] = value[index]
                     else:
@@ -612,7 +615,7 @@ class Runner:
 
         # and finally mark the dataset as closed, thus
         # finishing the measurement
-        self.ds.mark_complete()
+        self.ds.mark_completed()
 
         self.ds.unsubscribe_all()
 
