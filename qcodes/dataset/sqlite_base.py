@@ -256,7 +256,7 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     # outcome is 'nan'
     if np.isnan(numeric):
         return numeric
-    
+
     # Then we check if the outcome is 'inf', includes +inf and -inf
     if np.isinf(numeric):
         return numeric
