@@ -1,5 +1,4 @@
 from typing import Dict, Tuple, Union, NewType, TYPE_CHECKING, Any
-import logging
 import ctypes
 from ctypes import POINTER
 
@@ -18,8 +17,6 @@ HANDLE = ctypes.c_void_p
 
 POINTER_U8 = Any
 POINTER_U32 = Any
-
-logger = logging.getLogger(__name__)
 
 
 class AlazarATSAPI(WrappedDll):
