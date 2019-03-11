@@ -526,6 +526,20 @@ def test_numpy_nan(dataset):
     assert np.isnan(retrieved[1])
 
 
+def test_numpy_inf(dataset):
+    """
+    Test that we can insert and retrieve numpy inf in the data set
+    """
+    parameter_m = ParamSpec("m", "numeric")
+    dataset.add_parameter(parameter_m)
+    dataset.mark_started()
+
+    data_dict = [{"m": value} for value in [-np.inf, np.inf]]
+    dataset.add_results(data_dict)
+    retrieved = dataset.get_data("m")
+    assert np.isinf(retrieved).all()
+
+
 def test_missing_keys(dataset):
     """
     Test that we can now have partial results with keys missing. This is for
