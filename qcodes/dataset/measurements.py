@@ -349,10 +349,12 @@ class DataSaver:
                                  f'"{expec_dtype}", but got a result of '
                                  f'type {vals.dtype}.')
 
+        # Note that we allow 'numeric' input to be of type np.ndarray, if
+        # the shape of the input is ()
         allowed_types = {'numeric': (int, float, np.int, np.int8,
                                      np.int16, np.int32, np.int64,
                                      np.float, np.float16, np.float32,
-                                     np.float64),
+                                     np.float64, np.ndarray),
                          'text': (str,),
                          'array': (np.ndarray,)}
         for ps, vals in results_dict.items():
@@ -413,8 +415,8 @@ class DataSaver:
                        .intersection(set(result_dict)))
 
         if standalones:
-        self._results.append({param.name: result_dict[param]
-                              for param in standalones})
+            self._results.append({param.name: result_dict[param]
+                                  for param in standalones})
 
 
     @staticmethod
