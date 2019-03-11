@@ -75,7 +75,8 @@ def logfile_to_dataframe(logfile: Optional[str] = None,
     Args:
         logfile: name of the logfile; defaults to current default log file.
         columns: column headers for the returned dataframe, defaults to
-            columns used by handlers set up by `start_logger`.
+            columns used by handlers set up by
+            :func:`qcodes.logger.logger.start_logger`.
         separator: separator of the logfile to seperate the columns, defaults to
             separator used by handlers set up by
             :func:`qcodes.logger.logger.start_logger`.
