@@ -1,6 +1,7 @@
 import itertools
 from copy import copy
 import re
+from unittest.mock import patch
 import random
 
 import pytest
@@ -24,7 +25,8 @@ from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
-    standalone_parameters_dataset, array_in_scalar_dataset_unrolled
+    standalone_parameters_dataset, array_in_scalar_dataset_unrolled, \
+    varlen_array_in_scalar_dataset
 # pylint: disable=unused-import
 from qcodes.tests.dataset.test_descriptions import some_paramspecs
 
@@ -93,7 +95,7 @@ def test_dataset_states():
     with pytest.raises(RuntimeError, match='Can not mark DataSet as complete '
                                            'before it has '
                                            'been marked as started.'):
-        ds.mark_complete()
+        ds.mark_completed()
 
     match = ('This DataSet has not been marked as started. '
              'Please mark the DataSet as started before '
@@ -123,7 +125,7 @@ def test_dataset_states():
     ds.add_result({parameter.name: 1})
     ds.add_results([{parameter.name: 1}])
 
-    ds.mark_complete()
+    ds.mark_completed()
 
     assert ds.pristine is False
     assert ds.running is False
@@ -363,7 +365,7 @@ def test_add_data_1d():
         mydataset.add_result({'y': 500})
 
     assert mydataset.completed is False
-    mydataset.mark_complete()
+    mydataset.mark_completed()
     assert mydataset.completed is True
 
     with pytest.raises(CompletedError):
@@ -728,6 +730,15 @@ class TestGetData:
         assert expected == ds_with_vals.get_data(self.x, start=start, end=end)
 
 
+def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
+    """Test that the deprecated `mark_complete` calls `mark_completed`"""
+    ds = DataSet()
+
+    with patch.object(ds, 'mark_completed', autospec=True) as mark_completed:
+        pytest.deprecated_call(ds.mark_complete)
+        mark_completed.assert_called_once()
+
+
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
 def test_get_parameter_data(scalar_dataset, start, end):
@@ -863,6 +874,43 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
                           expected_values,
                           start,
                           end)
+
+
+def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
+    input_names = ['testparameter']
+
+    expected_names = {}
+    expected_names['testparameter'] = ['testparameter', 'scalarparam',
+                                       'this_setpoint']
+    expected_shapes = {}
+
+    n = 9
+    n_points = (n*(n+1))//2
+
+    scalar_param_values = []
+    setpoint_param_values = []
+    for i in range(1, n + 1):
+        for j in range(i):
+            setpoint_param_values.append(j)
+            scalar_param_values.append(i)
+
+    np.random.seed(0)
+    test_parameter_values = np.random.rand(n_points)
+    scalar_param_values = np.array(scalar_param_values)
+    setpoint_param_values = np.array(setpoint_param_values)
+
+    expected_shapes['testparameter'] = [(n_points,), (n_points,)]
+    expected_values = {}
+    expected_values['testparameter'] = [
+        test_parameter_values.ravel(),
+        scalar_param_values.ravel(),
+        setpoint_param_values.ravel()]
+
+    parameter_test_helper(varlen_array_in_scalar_dataset,
+                          input_names,
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
 
 
 @given(start=hst.one_of(hst.integers(1, 45), hst.none()),

@@ -31,7 +31,7 @@ def scalar_dataset(dataset):
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
-    dataset.mark_complete()
+    dataset.mark_completed()
     yield dataset
 
 
@@ -80,6 +80,27 @@ def array_in_scalar_dataset(experiment):
             scalar_param.set(i)
             datasaver.add_result((scalar_param, scalar_param.get()),
                                  (param, param.get()))
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
+
+
+@pytest.fixture(scope="function")
+def varlen_array_in_scalar_dataset(experiment):
+    meas = Measurement()
+    scalar_param = Parameter('scalarparam', set_cmd=None)
+    param = ArraySetPointParam()
+    meas.register_parameter(scalar_param)
+    meas.register_parameter(param, setpoints=(scalar_param,),
+                            paramtype='array')
+    np.random.seed(0)
+    with meas.run() as datasaver:
+        for i in range(1, 10):
+            scalar_param.set(i)
+            param.setpoints = (np.arange(i),)
+            datasaver.add_result((scalar_param, scalar_param.get()),
+                                 (param, np.random.rand(i)))
     try:
         yield datasaver.dataset
     finally:
@@ -148,5 +169,5 @@ def standalone_parameters_dataset(dataset):
     dataset.add_results([{p.name: np.int(n_rows*10*pn+i)
                           for pn, p in enumerate(params)}
                          for i in range(n_rows)])
-    dataset.mark_complete()
+    dataset.mark_completed()
     yield dataset

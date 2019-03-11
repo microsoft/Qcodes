@@ -23,7 +23,7 @@ to use. Normal text shows the container includes and uses of this object.
 -  *actions*
 -  DataManager
 -  **DataServer**
--  :ref:`loops`
+-  :ref:`loops_api`
 -  actions: Parameter, Task, Wait, (Active)Loop
 -  **ActiveLoop**
 
@@ -36,7 +36,7 @@ to use. Normal text shows the container includes and uses of this object.
 Station
 -------
 
-Read more about :ref:`station`.
+Read more about :ref:`station_api`.
 
 .. todo:: is this how we want it ? or like the one below ?
 
