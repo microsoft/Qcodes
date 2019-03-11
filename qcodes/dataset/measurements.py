@@ -412,6 +412,7 @@ class DataSaver:
         standalones = (set(interdeps.standalones)
                        .intersection(set(result_dict)))
 
+        if standalones:
         self._results.append({param.name: result_dict[param]
                               for param in standalones})
 
