@@ -597,7 +597,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Remove a particular instance from the record.
 
         Args:
-            The instance to remove
+            instance: The instance to remove
         """
         wr = weakref.ref(instance)
         if wr in getattr(cls, "_instances", []):
