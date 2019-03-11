@@ -636,7 +636,7 @@ class Measurement:
     def _paramspecbase_from_strings(
             self, name: str, setpoints: Sequence[str] = None,
             basis: Sequence[str] = None
-            ) -> Tuple[Tuple[ParamSpecBase, ParamSpecBase]]:
+            ) -> Tuple[Tuple[ParamSpecBase, ...], Tuple[ParamSpecBase, ...]]:
         """
         Helper function to look up and get ParamSpecBases and to give a nice
         error message if the user tries to register a parameter with reference
