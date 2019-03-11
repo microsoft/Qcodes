@@ -7,8 +7,8 @@ from functools import partial
 from weakref import WeakValueDictionary
 
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
-from .constants import API_SUCCESS, ERROR_CODES, ReturnCode
+from .constants import API_SUCCESS, API_DMA_IN_PROGRESS, ERROR_CODES, \
+    ReturnCode
 
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def mark_params_as_updated(*args) -> None:
 
 def check_error_code(return_code: int, func, arguments
                      ) -> None:
-    if (return_code != API_SUCCESS) and (return_code != 518):
+    if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
         if len(argrepr) > 100:
             argrepr = argrepr[:96] + '...]'
