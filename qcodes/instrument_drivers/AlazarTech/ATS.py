@@ -548,7 +548,7 @@ class AlazarTech_ATS(Instrument):
             buffer_timeout = self.buffer_timeout.raw_value
 
             done_setup = time.perf_counter()
-            print(f"[{time.time()}] Entering buffer wait loop.")
+
             while (buffers_completed < self.buffers_per_acquisition.get()):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
@@ -573,15 +573,13 @@ class AlazarTech_ATS(Instrument):
                     )
                 buffers_completed += 1
                 bytes_transferred += buf.size_bytes
-            print(f"[{time.time()}] Exited buffer wait loop.")
         finally:
             # stop measurement here
             done_capture = time.perf_counter()
             self.api.abort_async_read(self._handle)
 
-        # If we made it here, we should have completed all buffers.
-        assert buffers_completed == self.buffers_per_acquisition.get()
         time_done_abort = time.perf_counter()
+
         # -----cleanup here-----
         # extract data if not yet done
         if not buffer_recycling:
