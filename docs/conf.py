@@ -390,6 +390,17 @@ templates_path = ['_templates']
 suppress_warnings = ['image.nonlocal_uri']
 
 nitpicky = True
+# we allow most types from the typing modules to be used in
+# docstrings even if they don't resolve
+# io_manger is used all over the old dataset but it's not clear what this is
+nitpick_ignore = [('py:class', 'Optional'),
+                  ('py:class', 'Union'),
+                  ('py:class', 'Any'),
+                  ('py:class', 'Tuple'),
+                  ('py:class', 'List'),
+                  ('py:class', 'Sequence'),
+                  ('py:class', 'io_manager')]
+
 
 numfig = True
 
