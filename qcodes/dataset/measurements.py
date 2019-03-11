@@ -397,20 +397,24 @@ class DataSaver:
             res_dict: Dict[str, VALUE] = {}  # the dict to append to _results
             if toplevel_param.type == 'array':
                 res_dict = {ps.name: result_dict[ps] for ps in all_params}
+                res_list = [res_dict]
             elif toplevel_param.type == 'numeric':
                 res_list = self._finalize_res_dict_numeric(
                                result_dict, toplevel_param,
                                inff_params, deps_params)
-                self._results += res_list
             else:
                 res_dict = {ps.name: result_dict[ps] for ps in all_params}
+                res_list = [res_dict]
+            self._results += res_list
 
-            self._results.append(res_dict)
+        # Finally, handle standalone parameters
 
         standalones = (set(interdeps.standalones)
                        .intersection(set(result_dict)))
-        for param in standalones:
-            self._results.append({param.name: result_dict[param]})
+
+        self._results.append({param.name: result_dict[param]
+                              for param in standalones})
+
 
     @staticmethod
     def _finalize_res_dict_numeric(
@@ -430,6 +434,8 @@ class DataSaver:
         if toplevel_shape == ():
             # In the case of a scalar, life is simple
             res_list = [{ps.name: result_dict[ps] for ps in all_params}]
+            print('Scalar toplevel param')
+            print(f'res_list: {res_list}, all params {all_params}')
         else:
             # We first massage all values into np.arrays of the same
             # shape
@@ -672,7 +678,7 @@ class Measurement:
         return tuple(depends_on), tuple(inf_from)
 
     def register_parameter(
-            self : T, parameter: _BaseParameter,
+            self: T, parameter: _BaseParameter,
             setpoints: setpoints_type = None,
             basis: setpoints_type = None,
             paramtype: str = 'numeric') -> T:
