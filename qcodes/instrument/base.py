@@ -140,7 +140,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Args:
             name: how the submodule will be stored within
                 ``instrument.submodules`` and also how it can be
-            addressed.
+                addressed.
 
             submodule: The submodule to be stored.
 
