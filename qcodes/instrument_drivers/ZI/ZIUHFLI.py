@@ -1337,7 +1337,7 @@ class ZIUHFLI(Instrument):
                            unit='Hz',
                            get_cmd=self._get_samplingrate_as_float,
                            vals=vals.Enum(
-                               [ZIUHFLI._convert_to_float(freq) for freq in
+                               *[ZIUHFLI._convert_to_float(freq) for freq in
                                 self._samplingrate_codes.keys()]),
                            docstring=""" A numeric representation of the scope's
                              samplingrate parameter. Sets and gets the sampling 
@@ -2197,7 +2197,8 @@ class ZIUHFLI(Instrument):
         return nearest_frequency
 
     def _set_samplingrate_as_float(self, frequency):
-        self.scope_samplingrate(ZIUHFLI._convert_to_float(frequency))
+        sampling_rate = filter(lambda f: ZIUHFLI._convert_to_float(f) == frequency, self._samplingrate_codes.keys())
+        self.scope_samplingrate(''.join(sampling_rate))
 
     def _get_samplingrate_as_float(self):
         frequency = self.scope_samplingrate()
