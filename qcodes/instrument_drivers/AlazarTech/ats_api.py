@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union, NewType, TYPE_CHECKING, Any
+from typing import Dict, Tuple, Union, Any
 import ctypes
 from ctypes import POINTER
 
