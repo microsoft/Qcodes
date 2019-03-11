@@ -1,3 +1,11 @@
+"""
+This module defines constants that are used in Alazar ATS API.
+
+Since the original names of the constants are mostly preserved, it is 
+convenient to find the uesful constants here based on the Alazar SDK manual.
+"""
+
+
 from typing import NewType, Dict, Tuple
 from enum import IntEnum, IntFlag
 
@@ -184,8 +192,8 @@ _NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int, ...]] = {
 # on page 241 of the Alazar SDK manual
 NUMBER_OF_CHANNELS_FROM_BYTE_REPR: Dict[int, int] = {
     byte_repr: n_ch 
-    for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
-    for byte_repr in byte_reprs
+        for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
+        for byte_repr in byte_reprs
     }
 
 
@@ -339,17 +347,16 @@ class TriggerEngineSource(IntEnum):
 
 class TriggerSlope(IntEnum):
     """
-    Used in more than one place, for example, for AUX_IN_TRIGGER_ENABLE 
+    Used in more than one place, for example, for ``AUX_IN_TRIGGER_ENABLE``
     Auxiallary IO mode
     """
-    TRIGGER_SLOPE_POSITIVE =0x00000001
+    TRIGGER_SLOPE_POSITIVE = 0x00000001
     TRIGGER_SLOPE_NEGATIVE = 0x00000002
 
 
 class ExternalTriggerCoupling(IntEnum):
     AC = 1
     DC = 2
-
 
 
 class ExternalTriggerRange(IntEnum):
@@ -428,7 +435,7 @@ class Channel(IntFlag):
 
 
 class Capability(IntEnum):
-    """Capability identifiers for 'query capability' function"""
+    """Capability identifiers for :meth:`AlazarATSAPI.query_capability`"""
     GET_SERIAL_NUMBER = 0x10000024
     # Date of the board's latest calibration data as a decimal number with
     # the format DDMMYY where DD is 1-31, MM is 1-12,
