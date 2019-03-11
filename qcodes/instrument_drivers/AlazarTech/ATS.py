@@ -736,6 +736,31 @@ class AlazarTech_ATS(Instrument):
         self.api.write_register_(self._handle, offset, value)
 
 
+def _setup_ctypes_for_windll_lib_functions():
+    """
+    Set up ``argtypes`` and ``restype`` for functions from ``ctypes.windll``
+    libraries, which are used in this module.
+    """
+    if os.name == 'nt':
+        ctypes.windll.kernel32.VirtualAlloc.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_long,
+            ctypes.c_long,
+            ctypes.c_long
+        ]
+        ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
+
+        ctypes.windll.kernel32.VirtualFree.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_long,
+                ctypes.c_long
+            ]
+        ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
+
+
+_setup_ctypes_for_windll_lib_functions()
+
+
 class Buffer:
     """Buffer suitable for DMA transfers.
 
@@ -774,15 +799,8 @@ class Buffer:
         self._allocated = True
         self.addr = None
         if os.name == 'nt':
-            ctypes.windll.kernel32.VirtualAlloc.argtypes = [
-                ctypes.c_void_p,
-                ctypes.c_long,
-                ctypes.c_long,
-                ctypes.c_long
-            ]
             MEM_COMMIT = 0x1000
             PAGE_READWRITE = 0x4
-            ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
             self.addr = ctypes.windll.kernel32.VirtualAlloc(
                 0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
         else:
@@ -798,16 +816,9 @@ class Buffer:
         """
         uncommit memory allocated with this buffer object
         """
-
         self._allocated = False
         if os.name == 'nt':
-            ctypes.windll.kernel32.VirtualFree.argtypes = [
-                ctypes.c_void_p,
-                ctypes.c_long,
-                ctypes.c_long
-            ]
             MEM_RELEASE = 0x8000
-            ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
             ctypes.windll.kernel32.VirtualFree(
                 ctypes.c_void_p(self.addr), 0, MEM_RELEASE)
         else:
