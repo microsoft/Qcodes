@@ -1,3 +1,10 @@
+"""
+This module provides a class that encapsulates Alazar ATS API, 
+:class:`AlazarATSAPI`. The class is used to expose Alazar API functions
+of its C library in a python-friendly way.
+"""
+
+
 from typing import Dict, Tuple, Union, Any
 import ctypes
 from ctypes import POINTER
@@ -21,8 +28,17 @@ POINTER_U32 = Any
 
 class AlazarATSAPI(WrappedDll):
     """
-    Provides a thread-safe wrapper for the ATS API by
-    isolating all calls to the API in a single thread.
+    A thread-safe wrapper for the ATS API library.
+    
+    The exposed ATS API functions have snake_case names, may accept python
+    types and :class:`qcodes.instrument.parameter.Parameter` s as input.
+    The API calls are thread-safe, and are executed in a separate thread.
+    Moreover, behind the scenes it is ensured that only single instance of
+    this class exists per unique ATS API DLL file.
+
+    Some of the ATS API functions are also exposed with more convenient
+    signatures. These usually have the same name but with an additional
+    underscore at the end.
     """
 
     ## CONSTANTS ##
@@ -312,21 +328,21 @@ class AlazarATSAPI(WrappedDll):
     signatures.update({"AlazarErrorToText": Signature(
         argument_types=[U32], return_type=ctypes.c_char_p)})
 
-    ## OTHER API-RELATED METHOD ##
+    ## OTHER API-RELATED METHODS ##
 
     def get_board_model(self, handle: int) -> str:
         return self.BOARD_NAMES[self.get_board_kind(handle)]
 
     def get_channel_info_(self, handle: int) -> Tuple[int, int]:
         """
-        A more convenient version of `get_channel_info` method 
-        (`AlazarGetChannelInfo`).
+        A more convenient version of :meth:`get_channel_info` method 
+        (``AlazarGetChannelInfo``).
         
         This method hides the fact that the output values in the original
-        function are written to the values of the provided pointers.
+        function are written to the provided pointers.
 
         Args:
-            Handle: handle of the board of interest
+            handle: Handle of the board of interest
         
         Returns:
             Tuple of bits per sample and maximum board memory in samples
@@ -342,14 +358,14 @@ class AlazarATSAPI(WrappedDll):
     
     def get_cpld_version_(self, handle: int) -> str:
         """
-        A more convenient version of `get_cpld_version` method 
-        (`AlazarGetCPLDVersion`).
+        A more convenient version of :meth:`get_cpld_version` method 
+        (``AlazarGetCPLDVersion``).
         
         This method hides the fact that the output values in the original
-        function are written to the values of the provided pointers.
+        function are written to the provided pointers.
 
         Args:
-            handle: handle of the board of interest
+            handle: Handle of the board of interest
         
         Returns:
             Version string in the format "<major>.<minor>"
@@ -366,11 +382,11 @@ class AlazarATSAPI(WrappedDll):
 
     def get_driver_version_(self) -> str:
         """
-        A more convenient version of `get_driver_version` method 
-        (`AlazarGetDriverVersion`).
+        A more convenient version of :meth:`get_driver_version` method 
+        (``AlazarGetDriverVersion``).
         
         This method hides the fact that the output values in the original
-        function are written to the values of the provided pointers.
+        function are written to the provided pointers.
 
         Returns:
             Version string in the format "<major>.<minor>.<revision>"
@@ -390,11 +406,11 @@ class AlazarATSAPI(WrappedDll):
 
     def get_sdk_version_(self) -> str:   
         """
-        A more convenient version of `get_sdk_version` method 
-        (`AlazarGetSDKVersion`).
+        A more convenient version of :meth:`get_sdk_version` method 
+        (``AlazarGetSDKVersion``).
         
         This method hides the fact that the output values in the original
-        function are written to the values of the provided pointers.
+        function are written to the provided pointers.
 
         Returns:
             Version string in the format "<major>.<minor>.<revision>"
@@ -414,16 +430,16 @@ class AlazarATSAPI(WrappedDll):
 
     def query_capability_(self, handle: int, capability: int) -> int:
         """
-        A more convenient version of `query_capability` method 
-        (`AlazarQueryCapability`).
+        A more convenient version of :meth:`query_capability` method 
+        (``AlazarQueryCapability``).
         
         This method hides the fact that the output values in the original
-        function are written to the values of the provided pointers.
+        function are written to the provided pointers.
 
         Args:
             handle: Handle of the board of interest
             capability: An integer identifier of a capability parameter 
-                (refer to constants defined in ATS API for more info)
+                (see :const:`.constants.Capability` constants)
 
         Returns:
             Value of the requested capability
@@ -436,10 +452,10 @@ class AlazarATSAPI(WrappedDll):
     
     def read_register_(self, handle: int, offset: int) -> int:
         """
-        Read a value from a given register in the Alazars memory.
+        Read a value from a given offset in the Alazar card's register.
 
-        A more convenient version of `read_register` method 
-        (`AlazarReadRegister`).
+        A more convenient version of :meth:`read_register` method 
+        (``AlazarReadRegister``).
 
         Args:
             handle: Handle of the board of interest
@@ -459,10 +475,10 @@ class AlazarATSAPI(WrappedDll):
 
     def write_register_(self, handle: int, offset: int, value: int) -> None:
         """
-        Write a value to a given offset in the Alazars memory.
+        Write a value to a given offset in the Alazar card's register.
 
-        A more convenient version of `write_register` method 
-        (`AlazarWriteRegister`).
+        A more convenient version of :meth:`write_register` method 
+        (``AlazarWriteRegister``).
 
         Args:
             handle: Handle of the board of interest
