@@ -342,12 +342,23 @@ class DataSaver:
                                  f'type {type(vals)} ({vals}).')
 
         def array_type_validator(
-            ps_name: str, vals: np.ndarray, expec_dtype: str) -> None:
+            ps_name: str,
+            vals: Union[np.ndarray, tuple, list],
+            expec_dtype: str) -> None:
 
-            if vals.dtype not in allowed_types[expec_dtype]:
-                raise ValueError(f'Parameter {ps_name} expects values of type '
-                                 f'"{expec_dtype}", but got a result of '
-                                 f'type {vals.dtype}.')
+            if isinstance(vals, np.ndarray):
+                if vals.dtype not in allowed_types[expec_dtype]:
+                    raise ValueError(f'Parameter {ps_name} expects values of '
+                                    f'type "{expec_dtype}", but got a result '
+                                    f'of type {vals.dtype}.')
+            else:
+                seq_types = list(isinstance(val, allowed_types[expec_dtype])
+                                 for val in vals)
+                if not all(seq_types):
+                    wrong_val = seq_types.index(False)
+                    raise ValueError(f'Parameter {ps_name} expects values of '
+                                    f'type "{expec_dtype}", but got a result '
+                                    f'of type {type(wrong_val)}.')
 
         # Note that we allow 'numeric' input to be of type np.ndarray, if
         # the shape of the input is ()
@@ -356,7 +367,7 @@ class DataSaver:
                                      np.float, np.float16, np.float32,
                                      np.float64, np.ndarray),
                          'text': (str,),
-                         'array': (np.ndarray,)}
+                         'array': (np.ndarray, tuple , list)}
         for ps, vals in results_dict.items():
             # we allow for 'numeric' parameters to get results of
             # Sequence[scalar_type], so we must handle that as well as
@@ -430,6 +441,8 @@ class DataSaver:
         def reshaper(val):
             if np.shape(val) == () and isinstance(val, np.ndarray):
                 return np.reshape(val, (1,))
+            elif isinstance(val, (tuple, list)):
+                return np.array(val)
             else:
                 return val
 
