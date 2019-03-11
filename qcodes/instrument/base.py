@@ -108,8 +108,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             name (str): how the Function will be stored within
-            ``instrument.Functions`` and also how you  address it using the
-            shortcut methods: ``instrument.call(func_name, *args)`` etc.
+                ``instrument.Functions`` and also how you  address it using the
+                shortcut methods: ``instrument.call(func_name, *args)`` etc.
 
             **kwargs: constructor kwargs for ``Function``
 
