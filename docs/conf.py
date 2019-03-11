@@ -389,6 +389,8 @@ templates_path = ['_templates']
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
 
+nitpicky = True
+
 numfig = True
 
 # Use this kernel instead of the one stored in the notebook metadata:
