@@ -399,7 +399,8 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'Tuple'),
                   ('py:class', 'List'),
                   ('py:class', 'Sequence'),
-                  ('py:class', 'io_manager')]
+                  ('py:class', 'io_manager'),
+                  ('py:exc', 'visa.VisaIOError')]
 
 
 numfig = True
