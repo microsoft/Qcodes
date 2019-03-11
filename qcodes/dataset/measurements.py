@@ -398,8 +398,8 @@ class DataSaver:
                           .union({toplevel_param}))
             res_dict: Dict[str, VALUE] = {}  # the dict to append to _results
             if toplevel_param.type == 'array':
-                res_dict = {ps.name: result_dict[ps] for ps in all_params}
-                res_list = [res_dict]
+                res_list = self._finalize_res_dict_array(
+                    result_dict, all_params)
             elif toplevel_param.type == 'numeric':
                 res_list = self._finalize_res_dict_numeric(
                                result_dict, toplevel_param,
@@ -418,6 +418,24 @@ class DataSaver:
             self._results.append({param.name: result_dict[param]
                                   for param in standalones})
 
+    @staticmethod
+    def _finalize_res_dict_array(
+        result_dict: Dict[ParamSpecBase, values_type],
+        all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+        """
+        Make a list of res_dicts out of the results for a 'array' type
+        parameter. The results are assumed to already have been validated for
+        type and shape
+        """
+        def reshaper(val):
+            if np.shape(val) == () and isinstance(val, np.ndarray):
+                return np.reshape(val, (1,))
+            else:
+                return val
+
+        res_dict = {ps.name: reshaper(result_dict[ps]) for ps in all_params}
+
+        return [res_dict]
 
     @staticmethod
     def _finalize_res_dict_numeric(
@@ -428,15 +446,24 @@ class DataSaver:
         """
         Make a res_dict in the format expected by DataSet.add_results out
         of the results for a 'numeric' type parameter. This includes
-        replicating and unrolling values as needed
+        replicating and unrolling values as needed and also handling the corner
+        case of np.array(1) kind of values
         """
+
+        def array_to_scalar(val):
+            if isinstance(val, np.ndarray):
+                return float(val)
+            else:
+                return val
+
         res_list: List[Dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
         toplevel_shape = np.shape(result_dict[toplevel_param])
         if toplevel_shape == ():
-            # In the case of a scalar, life is simple
-            res_list = [{ps.name: result_dict[ps] for ps in all_params}]
+            # In the case of a scalar, life is reasonably simple
+            res_list = [{ps.name: array_to_scalar(result_dict[ps])
+                         for ps in all_params}]
             print('Scalar toplevel param')
             print(f'res_list: {res_list}, all params {all_params}')
         else:
