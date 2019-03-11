@@ -363,6 +363,12 @@ def test_remove(some_paramspecbases):
     idps_expected = InterDependencies_(dependencies={ps1: (ps2, ps3)})
     assert idps_rem == idps_expected
 
+    idps = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                              standalones=(ps4, ))
+    idps_rem = idps.remove(ps1)
+    idps_expected = InterDependencies_(standalones=(ps2, ps3, ps4))
+    assert idps_rem == idps_expected
+
 def test_equality_old(some_paramspecs):
 
     # TODO: make this more fancy with itertools

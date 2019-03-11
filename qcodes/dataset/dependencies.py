@@ -365,8 +365,8 @@ class InterDependencies_:
                                 'parameters are inferred from it.')
 
         if parameter in self.standalones:
-            new_standalones = (deepcopy(self.standalones).
-                               difference({parameter}))
+            new_standalones = tuple(deepcopy(self.standalones).
+                                    difference({parameter}))
             new_deps = deepcopy(self.dependencies)
             new_inffs = deepcopy(self.inferences)
         elif parameter in self.dependencies or parameter in self.inferences:
@@ -375,6 +375,7 @@ class InterDependencies_:
             # figure out whether removing this parameter will make any other
             # parameters standalone
             new_standalones_l = []
+            old_standalones = deepcopy(self.standalones)
             for indep in self.dependencies.get(parameter, []):
                 if not(indep in self._inferences_inv or
                        indep in self.inferences):
@@ -385,7 +386,8 @@ class InterDependencies_:
                     new_standalones_l.append(basis)
             new_deps.pop(parameter, None)
             new_inffs.pop(parameter, None)
-            new_standalones = tuple(new_standalones_l)
+            new_standalones = tuple(set(new_standalones_l)
+                                    .union(old_standalones))
 
         idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
                                   standalones=new_standalones)
