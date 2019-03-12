@@ -7,6 +7,8 @@ from math import sqrt
 
 from typing import Callable, List, Union, cast
 
+from qcodes.utils.helpers import create_on_off_val_mapping
+
 try:
     import zhinst.utils
 except ImportError:
@@ -962,29 +964,50 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
-            for output in range(1, 9):
-                self.add_parameter(
-                    'signal{}_output{}_enable'.format(sigout, output),
-                    label="Enable signal output's amplitude.",
-                    set_cmd=partial(self._sigout_setter,
-                                    sigout - 1, 0,
-                                    'enables/{}'.format(output - 1)),
-                    get_cmd=partial(self._sigout_getter,
-                                    sigout - 1, 0,
-                                    'enables/{}'.format(output - 1)),
-                    val_mapping={'ON': 1, 'OFF': 0},
-                    vals=vals.Enum('ON', 'OFF'))
+            if 'MF' in self.props['options']:
+                for output in range(1, 9):
+                    self.add_parameter(
+                        'signal{}_output{}_enable'.format(sigout, output),
+                        label="Enable signal output's amplitude.",
+                        set_cmd=partial(self._sigout_setter,
+                                        sigout - 1, 0,
+                                        'enables/{}'.format(output - 1)),
+                        get_cmd=partial(self._sigout_getter,
+                                        sigout - 1, 0,
+                                        'enables/{}'.format(output - 1)),
+                        val_mapping=create_on_off_val_mapping())
 
-                self.add_parameter(
-                    'signal{}_output{}_amplitude'.format(sigout, output),
-                    label='Signal output amplitude',
-                    set_cmd=partial(self._sigout_setter,
-                                    sigout - 1, 1,
-                                    'amplitudes/{}'.format(output - 1)),
-                    get_cmd=partial(self._sigout_getter,
-                                    sigout - 1, 1,
-                                    'amplitudes/{}'.format(output - 1)),
-                    unit='V')
+                    self.add_parameter(
+                        'signal{}_output{}_amplitude'.format(sigout, output),
+                        label='Signal output amplitude',
+                        set_cmd=partial(self._sigout_setter,
+                                        sigout - 1, 1,
+                                        'amplitudes/{}'.format(output - 1)),
+                        get_cmd=partial(self._sigout_getter,
+                                        sigout - 1, 1,
+                                        'amplitudes/{}'.format(output - 1)),
+                        unit='V',
+                        val_mapping=create_on_off_val_mapping())
+            else:
+                self.add_parameter('signal_output{}_enable'.format(sigout),
+                                   label="Enable signal output's amplitude.",
+                                   set_cmd=partial(self._sigout_setter,
+                                                   sigout - 1, 0,
+                                                   outputampenable[sigout]),
+                                   get_cmd=partial(self._sigout_getter,
+                                                   sigout - 1, 0,
+                                                   outputampenable[sigout]),
+                                   val_mapping=create_on_off_val_mapping())
+
+                self.add_parameter('signal_output{}_amplitude'.format(sigout),
+                                   label='Signal output amplitude',
+                                   set_cmd=partial(self._sigout_setter,
+                                                   sigout - 1, 1,
+                                                   outputamps[sigout]),
+                                   get_cmd=partial(self._sigout_getter,
+                                                   sigout - 1, 1,
+                                                   outputamps[sigout]),
+                                   unit='V')
 
         auxoutputchannels = ChannelList(self, "AUXOutputChannels", AUXOutputChannel,
                                snapshotable=False)
