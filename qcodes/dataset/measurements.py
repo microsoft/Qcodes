@@ -8,7 +8,6 @@ using the :class:`.Measurement` class.
 import json
 import logging
 from time import monotonic
-from collections import OrderedDict
 from typing import (Callable, Union, Dict, Tuple, List, Sequence, cast, Set,
                     MutableMapping, MutableSequence, Optional, Any, TypeVar)
 from inspect import signature
@@ -674,7 +673,6 @@ class Measurement:
                                                      MutableMapping]]] = []
         self.experiment = exp
         self.station = station
-        # self.parameters: Dict[str, ParamSpec] = OrderedDict()
         self._write_period: Optional[float] = None
         self.name = ''
         self._interdeps = InterDependencies_()
