@@ -390,10 +390,10 @@ templates_path = ['_templates']
 suppress_warnings = ['image.nonlocal_uri']
 
 nitpicky = True
+
+
 # we allow most types from the typing modules to be used in
 # docstrings even if they don't resolve
-# io_manger and chan_type are uses quite a few places. Should eventually be
-# removed. VisaIOError does not resolve even with pyvisa intersphinx
 nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'Union'),
                   ('py:class', 'Any'),
@@ -402,8 +402,16 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'Sequence'),
                   ('py:class', 'Iterable'),
                   ('py:class', 'Type'),
+                  # These are some types currently in use
+                  # in docstrings not actually defined anywhere
                   ('py:class', 'io_manager'),
                   ('py:class', 'chan_type'),
+                  ('py:class', 'SD_Wave'),
+                  ('py:class', 'array'),
+                  # External types that for some reason or the other
+                  # don't resolve.
+                  ('py:class', 'unittest.case.TestCase'),
+                  ('py:class', 'builtins.AssertionError'),
                   ('py:exc', 'visa.VisaIOError')]
 
 
