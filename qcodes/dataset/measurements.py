@@ -369,16 +369,19 @@ class DataSaver:
                          'text': (str,),
                          'array': (np.ndarray, tuple , list)}
         for ps, vals in results_dict.items():
-            # we allow for 'numeric' parameters to get results of
-            # Sequence[scalar_type], so we must handle that as well as
-            # scalar results
+            # we allow for 'numeric' and 'text' parameters to get results of
+            # Sequence[scalar_type] or Sequence[str], so we must handle that as
+            # well as results with the "correct" type
             if ps.type == 'numeric':
                 if np.shape(vals) == ():
                     basic_type_validator(ps.name, vals, 'numeric')
                 else:
                     array_type_validator(ps.name, np.array(vals), 'numeric')
             elif ps.type == 'text':
-                basic_type_validator(ps.name, vals, 'text')
+                if isinstance(vals, (list, tuple)):
+                    array_type_validator(ps.name, vals, 'text')
+                else:
+                    basic_type_validator(ps.name, vals, 'text')
             elif ps.type == 'array':
                 basic_type_validator(ps.name, vals, 'array')
                 array_type_validator(ps.name, vals, 'numeric')
@@ -426,8 +429,8 @@ class DataSaver:
                        .intersection(set(result_dict)))
 
         if standalones:
-            self._results.append({param.name: result_dict[param]
-                                  for param in standalones})
+            stdln_dict = {st: result_dict[st] for st in standalones}
+            self._results += self._finalize_res_dict_standalones(stdln_dict)
 
     @staticmethod
     def _finalize_res_dict_array(
@@ -477,8 +480,6 @@ class DataSaver:
             # In the case of a scalar, life is reasonably simple
             res_list = [{ps.name: array_to_scalar(result_dict[ps])
                          for ps in all_params}]
-            print('Scalar toplevel param')
-            print(f'res_list: {res_list}, all params {all_params}')
         else:
             # We first massage all values into np.arrays of the same
             # shape
@@ -500,6 +501,25 @@ class DataSaver:
 
             res_list = [{p.name: flat_results[p][ind] for p in all_params}
                         for ind in range(N)]
+
+        return res_list
+
+    @staticmethod
+    def _finalize_res_dict_standalones(
+        result_dict: Dict[ParamSpecBase, values_type]
+        ) -> List[Dict[str, VALUE]]:
+        """
+        Massage all standalone parameters into the correct shape
+        """
+        res_list = []
+        for param, value in result_dict.items():
+            if param.type == 'text':
+                if isinstance(value, (tuple, list)):
+                    res_list += [{param.name: string} for string in value]
+                else:
+                    res_list += [{param.name: value}]
+            else:
+                res_list += [{param.name: value}]
 
         return res_list
 
