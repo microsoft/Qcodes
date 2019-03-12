@@ -144,7 +144,7 @@ class ChannelList(Metadatable):
         parent (Instrument): the instrument to which this channel
             should be attached
 
-        name (string): the name of the channel list
+        name (str): the name of the channel list
 
         chan_type (InstrumentChannel): the type of channel contained
             within this list
@@ -219,7 +219,7 @@ class ChannelList(Metadatable):
         the specified channels
 
         Args:
-            i (int/slice): Either a single channel index or a slice of channels
+            i (int, slice): Either a single channel index or a slice of channels
               to get
         """
         if isinstance(i, slice):
@@ -528,7 +528,7 @@ class ChannelListValidator(Validator):
             value (InstrumentChannel): the value to be checked against the reference
                 channel list.
 
-            context (string): the context of the call, used as part of the exception
+            context (str): the context of the call, used as part of the exception
                 raised.
         """
         if value not in self._channel_list:
