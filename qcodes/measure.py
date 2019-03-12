@@ -50,10 +50,7 @@ class Measure(Metadatable):
             use_threads (Optional[bool]): whether to parallelize ``get``
                 operations using threads. Default False.
 
-            Other kwargs are passed along to data_set.new_data. The key ones
-            are:
-
-            location (Optional[Union[str, False]]): the location of the
+            location (Optional[Union[str, bool]]): the location of the
                 DataSet, a string whose meaning depends on formatter and io,
                 or False to only keep in memory. May be a callable to provide
                 automatic locations. If omitted, will use the default
@@ -68,6 +65,9 @@ class Measure(Metadatable):
 
             io (Optional[io_manager]): knows how to connect to the storage
                 (disk vs cloud etc)
+
+        location, name formatter and io are passed to ``data_set.new_data``
+        along with any other optional keyword arguments.
 
         returns:
             a DataSet object containing the results of the measurement
