@@ -68,7 +68,7 @@ jobs:
           CALL conda activate qcodes
           cd docs
           REM Turn warnings into errors
-          set SPHINXOPTS=-v
+          set SPHINXOPTS=-W -v
           make.bat htmlapi
         displayName: "Build docs"
         condition: succeededOrFailed()
