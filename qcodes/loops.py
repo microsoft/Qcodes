@@ -136,7 +136,7 @@ class Loop(Metadatable):
         Nest another loop inside this one.
 
         Args:
-            sweep_values ():
+            sweep_values:
             delay (int):
 
         Examples:
@@ -291,8 +291,8 @@ class Loop(Metadatable):
 
         Args:
             update (bool): If True, update the state by querying the underlying
-             sweep_values and actions. If False, just use the latest values in
-             memory.
+                sweep_values and actions. If False, just use the latest values
+                in memory.
 
         Returns:
             dict: base snapshot
