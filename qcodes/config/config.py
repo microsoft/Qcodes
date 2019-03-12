@@ -191,7 +191,7 @@ class Config:
             json_config (Optional[str]) : json file to validate
             schema (Optional[dict]): schema dictionary
             extra_schema_path (Optional[str]): schema path that contains
-                    extra validators to be added to schema dictionary
+                extra validators to be added to schema dictionary
         """
         if extra_schema_path is not None:
             # add custom validation
