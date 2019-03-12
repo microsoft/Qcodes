@@ -7,6 +7,7 @@ from functools import partial
 from weakref import WeakValueDictionary
 
 from qcodes.instrument.parameter import _BaseParameter
+from .utils import TraceParameter
 from .constants import API_SUCCESS, API_DMA_IN_PROGRESS, ERROR_CODES, \
     ReturnCode
 
@@ -20,14 +21,14 @@ RETURN_CODE = NewType('RETURN_CODE', ctypes.c_uint)
 ## FUNCTIONS ##
 
 
-def api_call_task(lock, c_func, callback, *args):
+def _api_call_task(lock, c_func, callback, *args):
     with lock:
         retval = c_func(*args)
     callback()
     return retval
 
 
-def normalize_params(*args: Any) -> List[Any]:
+def _normalize_params(*args: Any) -> List[Any]:
     args_out: List[Any] = []
     for arg in args:
         if isinstance(arg, _BaseParameter):
@@ -37,13 +38,13 @@ def normalize_params(*args: Any) -> List[Any]:
     return args_out
 
 
-def mark_params_as_updated(*args) -> None:
+def _mark_params_as_updated(*args) -> None:
     for arg in args:
         if isinstance(arg, TraceParameter):
             arg._set_updated()
 
 
-def check_error_code(return_code: int, func, arguments
+def _check_error_code(return_code: int, func, arguments
                      ) -> None:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
@@ -67,7 +68,7 @@ def check_error_code(return_code: int, func, arguments
     return arguments
 
 
-def convert_bytes_to_str(output: bytes, func, arguments) -> str:
+def _convert_bytes_to_str(output: bytes, func, arguments) -> str:
     return output.decode()
 
 
@@ -159,19 +160,19 @@ class WrappedDll(metaclass=DllWrapperMeta):
             ret_type = signature.return_type
             if ret_type is RETURN_CODE:
                 ret_type = ret_type.__supertype__
-                c_func.errcheck = check_error_code
+                c_func.errcheck = _check_error_code
             elif ret_type in (ctypes.c_char_p, ctypes.c_char, 
                               ctypes.c_wchar, ctypes.c_wchar_p):
-                c_func.errcheck = convert_bytes_to_str
+                c_func.errcheck = _convert_bytes_to_str
             c_func.restype = ret_type
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> Any:
         c_func = getattr(self._dll, c_name)
         future = self._executor.submit(
-            api_call_task,
+            _api_call_task,
             self._lock,
             c_func,
-            partial(mark_params_as_updated, *args), #TODO make optional
-            *normalize_params(*args) #TODO make optional
+            partial(_mark_params_as_updated, *args),
+            *_normalize_params(*args)
         )
         return future.result()
