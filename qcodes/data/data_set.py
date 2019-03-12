@@ -137,7 +137,7 @@ class DataSet(DelegateAttributes):
             where you started the python session.
 
         arrays (Optional[List[qcodes.data.data_array.DataArray]): arrays to add
-            to io_manager Can be added later with ``self.add_array(array)``.
+            to the DataSet. Can be added later with ``self.add_array(array)``.
 
         formatter (Optional[Formatter]): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
@@ -468,7 +468,7 @@ class DataSet(DelegateAttributes):
                  Defaults to 'amplitude'
 
         Returns:
-            (DataArray): array corresponding to the default parameter
+            DataArray: array corresponding to the default parameter
 
         See also:
             default_parameter_name
