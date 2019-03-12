@@ -40,7 +40,7 @@ except ImportError:
 if haswebsockets:
     from qcodes.monitor.monitor import Monitor
 
-from qcodes.data.data_set import DataSet, new_data, load_data
+from qcodes.data.data_set import DataSet, new_data, load_data, set_data_root_folder
 from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray
 from qcodes.data.format import Formatter

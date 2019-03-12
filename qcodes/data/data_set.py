@@ -5,6 +5,8 @@ import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
+from pathlib import Path
+from typing import Union
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
@@ -111,7 +113,6 @@ def load_data(location=None, formatter=None, io=None):
     data.read_metadata()
     data.read()
     return data
-
 
 class DataSet(DelegateAttributes):
 
@@ -670,6 +671,24 @@ class DataSet(DelegateAttributes):
             out += out_template.format(info=arr_info_i, lens=column_lengths)
 
         return out
+
+
+def set_data_root_folder(root_folder: Union[str, Path],
+                         silent: bool = False):
+    """Set root folder for data storage
+
+    Args:
+        root_folder: Root folder for data storage
+        silent: Suppress printing of root folder
+    """
+    if isinstance(root_folder, Path):
+        # Convert pathlib Path to string
+        root_folder = str(root_folder.absolute())
+
+    DataSet.default_io.base_location = root_folder
+
+    if not silent:
+        print(f'Data root folder set to {root_folder}')
 
 
 class _PrettyPrintDict(dict):
