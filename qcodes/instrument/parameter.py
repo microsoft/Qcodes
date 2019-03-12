@@ -7,7 +7,7 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from :class:`._BaseParameter` (except
+All parameter classes are subclassed from `._BaseParameter` (except
 CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
@@ -1592,11 +1592,12 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine
         name (str): the name of the paramter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1761,7 +1762,7 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name (string): the name of the parameter that one wants to add.
+        name (str): the name of the parameter that one wants to add.
 
         instrument (Optional[Instrument]): the "parent" instrument this
             parameter is attached to, if any.
@@ -1969,7 +1970,7 @@ class ScaledParameter(Parameter):
     def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         if self.role == ScaledParameter.Role.GAIN:
             value = self._wrapped_parameter() * self._multiplier()
@@ -1982,15 +1983,14 @@ class ScaledParameter(Parameter):
     @property
     def wrapped_parameter(self) -> Parameter:
         """
-        Returns:
-            the attached unscaled parameter
+        The attached unscaled parameter
         """
         return self._wrapped_parameter
 
     def get_wrapped_parameter_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached parameter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self._wrapped_parameter.get()
