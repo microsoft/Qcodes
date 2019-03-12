@@ -421,6 +421,8 @@ nitpick_ignore = [('py:class', 'Optional'),
                                'private.HMC804x._RohdeSchwarzHMC804x'),
                   # External types that for some reason or the other
                   # don't resolve.
+                  ('py:class', 'broadbean.sequence.fs_schmema'),
+                  ('py:class', 'SPI_rack'),
                   ('py:class', 'unittest.case.TestCase'),
                   ('py:class', 'builtins.AssertionError'),
                   ('py:exc', 'visa.VisaIOError')]
