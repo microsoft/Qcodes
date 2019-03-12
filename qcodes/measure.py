@@ -12,7 +12,7 @@ class Measure(Metadatable):
     Create a DataSet from a single (non-looped) set of actions.
 
     Args:
-        *actions (any): sequence of actions to perform. Any action that is
+        *actions (Any): sequence of actions to perform. Any action that is
             valid in a ``Loop`` can be used here. If an action is a gettable
             ``Parameter``, its output will be included in the DataSet.
             Scalars returned by an action will be saved as length-1 arrays,
