@@ -401,6 +401,7 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'List'),
                   ('py:class', 'Sequence'),
                   ('py:class', 'Iterable'),
+                  ('py:class', 'Type'),
                   ('py:class', 'io_manager'),
                   ('py:class', 'chan_type'),
                   ('py:exc', 'visa.VisaIOError')]
