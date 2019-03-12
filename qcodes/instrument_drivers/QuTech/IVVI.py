@@ -491,7 +491,7 @@ class IVVI(VisaInstrument):
             value (float): value to be rounded
             dacname (str or int or None): name or index of dac channel
         Returns:
-            value_round (float): rounded value
+            float: rounded value
 
         """
         if dacname is None:
