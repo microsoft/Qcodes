@@ -363,7 +363,8 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
     'py': ('https://pylib.readthedocs.io/en/stable/', None),
-    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None)
+    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
+    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)
 }
 
 
@@ -421,6 +422,7 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
                                'private.HMC804x._RohdeSchwarzHMC804x'),
                   ('py:class', 'qcodes.instrument.parameter._BaseParameter'),
+                  ('py:class', 'SweepFixedValues'),
                   # We don't generate the docs for function since its deprecated
                   ('py:class', 'Function'),
                   # External types that for some reason or the other
@@ -430,7 +432,25 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'SPI_rack'),
                   ('py:class', 'unittest.case.TestCase'),
                   ('py:class', 'builtins.AssertionError'),
-                  ('py:exc', 'visa.VisaIOError')]
+                  ('py:exc', 'visa.VisaIOError'),
+                  # The following are needed for qcodes.utils.magic since
+                  # it includes a bunch of docs from IPython that is not
+                  # conformant.
+                  ('py:class', 'callable'),
+                  ('py:class', 'All'),
+                  ('py:class', 'change'),
+                  ('py:class', "default: 'change'"),
+                  ('py:class', 'string'),
+                  ('py:class', 'all event handlers.'),
+                  ('py:class', 'The event handlers associated with a trait name'),
+                  ('py:class', "default: None"),
+                  ('py:class', "default True"),
+                  ('py:class', "default False"),
+                  ('py:class', "default: 'change'"),
+                  ('py:class', "default 'string'"),
+                  ('py:class', "default: All"),
+                  ('py:class', "IPython.utils.struct.Struct")
+                  ]
 
 
 numfig = True
