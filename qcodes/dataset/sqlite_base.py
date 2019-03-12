@@ -236,7 +236,8 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     integers into 'text' columns). Due to this fact, and for the reasons of
     flexibility, the numeric converter is also made capable of handling
     strings. An obvious exception to this is 'nan' (case insensitive) which
-    gets converted to `np.nan`.
+    gets converted to `np.nan`. Another exception to this is 'inf', which
+    gets converted to 'np.inf'.
     """
     try:
         # First, try to convert bytes to float
@@ -256,7 +257,11 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     if np.isnan(numeric):
         return numeric
 
-    # If it is not 'nan', then we need to see if the value is really an
+    # Then we check if the outcome is 'inf', includes +inf and -inf
+    if np.isinf(numeric):
+        return numeric
+
+    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
     # integer or with floating point digits
     numeric_int = int(numeric)
     if numeric != numeric_int:
