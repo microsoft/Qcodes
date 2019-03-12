@@ -1,3 +1,11 @@
+"""
+This module provides infrastructure for wrapping DLL libraries, loaded using
+:mod:`ctypes`. With this infrastructure, one just needs to subclass
+:class:`.WrappedDll` and define class methods for the functions of interest
+from the DLL library with mostly python types in mind, and conveniently
+specify their signatures in terms of :mod:`ctypes` types.
+"""
+
 import ctypes
 import logging
 from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any
@@ -45,7 +53,7 @@ def _mark_params_as_updated(*args) -> None:
 
 
 def _check_error_code(return_code: int, func, arguments
-                     ) -> None:
+                      ) -> None:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
         if len(argrepr) > 100:
@@ -86,12 +94,12 @@ class DllWrapperMeta(type):
     # Only allow a single instance per DLL path.
     _instances: WeakValueDictionary = WeakValueDictionary()  # of [str, Any]
 
-    # Note: without the 'type: ignore' for the `__call__` method below, mypy
+    # Note: without the 'type: ignore' for the ``__call__`` method below, mypy
     # generates 'Signature of "__call__" incompatible with supertype "type"'
     # error, which is an indicator of Liskov principle violation - subtypes
     # should not change the method signatures, but we need it here in order to
-    # use the `dll_path` argument which `type` superclass obviously does not
-    # have in its `__call__` method.
+    # use the ``dll_path`` argument which the ``type`` superclass obviously 
+    # does not have in its ``__call__`` method.
     def __call__(  # type: ignore
             cls, dll_path: int):
         api = cls._instances.get(dll_path, None)
@@ -109,26 +117,34 @@ class DllWrapperMeta(type):
 
 class WrappedDll(metaclass=DllWrapperMeta):
     """
-    A base class for wrapping DLL libraries. This class contains attributes
-    that subclasses have to define and/or initialize.
+    A base class for wrapping DLL libraries.
 
-    This class uses `signatures` dictionary defined in a class attribute
-    in order to assign `argtypes` and `restype` atttributes for functions of
-    a loaded DLL library (from the `._dll` attribute of the class).
+    Note that this class is still quite specific to Alazar ATS DLL library.
 
-    Each function is potentially executed in a different thread (depending on
-    what the class sets `_executor` attribute to), hence the class has to
-    provide a `_lock` instance that is used to wrap around the calls to
-    the DLL library.
+    This class uses dictionary of the :attr:``signatures`` attribute in order
+    to assign ``argtypes`` and ``restype`` atttributes for functions of
+    a loaded DLL library (from the :attr:`_dll` attribute of the class).
+    If ``restype`` is of type :const:`RETURN_CODE`, then an exception is
+    raised in case the return code is an Alazar error code. For string-alike
+    ``restype`` s, the returned value is converted to a python string.
 
-    Note that the use of lock, processing of the return codes (if any), etc.
-    are specific to Alazar ATS DLL library.
+    Functions are executed in a single separate thread (see what the
+    :attr:`_executor` gets initialize to), hence the class also has a lock
+    instance in the :attr:`_lock` attribute that is used to wrap around the
+    actual calls to the DLL library.
+
+    Method :meth:`_sync_dll_call` is supposed to be called when a subclass
+    implements calls to functions of the loaded DLL.
+
+    Attributes:
+        signatures: :mod:`ctypes` signatures for loaded DLL functions;
+            it is to be filled with :class:`Signature` instances for the DLL
+            functions of interest in a subclass.
 
     Args:
-        dll_path: path to the DLL library to load and wrap
+        dll_path: Path to the DLL library to load and wrap
     """
 
-    # This defines ctypes signatures for loaded DLL functions.
     signatures: Dict[str, Signature] = {}
 
     # This is the DLL library instance.
@@ -149,8 +165,8 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     def __apply_signatures(self):
         """
-        Adds ctypes signatures to all of the functions exposed by the ATS API
-        that we use in this class.
+        Apply :mod:`ctypes` signatures for all of the C library functions
+        specified in :attr:`signatures` attribute.
         """
         for name, signature in self.signatures.items():
             c_func = getattr(self._dll, name)
@@ -167,6 +183,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
             c_func.restype = ret_type
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> Any:
+        """Call given function from the DLL library on the given arguments"""
         c_func = getattr(self._dll, c_name)
         future = self._executor.submit(
             _api_call_task,
