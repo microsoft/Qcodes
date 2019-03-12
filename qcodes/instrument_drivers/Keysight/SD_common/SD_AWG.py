@@ -398,7 +398,7 @@ class SD_AWG(SD_Module):
                 in subsequent related function calls.
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformLoad(waveform_object, waveform_number)
@@ -417,7 +417,7 @@ class SD_AWG(SD_Module):
                 in subsequent related function calls.
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformLoadInt16(waveform_type, data_raw, waveform_number)
@@ -443,7 +443,7 @@ class SD_AWG(SD_Module):
                     AWG. (only works for waveforms with even number of points)
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformReLoad(waveform_object, waveform_number, padding_mode)
@@ -470,7 +470,7 @@ class SD_AWG(SD_Module):
                     AWG. (only works for waveforms with even number of points)
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.waveformReLoadArrayInt16(waveform_type, data_raw, waveform_number, padding_mode)
@@ -513,7 +513,7 @@ class SD_AWG(SD_Module):
             prescaler (int): waveform prescaler value, to reduce eff. sampling rate
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.AWGFromFile(awg_number, waveform_file, trigger_mode, start_delay, cycles, prescaler,
@@ -548,7 +548,7 @@ class SD_AWG(SD_Module):
                                         which have a second component
 
         Returns:
-            availableRAM (int): available onboard RAM in waveform points,
+            int: available onboard RAM in waveform points,
             or negative numbers for errors
         """
         value = self.awg.AWGfromArray(awg_number, trigger_mode, start_delay, cycles, prescaler,
