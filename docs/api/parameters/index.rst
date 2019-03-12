@@ -7,7 +7,6 @@ qcodes.instrument (Parameters)
 
     qcodes.instrument.parameter
     qcodes.instrument.group_parameter
-    qcodes.instrument.sweep_values
 
 
 .. automodule:: qcodes.instrument
@@ -19,4 +18,3 @@ qcodes.instrument (Parameters)
 
    parameter
    group_parameter
-   sweep_values
