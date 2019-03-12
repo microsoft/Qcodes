@@ -152,8 +152,10 @@ def test_list_of_strings(experiment):
         datasaver.add_result((p, list_of_strings))
 
     test_set = load_by_id(datasaver.run_id)
+    expec_data = [[item] for item in list_of_strings]
+    actual_data = test_set.get_data("p")
 
     try:
-        assert [[item] for item in list_of_strings] == test_set.get_data("p")
+        assert  actual_data == expec_data
     finally:
         test_set.conn.close()
