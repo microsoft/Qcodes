@@ -1675,7 +1675,7 @@ class ZIUHFLI(Instrument):
                        mode: bool,
                        setting: str,
                        value: Union[int, float],
-                       output_mode: Optional[int] = None):
+                       output_mode: Optional[int] = None) -> None:
         """
         Function to set signal output's settings. A specific setter function is
         needed as parameters depend on each other and need to be checked and
@@ -1698,9 +1698,7 @@ class ZIUHFLI(Instrument):
                         'dBm': lambda value: 10 ** ((value - 10) / 20)
                         }
 
-        def amp_valid():
-            nonlocal value
-            nonlocal number
+        def amp_valid(number, value):
             ampdef_val = params['signal_output{}_ampdef'.format(number+1)].get()
             autorange_val = params['signal_output{}_autorange'.format(number+1)].get()
 
@@ -1808,7 +1806,7 @@ class ZIUHFLI(Instrument):
             setstr += '/{}'.format(output_mode)
 
         if setting in dynamic_validation:
-            dynamic_validation[setting]()
+            dynamic_validation[setting](number, value)
 
         if mode == 0:
             self.daq.setInt(setstr, value)
@@ -1821,7 +1819,7 @@ class ZIUHFLI(Instrument):
             [f() for f in changing_param[setting]]
 
     def _sigout_getter(self, number: int, mode: bool, setting: str,
-                       output_mode: Optional[int] = None):
+                       output_mode: Optional[int] = None) -> Union[int, float]:
         """
         Function to query the settings of signal outputs. Specific setter
         function is needed as parameters depend on each other and need to be
