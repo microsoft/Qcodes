@@ -408,6 +408,17 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'chan_type'),
                   ('py:class', 'SD_Wave'),
                   ('py:class', 'array'),
+                  # private types that are not currently documented so links
+                  # will not resolve
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.'
+                               'private.Keysight_344xxA._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.private.'
+                               'Keysight_344xxA_submodules._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument.ip.IPInstrument'),
+                  ('py:class', 'qcodes.instrument_drivers.rigol.private.'
+                               'DP8xx._RigolDP8xx'),
+                  ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
+                               'private.HMC804x._RohdeSchwarzHMC804x'),
                   # External types that for some reason or the other
                   # don't resolve.
                   ('py:class', 'unittest.case.TestCase'),
