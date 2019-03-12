@@ -1,20 +1,29 @@
+"""
+This module provides helper objects for Alazar driver class. The objects allow
+to hide realted pieces of logic into a form of "submodule" (analogious to 
+:meth:`qcodes.instrument.InstrumentBase.add_submodule`) that can be included
+into the driver class in some way.
+"""
+
+
 from .ats_api import AlazarATSAPI
 from .constants import Capability
 
 
 class CapabilityHelper():
     """
-    A helper class providing convenient methods for various useful 
-    'query capability' calls for a given Alazar board.
+    A helper class providing convenient methods for various useful
+    'query capability' (``AlazarQueryCapability``) calls for a given
+    Alazar board.
 
-    Most common capabilities are enumerated in `.CAPABILITIES`.
+    Most common capabilities are enumerated in :attr:`.CAPABILITIES`.
 
-    Frequently used capabilities even have their `query_<...>()` convenience
-    methods.
+    For frequently used capabilities, dedicated convenience ``query_<...>()``
+    methods are available.
 
     Args:
         api: Instance of Alazar ATS API class
-        handle: Handle of a specific board (from `AlazarGetBoardBySystemId`)
+        handle: Handle of a specific board (from ``AlazarGetBoardBySystemId``)
     """
 
     CAPABILITIES = Capability
@@ -34,7 +43,7 @@ class CapabilityHelper():
     
     def query_latest_calibration(self) -> str:
         """Query latest calibration date in '12-34-56' format"""
-        # `date_int` is a decimal number with the format DDMMYY where 
+        # ``date_int`` is a decimal number with the format DDMMYY where 
         # DD is 1-31, MM is 1-12, and YY is 00-99 from 2000.
         date_int = self.query(self.CAPABILITIES.GET_LATEST_CAL_DATE)
         date_str = str(date_int)
@@ -72,7 +81,7 @@ class CapabilityHelper():
         versions. In Alazar DSO this is reported as FPGA Version.
         """
         asopc_type = self.query_asopc_type()
-        # Alazartech has confirmed in a support mail that this
+        # AlazarTech has confirmed in a support mail that this
         # is the way to get the firmware version
         firmware_major = (asopc_type >> 16) & 0xff
         firmware_minor = (asopc_type >> 24) & 0xf
