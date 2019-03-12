@@ -392,14 +392,17 @@ suppress_warnings = ['image.nonlocal_uri']
 nitpicky = True
 # we allow most types from the typing modules to be used in
 # docstrings even if they don't resolve
-# io_manger is used all over the old dataset but it's not clear what this is
+# io_manger and chan_type are uses quite a few places. Should eventually be
+# removed. VisaIOError does not resolve even with pyvisa intersphinx
 nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'Union'),
                   ('py:class', 'Any'),
                   ('py:class', 'Tuple'),
                   ('py:class', 'List'),
                   ('py:class', 'Sequence'),
+                  ('py:class', 'Iterable'),
                   ('py:class', 'io_manager'),
+                  ('py:class', 'chan_type'),
                   ('py:exc', 'visa.VisaIOError')]
 
 
