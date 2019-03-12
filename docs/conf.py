@@ -362,7 +362,8 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/', None),
     'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None),
+    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None)
 }
 
 
@@ -419,9 +420,13 @@ nitpick_ignore = [('py:class', 'Optional'),
                                'DP8xx._RigolDP8xx'),
                   ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
                                'private.HMC804x._RohdeSchwarzHMC804x'),
+                  ('py:class', 'qcodes.instrument.parameter._BaseParameter'),
+                  # We don't generate the docs for function since its deprecated
+                  ('py:class', 'Function'),
                   # External types that for some reason or the other
                   # don't resolve.
-                  ('py:class', 'broadbean.sequence.fs_schmema'),
+                  ('py:class', 'json.encoder.JSONEncoder'),
+                  ('py:attr', 'broadbean.sequence.fs_schmema'),
                   ('py:class', 'SPI_rack'),
                   ('py:class', 'unittest.case.TestCase'),
                   ('py:class', 'builtins.AssertionError'),
