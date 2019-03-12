@@ -119,8 +119,8 @@ class MultiChannelInstrumentParameter(MultiParameter):
         Set all parameters to this value
 
         Args:
-            value (unknown): The value to set to. The type is given by the
-            underlying parameter.
+            value (Any): The value to set to. The type is given by the
+                underlying parameter.
         """
         for chan in self._channels:
             getattr(chan, self._param_name).set(value)
