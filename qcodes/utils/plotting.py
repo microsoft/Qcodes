@@ -186,7 +186,7 @@ def apply_auto_color_scale(colorbar: matplotlib.pyplot.colorbar,
     :meth:`apply_color_scale_limits`.
     If you want to adjust the color scale based on the configuration file
     `qcodesrc.json`, use :meth:`auto_color_scale_from_config`, which is used
-    In :meth:`qcodes.dataset.plotting.plot_by_id`.
+    In :func:`qcodes.dataset.plotting.plot_by_id`.
 
     Args:
         colorbar: The matplotlib colorbar to which to apply
