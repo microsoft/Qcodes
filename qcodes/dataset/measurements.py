@@ -176,13 +176,13 @@ class DataSaver:
         return {parameter: values}
 
     def _unpack_arrayparameter(
-        self, partial_result: Tuple[ArrayParameter, values_type]
-            ) -> Dict[ParamSpecBase, values_type]:
+        self, partial_result: res_type) -> Dict[ParamSpecBase, values_type]:
         """
         Unpack a partial result containing an arrayparameter into a standard
         results dict form and return that dict
         """
         array_param, values_array = partial_result
+        array_param = cast(ArrayParameter, array_param)
 
         if array_param.setpoints is None:
             raise RuntimeError(f"{array_param.full_name} is an "
@@ -220,6 +220,7 @@ class DataSaver:
         """
 
         parameter, data = partial_result
+        parameter = cast(MultiParameter, parameter)
 
         result_dict = {}
 
@@ -228,6 +229,9 @@ class DataSaver:
                                f"{type(parameter)} "
                                f"without setpoints. Cannot handle this.")
         for i in range(len(parameter.shapes)):
+            # if this loop runs, then 'data' is a Sequence
+            data = cast(Sequence[Union[str, int, float, Any]], data)
+
             shape = parameter.shapes[i]
 
             try:
@@ -305,7 +309,7 @@ class DataSaver:
         present
         """
         try:
-            self._interdeps.validate_subset(results_dict.keys())
+            self._interdeps.validate_subset(list(results_dict.keys()))
         except (DependencyError, InferenceError) as err:
             raise ValueError('Can not add result, some required parameters '
                              'are missing.') from err
@@ -517,7 +521,7 @@ class DataSaver:
         """
         Massage all standalone parameters into the correct shape
         """
-        res_list = []
+        res_list: List[Dict[str, VALUE]] = []
         for param, value in result_dict.items():
             if param.type == 'text':
                 if isinstance(value, (tuple, list)):
@@ -816,6 +820,8 @@ class Measurement:
         """
         Update the interdependencies object with a new group
         """
+
+        parameter: Optional[ParamSpecBase]
 
         try:
             parameter = self._interdeps[name]

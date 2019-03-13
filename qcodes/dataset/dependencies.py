@@ -49,7 +49,7 @@ class InterDependencies_:
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                error: type = TypeError
+                error = TypeError
                 message: str = ('Standalones must be a sequence of '
                                 'ParamSpecs')
                 self._raise_from(ValueError, 'Invalid standalones',
@@ -101,9 +101,8 @@ class InterDependencies_:
         Helper function to remove duplicate entries from a ParamSpecTree. Will
         turn {A: (B, B, C)} into {A: (B, C)}
         """
-
         for ps, tup in tree.items():
-            specs = []
+            specs: List[ParamSpecBase] = []
             for p in tup:
                 if p not in specs:
                     specs.append(p)
