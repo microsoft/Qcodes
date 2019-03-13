@@ -741,6 +741,7 @@ def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
         mark_completed.assert_called_once()
 
 
+@settings(deadline=400)
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
 def test_get_parameter_data(scalar_dataset, start, end):
