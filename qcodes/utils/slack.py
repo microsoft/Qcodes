@@ -100,7 +100,7 @@ class Slack(threading.Thread):
 
         Args:
             interval (int): Update interval for widget (must be over 1s).
-            config (dict, optional): Config dict
+            config (Optional[dict]): Config dict
                 If not given, uses qc.config['user']['slack']
                 The config dict must contain the following keys:
 
@@ -108,7 +108,7 @@ class Slack(threading.Thread):
                 - 'bot_token': Token from bot (obtained from slack website)
                 - 'names': Usernames to periodically check for IM messages
 
-            auto_start (Bool=True)
+            auto_start (bool): Defaults to True.
 
         """
         if config is not None:
@@ -192,7 +192,7 @@ class Slack(threading.Thread):
             user_id: Id from which to retrieve user information
 
         Returns:
-            user (dict): user information
+            dict: user information
         """
         users = [user for user in self.users if
                  self.users[user]['id'] == user_id]
@@ -207,7 +207,7 @@ class Slack(threading.Thread):
             usernames: Slack usernames of users
 
         Returns:
-            users (dict): {username: user}
+            dict: {username: user}
         """
         users = {}
         response = self.slack.users.list()
@@ -440,7 +440,7 @@ class Slack(threading.Thread):
             **kwargs: Not used
 
         Returns:
-            is_finished (Bool): True if measurement is finished, False otherwise
+            bool: True if measurement is finished, False otherwise
         """
         if active_loop() is None:
             self.slack.chat.post_message(

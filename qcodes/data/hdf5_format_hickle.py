@@ -29,7 +29,7 @@ class HDF5FormatHickle(HDF5Format):
 
             location (str): the file location within io_manager
 
-            read_first (bool, optional): read previously saved metadata before
+            read_first (Optional[bool]): read previously saved metadata before
                 writing? The current metadata will still be the used if
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.
