@@ -22,8 +22,6 @@ WARNING_TRUNCATING = r"^Warning \(line: [0-9]+\): waveform \S+ cut " \
                      r" or 4 samples for dual channel waveforms\)$"
 WARNING_ANY = r"^Warning \(line: [0-9]+\):.*$"
 
-log = logging.getLogger(__name__)
-
 
 class CompilerError(Exception):
     """ Errors that occur during compilation of sequence programs."""
@@ -64,7 +62,7 @@ class ZIHDAWG8(Instrument):
 
         Args:
             *warnings: One or more regular expression that matches a compiler
-            warning.
+                warning.
 
         """
         for warning in warnings:
@@ -236,7 +234,7 @@ class ZIHDAWG8(Instrument):
             for warning_as_error in self._warnings_as_errors:
                 if re.search(warning_as_error, warning) is not None:
                     raise CompilerError('Warning treated as an error.', warning)
-            log.warning(warning)
+            self.log.warning(warning)
 
     def upload_waveform(self, awg_number: int, waveform: list,
                         index: int) -> None:
