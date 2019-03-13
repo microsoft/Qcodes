@@ -439,7 +439,8 @@ class AlazarATSAPI(WrappedDll):
         Args:
             handle: Handle of the board of interest
             capability: An integer identifier of a capability parameter 
-                (see :const:`.constants.Capability` constants)
+                (:class:`.constants.Capability` enumeration encapsulates
+                the available identifiers)
 
         Returns:
             Value of the requested capability
