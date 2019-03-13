@@ -85,7 +85,7 @@ class DataSaver:
                                     min_count=min_count,
                                     state={},
                                     callback_kwargs={'run_id':
-                                                         self._dataset.run_id,
+                                                     self._dataset.run_id,
                                                      'snapshot': snapshot})
         default_subscribers = qcodes.config.subscription.default_subscribers
         for subscriber in default_subscribers:
@@ -93,7 +93,8 @@ class DataSaver:
 
         self._interdeps = interdeps
         self.write_period = float(write_period)
-        self._results: List[Dict[str, VALUE]] = []  # will be filled by addResult
+        # self._results will be filled by add_result
+        self._results: List[Dict[str, VALUE]] = []
         self._last_save_time = monotonic()
         self._known_dependencies: Dict[str, List[str]] = {}
 
@@ -138,11 +139,14 @@ class DataSaver:
         for partial_result in res_tuple:
             parameter = partial_result[0]
             if isinstance(parameter, ArrayParameter):
-                results_dict.update(self._unpack_arrayparameter(partial_result))
+                results_dict.update(
+                        self._unpack_arrayparameter(partial_result))
             elif isinstance(parameter, MultiParameter):
-                results_dict.update(self._unpack_multiparameter(partial_result))
+                results_dict.update(
+                        self._unpack_multiparameter(partial_result))
             else:
-                results_dict.update(self._unpack_partial_result(partial_result))
+                results_dict.update(
+                        self._unpack_partial_result(partial_result))
 
         self._validate_result_deps(results_dict)
         self._validate_result_shapes(results_dict)
@@ -155,7 +159,8 @@ class DataSaver:
             self._last_save_time = monotonic()
 
     def _unpack_partial_result(
-        self, partial_result: res_type) -> Dict[ParamSpecBase, values_type]:
+            self,
+            partial_result: res_type) -> Dict[ParamSpecBase, values_type]:
         """
         Unpack a partial result (not containing ArrayParameters or
         MultiParameters) into a standard results dict form and return that
@@ -172,7 +177,7 @@ class DataSaver:
 
     def _unpack_arrayparameter(
         self, partial_result: Tuple[ArrayParameter, values_type]
-        ) -> Dict[ParamSpecBase, values_type]:
+            ) -> Dict[ParamSpecBase, values_type]:
         """
         Unpack a partial result containing an arrayparameter into a standard
         results dict form and return that dict
@@ -203,7 +208,7 @@ class DataSaver:
         return res_dict
 
     def _unpack_multiparameter(
-        self, partial_result: res_type) -> Dict[ParamSpecBase, Any]:
+            self, partial_result: res_type) -> Dict[ParamSpecBase, Any]:
         """
         Unpack the subarrays and setpoints from a MultiParameter and
         into a standard results dict form and return that
@@ -219,7 +224,8 @@ class DataSaver:
         result_dict = {}
 
         if parameter.setpoints is None:
-            raise RuntimeError(f"{parameter.full_name} is an {type(parameter)} "
+            raise RuntimeError(f"{parameter.full_name} is an "
+                               f"{type(parameter)} "
                                f"without setpoints. Cannot handle this.")
         for i in range(len(parameter.shapes)):
             shape = parameter.shapes[i]
@@ -255,7 +261,7 @@ class DataSaver:
     def _unpack_setpoints_from_parameter(
         self, parameter: _BaseParameter, setpoints: Sequence,
         sp_names: Sequence[str], fallback_sp_name: str
-        ) -> Dict[ParamSpecBase, values_type]:
+            ) -> Dict[ParamSpecBase, values_type]:
         """
         Unpack the setpoints and their values from a parameter with setpoints
         into a standard results dict form and return that dict
@@ -292,7 +298,7 @@ class DataSaver:
         return result_dict
 
     def _validate_result_deps(
-        self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
         Validate that the dependencies of the results_dict are met, meaning
         that (some) values for all required setpoints and inferences are
@@ -305,7 +311,7 @@ class DataSaver:
                              'are missing.') from err
 
     def _validate_result_shapes(
-        self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
         Validate that all sizes of the results_dict are consistent. This means
         that array-values of parameters and their setpoints are of the
@@ -327,13 +333,13 @@ class DataSaver:
                                      f"{setpoint_shape}.")
 
     def _validate_result_types(
-        self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
         Validate the type of the results
         """
 
         def basic_type_validator(
-            ps_name: str, vals: Any, expec_type: str) -> None:
+                ps_name: str, vals: Any, expec_type: str) -> None:
 
             if type(vals) not in allowed_types[expec_type]:
                 raise ValueError(f'Parameter {ps_name} is of type '
@@ -341,23 +347,23 @@ class DataSaver:
                                  f'type {type(vals)} ({vals}).')
 
         def array_type_validator(
-            ps_name: str,
-            vals: Union[np.ndarray, tuple, list],
-            expec_dtype: str) -> None:
+                ps_name: str,
+                vals: Union[np.ndarray, tuple, list],
+                expec_dtype: str) -> None:
 
             if isinstance(vals, np.ndarray):
                 if vals.dtype not in allowed_types[expec_dtype]:
                     raise ValueError(f'Parameter {ps_name} expects values of '
-                                    f'type "{expec_dtype}", but got a result '
-                                    f'of type {vals.dtype}.')
+                                     f'type "{expec_dtype}", but got a result '
+                                     f'of type {vals.dtype}.')
             else:
                 seq_types = list(isinstance(val, allowed_types[expec_dtype])
                                  for val in vals)
                 if not all(seq_types):
                     wrong_val = seq_types.index(False)
                     raise ValueError(f'Parameter {ps_name} expects values of '
-                                    f'type "{expec_dtype}", but got a result '
-                                    f'of type {type(wrong_val)}.')
+                                     f'type "{expec_dtype}", but got a result '
+                                     f'of type {type(wrong_val)}.')
 
         # Note that we allow 'numeric' input to be of type np.ndarray, if
         # the shape of the input is ()
@@ -366,7 +372,7 @@ class DataSaver:
                                      np.float, np.float16, np.float32,
                                      np.float64, np.ndarray),
                          'text': (str,),
-                         'array': (np.ndarray, tuple , list)}
+                         'array': (np.ndarray, tuple, list)}
         for ps, vals in results_dict.items():
             # we allow for 'numeric' and 'text' parameters to get results of
             # Sequence[scalar_type] or Sequence[str], so we must handle that as
@@ -386,7 +392,7 @@ class DataSaver:
                 array_type_validator(ps.name, vals, 'numeric')
 
     def _enqueue_results(
-        self, result_dict: Dict[ParamSpecBase, values_type]) -> None:
+            self, result_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
         Enqueue the results into self._results
 
@@ -433,8 +439,8 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_array(
-        result_dict: Dict[ParamSpecBase, values_type],
-        all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+            result_dict: Dict[ParamSpecBase, values_type],
+            all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
         """
         Make a list of res_dicts out of the results for a 'array' type
         parameter. The results are assumed to already have been validated for
@@ -454,10 +460,10 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_numeric(
-        result_dict: Dict[ParamSpecBase, values_type],
-        toplevel_param: ParamSpecBase,
-        inff_params: Set[ParamSpecBase],
-        deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+            result_dict: Dict[ParamSpecBase, values_type],
+            toplevel_param: ParamSpecBase,
+            inff_params: Set[ParamSpecBase],
+            deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
         """
         Make a res_dict in the format expected by DataSet.add_results out
         of the results for a 'numeric' type parameter. This includes
@@ -483,7 +489,8 @@ class DataSaver:
             # We first massage all values into np.arrays of the same
             # shape
             flat_results = {}
-            flat_results[toplevel_param] = np.array(result_dict[toplevel_param]).ravel()
+            toplevel_val = result_dict[toplevel_param]
+            flat_results[toplevel_param] = np.array(toplevel_val).ravel()
             N = len(flat_results[toplevel_param])
             for dep in deps_params:
                 if np.shape(result_dict[dep]) == ():
@@ -505,8 +512,8 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_standalones(
-        result_dict: Dict[ParamSpecBase, values_type]
-        ) -> List[Dict[str, VALUE]]:
+            result_dict: Dict[ParamSpecBase, values_type]
+            ) -> List[Dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
         """
@@ -652,8 +659,9 @@ class Runner:
         self.ds.unsubscribe_all()
 
 
-
 T = TypeVar('T', bound='Measurement')
+
+
 class Measurement:
     """
     Measurement procedure container
@@ -989,7 +997,7 @@ class Measurement:
                                      paramtype)
 
     def register_custom_parameter(
-            self : T, name: str,
+            self: T, name: str,
             label: str = None, unit: str = None,
             basis: setpoints_type = None,
             setpoints: setpoints_type = None,
@@ -1041,7 +1049,7 @@ class Measurement:
 
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self : T, func: Callable, args: tuple) -> T:
+    def add_before_run(self: T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -1059,7 +1067,7 @@ class Measurement:
 
         return self
 
-    def add_after_run(self : T, func: Callable, args: tuple) -> T:
+    def add_after_run(self: T, func: Callable, args: tuple) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -1077,7 +1085,7 @@ class Measurement:
 
         return self
 
-    def add_subscriber(self : T,
+    def add_subscriber(self: T,
                        func: Callable,
                        state: Union[MutableSequence, MutableMapping]) -> T:
         """
