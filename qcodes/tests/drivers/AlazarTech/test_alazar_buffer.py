@@ -1,9 +1,14 @@
 import ctypes
+import os
 
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import Buffer
 from qcodes.instrument_drivers.AlazarTech.ATS import os as ats_os
+
+
+pytestmark = pytest.mark.skipif(
+    os.name != 'nt', reason='These tests are relevant only for Windows')
 
 
 def test_buffer_initiates_only_on_windows(monkeypatch):

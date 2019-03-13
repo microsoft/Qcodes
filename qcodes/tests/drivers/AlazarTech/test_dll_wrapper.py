@@ -3,9 +3,16 @@
 
 import logging
 import gc
+import os
+
+import pytest
 
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import WrappedDll, \
     DllWrapperMeta
+
+
+pytestmark = pytest.mark.skipif(
+    os.name != 'nt', reason='These tests are relevant only for Windows')
 
 
 def test_wrapped_dll_singleton_behavior(caplog):
