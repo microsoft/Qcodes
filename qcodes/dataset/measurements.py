@@ -336,8 +336,9 @@ class DataSaver:
                                      f"{setpoint.name} has shape "
                                      f"{setpoint_shape}.")
 
+    @staticmethod
     def _validate_result_types(
-            self, results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            results_dict: Dict[ParamSpecBase, values_type]) -> None:
         """
         Validate the type of the results
         """
@@ -345,7 +346,7 @@ class DataSaver:
         def basic_type_validator(
                 ps_name: str, vals: Any, expec_type: str) -> None:
 
-            if type(vals) not in allowed_types[expec_type]:
+            if not isinstance(vals, allowed_types[expec_type]):
                 raise ValueError(f'Parameter {ps_name} is of type '
                                  f'"{expec_type}", but got a result of '
                                  f'type {type(vals)} ({vals}).')
@@ -827,7 +828,6 @@ class Measurement:
             parameter = self._interdeps[name]
         except KeyError:
             parameter = None
-            pass
 
         paramspec = ParamSpecBase(name=name,
                                   paramtype=paramtype,

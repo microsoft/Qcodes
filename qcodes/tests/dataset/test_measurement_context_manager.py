@@ -2,7 +2,6 @@ import re
 import os
 from time import sleep
 import json
-from copy import deepcopy
 
 import pytest
 from hypothesis import given, settings

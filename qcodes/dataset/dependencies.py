@@ -459,8 +459,8 @@ class InterDependencies_:
 
     def __eq__(self, other):
 
-        def sorter(input: Any) -> List[Any]:
-            return sorted(input, key=lambda ps: ps.name)
+        def sorter(inp: Any) -> List[Any]:
+            return sorted(inp, key=lambda ps: ps.name)
 
         if not isinstance(other, InterDependencies_):
             return False
