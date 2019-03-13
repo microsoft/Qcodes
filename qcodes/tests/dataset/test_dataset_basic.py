@@ -3,6 +3,7 @@ from copy import copy
 import re
 from unittest.mock import patch
 import random
+from typing import Sequence, Dict, Tuple, Optional
 
 import pytest
 import numpy as np
@@ -24,6 +25,7 @@ from qcodes.dataset.guids import parse_guid
 from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
                                                       experiment, dataset)
 from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
+    scalar_dataset_with_nulls, array_dataset_with_nulls, \
     array_dataset, multi_dataset, array_in_scalar_dataset, array_in_str_dataset, \
     standalone_parameters_dataset, array_in_scalar_dataset_unrolled, \
     varlen_array_in_scalar_dataset
@@ -526,6 +528,20 @@ def test_numpy_nan(dataset):
     assert np.isnan(retrieved[1])
 
 
+def test_numpy_inf(dataset):
+    """
+    Test that we can insert and retrieve numpy inf in the data set
+    """
+    parameter_m = ParamSpec("m", "numeric")
+    dataset.add_parameter(parameter_m)
+    dataset.mark_started()
+
+    data_dict = [{"m": value} for value in [-np.inf, np.inf]]
+    dataset.add_results(data_dict)
+    retrieved = dataset.get_data("m")
+    assert np.isinf(retrieved).all()
+
+
 def test_missing_keys(dataset):
     """
     Test that we can now have partial results with keys missing. This is for
@@ -750,6 +766,55 @@ def test_get_parameter_data(scalar_dataset, start, end):
                           expected_values,
                           start,
                           end)
+
+
+def test_get_scalar_parameter_data_no_nulls(scalar_dataset_with_nulls):
+
+    expected_names = {}
+    expected_names['first_value'] = ['first_value', 'setpoint']
+    expected_names['second_value'] = ['second_value', 'setpoint']
+    expected_shapes = {}
+    expected_shapes['first_value'] = [(1, ), (1,)]
+    expected_shapes['second_value'] = [(1, ), (1,)]
+    expected_values = {}
+    expected_values['first_value'] = [np.array([1]), np.array([0])]
+    expected_values['second_value'] = [np.array([2]), np.array([0])]
+
+    parameter_test_helper(scalar_dataset_with_nulls,
+                          list(expected_names.keys()),
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
+
+
+def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls):
+
+    types = [p.type for p in array_dataset_with_nulls.paramspecs.values()]
+
+    expected_names = {}
+    expected_names['val1'] = ['val1', 'sp1', 'sp2']
+    expected_names['val2'] = ['val2', 'sp1']
+    expected_shapes = {}
+    expected_values = {}
+
+    if 'array' in types:
+        shape = (1, 5)
+    else:
+        shape = (5,)
+
+    expected_shapes['val1'] = [shape] * 3
+    expected_shapes['val2'] = [shape] * 2
+    expected_values['val1'] = [np.ones(shape),
+                               np.arange(0, 5).reshape(shape),
+                               np.arange(5, 10).reshape(shape)]
+    expected_values['val2'] = [np.zeros(shape),
+                               np.arange(0, 5).reshape(shape)]
+
+    parameter_test_helper(array_dataset_with_nulls,
+                          list(expected_names.keys()),
+                          expected_names,
+                          expected_shapes,
+                          expected_values)
 
 
 def test_get_array_parameter_data(array_dataset):
@@ -1011,12 +1076,29 @@ def test_get_parameter_data_independent_parameters(standalone_parameters_dataset
                           expected_values)
 
 
-def parameter_test_helper(ds, toplevel_names,
-                          expected_names,
-                          expected_shapes,
-                          expected_values,
-                          start=None,
-                          end=None):
+def parameter_test_helper(ds: DataSet,
+                          toplevel_names: Sequence[str],
+                          expected_names: Dict[str, Sequence[str]],
+                          expected_shapes: Dict[str, Sequence[Tuple[int, ...]]],
+                          expected_values: Dict[str, Sequence[np.ndarray]],
+                          start: Optional[int] = None,
+                          end: Optional[int] = None):
+    """
+    A helper function to compare the data we actually read out of a given
+    dataset with the expected data.
+
+    Args:
+        ds: the dataset in question
+        toplevel_names: names of the toplevel parameters of the dataset
+        expected_names: names of the parameters expected to be loaded for a
+            given parameter as a sequence indexed by the parameter.
+        expected_shapes: expected shapes of the parameters loaded. The shapes
+            should be stored as a tuple per parameter in a sequence containing
+            all the loaded parameters for a given requested parameter.
+        expected_values: expected content of the data arrays stored in a
+            sequenceexpected_names:
+
+    """
 
     data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
     dataframe = ds.get_data_as_pandas_dataframe(*toplevel_names,

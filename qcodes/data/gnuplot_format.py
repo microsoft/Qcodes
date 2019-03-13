@@ -23,23 +23,27 @@ class GNUPlotFormat(Formatter):
 
     Args:
 
-        extension (default 'dat'): file extension for data files
+        extension (str): file extension for data files. Defaults to
+            'dat'
 
-        terminator (default '\\\\n'): newline character(s) to use on write
-            not used for reading, we will read any combination of '\\\\r' and '\\\\n'
+        terminator (str): newline character(s) to use on write
+            not used for reading, we will read any combination of '\\\\r'
+            and '\\\\n'. Defaults to '\\\\n'
 
-        separator (default '\\\\t'): field (column) separator, must be whitespace.
+        separator (str): field (column) separator, must be whitespace.
             Only used for writing, we will read with any whitespace separation.
+            Defaults to '\\\\t'.
 
-        comment (default '# '): lines starting with this are not data
+        comment (str): lines starting with this are not data
             Comments are written with this full string, and identified on read
-            by just the string after stripping whitespace.
+            by just the string after stripping whitespace. Defaults to '# '.
 
-        number_format (default 'g'): from the format mini-language, how to
-            format numeric data into a string
+        number_format (str): from the format mini-language, how to
+            format numeric data into a string. Defaults to 'g'.
 
-        always_nest (default True): whether to always make a folder for files
-            or just make a single data file if all data has the same setpoints
+        always_nest (bool): whether to always make a folder for files
+            or just make a single data file if all data has the same setpoints.
+            Defaults to bool.
 
     These files are basically tab-separated values, but any quantity of
     any whitespace characters is accepted.
@@ -357,7 +361,7 @@ class GNUPlotFormat(Formatter):
 
             location (str): the file location within io_manager
 
-            read_first (bool, optional): read previously saved metadata before
+            read_first (Optional[bool]): read previously saved metadata before
                 writing? The current metadata will still be the used if
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.

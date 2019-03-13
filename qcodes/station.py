@@ -156,7 +156,7 @@ class Station(Metadatable, DelegateAttributes):
 
         Raises:
             KeyError if a component with the given name is not part of this
-            station
+                station
         """
         try:
             return self.components.pop(name)
