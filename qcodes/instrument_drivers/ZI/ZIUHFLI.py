@@ -1,3 +1,4 @@
+import math
 import time
 import logging
 import numpy as np
@@ -1330,6 +1331,19 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum(*list(self._samplingrate_codes.keys()))
                             )
 
+        self.add_parameter('scope_samplingrate_float',
+                           label="Scope's sampling rate as float",
+                           set_cmd=self._set_samplingrate_as_float,
+                           unit='Hz',
+                           get_cmd=self._get_samplingrate_as_float,
+                           vals=vals.Enum(
+                               *[ZIUHFLI._convert_to_float(freq) for freq in
+                                self._samplingrate_codes.keys()]),
+                           docstring=""" A numeric representation of the scope's
+                             samplingrate parameter. Sets and gets the sampling 
+                             rate by using the scope_samplingrate parameter."""
+                           )
+
         self.add_parameter('scope_length',
                             label="Length of scope trace (pts)",
                             set_cmd=partial(self._scope_setter, 0, 1,
@@ -2167,6 +2181,28 @@ class ZIUHFLI(Instrument):
                 value = rawvalue
 
         return value
+
+    @staticmethod
+    def _convert_to_float(frequency):
+        converter = {'hz': 'e0', 'khz': 'e3', 'mhz': 'e6', 'ghz': 'e9',
+                     'thz': 'e12'}
+        value, suffix = frequency.split(' ')
+        return float(''.join([value, converter[suffix.lower()]]))
+
+    def round_to_nearest_sampling_frequency(self, desired_sampling_rate):
+        available_frequencies = [ZIUHFLI._convert_to_float(freq) for freq in
+                                 self._samplingrate_codes.keys()]
+        nearest_frequency = min(available_frequencies, key=lambda f: abs(
+            math.log(desired_sampling_rate, 2) - math.log(f, 2)))
+        return nearest_frequency
+
+    def _set_samplingrate_as_float(self, frequency):
+        sampling_rate = filter(lambda f: ZIUHFLI._convert_to_float(f) == frequency, self._samplingrate_codes.keys())
+        self.scope_samplingrate(''.join(sampling_rate))
+
+    def _get_samplingrate_as_float(self):
+        frequency = self.scope_samplingrate()
+        return ZIUHFLI._convert_to_float(frequency)
 
     def close(self):
         """

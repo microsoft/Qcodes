@@ -92,8 +92,9 @@ class ZIHDAWG8(Instrument):
         Args:
             wave_name: Name of the CSV file, is used by a sequence program.
             waveforms: One or more waveforms that are to be written to a
-            CSV file. Note if there are more than one waveforms then they have
-            to be of equal length, if not the longer ones will be truncated.
+                CSV file. Note if there are more than one waveforms then they
+                have to be of equal length, if not the longer ones will be
+                truncated.
         """
         data_dir = self.awg_module.getString('awgModule/directory')
         wave_dir = os.path.join(data_dir, "awg", "waves")
@@ -116,8 +117,8 @@ class ZIHDAWG8(Instrument):
 
         Args:
             wave_info: A list of tuples containing information about the waves
-            that are to be played. Every tuple should have a channel number and
-            wave, marker or both wave and marker.
+                that are to be played. Every tuple should have a channel number
+                and wave, marker or both wave and marker.
 
         Returns:
             A sequence program that can be compiled and uploaded.
@@ -174,8 +175,8 @@ class ZIHDAWG8(Instrument):
                 device.
 
         Returns:
-            0: Compilation was successful with no warnings.
-            2: Compilation was successful but with warnings.
+            0 is Compilation was successful with no warnings.
+            2 if Compilation was successful but with warnings.
         """
         self.awg_module.set('awgModule/index', awg_number)
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)

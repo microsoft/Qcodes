@@ -362,7 +362,9 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/', None),
     'python': ('https://docs.python.org/3.6', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None)
+    'py': ('https://pylib.readthedocs.io/en/stable/', None),
+    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
+    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)
 }
 
 
@@ -388,6 +390,68 @@ templates_path = ['_templates']
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
+
+nitpicky = True
+
+
+# we allow most types from the typing modules to be used in
+# docstrings even if they don't resolve
+nitpick_ignore = [('py:class', 'Optional'),
+                  ('py:class', 'Union'),
+                  ('py:class', 'Any'),
+                  ('py:class', 'Tuple'),
+                  ('py:class', 'List'),
+                  ('py:class', 'Sequence'),
+                  ('py:class', 'Iterable'),
+                  ('py:class', 'Type'),
+                  # These are some types currently in use
+                  # in docstrings not actually defined anywhere
+                  ('py:class', 'io_manager'),
+                  ('py:class', 'chan_type'),
+                  ('py:class', 'SD_Wave'),
+                  ('py:class', 'array'),
+                  # private types that are not currently documented so links
+                  # will not resolve
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.'
+                               'private.Keysight_344xxA._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument_drivers.Keysight.private.'
+                               'Keysight_344xxA_submodules._Keysight_344xxA'),
+                  ('py:class', 'qcodes.instrument.ip.IPInstrument'),
+                  ('py:class', 'qcodes.instrument_drivers.rigol.private.'
+                               'DP8xx._RigolDP8xx'),
+                  ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
+                               'private.HMC804x._RohdeSchwarzHMC804x'),
+                  ('py:class', 'qcodes.instrument.parameter._BaseParameter'),
+                  ('py:class', 'SweepFixedValues'),
+                  # We don't generate the docs for function since its deprecated
+                  ('py:class', 'Function'),
+                  # External types that for some reason or the other
+                  # don't resolve.
+                  ('py:class', 'json.encoder.JSONEncoder'),
+                  ('py:attr', 'broadbean.sequence.fs_schmema'),
+                  ('py:class', 'SPI_rack'),
+                  ('py:class', 'unittest.case.TestCase'),
+                  ('py:class', 'builtins.AssertionError'),
+                  ('py:exc', 'visa.VisaIOError'),
+                  # The following are needed for qcodes.utils.magic since
+                  # it includes a bunch of docs from IPython that is not
+                  # conformant.
+                  ('py:class', 'callable'),
+                  ('py:class', 'All'),
+                  ('py:class', 'change'),
+                  ('py:class', "default: 'change'"),
+                  ('py:class', 'string'),
+                  ('py:class', 'all event handlers.'),
+                  ('py:class', 'The event handlers associated with a trait name'),
+                  ('py:class', "default: None"),
+                  ('py:class', "default True"),
+                  ('py:class', "default False"),
+                  ('py:class', "default: 'change'"),
+                  ('py:class', "default 'string'"),
+                  ('py:class', "default: All"),
+                  ('py:class', "IPython.utils.struct.Struct")
+                  ]
+
 
 numfig = True
 
