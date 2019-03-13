@@ -111,7 +111,6 @@ class DataSaver:
         the database, but keeps the results in memory. Writing happens every
         `write_period` seconds and during the __exit__ method if this class.
 
-
         Args:
             res_tuple: a tuple with the first element being the parameter name
                 and the second element is the corresponding value(s) at this
@@ -123,7 +122,7 @@ class DataSaver:
                 Measurement object is encountered.
             ValueError: if the shapes of parameters do not match, i.e. if
                 a parameter gets values of a different shape than its setpoints
-                 (the exception being that setpoints can always be scalar)
+                (the exception being that setpoints can always be scalar)
             ParameterTypeError: if a parameter is given a value not matching
                 its type.
         """
