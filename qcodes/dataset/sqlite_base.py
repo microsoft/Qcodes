@@ -1304,8 +1304,11 @@ def get_parameter_data(conn: ConnectionPlus,
     is returned as numpy arrays within 2 layers of nested dicts. The keys of
     the outermost dict are the requested parameters and the keys of the second
     level are the loaded parameters (requested parameter followed by its
-    dependencies). Start and End  sllows one to specify a range of rows
-    (1-based indexing, both ends are included).
+    dependencies). Start and End allows one to specify a range of rows to
+    be returned (1-based indexing, both ends are included). The range filter
+    is applied AFTER the NULL values have been filtered out.
+    Be aware that different parameters that are independent of each other
+    may return a different number of rows.
 
     Note that this assumes that all array type parameters have the same length.
     This should always be the case for a parameter and its dependencies.
@@ -1316,7 +1319,8 @@ def get_parameter_data(conn: ConnectionPlus,
     Args:
         conn: database connection
         table_name: name of the table
-        columns: list of columns
+        columns: list of columns. If no columns are provided, all parameters
+            are returned.
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
     """
@@ -1337,7 +1341,13 @@ def get_parameter_data(conn: ConnectionPlus,
         param_names = [param.name for param in paramspecs]
         types = [param.type for param in paramspecs]
 
-        res = get_data(conn, table_name, param_names, start=start, end=end)
+        res = get_parameter_tree_values(conn,
+                                        table_name,
+                                        output_param,
+                                        *param_names[1:],
+                                        start=start,
+                                        end=end)
+
         # if we have array type parameters expand all other parameters
         # to arrays
         if 'array' in types and ('numeric' in types or 'text' in types):
@@ -1364,10 +1374,11 @@ def get_parameter_data(conn: ConnectionPlus,
 
         # Benchmarking shows that transposing the data with python types is
         # faster than transposing the data using np.array.transpose
-        res_t = list(map(list, zip(*res)))
+        res_t = map(list, zip(*res))
         output[output_param] = {name: np.array(column_data)
                          for name, column_data
                          in zip(param_names, res_t)}
+
     return output
 
 
@@ -1391,6 +1402,70 @@ def get_values(conn: ConnectionPlus,
     """
     c = atomic_transaction(conn, sql)
     res = many_many(c, param_name)
+
+    return res
+
+
+def get_parameter_tree_values(conn: ConnectionPlus,
+                              result_table_name: str,
+                              toplevel_param_name: str,
+                              *other_param_names,
+                              start: Optional[int] = None,
+                              end: Optional[int] = None) -> List[List[Any]]:
+    """
+    Get the values of one or more columns from a data table. The rows
+    retrieved are the rows where the 'toplevel_param_name' column has
+    non-NULL values, which is useful when retrieving a top level parameter
+    and its setpoints (and inferred_from parameter values)
+
+    Args:
+        conn: Connection to the DB file
+        result_table_name: The result table whence the values are to be
+            retrieved
+        toplevel_param_name: Name of the column that holds the top level
+            parameter
+        other_param_names: Names of additional columns to retrieve
+        start: The (1-indexed) result to include as the first results to
+            be returned. None is equivalent to 1. If start > end, nothing
+            is returned.
+        end: The (1-indexed) result to include as the last result to be
+            returned. None is equivalent to "all the rest". If start > end,
+            nothing is returned.
+
+    Returns:
+        A list of list. The outer list index is row number, the inner list
+        index is parameter value (first toplevel_param, then other_param_names)
+    """
+
+    offset = (start - 1) if start is not None else 0
+    limit = (end - offset) if end is not None else -1
+
+    if start is not None and end is not None and start > end:
+        limit = 0
+
+    # Note: if we use placeholders for the SELECT part, then we get rows
+    # back that have "?" as all their keys, making further data extraction
+    # impossible
+    #
+    # Also, placeholders seem to be ignored in the WHERE X IS NOT NULL line
+
+    columns = [toplevel_param_name] + list(other_param_names)
+    columns_for_select = ','.join(columns)
+
+    sql_subquery = f"""
+                   (SELECT {columns_for_select}
+                    FROM "{result_table_name}"
+                    WHERE {toplevel_param_name} IS NOT NULL)
+                   """
+    sql = f"""
+          SELECT {columns_for_select}
+          FROM {sql_subquery}
+          LIMIT {limit} OFFSET {offset}
+          """
+
+    cursor = conn.cursor()
+    cursor.execute(sql, ())
+    res = many_many(cursor, *columns)
 
     return res
 
@@ -1612,7 +1687,8 @@ def get_non_dependencies(conn: ConnectionPlus,
                          run_id: int) -> List[str]:
     """
     Return all parameters for a given run that are not dependencies of
-    other parameters.
+    other parameters, i.e. return the top level parameters of the given
+    run
 
     Args:
         conn: connection to the database
