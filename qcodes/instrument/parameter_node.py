@@ -518,7 +518,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
 
     def print_snapshot(self,
                        update: bool = False,
-                       max_chars: int = 80):
+                       max_chars: int = 80,
+                       level=0):
         """ Prints a readable version of the snapshot.
 
         The readable snapshot includes the name, value and unit of each
@@ -533,6 +534,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 readable snapshot will be cropped if this value is exceeded.
                 Defaults to 80 to be consistent with default terminal width.
         """
+
+        pretabs = '\t'*level  # Number of tabs at the start of each line
+
         floating_types = (float, np.integer, np.floating)
 
         try:
@@ -551,9 +555,9 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
         par_field_len = min(max(par_lengths)+1, 50)
 
         if str(self):
-            print(f'{self} :')
-        print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
-        print('-'*max_chars)
+            print(pretabs + f'{self} :')
+        print(pretabs + '{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
+        print(pretabs + '-'*max_chars)
         for param_name, param_snapshot in sorted(snapshot['parameters'].items()):
             name = param_snapshot['name']
             msg = '{0:<{1}}:'.format(name, par_field_len)
@@ -577,7 +581,7 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
             # Truncate the message if it is longer than max length
             if len(msg) > max_chars and not max_chars == -1:
                 msg = msg[0:max_chars-3] + '...'
-            print(msg)
+            print(pretabs + msg)
 
         for submodule in self.submodules.values():
             if hasattr(submodule, '_channels'):
@@ -588,8 +592,8 @@ class ParameterNode(Metadatable, DelegateAttributes, metaclass=ParameterNodeMeta
                 submodule.print_snapshot(update, max_chars)
 
         for parameter_node in self.parameter_nodes.values():
-            print('')
-            parameter_node.print_snapshot()
+            print(f'\n{parameter_node.name}')
+            parameter_node.print_snapshot(level=level+1)
 
     def call(self, func_name: str, *args, **kwargs):
         """ Shortcut for calling a function from its name.
