@@ -1,6 +1,8 @@
 import csv
 import json
+import logging
 import os
+import re
 import textwrap
 import time
 from functools import partial
@@ -10,6 +12,21 @@ import zhinst.utils
 
 from qcodes import Instrument
 from qcodes.utils import validators as validators
+
+WARNING_CLIPPING = r"^Warning \(line: [0-9]+\): [a-zA-Z0-9_]+ has a higher " \
+                   r"amplitude than 1.0, waveform amplitude will be limited " \
+                   r"to 1.0$"
+WARNING_TRUNCATING = r"^Warning \(line: [0-9]+\): waveform \S+ cut " \
+                     r"down to playable length from [0-9]+ to [0-9]+ samples " \
+                     r"\(should be a multiple of 8 samples for single channel" \
+                     r" or 4 samples for dual channel waveforms\)$"
+WARNING_ANY = r"^Warning \(line: [0-9]+\):.*$"
+
+log = logging.getLogger(__name__)
+
+
+class CompilerError(Exception):
+    """ Errors that occur during compilation of sequence programs."""
 
 
 class ZIHDAWG8(Instrument):
@@ -39,6 +56,19 @@ class ZIHDAWG8(Instrument):
         self.awg_module.execute()
         node_tree = self.download_device_node_tree()
         self.create_parameters_from_node_tree(node_tree)
+        self._warnings_as_errors = []
+
+    def elevate_compiler_warning_to_error(self, *warnings: str) -> None:
+        """ Add a compiler warning that should be treated as an error during
+            sequence program compilation.
+
+        Args:
+            *warnings: One or more regular expression that matches a compiler
+            warning.
+
+        """
+        for warning in warnings:
+            self._warnings_as_errors.append(warning)
 
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
@@ -177,20 +207,36 @@ class ZIHDAWG8(Instrument):
         Returns:
             0 is Compilation was successful with no warnings.
             2 if Compilation was successful but with warnings.
+
+        Raises:
+            CompilerError: If error occurs during compilation of the sequence
+            program, or if a warning is elevated to an error.
         """
         self.awg_module.set('awgModule/index', awg_number)
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)
         while len(self.awg_module.get('awgModule/compiler/sourcestring')
-                      ['compiler']['sourcestring'][0]) > 0:
-            time.sleep(0.1)
+                  ['compiler']['sourcestring'][0]) > 0:
+            time.sleep(0.01)
 
         if self.awg_module.getInt('awgModule/compiler/status') == 1:
-            raise Exception(
+            raise CompilerError(
+                self.awg_module.getString('awgModule/compiler/statusstring'))
+        elif self.awg_module.getInt('awgModule/compiler/status') == 2:
+            self._handle_compiler_warnings(
                 self.awg_module.getString('awgModule/compiler/statusstring'))
         while self.awg_module.getDouble('awgModule/progress') < 1.0:
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         return self.awg_module.getInt('awgModule/compiler/status')
+
+    def _handle_compiler_warnings(self, status_string: str) -> None:
+        warnings = [warning for warning in status_string.split('\n') if
+                    re.search(WARNING_ANY, warning) is not None]
+        for warning in warnings:
+            for warning_as_error in self._warnings_as_errors:
+                if re.search(warning_as_error, warning) is not None:
+                    raise CompilerError('Warning treated as an error.', warning)
+            log.warning(warning)
 
     def upload_waveform(self, awg_number: int, waveform: list,
                         index: int) -> None:
