@@ -194,9 +194,9 @@ class FieldVector(object):
             # and calling self._compute_unknowns()
             >>> f.set_component(r=10)
 
-        Parameters:
+        Args:
             new_values (dict): keys representing parameter names and values the
-            values to be set
+                values to be set
         """
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")

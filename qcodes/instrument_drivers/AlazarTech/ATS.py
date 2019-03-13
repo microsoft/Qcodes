@@ -216,7 +216,7 @@ class AlazarTech_ATS(Instrument):
         Get the information from a connected Alazar board
 
         Args:
-            dll (CDLL): CTypes CDLL
+            dll (ctypes.CDLL): CTypes CDLL
             system_id: id of the Alazar system
             board_id: id of the board within the alazar system
 
@@ -1067,7 +1067,8 @@ class Buffer:
     of the underlying memory buffer
 
     Args:
-        c_sample_type (ctypes type): The datatype of the buffer to create.
+        c_sample_type: The datatype of the buffer to create. Should be a valid
+            ctypes type.
         size_bytes (int): The size of the buffer to allocate, in bytes.
     """
     def __init__(self, c_sample_type, size_bytes):
@@ -1227,6 +1228,6 @@ class AcquisitionController(Instrument):
 
         Args:
             buffers_completed: how many buffers have been completed and copied
-            to local memory at the time of this callback.
+                to local memory at the time of this callback.
         """
         pass
