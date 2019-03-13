@@ -1,6 +1,5 @@
 import csv
 import json
-import logging
 import os
 import re
 import textwrap
@@ -54,7 +53,7 @@ class ZIHDAWG8(Instrument):
         self.awg_module.execute()
         node_tree = self.download_device_node_tree()
         self.create_parameters_from_node_tree(node_tree)
-        self._warnings_as_errors = []
+        self._warnings_as_errors: List[str] = []
 
     def elevate_compiler_warning_to_error(self, *warnings: str) -> None:
         """ Add a compiler warning that should be treated as an error during
