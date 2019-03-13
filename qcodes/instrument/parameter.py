@@ -7,7 +7,7 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from :class:`._BaseParameter` (except
+All parameter classes are subclassed from ``._BaseParameter`` (except
 CombinedParameter). The _BaseParameter provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
@@ -187,10 +187,10 @@ class _BaseParameter(Metadatable):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser ( Optional[Callable]): function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser (Optional[Callable]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
@@ -893,10 +893,10 @@ class Parameter(_BaseParameter):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser (Optional[Callable]): function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser (Optional[Callable]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
@@ -1175,8 +1175,8 @@ class ArrayParameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        setpoints (Optional[Tuple[setpoint_array]]):
-            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints (Optional[Tuple[array]]):
+            ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each dimension of the returned array. An
             N-dimension item should have N setpoint arrays, where the first is
             1D, the second 2D, etc.
@@ -1370,8 +1370,8 @@ class MultiParameter(_BaseParameter):
         units (Optional[Tuple[str]]): The unit of measure for each item.
             Use ``''`` or ``None`` for unitless values.
 
-        setpoints (Optional[Tuple[Tuple[setpoint_array]]]):
-            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+        setpoints (Optional[Tuple[Tuple[array]]]):
+            ``array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each returned array. An N-dimension item should
             have N setpoint arrays, where the first is 1D, the second 2D, etc.
             If omitted for any or all items, defaults to integers from zero in
@@ -1592,11 +1592,12 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine
         name (str): the name of the paramter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1614,11 +1615,12 @@ class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
-        *parameters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.instrument.parameter.Parameter): the parameters to
+            combine.
         name (str): the name of the parameter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
-        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
             the set values into one
 
     A combined parameter sets all the combined parameters at every point of the
@@ -1693,7 +1695,7 @@ class CombinedParameter(Metadatable):
             *array(numpy.ndarray): array(s) of setopoints
 
         Returns:
-            MultiPar: combined parameter
+            combined parameter
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
@@ -1761,7 +1763,7 @@ class InstrumentRefParameter(Parameter):
     An InstrumentRefParameter
 
     Args:
-        name (string): the name of the parameter that one wants to add.
+        name (str): the name of the parameter that one wants to add.
 
         instrument (Optional[Instrument]): the "parent" instrument this
             parameter is attached to, if any.
@@ -1969,7 +1971,7 @@ class ScaledParameter(Parameter):
     def get_raw(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which was set at the sample
+            value at which was set at the sample
         """
         if self.role == ScaledParameter.Role.GAIN:
             value = self._wrapped_parameter() * self._multiplier()
@@ -1982,15 +1984,14 @@ class ScaledParameter(Parameter):
     @property
     def wrapped_parameter(self) -> Parameter:
         """
-        Returns:
-            the attached unscaled parameter
+        The attached unscaled parameter
         """
         return self._wrapped_parameter
 
     def get_wrapped_parameter_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached parameter is (i.e. does
+            value at which the attached parameter is (i.e. does
             not account for the scaling)
         """
         return self._wrapped_parameter.get()
