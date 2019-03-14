@@ -38,7 +38,7 @@ class ZIHDAWG8(Instrument):
     be treated as errors. This is desirable if the user of the driver does
     not want clipping or truncating of waveform to happen silently by the
     compiler. Warnings are constants on the module level and can be added to the
-    drivers attribute :ivar:`warnings_as_errors`. If warning are added, they
+    drivers attribute ``warnings_as_errors``. If warning are added, they
     will raise a CompilerError.
     """
 
@@ -230,10 +230,10 @@ class ZIHDAWG8(Instrument):
             for warning_as_error in self.warnings_as_errors:
                 if re.search(warning_as_error, warning) is not None:
                     errors.append(warning)
+            if warning not in errors:
+                self.log.warning(warning)
         if len(errors) > 0:
             raise CompilerError('Warning treated as an error.', *errors)
-
-        [self.log.warning(warning) for warning in warnings]
 
     def upload_waveform(self, awg_number: int, waveform: list,
                         index: int) -> None:
