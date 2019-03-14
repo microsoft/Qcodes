@@ -196,10 +196,10 @@ class AlazarATSAPI(WrappedDll):
         argument_types=[HANDLE, U8, U32, U32, U32])})
     
     def set_bw_limit(self,
-                      handle: int,
-                      channel_id: Union[int, Parameter],
-                      flag: Union[int, Parameter]
-                      ) -> ReturnCode:
+                     handle: int,
+                     channel_id: Union[int, Parameter],
+                     flag: Union[int, Parameter]
+                     ) -> ReturnCode:
         return self._sync_dll_call(
             'AlazarSetBWLimit', handle, channel_id, flag)
     
@@ -327,6 +327,18 @@ class AlazarATSAPI(WrappedDll):
 
     signatures.update({"AlazarErrorToText": Signature(
         argument_types=[U32], return_type=ctypes.c_char_p)})
+    
+    def force_trigger(self, handle: int) -> ReturnCode:
+        return self._sync_dll_call('AlazarForceTrigger', handle)
+    
+    signatures.update({"AlazarForceTrigger": Signature(
+        argument_types=[HANDLE])})
+    
+    def force_trigger_enable(self, handle: int) -> ReturnCode:
+        return self._sync_dll_call('AlazarForceTriggerEnable', handle)
+    
+    signatures.update({"AlazarForceTriggerEnable": Signature(
+        argument_types=[HANDLE])})
 
     ## OTHER API-RELATED METHODS ##
 
