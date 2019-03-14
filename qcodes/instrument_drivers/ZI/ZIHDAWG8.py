@@ -38,7 +38,7 @@ class ZIHDAWG8(Instrument):
     be treated as errors. This is desirable if the user of the driver does
     not want clipping or truncating of waveform to happen silently by the
     compiler. Warnings are constants on the module level and can be added to the
-    drivers attribute warnings_as_errors. If warning are added, they will raise
+    drivers attribute :attr:`warnings_as_errors`. If warning are added, they will raise
     a CompilerError.
     """
 
