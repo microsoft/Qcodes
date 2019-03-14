@@ -38,8 +38,8 @@ class ZIHDAWG8(Instrument):
     be treated as errors. This is desirable if the user of the driver does
     not want clipping or truncating of waveform to happen silently by the
     compiler. Warnings are constants on the module level and can be added to the
-    drivers attribute :attr:`warnings_as_errors`. If warning are added, they will raise
-    a CompilerError.
+    drivers attribute :ivar:`warnings_as_errors`. If warning are added, they
+    will raise a CompilerError.
     """
 
     def __init__(self, name: str, device_id: str, **kwargs) -> None:
@@ -61,6 +61,7 @@ class ZIHDAWG8(Instrument):
         node_tree = self.download_device_node_tree()
         self.create_parameters_from_node_tree(node_tree)
         self.warnings_as_errors: List[str] = []
+        self._compiler_sleep_time = 0.01
 
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
@@ -208,7 +209,7 @@ class ZIHDAWG8(Instrument):
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)
         while len(self.awg_module.get('awgModule/compiler/sourcestring')
                   ['compiler']['sourcestring'][0]) > 0:
-            pass
+            time.sleep(self._compiler_sleep_time)
 
         if self.awg_module.getInt('awgModule/compiler/status') == 1:
             raise CompilerError(
@@ -217,19 +218,22 @@ class ZIHDAWG8(Instrument):
             self._handle_compiler_warnings(
                 self.awg_module.getString('awgModule/compiler/statusstring'))
         while self.awg_module.getDouble('awgModule/progress') < 1.0:
-            pass
+            time.sleep(self._compiler_sleep_time)
 
         return self.awg_module.getInt('awgModule/compiler/status')
 
     def _handle_compiler_warnings(self, status_string: str) -> None:
         warnings = [warning for warning in status_string.split('\n') if
                     re.search(WARNING_ANY, warning) is not None]
+        errors = []
         for warning in warnings:
             for warning_as_error in self.warnings_as_errors:
                 if re.search(warning_as_error, warning) is not None:
-                    raise CompilerError('Warning treated as an error.',
-                                        *warnings)
-            self.log.warning(warning)
+                    errors.append(warning)
+        if len(errors) > 0:
+            raise CompilerError('Warning treated as an error.', *errors)
+
+        [self.log.warning(warning) for warning in warnings]
 
     def upload_waveform(self, awg_number: int, waveform: list,
                         index: int) -> None:
