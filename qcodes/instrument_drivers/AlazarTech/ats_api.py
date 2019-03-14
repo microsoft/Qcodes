@@ -133,7 +133,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarReadRegister', handle, offset, output, password)
     
     signatures.update({"AlazarReadRegister": Signature(
-            argument_types=[U32, U32, POINTER(U32), U32])})
+            argument_types=[HANDLE, U32, POINTER(U32), U32])})
 
     def write_register(self,
                        handle: int,
@@ -145,7 +145,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarWriteRegister', handle, offset, value, password)
 
     signatures.update({"AlazarWriteRegister": Signature(
-            argument_types=[U32, U32, U32, U32])})
+            argument_types=[HANDLE, U32, U32, U32])})
 
     def num_of_systems(self) -> int:
         return self._sync_dll_call('AlazarNumOfSystems')
@@ -179,7 +179,7 @@ class AlazarATSAPI(WrappedDll):
             handle, source_id, sample_rate_id_or_value, edge_id, decimation)
     
     signatures.update({"AlazarSetCaptureClock": Signature(
-        argument_types=[U32, U32, U32, U32, U32])})
+        argument_types=[HANDLE, U32, U32, U32, U32])})
 
     def input_control(self,
                       handle: int,
@@ -286,7 +286,7 @@ class AlazarATSAPI(WrappedDll):
             flags)
     
     signatures.update({"AlazarBeforeAsyncRead": Signature(
-        argument_types=[U32, U32, ctypes.c_long, U32, U32, U32, U32])})
+        argument_types=[HANDLE, U32, ctypes.c_long, U32, U32, U32, U32])})
 
     def post_async_buffer(self,
                           handle: int,
@@ -297,7 +297,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
     
     signatures.update({"AlazarPostAsyncBuffer": Signature(
-        argument_types=[U32, ctypes.c_void_p, U32])})
+        argument_types=[HANDLE, ctypes.c_void_p, U32])})
 
     def wait_async_buffer_complete(self,
                                    handle: int,
@@ -308,7 +308,7 @@ class AlazarATSAPI(WrappedDll):
             'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
     
     signatures.update({"AlazarWaitAsyncBufferComplete": Signature(
-        argument_types=[U32, ctypes.c_void_p, U32])})
+        argument_types=[HANDLE, ctypes.c_void_p, U32])})
 
     def start_capture(self, handle: int) -> ReturnCode:
         return self._sync_dll_call('AlazarStartCapture', handle)
