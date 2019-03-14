@@ -1,3 +1,4 @@
+import math
 import time
 import logging
 import numpy as np
@@ -5,7 +6,7 @@ from functools import partial
 from math import sqrt
 from distutils.version import StrictVersion
 
-from typing import Callable, List, Union, Optional
+from typing import Callable, List, Union, cast, Optional
 
 try:
     import zhinst.utils
@@ -1557,7 +1558,7 @@ class ZIUHFLI(Instrument):
 
         # A "manual" parameter: a list of the signals for the sweeper
         # to subscribe to
-        self._sweeper_signals = []
+        self._sweeper_signals = [] # type: List[str]
 
         # This is the dictionary keeping track of the sweeper settings
         # These are the default settings
@@ -1643,6 +1644,19 @@ class ZIUHFLI(Instrument):
                             val_mapping=self._samplingrate_codes,
                             vals=vals.Enum(*list(self._samplingrate_codes.keys()))
                             )
+
+        self.add_parameter('scope_samplingrate_float',
+                           label="Scope's sampling rate as float",
+                           set_cmd=self._set_samplingrate_as_float,
+                           unit='Hz',
+                           get_cmd=self._get_samplingrate_as_float,
+                           vals=vals.Enum(
+                               *[ZIUHFLI._convert_to_float(freq) for freq in
+                                self._samplingrate_codes.keys()]),
+                           docstring=""" A numeric representation of the scope's
+                             samplingrate parameter. Sets and gets the sampling 
+                             rate by using the scope_samplingrate parameter."""
+                           )
 
         self.add_parameter('scope_length',
                             label="Length of scope trace (pts)",
@@ -1943,7 +1957,7 @@ class ZIUHFLI(Instrument):
         setting = 'sample'
         if demod_param not in ['x', 'y', 'R', 'phi']:
             raise RuntimeError("Invalid demodulator parameter")
-        datadict = self._getter(module, number, mode, setting)
+        datadict = cast(dict, self._getter(module, number, mode, setting))
         datadict['R'] = np.abs(datadict['x'] + 1j * datadict['y'])
         datadict['phi'] = np.angle(datadict['x'] + 1j * datadict['y'], deg=True)
         return datadict[demod_param]
@@ -2513,6 +2527,28 @@ class ZIUHFLI(Instrument):
                 value = rawvalue
 
         return value
+
+    @staticmethod
+    def _convert_to_float(frequency):
+        converter = {'hz': 'e0', 'khz': 'e3', 'mhz': 'e6', 'ghz': 'e9',
+                     'thz': 'e12'}
+        value, suffix = frequency.split(' ')
+        return float(''.join([value, converter[suffix.lower()]]))
+
+    def round_to_nearest_sampling_frequency(self, desired_sampling_rate):
+        available_frequencies = [ZIUHFLI._convert_to_float(freq) for freq in
+                                 self._samplingrate_codes.keys()]
+        nearest_frequency = min(available_frequencies, key=lambda f: abs(
+            math.log(desired_sampling_rate, 2) - math.log(f, 2)))
+        return nearest_frequency
+
+    def _set_samplingrate_as_float(self, frequency):
+        sampling_rate = filter(lambda f: ZIUHFLI._convert_to_float(f) == frequency, self._samplingrate_codes.keys())
+        self.scope_samplingrate(''.join(sampling_rate))
+
+    def _get_samplingrate_as_float(self):
+        frequency = self.scope_samplingrate()
+        return ZIUHFLI._convert_to_float(frequency)
 
     def close(self):
         """

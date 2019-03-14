@@ -1,7 +1,10 @@
-sphinx
+sphinx==1.8.4
 sphinx_rtd_theme
-sphinxcontrib-jsonschema
-nbconvert
+sphinx-jsonschema
+nbsphinx
+nbconvert==5.4.1 #5.4 does not work with nbsphinx and 5.3.x does not work with tornado 6.x
 ipython
 jupyter
 scipy
+pandas
+xarray

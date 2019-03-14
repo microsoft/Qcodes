@@ -61,9 +61,9 @@ Documentation
    help
    user/index
    community/index
+   dataset/index
    api/index
    api/generated/qcodes.instrument_drivers
-   roadmap
    changes/index
    examples/index
 

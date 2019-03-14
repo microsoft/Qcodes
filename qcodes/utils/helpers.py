@@ -3,28 +3,61 @@ import json
 import logging
 import math
 import numbers
-import sys
 import time
-
-from collections import Iterator, Sequence, Mapping
+import os
+from collections.abc import Iterator, Sequence, Mapping
 from copy import deepcopy
+from typing import Dict, List, Any
+from contextlib import contextmanager
+from asyncio import iscoroutinefunction
+from inspect import signature
+from functools import partial
+from collections import OrderedDict
 
 import numpy as np
 
-_tprint_times = {}
+from qcodes.utils.deprecate import deprecate
+
+
+_tprint_times= {} # type: Dict[str, float]
+
+
+log = logging.getLogger(__name__)
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
-    """Return numpy types as standard types."""
-    # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
-    # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+    """
+    This JSON encoder adds support for serializing types that the built-in
+    `json` module does not support out-of-the-box. See the docstring of the
+    `default` method for the description of all conversions.
+    """
 
     def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
+        """
+        List of conversions that this encoder performs:
+        * `numpy.generic` (all integer, floating, and other types) gets
+        converted to its python equivalent using its `item` method (see
+        `numpy` docs for more information,
+        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html)
+        * `numpy.ndarray` gets converted to python list using its `tolist`
+        method
+        * complex number (a number that conforms to `numbers.Complex` ABC) gets
+        converted to a dictionary with fields "re" and "im" containing floating
+        numbers for the real and imaginary parts respectively, and a field
+        "__dtype__" containing value "complex"
+        * object with a `_JSONEncoder` method get converted the return value of
+        that method
+        * objects which support the pickle protocol get converted using the
+        data provided by that protocol
+        * other objects which cannot be serialized get converted to their
+        string representation (suing the `str` function)
+        """
+        if isinstance(obj, np.generic) \
+                and not isinstance(obj, np.complexfloating):
+            # for numpy scalars
+            return obj.item()
         elif isinstance(obj, np.ndarray):
+            # for numpy arrays
             return obj.tolist()
         elif (isinstance(obj, numbers.Complex) and
               not isinstance(obj, numbers.Real)):
@@ -40,8 +73,16 @@ class NumpyJSONEncoder(json.JSONEncoder):
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
             except TypeError:
-                # we cannot convert the object to JSON, just take a string
-                s = str(obj)
+                # See if the object supports the pickle protocol.
+                # If so, we should be able to use that to serialize.
+                if hasattr(obj, '__getnewargs__'):
+                    return {
+                        '__class__': type(obj).__name__,
+                        '__args__': obj.__getnewargs__()
+                    }
+                else:
+                    # we cannot convert the object to JSON, just take a string
+                    s = str(obj)
             return s
 
 
@@ -69,10 +110,10 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj (any): the object to test.
+        obj (Any): the object to test.
 
-        types (Optional[Union[class, Tuple[class]]]): allowed type(s)
-            if omitted, we just test the depth/shape
+        types (Optional[Union[Type[object], Tuple[Type[object]]]]): allowed
+            type(s) if omitted, we just test the depth/shape
 
         depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
             a sequence of sequences. Default 1 unless ``shape`` is supplied.
@@ -110,6 +151,48 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
         elif types is not None and not isinstance(item, types):
             return False
     return True
+
+
+def is_function(f, arg_count, coroutine=False):
+    """
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form
+
+    Args:
+        f (Callable): function to check
+        arg_count (int): number of argument f should accept
+        coroutine (bool): is a coroutine. Default: False
+
+    Return:
+        bool: is function and accepts the specified number of arguments
+
+    """
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 def full_class(obj):
@@ -183,7 +266,7 @@ def make_sweep(start, stop, step=None, num=None):
         num (Optional[int]): Number of values to generate.
 
     Returns:
-        numpy.linespace: numbers over a specified interval.
+        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``
 
     Examples:
         >>> make_sweep(0, 10, num=5)
@@ -242,6 +325,8 @@ class LogCapture():
 
     """
 
+    @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
+               alternative="`qcodes.utils.logger.LogCapture`")
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
@@ -307,9 +392,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = []
-    delegate_attr_objects = []
-    omit_delegate_attrs = []
+    delegate_attr_dicts = [] # type: List[str]
+    delegate_attr_objects = [] # type: List[str]
+    omit_delegate_attrs = [] # type: List[str]
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
@@ -396,8 +481,8 @@ def compare_dictionaries(dict_1, dict_2,
         dict_1_name: optional name used in the differences string
         dict_2_name: ''
     Returns:
-        dicts_equal:      Boolean
-        dict_differences: formatted string containing the differences
+        Tuple[bool, str]: Are the dicts equal and the difference rendered as
+        a string.
 
     """
     err = ''
@@ -451,6 +536,7 @@ def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
+
 def foreground_qt_window(window):
     """
     Try as hard as possible to bring a qt window to the front. This
@@ -483,3 +569,137 @@ def foreground_qt_window(window):
     window.show()
     window.raise_()
     window.activateWindow()
+
+
+def add_to_spyder_UMR_excludelist(modulename: str):
+    """
+    Spyder tries to reload any user module. This does not work well for
+    qcodes because it overwrites Class variables. QCoDeS uses these to
+    store global attributes such as default station, monitor and list of
+    instruments. This "feature" can be disabled by the
+    gui. Unfortunately this cannot be disabled in a natural way
+    programmatically so in this hack we replace the global __umr__ instance
+    with a new one containing the module we want to exclude. This will do
+    nothing if Spyder is not found.
+    TODO is there a better way to detect if we are in spyder?
+    """
+    if any('SPYDER' in name for name in os.environ):
+
+        sitecustomize_found = False
+        try:
+            from spyder.utils.site import sitecustomize
+        except ImportError:
+            pass
+        else:
+            sitecustomize_found = True
+        if sitecustomize_found is False:
+            try:
+                from spyder_kernels.customize import spydercustomize as sitecustomize # type: ignore
+
+            except ImportError:
+                pass
+            else:
+                print("found kernels site")
+                sitecustomize_found = True
+
+        if sitecustomize_found is False:
+            return
+
+        excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
+                                          '').split(',')
+        if modulename not in excludednamelist:
+            log.info("adding {} to excluded modules".format(modulename))
+            excludednamelist.append(modulename)
+            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
+            os.environ['SPY_UMR_NAMELIST'] = ','.join(excludednamelist)
+
+
+@contextmanager
+def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
+    """
+    This context manager allows to change a given attribute of a given object
+    to a new value, and the original value is reverted upon exit of the context
+    manager.
+
+    Args:
+        object_
+            The object which attribute value is to be changed
+        attribute_name
+            The name of the attribute that is to be changed
+        new_value
+            The new value to which the attribute of the object is to be changed
+    """
+
+    old_value = getattr(object_, attribute_name)
+    setattr(object_, attribute_name, new_value)
+    try:
+        yield
+    finally:
+        setattr(object_, attribute_name, old_value)
+
+
+def partial_with_docstring(func, docstring, **kwargs):
+    """
+    We want to have a partial function which will allow us access the docstring
+    through the python built-in help function. This is particularly important
+    for client-facing driver methods, whose arguments might not be obvious.
+
+    Consider the follow example why this is needed:
+
+    >>> from functools import partial
+    >>> def f():
+    >>> ... pass
+    >>> g = partial(f)
+    >>> g.__doc__ = "bla"
+    >>> help(g) # this will print an unhelpful message
+
+    Args:
+        func (Callable)
+        docstring (str)
+    """
+    ex = partial(func, **kwargs)
+
+    def inner(**inner_kwargs):
+        ex(**inner_kwargs)
+
+    inner.__doc__ = docstring
+
+    return inner
+
+
+def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
+                              ) -> Dict:
+    """
+    Returns a value mapping which maps inputs which reasonably mean "on"/"off"
+    to the specified on_val/off_val which are to be sent to the
+    instrument. This value mapping is such that, when inverted,
+    on_val/off_val are mapped to boolean True/False.
+    """
+    # Here are the lists of inputs which "reasonably" mean the same as
+    # "on"/"off" (note that True/False values will be added below, and they
+    # will always be added)
+    ons_  = ('On',  'ON',  'on',  '1', 1)
+    offs_ = ('Off', 'OFF', 'off', '0', 0)
+
+    # This ensures that True/False values are always added and are added at
+    # the end of on/off inputs, so that after inversion True/False will be
+    # the remaining keys in the inverted value mapping dictionary
+    ons = ons_ + (True,)
+    offs = offs_ + (False,)
+
+    return OrderedDict([(on, on_val) for on in ons]
+                       + [(off, off_val) for off in offs])
+
+
+def abstractmethod(funcobj):
+    """A decorator indicating abstract methods.
+
+    This is heavily inspired by the decorator of the same name in
+    the ABC standard library. But we make our own version because
+    we actually want to allow the class with the abstract method to be
+    instantiated and we will use this property to detect if the
+    method is abstract and should be overwritten.
+    """
+    funcobj.__qcodes_is_abstract_method__ = True
+    return funcobj
+

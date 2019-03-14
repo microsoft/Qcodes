@@ -1,8 +1,11 @@
-coverage==4.4.2
+coverage!=4.5.0
 pytest-cov
 pytest
 codacy-coverage
-hypothesis
+hypothesis!=3.69.11 # due to bug in log capture
+mypy==0.670
 git+https://github.com/QCoDeS/pyvisa-sim.git
 lxml
 codecov
+asv
+gitpython

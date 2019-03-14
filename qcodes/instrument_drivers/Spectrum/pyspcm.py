@@ -1,6 +1,6 @@
 import os
 import platform
-import sys 
+import sys
 from ctypes import *
 
 # load registers for easier access

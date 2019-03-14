@@ -126,7 +126,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
     def __init__(self, channels, param_name, *args, **kwargs):
         super().__init__(channels, param_name, *args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         """
         Return a tuple containing the data from each of the channels in the
         list.
@@ -194,9 +194,6 @@ class QDac(VisaInstrument):
         handle.write_termination = '\n'
         # TODO: do we need a query delay for robust operation?
         self._write_response = ''
-
-        # The following bool is used in self.write
-        self.debugmode = False
 
         if self._get_firmware_version() < 0.170202:
             raise RuntimeError('''
@@ -650,8 +647,8 @@ class QDac(VisaInstrument):
         available in `_write_response`
 
         """
-        if self.debugmode:
-            log.info('Sending command string: {}'.format(cmd))
+
+        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)

@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 import string
 
-from qcodes import config
+import qcodes.config
 
 class SafeFormatter(string.Formatter):
 
@@ -58,23 +58,23 @@ class FormatLocation:
         > '2016-04-30/#001_13-28-15_Rainbow_test'
 
     Args:
-        fmt (str, optional): a format string that all the other info will be
+        fmt (Optional[str]): a format string that all the other info will be
             inserted into. Default '{date}/{time}', or '{date}/{time}_{name}'
             if there is a ``name`` in the record.
 
-        fmt_date (str, optional): a ``datetime.strftime`` format string,
+        fmt_date (Optional[str]): a ``datetime.strftime`` format string,
             should only use the date part. The result will be inserted in
             '{date}' in ``fmt``. Default '%Y-%m-%d'.
 
-        fmt_time (str, optional): a ``datetime.strftime`` format string,
+        fmt_time (Optional[str]): a ``datetime.strftime`` format string,
             should only use the time part. The result will be inserted in
             '{time}' in ``fmt``. Default '%H-%M-%S'.
 
-        fmt_counter (str, optional): a format string for the counter (integer)
+        fmt_counter (Optional[str]): a format string for the counter (integer)
             which is automatically generated from existing DataSets that the
             io manager can see. Default '{03}'.
 
-        record (dict, optional): A dict of default values to provide when
+        record (Optional[dict]): A dict of default values to provide when
             calling the location_provider. Values provided later will
             override these values.
 
@@ -83,7 +83,7 @@ class FormatLocation:
         as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
-    default_fmt = config['core']['default_fmt']
+    default_fmt = qcodes.config['core']['default_fmt']
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
@@ -114,9 +114,9 @@ class FormatLocation:
         Call the location provider to get a new location.
 
         Args:
-            io (io manager): where we intend to put the new DataSet.
+            io (io_manager): where we intend to put the new DataSet.
 
-            record (dict, optional): information to insert in the format string
+            record (Optional[dict]): information to insert in the format string
                 Any key provided here will override the default record
         """
         loc_fmt = self.fmt
