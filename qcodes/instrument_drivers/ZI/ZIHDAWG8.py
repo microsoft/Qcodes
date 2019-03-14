@@ -33,6 +33,13 @@ class ZIHDAWG8(Instrument):
     (tested using LabOne 18.05.54618 and firmware 53866).
     Furthermore, the Data Server and Web Server must be running and a connection
     between the two must be made.
+
+    Compiler warnings, when uploading and compiling a sequence program, can
+    be treated as errors. This is desirable if the user of the driver does
+    not want clipping or truncating of waveform to happen silently by the
+    compiler. Warnings are constants on the module level and can be added to the
+    drivers attribute warnings_as_errors. If warning are added, they will raise
+    a CompilerError.
     """
 
     def __init__(self, name: str, device_id: str, **kwargs) -> None:
@@ -53,19 +60,7 @@ class ZIHDAWG8(Instrument):
         self.awg_module.execute()
         node_tree = self.download_device_node_tree()
         self.create_parameters_from_node_tree(node_tree)
-        self._warnings_as_errors: List[str] = []
-
-    def elevate_compiler_warning_to_error(self, *warnings: str) -> None:
-        """ Add a compiler warning that should be treated as an error during
-            sequence program compilation.
-
-        Args:
-            *warnings: One or more regular expression that matches a compiler
-                warning.
-
-        """
-        for warning in warnings:
-            self._warnings_as_errors.append(warning)
+        self.warnings_as_errors: List[str] = []
 
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
@@ -213,7 +208,7 @@ class ZIHDAWG8(Instrument):
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)
         while len(self.awg_module.get('awgModule/compiler/sourcestring')
                   ['compiler']['sourcestring'][0]) > 0:
-            time.sleep(0.01)
+            pass
 
         if self.awg_module.getInt('awgModule/compiler/status') == 1:
             raise CompilerError(
@@ -222,7 +217,7 @@ class ZIHDAWG8(Instrument):
             self._handle_compiler_warnings(
                 self.awg_module.getString('awgModule/compiler/statusstring'))
         while self.awg_module.getDouble('awgModule/progress') < 1.0:
-            time.sleep(0.01)
+            pass
 
         return self.awg_module.getInt('awgModule/compiler/status')
 
@@ -230,9 +225,10 @@ class ZIHDAWG8(Instrument):
         warnings = [warning for warning in status_string.split('\n') if
                     re.search(WARNING_ANY, warning) is not None]
         for warning in warnings:
-            for warning_as_error in self._warnings_as_errors:
+            for warning_as_error in self.warnings_as_errors:
                 if re.search(warning_as_error, warning) is not None:
-                    raise CompilerError('Warning treated as an error.', warning)
+                    raise CompilerError('Warning treated as an error.',
+                                        *warnings)
             self.log.warning(warning)
 
     def upload_waveform(self, awg_number: int, waveform: list,
