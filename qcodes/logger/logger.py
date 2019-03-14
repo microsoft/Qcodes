@@ -54,7 +54,7 @@ file_handler: Optional[logging.Handler] = None
 
 def get_formatter() -> logging.Formatter:
     """
-    Returns :class:`logging.formatter` according to
+    Returns :class:`logging.Formatter` according to
     :data:`FORMAT_STRING_DICT`
     """
     format_string_items = [f'%({name}){fmt}'
