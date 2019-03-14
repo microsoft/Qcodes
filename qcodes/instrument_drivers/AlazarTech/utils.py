@@ -1,8 +1,8 @@
 """
 The module provides useful utility objects for the Alazar driver class.
 The purpose of these is more to provide relevant functionality and less to
-improve the code structure (which is more the purpose of the :mod:`helpers`
-module).
+improve the code structure (which is more the purpose of the 
+:mod:`.AlazarTech.helpers` module).
 """
 
 

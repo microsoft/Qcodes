@@ -123,17 +123,17 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     This class uses dictionary of the :attr:``signatures`` attribute in order
     to assign ``argtypes`` and ``restype`` atttributes for functions of
-    a loaded DLL library (from the :attr:`_dll` attribute of the class).
-    If ``restype`` is of type :const:`RETURN_CODE`, then an exception is
+    a loaded DLL library (from the ``_dll`` attribute of the class).
+    If ``restype`` is of type ``RETURN_CODE``, then an exception is
     raised in case the return code is an Alazar error code. For string-alike
     ``restype`` s, the returned value is converted to a python string.
 
     Functions are executed in a single separate thread (see what the
-    :attr:`_executor` gets initialize to), hence the class also has a lock
-    instance in the :attr:`_lock` attribute that is used to wrap around the
+    ``_executor`` gets initialize to), hence the class also has a lock
+    instance in the ``_lock`` attribute that is used to wrap around the
     actual calls to the DLL library.
 
-    Method :meth:`_sync_dll_call` is supposed to be called when a subclass
+    Method ``_sync_dll_call`` is supposed to be called when a subclass
     implements calls to functions of the loaded DLL.
 
     Attributes:

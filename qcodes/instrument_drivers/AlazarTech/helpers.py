@@ -1,8 +1,8 @@
 """
 This module provides helper objects for Alazar driver class. The objects allow
 to hide realted pieces of logic into a form of "submodule" (analogious to 
-:meth:`qcodes.instrument.InstrumentBase.add_submodule`) that can be included
-into the driver class in some way.
+:meth:`.InstrumentBase.add_submodule`) that can be included into the driver
+class in some way.
 """
 
 

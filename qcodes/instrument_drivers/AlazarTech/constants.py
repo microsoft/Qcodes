@@ -436,7 +436,7 @@ class Channel(IntFlag):
 
 
 class Capability(IntEnum):
-    """Capability identifiers for :meth:`AlazarATSAPI.query_capability`"""
+    """Capability identifiers for :meth:`.AlazarATSAPI.query_capability`"""
     GET_SERIAL_NUMBER = 0x10000024
     # Date of the board's latest calibration data as a decimal number with
     # the format DDMMYY where DD is 1-31, MM is 1-12,
