@@ -1631,7 +1631,7 @@ class ZIUHFLI(Instrument):
             module (str): The module (eg. demodulator, input, output, ..)
                 to set.
             number (int): Module's index
-            mode (bool): Indicating whether we are setting an int or double
+            mode (int): Indicating whether we are asking for an int (0) or double (1)
             setting (str): The module's setting to set.
             value (int/double): The value to set.
         """
@@ -1690,7 +1690,7 @@ class ZIUHFLI(Instrument):
         return datadict[demod_param]
 
     def _sigout_setter(self, number: int,
-                       mode: bool,
+                       mode: int,
                        setting: str,
                        value: Union[int, float],
                        output_mode: Optional[int] = None) -> None:
@@ -1701,7 +1701,7 @@ class ZIUHFLI(Instrument):
 
         Args:
             number: The output channel to use. Either 1 or 2.
-            mode: Indicating whether we are asking for an int or double
+            mode: Indicating whether we are asking for an int (0) or double (1).
             setting: The module's setting to set.
             value: The value to set the setting to.
             output_mode: Some options may take an extra int to indicate which of the 8
