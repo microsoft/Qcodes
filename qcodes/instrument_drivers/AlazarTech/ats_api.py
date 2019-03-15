@@ -19,10 +19,12 @@ from qcodes.instrument.parameter import _BaseParameter as Parameter
 
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8
+U16 = ctypes.c_uint16
 U32 = ctypes.c_uint32
 HANDLE = ctypes.c_void_p
 
 POINTER_c_uint8 = Any
+POINTER_c_uint16 = Any
 POINTER_c_uint32 = Any
 
 
@@ -327,18 +329,68 @@ class AlazarATSAPI(WrappedDll):
 
     signatures.update({"AlazarErrorToText": Signature(
         argument_types=[U32], return_type=ctypes.c_char_p)})
-    
+
     def force_trigger(self, handle: int) -> ReturnCode:
         return self._sync_dll_call('AlazarForceTrigger', handle)
-    
+
     signatures.update({"AlazarForceTrigger": Signature(
         argument_types=[HANDLE])})
-    
+
     def force_trigger_enable(self, handle: int) -> ReturnCode:
         return self._sync_dll_call('AlazarForceTriggerEnable', handle)
-    
+
     signatures.update({"AlazarForceTriggerEnable": Signature(
         argument_types=[HANDLE])})
+
+    def busy(self, handle: int) -> int:
+        return self._sync_dll_call('AlazarBusy', handle)
+
+    signatures.update({"AlazarBusy": Signature(
+        argument_types=[HANDLE], return_type=U32)})
+
+    def configure_record_average(self,
+                                 handle: int,
+                                 mode: int,
+                                 samples_per_record: int,
+                                 records_per_average: int,
+                                 options: int
+                                 ) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarConfigureRecordAverage',
+            handle, mode, samples_per_record, records_per_average, options)
+
+    signatures.update({"AlazarConfigureRecordAverage": Signature(
+        argument_types=[HANDLE, U32, U32, U32, U32])})
+
+    def free_buffer_u16(self,
+                        handle: int,
+                        buffer: POINTER_c_uint16
+                        ) -> ReturnCode:
+        return self._sync_dll_call('AlazarFreeBufferU16', handle, buffer)
+
+    signatures.update({"AlazarFreeBufferU16": Signature(
+        argument_types=[HANDLE, POINTER(U16)])})
+
+    def free_buffer_u8(self,
+                       handle: int,
+                       buffer: POINTER_c_uint8
+                       ) -> ReturnCode:
+        return self._sync_dll_call('AlazarFreeBufferU8', handle, buffer)
+
+    signatures.update({"AlazarFreeBufferU8": Signature(
+        argument_types=[HANDLE, POINTER(U8)])})
+
+    def set_led(self, handle: int, led_on: bool) -> ReturnCode:
+        return self._sync_dll_call('AlazarSetLED', handle, led_on)
+
+    signatures.update({"AlazarSetLED": Signature(
+        argument_types=[HANDLE, U32])})
+
+    def triggered(self, handle: int) -> int:
+        return self._sync_dll_call('AlazarTriggered', handle)
+
+    signatures.update({"AlazarTriggered": Signature(
+        argument_types=[HANDLE], return_type=U32)})
 
     ## OTHER API-RELATED METHODS ##
 

@@ -489,3 +489,33 @@ CPF_DEVICE_EP3SE260 = 2
 class CPFDevice(IntEnum):
     EP3SL50 = CPF_DEVICE_EP3SL50
     EP3SE260 = CPF_DEVICE_EP3SE260
+
+
+CRA_MODE_DISABLE = 0
+CRA_MODE_ENABLE_FPGA_AVE = 1
+
+
+class RecordAverageMode(IntEnum):
+    """
+    Values for ``mode`` argument of ``AlazarConfigureRecordAverage`` function
+    """
+    DISABLE = CRA_MODE_DISABLE
+    ENABLE_FPGA_AVE = CRA_MODE_ENABLE_FPGA_AVE
+
+
+CRA_OPTION_UNSIGNED = 0
+CRA_OPTION_SIGNED = 1
+
+
+class RecordAverageOption(IntEnum):
+    """
+    Values for ``options`` argument of ``AlazarConfigureRecordAverage``
+    function
+    """
+    UNSIGNED = CRA_OPTION_UNSIGNED  #: Find sum of unsigned ADC samples codes
+    SIGNED = CRA_OPTION_SIGNED  #: Find sum of signed ADC sample
+
+
+LED_OFF = 0
+LED_ON = 1
+
