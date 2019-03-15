@@ -22,8 +22,8 @@ U8 = ctypes.c_uint8
 U32 = ctypes.c_uint32
 HANDLE = ctypes.c_void_p
 
-POINTER_U8 = Any
-POINTER_U32 = Any
+POINTER_c_uint8 = Any
+POINTER_c_uint32 = Any
 
 
 class AlazarATSAPI(WrappedDll):
@@ -68,8 +68,8 @@ class AlazarATSAPI(WrappedDll):
 
     def get_channel_info(self,
                          handle: int,
-                         memory_size_in_samples: POINTER_U32,
-                         bits_per_sample: POINTER_U8
+                         memory_size_in_samples: POINTER_c_uint32,
+                         bits_per_sample: POINTER_c_uint8
                          ) -> ReturnCode:
         return self._sync_dll_call(
             'AlazarGetChannelInfo',
@@ -80,8 +80,8 @@ class AlazarATSAPI(WrappedDll):
     
     def get_cpld_version(self,
                          handle: int,
-                         major: POINTER_U8,
-                         minor: POINTER_U8
+                         major: POINTER_c_uint8,
+                         minor: POINTER_c_uint8
                          ) -> ReturnCode:
         return self._sync_dll_call(
             'AlazarGetCPLDVersion', handle, major, minor)
@@ -90,9 +90,9 @@ class AlazarATSAPI(WrappedDll):
         argument_types=[HANDLE, POINTER(U8), POINTER(U8)])})
 
     def get_driver_version(self,
-                           major: POINTER_U8,
-                           minor: POINTER_U8,
-                           revision: POINTER_U8
+                           major: POINTER_c_uint8,
+                           minor: POINTER_c_uint8,
+                           revision: POINTER_c_uint8
                            ) -> ReturnCode:
         return self._sync_dll_call(
             'AlazarGetDriverVersion', major, minor, revision)
@@ -101,9 +101,9 @@ class AlazarATSAPI(WrappedDll):
             argument_types=[POINTER(U8), POINTER(U8), POINTER(U8)])})
     
     def get_sdk_version(self,
-                        major: POINTER_U8,
-                        minor: POINTER_U8,
-                        revision: POINTER_U8
+                        major: POINTER_c_uint8,
+                        minor: POINTER_c_uint8,
+                        revision: POINTER_c_uint8
                         ) -> ReturnCode:
         return self._sync_dll_call(
             'AlazarGetSDKVersion', major, minor, revision)
@@ -115,7 +115,7 @@ class AlazarATSAPI(WrappedDll):
                          handle: int,
                          capability: int,
                          reserved: int,
-                         value: POINTER_U32
+                         value: POINTER_c_uint32
                          ) -> ReturnCode:
         return self._sync_dll_call(
             'AlazarQueryCapability', handle, capability, reserved, value)
@@ -126,7 +126,7 @@ class AlazarATSAPI(WrappedDll):
     def read_register(self,
                       handle: int,
                       offset: int,
-                      output: POINTER_U32,
+                      output: POINTER_c_uint32,
                       password: int,
                       ) -> ReturnCode:
         return self._sync_dll_call(
