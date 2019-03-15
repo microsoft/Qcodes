@@ -35,6 +35,25 @@ class ParamSpecBase:
         self.label = label or ''
         self.unit = unit or ''
 
+        self._hash: int = self._compute_hash()
+
+    def _compute_hash(self) -> int:
+        """
+        This method should only be called by __init__
+        """
+        attrs = ['name', 'type', 'label', 'unit']
+        # First, get the hash of the tuple with all the relevant attributes
+        all_attr_tuple_hash = hash(
+            tuple(getattr(self, attr) for attr in attrs)
+        )
+        hash_value = all_attr_tuple_hash
+
+        # Then, XOR it with the individual hashes of all relevant attributes
+        for attr in attrs:
+            hash_value = hash_value ^ hash(getattr(self, attr))
+
+        return hash_value
+
     def sql_repr(self):
         return f"{self.name} {self.type}"
 
@@ -55,20 +74,7 @@ class ParamSpecBase:
         """
         Allow ParamSpecBases in data structures that use hashing (e.g. sets)
         """
-        attrs = ['name', 'type', 'label', 'unit']
-
-
-        # First, get the hash of the tuple with all the relevant attributes
-        all_attr_tuple_hash = hash(
-            tuple(getattr(self, attr) for attr in attrs)
-        )
-        hash_value = all_attr_tuple_hash
-
-        # Then, XOR it with the individual hashes of all relevant attributes
-        for attr in attrs:
-            hash_value = hash_value ^ hash(getattr(self, attr))
-
-        return hash_value
+        return self._hash
 
     def serialize(self) -> Dict[str, Any]:
         """
