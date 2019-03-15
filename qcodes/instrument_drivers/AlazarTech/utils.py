@@ -17,8 +17,8 @@ class TraceParameter(Parameter):
     when the value of the parameter is changed.
 
     This parameter is useful for the Alazar card driver. Syncing parameters to
-    an Alazar card is not instance, hence it makes sense to first set the
-    values of parameters, and then "synchronize them to the card".
+    an Alazar card is relatively slow, hence it makes sense to first set the
+    values of the parameters, and then "synchronize them to the card".
     """
     def __init__(self, *args, **kwargs):
         self._synced_to_card = False
