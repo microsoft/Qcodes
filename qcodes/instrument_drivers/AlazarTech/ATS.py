@@ -624,7 +624,7 @@ class AlazarTech_ATS(Instrument):
                            (records_per_buffer * buffers_completed,
                             records_per_sec))
             self.log.debug("Transferred {:g} bytes ({:g} "
-                           "bytes per sec)".format(bytes_transferred, 
+                           "bytes per sec)".format(bytes_transferred,
                                                    bytes_per_sec))
             self.log.debug("Pre setup took {}".format(presetup_time))
             self.log.debug("Pre capture setup took {}".format(setup_time))

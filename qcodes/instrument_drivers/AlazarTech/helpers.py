@@ -37,7 +37,7 @@ class CapabilityHelper():
         return self._api.query_capability_(self._handle, capability)
 
     # Convenience and specific methods
-    
+
     def query_serial(self) -> str:
         return str(self.query(self.CAPABILITIES.GET_SERIAL_NUMBER))
 
