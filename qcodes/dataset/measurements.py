@@ -492,24 +492,25 @@ class DataSaver:
         else:
             # We first massage all values into np.arrays of the same
             # shape
-            flat_results = {}
+            flat_results: Dict[str, np.ndarray]= {}
+
             toplevel_val = result_dict[toplevel_param]
-            flat_results[toplevel_param] = np.array(toplevel_val).ravel()
-            N = len(flat_results[toplevel_param])
+            flat_results[toplevel_param.name] = np.array(toplevel_val).ravel()
+            N = len(flat_results[toplevel_param.name])
             for dep in deps_params:
                 if np.shape(result_dict[dep]) == ():
-                    flat_results[dep] = np.repeat(result_dict[dep], N)
+                    flat_results[dep.name] = np.repeat(result_dict[dep], N)
                 else:
-                    flat_results[dep] = np.array(result_dict[dep]).ravel()
+                    flat_results[dep.name] = np.array(result_dict[dep]).ravel()
             for inff in inff_params:
                 if np.shape(result_dict[inff]) == ():
-                    flat_results[inff] = np.repeat(result_dict[dep], N)
+                    flat_results[inff.name] = np.repeat(result_dict[dep], N)
                 else:
-                    flat_results[inff] = np.array(result_dict[inff]).ravel()
+                    flat_results[inff.name] = np.array(result_dict[inff]).ravel()
 
             # And then put everything into the list
 
-            res_list = [{p.name: flat_results[p][ind] for p in all_params}
+            res_list = [{p.name: flat_results[p.name][ind] for p in all_params}
                         for ind in range(N)]
 
         return res_list
@@ -525,6 +526,11 @@ class DataSaver:
         for param, value in result_dict.items():
             if param.type == 'text':
                 if isinstance(value, (tuple, list)):
+                    res_list += [{param.name: string} for string in value]
+                else:
+                    res_list += [{param.name: value}]
+            elif param.type == 'numeric':
+                if isinstance(value, (tuple, list, np.ndarray)):
                     res_list += [{param.name: string} for string in value]
                 else:
                     res_list += [{param.name: value}]
