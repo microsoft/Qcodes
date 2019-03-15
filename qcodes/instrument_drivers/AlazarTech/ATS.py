@@ -274,16 +274,16 @@ class AlazarTech_ATS(Instrument):
 
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
             if sample_rate is not None:
-                logger.warning("Using external 10 MHz ref clock "
-                               "but internal sample rate supplied. "
-                               "Please use 'external_sample_rate'")
+                self.log.warning("Using external 10 MHz ref clock "
+                                 "but internal sample rate supplied. "
+                                 "Please use 'external_sample_rate'")
             sample_rate = self.external_sample_rate
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
             if external_sample_rate is not None:
-                logger.warning("Using internal clock "
-                               "but external sample rate supplied. "
-                               "Please use 'external_sample_rate'")
+                self.log.warning("Using internal clock "
+                                 "but external sample rate supplied. "
+                                 "Please use 'external_sample_rate'")
 
         self.sync_settings_to_card()
 
@@ -476,15 +476,15 @@ class AlazarTech_ATS(Instrument):
             )
         elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
-                logger.warning('buffers_per_acquisition is not a divisor of '
-                               'samples per record which it should be in '
-                               'Ts mode, rounding down in samples per buffer '
-                               'calculation')
+                self.log.warning('buffers_per_acquisition is not a divisor '
+                                 'of samples per record which it should be '
+                                 'in TS mode, rounding down in samples per '
+                                 'buffer calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
             if self.records_per_buffer.raw_value != 1:
-                logger.warning('records_per_buffer should be 1 in TS mode, '
-                               'defauling to 1')
+                self.log.warning('records_per_buffer should be 1 in TS mode, '
+                                 'defauling to 1')
                 self.records_per_buffer.set(1)
             records_per_buffer = self.records_per_buffer.raw_value
 
@@ -519,9 +519,10 @@ class AlazarTech_ATS(Instrument):
         buffers_per_acquisition = self.buffers_per_acquisition.raw_value
 
         if allocated_buffers > buffers_per_acquisition:
-            logger.warning("'allocated_buffers' should be <= "
-                           "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                           f" to {buffers_per_acquisition}")
+            self.log.warning("'allocated_buffers' should be <= "
+                             "'buffers_per_acquisition'. Defaulting "
+                             "'allocated_buffers' to "
+                             f"{buffers_per_acquisition}")
             self.allocated_buffers.set(buffers_per_acquisition)
 
         allocated_buffers = self.allocated_buffers.raw_value
@@ -616,20 +617,22 @@ class AlazarTech_ATS(Instrument):
             bytes_per_sec = bytes_transferred / transfer_time_sec
             records_per_sec = (records_per_buffer *
                                buffers_completed / transfer_time_sec)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Captured %d buffers (%f buffers per sec)" %
-                         (buffers_completed, buffers_per_sec))
-            logger.debug("Captured %d records (%f records per sec)" %
-                         (records_per_buffer * buffers_completed, records_per_sec))
-            logger.debug("Transferred {:g} bytes ({:g} "
-                         "bytes per sec)".format(bytes_transferred, bytes_per_sec))
-            logger.debug("Pre setup took {}".format(presetup_time))
-            logger.debug("Pre capture setup took {}".format(setup_time))
-            logger.debug("Capture took {}".format(capture_time))
-            logger.debug("abort took {}".format(abort_time))
-            logger.debug("handling took {}".format(handling_time))
-            logger.debug("free mem took {}".format(free_mem_time))
-            logger.debug("tot acquire time is {}".format(tot_time))
+        if self.log.isEnabledFor(logging.DEBUG):
+            self.log.debug("Captured %d buffers (%f buffers per sec)" %
+                           (buffers_completed, buffers_per_sec))
+            self.log.debug("Captured %d records (%f records per sec)" %
+                           (records_per_buffer * buffers_completed,
+                            records_per_sec))
+            self.log.debug("Transferred {:g} bytes ({:g} "
+                           "bytes per sec)".format(bytes_transferred, 
+                                                   bytes_per_sec))
+            self.log.debug("Pre setup took {}".format(presetup_time))
+            self.log.debug("Pre capture setup took {}".format(setup_time))
+            self.log.debug("Capture took {}".format(capture_time))
+            self.log.debug("abort took {}".format(abort_time))
+            self.log.debug("handling took {}".format(handling_time))
+            self.log.debug("free mem took {}".format(free_mem_time))
+            self.log.debug("tot acquire time is {}".format(tot_time))
 
         # return result
         return acquisition_controller.post_acquire()
@@ -657,7 +660,7 @@ class AlazarTech_ATS(Instrument):
         """
         for b in self.buffer_list:
             b.free_mem()
-        logger.debug("buffers cleared")
+        self.log.debug("buffers cleared")
         self.buffer_list = []
 
     def signal_to_volt(self, channel: int, signal: int) -> float:
