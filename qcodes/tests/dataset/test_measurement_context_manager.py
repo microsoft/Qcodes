@@ -1583,7 +1583,8 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_arrays_of_different_length():
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+def test_datasaver_arrays_of_different_length(storage_type):
     """
     Test that we can save arrays of different length in a single call to
     datasaver.add_result
@@ -1597,9 +1598,9 @@ def test_datasaver_arrays_of_different_length():
                                    label='Temperature',
                                    unit='K')
     for n in range(no_of_signals):
-        meas.register_custom_parameter(f'freqs{n}', paramtype='array')
+        meas.register_custom_parameter(f'freqs{n}', paramtype=storage_type)
         meas.register_custom_parameter(f'signal{n}',
-                                       paramtype='array',
+                                       paramtype=storage_type,
                                        setpoints=(f'freqs{n}', 'temperature'))
 
     with meas.run() as datasaver:
