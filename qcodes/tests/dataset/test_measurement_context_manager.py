@@ -1583,6 +1583,44 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
 
 
 @pytest.mark.usefixtures("experiment")
+def test_datasaver_arrays_of_different_length():
+    """
+    Test that we can save arrays of different length in a single call to
+    datasaver.add_result
+    """
+
+    no_of_signals = 3
+
+    meas = Measurement()
+    meas.register_custom_parameter('temperature',
+                                   paramtype='numeric',
+                                   label='Temperature',
+                                   unit='K')
+    for n in range(no_of_signals):
+        meas.register_custom_parameter(f'freqs{n}', paramtype='array')
+        meas.register_custom_parameter(f'signal{n}',
+                                       paramtype='array',
+                                       setpoints=(f'freqs{n}', 'temperature'))
+
+    with meas.run() as datasaver:
+        result_t = ('temperature', 70)
+        result_freqs = list((f'freqs{n}', np.linspace(0, 1, n+1))
+                              for n in range(no_of_signals))
+        result_sigs = list((f'signal{n}', np.random.randn(n+1))
+                             for n in range(no_of_signals))
+        full_result = tuple(result_freqs + result_sigs + [result_t])
+        datasaver.add_result(*full_result)
+
+    ds = load_by_id(datasaver.run_id)
+
+    data = ds.get_parameter_data()
+
+    assert list(data.keys()) == [f'signal{n}' for n in range(no_of_signals)]
+    for n in range(no_of_signals):
+        assert (data[f'signal{n}']['temperature'] == np.array([70]*(n+1))).all()
+
+
+@pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2D():
     location = 'fixtures/2018-01-17/#002_2D_test_15-43-14'
     dir = os.path.dirname(__file__)
