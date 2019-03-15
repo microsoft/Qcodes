@@ -71,7 +71,6 @@ class AlazarTech_ATS(Instrument):
                 boards.append(cls.get_board_info(api, system_id, board_id))
         return boards
 
-    # TODO(nataliejpg) this needs fixing..., dll can't be a string
     @classmethod
     def get_board_info(cls, api: AlazarATSAPI, system_id: int,
                        board_id: int) -> Dict[str, Union[str, int]]:
