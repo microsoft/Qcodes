@@ -1,6 +1,6 @@
 """Tests for Alazar DLL API
 
-This suite of tests is expected to be executed on a Windows PC with a single 
+This suite of tests is expected to be executed on a Windows PC with a single
 Alazar board installed.
 """
 
@@ -12,8 +12,7 @@ import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
-from qcodes.instrument_drivers.AlazarTech.dll_wrapper import WrappedDll, \
-    DllWrapperMeta
+from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta
 from qcodes.instrument_drivers.AlazarTech.constants import ERROR_CODES, \
     API_SUCCESS, Capability
 
@@ -69,9 +68,9 @@ def test_alazar_api_singleton_behavior(caplog):
     assert caplog.records[-1].message == using_msg(AlazarTech_ATS.dll_path)
     caplog.clear()
 
-    # Indeed, this actually exposes a vulnarability of the setup. As far as 
+    # Indeed, this actually exposes a vulnarability of the setup. As far as
     # LoadLibrary from ctypes is concerned, both "..\AlazarApi" and
-    # "..\AlazarApi.dll" would result in the same loaded library with even 
+    # "..\AlazarApi.dll" would result in the same loaded library with even
     # the same `_handle` value. But here we will abuse this in order to create
     # a new instance of the Alazar API class by using the same DLL file.
     # This should probably be fixed.
@@ -107,10 +106,10 @@ def test_find_boards():
 
 
 def test_get_board_info(alazar_api):
-    info = AlazarTech_ATS.get_board_info(api=alazar_api, 
-                                         system_id=SYSTEM_ID, 
+    info = AlazarTech_ATS.get_board_info(api=alazar_api,
+                                         system_id=SYSTEM_ID,
                                          board_id=BOARD_ID)
-    assert {'system_id', 'board_id', 'board_kind', 
+    assert {'system_id', 'board_id', 'board_kind',
             'max_samples', 'bits_per_sample'} == set(list(info.keys()))
     assert info['system_id'] == SYSTEM_ID
     assert info['board_id'] == BOARD_ID
@@ -118,9 +117,9 @@ def test_get_board_info(alazar_api):
 
 def test_idn(alazar):
     idn = alazar.get_idn()
-    assert {'firmware', 'model', 'serial', 'vendor', 'CPLD_version', 
+    assert {'firmware', 'model', 'serial', 'vendor', 'CPLD_version',
             'driver_version', 'SDK_version', 'latest_cal_date', 'memory_size',
-            'asopc_type', 'pcie_link_speed', 'pcie_link_width', 
+            'asopc_type', 'pcie_link_speed', 'pcie_link_width',
             'bits_per_sample', 'max_samples'
             } == set(list(idn.keys()))
     assert idn['vendor'] == 'AlazarTech'
@@ -135,12 +134,12 @@ def test_return_codes_are_correct(alazar_api):
     for code, msg in ERROR_CODES.items():
         real_msg = alazar_api.error_to_text(code)
         assert real_msg in msg
-    
+
     assert alazar_api.error_to_text(API_SUCCESS) == 'ApiSuccess'
-    
+
     lower_unknown = API_SUCCESS - 1
     assert alazar_api.error_to_text(lower_unknown) == 'Unknown'
-    
+
     upper_unknown = max(list(ERROR_CODES.keys())) + 1
     assert alazar_api.error_to_text(upper_unknown) == 'Unknown'
 

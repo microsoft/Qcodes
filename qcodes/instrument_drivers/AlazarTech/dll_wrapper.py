@@ -68,7 +68,7 @@ def _check_error_code(return_code: int, func, arguments
                     return_code, func.__name__, argrepr))
         raise RuntimeError(
             'error {}: {} from function {} with args: {}'.format(
-                return_code, 
+                return_code,
                 ERROR_CODES[ReturnCode(return_code)],
                 func.__name__,
                 argrepr))
@@ -98,7 +98,7 @@ class DllWrapperMeta(type):
     # generates 'Signature of "__call__" incompatible with supertype "type"'
     # error, which is an indicator of Liskov principle violation - subtypes
     # should not change the method signatures, but we need it here in order to
-    # use the ``dll_path`` argument which the ``type`` superclass obviously 
+    # use the ``dll_path`` argument which the ``type`` superclass obviously
     # does not have in its ``__call__`` method.
     def __call__(  # type: ignore
             cls, dll_path: int):
@@ -155,7 +155,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     # This executor is used to execute DLL calls.
     _executor: concurrent.futures.Executor
- 
+
     def __init__(self, dll_path: str):
         super().__init__()
         self._dll = ctypes.cdll.LoadLibrary(dll_path)
@@ -177,7 +177,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
             if ret_type is RETURN_CODE:
                 ret_type = ret_type.__supertype__
                 c_func.errcheck = _check_error_code
-            elif ret_type in (ctypes.c_char_p, ctypes.c_char, 
+            elif ret_type in (ctypes.c_char_p, ctypes.c_char,
                               ctypes.c_wchar, ctypes.c_wchar_p):
                 c_func.errcheck = _convert_bytes_to_str
             c_func.restype = ret_type

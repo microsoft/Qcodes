@@ -1,7 +1,7 @@
 """
 This module defines constants that are used in Alazar ATS API.
 
-Since the original names of the constants are mostly preserved, it is 
+Since the original names of the constants are mostly preserved, it is
 convenient to find the uesful constants here based on the Alazar SDK manual.
 """
 
@@ -192,7 +192,7 @@ _NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int, ...]] = {
 # See table 4 Input Channel Configurations
 # on page 241 of the Alazar SDK manual
 NUMBER_OF_CHANNELS_FROM_BYTE_REPR: Dict[int, int] = {
-    byte_repr: n_ch 
+    byte_repr: n_ch
         for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
         for byte_repr in byte_reprs
     }
@@ -442,16 +442,16 @@ class Capability(IntEnum):
     # the format DDMMYY where DD is 1-31, MM is 1-12,
     # and YY is 00-99 from 2000
     GET_LATEST_CAL_DATE = 0x10000026
-    # Month of the board's latest calibration date as 
+    # Month of the board's latest calibration date as
     # a decimal number with the format MM where M is 1-12
     GET_LATEST_CAL_DATE_MONTH = 0x1000002D
-    # Day of month of the board's latest calibration date 
+    # Day of month of the board's latest calibration date
     # as a decimal number with the format DD where DD is 1-31
     GET_LATEST_CAL_DATE_DAY = 0x1000002E
-    # Year of the board's latest calibration date 
+    # Year of the board's latest calibration date
     # as a decimal number with the format YY where YY is 00-99 from 2000
     GET_LATEST_CAL_DATE_YEAR = 0x1000002F
-    # On-board memory size in maximum samples per channel in single channel 
+    # On-board memory size in maximum samples per channel in single channel
     # mode; see AlazarGetChannelInfo for more information
     MEMORY_SIZE = 0x1000002A
     # Board's FPGA signature
@@ -461,7 +461,7 @@ class Capability(IntEnum):
     # 10b/8b encoding, so divide the link speed by 10 to find the link speed
     # in bytes per second. For example, a link speed of 2.5 Gb/s gives
     # 250 MB/s per lane. PCIe Gen 2 digitizers such as ATS9360 should receive
-    # 5.0 Gb/s links. PCIe Gen 3 digitizers such as ATS9373 should receive 
+    # 5.0 Gb/s links. PCIe Gen 3 digitizers such as ATS9373 should receive
     # 8.0 Gb/s links.
     GET_PCIE_LINK_SPEED = 0x10000030
     # The PCIe link width in lanes negociated between a PCIe digitizer board

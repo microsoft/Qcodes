@@ -1,6 +1,6 @@
 """
 This module provides helper objects for Alazar driver class. The objects allow
-to hide realted pieces of logic into a form of "submodule" (analogious to 
+to hide realted pieces of logic into a form of "submodule" (analogious to
 :meth:`.InstrumentBase.add_submodule`) that can be included into the driver
 class in some way.
 """
@@ -43,7 +43,7 @@ class CapabilityHelper():
     
     def query_latest_calibration(self) -> str:
         """Query latest calibration date in '12-34-56' format"""
-        # ``date_int`` is a decimal number with the format DDMMYY where 
+        # ``date_int`` is a decimal number with the format DDMMYY where
         # DD is 1-31, MM is 1-12, and YY is 00-99 from 2000.
         date_int = self.query(self.CAPABILITIES.GET_LATEST_CAL_DATE)
         date_str = str(date_int)
@@ -59,7 +59,7 @@ class CapabilityHelper():
 
     def query_pcie_link_speed(self) -> float:
         """Query PCIE link speed in GB/s"""
-        # See the ATS-SDK programmer's guide about the encoding 
+        # See the ATS-SDK programmer's guide about the encoding
         # of the PCIE link speed.
         link_speed_int = self.query(self.CAPABILITIES.GET_PCIE_LINK_SPEED)
         link_speed = link_speed_int * 2.5 / 10
@@ -72,7 +72,7 @@ class CapabilityHelper():
     def query_firmware_version(self) -> str:
         """
         Query firmware version in "<major>.<minor>" format
-        
+
         The firmware version reported should match the version number of
         downloadable fw files from AlazarTech. But note that the firmware
         version has often been found to be incorrect for several firmware

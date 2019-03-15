@@ -57,7 +57,7 @@ class AlazarTech_ATS(Instrument):
 
         Args:
             dll_path: path to the Alazar API DLL library
-        
+
         Returns:
             list of board info dictionaries for each connected board
         """

@@ -1,5 +1,5 @@
 """
-This module provides a class that encapsulates Alazar ATS API, 
+This module provides a class that encapsulates Alazar ATS API,
 :class:`AlazarATSAPI`. The class is used to expose Alazar API functions
 of its C library in a python-friendly way.
 """
@@ -49,8 +49,8 @@ class AlazarATSAPI(WrappedDll):
 
     signatures: Dict[str, Signature] = {}
 
-    def set_trigger_time_out(self, 
-                             handle: int, 
+    def set_trigger_time_out(self,
+                             handle: int,
                              timeout_ticks: Union[int, Parameter]
                             ) -> ReturnCode:
         return self._sync_dll_call(
@@ -347,15 +347,15 @@ class AlazarATSAPI(WrappedDll):
 
     def get_channel_info_(self, handle: int) -> Tuple[int, int]:
         """
-        A more convenient version of :meth:`get_channel_info` method 
+        A more convenient version of :meth:`get_channel_info` method
         (``AlazarGetChannelInfo``).
-        
+
         This method hides the fact that the output values in the original
         function are written to the provided pointers.
 
         Args:
             handle: Handle of the board of interest
-        
+
         Returns:
             Tuple of bits per sample and maximum board memory in samples
         """
@@ -370,7 +370,7 @@ class AlazarATSAPI(WrappedDll):
     
     def get_cpld_version_(self, handle: int) -> str:
         """
-        A more convenient version of :meth:`get_cpld_version` method 
+        A more convenient version of :meth:`get_cpld_version` method
         (``AlazarGetCPLDVersion``).
         
         This method hides the fact that the output values in the original
@@ -394,9 +394,9 @@ class AlazarATSAPI(WrappedDll):
 
     def get_driver_version_(self) -> str:
         """
-        A more convenient version of :meth:`get_driver_version` method 
+        A more convenient version of :meth:`get_driver_version` method
         (``AlazarGetDriverVersion``).
-        
+
         This method hides the fact that the output values in the original
         function are written to the provided pointers.
 
@@ -411,14 +411,14 @@ class AlazarATSAPI(WrappedDll):
             ctypes.byref(minor),
             ctypes.byref(revision)
         )
-        driver_ver = (str(major.value) + "." 
+        driver_ver = (str(major.value) + "."
                       + str(minor.value) + "."
                       + str(revision.value))
         return driver_ver
 
-    def get_sdk_version_(self) -> str:   
+    def get_sdk_version_(self) -> str:
         """
-        A more convenient version of :meth:`get_sdk_version` method 
+        A more convenient version of :meth:`get_sdk_version` method
         (``AlazarGetSDKVersion``).
         
         This method hides the fact that the output values in the original
@@ -435,22 +435,22 @@ class AlazarATSAPI(WrappedDll):
             ctypes.byref(minor),
             ctypes.byref(revision)
         )
-        sdk_ver = (str(major.value) + "." 
+        sdk_ver = (str(major.value) + "."
                    + str(minor.value) + "."
                    + str(revision.value))
         return sdk_ver
 
     def query_capability_(self, handle: int, capability: int) -> int:
         """
-        A more convenient version of :meth:`query_capability` method 
+        A more convenient version of :meth:`query_capability` method
         (``AlazarQueryCapability``).
-        
+
         This method hides the fact that the output values in the original
         function are written to the provided pointers.
 
         Args:
             handle: Handle of the board of interest
-            capability: An integer identifier of a capability parameter 
+            capability: An integer identifier of a capability parameter
                 (:class:`.constants.Capability` enumeration encapsulates
                 the available identifiers)
 
@@ -462,12 +462,12 @@ class AlazarATSAPI(WrappedDll):
         self.query_capability(
             handle, capability, reserved, ctypes.byref(value))
         return value.value
-    
+
     def read_register_(self, handle: int, offset: int) -> int:
         """
         Read a value from a given offset in the Alazar card's register.
 
-        A more convenient version of :meth:`read_register` method 
+        A more convenient version of :meth:`read_register` method
         (``AlazarReadRegister``).
 
         Args:
@@ -490,7 +490,7 @@ class AlazarATSAPI(WrappedDll):
         """
         Write a value to a given offset in the Alazar card's register.
 
-        A more convenient version of :meth:`write_register` method 
+        A more convenient version of :meth:`write_register` method
         (``AlazarWriteRegister``).
 
         Args:

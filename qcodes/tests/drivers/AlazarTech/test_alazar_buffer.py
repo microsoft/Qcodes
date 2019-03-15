@@ -15,8 +15,8 @@ def test_buffer_initiates_only_on_windows(monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(ats_os, 'name', 'nt')
 
-        b = Buffer(ctypes.c_uint8, 25)
-    
+        _ = Buffer(ctypes.c_uint8, 25)
+
     with monkeypatch.context() as m:
         m.setattr(ats_os, 'name', 'other_os')
 
@@ -29,8 +29,8 @@ def test_buffer_is_allocated_when_initiated():
     assert b._allocated is True
 
 
-@pytest.mark.parametrize('ctype', (ctypes.c_uint8, ctypes.c_uint16, 
-                                   ctypes.c_uint32, ctypes.c_int32, 
+@pytest.mark.parametrize('ctype', (ctypes.c_uint8, ctypes.c_uint16,
+                                   ctypes.c_uint32, ctypes.c_int32,
                                    ctypes.c_float))
 def test_supported_ctypes_for_sample(ctype):
-    b = Buffer(ctype, 8)
+    Buffer(ctype, 8)
