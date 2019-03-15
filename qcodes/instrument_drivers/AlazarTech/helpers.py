@@ -40,7 +40,7 @@ class CapabilityHelper():
     
     def query_serial(self) -> str:
         return str(self.query(self.CAPABILITIES.GET_SERIAL_NUMBER))
-    
+
     def query_latest_calibration(self) -> str:
         """Query latest calibration date in '12-34-56' format"""
         # ``date_int`` is a decimal number with the format DDMMYY where

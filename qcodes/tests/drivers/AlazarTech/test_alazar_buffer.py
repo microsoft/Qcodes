@@ -15,13 +15,13 @@ def test_buffer_initiates_only_on_windows(monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(ats_os, 'name', 'nt')
 
-        _ = Buffer(ctypes.c_uint8, 25)
+        Buffer(ctypes.c_uint8, 25)
 
     with monkeypatch.context() as m:
         m.setattr(ats_os, 'name', 'other_os')
 
         with pytest.raises(Exception, match="Unsupported OS"):
-            b = Buffer(ctypes.c_uint8, 25)
+            Buffer(ctypes.c_uint8, 25)
 
 
 def test_buffer_is_allocated_when_initiated():

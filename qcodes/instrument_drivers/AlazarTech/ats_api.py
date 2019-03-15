@@ -420,7 +420,7 @@ class AlazarATSAPI(WrappedDll):
         """
         A more convenient version of :meth:`get_sdk_version` method
         (``AlazarGetSDKVersion``).
-        
+
         This method hides the fact that the output values in the original
         function are written to the provided pointers.
 
