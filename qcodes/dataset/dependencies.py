@@ -406,22 +406,23 @@ class InterDependencies_:
             DependencyError, if a dependency is missing
             InferenceError, if an inference is missing
         """
-        params = set(parameters)
+        params = set((p.name for p in parameters))
 
         for param in params:
-            deps = self.dependencies.get(param, ())
-            if set(deps).difference(params):
+            ps = self._id_to_paramspec[param]
+            deps = set(p.name for p in self.dependencies.get(ps, ()))
+            if deps.difference(params):
                 # pylint: disable=unused-variable
-                missing_names = [p.name for p in set(deps).difference(params)]
-                raise DependencyError(f'{param.name} has the following '
+                missing_names = [p for p in deps.difference(params)]
+                raise DependencyError(f'{param} has the following '
                                       'dependencies that are missing: '
                                       'f{missing_names}')
 
-            inffs = self.inferences.get(param, ())
-            if set(inffs).difference(params):
+            inffs = set(p.name for p in self.inferences.get(ps, ()))
+            if inffs.difference(params):
                 # pylint: disable=unused-variable
-                missing_names = [p.name for p in set(inffs).difference(params)]
-                raise InferenceError(f'{param.name} has the following '
+                missing_names = [p for p in inffs.difference(params)]
+                raise InferenceError(f'{param} has the following '
                                      'inferences that are missing: '
                                      'f{missing_names}')
 
