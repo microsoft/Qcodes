@@ -430,7 +430,7 @@ class AlazarATSAPI(WrappedDll):
 
         Args:
             handle: Handle of the board of interest
-        
+
         Returns:
             Version string in the format "<major>.<minor>"
         """
