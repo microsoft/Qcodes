@@ -31,7 +31,7 @@ class CapabilityHelper():
     def __init__(self, api: AlazarATSAPI, handle: int):
         self._api = api
         self._handle = handle
-    
+
     def query(self, capability: int) -> int:
         """Query the given 'capability' of the board"""
         return self._api.query_capability_(self._handle, capability)
