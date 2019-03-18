@@ -424,7 +424,7 @@ class AlazarATSAPI(WrappedDll):
         """
         A more convenient version of :meth:`get_cpld_version` method
         (``AlazarGetCPLDVersion``).
-        
+
         This method hides the fact that the output values in the original
         function are written to the provided pointers.
 
