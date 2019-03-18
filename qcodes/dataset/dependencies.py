@@ -75,25 +75,27 @@ class InterDependencies_:
             self._id_to_paramspec.update({self._id(ps): ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
 
-        self._dependencies_inv: ParamSpecTree = {}
+        self._dependencies_inv: ParamSpecTree = self._invert_tree(
+            self.dependencies)
+        self._inferences_inv: ParamSpecTree = self._invert_tree(
+            self.inferences)
+
+    @staticmethod
+    def _invert_tree(tree: ParamSpecTree) -> ParamSpecTree:
+        """
+        Helper function to invert a ParamSpecTree. Will turn {A: (B, C)} into
+        {B: (A,), C: (A,)}
+        """
+        inverted: ParamSpecTree = {}
         indeps: List[ParamSpecBase] = []
-        for indep_tup in self.dependencies.values():
+        for indep_tup in tree.values():
             for indep in indep_tup:
                 indeps.append(indep)
         for indep in set(indeps):
-            deps = tuple(ps for ps in self.dependencies
-                         if indep in self.dependencies[ps])
-            self._dependencies_inv[indep] = deps
-
-        self._inferences_inv: ParamSpecTree = {}
-        bases: List[ParamSpecBase] = []
-        for basis_tup in self.inferences.values():
-            for basis in basis_tup:
-                bases.append(basis)
-        for basis in set(bases):
-            inffs = tuple(ps for ps in self.inferences
-                          if basis in self.inferences[ps])
-            self._inferences_inv[basis] = inffs
+            deps = tuple(ps for ps in tree
+                         if indep in tree[ps])
+            inverted[indep] = deps
+        return inverted
 
     @staticmethod
     def _remove_duplicates(tree: ParamSpecTree) -> None:
