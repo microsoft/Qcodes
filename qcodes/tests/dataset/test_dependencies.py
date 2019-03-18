@@ -276,20 +276,30 @@ def test_validate_subset(some_paramspecbases):
     idps.validate_subset(())
     idps.validate_subset([])
 
-    with pytest.raises(DependencyError):
+    with pytest.raises(DependencyError) as exc_info:
         idps.validate_subset((ps1,))
+    assert exc_info.value._param_name == 'psb1'
+    assert exc_info.value._missing_params == {'psb2', 'psb3'}
 
-    with pytest.raises(DependencyError):
+    with pytest.raises(DependencyError) as exc_info:
         idps.validate_subset((ps1, ps2, ps4))
+    assert exc_info.value._param_name == 'psb1'
+    assert exc_info.value._missing_params == {'psb3'}
 
-    with pytest.raises(InferenceError):
-        idps.validate_subset((ps2, ps3))
+    with pytest.raises(InferenceError) as exc_info:
+        idps.validate_subset((ps3,))
+    assert exc_info.value._param_name == 'psb3'
+    assert exc_info.value._missing_params == {'psb4'}
 
-    with pytest.raises(InferenceError):
-        idps.validate_subset((ps1, ps2, ps3))
+    with pytest.raises(InferenceError) as exc_info:
+        idps2 = InterDependencies_(dependencies={ps1: (ps2, ps3)},
+                                    inferences={ps3: (ps4,)})
+        idps2.validate_subset((ps1, ps2, ps3))
+    assert exc_info.value._param_name == 'psb3'
+    assert exc_info.value._missing_params == {'psb4'}
 
     with pytest.raises(ValueError, match='ps42'):
-        ps42 = ParamSpecBase('ps42', paramtype='text', label='unknown', unit='it')
+        ps42 = ParamSpecBase('ps42', paramtype='text', label='', unit='it')
         idps.validate_subset((ps2, ps42, ps4))
 
 
