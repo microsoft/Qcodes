@@ -1199,7 +1199,7 @@ class ZIUHFLI(Instrument):
         # SIGNAL OUTPUTS
         output_mapping = {1: 3, 2: 7}
 
-        for sigout in range(1,3):
+        for sigout in range(1, 3):
 
             self.add_parameter('signal_output{}_on'.format(sigout),
                                 label='Turn signal output on and off.',
@@ -1259,7 +1259,7 @@ class ZIUHFLI(Instrument):
                         label='Signal output amplitude',
                         set_cmd=partial(self._sigout_setter,
                                         sigout - 1, 1, 'amplitudes',
-                                        output_mode=modeout - 1),
+                                        output_mode=output_mapping[sigout]),
                         get_cmd=partial(self._sigout_getter,
                                         sigout - 1, 1, 'amplitudes',
                                         output_mode=modeout - 1),
@@ -1287,10 +1287,12 @@ class ZIUHFLI(Instrument):
                     label="Output signal enabled/disabled.",
                     set_cmd=partial(self._sigout_setter,
                                     sigout - 1, 0,
-                                    outputampenable[sigout]),
+                                    'enables',
+                                    output_mode=output_mapping[sigout]),
                     get_cmd=partial(self._sigout_getter,
                                     sigout - 1, 0,
-                                    outputampenable[sigout]),
+                                    'enables',
+                                    output_mode=output_mapping[sigout]),
                     val_mapping=create_on_off_val_mapping(),
                     docstring="Enabling/Disabling the Signal Output. "
                               "Corresponds to the blue LED indicator on "
@@ -1302,10 +1304,12 @@ class ZIUHFLI(Instrument):
                     label='Signal output amplitude',
                     set_cmd=partial(self._sigout_setter,
                                     sigout - 1, 1,
-                                    outputamps[sigout]),
+                                    'amplitudes',
+                                    output_mode=output_mapping[sigout]),
                     get_cmd=partial(self._sigout_getter,
                                     sigout - 1, 1,
-                                    outputamps[sigout]),
+                                    'amplitudes',
+                                    output_mode=output_mapping[sigout]),
                     docstring="Set the signal output amplitude. The actual unit"
                               " and representation is defined by "
                               "signal_output{}_ampdef parameter".format(sigout))
