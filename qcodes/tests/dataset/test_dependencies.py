@@ -288,6 +288,10 @@ def test_validate_subset(some_paramspecbases):
     with pytest.raises(InferenceError):
         idps.validate_subset((ps1, ps2, ps3))
 
+    with pytest.raises(ValueError, match='ps42'):
+        ps42 = ParamSpecBase('ps42', paramtype='text', label='unknown', unit='it')
+        idps.validate_subset((ps2, ps42, ps4))
+
 
 def test_extend(some_paramspecbases):
 

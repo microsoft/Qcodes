@@ -426,7 +426,9 @@ class InterDependencies_:
         params = set(p.name for p in parameters)
 
         for param in params:
-            ps = self._id_to_paramspec[param]
+            ps = self._id_to_paramspec.get(param, None)
+            if ps is None:
+                raise ValueError(f'Unknown parameter: {param}')
 
             deps = set(p.name for p in self.dependencies.get(ps, ()))
             missing_deps = deps.difference(params)
