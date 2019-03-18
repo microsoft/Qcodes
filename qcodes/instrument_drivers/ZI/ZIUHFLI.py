@@ -1986,6 +1986,7 @@ class ZIUHFLI(Instrument):
         Function to set signal output's settings. A specific setter function is
         needed as parameters depend on each other and need to be checked and
         updated accordingly.
+
         Args:
             number: The output channel to use. Either 1 or 2.
             mode: Indicating whether we are asking for an int (0) or double (1).
@@ -1997,6 +1998,7 @@ class ZIUHFLI(Instrument):
 
         # convenient reference
         params = self.parameters
+
         amp_val_dict = {'Vpk': lambda value: value,
                         'Vrms': lambda value: value * sqrt(2),
                         'dBm': lambda value: 10 ** ((value - 10) / 20)
@@ -2068,6 +2070,7 @@ class ZIUHFLI(Instrument):
                               'ampdef': ampdef_valid,
                               'amplitudes': amp_valid,
                               'offset': offset_valid}
+
         def update_range_offset_amp():
             range_val = params['signal_output{}_range'.format(number+1)].get()
             offset_val = params['signal_output{}_offset'.format(number+1)].get()
@@ -2106,7 +2109,7 @@ class ZIUHFLI(Instrument):
 
         setstr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
         if output_mode is not None:
-          setstr += '/{}'.format(output_mode)
+            setstr += '/{}'.format(output_mode)
 
         if setting in dynamic_validation:
             log.info("Output setting: Validating {} with "
@@ -2135,6 +2138,7 @@ class ZIUHFLI(Instrument):
         Function to query the settings of signal outputs. Specific setter
         function is needed as parameters depend on each other and need to be
         checked and updated accordingly.
+
         Args:
             number:
             mode: Indicating whether we are asking for an int (0) or double (1).
