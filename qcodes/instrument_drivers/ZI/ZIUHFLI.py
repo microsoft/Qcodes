@@ -7,6 +7,7 @@ from math import sqrt
 from distutils.version import StrictVersion
 
 from typing import Callable, List, Union, cast, Optional
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 try:
     import zhinst.utils
@@ -1219,11 +1220,11 @@ class ZIUHFLI(Instrument):
                                 vals=vals.Enum('ON', 'OFF') )
 
             self.add_parameter('signal_output{}_ampdef'.format(sigout),
-                                get_cmd=None, set_cmd=None,
-                                initial_value='Vpk',
-                                label="Signal output amplitude's definition",
-                                unit='V',
-                                vals=vals.Enum('Vpk','Vrms', 'dBm'))
+                               get_cmd=None, set_cmd=None,
+                               initial_value='Vpk',
+                               label="Signal output amplitude's definition",
+                               unit='',
+                               vals=vals.Enum('Vpk', 'Vrms', 'dBm'))
 
             self.add_parameter('signal_output{}_range'.format(sigout),
                                 label='Signal output range',
@@ -1251,49 +1252,63 @@ class ZIUHFLI(Instrument):
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
-
             if 'MF' in self.props['options']:
-                for modeout in range(1,9):
+                for modeout in range(1, 9):
+                    self.add_parameter(
+                        'signal_output{}_amplitude{}'.format(sigout, modeout),
+                        label='Signal output amplitude',
+                        set_cmd=partial(self._sigout_setter,
+                                        sigout - 1, 1, 'amplitudes',
+                                        output_mode=modeout - 1),
+                        get_cmd=partial(self._sigout_getter,
+                                        sigout - 1, 1, 'amplitudes',
+                                        output_mode=modeout - 1),
+                        docstring="Set the signal output amplitude. The actual "
+                                  "unit and representation is defined by "
+                                  "signal_output{}_ampdef "
+                                  "parameter".format(sigout))
 
-                  self.add_parameter('signal_output{}_amplitude{}'.format(sigout,modeout),
-                                      label='Signal output amplitude',
-                                      set_cmd=partial(self._sigout_setter,
-                                                      sigout-1, 1, 'amplitudes', output_mode=modeout-1),
-                                      get_cmd=partial(self._sigout_getter,
-                                                     sigout-1, 1, 'amplitudes', output_mode=modeout-1),
-                                      unit='V')
-
-                  self.add_parameter('signal_output{}_enable{}'.format(sigout,modeout),
-                                      label="Enable signal output's amplitude.",
-                                      set_cmd=partial(self._sigout_setter,
-                                                      sigout-1, 0,
-                                                      'enables', output_mode=modeout-1),
-                                      get_cmd=partial(self._sigout_getter,
-                                                      sigout-1, 0,
-                                                      'enables', output_mode=modeout-1),
-                                      val_mapping={'ON': 1, 'OFF': 0},
-                                      vals=vals.Enum('ON', 'OFF') )
+                    self.add_parameter(
+                        'signal_output{}_enable{}'.format(sigout, modeout),
+                        label="Output signal enabled/disabled.",
+                        set_cmd=partial(self._sigout_setter,
+                                        sigout - 1, 0,
+                                        'enables', output_mode=modeout - 1),
+                        get_cmd=partial(self._sigout_getter,
+                                        sigout - 1, 0,
+                                        'enables', output_mode=modeout - 1),
+                        val_mapping=create_on_off_val_mapping(),
+                        docstring="Enabling/Disabling the Signal Output. "
+                                  "Corresponds to the blue LED indicator on "
+                                  "the instrument front panel.")
             else:
-                self.add_parameter('signal_output{}_amplitude'.format(sigout),
-                                   label='Signal output amplitude',
-                                   set_cmd=partial(self._sigout_setter,
-                                                   sigout - 1, 1,
-                                                   'amplitudes', output_mode=output_mapping[sigout]),
-                                   get_cmd=partial(self._sigout_getter,
-                                                   sigout - 1, 1,
-                                                   'amplitudes', output_mode=output_mapping[sigout]),
-                                   unit='V')
+                self.add_parameter(
+                    'signal_output{}_enable'.format(sigout),
+                    label="Output signal enabled/disabled.",
+                    set_cmd=partial(self._sigout_setter,
+                                    sigout - 1, 0,
+                                    outputampenable[sigout]),
+                    get_cmd=partial(self._sigout_getter,
+                                    sigout - 1, 0,
+                                    outputampenable[sigout]),
+                    val_mapping=create_on_off_val_mapping(),
+                    docstring="Enabling/Disabling the Signal Output. "
+                              "Corresponds to the blue LED indicator on "
+                              "the instrument front panel."
+                )
 
-                self.add_parameter('signal_output{}_enable'.format(sigout),
-                                   label="Enable signal output's amplitude.",
-                                   set_cmd=partial(self._sigout_setter,
-                                                   sigout - 1, 0,
-                                                   'enables', output_mode=output_mapping[sigout]),
-                                   get_cmd=partial(self._sigout_getter,
-                                                   sigout - 1, 0,
-                                                   'enables', output_mode=output_mapping[sigout]),
-                                   val_mapping={'ON': 1, 'OFF': 0},
-                                   vals=vals.Enum('ON', 'OFF'))
+                self.add_parameter(
+                    'signal_output{}_amplitude'.format(sigout),
+                    label='Signal output amplitude',
+                    set_cmd=partial(self._sigout_setter,
+                                    sigout - 1, 1,
+                                    outputamps[sigout]),
+                    get_cmd=partial(self._sigout_getter,
+                                    sigout - 1, 1,
+                                    outputamps[sigout]),
+                    docstring="Set the signal output amplitude. The actual unit"
+                              " and representation is defined by "
+                              "signal_output{}_ampdef parameter".format(sigout))
 
         auxoutputchannels = ChannelList(self, "AUXOutputChannels", AUXOutputChannel,
                                snapshotable=False)
@@ -1904,7 +1919,7 @@ class ZIUHFLI(Instrument):
             module (str): The module (eg. demodulator, input, output, ..)
                 to set.
             number (int): Module's index
-            mode (bool): Indicating whether we are setting an int or double
+            mode (int): Indicating whether we are asking for an int (0) or double (1)
             setting (str): The module's setting to set.
             value (int/double): The value to set.
         """
@@ -1963,17 +1978,17 @@ class ZIUHFLI(Instrument):
         return datadict[demod_param]
 
     def _sigout_setter(self, number: int,
-                       mode: bool,
+                       mode: int,
                        setting: str,
-                       value: Union[int,float],
-                       output_mode: Optional[int]=None):
+                       value: Union[int, float],
+                       output_mode: Optional[int] = None) -> None:
         """
         Function to set signal output's settings. A specific setter function is
         needed as parameters depend on each other and need to be checked and
         updated accordingly.
         Args:
             number: The output channel to use. Either 1 or 2.
-            mode: Indicating whether we are asking for an int or double
+            mode: Indicating whether we are asking for an int (0) or double (1).
             setting: The module's setting to set.
             value: The value to set the setting to.
             output_mode: Some options may take an extra int to indicate which of the 8
@@ -1992,7 +2007,7 @@ class ZIUHFLI(Instrument):
             autorange_val = params['signal_output{}_autorange'.format(number+1)].get()
 
             if autorange_val == 'ON':
-                imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
+                imp50_val = params['signal_output{}_imp50'.format(number + 1)].get()
                 imp50_dic = {'OFF': 1.5, 'ON': 0.75}
                 range_val = imp50_dic[imp50_val]
 
@@ -2010,15 +2025,14 @@ class ZIUHFLI(Instrument):
 
             def validate_against_individual(value, amp_val, range_val):
                 amp_val = round(amp_val, 3)
-                if -range_val< value+amp_val > range_val:
+                if -range_val < value + amp_val > range_val:
                     raise ValueError('Signal Output: Offset too high for '
                                      'chosen range.')
 
             range_val = params['signal_output{}_range'.format(number+1)].get()
             range_val = round(range_val, 3)
-
             if 'MF' in self.props['options']:
-                for i in range(1,9):
+                for i in range(1, 9):
                     amp_val = params['signal_output{}_amplitude{}'.format(number + 1, i)].get()
                     validate_against_individual(value, amp_val, range_val)
             else:
@@ -2026,7 +2040,7 @@ class ZIUHFLI(Instrument):
                 validate_against_individual(value, amp_val, range_val)
 
         def range_valid(number, value):
-            autorange_val = params['signal_output{}_autorange'.format(number+1)].get()
+            autorange_val = params['signal_output{}_autorange'.format(number + 1)].get()
             imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
             imp50_dic = {'OFF': [1.5, 0.15], 'ON': [0.75, 0.075]}
 
@@ -2057,16 +2071,15 @@ class ZIUHFLI(Instrument):
         def update_range_offset_amp():
             range_val = params['signal_output{}_range'.format(number+1)].get()
             offset_val = params['signal_output{}_offset'.format(number+1)].get()
-
             if 'MF' in self.props['options']:
                 amps_val = [params['signal_output{}_amplitude{}'.format(
-                    number + 1, output)].get() for output in range(1,9)]
+                    number + 1, output)].get() for output in range(1, 9)]
             else:
                 amps_val = [params['signal_output{}_amplitude'.format(
-                    number+1)].get()]
+                    number + 1)].get()]
             for amp_val in amps_val:
                 if -range_val < offset_val + amp_val > range_val:
-                    #The GUI would allow higher values but it would clip the signal.
+                    # The GUI would allow higher values but it would clip the signal.
                     raise ValueError('Signal Output: Amplitude and/or '
                                      'offset out of range.')
 
@@ -2116,18 +2129,18 @@ class ZIUHFLI(Instrument):
         if setting in changing_param:
             [f() for f in changing_param[setting]]
 
-    def _sigout_getter(self, number: int, mode: bool, setting: str,
-                       output_mode: Optional[int] = None):
+    def _sigout_getter(self, number: int, mode: int, setting: str,
+                       output_mode: Optional[int] = None) -> Union[int, float]:
         """
         Function to query the settings of signal outputs. Specific setter
         function is needed as parameters depend on each other and need to be
         checked and updated accordingly.
         Args:
             number:
-            mode: Indicating whether we are asking for an int or double
+            mode: Indicating whether we are asking for an int (0) or double (1).
             setting: The module's setting to set.
-            output_mode: Some options may take an extra int to indicate which of the 8
-                         demodulators this acts on
+            output_mode: Some options may take an extra int to indicate which
+            of the 8 demodulators this acts on
         """
 
         querystr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
