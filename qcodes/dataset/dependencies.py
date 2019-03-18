@@ -406,23 +406,24 @@ class InterDependencies_:
             DependencyError, if a dependency is missing
             InferenceError, if an inference is missing
         """
-        params = set((p.name for p in parameters))
+        params = set(p.name for p in parameters)
 
         for param in params:
             ps = self._id_to_paramspec[param]
+
             deps = set(p.name for p in self.dependencies.get(ps, ()))
-            if deps.difference(params):
-                missing_names = [p for p in deps.difference(params)]
+            missing_deps = deps.difference(params)
+            if missing_deps:
                 raise DependencyError(f'{param} has the following '
                                       'dependencies that are missing: '
-                                      f'{missing_names}')
+                                      f'{missing_deps}')
 
             inffs = set(p.name for p in self.inferences.get(ps, ()))
-            if inffs.difference(params):
-                missing_names = [p for p in inffs.difference(params)]
+            missing_inffs = inffs.difference(params)
+            if missing_inffs:
                 raise InferenceError(f'{param} has the following '
                                      'inferences that are missing: '
-                                     f'{missing_names}')
+                                     f'{missing_inffs}')
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
