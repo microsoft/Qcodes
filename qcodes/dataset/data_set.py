@@ -1,6 +1,7 @@
 import functools
 import json
-from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast)
+from typing import (Any, Dict, List, Optional, Union, Sized, Callable, cast,
+                    Sequence)
 from threading import Thread
 import time
 import importlib
@@ -367,14 +368,12 @@ class DataSet(Sized):
 
     @property
     def paramspecs(self) -> Dict[str, Union[ParamSpec, ParamSpecBase]]:
+        params: Sequence
         if self.pristine:
             params = self.description.interdeps.paramspecs
-            param_names = tuple(ps.name for ps in params)
-            return dict(zip(param_names, params))
         else:
-            params = tuple(self.get_parameters())
-            param_names = tuple(p.name for p in params)
-            return dict(zip(param_names, params))
+            params = self.get_parameters()
+        return {ps.name: ps for ps in params}
 
     @property
     def exp_id(self) -> int:
