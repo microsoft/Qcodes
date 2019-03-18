@@ -5,8 +5,12 @@ import time
 import os
 import warnings
 import sys
+import asyncio
+import concurrent
 
-from typing import List, Dict, Union, Tuple, cast, Sequence
+from threading import Lock
+from functools import partial
+from typing import List, Dict, Union, Tuple, Sequence, Awaitable
 from contextlib import contextmanager
 
 from qcodes.instrument.base import Instrument
@@ -26,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 # TODO (natalie) make logging vs print vs nothing decisions
 
-
 class AlazarTech_ATS(Instrument):
     """
     This is the qcodes driver for Alazar data acquisition cards
@@ -44,6 +47,11 @@ class AlazarTech_ATS(Instrument):
         dll_path: string containing the path of the ATS driver dll
 
     """
+
+    #: The ATS API DLL is not guaranteed to be thread-safe
+    #: This lock guards API calls.
+    _dll_lock : Lock = Lock()
+
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
     dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
@@ -638,6 +646,34 @@ class AlazarTech_ATS(Instrument):
         Returns:
             Whatever is given by acquisition_controller.post_acquire method
         """
+        loop : asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.async_acquire(
+            mode=mode,
+            samples_per_record=samples_per_record,
+            records_per_buffer=records_per_buffer,
+            buffers_per_acquisition=buffers_per_acquisition,
+            channel_selection=channel_selection,
+            transfer_offset=transfer_offset,
+            external_startcapture=external_startcapture,
+            enable_record_headers=enable_record_headers,
+            alloc_buffers=alloc_buffers,
+            fifo_only_streaming=fifo_only_streaming,
+            interleave_samples=interleave_samples,
+            get_processed_data=get_processed_data,
+            allocated_buffers=alloc_buffers,
+            buffer_timeout=buffer_timeout,
+            acquisition_controller=acquisition_controller
+        ))
+
+    async def async_acquire(self, mode=None, samples_per_record=None,
+                records_per_buffer=None, buffers_per_acquisition=None,
+                channel_selection=None, transfer_offset=None,
+                external_startcapture=None, enable_record_headers=None,
+                alloc_buffers=None, fifo_only_streaming=None,
+                interleave_samples=None, get_processed_data=None,
+                allocated_buffers=None, buffer_timeout=None,
+                acquisition_controller=None):
+
         # region set parameters from args
         start_func = time.perf_counter()
         if self._parameters_synced == False:
@@ -672,133 +708,141 @@ class AlazarTech_ATS(Instrument):
         samples_per_record = self.samples_per_record.raw_value
         records_per_buffer = self.records_per_buffer.raw_value
 
-        # Set record size for NPT mode
-        if mode == 'NPT':
-            pretriggersize = 0  # pretriggersize is 0 for NPT always
-            post_trigger_size = samples_per_record
-            self._call_dll('AlazarSetRecordSize',
-                           self._handle, pretriggersize,
-                           post_trigger_size)
-        # set acquisition parameters here for NPT, TS mode
-        samples_per_buffer = 0
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
 
-        acquire_flags = (self.mode.raw_value |
-                         self.external_startcapture.raw_value |
-                         self.enable_record_headers.raw_value |
-                         self.alloc_buffers.raw_value |
-                         self.fifo_only_streaming.raw_value |
-                         self.interleave_samples.raw_value |
-                         self.get_processed_data.raw_value)
+            # Set record size for NPT mode
+            if mode == 'NPT':
+                pretriggersize = 0  # pretriggersize is 0 for NPT always
+                post_trigger_size = samples_per_record
+                await self._async_call_dll(executor, 'AlazarSetRecordSize',
+                            self._handle, pretriggersize,
+                            post_trigger_size)
+            # set acquisition parameters here for NPT, TS mode
+            samples_per_buffer = 0
 
-        if mode == 'NPT':
-            records_per_acquisition = (
-                records_per_buffer * buffers_per_acquisition)
-            self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection.raw_value,
-                           self.transfer_offset.raw_value,
-                           samples_per_record,
-                           records_per_buffer, records_per_acquisition,
-                           acquire_flags)
-        elif mode == 'TS':
-            if (samples_per_record % buffers_per_acquisition != 0):
-                logger.warning('buffers_per_acquisition is not a divisor of '
-                                'samples per record which it should be in '
-                                'Ts mode, rounding down in samples per buffer '
-                                'calculation')
-            samples_per_buffer = int(samples_per_record /
-                                     buffers_per_acquisition)
-            if self.records_per_buffer.raw_value != 1:
-                logger.warning('records_per_buffer should be 1 in TS mode, '
-                                'defauling to 1')
-                self.records_per_buffer.set(1)
-            records_per_buffer = self.records_per_buffer.raw_value
+            acquire_flags = (self.mode.raw_value |
+                            self.external_startcapture.raw_value |
+                            self.enable_record_headers.raw_value |
+                            self.alloc_buffers.raw_value |
+                            self.fifo_only_streaming.raw_value |
+                            self.interleave_samples.raw_value |
+                            self.get_processed_data.raw_value)
 
-            self._call_dll('AlazarBeforeAsyncRead',
-                           self._handle, self.channel_selection.raw_value,
-                           self.transfer_offset.raw_value, samples_per_buffer,
-                           records_per_buffer, buffers_per_acquisition,
-                           acquire_flags)
+            if mode == 'NPT':
+                records_per_acquisition = (
+                    records_per_buffer * buffers_per_acquisition)
+                await self._async_call_dll(executor, 'AlazarBeforeAsyncRead',
+                            self._handle, self.channel_selection.raw_value,
+                            self.transfer_offset.raw_value,
+                            samples_per_record,
+                            records_per_buffer, records_per_acquisition,
+                            acquire_flags)
+            elif mode == 'TS':
+                if (samples_per_record % buffers_per_acquisition != 0):
+                    logger.warning('buffers_per_acquisition is not a divisor of '
+                                    'samples per record which it should be in '
+                                    'Ts mode, rounding down in samples per buffer '
+                                    'calculation')
+                samples_per_buffer = int(samples_per_record /
+                                        buffers_per_acquisition)
+                if self.records_per_buffer.raw_value != 1:
+                    logger.warning('records_per_buffer should be 1 in TS mode, '
+                                    'defauling to 1')
+                    self.records_per_buffer.set(1)
+                records_per_buffer = self.records_per_buffer.raw_value
 
-        # bytes per sample
-        max_s, bps = self._get_channel_info(self._handle)
-        # TODO(JHN) Why +7 I guess its to do ceil division?
-        bytes_per_sample = (bps + 7) // 8
-        # bytes per record
-        bytes_per_record = bytes_per_sample * samples_per_record
+                await self._async_call_dll(
+                            executor,
+                            'AlazarBeforeAsyncRead',
+                            self._handle, self.channel_selection.raw_value,
+                            self.transfer_offset.raw_value, samples_per_buffer,
+                            records_per_buffer, buffers_per_acquisition,
+                            acquire_flags)
 
-        # channels
-        channels_binrep = self.channel_selection.raw_value
-        number_of_channels = self.get_num_channels(channels_binrep)
+            # bytes per sample
+            _, bps = self._get_channel_info(self._handle)
+            # TODO(JHN) Why +7 I guess its to do ceil division?
+            bytes_per_sample = (bps + 7) // 8
+            # bytes per record
+            bytes_per_record = bytes_per_sample * samples_per_record
 
-        # bytes per buffer
-        bytes_per_buffer = (bytes_per_record *
-                            records_per_buffer * number_of_channels)
+            # channels
+            channels_binrep = self.channel_selection.raw_value
+            number_of_channels = self.get_num_channels(channels_binrep)
 
-        sample_type = ctypes.c_uint8
-        if bytes_per_sample > 1:
-            sample_type = ctypes.c_uint16
+            # bytes per buffer
+            bytes_per_buffer = (bytes_per_record *
+                                records_per_buffer * number_of_channels)
 
-        self.clear_buffers()
+            sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
 
-        # make sure that allocated_buffers <= buffers_per_acquisition
-        allocated_buffers = self.allocated_buffers.raw_value
-        buffers_per_acquisition = self.buffers_per_acquisition.raw_value
+            self.clear_buffers()
 
-        if allocated_buffers > buffers_per_acquisition:
-            logger.warning("'allocated_buffers' should be <= "
-                            "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                            f" to {buffers_per_acquisition}")
-            self.allocated_buffers.set(buffers_per_acquisition)
+            # make sure that allocated_buffers <= buffers_per_acquisition
+            allocated_buffers = self.allocated_buffers.raw_value
+            buffers_per_acquisition = self.buffers_per_acquisition.raw_value
 
-        allocated_buffers = self.allocated_buffers.raw_value
-        buffer_recycling = buffers_per_acquisition > allocated_buffers
-        for k in range(allocated_buffers):
+            if allocated_buffers > buffers_per_acquisition:
+                logger.warning("'allocated_buffers' should be <= "
+                                "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
+                                f" to {buffers_per_acquisition}")
+                self.allocated_buffers.set(buffers_per_acquisition)
+
+            allocated_buffers = self.allocated_buffers.raw_value
+            buffer_recycling = buffers_per_acquisition > allocated_buffers
+            for _ in range(allocated_buffers):
+                try:
+                    self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
+                except:
+                    self.clear_buffers()
+                    raise
+
+            # post buffers to Alazar
             try:
-                self.buffer_list.append(Buffer(sample_type, bytes_per_buffer))
-            except:
-                self.clear_buffers()
-                raise
+                for buf in self.buffer_list:
+                    await self._async_call_dll(
+                            executor, 'AlazarPostAsyncBuffer',
+                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
 
-        # post buffers to Alazar
-        try:
-            for buf in self.buffer_list:
-                self._call_dll('AlazarPostAsyncBuffer',
-                               self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
+                # -----start capture here-----
+                acquisition_controller.pre_start_capture()
+                start = time.perf_counter()  # Keep track of when acquisition started
+                # call the startcapture method
+                await self._async_call_dll(executor, 'AlazarStartCapture', self._handle)
+                acquisition_controller.pre_acquire()
 
-            # -----start capture here-----
-            acquisition_controller.pre_start_capture()
-            start = time.perf_counter()  # Keep track of when acquisition started
-            # call the startcapture method
-            self._call_dll('AlazarStartCapture', self._handle)
-            acquisition_controller.pre_acquire()
+                # buffer handling from acquisition
+                buffers_completed = 0
+                bytes_transferred = 0
+                buffer_timeout = self.buffer_timeout.raw_value
 
-            # buffer handling from acquisition
-            buffers_completed = 0
-            bytes_transferred = 0
-            buffer_timeout = self.buffer_timeout.raw_value
+                done_setup = time.perf_counter()
+                print(f"[{time.time()}] Entering buffer wait loop.")
+                while (buffers_completed < self.buffers_per_acquisition.get()):
+                    # Wait for the buffer at the head of the list of available
+                    # buffers to be filled by the board.
+                    buf = self.buffer_list[buffers_completed % allocated_buffers]
+                    await self._async_call_dll(
+                            executor, 'AlazarWaitAsyncBufferComplete',
+                                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
 
-            done_setup = time.perf_counter()
-            while (buffers_completed < self.buffers_per_acquisition.get()):
-                # Wait for the buffer at the head of the list of available
-                # buffers to be filled by the board.
-                buf = self.buffer_list[buffers_completed % allocated_buffers]
-                self._call_dll('AlazarWaitAsyncBufferComplete',
-                               self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
+                    acquisition_controller.buffer_done_callback(buffers_completed)
 
-                acquisition_controller.buffer_done_callback(buffers_completed)
-
-                # if buffers must be recycled, extract data and repost them
-                # otherwise continue to next buffer
-                if buffer_recycling:
-                    acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
-                    self._call_dll('AlazarPostAsyncBuffer',
-                                   self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
-                buffers_completed += 1
-                bytes_transferred += buf.size_bytes
-        finally:
-            # stop measurement here
-            done_capture = time.perf_counter()
-            self._call_dll('AlazarAbortAsyncRead', self._handle)
+                    # if buffers must be recycled, extract data and repost them
+                    # otherwise continue to next buffer
+                    if buffer_recycling:
+                        acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
+                        await self._async_call_dll(
+                            executor, 'AlazarPostAsyncBuffer',
+                                    self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
+                    buffers_completed += 1
+                    bytes_transferred += buf.size_bytes
+                print(f"[{time.time()}] Exited buffer wait loop.")
+            finally:
+                # stop measurement here
+                done_capture = time.perf_counter()
+                await self._async_call_dll(
+                            executor, 'AlazarAbortAsyncRead', self._handle)
         time_done_abort = time.perf_counter()
         # -----cleanup here-----
         # extract data if not yet done
@@ -812,7 +856,7 @@ class AlazarTech_ATS(Instrument):
         time_done_free_mem = time.perf_counter()
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
-        for name, p in self.parameters.items():
+        for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
                 if p.synced_to_card == False:
                     raise RuntimeError(f"TraceParameter {p} not synced to "
@@ -830,9 +874,9 @@ class AlazarTech_ATS(Instrument):
         abort_time = time_done_abort - done_capture
         handling_time = time_done_handling - time_done_abort
         free_mem_time = time_done_free_mem - time_done_handling
-        buffers_per_sec = 0
-        bytes_per_sec = 0
-        records_per_sec = 0
+        buffers_per_sec : float = 0
+        bytes_per_sec : float = 0
+        records_per_sec : float = 0
         if transfer_time_sec > 0:
             buffers_per_sec = buffers_completed / transfer_time_sec
             bytes_per_sec = bytes_transferred / transfer_time_sec
@@ -856,6 +900,8 @@ class AlazarTech_ATS(Instrument):
         # return result
         return acquisition_controller.post_acquire()
 
+    async_acquire.__doc__ = acquire.__doc__
+
     def _set_if_present(self, param_name: str, value: Union[int,str,float]) -> None:
         if value is not None:
             parameter = self.parameters[param_name]
@@ -866,6 +912,28 @@ class AlazarTech_ATS(Instrument):
             for i, v in enumerate(value):
                 parameter = self.parameters[param_base + str(i + 1)]
                 parameter.set(v)
+
+    def _async_call_dll(self, executor, func_name: str, *args) -> Awaitable[None]:
+        """
+        Asynchronously executes a dll function `func_name` using the given executor,
+        passing it the given arguments. Typically, the executor will be used
+        to place the DLL call into a background thread; in such cases, it is
+        critical to ensure that the DLL function is a CLL or WinDLL function,
+        and *not* a PyDLL function, since the latter will maintain a GIL acquisition.
+
+        For each argument in the list
+        - If an arg is a TraceParameter of this instrument, the parameter
+          value from `.raw_value` is used. If the call succeeds, these
+          parameters will be marked as updated using their `._set_updated()`
+          method
+        - If a regular parameter the raw_value is used and uptodate is tracked
+          outside this function
+        - Otherwise the arg is used directly
+        """
+        return asyncio.get_event_loop().run_in_executor(
+            executor,
+            partial(self._call_dll, func_name, *args)
+        )
 
     def _call_dll(self, func_name: str, *args) -> None:
         """
@@ -897,7 +965,8 @@ class AlazarTech_ATS(Instrument):
         # run the function
         func = getattr(self._ATS_dll, func_name)
         try:
-            return_code = func(*args_out)
+            with self._dll_lock:
+                return_code = func(*args_out)
         except Exception as e:
             logger.exception("Exception in DLL call")
             raise e
@@ -1106,7 +1175,6 @@ class Buffer:
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
         self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
         self.ctypes_buffer = ctypes_array
-        pointer, read_only_flag = self.buffer.__array_interface__['data']
 
     def free_mem(self):
         """
