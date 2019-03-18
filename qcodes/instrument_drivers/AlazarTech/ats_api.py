@@ -419,7 +419,7 @@ class AlazarATSAPI(WrappedDll):
             ctypes.byref(bps)
         )
         return max_s.value, bps.value
-    
+
     def get_cpld_version_(self, handle: int) -> str:
         """
         A more convenient version of :meth:`get_cpld_version` method
