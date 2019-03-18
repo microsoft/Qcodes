@@ -139,13 +139,13 @@ class DataSaver:
             parameter = partial_result[0]
             if isinstance(parameter, ArrayParameter):
                 results_dict.update(
-                        self._unpack_arrayparameter(partial_result))
+                    self._unpack_arrayparameter(partial_result))
             elif isinstance(parameter, MultiParameter):
                 results_dict.update(
-                        self._unpack_multiparameter(partial_result))
+                    self._unpack_multiparameter(partial_result))
             else:
                 results_dict.update(
-                        self._unpack_partial_result(partial_result))
+                    self._unpack_partial_result(partial_result))
 
         self._validate_result_deps(results_dict)
         self._validate_result_shapes(results_dict)
