@@ -5,6 +5,7 @@ from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
+ParamNameTree = Dict[str, Tuple[str, ...]]
 ErrorTuple = Tuple[Type[Exception], str]
 
 
@@ -79,6 +80,26 @@ class InterDependencies_:
             self.dependencies)
         self._inferences_inv: ParamSpecTree = self._invert_tree(
             self.inferences)
+
+        # Set operations are ~2x (or more) faster on strings than on hashable
+        # ParamSpecBase objects, hence the need for use of the following
+        # representation
+        self._deps_names: ParamNameTree = self._tree_of_names(
+            self.dependencies)
+        self._infs_names: ParamNameTree = self._tree_of_names(
+            self.inferences)
+
+    @staticmethod
+    def _tree_of_names(tree: ParamSpecTree) -> ParamNameTree:
+        """
+        Helper function to convert a ParamSpecTree-kind of tree where all
+        ParamSpecBases are substituted with their ``.name`` s.
+        Will turn {A: (B, C)} into {A.name: (B.name, C.name)}
+        """
+        name_tree: ParamNameTree = {}
+        for ps, ps_tuple in tree.items():
+            name_tree[ps.name] = tuple(p.name for p in ps_tuple)
+        return name_tree
 
     @staticmethod
     def _invert_tree(tree: ParamSpecTree) -> ParamSpecTree:
