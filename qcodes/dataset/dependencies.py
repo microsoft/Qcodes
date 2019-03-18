@@ -10,11 +10,31 @@ ErrorTuple = Tuple[Type[Exception], str]
 
 
 class DependencyError(Exception):
-    pass
+    def __init__(self,
+                 param_name: str,
+                 missing_params: Set[str],
+                 *args):
+        super().__init__(*args)
+        self._param_name = param_name
+        self._missing_params = missing_params
+
+    def __str__(self) -> str:
+        return (f'{self._param_name} has the following dependencies that are '
+                f'missing: {self._missing_params}')
 
 
 class InferenceError(Exception):
-    pass
+    def __init__(self,
+                 param_name: str,
+                 missing_params: Set[str],
+                 *args):
+        super().__init__(*args)
+        self._param_name = param_name
+        self._missing_params = missing_params
+
+    def __str__(self):
+        return (f'{self._param_name} has the following inferences that are '
+                f'missing: {self._missing_params}')
 
 
 class InterDependencies_:
@@ -433,16 +453,12 @@ class InterDependencies_:
             deps = set(self._deps_names.get(param, ()))
             missing_deps = deps.difference(params)
             if missing_deps:
-                raise DependencyError(f'{param} has the following '
-                                      'dependencies that are missing: '
-                                      f'{missing_deps}')
+                raise DependencyError(param, missing_deps)
 
             inffs = set(self._infs_names.get(param, ()))
             missing_inffs = inffs.difference(params)
             if missing_inffs:
-                raise InferenceError(f'{param} has the following '
-                                     'inferences that are missing: '
-                                     f'{missing_inffs}')
+                raise InferenceError(param, missing_inffs)
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
