@@ -197,10 +197,7 @@ class InterDependencies_:
         """
         if ps not in self:
             raise ValueError(f'Unknown parameter: {ps}')
-        try:
-            return self._dependencies_inv[ps]
-        except KeyError:
-            return ()
+        return self._dependencies_inv.get(ps, ())
 
     def what_is_inferred_from(self,
                               ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
@@ -217,10 +214,7 @@ class InterDependencies_:
         """
         if ps not in self:
             raise ValueError(f'Unknown parameter: {ps}')
-        try:
-            return self._inferences_inv[ps]
-        except KeyError:
-            return ()
+        return self._inferences_inv.get(ps, ())
 
     def serialize(self) -> Dict[str, Any]:
         """
@@ -488,6 +482,7 @@ class InterDependencies_:
 
     def __getitem__(self, name: str) -> ParamSpecBase:
         return self._id_to_paramspec[name]
+
 
 class InterDependencies:
     """
