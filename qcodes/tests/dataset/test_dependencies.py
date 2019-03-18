@@ -279,6 +279,9 @@ def test_validate_subset(some_paramspecbases):
     with pytest.raises(DependencyError):
         idps.validate_subset((ps1,))
 
+    with pytest.raises(DependencyError):
+        idps.validate_subset((ps1, ps2, ps4))
+
     with pytest.raises(InferenceError):
         idps.validate_subset((ps2, ps3))
 
