@@ -430,14 +430,14 @@ class InterDependencies_:
             if ps is None:
                 raise ValueError(f'Unknown parameter: {param}')
 
-            deps = set(p.name for p in self.dependencies.get(ps, ()))
+            deps = set(self._deps_names.get(param, ()))
             missing_deps = deps.difference(params)
             if missing_deps:
                 raise DependencyError(f'{param} has the following '
                                       'dependencies that are missing: '
                                       f'{missing_deps}')
 
-            inffs = set(p.name for p in self.inferences.get(ps, ()))
+            inffs = set(self._infs_names.get(param, ()))
             missing_inffs = inffs.difference(params)
             if missing_inffs:
                 raise InferenceError(f'{param} has the following '
