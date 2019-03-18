@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import (Dict, Any, Tuple, Optional, FrozenSet, List,
+from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     cast, Type, Sequence)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
@@ -86,15 +86,15 @@ class InterDependencies_:
         Helper function to invert a ParamSpecTree. Will turn {A: (B, C)} into
         {B: (A,), C: (A,)}
         """
-        inverted: ParamSpecTree = {}
-        indeps: List[ParamSpecBase] = []
+        indeps: Set[ParamSpecBase] = set()
         for indep_tup in tree.values():
-            for indep in indep_tup:
-                indeps.append(indep)
-        for indep in set(indeps):
-            deps = tuple(ps for ps in tree
-                         if indep in tree[ps])
+            indeps.update(indep_tup)
+
+        inverted: ParamSpecTree = {}
+        for indep in indeps:
+            deps = tuple(ps for ps in tree if indep in tree[ps])
             inverted[indep] = deps
+
         return inverted
 
     @staticmethod
