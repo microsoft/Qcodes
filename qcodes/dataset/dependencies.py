@@ -100,8 +100,8 @@ class InterDependencies_:
     @staticmethod
     def _remove_duplicates(tree: ParamSpecTree) -> None:
         """
-        Helper function to remove duplicate entries from a ParamSpecTree. Will
-        turn {A: (B, B, C)} into {A: (B, C)}
+        Helper function to remove duplicate entries from a ParamSpecTree while
+        preserving order. Will turn {A: (B, B, C)} into {A: (B, C)}
         """
         for ps, tup in tree.items():
             specs: List[ParamSpecBase] = []
