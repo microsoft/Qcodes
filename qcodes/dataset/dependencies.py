@@ -412,19 +412,17 @@ class InterDependencies_:
             ps = self._id_to_paramspec[param]
             deps = set(p.name for p in self.dependencies.get(ps, ()))
             if deps.difference(params):
-                # pylint: disable=unused-variable
                 missing_names = [p for p in deps.difference(params)]
                 raise DependencyError(f'{param} has the following '
                                       'dependencies that are missing: '
-                                      'f{missing_names}')
+                                      f'{missing_names}')
 
             inffs = set(p.name for p in self.inferences.get(ps, ()))
             if inffs.difference(params):
-                # pylint: disable=unused-variable
                 missing_names = [p for p in inffs.difference(params)]
                 raise InferenceError(f'{param} has the following '
                                      'inferences that are missing: '
-                                     'f{missing_names}')
+                                     f'{missing_names}')
 
     @classmethod
     def deserialize(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
