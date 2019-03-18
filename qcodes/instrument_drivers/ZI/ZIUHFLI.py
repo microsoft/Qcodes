@@ -1259,7 +1259,7 @@ class ZIUHFLI(Instrument):
                         label='Signal output amplitude',
                         set_cmd=partial(self._sigout_setter,
                                         sigout - 1, 1, 'amplitudes',
-                                        output_mode=output_mapping[sigout]),
+                                        output_mode=modeout - 1),
                         get_cmd=partial(self._sigout_getter,
                                         sigout - 1, 1, 'amplitudes',
                                         output_mode=modeout - 1),
