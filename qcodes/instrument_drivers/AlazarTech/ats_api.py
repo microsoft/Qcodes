@@ -21,11 +21,13 @@ from qcodes.instrument.parameter import _BaseParameter as Parameter
 U8 = ctypes.c_uint8
 U16 = ctypes.c_uint16
 U32 = ctypes.c_uint32
+C_LONG = ctypes.c_long
 HANDLE = ctypes.c_void_p
 
 POINTER_c_uint8 = Any
 POINTER_c_uint16 = Any
 POINTER_c_uint32 = Any
+POINTER_c_long = Any
 
 
 class AlazarATSAPI(WrappedDll):
@@ -168,7 +170,27 @@ class AlazarATSAPI(WrappedDll):
     
     signatures.update({'AlazarGetBoardBySystemID': Signature(
         argument_types=[U32, U32], return_type=HANDLE)})
-    
+
+    def get_parameter(self, handle: int, channel: int,
+                      parameter: int,
+                      ret_value: POINTER_c_long) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarGetParameter', handle, channel,
+            parameter, ret_value)
+
+    signatures.update({'AlazarGetParameter': Signature(
+        argument_types=[HANDLE, U8, U32, POINTER(C_LONG)])})
+
+    def set_parameter(self, handle: int, channel: int,
+                      parameter: int,
+                      value: int) -> ReturnCode:
+        return self._sync_dll_call(
+            'AlazarSetParameter', handle, channel,
+            parameter, value)
+
+    signatures.update({'AlazarSetParameter': Signature(
+        argument_types=[HANDLE, U8, U32, C_LONG])})
+
     def set_capture_clock(self,
                           handle: int,
                           source_id: Union[int, Parameter],
