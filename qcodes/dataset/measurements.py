@@ -739,7 +739,7 @@ class Measurement:
                 this should be left blank.
             paramtype: type of the parameter, i.e. the SQL storage class,
                 If None the paramtype will be inferred from the parameter type
-                and the validator of the supplied parameter" to be fool-proof.
+                and the validator of the supplied parameter.
         """
         if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
