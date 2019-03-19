@@ -113,9 +113,11 @@ def test_saving_numeric_values_as_text(numeric_type):
     try:
         value = numeric_type(2)
 
+        gottype = np.array(value).dtype
+
         msg = re.escape(f'Parameter {p.name} is of type '
                         f'"{p.type}", but got a result of '
-                        f'type {numeric_type} ({value}).')
+                        f'type {gottype} ({value}).')
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
     finally:
