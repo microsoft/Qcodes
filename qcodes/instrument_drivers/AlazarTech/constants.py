@@ -519,3 +519,83 @@ class RecordAverageOption(IntEnum):
 LED_OFF = 0
 LED_ON = 1
 
+
+class Parameters(IntEnum):
+    """
+    Parameters suitable to be used with `` AlazarSetParameter`` and/or
+    ``AlazarGetParameter``
+    Defined by ``ALAZAR_PARAMETERS`` in ``AlazarCmd.h``
+    """
+    DATA_WIDTH = 0x10000009
+    # The number of bits per sample
+    SETGET_ASYNC_BUFFSIZE_BYTES = 0x10000039
+    # The size of API-allocated DMA buffers in bytes
+    SETGET_ASYNC_BUFFCOUNT = 0x10000040
+    # The number of API-allocated DMA buffers
+    GET_ASYNC_BUFFERS_PENDING = 0x10000050
+    # DMA buffers currently posted to the board
+    GET_ASYNC_BUFFERS_PENDING_FULL = 0x10000051
+    # DMA buffers waiting to be processed by the application
+    GET_ASYNC_BUFFERS_PENDING_EMPTY = 0x10000052
+    # DMA buffers waiting to be filled by the board
+    SET_DATA_FORMAT = 0x10000041
+    # 0 if the data format is unsigned, and 1 otherwise
+    GET_DATA_FORMAT = 0x10000042
+    # 0 if the data format is unsigned, and 1 otherwise
+    GET_SAMPLES_PER_TIMESTAMP_CLOCK = 0x10000044
+    # Number of samples per timestamp clock
+    GET_RECORDS_CAPTURED = 0x10000045
+    # Records captured since the start of the acquisition (single-port)
+    # or buffer (dual-port)
+    ECC_MODE = 0x10000048
+    # ECC mode. Member of ECC_MODES enum
+    GET_AUX_INPUT_LEVEL = 0x10000049
+    # Read the TTL level of the AUX connector.
+    # Member of  AUX_INPUT_LEVELS enum
+    GET_CHANNELS_PER_BOARD = 0x10000070
+    # Number of analog channels supported by this digitizer
+    GET_FPGA_TEMPERATURE = 0x10000080
+    # Current FPGA temperature in degrees Celcius. Only supported by
+    # PCIe digitizers.
+    PACK_MODE = 0x10000072
+    # Get/Set the pack mode as a member of PACK_MODES enum
+    SET_SINGLE_CHANNEL_MODE = 0x10000043
+    # Reserve all the on-board memory to the channel passed as
+    # argument. Single-port only.
+    API_FLAGS = 0x10000090
+    # State of the API logging as a member of
+    # API_TRACE_STATES enum
+
+class ECC_MODES(IntEnum):
+    """
+    Values for ECC_MODE of ``Parameters``
+    Defined by ``ALAZAR_ECC_MODES`` in ``AlazarCmd.h``
+    """
+    ECC_DISABLE = 0  # Disable
+    ECC_ENABLE = 1  #  Enable
+
+class PACK_MODES(IntEnum):
+    """
+    Values for PACK_MODE of ``Parameters``
+    Defined by ``ALAZAR_PACK_MODES`` in ``AlazarCmd.h``
+    """
+    PACK_DEFAULT = 0 # Default pack mode of the board
+    PACK_8_BITS_PER_SAMPLE = 1 # 8 bits per sample
+    PACK_12_BITS_PER_SAMPLE = 2 #  12 bits per sample
+
+class AUX_INPUT_LEVELS(IntEnum):
+    """
+    Values for GET_AUX_INPUT_LEVEL of ``Parameters``
+    Defined by ``ALAZAR_AUX_INPUT_LEVELS`` in ``AlazarCmd.h``
+    """
+    AUX_INPUT_LOW = 0 # Low level
+    AUX_INPUT_HIGH = 1 # High level
+
+
+class API_TRACE_STATES(IntEnum):
+    """
+    Values for API_FLAGS of ``Parameters``
+    Defined by ``ALAZAR_API_TRACE_STATES`` in ``AlazarCmd.h``
+    """
+    API_ENABLE_TRACE = 1 # Trace enabled
+    API_DISABLE_TRACE = 0 # Trace disabled
