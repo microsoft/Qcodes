@@ -133,7 +133,7 @@ class DataSaver:
         # add_result with the arguments in any particular order, i.e. NOT
         # enforcing that setpoints come before dependent variables.
 
-        results_dict: Dict[ParamSpecBase, Any] = {}
+        results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
         for partial_result in res_tuple:
             parameter = partial_result[0]
@@ -159,7 +159,7 @@ class DataSaver:
 
     def _unpack_partial_result(
             self,
-            partial_result: res_type) -> Dict[ParamSpecBase, values_type]:
+            partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack a partial result (not containing ArrayParameters or
         MultiParameters) into a standard results dict form and return that
@@ -172,10 +172,10 @@ class DataSaver:
             raise ValueError('Can not add result for parameter '
                              f'{param}, no such parameter registered '
                              'with this measurement.')
-        return {parameter: values}
+        return {parameter: np.array(values)}
 
     def _unpack_arrayparameter(
-        self, partial_result: res_type) -> Dict[ParamSpecBase, values_type]:
+        self, partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack a partial result containing an arrayparameter into a standard
         results dict form and return that dict
@@ -194,7 +194,7 @@ class DataSaver:
                              f'{array_param}, no such parameter registered '
                              'with this measurement.')
 
-        res_dict = {main_parameter: values_array}
+        res_dict = {main_parameter: np.array(values_array)}
 
         sp_names = array_param.setpoint_full_names
         fallback_sp_name = f"{array_param.full_name}_setpoint"
@@ -207,7 +207,7 @@ class DataSaver:
         return res_dict
 
     def _unpack_multiparameter(
-            self, partial_result: res_type) -> Dict[ParamSpecBase, Any]:
+            self, partial_result: res_type) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the subarrays and setpoints from a MultiParameter and
         into a standard results dict form and return that
@@ -241,7 +241,7 @@ class DataSaver:
                                  'no such parameter registered '
                                  'with this measurement.')
 
-            result_dict.update({paramspec: data[i]})
+            result_dict.update({paramspec: np.array(data[i])})
             if shape != ():
                 # array parameter like part of the multiparameter
                 # need to find setpoints too
@@ -264,7 +264,7 @@ class DataSaver:
     def _unpack_setpoints_from_parameter(
         self, parameter: _BaseParameter, setpoints: Sequence,
         sp_names: Sequence[str], fallback_sp_name: str
-            ) -> Dict[ParamSpecBase, values_type]:
+            ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the setpoints and their values from a parameter with setpoints
         into a standard results dict form and return that dict
@@ -337,63 +337,18 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-            results_dict: Dict[ParamSpecBase, values_type]) -> None:
+            results_dict: Dict[ParamSpecBase, np.ndarray]) -> None:
         """
         Validate the type of the results
         """
 
-        def basic_type_validator(
-                ps_name: str, vals: Any, expec_type: str) -> None:
+        allowed_kinds = {'numeric': 'iuf', 'text': 'S', 'array': 'iuf'}
 
-            if not isinstance(vals, allowed_types[expec_type]):
-                raise ValueError(f'Parameter {ps_name} is of type '
-                                 f'"{expec_type}", but got a result of '
-                                 f'type {type(vals)} ({vals}).')
-
-        def array_type_validator(
-                ps_name: str,
-                vals: Union[np.ndarray, tuple, list],
-                expec_dtype: str) -> None:
-
-            if isinstance(vals, np.ndarray):
-                if vals.dtype not in allowed_types[expec_dtype]:
-                    raise ValueError(f'Parameter {ps_name} expects values of '
-                                     f'type "{expec_dtype}", but got a result '
-                                     f'of type {vals.dtype}.')
-            else:
-                seq_types = list(isinstance(val, allowed_types[expec_dtype])
-                                 for val in vals)
-                if not all(seq_types):
-                    wrong_val = seq_types.index(False)
-                    raise ValueError(f'Parameter {ps_name} expects values of '
-                                     f'type "{expec_dtype}", but got a result '
-                                     f'of type {type(wrong_val)}.')
-
-        # Note that we allow 'numeric' input to be of type np.ndarray, if
-        # the shape of the input is ()
-        allowed_types = {'numeric': (int, float, np.int, np.int8,
-                                     np.int16, np.int32, np.int64,
-                                     np.float, np.float16, np.float32,
-                                     np.float64, np.ndarray),
-                         'text': (str,),
-                         'array': (np.ndarray, tuple, list)}
         for ps, vals in results_dict.items():
-            # we allow for 'numeric' and 'text' parameters to get results of
-            # Sequence[scalar_type] or Sequence[str], so we must handle that as
-            # well as results with the "correct" type
-            if ps.type == 'numeric':
-                if np.shape(vals) == ():
-                    basic_type_validator(ps.name, vals, 'numeric')
-                else:
-                    array_type_validator(ps.name, np.array(vals), 'numeric')
-            elif ps.type == 'text':
-                if isinstance(vals, (list, tuple)):
-                    array_type_validator(ps.name, vals, 'text')
-                else:
-                    basic_type_validator(ps.name, vals, 'text')
-            elif ps.type == 'array':
-                basic_type_validator(ps.name, vals, 'array')
-                array_type_validator(ps.name, vals, 'numeric')
+                if not vals.dtype.kind in allowed_kinds[ps.type]:
+                    raise ValueError(f'Parameter {ps.name} is of type '
+                                     f'"{ps.type}", but got a result of '
+                                     f'type {vals.dtype} ({vals}).')
 
     def _enqueue_results(
             self, result_dict: Dict[ParamSpecBase, values_type]) -> None:
@@ -450,21 +405,25 @@ class DataSaver:
         parameter. The results are assumed to already have been validated for
         type and shape
         """
-        def reshaper(val):
-            if np.shape(val) == () and isinstance(val, np.ndarray):
-                return np.reshape(val, (1,))
-            elif isinstance(val, (tuple, list)):
-                return np.array(val)
-            else:
-                return val
+        def reshaper(val, paramtype):
+            if paramtype == 'numeric':
+                return float(val)
+            elif paramtype == 'text':
+                return str(val)
+            elif paramtype == 'array':
+                if val.shape:
+                    return val
+                else:
+                    return np.reshape(val, (1,))
 
-        res_dict = {ps.name: reshaper(result_dict[ps]) for ps in all_params}
+        res_dict = {ps.name: reshaper(result_dict[ps], ps.type)
+                    for ps in all_params}
 
         return [res_dict]
 
     @staticmethod
     def _finalize_res_dict_numeric(
-            result_dict: Dict[ParamSpecBase, values_type],
+            result_dict: Dict[ParamSpecBase, np.ndarray],
             toplevel_param: ParamSpecBase,
             inff_params: Set[ParamSpecBase],
             deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
@@ -475,19 +434,13 @@ class DataSaver:
         case of np.array(1) kind of values
         """
 
-        def array_to_scalar(val):
-            if isinstance(val, np.ndarray):
-                return float(val)
-            else:
-                return val
-
         res_list: List[Dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
-        toplevel_shape = np.shape(result_dict[toplevel_param])
+        toplevel_shape = result_dict[toplevel_param].shape
         if toplevel_shape == ():
             # In the case of a scalar, life is reasonably simple
-            res_list = [{ps.name: array_to_scalar(result_dict[ps])
+            res_list = [{ps.name: float(result_dict[ps])
                          for ps in all_params}]
         else:
             # We first massage all values into np.arrays of the same
@@ -495,18 +448,18 @@ class DataSaver:
             flat_results: Dict[str, np.ndarray]= {}
 
             toplevel_val = result_dict[toplevel_param]
-            flat_results[toplevel_param.name] = np.array(toplevel_val).ravel()
+            flat_results[toplevel_param.name] = toplevel_val.ravel()
             N = len(flat_results[toplevel_param.name])
             for dep in deps_params:
-                if np.shape(result_dict[dep]) == ():
+                if result_dict[dep].shape == ():
                     flat_results[dep.name] = np.repeat(result_dict[dep], N)
                 else:
-                    flat_results[dep.name] = np.array(result_dict[dep]).ravel()
+                    flat_results[dep.name] = result_dict[dep].ravel()
             for inff in inff_params:
                 if np.shape(result_dict[inff]) == ():
                     flat_results[inff.name] = np.repeat(result_dict[dep], N)
                 else:
-                    flat_results[inff.name] = np.array(result_dict[inff]).ravel()
+                    flat_results[inff.name] = result_dict[inff].ravel()
 
             # And then put everything into the list
 
@@ -517,7 +470,7 @@ class DataSaver:
 
     @staticmethod
     def _finalize_res_dict_standalones(
-            result_dict: Dict[ParamSpecBase, values_type]
+            result_dict: Dict[ParamSpecBase, np.ndarray]
             ) -> List[Dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
@@ -530,10 +483,10 @@ class DataSaver:
                 else:
                     res_list += [{param.name: value}]
             elif param.type == 'numeric':
-                if isinstance(value, (tuple, list, np.ndarray)):
-                    res_list += [{param.name: string} for string in value]
+                if value.shape:
+                    res_list += [{param.name: number} for number in value]
                 else:
-                    res_list += [{param.name: value}]
+                    res_list += [{param.name: float(value)}]
             else:
                 res_list += [{param.name: value}]
 

@@ -298,21 +298,6 @@ def test_unregister_parameter(DAC, DMM):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_adding_scalars_as_array_raises(DAC):
-    """
-    Test that adding scalars to an array type parameter raises
-    """
-    meas = Measurement()
-    meas.register_parameter(DAC.ch1, paramtype='array')
-    meas.register_parameter(DAC.ch2, paramtype='array')
-
-    with meas.run() as datasaver:
-        with pytest.raises(ValueError):
-            datasaver.add_result((DAC.ch1, DAC.ch1()),
-                                 (DAC.ch2, DAC.ch2()))
-
-
-@pytest.mark.usefixtures("experiment")
 def test_mixing_array_and_numeric(DAC):
     """
     Test that mixing array and numeric types is okay
