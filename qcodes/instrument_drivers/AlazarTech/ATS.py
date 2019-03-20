@@ -3,7 +3,7 @@ import logging
 import time
 import os
 import warnings
-from typing import List, Dict, Union, Sequence
+from typing import List, Dict, Union, Sequence, Optional
 from contextlib import contextmanager
 
 import numpy as np
@@ -400,7 +400,7 @@ class AlazarTech_ATS(Instrument):
             external_startcapture:
             enable_record_headers:
             alloc_buffers:
-            fifo_only_streaming:
+            fifo_only_streaming:
             interleave_samples:
             get_processed_data:
             allocated_buffers:
