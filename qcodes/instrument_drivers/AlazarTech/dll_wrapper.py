@@ -101,7 +101,7 @@ class DllWrapperMeta(type):
     # use the ``dll_path`` argument which the ``type`` superclass obviously
     # does not have in its ``__call__`` method.
     def __call__(  # type: ignore
-            cls, dll_path: int):
+            cls, dll_path: str):
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
