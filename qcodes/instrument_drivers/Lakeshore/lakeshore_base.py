@@ -207,7 +207,12 @@ class BaseOutput(InstrumentChannel):
                                'before automatically setting the range '
                                '(e.g. inst.range_limits([0.021, 0.1, 0.2, '
                                '1.1, 2, 4, 8]))')
-        i = bisect(self.range_limits.get_latest(), temperature)
+        range_limits = self.range_limits.get_latest()
+        i = bisect(range_limits, temperature)
+        # if temperature is larger than the highest range, then bisect returns
+        # an index that is +1 from the needed index, hence we need to take
+        # care of this corner case here:
+        i = min(i, len(range_limits) - 1)
         # there is a `+1` because `self.RANGES` includes `'off'` as the first
         # value.
         orange = self.INVERSE_RANGES[i+1] # this is `output range` not the fruit
@@ -279,7 +284,7 @@ class BaseOutput(InstrumentChannel):
             raise ValueError(f"Waiting until the setpoint is reached requires "
                              f"channel's {active_channel._channel!r} units to "
                              f"be set to 'kelvin'.")
-        
+
         t_setpoint = self.setpoint()
 
         time_now = time.perf_counter()
