@@ -57,9 +57,6 @@ class Output_336_CurrentSource(BaseOutput):
         self.I.vals = vals.Numbers(0.1, 1000)
         self.D.vals = vals.Numbers(0, 200)
 
-        self.range_limits.vals = vals.Sequence(
-            vals.Numbers(0, 400), length=2, require_sorted=True)
-
 
 class Output_336_VoltageSource(BaseOutput):
     """
@@ -83,10 +80,6 @@ class Output_336_VoltageSource(BaseOutput):
 
     def __init__(self, parent, output_name, output_index):
         super().__init__(parent, output_name, output_index, has_pid=False)
-
-        self.range_limits.vals = vals.Sequence(
-            vals.Numbers(0, 400), length=2, require_sorted=True)
-
 
 
 class Model_336_Channel(BaseSensorChannel):
