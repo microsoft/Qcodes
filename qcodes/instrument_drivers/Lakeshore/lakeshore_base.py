@@ -268,9 +268,12 @@ class BaseOutput(InstrumentChannel):
                                    self.wait_equilibration_time.get_latest())
 
         active_channel_id = self.input_channel()
-        active_channel_number_in_list = active_channel_id - 1
-        active_channel = \
-            self.root_instrument.channels[active_channel_number_in_list]
+        active_channel = getattr(
+            self.root_instrument,
+            (self.root_instrument
+                .input_channel_parameter_values_to_channel_name_on_instrument[active_channel_id]
+            )
+        )
 
         if active_channel.units() != 'kelvin':
             raise ValueError(f"Waiting until the setpoint is reached requires "
@@ -445,6 +448,8 @@ class LakeshoreBase(VisaInstrument):
     # "B" is referred to in instrument commands as '2', then this dictionary
     # will contain {'B': '2'} entry.
     channel_name_command: Dict[str, str] = {}
+
+    input_channel_parameter_values_to_channel_name_on_instrument: Dict[Any, str]
 
     def __init__(self,
                  name: str,

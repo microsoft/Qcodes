@@ -234,11 +234,15 @@ class Model_372(LakeshoreBase):
     """
     channel_name_command: Dict[str, str] = {'ch{:02}'.format(i): str(i)
                                             for i in range(1, 1 + _n_channels)}
+    input_channel_parameter_values_to_channel_name_on_instrument = {
+        i: f'ch{i:02}' for i in range(1, 1 + _n_channels)
+    }
 
     CHANNEL_CLASS = Model_372_Channel
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
+
         self.sample_heater = Output_372(self, 'sample_heater', 0)
         self.warmup_heater = Output_372(self, 'warmup_heater', 1)
         self.analog_heater = Output_372(self, 'analog_heater', 2)
