@@ -1,4 +1,3 @@
-import os
 from typing import ClassVar, Dict, Any
 
 from qcodes.instrument.group_parameter import GroupParameter, Group
