@@ -1,4 +1,4 @@
-from typing import Dict, ClassVar, List
+from typing import Dict, ClassVar, List, Any
 import time
 from bisect import bisect
 
@@ -29,6 +29,8 @@ class BaseOutput(InstrumentChannel):
     MODES: ClassVar[Dict[str, int]] = {}
     RANGES: ClassVar[Dict[str, int]] = {}
 
+    _input_channel_parameter_kwargs: ClassVar[Dict[str, Any]] = {}
+
     def __init__(self, parent, output_name, output_index, has_pid: bool=True) \
             -> None:
         super().__init__(parent, output_name)
@@ -49,8 +51,8 @@ class BaseOutput(InstrumentChannel):
                            docstring='Specifies which measurement input to '
                                      'control from (note that only '
                                      'measurement inputs are available)',
-                           get_parser=int,
-                           parameter_class=GroupParameter)
+                           parameter_class=GroupParameter,
+                           **self._input_channel_parameter_kwargs)
         self.add_parameter('powerup_enable',
                            label='Power-up enable on/off',
                            docstring='Specifies whether the output remains on '

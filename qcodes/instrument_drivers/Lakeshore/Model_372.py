@@ -1,4 +1,4 @@
-from typing import Dict, ClassVar
+from typing import Dict, ClassVar, Any
 
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase, BaseOutput, BaseSensorChannel)
@@ -35,10 +35,12 @@ class Output_372(BaseOutput):
         '31.6mA': 7,
         '100mA': 8}
 
+    _input_channel_parameter_kwargs: ClassVar[Dict[str, Any]] = {
+        'get_parser': int,
+        'vals': vals.Numbers(1, _n_channels)}
+
     def __init__(self, parent, output_name, output_index) -> None:
         super().__init__(parent, output_name, output_index, has_pid=True)
-
-        self.input_channel.vals = vals.Numbers(1, _n_channels)
 
         # Add more parameters for OUTMODE command 
         # and redefine the corresponding group
