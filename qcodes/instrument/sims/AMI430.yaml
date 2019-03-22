@@ -57,6 +57,8 @@ devices:
         getter:
           q: 'COIL?'
           r: '{}'
+        setter:
+          q: "CONF:COIL {}"
 
       field magnet:
         default: 0.123
