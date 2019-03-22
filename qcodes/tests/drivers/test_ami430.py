@@ -48,6 +48,16 @@ def current_driver():
     driver.close()
 
 
+@pytest.fixture(scope='function',
+                params=(True, False))
+def ami430(request):
+    mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
+                      terminator='\n', port=1,
+                      has_current_rating=request.param)
+    yield mag
+    mag.close()
+
+
 # here the original test has a homemade log system that we don't want to
 # reproduce / write tests for. Instead, we use normal logging from our
 # instrument.visa module
@@ -424,3 +434,163 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
 
+
+def test_current_and_field_params_interlink_at_init(ami430):
+    """
+    Test that the values of the ``coil_constant``-dependent parameters
+    are correctly proportional to each other at the initialization of the
+    instrument driver.
+    """
+    coil_constant = ami430.coil_constant()
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__change_current_ramp_limit(ami430):
+    """
+    Test that after changing ``current_ramp_limit``, the values of the 
+    ``field_*`` parameters change proportionally, ``coil__constant`` remains
+    the same. At the end just ensure that the values of the 
+    ``coil_constant``-dependent parameters are correctly proportional to each
+    other.
+    """
+    coil_constant_old = ami430.coil_constant()
+    current_ramp_limit_old = ami430.current_ramp_limit()
+    field_ramp_limit_old = ami430.field_ramp_limit()
+    current_limit_old = ami430.current_limit()
+    field_limit_old = ami430.field_limit()
+
+    current_ramp_limit_new = current_ramp_limit_old * 0.9
+
+    ami430.current_ramp_limit(current_ramp_limit_new)
+
+    field_ramp_limit_new_expected = field_ramp_limit_old * 0.9
+
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    coil_constant = ami430.coil_constant()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    # The following parameters are expected to change
+    np.testing.assert_almost_equal(
+        current_ramp_limit, current_ramp_limit_new)
+    np.testing.assert_almost_equal(
+        field_ramp_limit, field_ramp_limit_new_expected)
+
+    # The following parameters are not expected to change
+    np.testing.assert_almost_equal(
+        coil_constant, coil_constant_old)
+    np.testing.assert_almost_equal(
+        current_limit, current_limit_old)
+    np.testing.assert_almost_equal(
+        field_limit, field_limit_old)
+
+    # Proportions are expected to hold between field and current parameters
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__change_field_ramp_limit(ami430):
+    """
+    Test that after changing ``field_ramp_limit``, the values of the 
+    ``current_*`` parameters change proportionally, ``coil__constant`` remains
+    the same. At the end just ensure that the values of the 
+    ``coil_constant``-dependent parameters are correctly proportional to each
+    other.
+    """
+    coil_constant_old = ami430.coil_constant()
+    current_ramp_limit_old = ami430.current_ramp_limit()
+    field_ramp_limit_old = ami430.field_ramp_limit()
+    current_limit_old = ami430.current_limit()
+    field_limit_old = ami430.field_limit()
+
+    field_ramp_limit_new = field_ramp_limit_old * 0.9
+
+    ami430.field_ramp_limit(field_ramp_limit_new)
+
+    current_ramp_limit_new_expected = current_ramp_limit_old * 0.9
+
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    coil_constant = ami430.coil_constant()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    # The following parameters are expected to change
+    np.testing.assert_almost_equal(
+        field_ramp_limit, field_ramp_limit_new)
+    np.testing.assert_almost_equal(
+        current_ramp_limit, current_ramp_limit_new_expected)
+
+    # The following parameters are not expected to change
+    np.testing.assert_almost_equal(
+        coil_constant, coil_constant_old)
+    np.testing.assert_almost_equal(
+        current_limit, current_limit_old)
+    np.testing.assert_almost_equal(
+        field_limit, field_limit_old)
+
+    # Proportions are expected to hold between field and current parameters
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
+
+
+def test_current_and_field_params_interlink__change_coil_constant(ami430):
+    """
+    Test that after changing ``change_coil_constant``, the values of the 
+    ``current_*`` parameters remain the same while the values of the 
+    ``field_*`` parameters change proportionally. At the end just ensure that
+    the values of the ``coil_constant``-dependent parameters are correctly
+    proportional to each other.
+    """
+    coil_constant_old = ami430.coil_constant()
+    current_ramp_limit_old = ami430.current_ramp_limit()
+    field_ramp_limit_old = ami430.field_ramp_limit()
+    current_limit_old = ami430.current_limit()
+    field_limit_old = ami430.field_limit()
+
+    coil_constant_new = coil_constant_old * 3
+
+    ami430.coil_constant(coil_constant_new)
+
+    current_ramp_limit_new_expected = current_ramp_limit_old
+    current_limit_new_expected = current_limit_old
+    field_ramp_limit_new_expected = field_ramp_limit_old * 3
+    field_limit_new_expected = field_limit_old * 3
+
+    current_ramp_limit = ami430.current_ramp_limit()
+    field_ramp_limit = ami430.field_ramp_limit()
+    coil_constant = ami430.coil_constant()
+    current_limit = ami430.current_limit()
+    field_limit = ami430.field_limit()
+
+    # The following parameters are expected to change
+    np.testing.assert_almost_equal(
+        coil_constant, coil_constant_new)
+    np.testing.assert_almost_equal(
+        current_ramp_limit, current_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(
+        field_ramp_limit, field_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(
+        current_limit, current_limit_new_expected)
+    np.testing.assert_almost_equal(
+        field_limit, field_limit_new_expected)
+
+    # Proportions are expected to hold between field and current parameters
+    np.testing.assert_almost_equal(
+        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(
+        field_limit, current_limit*coil_constant)
