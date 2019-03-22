@@ -53,7 +53,7 @@ devices:
          # q: "CONF:FIELD:TARG {}"
 
       coil constant:
-        default: 1
+        default: 2.0
         getter:
           q: 'COIL?'
           r: '{}'
