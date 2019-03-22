@@ -1,5 +1,7 @@
 spec: "1.0"
+
 devices:
+
   device 1:
     eom:
       GPIB INSTR:
@@ -97,7 +99,6 @@ devices:
         setter:
           q: "QU {}"
 
-
       persistent mode:
         default: 0
         getter:
@@ -129,7 +130,9 @@ devices:
           q: "CONF:CURR:RATING {}"
 
 
-resources:  # we always need three power supplies; one for each axis. For the testing we add a few more
+# we always need three power supplies, one for each axis.
+# For the testing we add a few more.
+resources:
   GPIB::1::INSTR:
     device: device 1
   GPIB::2::INSTR:
