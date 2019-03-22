@@ -6,10 +6,11 @@ from hypothesis import given, settings
 from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
 import logging
-from typing import List, Dict
+from typing import List
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, AMI430Warning
+from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, \
+    AMI430Warning
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.math.field_vector import FieldVector
 
@@ -88,6 +89,7 @@ random_coordinates = {
         floats(min_value=0, max_value=1)  # z
     )
 }
+
 
 @given(set_target=random_coordinates["cartesian"])
 @settings(max_examples=10)
@@ -264,7 +266,8 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
 
         g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
         if g is None:
-            raise RuntimeError(f"No match found in {msg!r} when getting ramp down order")
+            raise RuntimeError(
+                f"No match found in {msg!r} when getting ramp down order")
         name = g.groups()[0]
         order.append(name)
 
@@ -386,12 +389,13 @@ def test_warning_increased_max_ramp_rate():
     # Increasing the maximum ramp rate should raise a warning
     target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.warns(AMI430Warning, match="Increasing maximum ramp rate") as excinfo:
+    with pytest.warns(AMI430Warning,
+                      match="Increasing maximum ramp rate") as excinfo:
         inst = AMI430_VISA("testing_increased_max_ramp_rate",
                            address='GPIB::4::INSTR', visalib=visalib,
                            terminator='\n', port=1,
                            current_ramp_limit=target_ramp_rate)
-        assert len(excinfo) >= 1 # Check we at least one warning.
+        assert len(excinfo) >= 1  # Check we at least one warning.
         inst.close()
 
 
@@ -414,7 +418,7 @@ def test_ramp_rate_exception(current_driver):
 
 def test_blocking_ramp_parameter(current_driver, caplog):
 
-    assert current_driver.block_during_ramp() == True
+    assert current_driver.block_during_ramp() is True
 
     log_name = 'qcodes.instrument.base'
 
@@ -425,7 +429,8 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         messages = [record.message for record in caplog.records]
         assert messages[-1] == '[z(AMI430_VISA)] Finished blocking ramp'
-        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
+        assert messages[-6] == \
+            '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
 
         caplog.clear()
         current_driver.block_during_ramp(False)
@@ -456,9 +461,9 @@ def test_current_and_field_params_interlink_at_init(ami430):
 
 def test_current_and_field_params_interlink__change_current_ramp_limit(ami430):
     """
-    Test that after changing ``current_ramp_limit``, the values of the 
+    Test that after changing ``current_ramp_limit``, the values of the
     ``field_*`` parameters change proportionally, ``coil__constant`` remains
-    the same. At the end just ensure that the values of the 
+    the same. At the end just ensure that the values of the
     ``coil_constant``-dependent parameters are correctly proportional to each
     other.
     """
@@ -503,9 +508,9 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(ami430):
 
 def test_current_and_field_params_interlink__change_field_ramp_limit(ami430):
     """
-    Test that after changing ``field_ramp_limit``, the values of the 
+    Test that after changing ``field_ramp_limit``, the values of the
     ``current_*`` parameters change proportionally, ``coil__constant`` remains
-    the same. At the end just ensure that the values of the 
+    the same. At the end just ensure that the values of the
     ``coil_constant``-dependent parameters are correctly proportional to each
     other.
     """
@@ -550,8 +555,8 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(ami430):
 
 def test_current_and_field_params_interlink__change_coil_constant(ami430):
     """
-    Test that after changing ``change_coil_constant``, the values of the 
-    ``current_*`` parameters remain the same while the values of the 
+    Test that after changing ``change_coil_constant``, the values of the
+    ``current_*`` parameters remain the same while the values of the
     ``field_*`` parameters change proportionally. At the end just ensure that
     the values of the ``coil_constant``-dependent parameters are correctly
     proportional to each other.
