@@ -38,8 +38,9 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert 0.0 == smu.res()
 
-        assert 'current' == smu.mode()
-        smu.mode('voltage')
+        assert 'voltage' == smu.src_mode()
+        smu.src_mode('current')
+        assert 'current' == smu.src_mode()
 
         assert 'off' == smu.output()
         smu.output('on')
@@ -64,3 +65,19 @@ def test_smu_channels_and_their_parameters(driver):
 
         assert 0.0 == smu.limiti()
         smu.limiti(2.3)
+
+        assert 1 == smu.count()
+        smu.count(10)
+        assert 10 == smu.count()
+
+        assert 'on' == smu.measureautorange_i()
+        smu.measureautorange_i('off')
+        assert 'off' == smu.measureautorange_i()
+
+        assert 'on' == smu.measureautorange_v()
+        smu.measureautorange_v('off')
+        assert 'off' == smu.measureautorange_v()
+
+        assert 0 == smu.interval()
+        smu.interval(1e-3)
+        assert 1e-3 == smu.interval()

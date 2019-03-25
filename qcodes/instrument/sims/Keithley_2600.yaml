@@ -40,14 +40,14 @@ devices:
               r: "{}"
             type: float
 
-          mode:
-            default: 0.0
+          src_mode:
+            default: 1
             getter:
               q: "print({ch_id}.source.func)"
               r: "{}"
             setter:
               q: "{ch_id}.source.func={}"
-            type: float
+            type: int
 
           output:
             default: 0.0
@@ -67,6 +67,24 @@ devices:
               q: "{ch_id}.measure.nplc={}"
             type: float
 
+          interval:
+            default: 0.0
+            getter:
+              q: "print({ch_id}.measure.interval)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.interval={}"
+            type: float
+
+          count:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.count)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.count={}"
+            type: int
+
           sourcerange_v:
             default: 0.0
             getter:
@@ -84,6 +102,24 @@ devices:
             setter:
               q: "{ch_id}.measure.rangev={}"
             type: float
+
+          measureautorange_v:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangev)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.autorangev={}"
+            type: int
+
+          measureautorange_i:
+            default: 1
+            getter:
+              q: "print({ch_id}.measure.autorangei)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.measure.autorangei={}"
+            type: int
 
           sourcerange_i:
             default: 0.0

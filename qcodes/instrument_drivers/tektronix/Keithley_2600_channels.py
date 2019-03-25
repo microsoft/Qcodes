@@ -126,7 +126,7 @@ class KeithleyChannel(InstrumentChannel):
                            label='Resistance',
                            unit='Ohm')
 
-        self.add_parameter('mode',
+        self.add_parameter('src_mode',
                            get_cmd=f'{channel}.source.func',
                            get_parser=float,
                            set_cmd=f'{channel}.source.func={{:d}}',
@@ -148,6 +148,28 @@ class KeithleyChannel(InstrumentChannel):
                            docstring='Number of power line cycles, used '
                                      'to perform measurements',
                            vals=vals.Numbers(0.001, 25))
+
+        self.add_parameter('count',
+                           label='number of samples',
+                           set_cmd=f'{channel}.measure.count={{}}',
+                           get_cmd=f'{channel}.measure.count',
+                           get_parser=int,
+                           docstring='This attribute controls the number of '
+                                     'measurements taken any time a measurement'
+                                     ' is requested.',
+                           vals=vals.Numbers(1, 140000))
+
+        self.add_parameter('interval',
+                           label='interval between multiple measurements',
+                           set_cmd=f'{channel}.measure.interval={{}}',
+                           get_cmd=f'{channel}.measure.interval',
+                           get_parser=float,
+                           docstring='This attribute sets the time interval '
+                                     'between measurements when '
+                                     'smuX.measure.count is set to a value '
+                                     'greater than 1.',
+                           vals=vals.Numbers(0, 1))
+
         # volt range
         # needs get after set (WilliamHPNielsen): why?
         self.add_parameter('sourcerange_v',
@@ -172,6 +194,32 @@ class KeithleyChannel(InstrumentChannel):
                                      'source current this will have no effect, '
                                      'set `sourcerange_v` instead',
                            vals=vals.Enum(*vranges[self.model]))
+        self.add_parameter('measureautorange_v',
+                           label='voltage measure autorange',
+                           get_cmd=f'{channel}.measure.autorangev',
+                           set_cmd=f'{channel}.measure.autorangev={{}}',
+                           val_mapping = {
+                               'off': 0,
+                               'on': 1,
+                               'FOLLOW_LIMIT': 2
+                           },
+                           docstring='indicates the measurement autorange '
+                                     'state',
+                           vals=vals.Enum(0,1,2))
+
+        self.add_parameter('measureautorange_i',
+                           label='voltage measure autorange',
+                           get_cmd=f'{channel}.measure.autorangei',
+                           set_cmd=f'{channel}.measure.autorangei={{}}',
+                           val_mapping={
+                               'off': 0,
+                               'on': 1,
+                               'FOLLOW_LIMIT': 2
+                           },
+                           docstring='indicates the measurement autorange '
+                                     'state',
+                           vals=vals.Enum(0,1,2))
+
         # current range
         # needs get after set
         self.add_parameter('sourcerange_i',
