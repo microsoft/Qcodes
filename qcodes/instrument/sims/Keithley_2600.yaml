@@ -10,6 +10,16 @@ devices:
       GPIB INSTR:
         q: "\n"
         r: "\n"
+
+    properties:
+      format:
+        default: "format.ASCII"
+        getter:
+          q: "print(format.data)"
+          r: "{}"
+        setter:
+          q: "format.data = {}"
+
     channels:
       card:
         ids: ['smua', 'smub']
@@ -18,7 +28,7 @@ devices:
           volt:
             default: 0.0
             getter:
-              q: "print({ch_id}.measure.v())"
+              q: "print({ch_id}.measure.v({ch_id}.nvbuffer1))"
               r: "{}"
             setter:
               q: "{ch_id}.source.levelv={}"
@@ -27,7 +37,7 @@ devices:
           curr:
             default: 0.0
             getter:
-              q: "print({ch_id}.measure.i())"
+              q: "print({ch_id}.measure.i({ch_id}.nvbuffer1))"
               r: "{}"
             setter:
               q: "{ch_id}.source.leveli={}"
@@ -36,7 +46,7 @@ devices:
           res:
             default: 0.0
             getter:
-              q: "print({ch_id}.measure.r())"
+              q: "print({ch_id}.measure.r({ch_id}.nvbuffer1))"
               r: "{}"
             type: float
 
@@ -157,11 +167,46 @@ devices:
               q: "{ch_id}.source.limiti={}"
             type: float
 
+          nvbuffer1_append:
+            default: 0
+            getter:
+              q: "print({ch_id}.nvbuffer1.appendmode)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.nvbuffer1.appendmode = {}"
+              type: int
+
+          nvbuffer1_collectsourcevalues:
+            default: 0
+            getter:
+              q: "print({ch_id}.nvbuffer1.collectsourcevalues)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.nvbuffer1.collectsourcevalues = {}"
+              type: int
+
+
+          nvbuffer1_collecttimestamp:
+            default: 0
+            getter:
+              q: "print({ch_id}.nvbuffer1.collecttimestamps)"
+              r: "{}"
+            setter:
+              q: "{ch_id}.nvbuffer1.collecttimestamps = {}"
+              type: int
+
+          nvbuffer1_readings:
+            default: "1,2,3,4,5"
+            getter:
+              q: "printbuffer(1, {ch_id}.nvbuffer1.n, {ch_id}.nvbuffer1.readings)"
+              r: "{}"
+
     dialogues:
       - q: "*IDN?"
         r: "Keithley Instruments Inc., Model 2601B, 1398687, 3.0.0"
       - q: 'print(localnode.model)'
         r: '2601B'
+      - q: "smua.nvbuffer1.clear()"
 
 resources:
   GPIB::1::INSTR:

@@ -79,6 +79,35 @@ class LuaSweepParameter(ArrayParameter):
         return data
 
 
+class ReadingBuffer(ArrayParameter):
+    def __init__(self, name: str, channel: InstrumentChannel, instrument: Instrument):
+        super().__init__(name, shape=(1,) )
+        self._channel = channel
+        self._instrument = instrument
+
+    def get_raw(self) -> np.ndarray:
+        data = self._getnvbuffer1()
+        return data
+
+    def setup(self, append=False, collectsourcevalues=False, collecttimestamp=False):
+        self._instrument.write(f"{self._channel}.nvbuffer1.appendmode = "
+                               f"{int(append)}")
+        self._instrument.write(f"{self._channel}.nvbuffer1.collectsourcevalues "
+                               f"= {int(collectsourcevalues)}")
+        self._instrument.write(f"{self._channel}.nvbuffer1.collecttimestamps "
+                               f"= {int(collecttimestamp)}")
+
+    def clear_buffer(self):
+        self._instrument.write(f"{self._channel}.nvbuffer1.clear()")
+
+    def _getnvbuffer1(self, mode='i'):
+        self._instrument.write("format.data = format.ASCII")
+        self._instrument.write(f"printbuffer(1, {self._channel}.nvbuffer1.n, {self._channel}.nvbuffer1.readings)")
+        response = self._instrument.parent.visa_handle.read()
+        data = np.fromstring(response, dtype=float, sep=',')
+
+        return data
+
 class KeithleyChannel(InstrumentChannel):
     """
     Class to hold the two Keithley channels, i.e.
@@ -106,21 +135,21 @@ class KeithleyChannel(InstrumentChannel):
         ilimit_minmax = self.parent._ilimit_minmax
 
         self.add_parameter('volt',
-                           get_cmd=f'{channel}.measure.v()',
+                           get_cmd=f'{channel}.measure.v({channel}.nvbuffer1)',
                            get_parser=float,
                            set_cmd=f'{channel}.source.levelv={{:.12f}}',
                            label='Voltage',
                            unit='V')
 
         self.add_parameter('curr',
-                           get_cmd=f'{channel}.measure.i()',
+                           get_cmd=f'{channel}.measure.i({channel}.nvbuffer1)',
                            get_parser=float,
                            set_cmd=f'{channel}.source.leveli={{:.12f}}',
                            label='Current',
                            unit='A')
 
         self.add_parameter('res',
-                           get_cmd=f'{channel}.measure.r()',
+                           get_cmd=f'{channel}.measure.r({channel}.nvbuffer1)',
                            get_parser=float,
                            set_cmd=False,
                            label='Resistance',
@@ -273,6 +302,9 @@ class KeithleyChannel(InstrumentChannel):
                            parameter_class=LuaSweepParameter)
 
         self.channel = channel
+
+        self.add_parameter('nvbuffer1', parameter_class=ReadingBuffer,
+                           channel=self.channel)
 
     def reset(self) -> None:
         """

@@ -81,3 +81,25 @@ def test_smu_channels_and_their_parameters(driver):
         assert 0 == smu.interval()
         smu.interval(1e-3)
         assert 1e-3 == smu.interval()
+
+
+class TestBufferedReadout:
+    @staticmethod
+    def test_clear_buffer(driver: Keithley_2600):
+        driver.smua.nvbuffer1.clear_buffer()
+
+        status = int(driver.visa_handle.query('*STB?'))
+        assert 0 == status
+
+    @staticmethod
+    def test_setup(driver: Keithley_2600):
+        driver.smua.nvbuffer1.setup(append=False,
+                                    collectsourcevalues=True,
+                                    collecttimestamp=True)
+
+        status = int(driver.visa_handle.query('*STB?'))
+        assert 0 == status
+
+    @staticmethod
+    def test_buffer_readout(driver: Keithley_2600):
+        assert all(x==y for x,y in zip([1,2,3,4,5], driver.smua.nvbuffer1()))
