@@ -97,7 +97,7 @@ class ReadingBuffer(ArrayParameter):
         self._instrument.write(f"{self._channel}.nvbuffer1.collecttimestamps "
                                f"= {int(collecttimestamp)}")
 
-    def clear_buffer(self):
+    def clear(self):
         self._instrument.write(f"{self._channel}.nvbuffer1.clear()")
 
     def _getnvbuffer1(self, mode='i'):

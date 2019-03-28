@@ -4,6 +4,7 @@ from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import \
     Keithley_2600
 
 import qcodes.instrument.sims as sims
+
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
 
 
@@ -12,6 +13,12 @@ def driver():
     driver = Keithley_2600('Keithley_2600',
                            address='GPIB::1::INSTR',
                            visalib=visalib)
+
+    # original_write = driver.write
+    # def logging_write(cmd):
+    #     print("command written: ", cmd)
+    # driver.visa_handle.write = logging_write
+    # driver.visa_handle.query = logging_write
 
     yield driver
     driver.close()
@@ -86,7 +93,7 @@ def test_smu_channels_and_their_parameters(driver):
 class TestBufferedReadout:
     @staticmethod
     def test_clear_buffer(driver: Keithley_2600):
-        driver.smua.nvbuffer1.clear_buffer()
+        driver.smua.nvbuffer1.clear()
 
         status = int(driver.visa_handle.query('*STB?'))
         assert 0 == status
@@ -103,3 +110,12 @@ class TestBufferedReadout:
     @staticmethod
     def test_buffer_readout(driver: Keithley_2600):
         assert all(x==y for x,y in zip([1,2,3,4,5], driver.smua.nvbuffer1()))
+
+    @staticmethod
+    def test_example(driver):
+        driver.smua.count(10)
+        driver.smua.interval(0.1)
+
+        last_point = driver.smua.volt()
+
+        all_points = driver.smua.nvbuffer1()
