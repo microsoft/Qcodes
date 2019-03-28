@@ -553,10 +553,12 @@ def test_update_existing_guids(caplog):
         ds1 = new_data_set('ds_one')
         xparam = ParamSpec('x', 'numeric')
         ds1.add_parameter(xparam)
+        ds1.mark_started()
         ds1.add_result({'x': 1})
 
         ds2 = new_data_set('ds_two')
         ds2.add_parameter(xparam)
+        ds2.mark_started()
         ds2.add_result({'x': 2})
 
         guid_comps_1 = parse_guid(ds1.guid)
@@ -571,18 +573,21 @@ def test_update_existing_guids(caplog):
         ds3 = new_data_set('ds_three')
         xparam = ParamSpec('x', 'numeric')
         ds3.add_parameter(xparam)
+        ds3.mark_started()
         ds3.add_result({'x': 3})
 
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
         xparam = ParamSpec('x', 'numeric')
         ds4.add_parameter(xparam)
+        ds4.mark_started()
         ds4.add_result({'x': 4})
 
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
         xparam = ParamSpec('x', 'numeric')
         ds5.add_parameter(xparam)
+        ds5.mark_started()
         ds5.add_result({'x': 5})
 
     with location_and_station_set_to(new_loc, new_ws):

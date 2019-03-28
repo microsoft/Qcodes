@@ -49,18 +49,18 @@ class RespondingThread(threading.Thread):
 
 
 def thread_map(callables, args=None, kwargs=None):
-    '''
+    """
     Evaluate a sequence of callables in separate threads, returning
     a list of their return values.
 
     Args:
         callables: a sequence of callables
-        args (optional): a sequence of sequences containing the positional
+        args (Optional): a sequence of sequences containing the positional
             arguments for each callable
-        kwargs (optional): a sequence of dicts containing the keyword arguments
+        kwargs (Optional): a sequence of dicts containing the keyword arguments
             for each callable
 
-    '''
+    """
     if args is None:
         args = ((),) * len(callables)
     if kwargs is None:
