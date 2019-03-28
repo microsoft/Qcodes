@@ -84,12 +84,19 @@ class ReadingBuffer(ArrayParameter):
         super().__init__(name, shape=(1,) )
         self._channel = channel
         self._instrument = instrument
+        self._mode = None
 
     def get_raw(self) -> np.ndarray:
         data = self._getnvbuffer1()
         return data
 
-    def setup(self, append=False, collectsourcevalues=False, collecttimestamp=False):
+    def setup(self, mode, append=False, collectsourcevalues=False, collecttimestamp=False):
+        self.clear() # as per suggestion in manual buffer should be cleared
+        # when changing settings
+        if mode not in ('v', 'i', 'r'):
+            raise ValueError("Mode must be 'v', 'i' or 'r'.")
+        self._mode = mode
+
         self._instrument.write(f"{self._channel}.nvbuffer1.appendmode = "
                                f"{int(append)}")
         self._instrument.write(f"{self._channel}.nvbuffer1.collectsourcevalues "
@@ -107,6 +114,12 @@ class ReadingBuffer(ArrayParameter):
         data = np.fromstring(response, dtype=float, sep=',')
 
         return data
+
+    def do_measurement(self):
+        if self._mode in ('v', 'i', 'r'):
+            self._instrument.write(f'{self._channel}.measure.v({self._channel}.nvbuffer1)')
+        else:
+            raise ValueError('Call `smuX.nvbuffer1.setup()` first to set mode.')
 
 class KeithleyChannel(InstrumentChannel):
     """
@@ -135,21 +148,21 @@ class KeithleyChannel(InstrumentChannel):
         ilimit_minmax = self.parent._ilimit_minmax
 
         self.add_parameter('volt',
-                           get_cmd=f'{channel}.measure.v({channel}.nvbuffer1)',
+                           get_cmd=f'{channel}.measure.v()',
                            get_parser=float,
                            set_cmd=f'{channel}.source.levelv={{:.12f}}',
                            label='Voltage',
                            unit='V')
 
         self.add_parameter('curr',
-                           get_cmd=f'{channel}.measure.i({channel}.nvbuffer1)',
+                           get_cmd=f'{channel}.measure.i()',
                            get_parser=float,
                            set_cmd=f'{channel}.source.leveli={{:.12f}}',
                            label='Current',
                            unit='A')
 
         self.add_parameter('res',
-                           get_cmd=f'{channel}.measure.r({channel}.nvbuffer1)',
+                           get_cmd=f'{channel}.measure.r()',
                            get_parser=float,
                            set_cmd=False,
                            label='Resistance',

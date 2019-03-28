@@ -100,7 +100,8 @@ class TestBufferedReadout:
 
     @staticmethod
     def test_setup(driver: Keithley_2600):
-        driver.smua.nvbuffer1.setup(append=False,
+        driver.smua.nvbuffer1.setup(mode='i',
+                                    append=False,
                                     collectsourcevalues=True,
                                     collecttimestamp=True)
 
@@ -111,11 +112,4 @@ class TestBufferedReadout:
     def test_buffer_readout(driver: Keithley_2600):
         assert all(x==y for x,y in zip([1,2,3,4,5], driver.smua.nvbuffer1()))
 
-    @staticmethod
-    def test_example(driver):
-        driver.smua.count(10)
-        driver.smua.interval(0.1)
 
-        last_point = driver.smua.volt()
-
-        all_points = driver.smua.nvbuffer1()
