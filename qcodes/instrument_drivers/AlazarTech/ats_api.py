@@ -310,7 +310,7 @@ class AlazarATSAPI(WrappedDll):
             flags)
 
     signatures.update({"AlazarBeforeAsyncRead": Signature(
-        argument_types=[HANDLE, U32, ctypes.c_long, U32, U32, U32, U32])})
+        argument_types=[HANDLE, U32, C_LONG, U32, U32, U32, U32])})
 
     def post_async_buffer(self,
                           handle: int,
