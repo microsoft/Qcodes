@@ -33,7 +33,8 @@ from qcodes.dataset.sqlite_base import (add_parameter,
                                         get_runid_from_guid,
                                         is_guid_in_database,
                                         mark_run_complete,
-                                        new_experiment)
+                                        new_experiment,
+                                        set_run_timestamp)
 from qcodes.dataset.descriptions import RunDescriber
 
 if TYPE_CHECKING:
@@ -337,6 +338,7 @@ class SqliteWriterInterface(DataWriterInterface):
 
         queries: Dict[Callable[[ConnectionPlus, Any], None], _Optional[Any]]
         queries = {self._set_run_completed: metadata.run_completed,
+                   self._set_run_started: metadata.run_started,
                    self._set_run_description: metadata.run_description,
                    self._set_tags: metadata.tags,
                    self._set_snapshot: metadata.snapshot}
@@ -356,6 +358,12 @@ class SqliteWriterInterface(DataWriterInterface):
                               ', that run has already been completed.')
 
         mark_run_complete(conn, completion_time=time, run_id=self.run_id)
+
+    def _set_run_started(self, conn: ConnectionPlus, time: float) -> None:
+        """
+        Set the run_timestamp. Will raise if it has already been set before.
+        """
+        set_run_timestamp(conn, self.run_id, timestamp=time)
 
     def _set_run_description(self, conn: ConnectionPlus, desc_str: str) \
             -> None:
