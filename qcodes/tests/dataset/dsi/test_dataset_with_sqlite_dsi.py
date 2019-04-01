@@ -526,6 +526,7 @@ def test_dataset_state_in_different_cases(experiment):
 
     assert False is ds.completed
     assert False is ds._started
+    assert False is ds.started
     assert True is ds.pristine
     assert False is ds.running
 
@@ -533,6 +534,7 @@ def test_dataset_state_in_different_cases(experiment):
 
     assert False is same_ds.completed
     assert False is same_ds._started
+    assert False is same_ds.started
     assert True is same_ds.pristine
     assert False is same_ds.running
 
@@ -543,6 +545,7 @@ def test_dataset_state_in_different_cases(experiment):
     ds.add_result({'x': 0})
 
     assert True is ds._started
+    assert True is ds.started
     assert False is ds.completed
     assert False is ds.pristine
     assert True is ds.running
@@ -551,6 +554,7 @@ def test_dataset_state_in_different_cases(experiment):
 
     assert False is same_ds.completed
     assert True is same_ds._started
+    assert True is same_ds.started
     assert False is same_ds.pristine
     assert True is same_ds.running
 
@@ -562,6 +566,7 @@ def test_dataset_state_in_different_cases(experiment):
 
     assert True is same_ds.completed
     assert True is same_ds._started
+    assert True is same_ds.started
     assert False is same_ds.pristine
     assert False is same_ds.running
 
@@ -572,14 +577,16 @@ def test_dataset_state_in_different_cases(experiment):
     ds.mark_started()
 
     assert False is ds.completed
-    assert False is ds._started
-    assert True is ds.pristine
-    assert False is ds.running
+    assert True is ds._started
+    assert True is ds.started
+    assert False is ds.pristine
+    assert True is ds.running
 
     ds.mark_completed()
 
     assert True is ds.completed
     assert True is ds._started
+    assert True is ds.started
     assert False is ds.pristine
     assert False is ds.running
 
@@ -587,5 +594,6 @@ def test_dataset_state_in_different_cases(experiment):
 
     assert True is same_ds.completed
     assert True is same_ds._started
+    assert True is same_ds.started
     assert False is same_ds.pristine
     assert False is same_ds.running
