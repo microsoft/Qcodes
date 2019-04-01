@@ -504,7 +504,7 @@ class DataSet(Sized):
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
             return ','.join(psnames)
         else:
-            return select_one_where(self.conn, "runs",
+            return select_one_where(self.dsi.reader.conn, "runs",
                                     "parameters", "run_id", self.run_id)
 
     @property
