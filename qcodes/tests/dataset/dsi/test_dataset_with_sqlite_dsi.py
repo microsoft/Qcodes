@@ -144,16 +144,16 @@ def test_add_parameter(experiment):
 
     ds.mark_started()
 
-    with pytest.raises(RuntimeError, match='It is not allowed to add '
-                                           'parameters to a started run'):
+    with pytest.raises(RuntimeError, match='Can not add parameters to a '
+                                           'DataSet that has been started.'):
         ds.add_parameter(spec)
 
     # Mark DataSet as completed and try to add a parameter
 
     ds.mark_completed()
 
-    with pytest.raises(RuntimeError, match='It is not allowed to add '
-                                           'parameters to a started run'):
+    with pytest.raises(RuntimeError, match='Can not add parameters to a '
+                                           'DataSet that has been started.'):
         ds.add_parameter(spec)
 
 
