@@ -66,8 +66,12 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
     assert set(key_names) == set(names)
 
     for name, shape, value in zip(names, shapes, values):
-        assert datadict[name].shape == shape
-        assert_array_equal(datadict[name], value)
+        if datadict[name].dtype == np.dtype('O'):
+            mydata = np.concatenate(datadict[name])
+        else:
+            mydata = datadict[name]
+        assert mydata.shape == shape
+        assert_array_equal(mydata, value)
 
 
 def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,

@@ -25,7 +25,7 @@ jobs:
           pip install -r test_requirements.txt
           pip install -r docs_requirements.txt
           pip install -e .
-        displayName: "Installation"
+        displayName: "Install environment, qcodes"
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
@@ -42,17 +42,27 @@ jobs:
           python generate_version_2.py
           python generate_version_3.py
         displayName: "Generate db fixtures"
+        condition: succeededOrFailed()
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
           cd qcodes
           pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
-        displayName: "Pytest"
+        displayName: "Run pytest"
+        condition: succeededOrFailed()
       - task: PublishTestResults@1
-        condition: always() # this step will always run, even if the pipeline is cancelled
+        displayName: "Publish test results"
+        condition: succeededOrFailed()
         inputs:
           testResultsFiles: 'qcodes\test-*.xml'
           testRunTitle: 'Publish test results'
+      - task: PublishCodeCoverageResults@1
+        displayName: "Publish code coverage results"
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
+          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat
           CALL conda activate qcodes
@@ -60,14 +70,12 @@ jobs:
           REM Turn warnings into errors
           set SPHINXOPTS=-W -v
           make.bat htmlapi
-        displayName: "docsbuild"
+        displayName: "Build docs"
+        condition: succeededOrFailed()
       - task: PublishBuildArtifacts@1
+        displayName: "Publish build docs to Azure DevOps"
+        condition: succeededOrFailed()
         inputs:
           pathtoPublish: 'docs/_build/html'
           artifactName: 'qcodes_docs'
           publishLocation: 'Container'
-      - task: PublishCodeCoverageResults@1
-        inputs:
-          codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
-          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
