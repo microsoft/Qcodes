@@ -520,7 +520,7 @@ LED_OFF = 0
 LED_ON = 1
 
 
-class Parameter(IntEnum):
+class AlazarParameter(IntEnum):
     """
     Parameters suitable to be used with `` AlazarSetParameter`` and/or
     ``AlazarGetParameter``
