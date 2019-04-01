@@ -140,9 +140,9 @@ def test_add_parameter(experiment):
     expected_descr = RunDescriber(InterDependencies(spec))
     assert expected_descr == ds.description
 
-    # Make DataSet started by adding a first result and try to add a parameter
+    # Make DataSet started and try to add a parameter
 
-    ds.add_result({'x': 1})
+    ds.mark_started()
 
     with pytest.raises(RuntimeError, match='It is not allowed to add '
                                            'parameters to a started run'):
@@ -185,6 +185,8 @@ def test_add_results(experiment, first_add_using_add_result, request):
     ds.add_parameter(y_spec)
 
     # Now let's add results
+
+    ds.mark_started()
 
     expected_x = []
     expected_y = []
@@ -278,6 +280,7 @@ def test_get_data(experiment, request, start_end):
     y_spec = ParamSpec('y', 'array')
     ds.add_parameter(x_spec)
     ds.add_parameter(y_spec)
+    ds.mark_started()
 
     expected_x = []
     expected_y = []
@@ -347,6 +350,7 @@ def test_get_values(experiment, request):
     y_spec = ParamSpec('y', 'array')
     ds.add_parameter(x_spec)
     ds.add_parameter(y_spec)
+    ds.mark_started()
 
     all_x = []
     all_y = []
@@ -421,6 +425,7 @@ def test_get_setpoints(experiment, request):
     ds.add_parameter(x_spec)
     ds.add_parameter(y_spec)
     ds.add_parameter(z_spec)
+    ds.mark_started()
 
     x_val_1 = 42
     x_val_2 = 43
@@ -534,6 +539,7 @@ def test_dataset_state_in_different_cases(experiment):
     # 2. Start this dataset
 
     ds.add_parameter(ParamSpec('x', 'numeric'))
+    ds.mark_started()
     ds.add_result({'x': 0})
 
     assert True is ds._started
@@ -563,6 +569,7 @@ def test_dataset_state_in_different_cases(experiment):
 
     ds = DataSet(guid=None, conn=conn)
     guid = ds.guid
+    ds.mark_started()
 
     assert False is ds.completed
     assert False is ds._started
