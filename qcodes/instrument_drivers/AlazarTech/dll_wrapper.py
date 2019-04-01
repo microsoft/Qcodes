@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 RETURN_CODE = NewType('RETURN_CODE', ctypes.c_uint)
 
 
-## FUNCTIONS ##
+# FUNCTIONS #
 
 
 def _api_call_task(lock, c_func, callback, *args):
@@ -80,7 +80,7 @@ def _convert_bytes_to_str(output: bytes, func, arguments) -> str:
     return output.decode()
 
 
-## CLASSES ##
+# CLASSES #
 
 
 class Signature(NamedTuple):
