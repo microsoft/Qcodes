@@ -110,10 +110,10 @@ def is_sequence_of(obj, types=None, depth=None, shape=None):
     Test if object is a sequence of entirely certain class(es).
 
     Args:
-        obj (any): the object to test.
+        obj (Any): the object to test.
 
-        types (Optional[Union[class, Tuple[class]]]): allowed type(s)
-            if omitted, we just test the depth/shape
+        types (Optional[Union[Type[object], Tuple[Type[object]]]]): allowed
+            type(s) if omitted, we just test the depth/shape
 
         depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
             a sequence of sequences. Default 1 unless ``shape`` is supplied.
@@ -160,7 +160,7 @@ def is_function(f, arg_count, coroutine=False):
     type casting "functions" are allowed, but only in the 1-argument form
 
     Args:
-        f (callable): function to check
+        f (Callable): function to check
         arg_count (int): number of argument f should accept
         coroutine (bool): is a coroutine. Default: False
 
@@ -266,7 +266,7 @@ def make_sweep(start, stop, step=None, num=None):
         num (Optional[int]): Number of values to generate.
 
     Returns:
-        numpy.linespace: numbers over a specified interval.
+        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``
 
     Examples:
         >>> make_sweep(0, 10, num=5)
@@ -481,8 +481,8 @@ def compare_dictionaries(dict_1, dict_2,
         dict_1_name: optional name used in the differences string
         dict_2_name: ''
     Returns:
-        dicts_equal:      Boolean
-        dict_differences: formatted string containing the differences
+        Tuple[bool, str]: Are the dicts equal and the difference rendered as
+        a string.
 
     """
     err = ''
@@ -654,7 +654,7 @@ def partial_with_docstring(func, docstring, **kwargs):
     >>> help(g) # this will print an unhelpful message
 
     Args:
-        func (callable)
+        func (Callable)
         docstring (str)
     """
     ex = partial(func, **kwargs)
