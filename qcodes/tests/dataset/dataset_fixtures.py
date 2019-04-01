@@ -100,7 +100,8 @@ def array_dataset_with_nulls(experiment, request):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
 
 
 @pytest.fixture(scope="function",
@@ -159,7 +160,8 @@ def varlen_array_in_scalar_dataset(experiment):
     try:
         yield datasaver.dataset
     finally:
-        datasaver.dataset.conn.close()
+        datasaver.dataset.dsi.reader.conn.close()
+        datasaver.dataset.dsi.writer.conn.close()
 
 
 @pytest.fixture(scope="function")
