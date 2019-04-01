@@ -2340,10 +2340,13 @@ def update_run_description(conn: ConnectionPlus, run_id: int,
         conn.cursor().execute(sql, (description, run_id))
 
 
-def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
+def set_run_timestamp(conn: ConnectionPlus,
+                      run_id: int,
+                      timestamp: Optional[float] = None) -> None:
     """
     Set the run_timestamp for the run with the given run_id. If the
-    run_timestamp has already been set, a RuntimeError is raised.
+    run_timestamp has already been set, a RuntimeError is raised. If the
+    timestamp is not passed, current ``time.time()`` is used.
     """
 
     query = """
@@ -2359,15 +2362,16 @@ def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
 
     with atomic(conn) as conn:
         c = conn.cursor()
-        timestamp = one(c.execute(query, (run_id,)), 'run_timestamp')
-        if timestamp is not None:
+        existing_timestamp = one(c.execute(query, (run_id,)), 'run_timestamp')
+        if existing_timestamp is not None:
             raise RuntimeError('Can not set run_timestamp; it has already '
-                               f'been set to: {timestamp}')
+                               f'been set to: {existing_timestamp}')
         else:
-            current_time = time.time()
-            c.execute(cmd, (current_time, run_id))
+            if timestamp is None:
+                timestamp = time.time()
+            c.execute(cmd, (timestamp, run_id))
             log.info(f"Set the run_timestamp of run_id {run_id} to "
-                     f"{current_time}")
+                     f"{timestamp}")
 
 
 def add_parameter(conn: ConnectionPlus,

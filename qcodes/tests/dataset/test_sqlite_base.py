@@ -369,19 +369,46 @@ def test_set_run_timestamp(experiment):
 
     ds = DataSet()
 
+    conn = ds.dsi.writer.conn
+
     assert ds.run_timestamp_raw is None
 
     time_now = time.time()
     time.sleep(1)  # for slower test platforms
-    mut.set_run_timestamp(ds.conn, ds.run_id)
+    mut.set_run_timestamp(conn, ds.run_id)
 
     assert ds.run_timestamp_raw > time_now
 
     with pytest.raises(RuntimeError, match="Rolling back due to unhandled "
                                            "exception") as ei:
-        mut.set_run_timestamp(ds.conn, ds.run_id)
+        mut.set_run_timestamp(conn, ds.run_id)
 
     assert error_caused_by(ei, ("Can not set run_timestamp; it has already "
                                 "been set"))
 
-    ds.conn.close()
+    ds.dsi.reader.conn.close()
+    conn.close()
+
+
+def test_set_run_timestamp_with_given_value(experiment):
+
+    ds = DataSet()
+
+    conn = ds.dsi.writer.conn
+
+    assert ds.run_timestamp_raw is None
+
+    expected_time = 42.0
+    mut.set_run_timestamp(conn, ds.run_id, timestamp=expected_time)
+
+    assert ds.run_timestamp_raw == expected_time
+
+    with pytest.raises(RuntimeError, match="Rolling back due to unhandled "
+                                           "exception") as ei:
+        mut.set_run_timestamp(conn, ds.run_id)
+
+    assert error_caused_by(ei, ("Can not set run_timestamp; it has already "
+                                "been set"))
+
+    ds.dsi.reader.conn.close()
+    conn.close()
