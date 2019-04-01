@@ -645,6 +645,11 @@ class DataSet(Sized):
         self.dsi.store_meta_data(
             MetaData(run_description=self.description.to_json()))
 
+        # write down the `run_started` time (`run_timestamp` in the DB and as
+        # DataSet's attribute)
+        self.dsi.store_meta_data(
+            MetaData(run_started=time.time()))
+
         # let data storage interface prepare for storing actual data
         self.dsi.prepare_for_storing_results()
 
