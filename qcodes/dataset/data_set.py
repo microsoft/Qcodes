@@ -794,19 +794,6 @@ class DataSet(Sized):
             self._perform_start_actions()
             self._started = True
 
-    def _perform_start_actions(self) -> None:
-        """
-        Perform the actions that must take place once the run has been started
-        """
-
-        for spec in self.description.interdeps.paramspecs:
-            add_parameter(self.conn, self.table_name, spec)
-
-        update_run_description(self.conn, self.run_id,
-                               self.description.to_json())
-
-        set_run_timestamp(self.conn, self.run_id)
-
     def mark_completed(self) -> None:
         """
         Mark dataset as complete and thus read only and notify the subscribers
