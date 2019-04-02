@@ -4,7 +4,7 @@ from typing_extensions import Final
 from numbers import Number
 from numpy import ndarray
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 from qcodes.dataset.descriptions import RunDescriber
 
@@ -46,6 +46,9 @@ class MetaData:
     tags: _Optional[Dict[str, Any]] = NOT_GIVEN
     #tier: _Optional[int] = NOT_GIVEN
     tier: int = 1
+
+    def asdict(self):
+        return asdict(self)
 
 
 class DataReaderInterface(ABC):

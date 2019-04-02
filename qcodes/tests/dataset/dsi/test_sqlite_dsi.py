@@ -105,6 +105,21 @@ def test_init_and_create_new_run(experiment):
     assert 'dataset-1-1' == dsi_reader.table_name
     assert 1 == dsi_reader.counter
 
+    # Test builtin convertion to dict works
+    md_dict = md.asdict()
+    assert isinstance(md_dict, dict)
+    assert md_dict['run_completed'] is None
+    empty_desc = RunDescriber(InterDependencies())
+    assert empty_desc.to_json() == md_dict['run_description']
+    assert md_dict['run_started'] is None
+    assert md_dict['snapshot'] is None
+    assert {} == md_dict['tags']
+    assert 1 == md_dict['tier']
+    assert 'dataset' == md_dict['name']
+    assert experiment.name == md_dict['exp_name']
+    assert experiment.sample_name == md_dict['sample_name']
+
+
 
 def test_init__load_existing_run(experiment):
     """Test initialising dsi for an existing run"""
