@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pytest
 
-from qcodes import ParamSpec
+from qcodes import ParamSpec, load_experiment_by_name
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_storage_interface import MetaData
 from qcodes.dataset.dependencies import InterDependencies
@@ -119,6 +119,104 @@ def test_init_and_create_new_run(experiment):
     assert experiment.name == md_dict['exp_name']
     assert experiment.sample_name == md_dict['sample_name']
 
+
+def test_create_run_for_given_experiment_name_and_sample_name(empty_temp_db,
+                                                              request):
+    conn = connect(get_DB_location())
+    request.addfinalizer(conn.close)
+
+    guid = generate_guid()
+
+    exp_name = 'new_exp'
+    sample_name = 'good_sample'
+
+    dsi_reader = SqliteReaderInterface(guid, conn=conn)
+
+    assert not (dsi_reader.run_exists())
+
+    dsi_writer = SqliteWriterInterface(guid, conn=conn)
+
+    # That was the bare __init__. Now create the run
+    dsi_writer.create_run(exp_name=exp_name, sample_name=sample_name)
+
+    # Try to load experiment to see if it has been created
+    experiment = load_experiment_by_name(exp_name, sample_name, conn)
+    assert experiment.name == exp_name
+    assert experiment.sample_name == sample_name
+
+    assert experiment.exp_id == dsi_writer.exp_id
+
+    assert dsi_reader.run_exists()
+    assert dsi_writer.run_id == 1
+    runs_rows = get_runs(conn)
+    assert 1 == len(runs_rows)
+    assert 1 == runs_rows[0]['run_id']
+    assert runs_rows[0]['name'] == dsi_writer.name
+    assert runs_rows[0]['result_table_name'] == dsi_writer.table_name
+    assert runs_rows[0]['result_counter'] == dsi_writer.counter
+
+    md = dsi_reader.retrieve_meta_data()
+
+    assert experiment.name == md.exp_name
+    assert experiment.sample_name == md.sample_name
+    assert experiment.exp_id == dsi_reader.exp_id
+
+    assert md.run_completed is None
+    empty_desc = RunDescriber(InterDependencies())
+    assert empty_desc.to_json() == md.run_description
+    assert md.run_started is None
+    assert md.snapshot is None
+    assert {} == md.tags
+    assert 1 == md.tier
+    assert 'dataset' == md.name
+    assert md.name == dsi_reader.name
+    assert 'dataset-1-1' == dsi_reader.table_name
+    assert 1 == dsi_reader.counter
+
+
+def test_create_run_for_given_and_existing_experiment_name_and_sample_name(
+        experiment):
+    conn = experiment.conn
+    guid = generate_guid()
+
+    dsi_reader = SqliteReaderInterface(guid, conn=conn)
+
+    assert not (dsi_reader.run_exists())
+
+    dsi_writer = SqliteWriterInterface(guid, conn=conn)
+
+    # That was the bare __init__. Now create the run
+    dsi_writer.create_run(exp_name=experiment.name,
+                          sample_name=experiment.sample_name)
+
+    assert experiment.exp_id == dsi_writer.exp_id
+
+    assert dsi_reader.run_exists()
+    assert dsi_writer.run_id == 1
+    runs_rows = get_runs(conn)
+    assert 1 == len(runs_rows)
+    assert 1 == runs_rows[0]['run_id']
+    assert runs_rows[0]['name'] == dsi_writer.name
+    assert runs_rows[0]['result_table_name'] == dsi_writer.table_name
+    assert runs_rows[0]['result_counter'] == dsi_writer.counter
+
+    md = dsi_reader.retrieve_meta_data()
+
+    assert experiment.name == md.exp_name
+    assert experiment.sample_name == md.sample_name
+    assert experiment.exp_id == dsi_reader.exp_id
+
+    assert md.run_completed is None
+    empty_desc = RunDescriber(InterDependencies())
+    assert empty_desc.to_json() == md.run_description
+    assert md.run_started is None
+    assert md.snapshot is None
+    assert {} == md.tags
+    assert 1 == md.tier
+    assert 'dataset' == md.name
+    assert md.name == dsi_reader.name
+    assert 'dataset-1-1' == dsi_reader.table_name
+    assert 1 == dsi_reader.counter
 
 
 def test_init__load_existing_run(experiment):

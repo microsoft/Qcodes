@@ -255,9 +255,13 @@ class SqliteWriterInterface(DataWriterInterface):
         Create an entry for this run is the database file. The kwargs may be
         exp_id, exp_name, sample_name, name. The logic for creating new runs
         in existing experiments is as follows: first exp_id is used to look up
-        an experiment. If an experiment is not found, nothing happens. Next the
-        (exp_name, sample_name) tuple is used to look up an experiment. If an
-        experiment is not found, one is CREATED with those two attributes.
+        an experiment. If an experiment with given exp_id exists, a run will
+        be created there. If exp_id is not given, then the
+        (exp_name, sample_name) tuple is used to look up an experiment. If
+        the two names are not given, the latest experiment in the database
+        will be selected, if it exists. If the two names are given,
+        they will be used to find matching experiment, and if one is not
+        found, such an experiment will be CREATED with those two attributes.
         """
 
         self.name = kwargs.get('name', None) or "dataset"
@@ -271,7 +275,8 @@ class SqliteWriterInterface(DataWriterInterface):
                              'be None or both be not-None.')
 
         if self.exp_id is None:
-            if len(get_experiments(self.conn)) > 0:
+            if sample_name is None \
+                    and len(get_experiments(self.conn)) > 0:
                 self.exp_id = get_last_experiment(self.conn)
             elif sample_name is None:
                 raise ValueError("No experiments found. "
