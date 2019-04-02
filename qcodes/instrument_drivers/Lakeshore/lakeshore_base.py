@@ -273,12 +273,9 @@ class BaseOutput(InstrumentChannel):
                                    self.wait_equilibration_time.get_latest())
 
         active_channel_id = self.input_channel()
-        active_channel = getattr(
-            self.root_instrument,
-            (self.root_instrument
-                .input_channel_parameter_values_to_channel_name_on_instrument[active_channel_id]
-            )
-        )
+        active_channel_name_on_instrument = (self.root_instrument
+            .input_channel_parameter_values_to_channel_name_on_instrument[active_channel_id])
+        active_channel = getattr(self.root_instrument, active_channel_name_on_instrument)
 
         if active_channel.units() != 'kelvin':
             raise ValueError(f"Waiting until the setpoint is reached requires "
