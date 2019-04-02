@@ -297,7 +297,7 @@ class ZNBChannel(InstrumentChannel):
         if val != start:
             log.warning(
                 "Could not set start to {} setting it to {}".format(val, start))
-        self._update_traces()
+        self.update_traces()
 
     def _set_stop(self, val):
         channel = self._instrument_channel
@@ -311,24 +311,24 @@ class ZNBChannel(InstrumentChannel):
         if val != stop:
             log.warning(
                 "Could not set stop to {} setting it to {}".format(val, stop))
-        self._update_traces()
+        self.update_traces()
 
     def _set_npts(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:SWE:POIN {:.7f}'.format(channel, val))
-        self._update_traces()
+        self.update_traces()
 
     def _set_span(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:SPAN {:.7f}'.format(channel, val))
-        self._update_traces()
+        self.update_traces()
 
     def _set_center(self, val):
         channel = self._instrument_channel
         self.write('SENS{}:FREQ:CENT {:.7f}'.format(channel, val))
-        self._update_traces()
+        self.update_traces()
 
-    def _update_traces(self):
+    def update_traces(self):
         """ updates start, stop and npts of all trace parameters"""
         start = self.start()
         stop = self.stop()
