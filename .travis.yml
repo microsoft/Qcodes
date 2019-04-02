@@ -55,6 +55,8 @@ script:
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
+    # check that line endings are correct avoiding mixed windows/unix style line endings
+    - pylint --reports=n --disable=all --enable=trailing-whitespace,mixed-line-endings,unexpected-line-ending-format --expected-line-ending-format=LF qcodes
     # run benchmarks to make sure they are correct
     - |
       cd benchmarking
