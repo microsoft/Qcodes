@@ -106,8 +106,9 @@ class ZNBChannel(InstrumentChannel):
             vna_parameter: Name of parameter on the vna that this should
                 measure such as S12. If left empty this will fall back to
                 `name`.
-            existing_trace_to_bind_to: If supplied try to bind to an existing trace with
-                this name rather than creating a new trace.
+            existing_trace_to_bind_to: Name of an existing trace on the VNA.
+                If supplied try to bind to an existing trace with this name
+                rather than creating a new trace.
 
         """
         n = channel
@@ -382,6 +383,7 @@ class ZNBChannel(InstrumentChannel):
             self.status(initial_state)
         return data
 
+
 class ZNB(VisaInstrument):
     """
     qcodes driver for the Rohde & Schwarz ZNB8 and ZNB20
@@ -394,7 +396,10 @@ class ZNB(VisaInstrument):
         name: instrument name
         address: Address of instrument probably in format
             'TCPIP0::192.168.15.100::inst0::INSTR'
-        init_s_params: Automatically setup channels matching S parameters
+        init_s_params: Automatically setup channels for all S parameters on the
+            VNA.
+        reset_channels: If True any channels defined on the VNA at the time
+            of initialization are reset and removed.
         **kwargs: passed to base class
 
     TODO:
@@ -403,9 +408,8 @@ class ZNB(VisaInstrument):
 
     CHANNEL_CLASS = ZNBChannel
 
-
-    def __init__(self, name: str, address: str, init_s_params: bool=True,
-                 reset_channels=True, **kwargs) -> None:
+    def __init__(self, name: str, address: str, init_s_params: bool = True,
+                 reset_channels: bool = True, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 
