@@ -1,4 +1,4 @@
-from typing import Dict, ClassVar, List
+from typing import Dict, ClassVar, List, Any
 import time
 from bisect import bisect
 
@@ -29,6 +29,8 @@ class BaseOutput(InstrumentChannel):
     MODES: ClassVar[Dict[str, int]] = {}
     RANGES: ClassVar[Dict[str, int]] = {}
 
+    _input_channel_parameter_kwargs: ClassVar[Dict[str, Any]] = {}
+
     def __init__(self, parent, output_name, output_index, has_pid: bool=True) \
             -> None:
         super().__init__(parent, output_name)
@@ -49,8 +51,8 @@ class BaseOutput(InstrumentChannel):
                            docstring='Specifies which measurement input to '
                                      'control from (note that only '
                                      'measurement inputs are available)',
-                           get_parser=int,
-                           parameter_class=GroupParameter)
+                           parameter_class=GroupParameter,
+                           **self._input_channel_parameter_kwargs)
         self.add_parameter('powerup_enable',
                            label='Power-up enable on/off',
                            docstring='Specifies whether the output remains on '
@@ -205,7 +207,12 @@ class BaseOutput(InstrumentChannel):
                                'before automatically setting the range '
                                '(e.g. inst.range_limits([0.021, 0.1, 0.2, '
                                '1.1, 2, 4, 8]))')
-        i = bisect(self.range_limits.get_latest(), temperature)
+        range_limits = self.range_limits.get_latest()
+        i = bisect(range_limits, temperature)
+        # if temperature is larger than the highest range, then bisect returns
+        # an index that is +1 from the needed index, hence we need to take
+        # care of this corner case here:
+        i = min(i, len(range_limits) - 1)
         # there is a `+1` because `self.RANGES` includes `'off'` as the first
         # value.
         orange = self.INVERSE_RANGES[i+1] # this is `output range` not the fruit
@@ -266,15 +273,15 @@ class BaseOutput(InstrumentChannel):
                                    self.wait_equilibration_time.get_latest())
 
         active_channel_id = self.input_channel()
-        active_channel_number_in_list = active_channel_id - 1
-        active_channel = \
-            self.root_instrument.channels[active_channel_number_in_list]
+        active_channel_name_on_instrument = (self.root_instrument
+            .input_channel_parameter_values_to_channel_name_on_instrument[active_channel_id])
+        active_channel = getattr(self.root_instrument, active_channel_name_on_instrument)
 
         if active_channel.units() != 'kelvin':
             raise ValueError(f"Waiting until the setpoint is reached requires "
                              f"channel's {active_channel._channel!r} units to "
                              f"be set to 'kelvin'.")
-        
+
         t_setpoint = self.setpoint()
 
         time_now = time.perf_counter()
@@ -443,6 +450,8 @@ class LakeshoreBase(VisaInstrument):
     # "B" is referred to in instrument commands as '2', then this dictionary
     # will contain {'B': '2'} entry.
     channel_name_command: Dict[str, str] = {}
+
+    input_channel_parameter_values_to_channel_name_on_instrument: Dict[Any, str]
 
     def __init__(self,
                  name: str,

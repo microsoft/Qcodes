@@ -1066,8 +1066,8 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus]=None) -> DataSet:
         dataset with the given guid
 
     Raises:
-        NameError if no run with the given GUID exists in the database
-        RuntimeError if several runs with the given GUID are found
+        NameError: if no run with the given GUID exists in the database
+        RuntimeError: if several runs with the given GUID are found
     """
     conn = conn or connect(get_DB_location())
 
