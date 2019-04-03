@@ -378,8 +378,8 @@ class DataSaver:
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
                     result_dict, all_params)
-            elif toplevel_param.type == 'numeric':
-                res_list = self._finalize_res_dict_numeric(
+            elif toplevel_param.type in ('numeric', 'text'):
+                res_list = self._finalize_res_dict_numeric_or_text(
                                result_dict, toplevel_param,
                                inff_params, deps_params)
             else:
@@ -422,14 +422,14 @@ class DataSaver:
         return [res_dict]
 
     @staticmethod
-    def _finalize_res_dict_numeric(
+    def _finalize_res_dict_numeric_or_text(
             result_dict: Dict[ParamSpecBase, np.ndarray],
             toplevel_param: ParamSpecBase,
             inff_params: Set[ParamSpecBase],
             deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
         """
         Make a res_dict in the format expected by DataSet.add_results out
-        of the results for a 'numeric' type parameter. This includes
+        of the results for a 'numeric' or text type parameter. This includes
         replicating and unrolling values as needed and also handling the corner
         case of np.array(1) kind of values
         """
@@ -437,10 +437,12 @@ class DataSaver:
         res_list: List[Dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
+        t_map = {'numeric': float, 'text': str}
+
         toplevel_shape = result_dict[toplevel_param].shape
         if toplevel_shape == ():
-            # In the case of a scalar, life is reasonably simple
-            res_list = [{ps.name: float(result_dict[ps])
+            # In the case of a single value, life is reasonably simple
+            res_list = [{ps.name: t_map[ps.type](result_dict[ps])
                          for ps in all_params}]
         else:
             # We first massage all values into np.arrays of the same
@@ -478,10 +480,10 @@ class DataSaver:
         res_list: List[Dict[str, VALUE]] = []
         for param, value in result_dict.items():
             if param.type == 'text':
-                if isinstance(value, (tuple, list)):
-                    res_list += [{param.name: string} for string in value]
+                if value.shape:
+                    res_list += [{param.name: str(val)} for val in value]
                 else:
-                    res_list += [{param.name: value}]
+                    res_list += [{param.name: str(value)}]
             elif param.type == 'numeric':
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
