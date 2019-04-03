@@ -276,7 +276,8 @@ class ZNBChannel(InstrumentChannel):
                          'GDEL\n': 'Delay',
                          'COMP\n': 'Complex Magnitude'}
         channel = self._instrument_channel
-        self.write(f"CALC{channel}:PAR:SEL '{self._tracename}';CALC{channel}:FORM {val}")
+        self.write(f"CALC{channel}:PAR:SEL '{self._tracename}'")
+        self.write(f"CALC{channel}:FORM {val}")
         self.trace.unit = unit_mapping[val]
         self.trace.label = "{} {}".format(
             self.short_name, label_mapping[val])
@@ -360,7 +361,7 @@ class ZNBChannel(InstrumentChannel):
         self._parent.cont_meas_off()
         try:
             # if force polar is set, the SDAT data format will be used. Here
-            # the data will be transfered as a complex number independet of
+            # the data will be transferred as a complex number independent of
             # the set format in the instrument.
             if force_polar:
                 data_format_command = 'SDAT'
