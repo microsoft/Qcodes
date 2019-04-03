@@ -747,6 +747,9 @@ class Measurement:
                              ''.format(type(parameter)))
 
         paramtype = self._infer_paramtype(parameter, paramtype)
+        # default to numeric
+        if paramtype is None:
+            paramtype = 'numeric'
 
         # now the parameter type must be valid
         if paramtype not in ParamSpec.allowed_types:
@@ -790,7 +793,7 @@ class Measurement:
 
     @staticmethod
     def _infer_paramtype(parameter: _BaseParameter,
-                         paramtype: Optional[str]) -> str:
+                         paramtype: Optional[str]) -> Optional[str]:
         """
         Infer the best parameter type to store the parameter supplied.
 
@@ -799,21 +802,22 @@ class Measurement:
             paramtype: The initial supplied parameter type or None
 
         Returns:
-            The inferred parameter type. If a parameter type is supplied this
-            will overwrite the inferred parameter type.
+            The inferred parameter type. If a not None parameter type is
+            supplied this will be preferred over any inferred type.
+            Returns None if a parameter type could not be inferred
         """
-        if isinstance(parameter.vals, vals.Arrays) and paramtype is None:
+        if paramtype is not None:
+            return paramtype
+
+        if isinstance(parameter.vals, vals.Arrays):
             paramtype = 'array'
-        elif isinstance(parameter, ArrayParameter) and paramtype is None:
+        elif isinstance(parameter, ArrayParameter):
             paramtype = 'array'
-        elif isinstance(parameter.vals, vals.Strings) and paramtype is None:
+        elif isinstance(parameter.vals, vals.Strings):
             paramtype = 'text'
         # TODO complex case here once support is added
-        # should we try to figure out if parts of a multiparamter are
+        # should we try to figure out if parts of a multiparameter are
         # arrays or something else?
-        # default to numeric
-        elif paramtype is None:
-            paramtype = 'numeric'
         return paramtype
 
     def _register_parameter(self: T, name: str,
