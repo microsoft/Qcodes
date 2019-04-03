@@ -1,6 +1,6 @@
 """
 This module defines a :class:`logging.LoggerAdapter` and
-:class:`logging.Filter` used to enable capture of output from specific
+:class:`logging.Filter` used to enable the capturing of output from specific
 instruments.
 """
 
