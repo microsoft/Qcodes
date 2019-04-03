@@ -342,7 +342,7 @@ class DataSaver:
         Validate the type of the results
         """
 
-        allowed_kinds = {'numeric': 'iuf', 'text': 'S', 'array': 'iuf'}
+        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iuf'}
 
         for ps, vals in results_dict.items():
                 if not vals.dtype.kind in allowed_kinds[ps.type]:
