@@ -811,7 +811,7 @@ class Measurement:
         # TODO complex case here once support is added
         # should we try to figure out if parts of a multiparamter are
         # arrays or something else?
-        # default to numeric as before
+        # default to numeric
         elif paramtype is None:
             paramtype = 'numeric'
         return paramtype
