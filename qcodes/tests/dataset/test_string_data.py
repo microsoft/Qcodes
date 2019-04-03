@@ -83,7 +83,7 @@ def test_string_with_wrong_paramtype(experiment):
 
     with meas.run() as datasaver:
         msg = re.escape('Parameter p is of type "numeric", but got a '
-                        "result of type <class 'str'> (some text).")
+                        "result of type <U9 (some text).")
         with pytest.raises(ValueError, match=msg):
             datasaver.add_result((p, "some text"))
 
@@ -106,7 +106,7 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
 
     try:
         msg = re.escape('Parameter p is of type "numeric", but got a '
-                        "result of type <class 'str'> (some text).")
+                        "result of type <U9 (some text).")
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result(("p", "some text"))
     finally:
