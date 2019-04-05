@@ -1,3 +1,4 @@
+from typing import Union
 import visa
 
 from qcodes import VisaInstrument
@@ -6,7 +7,9 @@ from qcodes.instrument_drivers.tektronix.Keithley_2400 import Keithley_2400
 
 class _Keithley_2450(VisaInstrument):
     """
-    A 2450 driver with the full set of features
+    A 2450 driver with the full set of features. Note that the command set
+    between the 2400 and 2450 are different (when not running in compatibility more)
+    and its not just a question of adjusting ranges or other minor modifications.
     """
 
     def __init__(self, name, address, **kwargs):
@@ -21,18 +24,36 @@ class Keithley_2450:
     the feature set. We will accept this for now.
 
     Note that before doing anything else, we need to set the language of the
-    instrument to SCPI instead of the Tektronix propriety TSP language, even
-    before initializing the parent Keithley_2400 class. Otherwise any SCPI
-    command in the init of that class will likely make this driver break.
+    instrument to SCPI or SCPI2400 instead of the Tektronix propriety TSP
+    language, even before initializing the parent Keithley_2400 class. Otherwise
+    any SCPI command in the init of that class will likely make this driver break.
     """
 
-    def __new__(cls, name, address, compatibility_mode=True, **kwargs):
+    def __new__(
+            cls,
+            name: str,
+            address: str,
+            compatibility_mode: Union[None, bool] = None,
+            **kwargs
+    ) -> VisaInstrument:
+        """
+        Args:
+            name
+            address
+            compatibility_mode: If None, the current compatibility mode setting will be
+                unchanged.
+
+        Returns:
+            VisaInstrument
+        """
 
         resource_manager = visa.ResourceManager()
         raw_instrument = resource_manager.open_resource(address)
         current_language = raw_instrument.query("*LANG?").strip()
 
-        if compatibility_mode:
+        if compatibility_mode is None:
+            target_language = current_language
+        elif compatibility_mode:
             target_language = "SCPI2400"
         else:
             target_language = "SCPI"
@@ -48,7 +69,7 @@ class Keithley_2450:
                 f"and try again"
             )
 
-        if compatibility_mode:
+        if current_language == "SCPI2400":
             driver_instance = Keithley_2400(name, address, **kwargs)
 
             driver_instance.log.warning(
@@ -58,7 +79,9 @@ class Keithley_2450:
                 "this is acceptable to you"
             )
 
-        else:
+        elif current_language == "SCPI":
             driver_instance = _Keithley_2450(name, address, **kwargs)
+        else:
+            raise RuntimeError("We do not support the TSP language in this driver")
 
         return driver_instance
