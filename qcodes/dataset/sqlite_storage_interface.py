@@ -353,7 +353,8 @@ class SqliteWriterInterface(DataWriterInterface):
                 if kwarg != NOT_GIVEN:
                     func(conn, kwarg)
 
-    def _set_run_completed(self, conn: ConnectionPlus, time: float) -> None:
+    def _set_run_completed(self, conn: ConnectionPlus, time: Optional[float]
+                           ) -> None:
         """
         Set the complete_timestamp and is_complete. Will raise if the former
         is not-NULL or if the latter is 1
@@ -362,13 +363,16 @@ class SqliteWriterInterface(DataWriterInterface):
             raise ValueError(f'Can not write run_completed to GUID {self.guid}'
                               ', that run has already been completed.')
 
-        mark_run_complete(conn, completion_time=time, run_id=self.run_id)
+        if time is not None:
+            mark_run_complete(conn, completion_time=time, run_id=self.run_id)
 
-    def _set_run_started(self, conn: ConnectionPlus, time: float) -> None:
+    def _set_run_started(self, conn: ConnectionPlus, time: Optional[float]
+                         ) -> None:
         """
         Set the run_timestamp. Will raise if it has already been set before.
         """
-        set_run_timestamp(conn, self.run_id, timestamp=time)
+        if time is not None:
+            set_run_timestamp(conn, self.run_id, timestamp=time)
 
     def _set_run_description(self, conn: ConnectionPlus, desc_str: str) \
             -> None:
