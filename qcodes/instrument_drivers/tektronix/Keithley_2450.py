@@ -37,14 +37,15 @@ class Keithley_2450:
         else:
             target_language = "SCPI"
 
-        raw_instrument.write(f"*LANG {target_language}")
+        if current_language != target_language:
 
-        if current_language == "TSP":
+            raw_instrument.write(f"*LANG {target_language}")
+
             raise RuntimeError(
-                "This driver is not compatible with the TSP langauge. "
-                "This has been adjusted to SCPI, but a power cycle is "
-                "needed to make this take effect. Please reboot the instrument "
-                "and try again"
+                f"A language change from {current_language} to {target_language} "
+                f"is needed. This has been adjusted, but a power cycle is "
+                f"needed to make this take effect. Please reboot the instrument "
+                f"and try again"
             )
 
         if compatibility_mode:
