@@ -54,6 +54,12 @@ class Keithley_2450:
         raw_instrument = resource_manager.open_resource(address)
         current_language = raw_instrument.query("*LANG?").strip()
 
+        if current_language == "TSP":
+            log.warning("The instrument is in TSP mode which is not supported.")
+            if compatibility_mode is None:
+                log.warning("Switching 'compatibility mode' to 'True'")
+                compatibility_mode = True
+
         if compatibility_mode is None:
             target_language = current_language
         elif compatibility_mode:
@@ -82,14 +88,8 @@ class Keithley_2450:
                 "this is acceptable to you"
             )
 
-        elif current_language == "SCPI":
-            driver_instance = _Keithley_2450(name, address, **kwargs)
         else:
+            driver_instance = _Keithley_2450(name, address, **kwargs)
 
-            raise RuntimeError(
-                "We do not support the TSP language in this driver "
-                "Please start this driver with 'compatibility_mode' either "
-                "True or False to switch to 'SCPI2400' or 'SCPI' respectively"
-            )
 
         return driver_instance
