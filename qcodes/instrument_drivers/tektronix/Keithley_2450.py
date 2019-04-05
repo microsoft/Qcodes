@@ -8,6 +8,7 @@ from qcodes.instrument_drivers.tektronix.Keithley_2400 import Keithley_2400
 
 log = logging.getLogger(__name__)
 
+
 class _Keithley_2450(VisaInstrument):
     """
     A 2450 driver with the full set of features. Note that the command set
