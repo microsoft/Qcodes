@@ -52,16 +52,14 @@ class InterDependencies_:
         inferences = inferences or {}
 
         deps_error = self.validate_paramspectree(dependencies)
-        if not deps_error is None:
-            old_error = cast(type, deps_error[0])
-            self._raise_from(ValueError, 'Invalid dependencies',
-                             old_error, deps_error[1])
+        if deps_error is not None:
+            old_error = deps_error[0](deps_error[1])
+            raise ValueError('Invalid dependencies') from old_error
 
         inffs_error = self.validate_paramspectree(inferences)
-        if not inffs_error is None:
-            old_error = cast(type, inffs_error[0])
-            self._raise_from(ValueError, 'Invalid inferences',
-                             old_error, inffs_error[1])
+        if inffs_error is not None:
+            old_error = inffs_error[0](inffs_error[1])
+            raise ValueError('Invalid inferences') from old_error
 
         link_error = self._validate_double_links(dependencies, inferences)
         if link_error is not None:
@@ -70,11 +68,10 @@ class InterDependencies_:
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                error = TypeError
-                message: str = ('Standalones must be a sequence of '
-                                'ParamSpecs')
-                self._raise_from(ValueError, 'Invalid standalones',
-                                 error, message)
+                base_error = TypeError('Standalones must be a sequence of '
+                                       'ParamSpecs')
+
+                raise ValueError('Invalid standalones') from base_error
 
         self._remove_duplicates(dependencies)
         self._remove_duplicates(inferences)
@@ -157,18 +154,6 @@ class InterDependencies_:
         Function to generate an ID from/for a ParamSpecBase
         """
         return ps.name
-
-    @staticmethod
-    def _raise_from(new_error: Type[Exception], new_mssg: str,
-                    old_error: Type[Exception], old_mssg: str) -> None:
-        """
-        Helper function to raise an error with a cause in a way that our test
-        suite can digest
-        """
-        try:
-            raise old_error(old_mssg)
-        except old_error as e:
-            raise new_error(new_mssg) from e
 
     @staticmethod
     def validate_paramspectree(
