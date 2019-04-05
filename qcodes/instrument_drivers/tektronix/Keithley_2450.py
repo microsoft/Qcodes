@@ -1,9 +1,12 @@
+import logging
 from typing import Union
 import visa
 
 from qcodes import VisaInstrument
 from qcodes.instrument_drivers.tektronix.Keithley_2400 import Keithley_2400
 
+
+log = logging.getLogger(__name__)
 
 class _Keithley_2450(VisaInstrument):
     """
@@ -82,6 +85,11 @@ class Keithley_2450:
         elif current_language == "SCPI":
             driver_instance = _Keithley_2450(name, address, **kwargs)
         else:
-            raise RuntimeError("We do not support the TSP language in this driver")
+
+            raise RuntimeError(
+                "We do not support the TSP language in this driver "
+                "Please start this driver with 'compatibility_mode' either "
+                "True or False to switch to 'SCPI2400' or 'SCPI' respectively"
+            )
 
         return driver_instance
