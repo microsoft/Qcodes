@@ -8,7 +8,7 @@ from qcodes.instrument_drivers.tektronix.Keithley_2400 import Keithley_2400
 class _Keithley_2450(VisaInstrument):
     """
     A 2450 driver with the full set of features. Note that the command set
-    between the 2400 and 2450 are different (when not running in compatibility more)
+    between the 2400 and 2450 are different (when not running in compatibility mode)
     and its not just a question of adjusting ranges or other minor modifications.
     """
 
