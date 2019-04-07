@@ -3,6 +3,11 @@ from .hdf5_format import HDF5Format
 import hickle
 from qcodes.utils.helpers import deep_update
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .data_set import DataSet
+
+
 #%%
 
 log = logging.getLogger(__name__)
@@ -13,18 +18,18 @@ class HDF5FormatHickle(HDF5Format):
     _metadata_file = 'snapshot.hickle'
     _format_tag = 'hdf5-hickle'
 
-    def write_metadata(self, data_set, io_manager=None, location=None, read_first=False):
+    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False):
         """
         Write all metadata in this DataSet to storage.
 
         Args:
-            data_set (DataSet): the data we're storing
+            data_set: the data we're storing
 
             io_manager (io_manager): the base location to write to
 
             location (str): the file location within io_manager
 
-            read_first (bool, optional): read previously saved metadata before
+            read_first (Optional[bool]): read previously saved metadata before
                 writing? The current metadata will still be the used if
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.
@@ -49,11 +54,11 @@ class HDF5FormatHickle(HDF5Format):
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
             hickle.dump(data_set.metadata, snap_file)
 
-    def read_metadata(self, data_set):
+    def read_metadata(self, data_set: 'DataSet'):
         """ Reads in the metadata
 
         Args:
-            data_set (DataSet): Dataset object to read the metadata into
+            data_set: Dataset object to read the metadata into
         """
         io_manager = data_set.io
         location = data_set.location

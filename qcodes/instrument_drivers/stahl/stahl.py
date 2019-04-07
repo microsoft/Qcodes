@@ -196,8 +196,8 @@ class Stahl(VisaInstrument):
     def parse_idn_string(idn_string) -> Dict[str, Any]:
         """
         Return:
-             dict with keys: "model", "serial_number", "voltage_range",
-             "n_channels", "output_type"
+             dict: The dict contains the following keys "model",
+             "serial_number", "voltage_range","n_channels", "output_type"
         """
         result = re.search(
             r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])",
