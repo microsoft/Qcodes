@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import re
 import textwrap
 import time
 from functools import partial
@@ -11,6 +12,19 @@ import zhinst.utils
 from qcodes import Instrument
 from qcodes.utils import validators as validators
 
+WARNING_CLIPPING = r"^Warning \(line: [0-9]+\): [a-zA-Z0-9_]+ has a higher " \
+                   r"amplitude than 1.0, waveform amplitude will be limited " \
+                   r"to 1.0$"
+WARNING_TRUNCATING = r"^Warning \(line: [0-9]+\): waveform \S+ cut " \
+                     r"down to playable length from [0-9]+ to [0-9]+ samples " \
+                     r"\(should be a multiple of 8 samples for single channel" \
+                     r" or 4 samples for dual channel waveforms\)$"
+WARNING_ANY = r"^Warning \(line: [0-9]+\):.*$"
+
+
+class CompilerError(Exception):
+    """ Errors that occur during compilation of sequence programs."""
+
 
 class ZIHDAWG8(Instrument):
     """
@@ -19,6 +33,13 @@ class ZIHDAWG8(Instrument):
     (tested using LabOne 18.05.54618 and firmware 53866).
     Furthermore, the Data Server and Web Server must be running and a connection
     between the two must be made.
+
+    Compiler warnings, when uploading and compiling a sequence program, can
+    be treated as errors. This is desirable if the user of the driver does
+    not want clipping or truncating of waveform to happen silently by the
+    compiler. Warnings are constants on the module level and can be added to the
+    drivers attribute ``warnings_as_errors``. If warning are added, they
+    will raise a CompilerError.
     """
 
     def __init__(self, name: str, device_id: str, **kwargs) -> None:
@@ -39,6 +60,8 @@ class ZIHDAWG8(Instrument):
         self.awg_module.execute()
         node_tree = self.download_device_node_tree()
         self.create_parameters_from_node_tree(node_tree)
+        self.warnings_as_errors: List[str] = []
+        self._compiler_sleep_time = 0.01
 
     def snapshot_base(self, update: bool = False,
                       params_to_skip_update: Sequence[str] = None) -> Dict:
@@ -92,8 +115,9 @@ class ZIHDAWG8(Instrument):
         Args:
             wave_name: Name of the CSV file, is used by a sequence program.
             waveforms: One or more waveforms that are to be written to a
-            CSV file. Note if there are more than one waveforms then they have
-            to be of equal length, if not the longer ones will be truncated.
+                CSV file. Note if there are more than one waveforms then they
+                have to be of equal length, if not the longer ones will be
+                truncated.
         """
         data_dir = self.awg_module.getString('awgModule/directory')
         wave_dir = os.path.join(data_dir, "awg", "waves")
@@ -116,8 +140,8 @@ class ZIHDAWG8(Instrument):
 
         Args:
             wave_info: A list of tuples containing information about the waves
-            that are to be played. Every tuple should have a channel number and
-            wave, marker or both wave and marker.
+                that are to be played. Every tuple should have a channel number
+                and wave, marker or both wave and marker.
 
         Returns:
             A sequence program that can be compiled and uploaded.
@@ -174,22 +198,42 @@ class ZIHDAWG8(Instrument):
                 device.
 
         Returns:
-            0: Compilation was successful with no warnings.
-            2: Compilation was successful but with warnings.
+            0 is Compilation was successful with no warnings.
+            2 if Compilation was successful but with warnings.
+
+        Raises:
+            CompilerError: If error occurs during compilation of the sequence
+                program, or if a warning is elevated to an error.
         """
         self.awg_module.set('awgModule/index', awg_number)
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)
         while len(self.awg_module.get('awgModule/compiler/sourcestring')
-                      ['compiler']['sourcestring'][0]) > 0:
-            time.sleep(0.1)
+                  ['compiler']['sourcestring'][0]) > 0:
+            time.sleep(self._compiler_sleep_time)
 
         if self.awg_module.getInt('awgModule/compiler/status') == 1:
-            raise Exception(
+            raise CompilerError(
+                self.awg_module.getString('awgModule/compiler/statusstring'))
+        elif self.awg_module.getInt('awgModule/compiler/status') == 2:
+            self._handle_compiler_warnings(
                 self.awg_module.getString('awgModule/compiler/statusstring'))
         while self.awg_module.getDouble('awgModule/progress') < 1.0:
-            time.sleep(0.1)
+            time.sleep(self._compiler_sleep_time)
 
         return self.awg_module.getInt('awgModule/compiler/status')
+
+    def _handle_compiler_warnings(self, status_string: str) -> None:
+        warnings = [warning for warning in status_string.split('\n') if
+                    re.search(WARNING_ANY, warning) is not None]
+        errors = []
+        for warning in warnings:
+            for warning_as_error in self.warnings_as_errors:
+                if re.search(warning_as_error, warning) is not None:
+                    errors.append(warning)
+            if warning not in errors:
+                self.log.warning(warning)
+        if len(errors) > 0:
+            raise CompilerError('Warning treated as an error.', *errors)
 
     def upload_waveform(self, awg_number: int, waveform: list,
                         index: int) -> None:

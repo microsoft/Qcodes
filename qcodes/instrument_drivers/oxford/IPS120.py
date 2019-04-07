@@ -99,8 +99,8 @@ class OxfordInstruments_IPS120(VisaInstrument):
         """Initializes the Oxford Instruments IPS 120 Magnet Power Supply.
 
         Args:
-            name (string)    : name of the instrument
-            address (string) : instrument address
+            name (str)    : name of the instrument
+            address (str) : instrument address
             use_gpib (bool)  : whether to use GPIB or serial
             number (int)     : ISOBUS instrument number. Ignored if using GPIB.
         """
