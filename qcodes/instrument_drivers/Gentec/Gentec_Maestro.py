@@ -23,14 +23,13 @@ class Gentec_Maestro(VisaInstrument):
         self.visa_handle.baud_rate = baud_rate
 
         # get instrument information
-        self.model = self.visa_handle.query('*VER').split()[0]
-        self.firmware_version = self.visa_handle.query('*VER').split()[2]
+        self.model, _, self.firmware_version = self._query_versions()
 
         # add parameters
         self.add_parameter('power',
                            get_cmd='*CVU',
                            get_parser=float,
-                           label='power',
+                           label='Power',
                            unit='W')
 
         def wavelength_get_parser(ans):
@@ -39,28 +38,31 @@ class Gentec_Maestro(VisaInstrument):
                            get_cmd='*GWL',
                            set_cmd='*PWC{0:0>5}',
                            get_parser=wavelength_get_parser,
-                           label='wavelength',
+                           label='Wavelength',
                            unit='nm')
 
         def zero_offset_get_parser(ans):
             return int(ans[5:])
-        self.add_parameter('zero_offset_status',
+        self.add_parameter('zero_offset_enabled',
                            get_cmd='*GZO',
                            get_parser=zero_offset_get_parser,
                            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
-                           label='zero offset status')
-
-        # add functions
-        self.add_function('set_zero_offset',
-                          call_cmd='*SOU')
-
-        self.add_function('clear_zero_offset',
-                          call_cmd='*COU')
+                           label='Zero offset enabled')
 
         # print connect message
         self.connect_message(idn_param='IDN')
 
     # get methods
     def get_idn(self):
-        return {'vendor': 'Gentec', 'model': self.model,
-                'firmware': str(self.firmware_version)}
+        return {'vendor': 'Gentec', 'model': self.model, 'firmware': self.firmware_version}
+
+    # further methods
+    def clear_zero_offset(self):
+        self.visa_handle.write('*COU')
+
+    def set_zero_offset(self):
+        self.visa_handle.write('*SOU')
+
+    def _query_versions(self):
+        query_return = self.visa_handle.query('*VER').split()
+        return query_return[0], query_return[1], query_return[2]
