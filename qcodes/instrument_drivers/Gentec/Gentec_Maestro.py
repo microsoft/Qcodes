@@ -12,7 +12,7 @@ class Gentec_Maestro(VisaInstrument):
     Attributes:
         model (str): Model identification.
         firmware_version (str): Firmware version.
-        
+
     """
 
     def __init__(self, name, address, baud_rate=115200, **kwargs):
