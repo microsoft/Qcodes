@@ -50,7 +50,7 @@ class Gentec_Maestro(VisaInstrument):
                            label='Zero offset enabled')
 
         # print connect message
-        self.connect_message(idn_param='IDN')
+        self.connect_message()
 
     # get methods
     def get_idn(self):
@@ -58,11 +58,10 @@ class Gentec_Maestro(VisaInstrument):
 
     # further methods
     def clear_zero_offset(self):
-        self.visa_handle.write('*COU')
+        self.write('*COU')
 
     def set_zero_offset(self):
-        self.visa_handle.write('*SOU')
+        self.write('*SOU')
 
     def _query_versions(self):
-        query_return = self.visa_handle.query('*VER').split()
-        return query_return[0], query_return[1], query_return[2]
+        return self.ask('*VER').split()
