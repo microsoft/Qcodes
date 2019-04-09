@@ -464,6 +464,7 @@ class AlazarTech_ATS(Instrument):
 
         max_buffer_size = 64*1024*1024
         # 64 MB see docs of AlazarBeforeAsyncRead
+        # http://www.alazartech.com/Support/Download%20Files/ATS-SDK-Guide-7.2.3.pdf#section*.110
 
         requested_buffer_size = (bits_per_sample * samples_per_record *
                                  records_per_buffer)//8
