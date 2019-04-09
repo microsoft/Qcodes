@@ -471,8 +471,9 @@ class AlazarTech_ATS(Instrument):
 
         if requested_buffer_size > max_buffer_size:
             raise RuntimeError(f"Requested a buffer of size: "
-                               f"{requested_buffer_size} MB. The maximum"
-                               f"supported size is f{max_buffer_size} MB.")
+                               f"{requested_buffer_size / 1024 ** 2} MB. "
+                               f"The maximum supported size is "
+                               f"f{max_buffer_size / 1024 ** 2} MB.")
 
         # Set record size for NPT mode
         if mode == 'NPT':
