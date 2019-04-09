@@ -445,6 +445,34 @@ class AlazarTech_ATS(Instrument):
         samples_per_record = self.samples_per_record.raw_value
         records_per_buffer = self.records_per_buffer.raw_value
 
+        # bits per sample
+        _, bits_per_sample = self.api.get_channel_info_(self._handle)
+        # Whole bytes per sample
+        bytes_per_sample = (bits_per_sample + 7) // 8
+        # bytes per record
+        bytes_per_record = bytes_per_sample * samples_per_record
+
+        # channels
+        channels_binrep = self.channel_selection.raw_value
+        number_of_channels = self.get_num_channels(channels_binrep)
+
+        # bytes per buffer
+        bytes_per_buffer = (bytes_per_record *
+                            records_per_buffer * number_of_channels)
+
+        sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
+
+        max_buffer_size = 64*1024*1024
+        # 64 MB see docs of AlazarBeforeAsyncRead
+
+        requested_buffer_size = (bits_per_sample * samples_per_record *
+                                 records_per_buffer)//8
+
+        if requested_buffer_size > max_buffer_size:
+            raise RuntimeError(f"Requested a buffer of size: "
+                               f"{requested_buffer_size} MB. The maximum"
+                               f"supported size is f{max_buffer_size} MB.")
+
         # Set record size for NPT mode
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
@@ -494,23 +522,6 @@ class AlazarTech_ATS(Instrument):
                 records_per_buffer, buffers_per_acquisition,
                 acquire_flags
             )
-
-        # bytes per sample
-        _, bps = self.api.get_channel_info_(self._handle)
-        # TODO(JHN) Why +7 I guess its to do ceil division?
-        bytes_per_sample = (bps + 7) // 8
-        # bytes per record
-        bytes_per_record = bytes_per_sample * samples_per_record
-
-        # channels
-        channels_binrep = self.channel_selection.raw_value
-        number_of_channels = self.get_num_channels(channels_binrep)
-
-        # bytes per buffer
-        bytes_per_buffer = (bytes_per_record *
-                            records_per_buffer * number_of_channels)
-
-        sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
 
         self.clear_buffers()
 
