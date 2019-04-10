@@ -13,7 +13,7 @@ from qcodes.instrument.parameter import Parameter
 from .ats_api import AlazarATSAPI
 from .utils import TraceParameter
 from .helpers import CapabilityHelper
-from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR
+from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
 
 
 logger = logging.getLogger(__name__)
@@ -447,32 +447,36 @@ class AlazarTech_ATS(Instrument):
 
         # bits per sample
         _, bits_per_sample = self.api.get_channel_info_(self._handle)
-        # Whole bytes per sample
-        bytes_per_sample = (bits_per_sample + 7) // 8
-        # bytes per record
-        bytes_per_record = bytes_per_sample * samples_per_record
 
         # channels
         channels_binrep = self.channel_selection.raw_value
         number_of_channels = self.get_num_channels(channels_binrep)
 
-        # bytes per buffer
-        bytes_per_buffer = (bytes_per_record *
-                            records_per_buffer * number_of_channels)
+        # In the following we need to consider the size of the buffer
+        # in two different scenarios as several Alazar cards have sample sizes
+        # that are in fractions of bytes. (such as 12 bits).
+        # We are transferring data padded to
+        # whole bytes. I.e a sample of 12 bits will take up 16 bits when
+        # transferred so we are allocating buffers of that size.
+        # However, when calculating internal limitations on the card we are
+        # using the fractional sizes of samples
 
-        sample_type = ctypes.c_uint16 if bytes_per_sample > 1 else ctypes.c_uint8
+        # number of bytes per sample rounded up to the nearest integer
+        whole_bytes_per_sample = (bits_per_sample + 7) // 8
+        transfer_record_size = whole_bytes_per_sample * samples_per_record
+        transfer_buffer_size = (transfer_record_size *
+                                records_per_buffer * number_of_channels)
 
-        max_buffer_size = 64*1024*1024
-        # 64 MB see docs of AlazarBeforeAsyncRead
-        # http://www.alazartech.com/Support/Download%20Files/ATS-SDK-Guide-7.2.3.pdf#section*.110
+        sample_type = (
+            ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8)
 
-        requested_buffer_size = (bits_per_sample * samples_per_record *
-                                 records_per_buffer)//8
+        internal_buffer_size_requested = (bits_per_sample * samples_per_record *
+                                          records_per_buffer) // 8
 
-        if requested_buffer_size > max_buffer_size:
+        if internal_buffer_size_requested > max_buffer_size:
             raise RuntimeError(f"Requested a buffer of size: "
-                               f"{requested_buffer_size / 1024 ** 2} MB. "
-                               f"The maximum supported size is "
+                               f"{internal_buffer_size_requested / 1024 ** 2}"
+                               f" MB. The maximum supported size is "
                                f"{max_buffer_size / 1024 ** 2} MB.")
 
         # Set record size for NPT mode
@@ -545,7 +549,7 @@ class AlazarTech_ATS(Instrument):
         try:
             for _ in range(allocated_buffers):
                 buf = self.allocate_and_post_buffer(sample_type,
-                                                    bytes_per_buffer)
+                                                    transfer_buffer_size)
                 self.buffer_list.append(buf)
 
             # -----start capture here-----

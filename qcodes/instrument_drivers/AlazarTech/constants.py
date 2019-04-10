@@ -15,6 +15,11 @@ ReturnCode = NewType('ReturnCode', int)
 API_SUCCESS = ReturnCode(512)
 API_DMA_IN_PROGRESS = ReturnCode(518)
 
+max_buffer_size = 64 * 1024 * 1024
+# The maximum size of a single buffer
+# in bytes. see docs of AlazarBeforeAsyncRead
+# http://www.alazartech.com/Support/Download%20Files/ATS-SDK-Guide-7.2.3.pdf#section*.110
+
 ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
     513: 'ApiFailed',
     514: 'ApiAccessDenied',
