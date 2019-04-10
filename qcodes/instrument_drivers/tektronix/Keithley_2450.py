@@ -167,6 +167,17 @@ class Source2450(InstrumentChannel):
             parameter_class=JustInTimeParameter
         )
 
+        self.add_parameter(
+            "read_back",
+            set_cmd=":SOUR:{function}:READ:BACK {{}}",
+            get_cmd=":SOUR:{function}:READ:BACK?",
+            vals=vals.Enum(
+                "ON",
+                "OFF"
+            ),
+            parameter_class=JustInTimeParameter
+        )
+
         for source_name, unit in [("current", "A"), ("voltage", "V")]:
             self.add_parameter(
                 f"{source_name}_setpoint",
