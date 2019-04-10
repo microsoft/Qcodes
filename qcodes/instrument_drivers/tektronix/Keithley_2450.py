@@ -193,6 +193,23 @@ class Source2450(InstrumentChannel):
         validator.validate(range_value)
         return range_value
 
+    def sweep_setup(
+            self,
+            start: float,
+            stop: float,
+            step_count: int,
+            delay: float = 0
+    ) -> None:
+
+        function = self.function.get_latest()
+        if function is None:
+            function = self.function.get()
+
+        range_type = "AUTO"
+        self.parent.write_raw(
+            f":SOURce:SWEep:{function}:LINear {start}, {stop}, {delay}, {step_count}, {range_type}"
+        )
+
 
 class Keithley2450(VisaInstrument):
     """
@@ -267,6 +284,11 @@ class Keithley2450(VisaInstrument):
         self.add_submodule(
             "source",
             Source2450(self, "source")
+        )
+
+        self.add_parameter(
+            "start_sweep",
+            set_cmd=":INITiate"
         )
 
         self.connect_message()
