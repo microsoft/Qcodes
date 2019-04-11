@@ -113,8 +113,10 @@ def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
     # however there are cases where this is empty
     # in such cases fall back to the traceback
     if error_location is not None:
-        return cause in str(error_location)
+        where_to_look = str(error_location)
     else:
-        return cause in str(root_traceback)
+        where_to_look = str(root_traceback)
+
+    return cause in where_to_look
 
 
