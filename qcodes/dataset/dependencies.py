@@ -4,14 +4,100 @@ between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
 from copy import deepcopy
+from functools import reduce
+from collections import ChainMap
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     Type, Sequence)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
-ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
+Dependencies = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]
 ErrorTuple = Tuple[Type[Exception], str]
+
+
+class ParamSpecTree:
+    """
+    Class to represent a parameter tree, i.e. one parameter at the top (root)
+    level depending on N leaf parameters.
+    """
+
+    def __init__(self, root: ParamSpecBase, *leafs: ParamSpecBase):
+        if not isinstance(root, ParamSpecBase):
+            raise ValueError('Root of ParamSpecTree must be of type '
+                             'ParamSpecBase. Got root of type '
+                             f'{type(root)}.')
+        for leaf in leafs:
+            if not isinstance(leaf, ParamSpecBase):
+                raise ValueError('Leafs of ParamSpecTree must be of type '
+                                 'ParamSpecBase. Got leaf of type '
+                                 f'{type(leaf)}.')
+        self.root = root
+        self._leafs_set = set(leafs)
+        self._leafs_tuple = leafs
+        self._leaf_names = set(leaf.name for leaf in leafs)
+        self._as_dict = {root: leafs}
+        self._as_dict_str = {root.name: self.leaf_names}
+
+    @property
+    def leaf_names(self) -> Set[str]:
+        return self._leaf_names
+
+    @property
+    def leafs(self) -> Set[ParamSpecBase]:
+        return self._leafs_set
+
+    def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
+        return self._as_dict
+
+    def as_dict_str(self) -> Dict[str, str]:
+        return self._as_dict_str
+
+
+class ParamSpecGrove:
+
+    def __init__(self, *trees: ParamSpecTree):
+        for tree in trees:
+            if not isinstance(tree, ParamSpecTree):
+                raise ValueError('ParamSpecGrove can only contain '
+                                 'ParamSpecTrees, but received a/an '
+                                 f'{type(tree)} instead.')
+        # validate input
+        root_names_raw = tuple(tree.root.name for tree in trees)
+        root_names = set(root_names_raw)
+        if len(root_names_raw) > len(root_names):
+            raise ValueError('Supplied trees do not have unique root names')
+        leaf_names: Set[str] = reduce(set.union,
+                                      (tree.leaf_names for tree in trees),
+                                      set())
+        if root_names.intersection(leaf_names):
+            raise ValueError('Cycles detected!')
+
+        self._trees = set(trees)
+
+        self._roots: Set[ParamSpecBase] = set(tree.root for tree in trees)
+        self._leafs: Set[ParamSpecBase] = reduce(set.union,
+                                                (tree.leafs for tree in trees),
+                                                set())
+
+        self._trees_as_dict = dict(ChainMap(*(t.as_dict()
+                                              for t in self._trees)))
+        self._trees_as_dict_str = dict(ChainMap(*(t.as_dict_str()
+                                                  for t in self._trees)))
+
+    def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
+        return self._trees_as_dict
+
+    @property
+    def roots(self) -> Set[ParamSpecBase]:
+        return self._roots
+
+    @property
+    def leafs(self) -> Set[ParamSpecBase]:
+        return self._leafs
+
+    def extend(self, new: ParamSpecTree) -> 'ParamSpecGrove':
+        return ParamSpecGrove(*self._trees, new)
 
 
 class DependencyError(Exception):
@@ -49,24 +135,28 @@ class InterDependencies_:
     """
 
     def __init__(self,
-                 dependencies: Optional[ParamSpecTree] = None,
-                 inferences: Optional[ParamSpecTree] = None,
+                 dependencies: Optional[Dependencies] = None,
+                 inferences: Optional[Dependencies] = None,
                  standalones: Tuple[ParamSpecBase, ...] = ()):
 
         dependencies = dependencies or {}
         inferences = inferences or {}
 
-        deps_error = self.validate_paramspectree(dependencies)
-        if deps_error is not None:
-            old_error = deps_error[0](deps_error[1])
-            raise ValueError('Invalid dependencies') from old_error
+        try:
+            new_deps_gen = (ParamSpecTree(k, *v)
+                            for k, v in dependencies.items())
+            new_deps = ParamSpecGrove(*new_deps_gen)
+        except (AttributeError, ValueError, TypeError) as e:
+            raise ValueError('Invalid dependencies') from e
 
-        inffs_error = self.validate_paramspectree(inferences)
-        if inffs_error is not None:
-            old_error = inffs_error[0](inffs_error[1])
-            raise ValueError('Invalid inferences') from old_error
+        try:
+            new_inffs_gen = (ParamSpecTree(k, *v)
+                             for k, v in inferences.items())
+            new_inffs = ParamSpecGrove(*new_inffs_gen)
+        except (AttributeError, ValueError, TypeError) as e:
+            raise ValueError('Invalid inferences') from e
 
-        link_error = self._validate_double_links(dependencies, inferences)
+        link_error = self._validate_double_links(new_deps, new_inffs)
         if link_error is not None:
             error, mssg = link_error
             raise error(mssg)
@@ -81,8 +171,8 @@ class InterDependencies_:
         self._remove_duplicates(dependencies)
         self._remove_duplicates(inferences)
 
-        self.dependencies: ParamSpecTree = dependencies
-        self.inferences: ParamSpecTree = inferences
+        self.dependencies: Dependencies = dependencies
+        self.inferences: Dependencies = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
 
         # The object is now complete, but for convenience, we form some more
@@ -98,9 +188,9 @@ class InterDependencies_:
             self._id_to_paramspec.update({ps.name: ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
 
-        self._dependencies_inv: ParamSpecTree = self._invert_tree(
+        self._dependencies_inv: Dependencies = self._invert_tree(
             self.dependencies)
-        self._inferences_inv: ParamSpecTree = self._invert_tree(
+        self._inferences_inv: Dependencies = self._invert_tree(
             self.inferences)
 
         # Set operations are ~2x (or more) faster on strings than on hashable
@@ -112,9 +202,9 @@ class InterDependencies_:
             self.inferences)
 
     @staticmethod
-    def _tree_of_names(tree: ParamSpecTree) -> ParamNameTree:
+    def _tree_of_names(tree: Dependencies) -> ParamNameTree:
         """
-        Helper function to convert a ParamSpecTree-kind of tree where all
+        Helper function to convert a Dependencies-kind of tree where all
         ParamSpecBases are substituted with their ``.name`` s.
         Will turn {A: (B, C)} into {A.name: (B.name, C.name)}
         """
@@ -124,16 +214,16 @@ class InterDependencies_:
         return name_tree
 
     @staticmethod
-    def _invert_tree(tree: ParamSpecTree) -> ParamSpecTree:
+    def _invert_tree(tree: Dependencies) -> Dependencies:
         """
-        Helper function to invert a ParamSpecTree. Will turn {A: (B, C)} into
+        Helper function to invert a Dependencies. Will turn {A: (B, C)} into
         {B: (A,), C: (A,)}
         """
         indeps: Set[ParamSpecBase] = set()
         for indep_tup in tree.values():
             indeps.update(indep_tup)
 
-        inverted: ParamSpecTree = {}
+        inverted: Dependencies = {}
         for indep in indeps:
             deps = tuple(ps for ps in tree if indep in tree[ps])
             inverted[indep] = deps
@@ -141,9 +231,9 @@ class InterDependencies_:
         return inverted
 
     @staticmethod
-    def _remove_duplicates(tree: ParamSpecTree) -> None:
+    def _remove_duplicates(tree: Dependencies) -> None:
         """
-        Helper function to remove duplicate entries from a ParamSpecTree while
+        Helper function to remove duplicate entries from a Dependencies while
         preserving order. Will turn {A: (B, B, C)} into {A: (B, C)}
         """
         for ps, tup in tree.items():
@@ -321,8 +411,8 @@ class InterDependencies_:
 
     def extend(
             self,
-            dependencies: Optional[ParamSpecTree] = None,
-            inferences: Optional[ParamSpecTree] = None,
+            dependencies: Optional[Dependencies] = None,
+            inferences: Optional[Dependencies] = None,
             standalones: Tuple[ParamSpecBase, ...] = ()) -> 'InterDependencies_':
         """
         Create a new InterDependencies_ object that is an extension of this

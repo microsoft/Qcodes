@@ -108,12 +108,11 @@ def test_init_validation_raises(some_paramspecbases):
                      {ps1: ('ps2',)},
                      {ps1: (ps2,), ps2: (ps1,)}
                      )
-    causes = ("ParamSpecTree must be a dict",
-              "ParamSpecTree must have ParamSpecs as keys",
-              "ParamSpecTree must have tuple values",
-              "ParamSpecTree can only have tuples "
-              "of ParamSpecs as values",
-              "ParamSpecTree can not have cycles")
+    causes = ("'list' object has no attribute 'items'",
+              "Root of ParamSpecTree must be of type ParamSpecBase",
+              "Leafs of ParamSpecTree must be of type ParamSpecBase",
+              "Leafs of ParamSpecTree must be of type ParamSpecBase",
+              "Cycles detected!")
 
     for tree, cause in zip(invalid_trees, causes):
         with pytest.raises(ValueError, match='Invalid dependencies') as ei:
