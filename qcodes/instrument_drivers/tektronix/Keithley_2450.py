@@ -33,7 +33,7 @@ class Keithley2450Sweep(ArrayParameter):
         self.setpoint_labels = (source_function,)
         self.setpoint_units = (source_unit,)
 
-        sense_function_p = self.instrument.sens.function
+        sense_function_p = self.instrument.sense.function
         sense_function = sense_function_p.get_latest() or sense_function_p.function()
         self.label = sense_function
         self.unit = Sense2450.function_modes[sense_function]["unit"]
@@ -109,7 +109,8 @@ class Sense2450(InstrumentChannel):
                 unit=args["unit"]
             )
 
-    def _function_get_parser(self, get_value: str) -> str:
+    @staticmethod
+    def _function_get_parser(get_value: str) -> str:
         """
         Args:
             get_value: ""CURR:DC"" (Note the quotation marks in the string)
@@ -182,6 +183,15 @@ class Source2450(InstrumentChannel):
                 unit=args["unit"]
             )
 
+            limit_cmd = {"CURR": "VLIM", "VOLT": "ILIM"}[function]
+            self.add_parameter(
+                f"_limit_{function}",
+                set_cmd=f"SOUR:{function}:{limit_cmd} {{}}",
+                get_cmd=f"SOUR:{function}:{limit_cmd}?",
+                get_parser=float,
+                unit=args["unit"]
+            )
+
     @property
     def range(self) -> Parameter:
         """
@@ -198,6 +208,15 @@ class Source2450(InstrumentChannel):
         """
         function = self.function.get_latest() or self.function()
         param_name = f"_setpoint_{function}"
+        return self.parameters[param_name]
+
+    @property
+    def limit(self):
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.function.get_latest() or self.function()
+        param_name = f"_limit_{function}"
         return self.parameters[param_name]
 
 
