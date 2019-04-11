@@ -165,7 +165,7 @@ class Source2450(InstrumentChannel):
             vals=vals.Enum(*Source2450.function_modes.keys())
         )
 
-        for function, args in Sense2450.function_modes.items():
+        for function, args in Source2450.function_modes.items():
             self.add_parameter(
                 f"_range_{function}",
                 set_cmd=f":SOUR:{function}:RANGe {{}}",
