@@ -207,11 +207,24 @@ class Keithley2450(VisaInstrument):
     """
 
     @staticmethod
-    def set_correct_language(address):
+    def set_correct_language(address: str) -> None:
+        """
+        The correct communication protocol is SCPI, make sure this is set
+
+        Args:
+            address: Visa resource address
+        """
         Keithley2450._check_scpi_mode(address, raise_on_incorrect_setting=False)
 
     @staticmethod
-    def _check_scpi_mode(address, raise_on_incorrect_setting=True):
+    def _check_scpi_mode(address: str, raise_on_incorrect_setting: bool = True) -> None:
+        """
+        Args:
+            address: Visa resource address
+            raise_on_incorrect_setting: If True and the language mode is anything other then "SCPI",
+                raise a runtime error. If False and the language mode is anything other then "SCPI"
+                adjust the language to "SCPI"
+        """
 
         resource_manager = visa.ResourceManager()
         raw_instrument = resource_manager.open_resource(address)
@@ -230,7 +243,7 @@ class Keithley2450(VisaInstrument):
 
         raw_instrument.close()
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs) -> None:
 
         Keithley2450._check_scpi_mode(address)
 
