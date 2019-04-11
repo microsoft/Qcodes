@@ -725,9 +725,9 @@ class ZIUHFLI(Instrument):
                                label=('Reference frequency multiplication' +
                                       ' factor'),
                                get_cmd=partial(self._getter, 'demods',
-                                               demod-1, 1, 'harmonic'),
+                                               demod-1, 0, 'harmonic'),
                                set_cmd=partial(self._setter, 'demods',
-                                               demod-1, 1, 'harmonic'),
+                                               demod-1, 0, 'harmonic'),
                                vals=vals.Ints(1, 999)
                                )
 
