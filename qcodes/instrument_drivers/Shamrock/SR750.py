@@ -2,6 +2,10 @@ from qcodes import Instrument
 from qcodes.utils.validators import Ints, Numbers
 import ctypes
 import os
+import logging
+from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 class ShamrockCIF:
@@ -11,12 +15,12 @@ class ShamrockCIF:
     The class has been tested for a Shamrock SR750.
 
     Args:
-        dll_path (str): Path to the ShamrockCIF.dll file. If not set, a default path is used.
-        verbose (bool): Flag for the verbose behaviour. If true, successful events are printed.
+        dll_path: Path to the ShamrockCIF.dll file. If not set, a default path is used.
+        verbose: Flag for the verbose behaviour. If true, successful events are printed.
 
     Attributes:
-        verbose (bool): Flag for the verbose behaviour.
-        dll (WinDLL): WinDLL object for ShamrockCIF.dll.
+        verbose: Flag for the verbose behaviour.
+        dll: WinDLL object for ShamrockCIF.dll.
 
     """
 
@@ -26,31 +30,39 @@ class ShamrockCIF:
     # success and error codes
     _success_codes = {20202: 'SHAMROCK_SUCCESS'}
     _error_codes = {
-        20201: 'SHAMROCK_COMMUNICATION_ERROR', 20266: 'SHAMROCK_P1INVALID', 20267: 'SHAMROCK_P2INVALID',
-        20268: 'SHAMROCK_P3INVALID', 20269: 'SHAMROCK_P4INVALID', 20270: 'SHAMROCK_P5INVALID',
-        20275: 'SHAMROCK_NOT_INITIALIZED', 20292: 'SHAMROCK_NOT_AVAILABLE'}
+        20201: 'SHAMROCK_COMMUNICATION_ERROR',
+        20266: 'SHAMROCK_P1INVALID',
+        20267: 'SHAMROCK_P2INVALID',
+        20268: 'SHAMROCK_P3INVALID',
+        20269: 'SHAMROCK_P4INVALID',
+        20270: 'SHAMROCK_P5INVALID',
+        20275: 'SHAMROCK_NOT_INITIALIZED',
+        20292: 'SHAMROCK_NOT_AVAILABLE'
+    }
 
-    def __init__(self, dll_path=None, verbose=False):
+    def __init__(self, dll_path: Optional[str] = None, verbose: Optional[bool] = False):
 
         # save attributes
-        self.verbose = verbose
+        self.verbose: bool = verbose
 
         # connect to the DLL
         current_path = os.getcwd()
         os.chdir(os.path.dirname(self._dll_path))
-        self.dll = ctypes.windll.LoadLibrary(dll_path or self._dll_path)
+        self.dll: ctypes.WinDLL = ctypes.windll.LoadLibrary(dll_path or self._dll_path)
         os.chdir(current_path)
 
     def error_check(self, code, function_name=''):
         if code in self._success_codes.keys():
             if self.verbose:
-                print("ShamrockCIF: [%s]: %s" % (function_name, self._success_codes[code]))
+                logger.info(f"ShamrockCIF: [{function_name}]: {self._success_codes[code]}")
         elif code in self._error_codes.keys():
-            print("ShamrockCIF: [%s]: %s" % (function_name, self._error_codes[code]))
-            raise Exception(self._error_codes[code])
+            error_string = f"ShamrockCIF: [{function_name}]: {self._error_codes[code]}"
+            logger.error(error_string)
+            raise Exception(error_string)
         else:
-            print("ShamrockCIF: [%s]: Unknown code: %s" % (function_name, code))
-            raise Exception()
+            error_string = f"ShamrockCIF: [{function_name}]: Unknown code: {code}"
+            logger.error(error_string)
+            raise Exception(error_string)
 
     # dll functions
     def close(self):
@@ -63,7 +75,7 @@ class ShamrockCIF:
         c_number_pixels = ctypes.c_int(number_pixels)
         code = self.dll.ShamrockGetCalibration(c_device, c_calibration, c_number_pixels)
         self.error_check(code, 'ShamrockGetCalibration')
-        return [max(0, v) for v in c_calibration]
+        return [max(0.0, v) for v in c_calibration]
 
     def get_grating(self, device):
         c_device = ctypes.c_int(device)
@@ -180,35 +192,35 @@ class Shamrock_SR750(Instrument):
     Instrument driver for the Shamrock SR750 spectrometer.
 
     Args:
-        name (str): Instrument name.
-        dll_path (str): Path to the ShamrockCIF.dll file. If not set, a default path is used.
-        device_id (int): ID for the desired spectrometer.
-        ccd_number_pixels (int): Number of pixels on the connected CCD.
-        ccd_pixel_width (int): Pixel width on the connected CCD.
+        name: Instrument name.
+        dll_path: Path to the ShamrockCIF.dll file. If not set, a default path is used.
+        device_id: ID for the desired spectrometer.
+        ccd_number_pixels: Number of pixels on the connected CCD.
+        ccd_pixel_width: Pixel width on the connected CCD.
 
     Attributes:
-        ShamrockCIF (ShamrockCIF): DLL wrapper for ShamrockCIF.dll
-        device_id (int): Spectrometer device ID.
-        serial_number (int): Serial number of the spectrometer.
-        number_gratings (int): Number of gratings on the spectrometer.
+        ShamrockCIF: DLL wrapper for ShamrockCIF.dll
+        device_id: Spectrometer device ID.
+        serial_number: Serial number of the spectrometer.
+        number_gratings: Number of gratings on the spectrometer.
     """
 
-    def __init__(self, name, dll_path=None, device_id=0, ccd_number_pixels=1024, ccd_pixel_width=26, **kwargs):
+    def __init__(self, name: str, dll_path: Optional[str] = None, device_id: Optional[int] = 0, ccd_number_pixels: Optional[int] = 1024, ccd_pixel_width: Optional[int] = 26, **kwargs):
 
         super().__init__(name, **kwargs)
 
         # link to dll
-        self.ShamrockCIF = ShamrockCIF(dll_path=dll_path)
+        self.ShamrockCIF: ShamrockCIF = ShamrockCIF(dll_path=dll_path)
 
         # store device number
-        self.device_id = device_id
+        self.device_id: int = device_id
 
         # initialize Shamrock
         self.ShamrockCIF.initialize()
 
         # read info from Shamrock
-        self.serial_number = self.ShamrockCIF.get_serial_number(self.device_id)
-        self.number_gratings = self.ShamrockCIF.get_number_gratings(self.device_id)
+        self.serial_number: int = self.ShamrockCIF.get_serial_number(self.device_id)
+        self.number_gratings: int = self.ShamrockCIF.get_number_gratings(self.device_id)
 
         # send CCD info to Shamrock
         self.ShamrockCIF.set_number_pixels(self.device_id, ccd_number_pixels)
@@ -216,64 +228,65 @@ class Shamrock_SR750(Instrument):
 
         # add the instrument parameters
         self.add_parameter('blaze',
-                           get_cmd=self.get_blaze,
+                           get_cmd=self._get_blaze,
                            get_parser=int,
-                           label='blaze')
+                           label='Blaze')
 
         self.add_parameter('calibration',
-                           get_cmd=self.get_calibration,
+                           get_cmd=self._get_calibration,
                            unit='nm',
-                           label='calibration')
+                           label='Calibration')
 
         self.add_parameter('grating',
-                           get_cmd=self.get_grating,
-                           set_cmd=self.set_grating,
+                           get_cmd=self._get_grating,
+                           set_cmd=self._set_grating,
                            get_parser=int,
                            vals=Ints(min_value=1,
                                      max_value=self.number_gratings),
-                           label='grating')
+                           label='Grating')
 
         self.add_parameter('groove_density',
-                           get_cmd=self.get_groove_density,
+                           get_cmd=self._get_groove_density,
                            get_parser=int,
                            unit='l/mm',
-                           label='groove density')
+                           label='Groove density')
 
         self.add_parameter('slit',
-                           get_cmd=self.get_slit,
-                           set_cmd=self.set_slit,
+                           get_cmd=self._get_slit,
+                           set_cmd=self._set_slit,
                            get_parser=int,
                            vals=Ints(min_value=10,
                                      max_value=2500),
                            unit=u"\u03BC"+'m',
-                           label='slit')
+                           label='Slit')
 
-        min_wavelength, max_wavelength = self.ShamrockCIF.get_wavelength_limits(self.device_id, self.get_grating())
+        min_wavelength, max_wavelength = self.ShamrockCIF.get_wavelength_limits(self.device_id, self._get_grating())
         self.add_parameter('wavelength',
-                           get_cmd=self.get_wavelength,
-                           set_cmd=self.set_wavelength,
+                           get_cmd=self._get_wavelength,
+                           set_cmd=self._set_wavelength,
                            get_parser=float,
                            vals=Numbers(min_value=min_wavelength,
                                         max_value=max_wavelength),
                            unit='nm',
-                           label='wavelength')
+                           label='Wavelength')
 
         # print connect message
-        self.connect_message(idn_param='IDN')
+        self.connect_message()
 
     # get methods
-    def get_blaze(self):
+
+    def _get_blaze(self):
         grating = self.ShamrockCIF.get_grating(self.device_id)
         grating_info = self.ShamrockCIF.get_grating_info(self.device_id, grating)
         return grating_info[1]
 
-    def get_calibration(self):
+    def _get_calibration(self):
         return self.ShamrockCIF.get_calibration(self.device_id, 1024)
 
-    def get_grating(self):
+    def _get_grating(self):
         return self.ShamrockCIF.get_grating(self.device_id)
 
-    def get_groove_density(self):
+    def _get_groove_density(self):
         grating = self.ShamrockCIF.get_grating(self.device_id)
         grating_info = self.ShamrockCIF.get_grating_info(self.device_id, grating)
         return grating_info[0]
@@ -281,25 +294,27 @@ class Shamrock_SR750(Instrument):
     def get_idn(self):
         return {'vendor': 'Shamrock', 'serial': self.serial_number}
 
-    def get_slit(self):
+    def _get_slit(self):
         return self.ShamrockCIF.get_slit(self.device_id)
 
-    def get_wavelength(self):
+    def _get_wavelength(self):
         return self.ShamrockCIF.get_wavelength(self.device_id)
 
     # set methods
-    def set_grating(self, grating):
+
+    def _set_grating(self, grating):
         self.ShamrockCIF.set_grating(self.device_id, grating)
         min_wavelength, max_wavelength = self.ShamrockCIF.get_wavelength_limits(self.device_id, grating)
         self.wavelength.vals = Numbers(min_value=min_wavelength, max_value=max_wavelength)
 
-    def set_slit(self, val):
+    def _set_slit(self, val):
         self.ShamrockCIF.set_slit(self.device_id, val)
 
-    def set_wavelength(self, wavelength):
+    def _set_wavelength(self, wavelength):
         self.ShamrockCIF.set_wavelength(self.device_id, wavelength)
 
     # further methods
+
     def close(self):
         self.ShamrockCIF.close()
         super().close()
