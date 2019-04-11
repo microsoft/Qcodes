@@ -1,83 +1,81 @@
-import re
-from typing import Dict, Union, Any
 import visa
+import numpy as np
 
-from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter
+from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
 
 
-class JustInTimeParameter(_BaseParameter):
+class Keithley2450Sweep(ArrayParameter):
     """
-    Part of the set and get command strings are resolved right before the
-    `ask_raw` and `write_raw` are called.
-
-    For instance, if the get_cmd is ":SENS:{function}:RANG?", then at
-    call time we look up what the latest value of the
-    "instrument.function" parameter is. If this is `CURR`, we send
-    the string ":SENS:CURR:RANG?" to the instrument.
-
-    Everything between the curly brackets needs to be a Parameter attached
-    to the parent instrument.
+    Array parameter to capture sweeps defined in the Keithley 2450 instrument
     """
 
-    def __init__(
+    def __init__(self, name: str, instrument: 'Keithley2450') -> None:
+        placeholder_shape = (0,)
+        super().__init__(name, placeholder_shape, instrument)
+        self._has_performed_setup = False
+
+    def setup(
             self,
-            name: str,
-            instrument: Union[VisaInstrument, InstrumentChannel],
-            get_cmd: str,
-            set_cmd: str,
-            unit: str = None,
-            **kwargs: Dict[str, Any]
+            start: float,
+            stop: float,
+            step_count: int,
+            delay: float = 0,
+            sweep_count: int = 1,
+            range_mode: str = "AUTO"
     ) -> None:
+        source_function_p = self.instrument.source.function
+        source_function = source_function_p.get_latest() or source_function_p.function()
+        source_unit = Source2450.function_modes[source_function]["unit"]
 
-        super().__init__(name, instrument, **kwargs)
-        self.unit = unit
-        self._get_cmd = get_cmd
-        self._set_cmd = set_cmd
+        self.setpoint_names = (source_function,)
+        self.setpoint_labels = (source_function,)
+        self.setpoint_units = (source_unit,)
 
-    def _resolve_kwargs(self, command_string: str) -> Dict[str, Any]:
-        """
-        Args:
-            command_string: E.g. ":SENS:{function}:RANG?"
+        sense_function_p = self.instrument.sens.function
+        sense_function = sense_function_p.get_latest() or sense_function_p.function()
+        self.label = sense_function
+        self.unit = Sense2450.function_modes[sense_function]["unit"]
 
-        Returns:
-            dict: E.g. {"function": "current"} if self.instrument.current.get() = "current"
-        """
-        def get_param_value(parameter_name):
-            param = self.instrument.parameters[parameter_name]
-            value = param.get_latest()
-            if value is None:
-                value = param.get()
+        setpoints = np.linspace(start, stop, step_count)
 
-            return value
+        self.shape = (len(setpoints),)
+        self.setpoints = (tuple(setpoints),)
 
-        parameter_names = re.findall(r"{(\w+)}", command_string)
+        self.instrument.write_raw(
+            f":SOURce:SWEep:{source_function}:LINear {start},{stop},{step_count},{delay},{sweep_count},{range_mode}"
+        )
+        self._has_performed_setup = True
 
-        return {
-            param_name: get_param_value(param_name)
-            for param_name in parameter_names
-        }
+    def get_raw(self) -> np.array:
 
-    def get_raw(self) -> Any:
-        kwargs = self._resolve_kwargs(self._get_cmd)
-        get_cmd = self._get_cmd.format(**kwargs)
+        if not self._has_performed_setup:
+            raise RuntimeError("Please setup the sweep before calling this function")
 
-        return self.instrument.ask_raw(get_cmd)
+        self.instrument.write_raw(":INITiate")
+        self.instrument.write_raw("*WAI")
+        raw_data = self.instrument.ask_raw(f":TRACe:DATA? 1, {self.shape[0]}")
+        self.instrument.write_raw(":TRACe:CLEar")
+        self._has_performed_setup = False
 
-    def set_raw(self, value: Any) -> None:
-        kwargs = self._resolve_kwargs(self._set_cmd)
-        set_cmd = self._set_cmd.format(**kwargs)
-
-        self.instrument.write_raw(set_cmd.format(value))
+        return np.array([float(i) for i in raw_data.split(",")])
 
 
 class Sense2450(InstrumentChannel):
-    """Sense sub-module for the Keithley 2450 source meter"""
-    range_limits = {
-        "CURR": vals.Numbers(10E-9, 1),
-        "RES": vals.Numbers(20, 200E6),
-        "VOLT": vals.Numbers(0.02, 200)
+    function_modes = {
+        "CURR": {
+            "unit": "A",
+            "vals": vals.Numbers(10E-9, 1)
+        },
+        "RES": {
+            "unit": "Ohm",
+            "vals": vals.Numbers(20, 200E6)
+        },
+        "VOLT": {
+            "unit": "V",
+            "vals": vals.Numbers(0.02, 200)
+        }
     }
 
     def __init__(self, parent: 'Keithley2450', name: str) -> None:
@@ -87,36 +85,31 @@ class Sense2450(InstrumentChannel):
             "function",
             set_cmd=":SENS:FUNC \"{}\"",
             get_cmd=":SENS:FUNC?",
-            vals=vals.Enum(
-                "CURR",
-                "VOLT",
-                "RES"
-            ),
+            vals=vals.Enum(*Sense2450.function_modes.keys()),
             get_parser=self._function_get_parser
         )
 
-        self.add_parameter(
-            "four_wire_measurement",
-            set_cmd=":SENSe:{function}:RSENse {{}}",
-            get_cmd=":SENSe:{function}:RSENse?",
-            val_mapping={
-                True: "1",
-                False: "0"
-            },
-            parameter_class=JustInTimeParameter
-        )
+        for function, args in Sense2450.function_modes.items():
+            self.add_parameter(
+                f"_four_wire_measurement_{function}",
+                set_cmd=f":SENSe:{function}:RSENse {{}}",
+                get_cmd=f":SENSe:{function}:RSENse?",
+                val_mapping={
+                    True: "1",
+                    False: "0"
+                },
+            )
 
-        self.add_parameter(
-            "range",
-            set_cmd=":SENSe:{function}:RANGe {{}}",
-            get_cmd=":SENSe:{function}:RANGe?",
-            set_parser=self._range_validator,
-            get_parser=float,
-            parameter_class=JustInTimeParameter
-        )
+            self.add_parameter(
+                f"_range_{function}",
+                set_cmd=f":SENSe:{function}:RANGe {{}}",
+                get_cmd=f":SENSe:{function}:RANGe?",
+                vals=args["vals"],
+                get_parser=float,
+                unit=args["unit"]
+            )
 
-    @staticmethod
-    def _function_get_parser(get_value: str) -> str:
+    def _function_get_parser(self, get_value: str) -> str:
         """
         Args:
             get_value: ""CURR:DC"" (Note the quotation marks in the string)
@@ -124,125 +117,111 @@ class Sense2450(InstrumentChannel):
         Returns:
             str: "CURR"
         """
-
         return_value = get_value.strip("\"")
         if return_value.endswith(":DC"):
             return_value = return_value.split(":")[0]
 
         return return_value
 
-    def _range_validator(self, range_value: float) -> float:
-        """Validate that the range, given the function, is correct"""
-        validator = Sense2450.range_limits[self.function()]
-        validator.validate(range_value)
-        return range_value
+    @property
+    def four_wire_measurement(self) -> Parameter:
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.function.get_latest() or self.function()
+        param_name = f"_four_wire_measurement_{function}"
+        return self.parameters[param_name]
+
+    @property
+    def range(self) -> Parameter:
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.function.get_latest() or self.function()
+        param_name = f"_range_{function}"
+        return self.parameters[param_name]
 
 
 class Source2450(InstrumentChannel):
-    """Source sub-module for the Keithley 2450 source meter"""
-    range_limits = {
-        "CURR": vals.Numbers(-1, 1),
-        "VOLT": vals.Numbers(-200, 200)
+    function_modes = {
+        "CURR": {
+            "unit": "A",
+            "vals": vals.Numbers(-1, 1)
+        },
+        "VOLT": {
+            "unit": "V",
+            "vals": vals.Numbers(-200, 200)
+        }
     }
 
-    def __init__(self, parent: 'Keithley2450', name: str):
+    def __init__(self, parent: 'Keithley2450', name: str) -> None:
         super().__init__(parent, name)
 
         self.add_parameter(
             "function",
             set_cmd="SOUR:FUNC {}",
             get_cmd="SOUR:FUNC?",
-            vals=vals.Enum(
-                "CURR",
-                "VOLT"
-            )
+            vals=vals.Enum(*Source2450.function_modes.keys())
         )
 
-        self.add_parameter(
-            "range",
-            set_cmd=":SOUR:{function}:RANGe {{}}",
-            get_cmd=":SOUR:{function}:RANGe?",
-            set_parser=self._range_validator,
-            get_parser=float,
-            parameter_class=JustInTimeParameter
-        )
-
-        self.add_parameter(
-            "read_back",
-            set_cmd=":SOUR:{function}:READ:BACK {{}}",
-            get_cmd=":SOUR:{function}:READ:BACK?",
-            vals=vals.Enum(
-                "ON",
-                "OFF"
-            ),
-            parameter_class=JustInTimeParameter
-        )
-
-        for source_name, unit in [("current", "A"), ("voltage", "V")]:
+        for function, args in Sense2450.function_modes.items():
             self.add_parameter(
-                f"{source_name}_setpoint",
-                set_cmd=f"SOUR:{source_name} {{}}",
-                get_cmd=f"SOUR:{source_name}?",
-                unit=unit,
-                get_parser=float
+                f"_range_{function}",
+                set_cmd=f":SOUR:{function}:RANGe {{}}",
+                get_cmd=f":SOUR:{function}:RANGe?",
+                vals=args["vals"],
+                get_parser=float,
+                unit=args["unit"]
             )
 
-    def _range_validator(self, range_value: float) -> float:
-        """Validate that the range, given the function, is correct"""
-        validator = Source2450.range_limits[self.function()]
-        validator.validate(range_value)
-        return range_value
+            self.add_parameter(
+                f"_setpoint_{function}",
+                set_cmd=f"SOUR:{function} {{}}",
+                get_cmd=f"SOUR:{function}?",
+                get_parser=float,
+                unit=args["unit"]
+            )
 
-    def sweep_setup(
-            self,
-            start: float,
-            stop: float,
-            step_count: int,
-            delay: float = 0
-    ) -> None:
+    @property
+    def range(self) -> Parameter:
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.function.get_latest() or self.function()
+        param_name = f"_range_{function}"
+        return self.parameters[param_name]
 
-        function = self.function.get_latest()
-        if function is None:
-            function = self.function.get()
-
-        range_type = "AUTO"
-        self.parent.write_raw(
-            f":SOURce:SWEep:{function}:LINear {start}, {stop}, {delay}, {step_count}, {range_type}"
-        )
+    @property
+    def setpoint(self) -> Parameter:
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.function.get_latest() or self.function()
+        param_name = f"_setpoint_{function}"
+        return self.parameters[param_name]
 
 
 class Keithley2450(VisaInstrument):
     """
     The QCoDeS driver for the Keithley 2450 source meter
     """
-    @staticmethod
-    def set_correct_protocol(address: str) -> None:
-        """
-        The correct communication protocol is SCPI, make sure this is set
-
-        Args:
-            address: Visa resource address
-        """
-        Keithley2450._check_and_adjust_protocol(address)
 
     @staticmethod
-    def _check_and_adjust_protocol(address, raise_on_fail=False) -> None:
-        """
-        Args:
-            address: Visa resource address
-            raise_on_fail: If True and the language mode is anything other then "SCPI", raise a runtime error.
-                If 'raise_on_fail' is False and the language mode is anything other then "SCPI"
-                adjust the language to "SCPI"
-        """
+    def set_correct_language(address):
+        Keithley2450._check_scpi_mode(address, raise_on_incorrect_setting=False)
+
+    @staticmethod
+    def _check_scpi_mode(address, raise_on_incorrect_setting=True):
+
         resource_manager = visa.ResourceManager()
         raw_instrument = resource_manager.open_resource(address)
-        language = raw_instrument.query("*LANG?")
+        language = raw_instrument.query("*LANG?").strip()
 
         if language != "SCPI":
-            if raise_on_fail:
+            if raise_on_incorrect_setting:
                 raise RuntimeError(
                     f"The instrument is in {language} mode which is not supported."
-                    f"Please run `Keithley2450.set_correct_protocol(address)` and try to "
+                    f"Please run `Keithley2450.set_correct_language(address)` and try to "
                     f"initialize the driver again"
                 )
             else:
@@ -251,11 +230,9 @@ class Keithley2450(VisaInstrument):
 
         raw_instrument.close()
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name, address, **kwargs):
 
-        # Before doing anything else, make sure the instrument has the correct
-        # protocol mode (SCPI), else raise a runtime error
-        Keithley2450._check_and_adjust_protocol(address, raise_on_fail=True)
+        Keithley2450._check_scpi_mode(address)
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -286,28 +263,28 @@ class Keithley2450(VisaInstrument):
             Source2450(self, "source")
         )
 
+        for function, args in Sense2450.function_modes.items():
+            parameter_name = f"_measure_{function}"
+
+            self.add_parameter(
+                parameter_name,
+                get_cmd=":MEASure?",
+                get_parser=float,
+                unit=args["unit"]
+            )
+
         self.add_parameter(
-            "start_sweep",
-            set_cmd=":INITiate"
+            name="sweep",
+            parameter_class=Keithley2450Sweep
         )
 
         self.connect_message()
 
     @property
     def measure(self) -> Parameter:
-
-        units = {
-            "CURR": "A",
-            "VOLT": "V",
-            "RES": "Ohm"
-        }
-        sense_function = self.sense.function()
-        unit = units[sense_function]
-
-        return Parameter(
-            "measure",
-            instrument=self,
-            get_cmd=":MEASure?",
-            unit=unit,
-            get_parser=float
-        )
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.sense.function.get_latest() or self.sense.function()
+        param_name = f"_measure_{function}"
+        return self.parameters[param_name]
