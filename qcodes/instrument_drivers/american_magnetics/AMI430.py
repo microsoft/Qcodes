@@ -115,8 +115,8 @@ class AMI430(IPInstrument):
     either the AMI430_2D or AMI430_3D virtual instrument classes.
 
     Args:
-        name (string): a name for the instrument
-        address (string): IP address of the power supply programmer
+        name (str): a name for the instrument
+        address (str): IP address of the power supply programmer
         current_ramp_limit: A current ramp limit, in units of A/s
     """
     _SHORT_UNITS = {'seconds': 's', 'minutes': 'min',

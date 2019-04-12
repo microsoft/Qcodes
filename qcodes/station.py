@@ -155,8 +155,8 @@ class Station(Metadatable, DelegateAttributes):
             for python dictionaries)
 
         Raises:
-            KeyError if a component with the given name is not part of this
-            station
+            KeyError: if a component with the given name is not part of this
+                station
         """
         try:
             return self.components.pop(name)

@@ -20,9 +20,30 @@ def empty_temp_db():
     # create a temp database for testing
     with tempfile.TemporaryDirectory() as tmpdirname:
         qc.config["core"]["db_location"] = os.path.join(tmpdirname, 'temp.db')
-        qc.config["core"]["db_debug"] = True
+        if os.environ.get('QCODES_SQL_DEBUG'):
+            qc.config["core"]["db_debug"] = True
+        else:
+            qc.config["core"]["db_debug"] = False
         initialise_database()
         yield
+
+
+@pytest.fixture(scope='function')
+def two_empty_temp_db_connections():
+    """
+    Yield the paths of two empty files. Meant for use with the
+    test_database_copy_paste
+    """
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        source_path = os.path.join(tmpdirname, 'source.db')
+        target_path = os.path.join(tmpdirname, 'target.db')
+        source_conn = connect(source_path)
+        target_conn = connect(target_path)
+        try:
+            yield (source_conn, target_conn)
+        finally:
+            source_conn.close()
+            target_conn.close()
 
 
 @pytest.fixture(scope='function')

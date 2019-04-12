@@ -1,7 +1,7 @@
 import logging
 import struct
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import qcodes as qc
 from qcodes import VisaInstrument, DataSet
@@ -349,7 +349,7 @@ class Keithley_2600(VisaInstrument):
         """
         Args:
             name: Name to use internally in QCoDeS
-            address: VISA ressource address
+            address: VISA resource address
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -430,7 +430,7 @@ class Keithley_2600(VisaInstrument):
     def _display_settext(self, text: str) -> None:
         self.visa_handle.write('display.settext("{}")'.format(text))
 
-    def get_idn(self) -> Dict[str, str]:
+    def get_idn(self) -> Dict[str, Optional[str]]:
         IDN = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         model = model[6:]
