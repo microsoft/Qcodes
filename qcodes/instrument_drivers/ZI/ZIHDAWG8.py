@@ -203,7 +203,7 @@ class ZIHDAWG8(Instrument):
 
         Raises:
             CompilerError: If error occurs during compilation of the sequence
-            program, or if a warning is elevated to an error.
+                program, or if a warning is elevated to an error.
         """
         self.awg_module.set('awgModule/index', awg_number)
         self.awg_module.set('awgModule/compiler/sourcestring', sequence_program)
