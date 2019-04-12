@@ -19,8 +19,8 @@ def setup_measurement(dataset: OldDataSet) -> Measurement:
         if array.is_setpoint:
             setarrays = None
         else:
-            setarrays = [setarray.name for setarray in array.set_arrays]
-        meas.register_custom_parameter(name=array.name,
+            setarrays = [setarray.array_id for setarray in array.set_arrays]
+        meas.register_custom_parameter(name=array.array_id,
                                        label=array.label,
                                        unit=array.unit,
                                        setpoints = setarrays
@@ -33,13 +33,13 @@ def store_array_to_database(datasaver, array):
     if dims == 2:
         for index1, i in enumerate(array.set_arrays[0]):
             for index2, j in enumerate(array.set_arrays[1][index1]):
-                datasaver.add_result((array.set_arrays[0].name, i),
-                                     (array.set_arrays[1].name, j),
-                                     (array.name, array[index1,index2]))
+                datasaver.add_result((array.set_arrays[0].array_id, i),
+                                     (array.set_arrays[1].array_id, j),
+                                     (array.array_id, array[index1,index2]))
     elif dims == 1:
         for index, i in enumerate(array.set_arrays[0]):
-            datasaver.add_result((array.set_arrays[0].name, i),
-                                 (array.name, array[index]))
+            datasaver.add_result((array.set_arrays[0].array_id, i),
+                                 (array.array_id, array[index]))
     else:
         raise NotImplementedError('The exporter only currently handles 1 and 2 Dimentional data')
     return datasaver.run_id
@@ -52,14 +52,14 @@ def store_array_to_database_alt(meas, array):
         with meas.run() as datasaver:
             for index1, i in enumerate(array.set_arrays[0]):
                 outer_data[:] = i
-                datasaver.add_result((array.set_arrays[0].name, outer_data),
-                                     (array.set_arrays[1].name, array.set_arrays[1][index1,:]),
-                                     (array.name, array[index1,:]))
+                datasaver.add_result((array.set_arrays[0].array_id, outer_data),
+                                     (array.set_arrays[1].array_id, array.set_arrays[1][index1,:]),
+                                     (array.array_id, array[index1,:]))
     elif dims == 1:
         with meas.run() as datasaver:
             for index, i in enumerate(array.set_arrays[0]):
-                datasaver.add_result((array.set_arrays[0].name, i),
-                                     (array.name, array[index]))
+                datasaver.add_result((array.set_arrays[0].array_id, i),
+                                     (array.array_id, array[index]))
     else:
         raise NotImplementedError('The exporter only currently handles 1 and 2 Dimentional data')
     return datasaver.run_id

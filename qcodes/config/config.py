@@ -9,7 +9,7 @@ from os.path import expanduser
 from pathlib import Path
 
 import jsonschema
-from typing import Dict
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class Config:
 
         current_config(dict): Valid config values
         current_schema(dict): Validators and descriptions of config values
-        current_config_path(path): Path of the last loaded config file
+        current_config_path(str): Path of the last loaded config file
 
     """
 
@@ -102,7 +102,7 @@ class Config:
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()
 
-    def load_default(self):
+    def load_default(self) -> Tuple[dict, dict]:
         defaults = self.load_config(self.default_file_name)
         defaults_schema = self.load_config(self.schema_default_file_name)
         self.validate(defaults, defaults_schema)
@@ -132,7 +132,7 @@ class Config:
 
         Args:
             path: Optional path to directory containing a `qcodesrc.json`
-            config file
+               config file
         """
         config = copy.deepcopy(self.defaults)
         self.current_schema = copy.deepcopy(self.defaults_schema)
@@ -156,7 +156,9 @@ class Config:
             schema_file = os.path.join(self.config_file_path,
                                        self.schema_file_name)
             self._update_config_from_file(config_file, schema_file, config)
-
+        if config is None:
+            raise RuntimeError("Could not load config from any of the "
+                               "expected locations.")
         self.current_config = config
         self.current_config_path = self._loaded_config_files[-1]
 
@@ -186,10 +188,10 @@ class Config:
         validators are used.
 
         Args:
-            json_config (Optiona[string]) : json file to validate
-            schema (Optiona[dict]): schema dictionary
-            extra_schema_path (Optiona[string]): schema path that contains
-                    extra validators to be added to schema dictionary
+            json_config (Optional[str]) : json file to validate
+            schema (Optional[dict]): schema dictionary
+            extra_schema_path (Optional[str]): schema path that contains
+                extra validators to be added to schema dictionary
         """
         if extra_schema_path is not None:
             # add custom validation
@@ -218,8 +220,8 @@ class Config:
 
         Args:
             key(str): key to be added under user config
-            value (any): value to add to config
-            value_type(Optional(string)): type of value
+            value (Any): value to add to config
+            value_type(Optional(str)): type of value
                 allowed are string, boolean, integer
             default (str): default value, stored only in the schema
             description (str): description of key to add to schema
@@ -322,7 +324,7 @@ class Config:
         Saves current config to path.
 
         Args:
-            path (string): path of new file(s)
+            path (str): path of new file(s)
         """
         with open(path, "w") as fp:
             json.dump(self.current_config, fp, indent=4)
@@ -332,7 +334,7 @@ class Config:
         Saves current schema to path.
 
         Args:
-            path (string): path of new file(s)
+            path (str): path of new file(s)
         """
         with open(path, "w") as fp:
             json.dump(self.current_schema, fp, indent=4)
@@ -355,16 +357,24 @@ class Config:
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
-    def describe(self, name):
+    def describe(self, name: str) -> str:
         """
         Describe a configuration entry
 
         Args:
-            name (str): name of entry to describe
+            name: name of entry to describe in 'dotdict' notation,
+              e.g. name="user.scriptfolder"
         """
         val = self.current_config
+        if val is None:
+            raise RuntimeError(f"Config is empty, cannot describe entry.")
+        if self.current_schema is None:
+            raise RuntimeError("No schema found, cannot describe entry.")
         sch = self.current_schema["properties"]
         for key in name.split('.'):
+            if val is None:
+                raise RuntimeError(f"Cannot describe {name} Some part of it "
+                                   f"is null")
             val = val[key]
             if sch.get(key):
                 sch = sch[key]
@@ -392,9 +402,9 @@ class Config:
 
     def __repr__(self):
         old = super().__repr__()
-        output = f"""Current values: \n {current_config} \n
-                     Current paths: \n {self._loaded_config_files} \n
-                     {old}"""
+        output = (f"Current values: \n {self.current_config} \n"
+                  f"Current paths: \n {self._loaded_config_files} \n"
+                  f"{old}")
         return output
 
 

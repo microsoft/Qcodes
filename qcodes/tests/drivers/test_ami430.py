@@ -253,6 +253,8 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
             continue
 
         g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
+        if g is None:
+            raise RuntimeError(f"No match found in {msg!r} when getting ramp down order")
         name = g.groups()[0]
         order.append(name)
 
@@ -413,7 +415,7 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
         messages = [record.message for record in caplog.records]
         assert messages[-1] == '[z(AMI430_VISA)] Finished blocking ramp'
-        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1'
+        assert messages[-6] == '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
 
         caplog.clear()
         current_driver.block_during_ramp(False)
