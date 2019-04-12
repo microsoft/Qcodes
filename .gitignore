@@ -80,10 +80,12 @@ target/
 *.py~
 tmp/
 .#*
+.mypy_cache/*
 
 docs/examples/data/*
 
 .idea/
+.vscode/
 
 # Mac files
 .DS_Store
@@ -98,3 +100,6 @@ experiments.db
 benchmarking/env/
 benchmarking/html/
 benchmarking/results/
+
+# Ignore .db files that are generated for some tests
+qcodes/tests/dataset/fixtures/db_files/*

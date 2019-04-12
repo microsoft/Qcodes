@@ -1,0 +1,81 @@
+name: "QCoDeS CI"
+
+trigger:
+  branches:
+    include:
+      - master
+
+jobs:
+  - job: "run_the_tests"
+    pool:
+      vmImage: "vs2017-win2016"
+
+    steps:
+      - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+        displayName: "Add conda to PATH"
+      - script: |
+          conda update -n base conda
+          conda init cmd.exe powershell
+        displayName: "Conda setup"
+      - script: |
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda --version
+          CALL conda env create --file environment.yml
+          CALL conda activate qcodes
+          pip install -r test_requirements.txt
+          pip install -r docs_requirements.txt
+          pip install -e .
+        displayName: "Install environment, qcodes"
+      - script: |
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda activate qcodes
+          mypy qcodes
+        displayName: "mypy"
+      - script: |
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda activate qcodes
+          cd ..
+          git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
+          cd qcodes_generate_test_db
+          python generate_version_0.py
+          python generate_version_1.py
+          python generate_version_2.py
+          python generate_version_3.py
+        displayName: "Generate db fixtures"
+        condition: succeededOrFailed()
+      - script: |
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda activate qcodes
+          cd qcodes
+          pytest --junitxml=test-results.xml --cov=qcodes --cov-report=xml --cov-report=html --cov-config=.coveragerc
+        displayName: "Run pytest"
+        condition: succeededOrFailed()
+      - task: PublishTestResults@1
+        displayName: "Publish test results"
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFiles: 'qcodes\test-*.xml'
+          testRunTitle: 'Publish test results'
+      - task: PublishCodeCoverageResults@1
+        displayName: "Publish code coverage results"
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)\qcodes\coverage.xml'
+          reportDirectory: '$(System.DefaultWorkingDirectory)\qcodes\htmlcov'
+      - script: |
+          CALL C:\Miniconda\condabin\conda_hook.bat
+          CALL conda activate qcodes
+          cd docs
+          REM Turn warnings into errors
+          set SPHINXOPTS=-W -v
+          make.bat htmlapi
+        displayName: "Build docs"
+        condition: succeededOrFailed()
+      - task: PublishBuildArtifacts@1
+        displayName: "Publish build docs to Azure DevOps"
+        condition: succeededOrFailed()
+        inputs:
+          pathtoPublish: 'docs/_build/html'
+          artifactName: 'qcodes_docs'
+          publishLocation: 'Container'
