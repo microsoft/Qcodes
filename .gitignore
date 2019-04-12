@@ -85,6 +85,7 @@ tmp/
 docs/examples/data/*
 
 .idea/
+.vscode/
 
 # Mac files
 .DS_Store

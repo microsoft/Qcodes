@@ -352,9 +352,13 @@ def test_select_range_limits(lakeshore_372):
     h = lakeshore_372.sample_heater
     ranges = list(range(1, 9))
     h.range_limits(ranges)
+
     for i in ranges:
-        h.set_range_from_temperature(i-0.5)
+        h.set_range_from_temperature(i - 0.5)
         assert h.output_range() == h.INVERSE_RANGES[i]
+
+    h.set_range_from_temperature(i + 0.5)
+    assert h.output_range() == h.INVERSE_RANGES[len(ranges)]
 
 
 def test_set_and_wait_unit_setpoint_reached(lakeshore_372):

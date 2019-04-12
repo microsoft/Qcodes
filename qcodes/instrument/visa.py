@@ -34,7 +34,7 @@ class VisaInstrument(Instrument):
             the user to do that. see eg:
             http://pyvisa.readthedocs.org/en/stable/names.html
 
-        timeout (number): seconds to allow for responses. Default 5.
+        timeout (int, float): seconds to allow for responses. Default 5.
 
         terminator: Read termination character(s) to look for. Default ''.
 
