@@ -85,8 +85,13 @@ class ParamSpecGrove:
         self._trees_as_dict_str = dict(ChainMap(*(t.as_dict_str()
                                                   for t in self._trees)))
 
+        self._trees_as_dict_inv = self._invert_grove()
+
     def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         return self._trees_as_dict
+
+    def as_dict_inv(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
+        return self._trees_as_dict_inv
 
     @property
     def roots(self) -> Set[ParamSpecBase]:
@@ -98,6 +103,46 @@ class ParamSpecGrove:
 
     def extend(self, new: ParamSpecTree) -> 'ParamSpecGrove':
         return ParamSpecGrove(*self._trees, new)
+
+    def _invert_grove(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
+        """
+        Helper function to invert the dict representation of the grove.
+        Will turn {A: (B, C)} into {B: (A,), C: (A,)}
+        """
+        grovedict = self._trees_as_dict
+
+        indeps: Set[ParamSpecBase] = set()
+        for indep_tup in grovedict.values():
+            indeps.update(indep_tup)
+
+        inverted: Dependencies = {}
+        for indep in indeps:
+            deps = tuple(ps for ps in grovedict if indep in grovedict[ps])
+            inverted[indep] = deps
+
+        return inverted
+
+    def __add__(self, other_grove: 'ParamSpecGrove') -> 'ParamSpecGrove':
+        if not isinstance(other_grove, ParamSpecGrove):
+            raise TypeError(f'Must be ParamSpecGrove, not {type(other_grove)}')
+
+        new_trees = deepcopy(self._trees).union(deepcopy(other_grove._trees))
+        return ParamSpecGrove(*new_trees)
+
+    def __getitem__(self, ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
+        try:
+            ret_val = self.as_dict()[ps]
+            return ret_val
+        except KeyError:
+            try:
+                ret_val = self.as_dict_inv()[ps]
+                return ret_val
+            except KeyError:
+                pass
+        raise KeyError(f'{ps} not found in this grove')
+
+    def __contains__(self, ps: ParamSpecBase) -> bool:
+        return ps in self._trees_as_dict or ps in self._trees_as_dict_inv
 
 
 class DependencyError(Exception):
@@ -143,20 +188,20 @@ class InterDependencies_:
         inferences = inferences or {}
 
         try:
-            new_deps_gen = (ParamSpecTree(k, *v)
+            deps_gen = (ParamSpecTree(k, *v)
                             for k, v in dependencies.items())
-            new_deps = ParamSpecGrove(*new_deps_gen)
+            deps_grove = ParamSpecGrove(*deps_gen)
         except (AttributeError, ValueError, TypeError) as e:
             raise ValueError('Invalid dependencies') from e
 
         try:
-            new_inffs_gen = (ParamSpecTree(k, *v)
+            inffs_gen = (ParamSpecTree(k, *v)
                              for k, v in inferences.items())
-            new_inffs = ParamSpecGrove(*new_inffs_gen)
+            inffs_grove = ParamSpecGrove(*inffs_gen)
         except (AttributeError, ValueError, TypeError) as e:
             raise ValueError('Invalid inferences') from e
 
-        link_error = self._validate_double_links(new_deps, new_inffs)
+        link_error = self._validate_double_links(deps_grove, inffs_grove)
         if link_error is not None:
             error, mssg = link_error
             raise error(mssg)
@@ -174,6 +219,9 @@ class InterDependencies_:
         self.dependencies: Dependencies = dependencies
         self.inferences: Dependencies = inferences
         self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
+
+        self.deps_grove = deps_grove
+        self.inffs_grove = inffs_grove
 
         # The object is now complete, but for convenience, we form some more
         # private attributes for easy look-up
@@ -309,9 +357,12 @@ class InterDependencies_:
         Raises:
             ValueError if the parameter is not part of this object
         """
-        if ps not in self:
+        if ps not in self.deps_grove and ps not in self.inffs_grove:
             raise ValueError(f'Unknown parameter: {ps}')
-        return self._dependencies_inv.get(ps, ())
+        try:
+            return self.deps_grove[ps]
+        except KeyError:
+            return ()
 
     def what_is_inferred_from(self,
                               ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
@@ -326,9 +377,12 @@ class InterDependencies_:
         Raises:
             ValueError if the parameter is not part of this object
         """
-        if ps not in self:
+        if ps not in self.deps_grove and ps not in self.inffs_grove:
             raise ValueError(f'Unknown parameter: {ps}')
-        return self._inferences_inv.get(ps, ())
+        try:
+            return self.inffs_grove[ps]
+        except KeyError:
+            return ()
 
     def serialize(self) -> Dict[str, Any]:
         """
