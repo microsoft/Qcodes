@@ -1,3 +1,10 @@
+"""
+The measurement module provides a context manager for registering parameters
+to measure and storing results. The user is expected to mainly interact with it
+using the :class:`.Measurement` class.
+"""
+
+
 import json
 import logging
 from time import monotonic
@@ -159,7 +166,7 @@ class DataSaver:
                                                   res,
                                                   found_parameters)
 
-        for partial_result in res:
+        for i, partial_result in enumerate(res):
             parameter = partial_result[0]
             paramstr = str(parameter)
             value = partial_result[1]
@@ -174,9 +181,12 @@ class DataSaver:
                 inserting_as_arrays = True
                 inserting_this_as_array = True
             if any(isinstance(value, typ) for typ in array_like_types):
-
                 value = cast(np.ndarray, partial_result[1])
                 value = np.atleast_1d(value)
+                # we want to always use the np array going forward
+                # note that the actual cast to np array is done
+                # by `np.atleast_1d` not by `cast`
+                res[i] = (parameter, value)
                 array_size = len(value.ravel())
                 if param_spec.type != 'array' and array_size > 1:
                     inserting_unrolled_array = True
@@ -218,6 +228,7 @@ class DataSaver:
                                      f' Values only given for'
                                      f' {sorted(stuffwehave)}.')
 
+
         if inserting_unrolled_array and inserting_as_arrays:
             raise RuntimeError("Trying to insert multiple data values both "
                                "in array from and as numeric. This is not "
@@ -255,13 +266,9 @@ class DataSaver:
                     if hasattr(value, '__len__') and not isinstance(value, str):
                         value = cast(Union[Sequence, np.ndarray], value)
                         if isinstance(value, np.ndarray):
-                            # this is significantly faster than atleast_1d
-                            # espcially for non 0D arrays
-                            # because we already know that this is a numpy
-                            # array and just one numpy array. atleast_1d
-                            # performs additional checks.
-                            if value.ndim == 0:
-                                value = value.reshape(1)
+                            # we always want to iterate over a 1d array
+                            # ravel unconditionally returns a 1d representation
+                            # both for >1D arrays and for 0D arrays
                             value = value.ravel()
                         res_dict[param] = value[index]
                     else:
@@ -482,6 +489,8 @@ class Runner:
         else:
             raise RuntimeError("No parameters supplied")
 
+        self.ds.mark_started()
+
         # register all subscribers
         for (callble, state) in self.subscribers:
             # We register with minimal waiting time.
@@ -508,7 +517,7 @@ class Runner:
 
         # and finally mark the dataset as closed, thus
         # finishing the measurement
-        self.ds.mark_complete()
+        self.ds.mark_completed()
 
         self.ds.unsubscribe_all()
 

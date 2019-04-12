@@ -284,9 +284,9 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
     def __init__(self, name, address, silent=False, **kwargs):
         """
         Args:
-            name (string): The name of the instrument used internally
+            name (str): The name of the instrument used internally
                 by QCoDeS. Must be unique.
-            address (string): The VISA resource name.
+            address (str): The VISA resource name.
             silent (Optional[bool]): If True, no connect message is printed.
         """
 

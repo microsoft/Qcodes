@@ -1,3 +1,10 @@
+"""
+This module implements a :class:`.Group` intended to hold multiple
+parameters that are to be gotten and set by the same command. The parameters
+should be of type :class:`GroupParameter`
+"""
+
+
 from collections import OrderedDict
 from typing import List, Union, Callable, Dict, Any, Optional
 
@@ -7,19 +14,19 @@ from qcodes import Instrument
 
 class GroupParameter(Parameter):
     """
-    Group parameter is a `Parameter` which value can be set or gotten only
-    together with other group parameters. This happens when an instrument
+    Group parameter is a :class:`.Parameter` which value can be set or gotten
+    only together with other group parameters. This happens when an instrument
     has commands which set and get more than one parameter per call.
 
-    The `set_raw` method of a group parameter forwards the call to the
+    The ``set_raw`` method of a group parameter forwards the call to the
     group, and the group then makes sure that the values of other parameters
-    within the group are left unchanged. The `get_raw` method of a group
+    within the group are left unchanged. The ``get_raw`` method of a group
     parameter also forwards the call to the group, and the group makes sure
     that the command output is parsed correctly, and the value of the
     parameter of interest is returned.
 
     After initialization, the group parameters need to be added to a group.
-    See `Group` for more information.
+    See :class:`.Group` for more information.
 
     Args:
         name
@@ -68,8 +75,9 @@ class GroupParameter(Parameter):
 
 class Group:
     """
-    The group combines `GroupParameter`s that are to be gotten or set via the
-    same command. The command has to be a string, for example, a VISA command.
+    The group combines :class:`.GroupParameter` s that are to be gotten or set
+    via the same command. The command has to be a string, for example,
+    a VISA command.
 
     The `Group`'s methods are used within `GroupParameter` in order to
     properly implement setting and getting of a single parameter in the
@@ -77,17 +85,18 @@ class Group:
 
     The command used for setting values of parameters has to be a format
     string which contains the names of the parameters the group has been
-    initialized with. For example, if a command has syntax `"CMD a_value,
-    b_value"`, where `'a_value'` and `'b_value'` are values of two parameters
-    with names `"a"` and `"b"`, then the command string has to be "CMD {a},
-    {b}", and the group has to be initialized with two `GroupParameter`s
-    `a_param` and `b_param`, where `a_param.name=="a"` and `b_param.name=="b"`.
+    initialized with. For example, if a command has syntax ``CMD a_value,
+    b_value``, where ``a_value`` and ``b_value`` are values of two parameters
+    with names ``a`` and ``b``, then the command string has to be ``CMD {a},
+    {b}``, and the group has to be initialized with two ``GroupParameter`` s
+    ``a_param`` and ``b_param``, where ``a_param.name=="a"`` and
+    ``b_param.name=="b"``.
 
     Note that by default, it is assumed that the command used for getting
     values returns a comma-separated list of values of parameters, and their
-    order corresponds to the order of `GroupParameter`s in the list that is
-    passed to the `Group`'s constructor. Through keyword arguments of the
-    `Group`'s constructor, it is possible to change the separator, and even
+    order corresponds to the order of ``GroupParameter`` s in the list that is
+    passed to the ``Group``'s constructor. Through keyword arguments of the
+    ``Group``'s constructor, it is possible to change the separator, and even
     the parser of the output of the get command.
 
     The get and set commands are called via the instrument that the first
@@ -95,52 +104,53 @@ class Group:
     group belong to the same instrument.
 
     Example:
-        ```
-        class InstrumentWithGroupParameters(VisaInstrument):
-            def __init__(self, name, address, **kwargs):
-                super().__init__(name, address, **kwargs)
 
-                ...
+        ::
 
-                # Here is how group of group parameters is defined for
-                # a simple case of an example "SGP" command that sets and gets
-                # values of "enabled" and "gain" parameters (it is assumed that
-                # "SGP?" returns the parameter values as comma-separated list
-                # "enabled_value,gain_value")
-                self.add_parameter('enabled',
-                                   label='Enabled',
-                                   val_mapping={True: 1, False: 0},
-                                   parameter_class=GroupParameter)
-                self.add_parameter('gain',
-                                   label='Some gain value',
-                                   get_parser=float,
-                                   parameter_class=GroupParameter)
-                self.output_group = Group([self.enabled, self.gain],
-                                          set_cmd='SGP {enabled}, {gain}',
-                                          get_cmd='SGP?')
+            class InstrumentWithGroupParameters(VisaInstrument):
+                def __init__(self, name, address, **kwargs):
+                    super().__init__(name, address, **kwargs)
 
-                ...
-        ```
+                    ...
+
+                    # Here is how group of group parameters is defined for
+                    # a simple case of an example "SGP" command that sets and gets
+                    # values of "enabled" and "gain" parameters (it is assumed that
+                    # "SGP?" returns the parameter values as comma-separated list
+                    # "enabled_value,gain_value")
+                    self.add_parameter('enabled',
+                                       label='Enabled',
+                                       val_mapping={True: 1, False: 0},
+                                       parameter_class=GroupParameter)
+                    self.add_parameter('gain',
+                                       label='Some gain value',
+                                       get_parser=float,
+                                       parameter_class=GroupParameter)
+                    self.output_group = Group([self.enabled, self.gain],
+                                              set_cmd='SGP {enabled}, {gain}',
+                                              get_cmd='SGP?')
+
+                    ...
 
     Args:
         parameters
             a list of `GroupParameter` instances which have to be gotten and
             set via the same command; the order of parameters in the list
             should correspond to the order of the values returned by the
-            `get_cmd`
+            ``get_cmd``
         set_cmd
             format string of the command that is used for setting the values
-            of the parameters; for example, "CMD {a}, {b}"
+            of the parameters; for example, ``CMD {a}, {b}``
         get_cmd
             string of the command that is used for getting the values of the
-            parameters; for example, "CMD?"
+            parameters; for example, ``CMD?``
         separator
-            a separator that is used when parsing the output of the `get_cmd`
+            a separator that is used when parsing the output of the ``get_cmd``
             in order to obtain the values of the parameters; it is ignored in
-            case a custom `get_parser` is used
+            case a custom ``get_parser`` is used
         get_parser
             a callable with a single string argument that is used to parse
-            the output of the `get_cmd`; the callable has to return a
+            the output of the ``get_cmd``; the callable has to return a
             dictionary where parameter names are keys, and the values are the
             values (as directly obtained from the output of the get command;
             note that parsers within the parameters will take care of
@@ -148,10 +158,11 @@ class Group:
     """
     def __init__(self,
                  parameters: List[GroupParameter],
-                 set_cmd: str=None,
-                 get_cmd: str=None,
-                 get_parser: Union[Callable[[str], Dict[str, Any]], None]=None,
-                 separator: str=','
+                 set_cmd: str = None,
+                 get_cmd: str = None,
+                 get_parser: Union[Callable[[str],
+                                            Dict[str, Any]], None] = None,
+                 separator: str = ','
                  ) -> None:
         self.parameters = OrderedDict((p.name, p) for p in parameters)
 
@@ -185,7 +196,7 @@ class Group:
     def set(self, set_parameter: GroupParameter, value: Any):
         """
         Sets the value of the given parameter within a group to the given
-        value by calling the `set_cmd`
+        value by calling the ``set_cmd``
 
         Args:
             set_parameter
@@ -209,7 +220,7 @@ class Group:
     def update(self):
         """
         Update the values of all the parameters within the group by calling
-        the `get_cmd`
+        the ``get_cmd``
         """
         ret = self.get_parser(self.instrument.ask(self.get_cmd))
         for name, p in list(self.parameters.items()):
