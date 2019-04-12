@@ -127,7 +127,6 @@ class Demodulation_AcquisitionController(AcquisitionController):
             return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
-        return None
 
     def fit(self, buf):
         """

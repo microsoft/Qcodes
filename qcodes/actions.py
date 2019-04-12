@@ -1,7 +1,7 @@
 """Actions, mainly to be executed in measurement Loops."""
 import time
 
-from qcodes.utils.deferred_operations import is_function
+from qcodes.utils.helpers import is_function
 from qcodes.utils.threading import thread_map
 
 
@@ -38,7 +38,7 @@ class Task:
     but are accepted for compatibility with other things happening in a Loop.
 
     Args:
-        func (callable): Function to executed
+        func (Callable): Function to executed
         *args: pass to func, after evaluation if callable
         **kwargs: pass to func, after evaluation if callable
 
@@ -189,15 +189,13 @@ class BreakIf:
     Loop action that breaks out of the loop if a condition is truthy.
 
     Args:
-        condition (callable): a callable taking no arguments.
+        condition (Callable): a callable taking no arguments.
             Can be a simple function that returns truthy when it's time to quit
-            May also be constructed by deferred operations on `Parameter`.
     Raises:
         TypeError: if condition is not a callable with no aguments.
 
     Examples:
-            >>> BreakIf(gates.chan1 >= 3)
-            >>> BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
+            >>> BreakIf(lambda: gates.chan1.get() >= 3)
     """
 
     def __init__(self, condition):
@@ -211,7 +209,6 @@ class BreakIf:
             raise _QcodesBreak
 
     def snapshot(self, update=False):
-        # TODO: make nice reprs for DeferredOperations
         """
         Snapshots breakif action
         Args:

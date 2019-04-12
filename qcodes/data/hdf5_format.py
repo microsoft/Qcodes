@@ -3,21 +3,31 @@ import logging
 import h5py
 import os
 import json
+from typing import TYPE_CHECKING
 
+from ..version import __version__ as _qcodes_version
 from .data_array import DataArray
 from .format import Formatter
 
+if TYPE_CHECKING:
+    from .data_set import DataSet
 
 class HDF5Format(Formatter):
     """
     HDF5 formatter for saving qcodes datasets.
 
     Capable of storing (write) and recovering (read) qcodes datasets.
+
     """
 
-    def close_file(self, data_set):
+    _format_tag = 'hdf5'
+
+    def close_file(self, data_set: 'DataSet'):
         """
         Closes the hdf5 file open in the dataset.
+
+        Args:
+            data_set: DataSet object
         """
         if hasattr(data_set, '_h5_base_group'):
             data_set._h5_base_group.close()
@@ -29,7 +39,7 @@ class HDF5Format(Formatter):
 
     def _create_file(self, filepath):
         """
-        creates a hdf5 file (data_object) at a location specifed by
+        creates a hdf5 file (data_object) at a location specified by
         filepath
         """
         folder, _filename = os.path.split(filepath)
@@ -45,14 +55,28 @@ class HDF5Format(Formatter):
                                                 io_manager=data_set.io)
         data_set._h5_base_group = h5py.File(filepath, 'r+')
 
-    def read(self, data_set, location=None):
+    def read(self, data_set: 'DataSet', location=None):
         """
         Reads an hdf5 file specified by location into a data_set object.
-        If no data_set is provided will creata an empty data_set to read into.
-        If no location is provided will use the location specified in the
-        dataset.
+        If no data_set is provided will create an empty data_set to read into.
+
+
+        Args:
+            data_set: the data to read into. Should already have
+                attributes ``io`` (an io manager), ``location`` (string),
+                and ``arrays`` (dict of ``{array_id: array}``, can be empty
+                or can already have some or all of the arrays present, they
+                expect to be overwritten)
+            location (None or str): Location to write the data. If no location 
+                is provided will use the location specified in the dataset.
         """
         self._open_file(data_set, location)
+
+        if '__format_tag' in data_set._h5_base_group.attrs:
+            format_tag = data_set._h5_base_group.attrs['__format_tag']
+            if format_tag != self._format_tag:
+                raise Exception('format tag %s does not match tag %s of file %s' %
+                                (format_tag, self._format_tag, location))
 
         for i, array_id in enumerate(
                 data_set._h5_base_group['Data Arrays'].keys()):
@@ -76,8 +100,11 @@ class HDF5Format(Formatter):
             set_arrays = [s.decode() for s in set_arrays]
             # else:
             #     set_arrays = ()
-            vals = dat_arr.value[:, 0]
+            vals = dat_arr[:, 0]
             if 'shape' in dat_arr.attrs.keys():
+                # extend with NaN if needed
+                esize = np.prod(dat_arr.attrs['shape'])
+                vals = np.append(vals, [np.nan] * (esize - vals.size))
                 vals = vals.reshape(dat_arr.attrs['shape'])
             if array_id not in data_set.arrays.keys():  # create new array
                 d_array = DataArray(
@@ -123,6 +150,9 @@ class HDF5Format(Formatter):
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).
         data_set._h5_base_group = self._create_file(filepath)
+        data_set._h5_base_group.attrs['__qcodes_version'] = _qcodes_version
+        data_set._h5_base_group.attrs['__format_tag'] = self._format_tag
+
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
@@ -138,6 +168,7 @@ class HDF5Format(Formatter):
             force_write (bool): if True creates a new file to write to
             flush (bool) : whether to flush after writing, can be disabled
                 for testing or performance reasons
+            write_metadata (bool): If True write the dataset metadata to disk
             only_complete (bool): Not used by this formatter, but must be
                 included in the call signature to avoid an "unexpected
                 keyword argument" TypeError.
@@ -182,7 +213,12 @@ class HDF5Format(Formatter):
             datasetshape = dset.shape
             old_dlen = datasetshape[0]
             x = data_set.arrays[array_id]
-            new_dlen = len(x[~np.isnan(x)])
+            try:
+                # get latest NaN element
+                new_dlen = (~np.isnan(x)).flatten().nonzero()[0][-1] + 1
+            except IndexError:
+                new_dlen = old_dlen
+
             new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
@@ -257,12 +293,56 @@ class HDF5Format(Formatter):
         metadata_group = data_set._h5_base_group.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
+        # flush ensures buffers are written to disk
+        # (useful for ensuring openable by other files)
+        data_set._h5_base_group.file.flush()
+
+    def _read_list_group(self, entry_point, list_type):
+        d = {}
+        self.read_dict_from_hdf5(data_dict=d,
+                                 h5_group=entry_point[list_type])
+
+        if list_type == 'tuple':
+            item = tuple([d[k] for k in sorted(d.keys())])
+        elif list_type == 'list':
+            item = [d[k] for k in sorted(d.keys())]
+        else:
+            raise Exception('type %s not supported' % type(item))
+
+        return item
+
+    def _write_list_group(self, key, item, entry_point, list_type):
+        entry_point.create_group(key)
+        group_attrs = entry_point[key].attrs
+        group_attrs['list_type'] = list_type
+
+        if list_type == 'tuple' or list_type == 'list':
+            item = dict((str(v[0]), v[1]) for v in enumerate(item))
+        else:
+            raise Exception('type %s not supported' % type(item))
+
+        entry_point[key].create_group(list_type)
+        self.write_dict_to_hdf5(
+            data_dict=item,
+            entry_point=entry_point[key][list_type])
+
     def write_dict_to_hdf5(self, data_dict, entry_point):
+        """ Write a (nested) dictionary to HDF5 
+
+        Args:
+            data_dict (dict): Dicionary to be written
+            entry_point (object): Object to write to
+        """
         for key, item in data_dict.items():
-            if isinstance(item, (str, bool, tuple, float, int)):
+            if isinstance(key, (float, int)):
+                key = '__' + str(type(key)) + '__' + str(key)
+
+            if isinstance(item, (str, bool, float, int)):
                 entry_point.attrs[key] = item
             elif isinstance(item, np.ndarray):
                 entry_point.create_dataset(key, data=item)
+            elif isinstance(item, (np.int32, np.int64)):
+                entry_point.attrs[key] = int(item)
             elif item is None:
                 # as h5py does not support saving None as attribute
                 # I create special string, note that this can create
@@ -272,6 +352,8 @@ class HDF5Format(Formatter):
                 entry_point.create_group(key)
                 self.write_dict_to_hdf5(data_dict=item,
                                         entry_point=entry_point[key])
+            elif isinstance(item, tuple):
+                self._write_list_group(key, item, entry_point, 'tuple')
             elif isinstance(item, list):
                 if len(item) > 0:
                     elt_type = type(item[0])
@@ -309,10 +391,7 @@ class HDF5Format(Formatter):
                                     elt_type, key, item))
                             entry_point.attrs[key] = str(item)
                     else:
-                        logging.warning(
-                            'List of mixed type for "{}":"{}" not supported, '
-                            'storing as string'.format(type(item), key, item))
-                        entry_point.attrs[key] = str(item)
+                        self._write_list_group(key, item, entry_point, 'list')
                 else:
                     # as h5py does not support saving None as attribute
                     entry_point.attrs[key] = 'NoneType:__emptylist__'
@@ -323,10 +402,13 @@ class HDF5Format(Formatter):
                     'storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
-    def read_metadata(self, data_set):
+    def read_metadata(self, data_set: 'DataSet'):
         """
         Reads in the metadata, this is also called at the end of a read
         statement so there should be no need to call this explicitly.
+
+        Args:
+            data_set: Dataset object to read the metadata into
         """
         # checks if there is an open file in the dataset as load_data does
         # reading of metadata before reading the complete dataset
@@ -338,6 +420,13 @@ class HDF5Format(Formatter):
         return data_set
 
     def read_dict_from_hdf5(self, data_dict, h5_group):
+        """ Read a dictionary from HDF5 
+
+        Args:
+            data_dict (dict): Dataset to read from
+            h5_group (object): HDF5 object to read from
+        """
+
         if 'list_type' not in h5_group.attrs:
             for key, item in h5_group.items():
                 if isinstance(item, h5py.Group):
@@ -346,9 +435,9 @@ class HDF5Format(Formatter):
                                                               item)
                 else:  # item either a group or a dataset
                     if 'list_type' not in item.attrs:
-                        data_dict[key] = item.value
+                        data_dict[key] = item[...]
                     else:
-                        data_dict[key] = list(item.value)
+                        data_dict[key] = list(item[...])
             for key, item in h5_group.attrs.items():
                 if type(item) is str:
                     # Extracts "None" as an exception as h5py does not support
@@ -358,7 +447,13 @@ class HDF5Format(Formatter):
                         item = None
                     elif item == 'NoneType:__emptylist__':
                         item = []
+                    else:
+                        pass
                 data_dict[key] = item
+        elif h5_group.attrs['list_type'] == 'tuple':
+            data_dict = self._read_list_group(h5_group, 'tuple')
+        elif h5_group.attrs['list_type'] == 'list':
+            data_dict = self._read_list_group(h5_group, 'list')
         elif h5_group.attrs['list_type'] == 'dict':
             # preallocate empty list
             list_to_be_filled = [None] * h5_group.attrs['list_length']
@@ -394,25 +489,27 @@ def str_to_bool(s):
     else:
         raise ValueError("Cannot covert {} to a bool".format(s))
 
+
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 
 
 class HDF5FormatMetadata(HDF5Format):
 
+    _format_tag = 'hdf5-json'
     metadata_file = 'snapshot.json'
 
-    def write_metadata(self, data_set, io_manager=None, location=None, read_first=False):
+    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False):
         """
         Write all metadata in this DataSet to storage.
 
         Args:
-            data_set (DataSet): the data we're storing
+            data_set: the data we're storing
 
             io_manager (io_manager): the base location to write to
 
             location (str): the file location within io_manager
 
-            read_first (bool, optional): read previously saved metadata before
+            read_first (Optional[bool]): read previously saved metadata before
                 writing? The current metadata will still be the used if
                 there are changes, but if the saved metadata has information
                 not present in the current metadata, it will be retained.

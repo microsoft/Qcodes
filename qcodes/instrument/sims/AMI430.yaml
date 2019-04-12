@@ -28,6 +28,14 @@ devices:
         setter:
           q: "CONF:FIELD:UNITS {}"
 
+      current limit:
+        default: 80
+        getter:
+          q: "CURR:LIMIT?"
+          r: "{}"
+        setter:
+          q: "CONF:CURR:LIMIT {}"
+
       ramp rate current first segment:
         default: '50, 50, 50'
         getter:
