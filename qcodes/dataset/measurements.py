@@ -361,7 +361,8 @@ class DataSaver:
         tree.
 
         Deal with 'numeric' type parameters. If a 'numeric' top level parameter
-        has non-scalar shape, it must be unrolled into a list of
+        has non-scalar shape, it must be unrolled into a list of dicts of
+        single values (database).
         """
 
         interdeps = self._interdeps
