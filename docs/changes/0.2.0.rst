@@ -10,7 +10,8 @@ ______________
 
 - New and Improved drivers:
 
-  - Alazar cards
+  - Alazar cards:
+
     - Alazar 9870 Don't assign to instrument property (#1182)
     - Alazar add buffer completed callback (#1234)
     - updated/fixed ATS9870 driver (#1290)
@@ -19,7 +20,9 @@ ______________
     - Add Alazar ATS9373 driver (#1324)
     - Add functions to read and write registers on Alazar and Trigger holdoff for 9360 (#1307)
     - Alazar add get/set parameter (#1523)
-  - Lock-in amplifiers
+
+  - Lock-in amplifiers:
+
     - Fix maximum frequency for SRS860 - it is 500 kHz (#1164)
     - Standford Research SR860 lock-in amplifier driver improvements and bug fixes (#1160)
     - SR86x lockin: get values of many parameters at once (#1245)
@@ -29,7 +32,9 @@ ______________
     - Feature/dem 805/implement sampling rate float parameter (#1510)
     - Feature/dem 804/implement missing uhfli commands (#1500)
     - Driver: ziuhfli - demod{}_harmonic now return int (#1534)
-  - Magnets
+
+  - Magnets:
+
     - AMI430 driver setting set point despite being outside safe region (#1162)
     - Driver/Mercury iPS with VISA (#897)
     - driver / add block_during_ramp parameter to AMI430_3D (#1228)
@@ -38,7 +43,9 @@ ______________
     - Add simultaneous blocking ramp parameters MercuryIPS (#1467)
     - Various IPS120 driver improvements (#1402)
     - Field Vectors attributes should only be floats (#1458)
-  - Multi Meters
+
+  - Multi Meters:
+
     - Keithley 2400 protect read commands (#1171)
     - Refactor Keysight 344xxA code and small fixes (#1169)
     - Fix keithley 2600 formatting (#1301)
@@ -46,11 +53,15 @@ ______________
     - Driver: Keysight 344xxA - flexible measurements and modularization (#1433)
     - adds a very basic pyvisa-sim yaml for the Keithley 2600 (#1465)
     - Driver/gentec maestro (#1507)
-  - Oscilloscopes
+
+  - Oscilloscopes:
+
     - Driver/infiniium additional parameters (#1203)
     - Set minimum version of firmware for Rigol DS4000 (#1206)
     - Extend RTO1000 driver (#1410)
-  - Signal and Waveform generators
+
+  - Signal and Waveform generators:
+
     - Added support for N5183B Signal Generator (#1153, #1155)
     - Refactor awg file handling in awg5014 driver (#1066)
     - Rigol dg1062 (#1082)
@@ -65,18 +76,24 @@ ______________
     - Remove deprecated keysight waveform drivers drivers (#1435)
     - Feature/rigol dg1062/adding duty cycle parameter (#1456)
     - [DEM-831] Compiler warnings in ZIHDAWG8 should be logged or raised. (#1522)
-  - Spectrum and Vector Network Analyzers
+
+  - Spectrum and Vector Network Analyzers:
+
     - Driver / signalhound use standard logging (#1154)
     - driver/Keysight N5245A (#807)
     - Remove unused function in N52xx driver (#1219)
     - Spectrum analyser update (#1248)
     - Signal hound a few more changes (#1318)
     - Znb read from existing channels (#1111)
-  - Temperature controllers
+
+  - Temperature controllers:
+
     - Driver/lakeshore336 and lakeshore 372 (#972)
     - Extension/lakeshore read curve file (#1421)
     - Lakeshore Model 336: make runnable, add minimal test, and fixes along the way (#1526)
-  - Others
+
+  - Others:
+
     - Change loglevel for send/recv in IPInstrument (#1146)
     - M4i: bugfix spectrum digitizer driver (#1145)
     - Add set_parameter_bounds to IVVI.py (#1128)
@@ -101,11 +118,15 @@ ______________
     - fix bug in averaging of m4i blockavg (#1528)
 
 - Other changes:
-  - Config
+
+  - Config:
+
     - allow config to update based on specified path (#1226)
     - Config cleanup (#1242)
     - Bugfix: fix __repr__ of Config (#1403)
-  - Dataset
+
+  - Dataset:
+
     - Add some minor DataSet conveniences (#1211)
     - Make data saver accept numpy type floats/ints (#1225)
     - Dataset Context manager. Allow insertion of Data direcly as arrays (#1207)
@@ -143,10 +164,14 @@ ______________
     - fix: Handle 'inf' in _convert_numeric (#1449)
     - Dataset: Fix/do not retrive nulls (#1512)
     - Update Offline Plotting Tutorial with kwargs examples (#1516)
-  - Documentation
+
+  - Documentation:
+
     - Build and execute notebooks with nbsphinx (#1330)
     - Documentation improvements (#1349, #1358, #1362, , #1436, #1479, #1485, #1478, #1514, #1515, #1518, #1517)
-  - Instruments and Parameters
+
+  - Instruments and Parameters:
+
     - Add option to remove channels from ChannelList (#1045)
     - Fix validation of steps (#1176)
     - Add paramterScaler with an usage example (#1069)
@@ -165,14 +190,18 @@ ______________
     - New Parameter Class ParameterWithSetpoints (#1263)
     - val_mapping creator function to solve on/off/true/false issue (#1413, #1502)
     - Add origin to parameter warnings (#1481)
-  - Legacy dataset
+
+  - Legacy dataset:
+
     - fix read and write of NaN to hdf5, issue (#1180)
     - add flush option to hdf5 write_metadata (#1455)
-  - Logging
+  - Logging:
+
     - Log the instrument that a failed parameter update comes from (#1173)
     - Feat / logfile analysis (#1093)
     - logging module (#1309, #1364)
-  - Plotting
+  - Plotting:
+
     - Feature / add label to plot_by_id (#1235)
     - Feature / rescale ticks and units in plot_by_id (#1239)
     - Smart color scale (#1253, #1255, #1259, #1294)
@@ -182,7 +211,9 @@ ______________
     - Plot_by_id rasterise 2d plots for large datasets (#1305)
     - Feature: plot_by_id string-valued data for 2D plots (#1311)
     - Fix / plot by id cmap kwar (#1427)
-  - Other
+
+  - Other:
+
     - Setup benchmarking and add simple dataset benchmark (#1202)
     - Set up CI with Azure Pipelines (#1292,  #1293, #1300)
     - Catch generic exceptions in import of dependencies. (#1316)
