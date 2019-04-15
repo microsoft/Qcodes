@@ -134,7 +134,7 @@ ______________
     - Development/dependencies dsl (#1227)
     - logging module (#1309, #1364)
     - Adapt workaround for spyder UMR to work with newest version of spyder (#1338)
-    - Documentation improvements (#1349, #1358, #1362,
+    - Documentation improvements (#1349, #1358, #1362, , #1436, #1479, #1485, #1478, #1514, #1515, #1518, #1517)
     - Add Subscribers from config (#1365)
     - Bugfix: removing a channel instance that was added with `extend` (#1368)
     - Snapshot diff and method chaining (#1363)
@@ -148,7 +148,7 @@ ______________
     - Bugfix: fix __repr__ of Config (#1403)
     - Fix bug where atomic and ConnectionPlus might not commit to database (+ fix DataSet.unsubscribe) (+ deprecate DataSet modify_results, modify_result, add_parameter_values) (#1389)
     - Feature / database extract runs (#1397)
-    - Monitor: Support for new versions of Websocket (#1407, #1420, #1436, #1479, #1485, #1478, #1514, #1515, #1518, #1517)
+    - Monitor: Support for new versions of Websocket (#1407, #1420)
     - Add `get_parameter_data` aka `get_columns` (#1400)
     - Fix / plot by id cmap kwar (#1427)
     - Ensure that partial run creation is completly rolled back (#1445)
