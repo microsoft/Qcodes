@@ -1,3 +1,8 @@
+"""
+This module holds the objects that describe the intra-run relationships
+between the parameters of that run. Most importantly, the information about
+which parameters depend on each other is handled here.
+"""
 from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
                     cast, Type, Sequence)
