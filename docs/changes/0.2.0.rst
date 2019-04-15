@@ -20,6 +20,7 @@ ______________
     - Add Alazar ATS9373 driver (#1324)
     - Add functions to read and write registers on Alazar and Trigger holdoff for 9360 (#1307)
     - Alazar add get/set parameter (#1523)
+    - Alazar: refactor DLL API related things (#1471)
 
   - Lock-in amplifiers:
 
