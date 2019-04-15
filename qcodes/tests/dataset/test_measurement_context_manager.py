@@ -1569,7 +1569,7 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-@settings(deadline=800)
+@settings(deadline=1200)
 @given(Ns=hst.lists(hst.integers(2, 10), min_size=2, max_size=5))
 def test_datasaver_arrays_of_different_length(storage_type, Ns):
     """
