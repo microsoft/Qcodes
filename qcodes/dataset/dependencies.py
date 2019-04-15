@@ -5,7 +5,7 @@ which parameters depend on each other is handled here.
 """
 from copy import deepcopy
 from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    cast, Type, Sequence)
+                    Type, Sequence)
 
 from qcodes.dataset.param_spec import ParamSpecBase, ParamSpec
 
