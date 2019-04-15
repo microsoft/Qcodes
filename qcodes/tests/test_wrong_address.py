@@ -23,8 +23,6 @@ def test_wrong_address():
                             address=wrong_address,
                             visalib=visalib)
 
-    assert error_caused_by(exc_info, wrong_address)
-
     right_address = 'GPIB::1::INSTR'  # from the simulation yaml file
 
     _ = Keysight_34465A('keysight_34465A_sim',
