@@ -1,8 +1,10 @@
 from functools import wraps
 import warnings
+from typing import Optional, Callable
 
-def deprecate(reason=None, alternative=None):
-    def actual_decorator(func):
+def deprecate(reason:Optional[str]=None,
+              alternative:Optional[str]=None) -> Callable:
+    def actual_decorator(func: Callable) -> Callable:
         @wraps(func)
         def decorated_func(*args, **kwargs):
             msg = f'The function \"{func.__name__}\" is deprecated'

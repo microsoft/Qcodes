@@ -1,10 +1,12 @@
 """
 Test suite for parameter
 """
-from collections import namedtuple, Iterable
+from collections import namedtuple
+from collections.abc import Iterable
 from unittest import TestCase
 from typing import Tuple
 import pytest
+from datetime import datetime
 
 import numpy as np
 from hypothesis import given, event, settings
@@ -15,6 +17,7 @@ from qcodes.instrument.parameter import (
     InstrumentRefParameter, ScaledParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Numbers
 
 
@@ -28,6 +31,23 @@ class GettableParam(Parameter):
         self._get_count += 1
         self._save_val(42)
         return 42
+
+
+class DeprecatedParam(Parameter):
+    """ Parameter that uses deprecated wrapping of get and set"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._value = 42
+        self.set_count = 0
+        self.get_count = 0
+
+    def get(self):
+        self.get_count += 1
+        return self._value
+
+    def set(self, value):
+        self.set_count += 1
+        self._value = value
 
 
 class BookkeepingValidator(vals.Validator):
@@ -47,7 +67,7 @@ blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
     namedtuple('blank', 'name')('')  # blank .name
-) # type: Tuple
+)
 named_instrument = namedtuple('yesname', 'name')('astro')
 
 
@@ -180,9 +200,25 @@ class TestParameter(TestCase):
         snap = p_no_snapshot.snapshot()
         self.assertNotIn('value', snap)
 
+    def test_get_latest(self):
+        # Create a gettable parameter
+        local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+        before_set = datetime.now()
+        local_parameter.set(1)
+        after_set = datetime.now()
+
+        # Check we return last set value, with the correct timestamp
+        self.assertEqual(local_parameter.get_latest(), 1)
+        self.assertTrue(before_set <= local_parameter.get_latest.get_timestamp() <= after_set)
+
+        # Check that updating the value updates the timestamp
+        local_parameter.set(2)
+        self.assertEqual(local_parameter.get_latest(), 2)
+        self.assertGreaterEqual(local_parameter.get_latest.get_timestamp(), after_set)
+
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
-        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
         self.assertTrue(hasattr(gettable_parameter, 'get'))
         self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
@@ -191,14 +227,14 @@ class TestParameter(TestCase):
         self.assertIsNone(gettable_parameter())
 
         # Create parameter that saves value during set, and has no get_cmd
-        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        settable_parameter = Parameter('two', set_cmd=None, get_cmd=False)
         self.assertFalse(hasattr(settable_parameter, 'get'))
         self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
             settable_parameter()
         settable_parameter(42)
 
-        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        settable_gettable_parameter = Parameter('three', set_cmd=None, get_cmd=None)
         self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
         self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
         self.assertIsNone(settable_gettable_parameter())
@@ -221,6 +257,15 @@ class TestParameter(TestCase):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
 
+    def test_bad_name(self):
+        with self.assertRaises(ValueError):
+            Parameter('p with space')
+        with self.assertRaises(ValueError):
+            Parameter('⛄')
+        with self.assertRaises(ValueError):
+            Parameter('1')
+
+
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
         p(42)
@@ -231,6 +276,12 @@ class TestParameter(TestCase):
 
         p(44.5)
         self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
+
+        # Test error conditions
+        with self.assertLogs(level='WARN'):
+            self.assertEqual(p.get_ramp_values("A", 1), [])
+        with self.assertRaises(RuntimeError):
+            p.get_ramp_values((1, 2, 3), 1)
 
     def test_scale_raw_value(self):
         p = Parameter(name='test_scale_raw_value', set_cmd=None)
@@ -564,6 +615,7 @@ class TestArrayParameter(TestCase):
         self.assertEqual(p.unit, unit)
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_full_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
         self.assertEqual(p._get_count, 0)
@@ -601,14 +653,25 @@ class TestArrayParameter(TestCase):
     def test_full_name(self):
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
-            p = SimpleArrayParam([6, 7], 'fred', (2,))
+            p = SimpleArrayParam([6, 7], 'fred', (2,),
+                                 setpoint_names=('barney',))
             p._instrument = instrument
             self.assertEqual(str(p), 'fred')
+            self.assertEqual(p.setpoint_full_names, ('barney',))
 
-        # and finally an instrument that really has a name
-        p = SimpleArrayParam([6, 7], 'wilma', (2,))
+        # and then an instrument that really has a name
+        p = SimpleArrayParam([6, 7], 'wilma', (2,),
+                             setpoint_names=('betty',))
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_wilma')
+        self.assertEqual(p.setpoint_full_names, ('astro_betty',))
+
+        # and with a 2d parameter to test mixed setpoint_names
+        p = SimpleArrayParam([[6, 7, 8], [1, 2, 3]], 'wilma', (3, 2),
+                             setpoint_names=('betty', None))
+        p._instrument = named_instrument
+        self.assertEqual(p.setpoint_full_names, ('astro_betty', None))
+
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -637,11 +700,9 @@ class SimpleMultiParam(MultiParameter):
 
 
 class SettableMulti(SimpleMultiParam):
-    # this is not fully suported - just created to raise a warning in the test below.
-    # We test that the warning is raised
     def set_raw(self, v):
         print("Calling set")
-        self.v = v
+        self._return_val = v
 
 
 class TestMultiParameter(TestCase):
@@ -709,6 +770,9 @@ class TestMultiParameter(TestCase):
         self.assertEqual(p.units, units)
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
+        # as the parameter is not attached to an instrument the full names are
+        # equivalent to the setpoint_names
+        self.assertEqual(p.setpoint_full_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
         self.assertEqual(p._get_count, 0)
@@ -744,31 +808,44 @@ class TestMultiParameter(TestCase):
         self.assertFalse(hasattr(p, 'set'))
         # We allow creation of Multiparameters with set to support
         # instruments that already make use of them.
-        with self.assertWarns(UserWarning):
-            SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                          name, names, shapes)
+
+        p = SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]], name, names, shapes)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertTrue(hasattr(p, 'set'))
+        value_to_set = [2, [1, 5, 2], [[8, 2], [4, 9]]]
+        p.set(value_to_set)
+        assert p.get() == value_to_set
 
     def test_full_name_s(self):
         name = 'mixed_dimensions'
         names = ['0D', '1D', '2D']
+        setpoint_names = ((),
+                          ('setpoints_1D',),
+                          ('setpoints_2D_1',
+                           None))
         shapes = ((), (3,), (2, 2))
 
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
             p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                                 name, names, shapes)
+                                 name, names, shapes,
+                                 setpoint_names=setpoint_names)
             p._instrument = instrument
             self.assertEqual(str(p), name)
-
             self.assertEqual(p.full_names, names)
+            self.assertEqual(p.setpoint_full_names,
+                             ((), ('setpoints_1D',), ('setpoints_2D_1', None)))
 
         # and finally an instrument that really has a name
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                             name, names, shapes)
+                             name, names, shapes, setpoint_names=setpoint_names)
         p._instrument = named_instrument
         self.assertEqual(str(p), 'astro_mixed_dimensions')
 
         self.assertEqual(p.full_names, ['astro_0D', 'astro_1D', 'astro_2D'])
+        self.assertEqual(p.setpoint_full_names,
+                         ((), ('astro_setpoints_1D',),
+                          ('astro_setpoints_2D_1', None)))
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -891,6 +968,37 @@ class TestStandardParam(TestCase):
 
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
+
+    def test_on_off_val_mapping(self):
+        instrument_value_for_on = 'on_'
+        instrument_value_for_off = 'off_'
+
+        parameter_return_value_for_on = True
+        parameter_return_value_for_off = False
+
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      val_mapping=create_on_off_val_mapping(
+                          on_val=instrument_value_for_on,
+                          off_val=instrument_value_for_off))
+
+        test_data = [(instrument_value_for_on,
+                      parameter_return_value_for_on,
+                      ('On', 'on', 'ON', 1, True)),
+                     (instrument_value_for_off,
+                      parameter_return_value_for_off,
+                      ('Off', 'off', 'OFF', 0, False))]
+
+        for instr_value, parameter_return_value, inputs in test_data:
+            for inp in inputs:
+                # Setting parameter with any of the `inputs` is allowed
+                p(inp)
+                # For any value from the `inputs`, what gets send to the
+                # instrument is on_val/off_val which are specified in
+                # `create_on_off_val_mapping`
+                self.assertEqual(self._p, instr_value)
+                # When getting a value of the parameter, only specific
+                # values are returned instead of `inputs`
+                self.assertEqual(p(), parameter_return_value)
 
 
 class TestManualParameterValMapping(TestCase):
@@ -1098,3 +1206,44 @@ class TestSetContextManager(TestCase):
         with self.instrument.a.set_to(3):
             assert self.instrument.a.get() == 3
         assert self.instrument.a.get() == 2
+
+
+def test_deprecated_param_warns():
+    """
+    Test that creating a parameter that has deprecated get and set still works
+    but raises the correct warnings.
+    """
+
+    with pytest.warns(UserWarning) as record:
+        a = DeprecatedParam(name='foo')
+    assert len(record) == 2
+    assert record[0].message.args[0] == ("Wrapping get method of parameter: "
+                                         "foo, original get method will not be "
+                                         "directly accessible. It is "
+                                         "recommended to define get_raw in "
+                                         "your subclass instead. Overwriting "
+                                         "get will be an error in the future.")
+    assert record[1].message.args[0] == ("Wrapping set method of parameter: "
+                                         "foo, original set method will not be "
+                                         "directly accessible. It is "
+                                         "recommended to define set_raw in "
+                                         "your subclass instead. Overwriting "
+                                         "set will be an error in the future.")
+    # test that get and set are called as expected (not shadowed by wrapper)
+    assert a.get_count == 0
+    assert a.set_count == 0
+    assert a.get() == 42
+    assert a.get_count == 1
+    assert a.set_count == 0
+    a.set(11)
+    assert a.get_count == 1
+    assert a.set_count == 1
+    assert a.get() == 11
+    assert a.get_count == 2
+    assert a.set_count == 1
+    # check that wrapper functionality works e.g stepping is performed correctly
+    a.step = 1
+    a.set(20)
+    assert a.set_count == 1+9
+    assert a.get() == 20
+    assert a.get_count == 3
