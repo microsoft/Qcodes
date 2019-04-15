@@ -1,6 +1,9 @@
 Changelog for QCoDeS 0.2.0
 ==========================
 
+This release contains large number of driver updates as well as significant improvements to the dataset and
+documentation. It also introduces a new Parameter Class (ParameterWithSetpoints) that is intended to replace
+ArrayParameter.
 
 New & Improved
 ______________
@@ -172,12 +175,5 @@ ______________
     - Dataset: Fix/do not retrive nulls (#1512)
     - Update Offline Plotting Tutorial with kwargs examples (#1516)
     - Make error_caused_by more robust (#1532)
-
-
-
-
-
-Breaking Changes
-________________
 
 
