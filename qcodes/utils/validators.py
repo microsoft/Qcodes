@@ -1,5 +1,6 @@
 import math
 from typing import Union, Optional, Tuple, Any, Hashable
+import re
 # rename on import since this file implements its own classes
 # with these names.
 from typing import Callable as TCallable
@@ -327,6 +328,48 @@ class Enum(Validator):
 
     def __repr__(self) -> str:
         return '<Enum: {}>'.format(repr(self._values))
+
+
+class EnumSCPIArgs(Enum):
+    """
+    The SCPI is case in-sensitive. Furthermore, not all characters in a
+    argument are necessary. For example, the command "SOUR:CURRent 1.0"
+    and "SOUR:CURR 1.0" and "SOUR:current 1.0" are all valid and will
+    produce identical results on the Keithley 2450 source meter.
+
+    In manuals, this is specified by reserving upper case letters for parts
+    which are mandatory and lower case letters for optional parts.
+
+    This validator takes this all into account.
+
+    Example:
+          >>> vals = EnumScpiArgs("VOLTage", "CURRent", "RESistance")
+          >>> # The following will all validate
+          >>> vals.validate("volt")
+          >>> vals.validate("VOLT")
+          >>> vals.validate("voltage")
+          >>> vals.validate("VOLTage")
+          >>> vals.validate("VOLTAGE")
+    """
+    def __init__(self, *values):
+        super().__init__(*self._add_scpi_aliases(values))
+
+    @staticmethod
+    def _add_scpi_aliases(values):
+
+        expanded_values = list(values)
+        for item in values:
+
+            expanded_values.append(item.lower())
+            expanded_values.append(item.upper())
+
+            uppercase_substring = re.findall("^([A-Z]*).*", item)[0]
+
+            if uppercase_substring != '':
+                expanded_values.append(uppercase_substring)
+                expanded_values.append(uppercase_substring.lower())
+
+        return expanded_values
 
 
 class OnOff(Validator):
