@@ -86,8 +86,8 @@ class InterDependencies_:
         self._id_to_paramspec: Dict[str, ParamSpecBase] = {}
         for tree in (self.dependencies, self.inferences):
             for ps, ps_tup in tree.items():
-                self._id_to_paramspec.update({self._id(ps): ps})
-                self._id_to_paramspec.update({self._id(pst): pst
+                self._id_to_paramspec.update({ps.name: ps})
+                self._id_to_paramspec.update({pst.name: pst
                                               for pst in ps_tup})
         for ps in self.standalones:
             self._id_to_paramspec.update({self._id(ps): ps})
@@ -147,13 +147,6 @@ class InterDependencies_:
                 if p not in specs:
                     specs.append(p)
             tree[ps] = tuple(specs)
-
-    @staticmethod
-    def _id(ps: ParamSpecBase) -> str:
-        """
-        Function to generate an ID from/for a ParamSpecBase
-        """
-        return ps.name
 
     @staticmethod
     def validate_paramspectree(
