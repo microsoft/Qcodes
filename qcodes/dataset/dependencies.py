@@ -535,10 +535,6 @@ class InterDependencies:
         ours = sorted(self.paramspecs, key=lambda ps: ps.name)
         theirs = sorted(other.paramspecs, key=lambda ps: ps.name)
         if not ours == theirs:
-            for ps in ours:
-                print(ps)
-            for ps in theirs:
-                print(ps)
             return False
         return True
 
