@@ -4,8 +4,9 @@ import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, PermissiveInts,
-                                     Enum, MultiType, PermissiveMultiples,
-                                     Arrays, Multiples, Lists, Callable, Dict)
+                                     Enum, EnumSCPIArgs ,MultiType,
+                                     PermissiveMultiples, Arrays,
+                                     Multiples, Lists, Callable, Dict)
 
 
 class AClass:
@@ -442,6 +443,33 @@ class TestEnum(TestCase):
             e = Enum(*enum)
             for val in e._valid_values:
                 e.validate(val)
+
+
+class TestEnumSCPIArgs(TestCase):
+    scpi_args = ["CURRent", "voltage", "resistANCE"]
+
+    valid_values = [
+        "CURR", "CURRENT", "curr", "current", "CURRent",
+        "VOLTAGE", "voltage",
+        "RESISTANCE", "resistance", "resistANCE"
+    ]
+
+    invalid_values = [
+        "CURrent", "currenT", "VOLTage", "RESistance", "ANCE"
+    ]
+
+    def test_valid_values(self):
+        e = EnumSCPIArgs(*self.scpi_args)
+
+        for valid_value in self.valid_values:
+            e.validate(valid_value)
+
+    def test_invalid_values(self):
+        e = EnumSCPIArgs(*self.scpi_args)
+
+        for invalid_value in self.invalid_values:
+            with self.assertRaises(ValueError):
+                e.validate(invalid_value)
 
 
 class TestMultiples(TestCase):
