@@ -1569,13 +1569,15 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument):
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-def test_datasaver_arrays_of_different_length(storage_type):
+@settings(deadline=500)
+@given(Ns=hst.lists(hst.integers(2, 10), min_size=2, max_size=5))
+def test_datasaver_arrays_of_different_length(storage_type, Ns):
     """
     Test that we can save arrays of different length in a single call to
     datasaver.add_result
     """
 
-    no_of_signals = 3
+    no_of_signals = len(Ns)
 
     meas = Measurement()
     meas.register_custom_parameter('temperature',
@@ -1590,9 +1592,9 @@ def test_datasaver_arrays_of_different_length(storage_type):
 
     with meas.run() as datasaver:
         result_t = ('temperature', 70)
-        result_freqs = list((f'freqs{n}', np.linspace(0, 1, n+1))
+        result_freqs = list((f'freqs{n}', np.linspace(0, 1, Ns[n]))
                               for n in range(no_of_signals))
-        result_sigs = list((f'signal{n}', np.random.randn(n+1))
+        result_sigs = list((f'signal{n}', np.random.randn(Ns[n]))
                              for n in range(no_of_signals))
         full_result = tuple(result_freqs + result_sigs + [result_t])
         datasaver.add_result(*full_result)
@@ -1603,7 +1605,7 @@ def test_datasaver_arrays_of_different_length(storage_type):
 
     assert list(data.keys()) == [f'signal{n}' for n in range(no_of_signals)]
     for n in range(no_of_signals):
-        assert (data[f'signal{n}']['temperature'] == np.array([70]*(n+1))).all()
+        assert (data[f'signal{n}']['temperature'] == np.array([70]*(Ns[n]))).all()
 
 
 @pytest.mark.usefixtures("experiment")
