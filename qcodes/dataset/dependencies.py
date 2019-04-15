@@ -90,7 +90,7 @@ class InterDependencies_:
                 self._id_to_paramspec.update({pst.name: pst
                                               for pst in ps_tup})
         for ps in self.standalones:
-            self._id_to_paramspec.update({self._id(ps): ps})
+            self._id_to_paramspec.update({ps.name: ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
 
         self._dependencies_inv: ParamSpecTree = self._invert_tree(
