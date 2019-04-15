@@ -351,11 +351,11 @@ class EnumSCPIArgs(Enum):
           >>> vals.validate("VOLTage")
           >>> vals.validate("VOLTAGE")
     """
-    def __init__(self, *values):
-        super().__init__(*self._add_scpi_aliases(values))
+    def __init__(self, *values: str) -> None:
+        super().__init__(*self._add_scpi_aliases(*values))
 
     @staticmethod
-    def _add_scpi_aliases(values):
+    def _add_scpi_aliases(*values: str):
 
         expanded_values = list(values)
         for item in values:
