@@ -292,56 +292,20 @@ class InterDependencies_:
             tree[ps] = tuple(specs)
 
     @staticmethod
-    def validate_paramspectree(
-        paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
+    def _validate_double_links(grove1: ParamSpecGrove,
+                               grove2: ParamSpecGrove) -> Optional[ErrorTuple]:
         """
-        Validate a ParamSpecTree. Apart from adhering to the type, a
-        ParamSpecTree must not have any cycles.
-
-        Returns:
-            A tuple with an exception type and an error message or None, if
-            the paramtree is valid
+        Validate that two groves do not contain double links. A double link
+        is a link between two nodes that exists in both groves. E.g. if the
+        first grove has {A: (B, C)}, the second may not have {B: (A,)} etc.
         """
-
-        # Validate the type
-
-        if not isinstance(paramspectree, dict):
-            return (TypeError, 'ParamSpecTree must be a dict')
-
-        for key, values in paramspectree.items():
-            if not isinstance(key, ParamSpecBase):
-                return (TypeError, 'ParamSpecTree must have ParamSpecs as keys')
-            if not isinstance(values, tuple):
-                return (TypeError, 'ParamSpecTree must have tuple values')
-            for value in values:
-                if not isinstance(value, ParamSpecBase):
-                    return (TypeError,
-                            ('ParamSpecTree can only have tuples of '
-                             'ParamSpecs as values'))
-
-        # check for cycles
-
-        roots = set(paramspectree.keys())
-        leafs = set(ps for tup in paramspectree.values() for ps in tup)
-
-        if roots.intersection(leafs) != set():
-            return (ValueError, 'ParamSpecTree can not have cycles')
-
-        return None
-
-    @staticmethod
-    def _validate_double_links(tree1: ParamSpecTree,
-                               tree2: ParamSpecTree) -> Optional[ErrorTuple]:
-        """
-        Validate that two trees do not contain double links. A double link
-        is a link between two nodes that exists in both trees. E.g. if the
-        first tree has {A: (B, C)}, the second may not have {B: (A,)} etc.
-        """
-        for ps, tup in tree1.items():
-            for val in tup:
-                if ps in tree2.get(val, ()):
-                    mssg = (f"Invalid dependencies/inferences. {ps} and "
-                            f"{val} have an ill-defined relationship.")
+        for root, leafs in grove1.as_dict().items():
+            for leaf in leafs:
+                one_way_error = root in grove2.as_dict().get(leaf, ())
+                other_way_error = leaf in grove2.as_dict().get(root, ())
+                if one_way_error or other_way_error:
+                    mssg = (f"Invalid dependencies/inferences. {root} and "
+                            f"{leaf} have an ill-defined relationship.")
                     return (ValueError, mssg)
 
         return None
