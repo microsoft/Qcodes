@@ -67,9 +67,13 @@ script:
     - |
       cd docs
       make SPHINXOPTS="-W -v" htmlapi
+    # rerun the tests from within a python session to ensure that all fixtures
+    # are bundled correctly. To save time we only do this from python 3.6
     - |
       cd $HOME
-      python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
+      if [[ $TRAVIS_PYTHON_VERSION  == "3.6" ]]; then
+        python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
+      fi
 
 after_success:
     # upload code coverage
