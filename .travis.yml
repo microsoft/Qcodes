@@ -69,7 +69,7 @@ script:
       make SPHINXOPTS="-W -v" htmlapi
     - |
       cd $HOME
-      python -c "import qcodes; qcodes.test()"
+      python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
 
 after_success:
     # upload code coverage
