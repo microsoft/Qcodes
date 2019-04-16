@@ -18,6 +18,7 @@ branches:
   only:
     - master
     - DataStorageInterface
+    - v0.2.x
 
 # command to install dependencies and qcodes
 # We want to fail early if there is an installation problem, so
