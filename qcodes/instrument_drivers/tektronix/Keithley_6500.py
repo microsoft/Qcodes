@@ -109,10 +109,15 @@ class Keithley_6500(VisaInstrument):
                            vals=Bool())
 
         # Global parameters
-        self.add_parameter('display_enabled',
-                           get_parser=_parse_output_bool,
-                           get_cmd='DISP:ENAB?',
-                           set_cmd='DISP:ENAB {}', set_parser=int, vals=Bool())
+        self.add_parameter('display_backlight',
+                           docstring='Control the brightness of the display '
+                                     'backligt. OFF turns the display off and'
+                                     'BLACkout also turns off indicators and '
+                                     'key lights on the device.',
+                           get_cmd='DISP:LIGH:STAT?',
+                           set_cmd='DISP:LIGH:STAT {}',
+                           vals=Enum('ON100', 'ON75', 'ON50', 'ON25', 'OFF',
+                                     'BLACkout'))
 
         self.add_parameter('trigger_count',
                            get_parser=int,
@@ -121,17 +126,41 @@ class Keithley_6500(VisaInstrument):
                            vals=MultiType(Ints(min_value=1, max_value=9999),
                                           Enum('inf', 'default', 'minimum', 'maximum')))
 
-        self.add_parameter('trigger_delay',
-                           get_parser=float,
-                           get_cmd='TRIG:DEL?',
-                           set_cmd='TRIG:DEL {}',
-                           unit='s', vals=Numbers(min_value=0, max_value=999999.999))
+        for trigger in range(1, 5):
+            self.add_parameter('trigger%i_delay' % trigger,
+                               docstring='Set and read trigger delay for '
+                                         'timer %i.' % trigger,
+                               get_parser=float,
+                               get_cmd='TRIG:TIM%i:DEL?' % trigger,
+                               set_cmd='TRIG:TIM%i:DEL {}' % trigger,
+                               unit='s', vals=Numbers(min_value=0,
+                                                      max_value=999999.999))
 
-        self.add_parameter('trigger_source',
-                           get_cmd='TRIG:SOUR?',
-                           set_cmd='TRIG:SOUR {}',
-                           val_mapping={'immediate': 'NONE', 'timer': 'TIM', 'manual': 'MAN',
-                                        'bus': 'BUS', 'external': 'EXT'})
+            self.add_parameter('trigger%i_source' % trigger,
+                               docstring='Set, and read, the event that sets'
+                                         'the trigger timer %i.' % trigger,
+                               get_cmd='TRIG:TIM%i:STAR:STIM?' % trigger,
+                               set_cmd='TRIG:TIM%i:STAR:STIM {}' % trigger,
+                               val_mapping={'immediate': 'NONE',
+                                            'timer1': 'TIM1',
+                                            'timer2': 'TIM2',
+                                            'timer3': 'TIM3',
+                                            'timer4': 'TIM4',
+                                            'notify1': 'NOTify1',
+                                            'notify2': 'NOTify2',
+                                            'notify3': 'NOTify3',
+                                            'digital-input1': 'DIGio1',
+                                            'digital-input2': 'DIGio2',
+                                            'digital-input3': 'DIGio3',
+                                            'digital-input4': 'DIGio4',
+                                            'digital-input5': 'DIGio5',
+                                            'digital-input6': 'DIGio6',
+                                            'tsp-link1': 'TSPLink1',
+                                            'tsp-link2': 'TSPLink2',
+                                            'tsp-link3': 'TSPLink3',
+                                            'front-panel': 'DISPlay',
+                                            'bus': 'COMMand',
+                                            'external': 'EXT'})
 
         self.add_parameter('trigger_timer',
                            get_parser=float,
