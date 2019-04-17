@@ -111,13 +111,17 @@ class Keithley_6500(VisaInstrument):
         # Global parameters
         self.add_parameter('display_backlight',
                            docstring='Control the brightness of the display '
-                                     'backligt. OFF turns the display off and'
-                                     'BLACkout also turns off indicators and '
+                                     'backligt. Off turns the display off and'
+                                     'Blackout also turns off indicators and '
                                      'key lights on the device.',
                            get_cmd='DISP:LIGH:STAT?',
                            set_cmd='DISP:LIGH:STAT {}',
-                           vals=Enum('ON100', 'ON75', 'ON50', 'ON25', 'OFF',
-                                     'BLACkout'))
+                           val_mapping={'On 100': 'ON100',
+                                        'On 75': 'ON75',
+                                        'On 50': 'ON50',
+                                        'On 25': 'ON25',
+                                        'Off': 'OFF',
+                                        'Blackout': 'BLACkout'})
 
         self.add_parameter('trigger_count',
                            get_parser=int,
@@ -137,8 +141,8 @@ class Keithley_6500(VisaInstrument):
                                                       max_value=999999.999))
 
             self.add_parameter('trigger%i_source' % trigger,
-                               docstring='Set, and read, the event that sets'
-                                         'the trigger timer %i.' % trigger,
+                               docstring='Set the trigger source for '
+                                         'timer %i.' % trigger,
                                get_cmd='TRIG:TIM%i:STAR:STIM?' % trigger,
                                set_cmd='TRIG:TIM%i:STAR:STIM {}' % trigger,
                                val_mapping={'immediate': 'NONE',
