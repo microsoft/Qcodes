@@ -161,6 +161,12 @@ def varlen_array_in_scalar_dataset(experiment):
 
 @pytest.fixture(scope="function")
 def array_in_scalar_dataset_unrolled(experiment):
+    """
+    This fixture yields a dataset where an array-valued parameter is registered
+    as a 'numeric' type and has an additional single-valued setpoint. We
+    expect data to be saved as individual scalars, with the scalar setpoint
+    repeated.
+    """
     meas = Measurement()
     scalar_param = Parameter('scalarparam', set_cmd=None)
     param = ArraySetPointParam()
