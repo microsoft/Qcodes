@@ -12,15 +12,15 @@ class ParameterError(Exception):
     pass
 
 
-def assert_parameters(parameter_values: Dict[Parameter, Any]) -> None:
+def assert_parameter_values(required_parameter_values: Dict[Parameter, Any]) -> None:
     """
+    Assert that the parameters specified in the input dictionary have the required
+    values.
+
     Args:
-        parameter_values
-    Returns:
-        Callable: a decorator which asserts that the parameters specified in the
-        input dictionary have the required values before calling the original method
+        required_parameter_values
     """
-    for parameter, required_value in parameter_values.items():
+    for parameter, required_value in required_parameter_values.items():
 
         actual_value = parameter.get_latest() or parameter.get()
         if required_value != actual_value:
@@ -28,8 +28,8 @@ def assert_parameters(parameter_values: Dict[Parameter, Any]) -> None:
             instrument_name = parameter.instrument.name.replace("_", '.')
 
             raise ParameterError(
-                f"'{instrument_name}.{parameter.name}()={actual_value}' "
-                f"Please run '{instrument_name}.{parameter.name}({required_value})' and try again"
+                f"'{instrument_name}.{parameter.name}' has value '{actual_value}' "
+                f"This should be '{required_value}'"
             )
 
 
@@ -97,7 +97,7 @@ class Sense2450(InstrumentChannel):
             "range_vals": Numbers(10E-9, 1)
         },
         "resistance": {
-            "instrument_name": "RES",
+            "instrument_name": "\"RES\"",
             "unit": "Ohm",
             "range_vals": Numbers(20, 200E6)
         },
@@ -151,13 +151,27 @@ class Sense2450(InstrumentChannel):
                 }
             )
 
-            self.add_parameter(
-                f"_measure_{function}",
-                get_cmd=":MEASure?",
-                get_parser=float,
-                unit=args["unit"],
-                snapshot_value=False
-            )
+        self.add_parameter(
+            "voltage",
+            get_cmd=self._measure("voltage"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False
+        )
+
+        self.add_parameter(
+            "current",
+            get_cmd=self._measure("current"),
+            get_parser=float,
+            unit="A",
+            snapshot_value=False
+        )
+
+    def _measure(self, function):
+        def measurer():
+            assert_parameter_values({self.function: function, self.parent.output: True})
+            return self.ask_raw(":MEASure?")
+        return measurer
 
     @property
     def four_wire_measurement(self) -> Parameter:
@@ -185,21 +199,6 @@ class Sense2450(InstrumentChannel):
         function = self.function.get_latest() or self.function()
         param_name = f"_range_{function}"
         return self.parameters[param_name]
-
-    @property
-    def current(self) -> Parameter:
-        """
-        Return the parameter which performs a current measurement. Assert that we
-        are in current mode first
-        """
-
-        assert_parameters({self.function: "current", self.parent.output: True})
-        return self.parameters["_measure_current"]
-
-    @property
-    def voltage(self) -> Parameter:
-        assert_parameters({self.function: "voltage", self.parent.output: True})
-        return self.parameters["_measure_voltage"]
 
 
 class Source2450(InstrumentChannel):
@@ -249,14 +248,6 @@ class Source2450(InstrumentChannel):
                 }
             )
 
-            self.add_parameter(
-                f"_setpoint_{function}",
-                set_cmd=f"SOUR:{function} {{}}",
-                get_cmd=f"SOUR:{function}?",
-                get_parser=float,
-                unit=args["unit"]
-            )
-
             limit_cmd = {"current": "VLIM", "voltage": "ILIM"}[function]
             self.add_parameter(
                 f"_limit_{function}",
@@ -265,6 +256,36 @@ class Source2450(InstrumentChannel):
                 get_parser=float,
                 unit=args["unit"]
             )
+
+        self.add_parameter(
+            "current",
+            set_cmd=self._setpoint_setter("current"),
+            get_cmd=self._setpoint_getter("current"),
+            get_parser=float,
+            unit="A",
+            snapshot_value=False
+        )
+
+        self.add_parameter(
+            "voltage",
+            set_cmd=self._setpoint_setter("voltage"),
+            get_cmd=self._setpoint_getter("voltage"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False
+        )
+
+    def _setpoint_setter(self, function):
+        def setter(value):
+            assert_parameter_values({self.function: function})
+            return self.write_raw(f"SOUR:{function} {value}")
+        return setter
+
+    def _setpoint_getter(self, function):
+        def getter():
+            assert_parameter_values({self.function: function})
+            return self.ask_raw(f"SOUR:{function}?")
+        return getter
 
     @property
     def range(self) -> Parameter:
@@ -292,23 +313,6 @@ class Source2450(InstrumentChannel):
         function = self.function.get_latest() or self.function()
         param_name = f"_limit_{function}"
         return self.parameters[param_name]
-
-    @property
-    def current(self) -> Parameter:
-        """
-        Return the parameter that sets/gets the current set point
-        """
-
-        assert_parameters({self.function: "current"})
-        return self.parameters["_setpoint_current"]
-
-    @property
-    def voltage(self) -> Parameter:
-        """
-        Return the parameter that sets/gets the voltage set point
-        """
-        assert_parameters({self.function: "voltage"})
-        return self.parameters["_setpoint_voltage"]
 
 
 class Keithley2450(VisaInstrument):
