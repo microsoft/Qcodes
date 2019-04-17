@@ -38,6 +38,10 @@ def _parse_output_bool(numeric_value: Union[int, float]):
     return bool(numeric_value)
 
 
+class CommandSetError(Exception):
+    pass
+
+
 class Keithley_6500(VisaInstrument):
 
     def __init__(self, name, address, reset_device=False, **kwargs):
@@ -173,6 +177,11 @@ class Keithley_6500(VisaInstrument):
         self.write('FORM:DATA ASCII')
         self.connect_message()
 
+        command_set = self.ask_raw('*LANG?')
+        if command_set != 'SCPI':
+            raise CommandSetError("This driver only compatible with the 'SCPI' "
+                                  "command set, not '{}' set".format(command_set))
+    
     def reset(self):
         """ Reset the device """
         self.write('*RST')
