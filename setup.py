@@ -78,7 +78,8 @@ setup(name='qcodes',
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
-                               'tests/dataset/fixtures/2018-01-17/*/*']},
+                               'tests/dataset/fixtures/2018-01-17/*/*',
+                               'tests/drivers/auxiliary_files/*']},
 
       install_requires=install_requires,
       
