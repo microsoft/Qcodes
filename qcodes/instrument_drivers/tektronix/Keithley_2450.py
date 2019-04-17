@@ -1,9 +1,36 @@
 import visa
 import numpy as np
+from typing import Any, Dict
 
 from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter
 from qcodes.instrument.parameter import Parameter
-import qcodes.utils.validators as vals
+from qcodes.utils.validators import Enum, Numbers
+
+
+class ParameterError(Exception):
+    """Raise this error if a parameter has an unexpected value"""
+    pass
+
+
+def assert_parameters(parameter_values: Dict[Parameter, Any]) -> None:
+    """
+    Args:
+        parameter_values
+    Returns:
+        Callable: a decorator which asserts that the parameters specified in the
+        input dictionary have the required values before calling the original method
+    """
+    for parameter, required_value in parameter_values.items():
+
+        actual_value = parameter.get_latest() or parameter.get()
+        if required_value != actual_value:
+
+            instrument_name = parameter.instrument.name.replace("_", '.')
+
+            raise ParameterError(
+                f"'{instrument_name}.{parameter.name}()={actual_value}' "
+                f"Please run '{instrument_name}.{parameter.name}({required_value})' and try again"
+            )
 
 
 class Keithley2450Sweep(ArrayParameter):
@@ -64,17 +91,20 @@ class Keithley2450Sweep(ArrayParameter):
 
 class Sense2450(InstrumentChannel):
     function_modes = {
-        "CURR": {
+        "current": {
+            "instrument_name": "\"CURR:DC\"",
             "unit": "A",
-            "vals": vals.Numbers(10E-9, 1)
+            "range_vals": Numbers(10E-9, 1)
         },
-        "RES": {
+        "resistance": {
+            "instrument_name": "RES",
             "unit": "Ohm",
-            "vals": vals.Numbers(20, 200E6)
+            "range_vals": Numbers(20, 200E6)
         },
-        "VOLT": {
+        "voltage": {
+            "instrument_name": "\"VOLT:DC\"",
             "unit": "V",
-            "vals": vals.Numbers(0.02, 200)
+            "range_vals": Numbers(0.02, 200)
         }
     }
 
@@ -83,10 +113,12 @@ class Sense2450(InstrumentChannel):
 
         self.add_parameter(
             "function",
-            set_cmd=":SENS:FUNC \"{}\"",
+            set_cmd=":SENS:FUNC {}",
             get_cmd=":SENS:FUNC?",
-            vals=vals.Enum(*Sense2450.function_modes.keys()),
-            get_parser=self._function_get_parser
+            val_mapping={
+                key: self.function_modes[key]["instrument_name"]
+                for key in self.function_modes
+            }
         )
 
         for function, args in Sense2450.function_modes.items():
@@ -104,25 +136,28 @@ class Sense2450(InstrumentChannel):
                 f"_range_{function}",
                 set_cmd=f":SENSe:{function}:RANGe {{}}",
                 get_cmd=f":SENSe:{function}:RANGe?",
-                vals=args["vals"],
+                vals=args["range_vals"],
                 get_parser=float,
                 unit=args["unit"]
             )
 
-    @staticmethod
-    def _function_get_parser(get_value: str) -> str:
-        """
-        Args:
-            get_value: ""CURR:DC"" (Note the quotation marks in the string)
+            self.add_parameter(
+                f"_auto_range_{function}",
+                set_cmd=f":SENSe:{function}:RANGe:AUTO {{}}",
+                get_cmd=f":SENSe:{function}:RANGe:AUTO?",
+                val_mapping={
+                    True: "1",
+                    False: "0"
+                }
+            )
 
-        Returns:
-            str: "CURR"
-        """
-        return_value = get_value.strip("\"")
-        if return_value.endswith(":DC"):
-            return_value = return_value.split(":")[0]
-
-        return return_value
+            self.add_parameter(
+                f"_measure_{function}",
+                get_cmd=":MEASure?",
+                get_parser=float,
+                unit=args["unit"],
+                snapshot_value=False
+            )
 
     @property
     def four_wire_measurement(self) -> Parameter:
@@ -134,6 +169,15 @@ class Sense2450(InstrumentChannel):
         return self.parameters[param_name]
 
     @property
+    def auto_range(self) -> Parameter:
+        """
+        Return the appropriate parameter based on the current function
+        """
+        function = self.function.get_latest() or self.function()
+        param_name = f"_auto_range_{function}"
+        return self.parameters[param_name]
+
+    @property
     def range(self) -> Parameter:
         """
         Return the appropriate parameter based on the current function
@@ -142,16 +186,33 @@ class Sense2450(InstrumentChannel):
         param_name = f"_range_{function}"
         return self.parameters[param_name]
 
+    @property
+    def current(self) -> Parameter:
+        """
+        Return the parameter which performs a current measurement. Assert that we
+        are in current mode first
+        """
+
+        assert_parameters({self.function: "current", self.parent.output: True})
+        return self.parameters["_measure_current"]
+
+    @property
+    def voltage(self) -> Parameter:
+        assert_parameters({self.function: "voltage", self.parent.output: True})
+        return self.parameters["_measure_voltage"]
+
 
 class Source2450(InstrumentChannel):
     function_modes = {
-        "CURR": {
+        "current": {
+            "instrument_name": "CURR",
             "unit": "A",
-            "vals": vals.Numbers(-1, 1)
+            "range_vals": Numbers(-1, 1)
         },
-        "VOLT": {
+        "voltage": {
+            "instrument_name": "VOLT",
             "unit": "V",
-            "vals": vals.Numbers(-200, 200)
+            "range_vals": Numbers(-200, 200)
         }
     }
 
@@ -162,7 +223,10 @@ class Source2450(InstrumentChannel):
             "function",
             set_cmd="SOUR:FUNC {}",
             get_cmd="SOUR:FUNC?",
-            vals=vals.Enum(*Source2450.function_modes.keys())
+            val_mapping={
+                key: self.function_modes[key]["instrument_name"]
+                for key in self.function_modes
+            }
         )
 
         for function, args in Source2450.function_modes.items():
@@ -170,9 +234,19 @@ class Source2450(InstrumentChannel):
                 f"_range_{function}",
                 set_cmd=f":SOUR:{function}:RANGe {{}}",
                 get_cmd=f":SOUR:{function}:RANGe?",
-                vals=args["vals"],
+                vals=args["range_vals"],
                 get_parser=float,
                 unit=args["unit"]
+            )
+
+            self.add_parameter(
+                f"_auto_range_{function}",
+                set_cmd=f":SOURce:{function}:RANGe:AUTO {{}}",
+                get_cmd=f":SOURce:{function}:RANGe:AUTO?",
+                val_mapping={
+                    True: "1",
+                    False: "0"
+                }
             )
 
             self.add_parameter(
@@ -183,7 +257,7 @@ class Source2450(InstrumentChannel):
                 unit=args["unit"]
             )
 
-            limit_cmd = {"CURR": "VLIM", "VOLT": "ILIM"}[function]
+            limit_cmd = {"current": "VLIM", "voltage": "ILIM"}[function]
             self.add_parameter(
                 f"_limit_{function}",
                 set_cmd=f"SOUR:{function}:{limit_cmd} {{}}",
@@ -202,12 +276,12 @@ class Source2450(InstrumentChannel):
         return self.parameters[param_name]
 
     @property
-    def setpoint(self) -> Parameter:
+    def auto_range(self) -> Parameter:
         """
         Return the appropriate parameter based on the current function
         """
         function = self.function.get_latest() or self.function()
-        param_name = f"_setpoint_{function}"
+        param_name = f"_auto_range_{function}"
         return self.parameters[param_name]
 
     @property
@@ -218,6 +292,23 @@ class Source2450(InstrumentChannel):
         function = self.function.get_latest() or self.function()
         param_name = f"_limit_{function}"
         return self.parameters[param_name]
+
+    @property
+    def current(self) -> Parameter:
+        """
+        Return the parameter that sets/gets the current set point
+        """
+
+        assert_parameters({self.function: "current"})
+        return self.parameters["_setpoint_current"]
+
+    @property
+    def voltage(self) -> Parameter:
+        """
+        Return the parameter that sets/gets the voltage set point
+        """
+        assert_parameters({self.function: "voltage"})
+        return self.parameters["_setpoint_voltage"]
 
 
 class Keithley2450(VisaInstrument):
@@ -272,7 +363,7 @@ class Keithley2450(VisaInstrument):
             "terminals",
             set_cmd="ROUTe:TERMinals {}",
             get_cmd="ROUTe:TERMinals?",
-            vals=vals.Enum("REAR", "FRONT")
+            vals=Enum("REAR", "FRONT")
         )
 
         self.add_parameter(
@@ -295,16 +386,6 @@ class Keithley2450(VisaInstrument):
             Source2450(self, "source")
         )
 
-        for function, args in Sense2450.function_modes.items():
-            parameter_name = f"_measure_{function}"
-
-            self.add_parameter(
-                parameter_name,
-                get_cmd=":MEASure?",
-                get_parser=float,
-                unit=args["unit"]
-            )
-
         self.add_parameter(
             name="sweep",
             parameter_class=Keithley2450Sweep
@@ -312,11 +393,3 @@ class Keithley2450(VisaInstrument):
 
         self.connect_message()
 
-    @property
-    def measure(self) -> Parameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.sense.function.get_latest() or self.sense.function()
-        param_name = f"_measure_{function}"
-        return self.parameters[param_name]
