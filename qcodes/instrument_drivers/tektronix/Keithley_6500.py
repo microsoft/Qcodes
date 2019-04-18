@@ -58,6 +58,12 @@ class Keithley_6500(VisaInstrument):
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
+        command_set = self.ask('*LANG?')
+        if command_set != 'SCPI':
+            error_msg = "This driver only compatible with the 'SCPI' command " \
+                        "set, not '{}' set".format(command_set)
+            raise CommandSetError(error_msg)
+
         self._trigger_sent = False
 
         self._mode_map = {'ac current': 'CURR:AC', 'dc current': 'CURR:DC', 'ac voltage': 'VOLT:AC',
@@ -176,12 +182,6 @@ class Keithley_6500(VisaInstrument):
             self.reset()
         self.write('FORM:DATA ASCII')
         self.connect_message()
-
-        command_set = self.ask_raw('*LANG?')
-        if command_set != 'SCPI':
-            error_msg = "This driver only compatible with the 'SCPI' command " \
-                        "set, not '{}' set".format(command_set)
-            raise CommandSetError(error_msg)
 
     def reset(self):
         """ Reset the device """
