@@ -179,9 +179,10 @@ class Keithley_6500(VisaInstrument):
 
         command_set = self.ask_raw('*LANG?')
         if command_set != 'SCPI':
-            raise CommandSetError("This driver only compatible with the 'SCPI' "
-                                  "command set, not '{}' set".format(command_set))
-    
+            error_msg = "This driver only compatible with the 'SCPI' command " \
+                        "set, not '{}' set".format(command_set)
+            raise CommandSetError(error_msg)
+
     def reset(self):
         """ Reset the device """
         self.write('*RST')
