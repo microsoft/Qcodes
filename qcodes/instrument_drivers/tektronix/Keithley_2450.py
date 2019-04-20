@@ -1,6 +1,6 @@
 import visa
 import numpy as np
-from typing import Any, Dict
+from typing import Any, Dict, Callable
 
 from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter
 from qcodes.instrument.parameter import Parameter
@@ -167,7 +167,7 @@ class Sense2450(InstrumentChannel):
             snapshot_value=False
         )
 
-    def _measure(self, function):
+    def _measure(self, function: str) -> Callable:
         def measurer():
             assert_parameter_values({self.function: function, self.parent.output: True})
             return self.ask_raw(":MEASure?")
@@ -275,13 +275,13 @@ class Source2450(InstrumentChannel):
             snapshot_value=False
         )
 
-    def _setpoint_setter(self, function):
+    def _setpoint_setter(self, function: str) -> Callable:
         def setter(value):
             assert_parameter_values({self.function: function})
             return self.write_raw(f"SOUR:{function} {value}")
         return setter
 
-    def _setpoint_getter(self, function):
+    def _setpoint_getter(self, function: str) -> Callable:
         def getter():
             assert_parameter_values({self.function: function})
             return self.ask_raw(f"SOUR:{function}?")
