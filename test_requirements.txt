@@ -9,3 +9,4 @@ lxml
 codecov
 asv
 gitpython
+pylint

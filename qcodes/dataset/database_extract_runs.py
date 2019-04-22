@@ -4,6 +4,7 @@ import os
 
 import numpy as np
 
+from qcodes.dataset.dependencies import new_to_old
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.sqlite_base import (add_meta_data,
@@ -191,7 +192,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     if run_id != -1:
         return
 
-    parspecs = dataset.paramspecs.values()
+    parspecs = new_to_old(dataset._interdeps).paramspecs
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
 
