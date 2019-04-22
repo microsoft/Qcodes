@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import numpy as np
 from hypothesis import given, strategies as hst
@@ -5,6 +7,7 @@ from hypothesis import given, strategies as hst
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
 from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.dependencies import InterDependencies_
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
@@ -48,7 +51,8 @@ def test_default_callback():
 
         test_set = qc.new_data_set("test-dataset")
         test_set.add_metadata('snapshot', 123)
-        DataSaver(dataset=test_set, write_period=0, parameters={})
+        DataSaver(dataset=test_set, write_period=0,
+                  interdeps=InterDependencies_)
         test_set.mark_started()
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == 123
@@ -66,13 +70,15 @@ def test_numpy_types():
     Test that we can save numpy types in the data set
     """
 
-    p = ParamSpec("p", "numeric")
+    p = ParamSpec(name="p", paramtype="numeric")
     test_set = qc.new_data_set("test-dataset")
     test_set.add_parameter(p)
     test_set.mark_started()
 
+    idps = InterDependencies_(standalones=(p.base_version(),))
+
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, parameters={"p": p})
+        dataset=test_set, write_period=0, interdeps=idps)
 
     dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
               np.float64]
@@ -99,13 +105,20 @@ def test_saving_numeric_values_as_text(numeric_type):
     test_set.add_parameter(p)
     test_set.mark_started()
 
+    idps = InterDependencies_(standalones=(p.base_version(),))
+
     data_saver = DataSaver(
-        dataset=test_set, write_period=0, parameters={"p": p})
+        dataset=test_set, write_period=0, interdeps=idps)
 
     try:
-        msg = f"It is not possible to save a numeric value for parameter " \
-              f"'{p.name}' because its type class is 'text', not 'numeric'."
+        value = numeric_type(2)
+
+        gottype = np.array(value).dtype
+
+        msg = re.escape(f'Parameter {p.name} is of type '
+                        f'"{p.type}", but got a result of '
+                        f'type {gottype} ({value}).')
         with pytest.raises(ValueError, match=msg):
-            data_saver.add_result((p.name, numeric_type(2)))
+            data_saver.add_result((p.name, value))
     finally:
         data_saver.dataset.conn.close()

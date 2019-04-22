@@ -1,8 +1,10 @@
 import io
-from typing import Dict, Any
+from typing import Dict, Any, Union
 import json
 
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         InterDependencies_)
+SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
 class RunDescriber:
@@ -18,11 +20,18 @@ class RunDescriber:
     itself.
     """
 
-    def __init__(self, interdeps: InterDependencies) -> None:
+    def __init__(self, interdeps: SomeDeps) -> None:
 
-        if not isinstance(interdeps, InterDependencies):
+        self._old_style_deps: bool
+
+        if isinstance(interdeps, InterDependencies_):
+            self._old_style_deps = False
+        elif isinstance(interdeps, InterDependencies):
+            self._old_style_deps = True
+        else:
             raise ValueError('The interdeps arg must be of type: '
-                             f'InterDependencies. Got {type(interdeps)}.')
+                             'InterDependencies or InterDependencies_. '
+                             f' Got {type(interdeps)}.')
 
         self.interdeps = interdeps
 
@@ -39,7 +48,14 @@ class RunDescriber:
         """
         Make a RunDescriber object based on a serialized version of it
         """
-        idp = InterDependencies.deserialize(ser['interdependencies'])
+        # We must currently support new and old type InterDep.s objects
+
+        idp: Union[InterDependencies, InterDependencies_]
+
+        if 'paramspecs' in ser['interdependencies'].keys():
+            idp = InterDependencies.deserialize(ser['interdependencies'])
+        else:
+            idp = InterDependencies_.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)
 
         return rundesc

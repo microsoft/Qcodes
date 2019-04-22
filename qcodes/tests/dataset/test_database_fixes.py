@@ -4,7 +4,7 @@ import pytest
 
 import qcodes
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies_
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.sqlite_base import _fix_wrong_run_descriptions, \
     get_user_version
@@ -31,7 +31,7 @@ def test_fix_wrong_run_descriptions():
         ds1 = DataSet(conn=conn, run_id=1)
         expected_description = ds1.description
 
-        empty_description = RunDescriber(InterDependencies())
+        empty_description = RunDescriber(InterDependencies_())
 
         _fix_wrong_run_descriptions(conn, [1, 2, 3, 4])
 

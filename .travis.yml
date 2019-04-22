@@ -18,6 +18,7 @@ branches:
   only:
     - master
     - DataStorageInterface
+    - v0.2.x
 
 # command to install dependencies and qcodes
 # We want to fail early if there is an installation problem, so
@@ -55,6 +56,8 @@ script:
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
     - cd ..
     - mypy qcodes
+    # check that line endings are correct avoiding mixed windows/unix style line endings
+    - pylint --reports=n --disable=all --enable=mixed-line-endings,unexpected-line-ending-format --expected-line-ending-format=LF qcodes
     # run benchmarks to make sure they are correct
     - |
       cd benchmarking
@@ -65,10 +68,17 @@ script:
     - |
       cd docs
       make SPHINXOPTS="-W -v" htmlapi
-    - cd ..
+    # rerun the tests from within a python session to ensure that all fixtures
+    # are bundled correctly. To save time we only do this from python 3.6
+    - |
+      cd $HOME
+      if [[ $TRAVIS_PYTHON_VERSION  == "3.6" ]]; then
+        python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"
+      fi
 
 after_success:
     # upload code coverage
+    - cd $TRAVIS_BUILD_DIR
     - python-codacy-coverage -r qcodes/coverage.xml
     - codecov
     # upload the docs
