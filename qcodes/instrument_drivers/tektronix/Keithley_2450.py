@@ -1,9 +1,9 @@
 import visa
 import numpy as np
-from typing import Any, Dict, Callable
+from typing import Any, Dict, Callable, cast
 
 from qcodes import VisaInstrument, InstrumentChannel, ArrayParameter
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, _BaseParameter
 from qcodes.utils.validators import Enum, Numbers
 
 
@@ -25,7 +25,8 @@ def assert_parameter_values(required_parameter_values: Dict[Parameter, Any]) -> 
         actual_value = parameter.get_latest() or parameter.get()
         if required_value != actual_value:
 
-            instrument_name = parameter.instrument.name.replace("_", '.')
+            instrument = cast(VisaInstrument, parameter.instrument)
+            instrument_name = instrument.name.replace("_", '.')
 
             raise ParameterError(
                 f"'{instrument_name}.{parameter.name}' has value '{actual_value}' "
@@ -52,38 +53,42 @@ class Keithley2450Sweep(ArrayParameter):
             sweep_count: int = 1,
             range_mode: str = "AUTO"
     ) -> None:
-        source_function_p = self.instrument.source.function
+
+        instrument = cast(Keithley2450, self.instrument)
+        source_function_p = instrument.source.function
         source_function = source_function_p.get_latest() or source_function_p.function()
         source_unit = Source2450.function_modes[source_function]["unit"]
 
         self.setpoint_names = (source_function,)
         self.setpoint_labels = (source_function,)
-        self.setpoint_units = (source_unit,)
+        self.setpoint_units = (str(source_unit),)
 
-        sense_function_p = self.instrument.sense.function
+        sense_function_p = instrument.sense.function
         sense_function = sense_function_p.get_latest() or sense_function_p.function()
         self.label = sense_function
-        self.unit = Sense2450.function_modes[sense_function]["unit"]
+        self.unit = str(Sense2450.function_modes[sense_function]["unit"])
 
         setpoints = np.linspace(start, stop, step_count)
 
         self.shape = (len(setpoints),)
         self.setpoints = (tuple(setpoints),)
 
-        self.instrument.write_raw(
+        instrument.write_raw(
             f":SOURce:SWEep:{source_function}:LINear {start},{stop},{step_count},{delay},{sweep_count},{range_mode}"
         )
         self._has_performed_setup = True
 
     def get_raw(self) -> np.array:
 
+        instrument = cast(Keithley2450, self.instrument)
+
         if not self._has_performed_setup:
             raise RuntimeError("Please setup the sweep before calling this function")
 
-        self.instrument.write_raw(":INITiate")
-        self.instrument.write_raw("*WAI")
-        raw_data = self.instrument.ask_raw(f":TRACe:DATA? 1, {self.shape[0]}")
-        self.instrument.write_raw(":TRACe:CLEar")
+        instrument.write_raw(":INITiate")
+        instrument.write_raw("*WAI")
+        raw_data = instrument.ask_raw(f":TRACe:DATA? 1, {self.shape[0]}")
+        instrument.write_raw(":TRACe:CLEar")
         self._has_performed_setup = False
 
         return np.array([float(i) for i in raw_data.split(",")])
@@ -174,7 +179,7 @@ class Sense2450(InstrumentChannel):
         return measurer
 
     @property
-    def four_wire_measurement(self) -> Parameter:
+    def four_wire_measurement(self) -> _BaseParameter:
         """
         Return the appropriate parameter based on the current function
         """
@@ -183,7 +188,7 @@ class Sense2450(InstrumentChannel):
         return self.parameters[param_name]
 
     @property
-    def auto_range(self) -> Parameter:
+    def auto_range(self) -> _BaseParameter:
         """
         Return the appropriate parameter based on the current function
         """
@@ -192,7 +197,7 @@ class Sense2450(InstrumentChannel):
         return self.parameters[param_name]
 
     @property
-    def range(self) -> Parameter:
+    def range(self) -> _BaseParameter:
         """
         Return the appropriate parameter based on the current function
         """
@@ -288,7 +293,7 @@ class Source2450(InstrumentChannel):
         return getter
 
     @property
-    def range(self) -> Parameter:
+    def range(self) -> _BaseParameter:
         """
         Return the appropriate parameter based on the current function
         """
@@ -297,7 +302,7 @@ class Source2450(InstrumentChannel):
         return self.parameters[param_name]
 
     @property
-    def auto_range(self) -> Parameter:
+    def auto_range(self) -> _BaseParameter:
         """
         Return the appropriate parameter based on the current function
         """
