@@ -4,9 +4,8 @@ import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, PermissiveInts,
-                                     Enum, EnumSCPIArgs ,MultiType,
-                                     PermissiveMultiples, Arrays,
-                                     Multiples, Lists, Callable, Dict)
+                                     Enum, MultiType, PermissiveMultiples,
+                                     Arrays, Multiples, Lists, Callable, Dict)
 
 
 class AClass:
