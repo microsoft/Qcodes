@@ -50,7 +50,7 @@ class ParamSpecTree:
     def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         return self._as_dict
 
-    def as_dict_str(self) -> Dict[str, str]:
+    def as_dict_str(self) -> Dict[str, Set[str]]:
         return self._as_dict_str
 
 
