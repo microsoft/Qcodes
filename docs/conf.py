@@ -433,6 +433,7 @@ nitpick_ignore = [('py:class', 'Optional'),
                   ('py:class', 'unittest.case.TestCase'),
                   ('py:class', 'builtins.AssertionError'),
                   ('py:exc', 'visa.VisaIOError'),
+                  ('py:class', '_ctypes.Structure'),
                   # The following are needed for qcodes.utils.magic since
                   # it includes a bunch of docs from IPython that is not
                   # conformant.
