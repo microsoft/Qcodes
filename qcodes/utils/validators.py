@@ -1,6 +1,5 @@
 import math
 from typing import Union, Optional, Tuple, Any, Hashable
-import re
 # rename on import since this file implements its own classes
 # with these names.
 from typing import Callable as TCallable
