@@ -445,33 +445,6 @@ class TestEnum(TestCase):
                 e.validate(val)
 
 
-class TestEnumSCPIArgs(TestCase):
-    scpi_args = ["CURRent", "voltage", "resistANCE"]
-
-    valid_values = [
-        "CURR", "CURRENT", "curr", "current", "CURRent",
-        "VOLTAGE", "voltage",
-        "RESISTANCE", "resistance", "resistANCE"
-    ]
-
-    invalid_values = [
-        "CURrent", "currenT", "VOLTage", "RESistance", "ANCE"
-    ]
-
-    def test_valid_values(self):
-        e = EnumSCPIArgs(*self.scpi_args)
-
-        for valid_value in self.valid_values:
-            e.validate(valid_value)
-
-    def test_invalid_values(self):
-        e = EnumSCPIArgs(*self.scpi_args)
-
-        for invalid_value in self.invalid_values:
-            with self.assertRaises(ValueError):
-                e.validate(invalid_value)
-
-
 class TestMultiples(TestCase):
     divisors = [3, 7, 11, 13]
     not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5,
