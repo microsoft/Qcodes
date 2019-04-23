@@ -1,0 +1,49 @@
+#
+spec: "1.0"
+devices:
+  device wrong_mode:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, wrong mode, model, v0.01"
+      - q: "*LANG?"
+        r: "SCPI2400"
+
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, correct mode, model, v0.01"
+      - q: "*LANG?"
+        r: "SCPI"
+
+    properties:
+      source_function:
+        default: "CURR"
+        getter:
+          q: ":SOUR:FUNC?"
+          r: "{}"
+        setter:
+          q: ":SOUR:FUNC {}"
+
+      sense_function:
+        default: "\"CURR:DC\""
+        getter:
+          q: ":SENS:FUNC?"
+          r: "{}"
+        setter:
+          q: ":SENS:FUNC {}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device wrong_mode
+  GPIB::2::INSTR:
+    device: device 1

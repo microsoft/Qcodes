@@ -1,4 +1,3 @@
-import visa
 import numpy as np
 from typing import Any, Dict, Callable, cast
 
@@ -29,7 +28,7 @@ def assert_parameter_values(required_parameter_values: Dict[Parameter, Any]) -> 
             instrument_name = instrument.name.replace("_", '.')
 
             raise ParameterError(
-                f"'{instrument_name}.{parameter.name}' has value '{actual_value}' "
+                f"'{instrument_name}.{parameter.name}' has value '{actual_value}'. "
                 f"This should be '{required_value}'"
             )
 
@@ -172,6 +171,14 @@ class Sense2450(InstrumentChannel):
             snapshot_value=False
         )
 
+        self.add_parameter(
+            "resistance",
+            get_cmd=self._measure("resistance"),
+            get_parser=float,
+            unit="Ohm",
+            snapshot_value=False
+        )
+
     def _measure(self, function: str) -> Callable:
         def measurer():
             assert_parameter_values({self.function: function, self.parent.output: True})
@@ -225,8 +232,8 @@ class Source2450(InstrumentChannel):
 
         self.add_parameter(
             "function",
-            set_cmd="SOUR:FUNC {}",
-            get_cmd="SOUR:FUNC?",
+            set_cmd=":SOUR:FUNC {}",
+            get_cmd=":SOUR:FUNC?",
             val_mapping={
                 key: self.function_modes[key]["instrument_name"]
                 for key in self.function_modes
@@ -311,7 +318,7 @@ class Source2450(InstrumentChannel):
         return self.parameters[param_name]
 
     @property
-    def limit(self):
+    def limit(self) -> _BaseParameter:
         """
         Return the appropriate parameter based on the current function
         """
@@ -325,48 +332,19 @@ class Keithley2450(VisaInstrument):
     The QCoDeS driver for the Keithley 2450 source meter
     """
 
-    @staticmethod
-    def set_correct_language(address: str) -> None:
-        """
-        The correct communication protocol is SCPI, make sure this is set
-
-        Args:
-            address: Visa resource address
-        """
-        Keithley2450._check_scpi_mode(address, raise_on_incorrect_setting=False)
-
-    @staticmethod
-    def _check_scpi_mode(address: str, raise_on_incorrect_setting: bool = True) -> None:
-        """
-        Args:
-            address: Visa resource address
-            raise_on_incorrect_setting: If True and the language mode is anything other then "SCPI",
-                raise a runtime error. If False and the language mode is anything other then "SCPI"
-                adjust the language to "SCPI"
-        """
-
-        resource_manager = visa.ResourceManager()
-        raw_instrument = resource_manager.open_resource(address)
-        language = raw_instrument.query("*LANG?").strip()
-
-        if language != "SCPI":
-            if raise_on_incorrect_setting:
-                raise RuntimeError(
-                    f"The instrument is in {language} mode which is not supported."
-                    f"Please run `Keithley2450.set_correct_language(address)` and try to "
-                    f"initialize the driver again"
-                )
-            else:
-                raw_instrument.write("*LANG SCPI")
-                print("PLease power cycle the instrument to make the change take effect")
-
-        raw_instrument.close()
-
     def __init__(self, name: str, address: str, **kwargs) -> None:
 
-        Keithley2450._check_scpi_mode(address)
-
         super().__init__(name, address, terminator='\n', **kwargs)
+
+        if not self._has_correct_language_mode():
+            self.log.warning(
+                f"The instrument is an unsupported language mode."
+                f"Please run `instrument.set_correct_language()` and try to "
+                f"initialize the driver again after an instrument power cycle. "
+                f"No parameters/sub modules shall be available on this driver "
+                f"instance"
+            )
+            return
 
         self.add_parameter(
             "terminals",
@@ -402,3 +380,17 @@ class Keithley2450(VisaInstrument):
 
         self.connect_message()
 
+    def set_correct_language(self) -> None:
+        """
+        The correct communication protocol is SCPI, make sure this is set
+        """
+        self.raw_write("*LANG SCPI")
+        self.log.warning("PLease power cycle the instrument to make the change take effect")
+        # We want the user to be able to instantiate a driver with the same name
+        self.close()
+
+    def _has_correct_language_mode(self) -> bool:
+        """
+        Query if we have the correct language mode
+        """
+        return self.ask_raw("*LANG?") == "SCPI"
