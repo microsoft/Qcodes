@@ -232,7 +232,7 @@ class Source2450(InstrumentChannel):
 
         self.add_parameter(
             "function",
-            set_cmd=":SOUR:FUNC {}",
+            set_cmd=self._set_source_function,
             get_cmd=":SOUR:FUNC?",
             val_mapping={
                 key: self.function_modes[key]["instrument_name"]
@@ -286,6 +286,15 @@ class Source2450(InstrumentChannel):
             unit="V",
             snapshot_value=False
         )
+
+    def _set_source_function(self, value):
+
+        if self.parent.sense.function() == "resistance":
+            raise RuntimeError(
+                "Cannot change the source function while sense function is in 'resistance' mode"
+            )
+
+        self.write(f":SOUR:FUNC {value}")
 
     def _setpoint_setter(self, function: str) -> Callable:
         def setter(value):

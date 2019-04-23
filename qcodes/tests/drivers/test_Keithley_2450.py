@@ -60,13 +60,30 @@ def test_change_source_function(k2450):
         k2450.source.current()
 
 
+def test_source_change_error(k2450):
+    """
+    If the sense function is in resistance mode, test that an error is generated
+    when we change the source function
+    """
+    k2450.source.function("voltage")
+    k2450.sense.function("resistance")
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot change the source function while sense function is in 'resistance' mode"
+    ):
+        k2450.source.function("current")
+
+    k2450.sense.function("voltage")
+    k2450.source.function("current")
+
+
 def test_sense_current_mode(k2450):
     """
     We test the following
     1) When we are in the "current" mode, we cannot get/set the voltage or resistance parameter.
     2) The properties 'range' and 'auto_range' return the parameters associated with current
     """
-    assert k2450.sense.function() == "current"
+    assert k2450.sense.function("current")
     assert k2450.sense.range is k2450.sense.parameters["_range_current"]
     assert k2450.sense.auto_range is k2450.sense.parameters["_auto_range_current"]
 
