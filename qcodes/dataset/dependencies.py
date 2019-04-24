@@ -38,6 +38,7 @@ class ParamSpecTree:
         self._leaf_names = set(leaf.name for leaf in leafs)
         self._as_dict = {root: leafs}
         self._as_dict_str = {root.name: self.leaf_names}
+        self._is_stub = not(bool(self._leafs_set))
 
     @property
     def leaf_names(self) -> Set[str]:
@@ -47,11 +48,23 @@ class ParamSpecTree:
     def leafs(self) -> Set[ParamSpecBase]:
         return self._leafs_set
 
+    @property
+    def is_stub(self) -> bool:
+        return self._is_stub
+
     def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         return self._as_dict
 
     def as_dict_str(self) -> Dict[str, Set[str]]:
         return self._as_dict_str
+
+    def __repr__(self) -> str:
+        rpr = f'ParamSpecTree({self.root}'
+        if self.is_stub:
+            rpr += ')'
+        else:
+            rpr += f', {", ".join([str(l) for l in self._leafs_tuple])})'
+        return rpr
 
 
 class ParamSpecGrove:
