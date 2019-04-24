@@ -90,11 +90,12 @@ def test_rescaled_ticks_and_units(scale, unit,
     assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
-def test_plot_by_id_line_and_heatmap(experiment):
+def test_plot_by_id_line_and_heatmap(experiment, request):
     """
     Test that line plots and heatmaps can be plotted together
     """
     inst = DummyInstrument('dummy', gates=['s1', 'm1', 's2', 'm2'])
+    request.addfinalizer(inst.close)
 
     inst.m1.get = np.random.randn
     inst.m2.get = lambda: np.random.randint(0, 5)
