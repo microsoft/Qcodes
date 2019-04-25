@@ -293,15 +293,17 @@ class Keithley2450(VisaInstrument):
 
         self.write(f":SOUR:FUNC {value}")
         self.sense.sweep.setpoints = (self.source.sweep_axis,)
-        self.source.reset_sweep()
+        self.source.sweep_reset()
 
     @property
-    def source(self) -> InstrumentBase:
-        return self.submodules[f"_source_{self.source_function()}"]
+    def source(self) -> Source2450:
+        submodule = self.submodules[f"_source_{self.source_function()}"]
+        return cast(Source2450, submodule)
 
     @property
-    def sense(self) -> InstrumentBase:
-        return self.submodules[f"_sense_{self.sense_function()}"]
+    def sense(self) -> Sense2450:
+        submodule = self.submodules[f"_sense_{self.sense_function()}"]
+        return cast(Sense2450, submodule)
 
     def npts(self) -> int:
         """
