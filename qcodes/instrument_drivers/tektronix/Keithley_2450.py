@@ -1,280 +1,198 @@
 import numpy as np
 from typing import Any, Dict, Callable, cast, Sequence
 
+from qcodes.instrument.base import InstrumentBase
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.instrument.parameter import Parameter, _BaseParameter
 from qcodes.utils.validators import Enum, Numbers, Arrays
 
 
-class ParameterError(Exception):
-    """Raise this error if a parameter has an unexpected value"""
-    pass
+class Keithley2450ParameterWithSetpoints(ParameterWithSetpoints):
+    @property
+    def setpoints(self) -> Sequence[_BaseParameter]:
+        return self.instrument.parent.source.sweep_axis,
 
-
-def assert_parameter_values(required_parameter_values: Dict[Parameter, Any]) -> None:
-    """
-    Assert that the parameters specified in the input dictionary have the required
-    values.
-
-    Args:
-        required_parameter_values
-    """
-    for parameter, required_value in required_parameter_values.items():
-
-        actual_value = parameter.get_latest() or parameter.get()
-        if required_value != actual_value:
-
-            instrument = cast(VisaInstrument, parameter.instrument)
-            instrument_name = instrument.name.replace("_", '.')
-
-            raise ParameterError(
-                f"'{instrument_name}.{parameter.name}' has value '{actual_value}'. "
-                f"This should be '{required_value}'"
-            )
+    @setpoints.setter
+    def setpoints(self, setpoints: Sequence[_BaseParameter]):
+        pass
 
 
 class Sense2450(InstrumentChannel):
     function_modes = {
         "current": {
-            "instrument_name": "\"CURR:DC\"",
+            "name": "\"CURR:DC\"",
             "unit": "A",
             "range_vals": Numbers(10E-9, 1)
         },
         "resistance": {
-            "instrument_name": "\"RES\"",
+            "name": "\"RES\"",
             "unit": "Ohm",
             "range_vals": Numbers(20, 200E6)
         },
         "voltage": {
-            "instrument_name": "\"VOLT:DC\"",
+            "name": "\"VOLT:DC\"",
             "unit": "V",
             "range_vals": Numbers(0.02, 200)
         }
     }
 
-    def __init__(self, parent: 'Keithley2450', name: str) -> None:
+    def __init__(self, parent: 'Keithley2450', name: str, proper_function: str) -> None:
         super().__init__(parent, name)
+        self._proper_function = proper_function
+        range_vals = self.function_modes[self._proper_function]["range_vals"]
+        unit = self.function_modes[self._proper_function]["unit"]
+
+        self.function = self.parent.sense_function
 
         self.add_parameter(
-            "function",
-            set_cmd=":SENS:FUNC {}",
-            get_cmd=":SENS:FUNC?",
+            "four_wire_measurement",
+            set_cmd=f":SENSe:{self._proper_function}:RSENse {{}}",
+            get_cmd=f":SENSe:{self._proper_function}:RSENse?",
             val_mapping={
-                key: self.function_modes[key]["instrument_name"]
-                for key in self.function_modes
+                True: "1",
+                False: "0"
+            },
+        )
+
+        self.add_parameter(
+            "range",
+            set_cmd=f":SENSe:{self._proper_function}:RANGe {{}}",
+            get_cmd=f":SENSe:{self._proper_function}:RANGe?",
+            vals=range_vals,
+            get_parser=float,
+            unit=unit
+        )
+
+        self.add_parameter(
+            "auto_range",
+            set_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO {{}}",
+            get_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO?",
+            val_mapping={
+                True: "1",
+                False: "0"
             }
         )
 
-        for function, args in Sense2450.function_modes.items():
-            self.add_parameter(
-                f"_four_wire_measurement_{function}",
-                set_cmd=f":SENSe:{function}:RSENse {{}}",
-                get_cmd=f":SENSe:{function}:RSENse?",
-                val_mapping={
-                    True: "1",
-                    False: "0"
-                },
-            )
+        self.add_parameter(
+            self._proper_function,
+            get_cmd=self._measure,
+            get_parser=float,
+            unit=unit,
+            snapshot_value=False
+        )
 
-            self.add_parameter(
-                f"_range_{function}",
-                set_cmd=f":SENSe:{function}:RANGe {{}}",
-                get_cmd=f":SENSe:{function}:RANGe?",
-                vals=args["range_vals"],
-                get_parser=float,
-                unit=args["unit"]
-            )
+        self.add_parameter(
+            "sweep",
+            get_cmd=self._measure_sweep,
+            unit=unit,
+            vals=Arrays(shape=(self.parent.npts,)),
+            parameter_class=Keithley2450ParameterWithSetpoints
+        )
 
-            self.add_parameter(
-                f"_auto_range_{function}",
-                set_cmd=f":SENSe:{function}:RANGe:AUTO {{}}",
-                get_cmd=f":SENSe:{function}:RANGe:AUTO?",
-                val_mapping={
-                    True: "1",
-                    False: "0"
-                }
-            )
+    def _measure(self) -> Callable:
+        if not self.parent.output():
+            raise RuntimeError("Output needs to be on for a measurement")
+        return self.ask(":MEASure?")
 
-            self.add_parameter(
-                function,
-                get_cmd=self._measure(function),
-                get_parser=float,
-                unit=args["unit"],
-                snapshot_value=False
-            )
+    def set_points(self):
+        return self.parent.source.sweep_axis,
 
-    def _measure(self, function: str) -> Callable:
-        def measurer():
-            assert_parameter_values({self.function: function, self.parent.output: True})
-            return self.ask(":MEASure?")
-        return measurer
+    def _measure_sweep(self) -> np.ndarray:
 
-    @property
-    def four_wire_measurement(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.function.get_latest() or self.function()
-        param_name = f"_four_wire_measurement_{function}"
-        return self.parameters[param_name]
+        source = cast(Source2450, self.parent.source)
+        cmd_args = dict(source.sweep_arguments)
+        cmd_args["function"] = source.function.get_latest() or source.function.get()
 
-    @property
-    def auto_range(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.function.get_latest() or self.function()
-        param_name = f"_auto_range_{function}"
-        return self.parameters[param_name]
+        cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
+              "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
 
-    @property
-    def range(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.function.get_latest() or self.function()
-        param_name = f"_range_{function}"
-        return self.parameters[param_name]
+        self.write(cmd)
+        self.write(":INITiate")
+        self.write("*WAI")
+        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
+        self.write(":TRACe:CLEar")
+
+        return np.array([float(i) for i in raw_data.split(",")])
 
 
 class Source2450(InstrumentChannel):
     function_modes = {
         "current": {
-            "instrument_name": "CURR",
+            "name": "CURR",
             "unit": "A",
             "range_vals": Numbers(-1, 1)
         },
         "voltage": {
-            "instrument_name": "VOLT",
+            "name": "VOLT",
             "unit": "V",
             "range_vals": Numbers(-200, 200)
         }
     }
 
-    def __init__(self, parent: 'Keithley2450', name: str) -> None:
+    def __init__(self, parent: 'Keithley2450', name: str, proper_function: str) -> None:
         super().__init__(parent, name)
+        self._proper_function = proper_function
+        range_vals = self.function_modes[self._proper_function]["range_vals"]
+        unit = self.function_modes[self._proper_function]["unit"]
 
-        self._sweep_arguments: dict = {}
+        self.function = self.parent.source_function
+        self._sweep_arguments = {}
 
         self.add_parameter(
-            "function",
-            set_cmd=self._set_source_function,
-            get_cmd=":SOUR:FUNC?",
+            "range",
+            set_cmd=f":SOUR:{self._proper_function}:RANGe {{}}",
+            get_cmd=f":SOUR:{self._proper_function}:RANGe?",
+            vals=range_vals,
+            get_parser=float,
+            unit=unit
+        )
+
+        self.add_parameter(
+            "auto_range",
+            set_cmd=f":SOURce:{self._proper_function}:RANGe:AUTO {{}}",
+            get_cmd=f":SOURce:{self._proper_function}:RANGe:AUTO?",
             val_mapping={
-                key: self.function_modes[key]["instrument_name"]
-                for key in self.function_modes
+                True: "1",
+                False: "0"
             }
         )
 
-        for source_function, args in Source2450.function_modes.items():
-            self.add_parameter(
-                f"_range_{source_function}",
-                set_cmd=f":SOUR:{source_function}:RANGe {{}}",
-                get_cmd=f":SOUR:{source_function}:RANGe?",
-                vals=args["range_vals"],
-                get_parser=float,
-                unit=args["unit"]
-            )
-
-            self.add_parameter(
-                f"_auto_range_{source_function}",
-                set_cmd=f":SOURce:{source_function}:RANGe:AUTO {{}}",
-                get_cmd=f":SOURce:{source_function}:RANGe:AUTO?",
-                val_mapping={
-                    True: "1",
-                    False: "0"
-                }
-            )
-
-            limit_cmd = {"current": "VLIM", "voltage": "ILIM"}[source_function]
-            self.add_parameter(
-                f"_limit_{source_function}",
-                set_cmd=f"SOUR:{source_function}:{limit_cmd} {{}}",
-                get_cmd=f"SOUR:{source_function}:{limit_cmd}?",
-                get_parser=float,
-                unit=args["unit"]
-            )
-
-            self.add_parameter(
-                f"_sweep_axis_{source_function}",
-                get_cmd=self._get_sweep_axis,
-                vals=Arrays(shape=(self.npts,)),
-                unit=args["unit"]
-            )
-
-            for sense_function, sense_args in Sense2450.function_modes.items():
-                self.add_parameter(
-                    f"_sweep_{source_function}_{sense_function}",
-                    get_cmd=self._measure_sweep(source_function),
-                    unit=sense_args["unit"],
-                    vals=Arrays(shape=(self.npts,)),
-                    setpoints=(self.parameters[f"_sweep_axis_{source_function}"],),
-                    parameter_class=ParameterWithSetpoints
-                )
+        limit_cmd = {"current": "VLIM", "voltage": "ILIM"}[self._proper_function]
+        self.add_parameter(
+            "limit",
+            set_cmd=f"SOUR:{self._proper_function}:{limit_cmd} {{}}",
+            get_cmd=f"SOUR:{self._proper_function}:{limit_cmd}?",
+            get_parser=float,
+            unit=unit
+        )
 
         self.add_parameter(
-            "current",
-            set_cmd=self._setpoint_setter("current"),
-            get_cmd=self._setpoint_getter("current"),
+            self._proper_function,
+            set_cmd=f"SOUR:{self._proper_function} {{}}",
+            get_cmd=f"SOUR:{self._proper_function}?",
             get_parser=float,
-            unit="A",
+            unit=unit,
             snapshot_value=False
         )
 
         self.add_parameter(
-            "voltage",
-            set_cmd=self._setpoint_setter("voltage"),
-            get_cmd=self._setpoint_getter("voltage"),
-            get_parser=float,
-            unit="V",
-            snapshot_value=False
+            "sweep_axis",
+            get_cmd=self.get_sweep_axis,
+            vals=Arrays(shape=(self.parent.npts,)),
+            unit=unit
         )
 
-    def _set_source_function(self, value: str) -> None:
-
-        if self.parent.sense.function() == "resistance":
-            raise RuntimeError(
-                "Cannot change the source function while sense function is in 'resistance' mode"
+    def get_sweep_axis(self):
+        if self._sweep_arguments == {}:
+            raise ValueError(
+                "Before starting a sweep, please call 'sweep_setup'"
             )
 
-        self.write(f":SOUR:FUNC {value}")
-        # If the source function changes, we cannot trust the
-        # sweep setup anymore
-        self._sweep_arguments: dict = {}
-
-    def _setpoint_setter(self, function: str) -> Callable:
-        def setter(value):
-            assert_parameter_values({self.function: function})
-            return self.write_raw(f"SOUR:{function} {value}")
-
-        return setter
-
-    def _setpoint_getter(self, function: str) -> Callable:
-        def getter():
-            assert_parameter_values({self.function: function})
-            return self.ask_raw(f"SOUR:{function}?")
-
-        return getter
-
-    def _measure_sweep(self, function: str) -> Callable:
-        def measurer() -> np.ndarray:
-            assert_parameter_values({self.function: function, self.parent.output: True})
-
-            cmd_args = dict(self._sweep_arguments)
-            cmd_args["function"] = self.function()
-
-            cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
-                  "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
-
-            self.write(cmd)
-            self.write(":INITiate")
-            self.write("*WAI")
-            raw_data = self.ask(f":TRACe:DATA? 1, {self.npts()}")
-            self.write(":TRACe:CLEar")
-
-            return np.array([float(i) for i in raw_data.split(",")])
-
-        return measurer
+        return np.linspace(
+            start=self._sweep_arguments["start"],
+            stop=self._sweep_arguments["stop"],
+            num=self._sweep_arguments["step_count"]
+        )
 
     def sweep_setup(
             self,
@@ -295,64 +213,9 @@ class Source2450(InstrumentChannel):
             range_mode=range_mode
         )
 
-    def _get_sweep_axis(self):
-        if self._sweep_arguments == {}:
-            raise ValueError(
-                "Before starting a sweep, please call 'sweep_setup'"
-            )
-
-        return np.linspace(
-            start=self._sweep_arguments["start"],
-            stop=self._sweep_arguments["stop"],
-            num=self._sweep_arguments["step_count"],
-        )
-
     @property
-    def range(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.function.get_latest() or self.function()
-        param_name = f"_range_{function}"
-        return self.parameters[param_name]
-
-    @property
-    def auto_range(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.function.get_latest() or self.function()
-        param_name = f"_auto_range_{function}"
-        return self.parameters[param_name]
-
-    @property
-    def limit(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        function = self.function.get_latest() or self.function()
-        param_name = f"_limit_{function}"
-        return self.parameters[param_name]
-
-    @property
-    def sweep_axis(self) -> _BaseParameter:
-        function = self.function.get_latest() or self.function()
-        param_name = f"_sweep_axis_{function}"
-        return self.parameters[param_name]
-
-    def npts(self):
-        return len(self.sweep_axis())
-
-    @property
-    def sweep(self) -> _BaseParameter:
-        """
-        Return the appropriate parameter based on the current function
-        """
-        source_function = self.function.get_latest() or self.function()
-        sense_module = cast(Sense2450, self.parent.sense)
-        sense_function = sense_module.function.get_latest() or sense_module.function()
-        param_name = f"_sweep_{source_function}_{sense_function}"
-        return self.parameters[param_name]
+    def sweep_arguments(self) -> dict:
+        return self._sweep_arguments
 
 
 class Keithley2450(VisaInstrument):
@@ -375,6 +238,26 @@ class Keithley2450(VisaInstrument):
             return
 
         self.add_parameter(
+            "source_function",
+            set_cmd=self._set_source_function,
+            get_cmd=":SOUR:FUNC?",
+            val_mapping={
+                key: value["name"]
+                for key, value in Source2450.function_modes.items()
+            }
+        )
+
+        self.add_parameter(
+            "sense_function",
+            set_cmd=":SENS:FUNC {}",
+            get_cmd=":SENS:FUNC?",
+            val_mapping={
+                key: value["name"]
+                for key, value in Sense2450.function_modes.items()
+            }
+        )
+
+        self.add_parameter(
             "terminals",
             set_cmd="ROUTe:TERMinals {}",
             get_cmd="ROUTe:TERMinals?",
@@ -391,17 +274,43 @@ class Keithley2450(VisaInstrument):
             }
         )
 
-        self.add_submodule(
-            "source",
-            Source2450(self, "source")
-        )
+        for proper_source_function in Source2450.function_modes:
+            self.add_submodule(
+                f"_source_{proper_source_function}",
+                Source2450(self, "source", proper_source_function)
+            )
 
-        self.add_submodule(
-            "sense",
-            Sense2450(self, "sense")
-        )
+        for proper_sense_function in Sense2450.function_modes:
+            self.add_submodule(
+                f"_sense_{proper_sense_function}",
+                Sense2450(self, "sense", proper_sense_function)
+            )
 
         self.connect_message()
+
+    def _set_source_function(self, value: str) -> None:
+
+        if self.sense_function() == "resistance":
+            raise RuntimeError(
+                "Cannot change the source function while sense function is in 'resistance' mode"
+            )
+
+        self.write(f":SOUR:FUNC {value}")
+
+    @property
+    def source(self) -> InstrumentBase:
+        return self.submodules[f"_source_{self.source_function()}"]
+
+    @property
+    def sense(self) -> InstrumentBase:
+        return self.submodules[f"_sense_{self.sense_function()}"]
+
+    def npts(self):
+        """
+        Get the number of points
+        :return:
+        """
+        return len(self.source.get_sweep_axis())
 
     def set_correct_language(self) -> None:
         """
