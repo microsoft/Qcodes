@@ -15,7 +15,7 @@ from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
 from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
+from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
@@ -165,7 +165,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
 
 
 def test_correct_experiment_routing(two_empty_temp_db_connections,
-                                    some_paramspecs):
+                                    some_interdeps):
     """
     Test that existing experiments are correctly identified AND that multiple
     insertions of the same runs don't matter (run insertion is idempotent)
@@ -182,14 +182,13 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
         source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
         exp_1_run_ids.append(source_dataset.run_id)
 
-        for ps in some_paramspecs[2].values():
-            source_dataset.add_parameter(ps)
+        source_dataset.set_interdependencies(some_interdeps[1])
 
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({ps.name: val
-                                       for ps in some_paramspecs[2].values()})
+            source_dataset.add_result({name: val
+                                       for name in some_interdeps[1].names})
         source_dataset.mark_completed()
 
     # make a new experiment with 1 run
@@ -198,13 +197,12 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     ds = DataSet(conn=source_conn, exp_id=source_exp_2.exp_id, name="lala")
     exp_2_run_ids = [ds.run_id]
 
-    for ps in some_paramspecs[2].values():
-        ds.add_parameter(ps)
+    ds.set_interdependencies(some_interdeps[1])
 
     ds.mark_started()
 
     for val in range(10):
-        ds.add_result({ps.name: val for ps in some_paramspecs[2].values()})
+        ds.add_result({name: val for name in some_interdeps[1].names})
 
     ds.mark_completed()
 
@@ -261,7 +259,7 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
 
 def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
-                                                some_paramspecs):
+                                                some_interdeps):
     """
     Test that inserting runs from multiple experiments raises
     """
@@ -281,14 +279,13 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
         exp_1_run_ids.append(source_dataset.run_id)
 
-        for ps in some_paramspecs[2].values():
-            source_dataset.add_parameter(ps)
+        source_dataset.set_interdependencies(some_interdeps[1])
 
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({ps.name: val
-                                       for ps in some_paramspecs[2].values()})
+            source_dataset.add_result({name: val
+                                       for name in some_interdeps[1].names})
         source_dataset.mark_completed()
 
     # make 5 runs in second experiment
@@ -299,14 +296,14 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         source_dataset = DataSet(conn=source_conn, exp_id=source_exp_2.exp_id)
         exp_2_run_ids.append(source_dataset.run_id)
 
-        for ps in some_paramspecs[2].values():
-            source_dataset.add_parameter(ps)
+        source_dataset.set_interdependencies(some_interdeps[1])
+
 
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({ps.name: val
-                                       for ps in some_paramspecs[2].values()})
+            source_dataset.add_result({name: val
+                                       for name in some_interdeps[1].names})
         source_dataset.mark_completed()
 
     run_ids = exp_1_run_ids + exp_2_run_ids
@@ -319,8 +316,7 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_extracting_dataless_run(two_empty_temp_db_connections,
-                                 some_paramspecs):
+def test_extracting_dataless_run(two_empty_temp_db_connections):
     """
     Although contrived, it could happen that a run with no data is extracted
     """
@@ -343,7 +339,7 @@ def test_extracting_dataless_run(two_empty_temp_db_connections,
 
 
 def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
-                                        some_paramspecs):
+                                        some_interdeps):
     """
     Check that a correct result table name is given and that a correct run_id
     is assigned
@@ -355,29 +351,28 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
 
     source_exp1 = Experiment(conn=source_conn)
     source_ds_1_1 = DataSet(conn=source_conn, exp_id=source_exp1.exp_id)
-    for ps in some_paramspecs[2].values():
-        source_ds_1_1.add_parameter(ps)
+    source_ds_1_1.set_interdependencies(some_interdeps[1])
+
     source_ds_1_1.mark_started()
-    source_ds_1_1.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
+    source_ds_1_1.add_result({name: 0.0
+                              for name in some_interdeps[1].names})
     source_ds_1_1.mark_completed()
 
     source_exp2 = Experiment(conn=source_conn)
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
-    for ps in some_paramspecs[2].values():
-        source_ds_2_1.add_parameter(ps)
+    source_ds_2_1.set_interdependencies(some_interdeps[1])
     source_ds_2_1.mark_started()
-    source_ds_2_1.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
+    source_ds_2_1.add_result({name: 0.0
+                              for name in some_interdeps[1].names})
     source_ds_2_1.mark_completed()
     source_ds_2_2 = DataSet(conn=source_conn,
                             exp_id=source_exp2.exp_id,
                             name="customname")
-    for ps in some_paramspecs[2].values():
-        source_ds_2_2.add_parameter(ps)
+
+    source_ds_2_2.set_interdependencies(some_interdeps[1])
     source_ds_2_2.mark_started()
-    source_ds_2_2.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
+    source_ds_2_2.add_result({name: 0.0
+                              for name in some_interdeps[1].names})
     source_ds_2_2.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
@@ -391,7 +386,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
 
 
 def test_load_by_X_functions(two_empty_temp_db_connections,
-                             some_paramspecs):
+                             some_interdeps):
     """
     Test some different loading functions
     """
@@ -402,30 +397,19 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
 
     source_exp1 = Experiment(conn=source_conn)
     source_ds_1_1 = DataSet(conn=source_conn, exp_id=source_exp1.exp_id)
-    for ps in some_paramspecs[2].values():
-        source_ds_1_1.add_parameter(ps)
-    source_ds_1_1.mark_started()
-    source_ds_1_1.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
-    source_ds_1_1.mark_completed()
 
     source_exp2 = Experiment(conn=source_conn)
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
-    for ps in some_paramspecs[2].values():
-        source_ds_2_1.add_parameter(ps)
-    source_ds_2_1.mark_started()
-    source_ds_2_1.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
-    source_ds_2_1.mark_completed()
+
     source_ds_2_2 = DataSet(conn=source_conn,
                             exp_id=source_exp2.exp_id,
                             name="customname")
-    for ps in some_paramspecs[2].values():
-        source_ds_2_2.add_parameter(ps)
-    source_ds_2_2.mark_started()
-    source_ds_2_2.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
-    source_ds_2_2.mark_completed()
+
+    for ds in (source_ds_1_1, source_ds_2_1, source_ds_2_2):
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
@@ -440,7 +424,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
 
 
 def test_old_versions_not_touched(two_empty_temp_db_connections,
-                                  some_paramspecs):
+                                  some_interdeps):
 
     source_conn, target_conn = two_empty_temp_db_connections
 
@@ -473,11 +457,11 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
     source_exp = Experiment(conn=source_conn)
     source_ds = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
 
-    for ps in some_paramspecs[2].values():
-        source_ds.add_parameter(ps)
+    source_ds.set_interdependencies(some_interdeps[1])
+
     source_ds.mark_started()
-    source_ds.add_result({ps.name: 0.0
-                              for ps in some_paramspecs[2].values()})
+    source_ds.add_result({name: 0.0
+                          for name in some_interdeps[1].names})
     source_ds.mark_completed()
 
     with raise_if_file_changed(fixturepath):
@@ -492,7 +476,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
 
 
 def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
-                                           some_paramspecs):
+                                           some_interdeps):
     """
     In older API versions (corresponding to DB version 3),
     users could get away with setting the sample name to None
@@ -514,13 +498,12 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
         source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
         exp_1_run_ids.append(source_dataset.run_id)
 
-        for ps in some_paramspecs[2].values():
-            source_dataset.add_parameter(ps)
+        source_dataset.set_interdependencies(some_interdeps[1])
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({ps.name: val
-                                       for ps in some_paramspecs[2].values()})
+            source_dataset.add_result({name: val
+                                       for name in some_interdeps[1].names})
         source_dataset.mark_completed()
 
     sql = """
@@ -578,7 +561,7 @@ def test_integration_station_and_measurement(two_empty_temp_db_connections,
     assert datasaver.dataset.the_same_dataset_as(target_ds)
 
 
-def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
+def test_atomicity(two_empty_temp_db_connections, some_interdeps):
     """
     Test the atomicity of the transaction by extracting and inserting two
     runs where the second one is not completed. The not completed error must
@@ -595,20 +578,16 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
 
     source_exp = Experiment(conn=source_conn)
     source_ds_1 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
-    for ps in some_paramspecs[2].values():
-        source_ds_1.add_parameter(ps)
-    source_ds_1.mark_started()
-    source_ds_1.add_result({ps.name: 2.1
-                            for ps in some_paramspecs[2].values()})
-    source_ds_1.mark_completed()
-
     source_ds_2 = DataSet(conn=source_conn, exp_id=source_exp.exp_id)
-    for ps in some_paramspecs[2].values():
-        source_ds_2.add_parameter(ps)
-    source_ds_2.mark_started()
-    source_ds_2.add_result({ps.name: 2.1
-                            for ps in some_paramspecs[2].values()})
-    # This dataset is NOT marked as completed
+
+    for ds in (source_ds_1, source_ds_2):
+        ds.set_interdependencies(some_interdeps[1])
+        ds.mark_started()
+        ds.add_result({name: 2.1
+                       for name in some_interdeps[1].names})
+
+    # importantly, source_ds_2 is NOT marked as completed
+    source_ds_1.mark_completed()
 
     # now check that the target file is untouched
     with raise_if_file_changed(target_path):
@@ -618,7 +597,7 @@ def test_atomicity(two_empty_temp_db_connections, some_paramspecs):
             extract_runs_into_db(source_path, target_path, 1, 2)
 
 
-def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs, inst):
+def test_column_mismatch(two_empty_temp_db_connections, some_interdeps, inst):
     """
     Test insertion of runs with no metadata and no snapshot into a DB already
     containing a run that has both
@@ -648,11 +627,11 @@ def test_column_mismatch(two_empty_temp_db_connections, some_paramspecs, inst):
 
     Experiment(conn=source_conn)
     source_ds = DataSet(conn=source_conn)
-    for ps in some_paramspecs[2].values():
-        source_ds.add_parameter(ps)
+    source_ds.set_interdependencies(some_interdeps[1])
+
     source_ds.mark_started()
-    source_ds.add_result({ps.name: 2.1
-                          for ps in some_paramspecs[2].values()})
+    source_ds.add_result({name: 2.1
+                          for name in some_interdeps[1].names})
     source_ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, 1)
