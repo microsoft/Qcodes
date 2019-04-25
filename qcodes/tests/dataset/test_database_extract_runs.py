@@ -15,6 +15,7 @@ from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
 from qcodes.dataset.database import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.tests.dataset.temporary_databases import two_empty_temp_db_connections
+from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
@@ -49,7 +50,7 @@ def inst():
     inst.close()
 
 
-def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
+def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps):
     """
     Test that an error is raised if we attempt to extract a run not present in
     the source DB
@@ -65,15 +66,13 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
 
         source_dataset = DataSet(conn=source_conn, exp_id=source_exp_1.exp_id)
         exp_1_run_ids.append(source_dataset.run_id)
-
-        for ps in some_paramspecs[2].values():
-            source_dataset.add_parameter(ps)
+        source_dataset.set_interdependencies(some_interdeps[1])
 
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({ps.name: val
-                                       for ps in some_paramspecs[2].values()})
+            source_dataset.add_result({name: val
+                                       for name in some_interdeps[1].names})
         source_dataset.mark_completed()
 
     source_path = path_to_dbfile(source_conn)
@@ -90,7 +89,7 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_paramspecs):
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
+def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -113,14 +112,13 @@ def test_basic_extraction(two_empty_temp_db_connections, some_paramspecs):
                                      f'{source_dataset.guid} and run_id: '
                                      f'{source_dataset.run_id}'))
 
-    for ps in some_paramspecs[1].values():
-        source_dataset.add_parameter(ps)
+    source_dataset.set_interdependencies(some_interdeps[0])
 
     source_dataset.mark_started()
 
     for value in range(10):
         result = {ps.name: type_casters[ps.type](value)
-                  for ps in some_paramspecs[1].values()}
+                  for ps in some_interdeps[0].paramspecs}
         source_dataset.add_result(result)
 
     source_dataset.add_metadata('goodness', 'fair')
