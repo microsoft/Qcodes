@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Callable, cast
 
-from qcodes.instrument.base import InstrumentBase
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.utils.validators import Enum, Numbers, Arrays
 
@@ -9,17 +8,17 @@ from qcodes.utils.validators import Enum, Numbers, Arrays
 class Sense2450(InstrumentChannel):
     function_modes = {
         "current": {
-            "name": "\"CURR:DC\"",
+            "name": '"CURR:DC"',
             "unit": "A",
             "range_vals": Numbers(10E-9, 1)
         },
         "resistance": {
-            "name": "\"RES\"",
+            "name": '"RES"',
             "unit": "Ohm",
             "range_vals": Numbers(20, 200E6)
         },
         "voltage": {
-            "name": "\"VOLT:DC\"",
+            "name": '"VOLT:DC"',
             "unit": "V",
             "range_vals": Numbers(0.02, 200)
         }
@@ -266,12 +265,14 @@ class Keithley2450(VisaInstrument):
             }
         )
 
+        # Make a source module for every source function ('current' and voltage')
         for proper_source_function in Source2450.function_modes:
             self.add_submodule(
                 f"_source_{proper_source_function}",
                 Source2450(self, "source", proper_source_function)
             )
 
+        # Make a sense module for every sense function ('current', voltage' and 'resistance')
         for proper_sense_function in Sense2450.function_modes:
             self.add_submodule(
                 f"_sense_{proper_sense_function}",
@@ -281,10 +282,39 @@ class Keithley2450(VisaInstrument):
         self.connect_message()
 
     def _set_sense_function(self, value: str) -> None:
+        """
+        Change the sense function. The property 'sense' will return the
+        sense module appropriate for this function setting, which will be
+        the 'active' sense module.
+
+        We need to ensure that the setpoints of the sweep parameter in the
+        active sense module is correctly set. Normally we would do that
+        with 'self.sense.setpoints = (self.source.sweep_axis,)'
+
+        However, we cannot call the property 'self.sense', because that property
+        will call `get_latest` on the parameter for which this function
+        (that is '_set_sense_function') is the setter
+        """
         self.write(f":SENS:FUNC {value}",)
-        self.sense.sweep.setpoints = (self.source.sweep_axis,)
+        sense_function = self.sense_function.inverse_val_mapping[value]
+        sense = self.submodules[f"_sense_{sense_function}"]
+        sense.sweep.setpoints = (self.source.sweep_axis,)
 
     def _set_source_function(self, value: str) -> None:
+        """
+        Change the source function. The property 'source' will return the
+        source module appropriate for this function setting, which will be
+        the 'active' source module.
+
+        We need to ensure that the setpoints of the sweep parameter in the
+        active sense module reflects the change in the source module.
+        Normally we would do that with
+        'self.sense.setpoints = (self.source.sweep_axis,)'
+
+        However, we cannot call the property 'self.source', because that property
+        will call `get_latest` on the parameter for which this function
+        (that is '_set_source_function') is the setter
+        """
 
         if self.sense_function() == "resistance":
             raise RuntimeError(
@@ -292,17 +322,34 @@ class Keithley2450(VisaInstrument):
             )
 
         self.write(f":SOUR:FUNC {value}")
-        self.sense.sweep.setpoints = (self.source.sweep_axis,)
-        self.source.sweep_reset()
+        source_function = self.source_function.inverse_val_mapping[value]
+        source = self.submodules[f"_source_{source_function}"]
+        self.sense.sweep.setpoints = (source.sweep_axis,)
+        # Once the source function has changed, we cannot trust the sweep setup anymore
+        source.sweep_reset()
 
     @property
     def source(self) -> Source2450:
-        submodule = self.submodules[f"_source_{self.source_function()}"]
+        """
+        We have different source modules depending on the source function, which can be
+        'current' or 'voltage'
+
+        Return the correct source module based on the source function
+        """
+        source_function = self.source_function.get_latest() or self.source_function()
+        submodule = self.submodules[f"_source_{source_function}"]
         return cast(Source2450, submodule)
 
     @property
     def sense(self) -> Sense2450:
-        submodule = self.submodules[f"_sense_{self.sense_function()}"]
+        """
+        We have different sense modules depending on the sense function, which can be
+        'current', 'voltage' or 'resistance'
+
+        Return the correct source module based on the sense function
+        """
+        sense_function = self.sense_function.get_latest() or self.sense_function()
+        submodule = self.submodules[f"_sense_{sense_function}"]
         return cast(Sense2450, submodule)
 
     def npts(self) -> int:
