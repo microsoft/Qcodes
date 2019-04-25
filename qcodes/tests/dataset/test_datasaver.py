@@ -6,7 +6,7 @@ from hypothesis import given, strategies as hst
 
 import qcodes as qc
 from qcodes.dataset.measurements import DataSaver
-from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.dependencies import InterDependencies_
 # pylint: disable=unused-import
 from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
@@ -70,12 +70,12 @@ def test_numpy_types():
     Test that we can save numpy types in the data set
     """
 
-    p = ParamSpec(name="p", paramtype="numeric")
+    p = ParamSpecBase(name="p", paramtype="numeric")
     test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
+    test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
     test_set.mark_started()
 
-    idps = InterDependencies_(standalones=(p.base_version(),))
+    idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
         dataset=test_set, write_period=0, interdeps=idps)
@@ -99,13 +99,13 @@ def test_saving_numeric_values_as_text(numeric_type):
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """
-    p = ParamSpec("p", "text")
+    p = ParamSpecBase("p", "text")
 
     test_set = qc.new_data_set("test-dataset")
-    test_set.add_parameter(p)
+    test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
     test_set.mark_started()
 
-    idps = InterDependencies_(standalones=(p.base_version(),))
+    idps = InterDependencies_(standalones=(p,))
 
     data_saver = DataSaver(
         dataset=test_set, write_period=0, interdeps=idps)
