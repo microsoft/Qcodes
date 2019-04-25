@@ -1,20 +1,9 @@
 import numpy as np
-from typing import Any, Dict, Callable, cast, Sequence
+from typing import Callable, cast
 
 from qcodes.instrument.base import InstrumentBase
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.instrument.parameter import Parameter, _BaseParameter
 from qcodes.utils.validators import Enum, Numbers, Arrays
-
-
-class Keithley2450ParameterWithSetpoints(ParameterWithSetpoints):
-    @property
-    def setpoints(self) -> Sequence[_BaseParameter]:
-        return self.instrument.parent.source.sweep_axis,
-
-    @setpoints.setter
-    def setpoints(self, setpoints: Sequence[_BaseParameter]):
-        pass
 
 
 class Sense2450(InstrumentChannel):
@@ -86,16 +75,13 @@ class Sense2450(InstrumentChannel):
             get_cmd=self._measure_sweep,
             unit=unit,
             vals=Arrays(shape=(self.parent.npts,)),
-            parameter_class=Keithley2450ParameterWithSetpoints
+            parameter_class=ParameterWithSetpoints
         )
 
     def _measure(self) -> Callable:
         if not self.parent.output():
             raise RuntimeError("Output needs to be on for a measurement")
         return self.ask(":MEASure?")
-
-    def set_points(self):
-        return self.parent.source.sweep_axis,
 
     def _measure_sweep(self) -> np.ndarray:
 
@@ -217,6 +203,9 @@ class Source2450(InstrumentChannel):
     def sweep_arguments(self) -> dict:
         return self._sweep_arguments
 
+    def reset_sweep(self) -> None:
+        self._sweep_arguments = {}
+
 
 class Keithley2450(VisaInstrument):
     """
@@ -249,7 +238,7 @@ class Keithley2450(VisaInstrument):
 
         self.add_parameter(
             "sense_function",
-            set_cmd=":SENS:FUNC {}",
+            set_cmd=self._set_sense_function,
             get_cmd=":SENS:FUNC?",
             val_mapping={
                 key: value["name"]
@@ -288,6 +277,10 @@ class Keithley2450(VisaInstrument):
 
         self.connect_message()
 
+    def _set_sense_function(self, value: str) -> None:
+        self.write(f":SENS:FUNC {value}",)
+        self.sense.sweep.setpoints = (self.source.sweep_axis,)
+
     def _set_source_function(self, value: str) -> None:
 
         if self.sense_function() == "resistance":
@@ -296,6 +289,8 @@ class Keithley2450(VisaInstrument):
             )
 
         self.write(f":SOUR:FUNC {value}")
+        self.sense.sweep.setpoints = (self.source.sweep_axis,)
+        self.source.reset_sweep()
 
     @property
     def source(self) -> InstrumentBase:
@@ -305,10 +300,9 @@ class Keithley2450(VisaInstrument):
     def sense(self) -> InstrumentBase:
         return self.submodules[f"_sense_{self.sense_function()}"]
 
-    def npts(self):
+    def npts(self) -> int:
         """
-        Get the number of points
-        :return:
+        Get the number of points in the sweep axis
         """
         return len(self.source.get_sweep_axis())
 
