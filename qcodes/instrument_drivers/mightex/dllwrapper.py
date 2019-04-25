@@ -52,3 +52,4 @@ class MightexDLLWrapper(object):
 
         self.set_auto_dark = self._dll.MTSSE_SetDeviceSpectrometerAutoDarkStatus
         self.set_auto_dark.argtypes = [ct.c_int, ct.c_int, ct.c_int]
+

@@ -189,3 +189,4 @@ class MightexSSE_1304_U(qc.Instrument):
 
     def set_darkframe(self, drk: np.ndarray):
         self.drkdata = drk
+
