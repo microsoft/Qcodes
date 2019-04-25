@@ -74,7 +74,7 @@ class Sense2450(InstrumentChannel):
         )
 
     def _measure(self) -> Callable:
-        if not self.parent.output():
+        if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
         return self.ask(":MEASure?")
 
@@ -250,7 +250,8 @@ class Keithley2450(VisaInstrument):
         )
 
         self.add_parameter(
-            "output",
+            "output_enabled",
+            initial_value="0",
             set_cmd=":OUTP {}",
             get_cmd=":OUTP?",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
