@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
+
 def get_version(verbose=1):
     """ Extract version information from source code """
 
@@ -23,6 +24,7 @@ def get_version(verbose=1):
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 extras = {
     'MatPlot': ('matplotlib', '2.2.3'),
@@ -57,14 +59,18 @@ setup(name='qcodes',
       package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
                                'monitor/dist/css/*', 'config/*.json',
                                'instrument/sims/*.yaml',
-                               'tests/dataset/fixtures/2018-01-17/*/*']},
+                               'tests/dataset/fixtures/2018-01-17/*/*',
+                               'tests/drivers/auxiliary_files/*']},
       install_requires=[
-          'numpy>=1.10,<1.14',
-          'pyvisa>=1.8',
+          'numpy>=1.10',
+          'pyvisa>=1.9.1',
           'h5py>=2.6',
-          'websockets>=3.2',
+          'websockets>=7.0',
           'jsonschema',
-          'pyzmq'
+          'pyzmq',
+          'wrapt',
+          'pandas',
+          'tqdm'
       ],
 
       test_suite='qcodes.tests',
@@ -100,6 +106,13 @@ valueerror_template = '''
 *****
 '''
 
+othererror_template = '''
+*****
+***** could not import package {0}. Please try importing it from 
+***** the commandline to diagnose the issue.
+*****
+'''
+
 # now test the versions of extras
 for extra, (module_name, min_version) in extras.items():
     try:
@@ -111,3 +124,5 @@ for extra, (module_name, min_version) in extras.items():
     except ValueError:
         print(valueerror_template.format(
             module_name, module.__version__, min_version, extra))
+    except:
+        print(othererror_template.format(module_name))

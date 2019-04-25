@@ -9,10 +9,10 @@ class BasePlot:
     Auto-updating plot connected to a Jupyter notebook
 
     Args:
-        interval (Int): period in seconds between update checks
+        interval (int): period in seconds between update checks
          default 1
 
-        data_keys(String): sequence of keys in trace config can contain data
+        data_keys (str): sequence of keys in trace config can contain data
             that we should look for updates in.
             default 'xyz' (treated as a sequence) but add more if
             for example marker size or color can contain data
@@ -47,7 +47,7 @@ class BasePlot:
         Clear all content and add new trace.
 
         Args:
-            args (): optional way to provide x/y/z data without keywords
+            args: optional way to provide x/y/z data without keywords
                 If the last one is 1D, may be `y` or `x`, `y`
                 If the last one is 2D, may be `z` or `x`, `y`, `z`
 
@@ -76,15 +76,18 @@ class BasePlot:
             kwargs: after inserting info found in args and possibly in set_arrays
                 into `x`, `y`, and optionally `z`, these are passed along to
                 self.add_to_plot.
-                To use custom labels and units pass for example:
-                    plot.add(x=set, y=amplitude,
-                             xlabel="set"
-                             xunit="V",
-                             ylabel= "Amplitude",
-                             yunit ="V")
 
         Returns:
             Plot handle for trace
+
+        Examples:
+            To use custom labels and units pass for example:
+
+            >>> plot.add(x=set, y=amplitude,
+            >>>          xlabel="set",
+            >>>          xunit="V",
+            >>>          ylabel= "Amplitude",
+            >>>          yunit ="V")
 
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
@@ -113,7 +116,7 @@ class BasePlot:
         Add an updater to the plot.
 
         Args:
-            updater (callable): callable (with no args) that updates the data in this trace
+            updater (Callable): callable (with no args) that updates the data in this trace
                 if omitted, we will look for DataSets referenced in this data, and
                 call their sync methods.
             plot_config (dict): this is a dictionary that gets populated inside
@@ -150,7 +153,7 @@ class BasePlot:
         implementation, feel free to change it 👼
 
         Returns:
-            string: the title of the figure
+            str: the title of the figure
         """
         title_parts = []
         for trace in self.traces:
@@ -175,7 +178,7 @@ class BasePlot:
             data_array (DataArray): data array to get label from
 
         Returns:
-            string: label or name of the data_array
+            str: label or name of the data_array
 
         """
         # TODO this should really be a static method

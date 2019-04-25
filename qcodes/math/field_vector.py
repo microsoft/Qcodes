@@ -8,53 +8,56 @@ representation immediately.
 
 import numpy as np
 
+from typing import Union, Type, TypeVar, Optional
+NormOrder = Union[str, float]
+T = TypeVar('T', bound='FieldVector')
+
 
 class FieldVector(object):
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
+    repr_format = "cartesian"
 
-    def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None,
-                 rho=None):
+    def __init__(self,
+                 x: Optional[float] = None,
+                 y: Optional[float] = None,
+                 z: Optional[float] = None,
+                 r: Optional[float] = None,
+                 theta: Optional[float] = None,
+                 phi: Optional[float] = None,
+                 rho: Optional[float] = None):
         """
-        Parameters:
-            x (float, optional): represents the norm of the projection of the
-                                    vector along the x-axis
-            y (float, optional): represents the norm of the projection of the
-                                    vector along the y-axis
-            z (float, optional): represents the norm of the projection of the
-                                    vector along the z-axis
-            r (float, optional): represents the norm of the vector
-            theta (float, optional): represents the angle of the vector with
-                                        respect to the positive z-axis
-            rho (float, optional): represents the norm of the projection of the
-                                    vector on to the xy-plane
-            phi (float, optional): represents the angle of rho with respect to
-                                        the positive x-axis
+        All arguments are optional, however the user needs to provide
+        one of the following combinations for a meaningful computation:
+        (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
+        values.
 
-        Note: All inputs are optional, however the user needs to either give
-                (x, y, z) values, (r, theta, phi) values or (phi, rho, z)
-                values for meaningful computation
+        Args:
+            x: represents the norm of the projection
+                of the vector along the x-axis
+            y: represents the norm of the projection
+                of the vector along the y-axis
+            z: represents the norm of the projection
+                of the vector along the z-axis
+            r: represents the norm of the vector
+            theta: represents the angle of the vector
+                with respect to the positive z-axis
+            rho: represents the norm of the projection
+                of the vector on to the xy-plane
+            phi: represents the angle of rho
+                with respect to the positive x-axis
         """
-        self._x = x
-        self._y = y
-        self._z = z
+        self._x = float(x) if x is not None else None
+        self._y = float(y) if y is not None else None
+        self._z = float(z) if z is not None else None
 
-        self._r = r
-        if theta is not None:
-            self._theta = np.radians(theta)
-        else:
-            self._theta = theta
-
-        if phi is not None:
-            self._phi = np.radians(phi)
-        else:
-            self._phi = phi
-
-        self._rho = rho
+        self._r = float(r) if r is not None else None
+        self._theta = float(np.radians(theta)) if theta is not None else None
+        self._phi = float(np.radians(phi)) if phi is not None else None
+        self._rho = float(rho) if rho is not None else None
 
         self._compute_unknowns()
 
     def _set_attribute_value(self, attr_name, value):
-
         if value is None:
             return
 
@@ -70,14 +73,15 @@ class FieldVector(object):
                 )
 
     def _set_attribute_values(self, attr_names, values):
-
         for attr_name, value in zip(attr_names, values):
             self._set_attribute_value(attr_name, value)
 
+    def __getnewargs__(self):
+        return self.x, self.y, self.z
+
     @staticmethod
     def _cartesian_to_other(x, y, z):
-        """ Convert a cartesian set of coordinates to values of interest."""
-
+        """Convert a cartesian set of coordinates to values of interest."""
         if any([i is None for i in [x, y, z]]):
             return None
 
@@ -94,7 +98,6 @@ class FieldVector(object):
     @staticmethod
     def _spherical_to_other(r, theta, phi):
         """Convert from spherical to other representations"""
-
         if any([i is None for i in [r, theta, phi]]):
             return None
 
@@ -108,7 +111,6 @@ class FieldVector(object):
     @staticmethod
     def _cylindrical_to_other(phi, rho, z):
         """Convert from cylindrical to other representations"""
-
         if any([i is None for i in [phi, rho, z]]):
             return None
 
@@ -131,7 +133,6 @@ class FieldVector(object):
         This function will raise an error if there are contradictory inputs
         (e.g. x=3, y=4, z=0 and rho=6).
         """
-
         for f in [
             lambda: FieldVector._cartesian_to_other(self._x, self._y, self._z),
             lambda: FieldVector._spherical_to_other(self._r, self._theta,
@@ -145,7 +146,7 @@ class FieldVector(object):
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self, other):
+    def copy(self: T, other: T):
         """Copy the properties of other vector to yourself"""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
@@ -159,12 +160,14 @@ class FieldVector(object):
             >>> f = FieldVector(x=0, y=2, z=6)
             >>> f.set_vector(x=9, y=3, z=1)
             >>> f.set_vector(r=1, theta=30.0, phi=10.0)
-            >>> f.set_vector(x=9, y=0)  # this should raise a value error:
+            # The following should raise a value error:
             # "Can only set vector with a complete value set"
-            >>> f.set_vector(x=9, y=0, r=3)  # although mathematically it is
-            # possible to compute the complete vector from the values given,
-            # this is too hard to implement with generality (and not worth it)
-            # so this to will raise the above mentioned ValueError
+            >>> f.set_vector(x=9, y=0)
+            # Although mathematically it is possible to compute the complete
+            # vector from the values given, this is too hard to implement with
+            # generality (and not worth it), so the following will raise the
+            # above-mentioned ValueError too
+            >>> f.set_vector(x=9, y=0, r=3)
         """
         names = sorted(list(new_values.keys()))
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
@@ -183,18 +186,18 @@ class FieldVector(object):
 
         Examples:
             >>> f = FieldVector(x=2, y=3, z=4)
-            >>> f.set_component(r=10) # Since r is part of the set
-            # (r, theta, phi) representing spherical coordinates, setting r
-            # means that theta and phi are kept constant and only r is changed.
-            # After changing r, (x, y, z) values are recomputed, as is the rho
-            # coordinate. Internally we arrange this by setting x, y, z and
-            # rho to None and calling self._compute_unknowns()
+            # Since r is part of the set (r, theta, phi) representing
+            # spherical coordinates, setting r means that theta and phi are
+            # kept constant and only r is changed. After changing r,
+            # (x, y, z) values are recomputed, as is the rho coordinate.
+            # Internally we arrange this by setting x, y, z and rho to None
+            # and calling self._compute_unknowns()
+            >>> f.set_component(r=10)
 
-        Parameters:
+        Args:
             new_values (dict): keys representing parameter names and values the
-            values to be set
+                values to be set
         """
-
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
 
@@ -207,7 +210,7 @@ class FieldVector(object):
         else:
             value = items[0][1]
 
-        setattr(self, "_" + component_name, value)
+        setattr(self, "_" + component_name, float(value))
 
         groups = [["x", "y", "z"], ["r", "theta", "phi"], ["phi", "rho", "z"]]
 
@@ -250,30 +253,131 @@ class FieldVector(object):
 
         return True
 
+    def __getitem__(self, component):
+        return self.get_components(component)[0]
+
+    def __setitem__(self, component, value):
+        self.set_component(**{component: value})
+
+    def __mul__(self, other):
+        if not isinstance(other, (float, int)):
+            return NotImplemented
+
+        return FieldVector(**{
+            component: self[component] * other
+            for component in 'xyz'
+        })
+
+    def __rmul__(self, other):
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+
+        return self * other
+
+    def __neg__(self):
+        return -1 * self
+
+    def __add__(self, other):
+        if not isinstance(other, FieldVector):
+            return NotImplemented
+
+        return FieldVector(**{
+            component: self[component] + other[component]
+            for component in 'xyz'
+        })
+
+    def __sub__(self, other):
+        if not isinstance(other, FieldVector):
+            return NotImplemented
+
+        return FieldVector(**{
+            component: self[component] - other[component]
+            for component in 'xyz'
+        })
+
+    # NB: we disable the pylint warning here so that we can match
+    #     NumPy's naming convention for the norm method.
+    def norm(self,
+             ord: NormOrder = 2  # pylint: disable=redefined-builtin
+             ) -> float:
+        """
+        Returns the norm of this field vector. See np.norm
+        for the definition of the ord keyword argument.
+        """
+        return np.linalg.norm([self.x, self.y, self.z], ord=ord)
+
+    def distance(self, other,
+                 ord: NormOrder = 2  # pylint: disable=redefined-builtin
+                 ) -> float:
+        return (self - other).norm(ord=ord)
+
     @property
-    def x(self):
+    def x(self) -> Optional[float]:
         return self._x
 
     @property
-    def y(self):
+    def y(self) -> Optional[float]:
         return self._y
 
     @property
-    def z(self):
+    def z(self) -> Optional[float]:
         return self._z
 
     @property
-    def rho(self):
+    def rho(self) -> Optional[float]:
         return self._rho
 
     @property
-    def theta(self):
-        return np.degrees(self._theta)
+    def theta(self) -> Optional[float]:
+        return float(np.degrees(self._theta))
 
     @property
-    def r(self):
+    def r(self) -> Optional[float]:
         return self._r
 
     @property
-    def phi(self):
-        return np.degrees(self._phi)
+    def phi(self) -> Optional[float]:
+        return float(np.degrees(self._phi))
+
+    # Representation Methods #
+
+    def repr_cartesian(self) -> str:
+        return f"FieldVector(x={self.x}, y={self.y}, z={self.z})"
+
+    def repr_spherical(self) -> str:
+        return f"FieldVector(r={self.r}, phi={self.phi}, theta={self.theta})"
+
+    def repr_cylindrical(self) -> str:
+        return f"FieldVector(rho={self.rho}, phi={self.phi}, z={self.z})"
+
+    def __repr__(self) -> str:
+        if self.repr_format == "cartesian":
+            return self.repr_cartesian()
+        elif self.repr_format == "spherical":
+            return self.repr_spherical()
+        elif self.repr_format == "cylindrical":
+            return self.repr_cylindrical()
+        else:
+            return super().__repr__()
+
+    # Homogeneous Coordinates #
+
+    def as_homogeneous(self) -> np.ndarray:
+        return np.array([self.x, self.y, self.z, 1])
+
+    @classmethod
+    def from_homogeneous(cls: Type[T], hvec: np.ndarray) -> T:
+        # Homogeneous coordinates define an equivalence relation
+        #     [x / s, y / s, z / s, 1] == [x, y, z, s].
+        # More generally,
+        #     [x, y, z, s] == [x', y', z', s']
+        #     iff x / s == x' / s',
+        #         y / s == y' / s', and
+        #         z / s == z' / s'.
+        # This definition has the consequence that for any w,
+        # w * [x, y, z, s] == [x, y, z, s].
+        # Thus, we start by rescaling such that s == 1.
+        hvec /= hvec[-1]
+        return cls(
+            x=hvec[0], y=hvec[1], z=hvec[2]
+        )

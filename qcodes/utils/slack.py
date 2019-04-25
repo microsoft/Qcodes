@@ -74,9 +74,10 @@ class Slack(threading.Thread):
     When an IM is sent to the Slack bot, it will be processed during the next
     `update()` call (provided the username is registered in the config).
     Standard commands provided to the Slack bot are:
-        plot: Upload latest qcodes plot
-        msmt/measurement: Print information about latest measurement
-        notify finished: Send message once measurement is finished
+
+    - plot: Upload latest qcodes plot
+    - msmt/measurement: Print information about latest measurement
+    - notify finished: Send message once measurement is finished
 
     Custom commands can be added as (cmd, func) key-value pairs to
     `self.commands`. When `cmd` is sent to the bot, `func` is evaluated.
@@ -86,24 +87,28 @@ class Slack(threading.Thread):
     indicates if the task should be removed from the list of tasks.
     A custom task can be added as a (cmd, func) key-value pair  to
     `self.task_commands`.
-    They can then be called through Slack IM via
-        notify/task {cmd} *args: register task with name `cmd` that is
-            performed every time `update()` is called.
+    They can then be called through Slack IM via:
+
+    ``notify/task {cmd} *args:`` register task with name `cmd` that is
+    performed every time `update()` is called.
     """
 
     def __init__(self, interval=3, config=None, auto_start=True, **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
         and using multiprocessing.
+
         Args:
             interval (int): Update interval for widget (must be over 1s).
-            config (dict, optional): Config dict
+            config (Optional[dict]): Config dict
                 If not given, uses qc.config['user']['slack']
                 The config dict must contain the following keys:
-                    'bot_name': Name of the bot
-                    'bot_token': Token from bot (obtained from slack website)
-                    'names': Usernames to periodically check for IM messages
-            auto_start (Bool=True)
+
+                - 'bot_name': Name of the bot
+                - 'bot_token': Token from bot (obtained from slack website)
+                - 'names': Usernames to periodically check for IM messages
+
+            auto_start (bool): Defaults to True.
 
         """
         if config is not None:
@@ -187,7 +192,7 @@ class Slack(threading.Thread):
             user_id: Id from which to retrieve user information
 
         Returns:
-            user (dict): user information
+            dict: user information
         """
         users = [user for user in self.users if
                  self.users[user]['id'] == user_id]
@@ -202,7 +207,7 @@ class Slack(threading.Thread):
             usernames: Slack usernames of users
 
         Returns:
-            users (dict): {username: user}
+            dict: {username: user}
         """
         users = {}
         response = self.slack.users.list()
@@ -435,7 +440,7 @@ class Slack(threading.Thread):
             **kwargs: Not used
 
         Returns:
-            is_finished (Bool): True if measurement is finished, False otherwise
+            bool: True if measurement is finished, False otherwise
         """
         if active_loop() is None:
             self.slack.chat.post_message(

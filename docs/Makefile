@@ -20,6 +20,8 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
+	@echo "  htmlapi    to make standalone HTML files including generated api docs"
+	@echo "  htmlfast   like htmlapi but skips execution of notebooks"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -56,6 +58,15 @@ clean:
 .PHONY: html
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+.PHONY: htmlapi
+htmlapi: genapis html
+
+.PHONY: htmlfast
+htmlfast: genapis
+	$(SPHINXBUILD) -D nbsphinx_execute=never -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
@@ -229,22 +240,16 @@ dummy:
 	@echo
 	@echo "Build finished. Dummy builder generates no files."
 
+# this is only left for backwards compatibility. Changed to be consistent with windows
 .PHONY: html-api
-html-api:
-	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight
+html-api: htmlapi
+
+# generate api docs for instruments automatically
+.PHONY: genapis
+genapis:
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes ../qcodes/instrument_drivers/Spectrum/pyspcm.py ../qcodes/instrument_drivers/Spectrum/M4i.py ../qcodes/instrument_drivers/keysight ../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/*
 	mkdir -p api/generated/
-	mkdir -p _notebooks
-	mkdir -p _notebooks/DataSet
-	mkdir -p _notebooks/DataSet/Real_instruments
-	mkdir -p _notebooks/driver_examples
-	mkdir -p _notebooks/benchmarking
 	cp _auto/qcodes.instrument_drivers.* api/generated/
-	jupyter-nbconvert --to rst 'examples/*.ipynb' --output-dir=_notebooks
-	jupyter-nbconvert --to rst 'examples/DataSet/Real_instruments/*.ipynb' --output-dir=_notebooks/DataSet/Real_instruments
-	jupyter-nbconvert --to rst --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=python3 --execute 'examples/DataSet/*.ipynb' --output-dir=_notebooks/DataSet
-	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir=_notebooks/driver_examples
-	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
-	make html
 
 .PHONY: gh-pages
 gh-pages:
@@ -256,7 +261,7 @@ gh-pages:
 	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
-	cd docs && make html-api && \
+	cd docs && make htmlapi && \
 	mv -fv $(BUILDDIR)/html/* ../
 	rm -rf $(GH_PAGES_SOURCES) build
 	git add -A
