@@ -703,3 +703,18 @@ def abstractmethod(funcobj):
     funcobj.__qcodes_is_abstract_method__ = True
     return funcobj
 
+
+def _ruamel_importer():
+    try:
+        from ruamel_yaml import YAML
+    except ImportError:
+        try:
+            from ruamel.yaml import YAML
+        except ImportError:
+            raise ImportError('No ruamel module found. Please install '
+                              'either ruamel.yaml or ruamel_yaml to '
+                              'use the methods to_yaml and from_yaml')
+    return YAML
+
+
+YAML = _ruamel_importer()

@@ -4,6 +4,8 @@ import json
 
 from qcodes.dataset.dependencies import (InterDependencies,
                                          InterDependencies_)
+from qcodes.utils.helpers import YAML
+
 SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
@@ -60,26 +62,10 @@ class RunDescriber:
 
         return rundesc
 
-    @staticmethod
-    def _ruamel_importer():
-        try:
-            from ruamel_yaml import YAML
-        except ImportError:
-            try:
-                from ruamel.yaml import YAML
-            except ImportError:
-                raise ImportError('No ruamel module found. Please install '
-                                  'either ruamel.yaml or ruamel_yaml to '
-                                  'use the methods to_yaml and from_yaml')
-        return YAML
-
     def to_yaml(self) -> str:
         """
         Output the run description as a yaml string
         """
-
-        YAML = self._ruamel_importer()
-
         yaml = YAML()
         with io.StringIO() as stream:
             yaml.dump(self.serialize(), stream=stream)
@@ -99,9 +85,6 @@ class RunDescriber:
         Parse a yaml string (the return of `to_yaml`) into a RunDescriber
         object
         """
-
-        YAML = cls._ruamel_importer()
-
         yaml = YAML()
         # yaml.load returns an OrderedDict, but we need a dict
         ser = dict(yaml.load(yaml_str))
