@@ -3,6 +3,7 @@ from typing import Callable, cast, Dict, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.utils.validators import Enum, Numbers, Arrays
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Sense2450(InstrumentChannel):
@@ -36,10 +37,7 @@ class Sense2450(InstrumentChannel):
             "four_wire_measurement",
             set_cmd=f":SENSe:{self._proper_function}:RSENse {{}}",
             get_cmd=f":SENSe:{self._proper_function}:RSENse?",
-            val_mapping={
-                True: "1",
-                False: "0"
-            },
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
         self.add_parameter(
@@ -55,10 +53,7 @@ class Sense2450(InstrumentChannel):
             "auto_range",
             set_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO {{}}",
             get_cmd=f":SENSe:{self._proper_function}:RANGe:AUTO?",
-            val_mapping={
-                True: "1",
-                False: "0"
-            }
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
         self.add_parameter(
@@ -71,6 +66,7 @@ class Sense2450(InstrumentChannel):
 
         self.add_parameter(
             "sweep",
+            label=self._proper_function,
             get_cmd=self._measure_sweep,
             unit=unit,
             vals=Arrays(shape=(self.parent.npts,)),
@@ -128,10 +124,7 @@ class Source2450(InstrumentChannel):
             "auto_range",
             set_cmd=f":SOURce:{self._proper_function}:RANGe:AUTO {{}}",
             get_cmd=f":SOURce:{self._proper_function}:RANGe:AUTO?",
-            val_mapping={
-                True: "1",
-                False: "0"
-            }
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
         limit_cmd = {"current": "VLIM", "voltage": "ILIM"}[self._proper_function]
@@ -154,6 +147,7 @@ class Source2450(InstrumentChannel):
 
         self.add_parameter(
             "sweep_axis",
+            label=self._proper_function,
             get_cmd=self.get_sweep_axis,
             vals=Arrays(shape=(self.parent.npts,)),
             unit=unit
@@ -162,7 +156,7 @@ class Source2450(InstrumentChannel):
     def get_sweep_axis(self):
         if self._sweep_arguments == {}:
             raise ValueError(
-                "Before starting a sweep, please call 'sweep_setup'"
+                "Please setup the sweep before getting values of this parameter"
             )
 
         return np.linspace(
@@ -220,10 +214,10 @@ class Keithley2450(VisaInstrument):
 
         if not self._has_correct_language_mode():
             self.log.warning(
-                f"The instrument is an unsupported language mode."
+                f"The instrument is in an unsupported language mode."
                 f"Please run `instrument.set_correct_language()` and try to "
                 f"initialize the driver again after an instrument power cycle. "
-                f"No parameters/sub modules shall be available on this driver "
+                f"No parameters/sub modules will be available on this driver "
                 f"instance"
             )
             return
@@ -252,20 +246,17 @@ class Keithley2450(VisaInstrument):
             "terminals",
             set_cmd="ROUTe:TERMinals {}",
             get_cmd="ROUTe:TERMinals?",
-            vals=Enum("REAR", "FRONT")
+            vals=Enum("rear", "front")
         )
 
         self.add_parameter(
             "output",
             set_cmd=":OUTP {}",
             get_cmd=":OUTP?",
-            val_mapping={
-                True: "1",
-                False: "0"
-            }
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
-        # Make a source module for every source function ('current' and voltage')
+        # Make a source module for every source function ('current' and 'voltage')
         for proper_source_function in Source2450.function_modes:
             self.add_submodule(
                 f"_source_{proper_source_function}",
@@ -284,8 +275,7 @@ class Keithley2450(VisaInstrument):
     def _set_sense_function(self, value: str) -> None:
         """
         Change the sense function. The property 'sense' will return the
-        sense module appropriate for this function setting, which will be
-        the 'active' sense module.
+        sense module appropriate for this function setting.
 
         We need to ensure that the setpoints of the sweep parameter in the
         active sense module is correctly set. Normally we would do that
@@ -303,8 +293,7 @@ class Keithley2450(VisaInstrument):
     def _set_source_function(self, value: str) -> None:
         """
         Change the source function. The property 'source' will return the
-        source module appropriate for this function setting, which will be
-        the 'active' source module.
+        source module appropriate for this function setting.
 
         We need to ensure that the setpoints of the sweep parameter in the
         active sense module reflects the change in the source module.
@@ -362,8 +351,8 @@ class Keithley2450(VisaInstrument):
         """
         The correct communication protocol is SCPI, make sure this is set
         """
-        self.raw_write("*LANG SCPI")
-        self.log.warning("PLease power cycle the instrument to make the change take effect")
+        self.write("*LANG SCPI")
+        self.log.warning("Please power cycle the instrument to make the change take effect")
         # We want the user to be able to instantiate a driver with the same name
         self.close()
 
@@ -371,4 +360,4 @@ class Keithley2450(VisaInstrument):
         """
         Query if we have the correct language mode
         """
-        return self.ask_raw("*LANG?") == "SCPI"
+        return self.ask("*LANG?") == "SCPI"
