@@ -217,7 +217,7 @@ class Source2450(InstrumentChannel):
         Note: This call is blocking
         """
         cmd_args = dict(self._sweep_arguments)
-        cmd_args["function"] = self.function.get_latest() or self.function.get()
+        cmd_args["function"] = self._proper_function
 
         cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
               "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
