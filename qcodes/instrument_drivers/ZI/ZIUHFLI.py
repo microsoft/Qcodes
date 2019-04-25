@@ -2259,19 +2259,23 @@ class ZIUHFLI(Instrument):
         return float(''.join([value, converter[suffix.lower()]]))
 
     def round_to_nearest_sampling_frequency(self, desired_sampling_rate):
-        available_frequencies = [ZIUHFLI._convert_to_float(freq) for freq in
-                                 self._samplingrate_codes.keys()]
+        available_frequencies = [1.8e9 / 2 ** self._samplingrate_codes[freq]
+                                 for freq in self._samplingrate_codes.keys()]
+
         nearest_frequency = min(available_frequencies, key=lambda f: abs(
             math.log(desired_sampling_rate, 2) - math.log(f, 2)))
         return nearest_frequency
 
     def _set_samplingrate_as_float(self, frequency):
-        sampling_rate = filter(lambda f: ZIUHFLI._convert_to_float(f) == frequency, self._samplingrate_codes.keys())
+        sampling_rate = filter(
+            lambda f: ZIUHFLI._convert_to_float(f) == frequency,
+            self._samplingrate_codes.keys())
         self.scope_samplingrate(''.join(sampling_rate))
 
     def _get_samplingrate_as_float(self):
         frequency = self.scope_samplingrate()
-        return ZIUHFLI._convert_to_float(frequency)
+        correct_frequency = 1.8e9 / 2 ** self._samplingrate_codes[frequency]
+        return correct_frequency
 
     def close(self):
         """
