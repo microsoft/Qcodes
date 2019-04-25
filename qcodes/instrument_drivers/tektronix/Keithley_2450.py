@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable, cast
+from typing import Callable, cast, Dict, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.utils.validators import Enum, Numbers, Arrays
@@ -113,7 +113,7 @@ class Source2450(InstrumentChannel):
         unit = self.function_modes[self._proper_function]["unit"]
 
         self.function = self.parent.source_function
-        self._sweep_arguments = {}
+        self._sweep_arguments: Dict[str, Union[float, int, str]] = {}
 
         self.add_parameter(
             "range",
