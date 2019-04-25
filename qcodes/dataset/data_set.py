@@ -511,6 +511,12 @@ class DataSet(Sized):
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError('Wrong input type. Expected InterDepencies_, '
                             f'got {type(interdeps)}')
+
+        if not self.pristine:
+            mssg = ('Can not set interdependencies on a DataSet that has '
+                    'been started.')
+            raise RuntimeError(mssg)
+
         self._interdeps = interdeps
 
     def get_parameters(self) -> SPECS:
