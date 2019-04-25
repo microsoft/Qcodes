@@ -4,18 +4,15 @@ from typing import Dict, List, Optional, Sequence, Any
 from functools import partial
 import importlib
 import logging
-import warnings
 import os
 from copy import deepcopy
-from ruamel.yaml import YAML
 
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import make_unique, DelegateAttributes
+from qcodes.utils.helpers import make_unique, DelegateAttributes, YAML
 
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.parameter import ManualParameter
-from qcodes.instrument.parameter import StandardParameter
+from qcodes.instrument.parameter import (
+    Parameter, ManualParameter, StandardParameter, DelegateParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 from qcodes.config.config import Config
@@ -66,12 +63,12 @@ class Station(Metadatable, DelegateAttributes):
             treated as attributes of self
     """
 
-    default = None # type: 'Station'
+    default = None  # type: 'Station'
 
     def __init__(self, *components: Metadatable,
-                 config_file: Optional[str]=None,
-                 monitor: Monitor=None, default: bool=True,
-                 update_snapshot: bool=True, **kwargs) -> None:
+                 config_file: Optional[str] = None,
+                 monitor: Monitor = None, default: bool = True,
+                 update_snapshot: bool = True, **kwargs) -> None:
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -83,7 +80,7 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components = {} # type: Dict[str, Metadatable]
+        self.components: Dict[str, Metadatable] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
@@ -96,9 +93,8 @@ class Station(Metadatable, DelegateAttributes):
 
         self.load_config_file(self.config_file)
 
-
-    def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> Dict:
+    def snapshot_base(self, update: bool = False,
+                      params_to_skip_update: Sequence[str] = None) -> Dict:
         """
         State of the station as a JSON-compatible dict.
 
@@ -249,10 +245,8 @@ class Station(Metadatable, DelegateAttributes):
     delegate_attr_dicts = ['components']
 
     def load_config_file(self, filename: Optional[str] = None):
-
         # 1. load config from file
-        if filename is None:
-            filename = DEFAULT_CONFIG_FILE
+        filename = filename or DEFAULT_CONFIG_FILE
         try:
             with open(filename, 'r') as f:
                 self._config = YAML().load(f)
