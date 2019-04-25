@@ -25,6 +25,40 @@ def some_paramspecbases():
 
     return (psb1, psb2, psb3, psb4)
 
+@pytest.fixture
+def some_interdeps():
+    """
+    Some different InterDependencies_ objects for testing
+    """
+    idps_list = []
+    ps1 = ParamSpecBase('ps1', paramtype='numeric', label='Raw Data 1',
+                        unit='V')
+    ps2 = ParamSpecBase('ps2', paramtype='array', label='Raw Data 2',
+                        unit='V')
+    ps3 = ParamSpecBase('ps3', paramtype='text', label='Axis 1',
+                        unit='')
+    ps4 = ParamSpecBase('ps4', paramtype='numeric', label='Axis 2',
+                        unit='V')
+    ps5 = ParamSpecBase('ps5', paramtype='numeric', label='Signal',
+                        unit='Conductance')
+    ps6 = ParamSpecBase('ps6', paramtype='text', label='Goodness',
+                    unit='')
+
+    idps = InterDependencies_(dependencies={ps5: (ps3, ps4), ps6: (ps3, ps4)},
+                              inferences={ps4: (ps2,), ps3: (ps1,)})
+
+    idps_list.append(idps)
+
+    ps1 = ParamSpecBase('ps1', paramtype='numeric',
+                        label='setpoint', unit='Hz')
+    ps2 = ParamSpecBase('ps2', paramtype='numeric', label='signal',
+                        unit='V')
+    idps = InterDependencies_(dependencies={ps2: (ps1,)})
+
+    idps_list.append(idps)
+
+    return idps_list
+
 
 def test_wrong_input_raises():
 
