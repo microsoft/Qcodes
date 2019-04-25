@@ -66,6 +66,18 @@ class ParamSpecTree:
             rpr += f', {", ".join([str(l) for l in self._leafs_tuple])})'
         return rpr
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ParamSpecTree):
+            return False
+        if self.root != other.root:
+            return False
+        if self._leafs_tuple != other._leafs_tuple:
+            return False
+        return True
+
+    def __hash__(self) -> int:
+        return hash((self.root, self._leafs_tuple))
+
 
 class ParamSpecGrove:
 
