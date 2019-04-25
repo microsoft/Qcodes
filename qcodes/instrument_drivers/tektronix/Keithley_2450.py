@@ -86,15 +86,7 @@ class Sense2450(InstrumentChannel):
     def _measure_sweep(self) -> np.ndarray:
 
         source = cast(Source2450, self.parent.source)
-        cmd_args = dict(source.sweep_arguments)
-        cmd_args["function"] = source.function.get_latest() or source.function.get()
-
-        cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
-              "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
-
-        self.write(cmd)
-        self.write(":INITiate")
-        self.write("*WAI")
+        source.sweep_start()
         raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
         self.write(":TRACe:CLEar")
 
@@ -199,11 +191,22 @@ class Source2450(InstrumentChannel):
             range_mode=range_mode
         )
 
-    @property
-    def sweep_arguments(self) -> dict:
-        return self._sweep_arguments
+    def sweep_start(self) -> None:
+        """
+        Start a sweep and return when the sweep has finished.
+        Note: This call is blocking
+        """
+        cmd_args = dict(self._sweep_arguments)
+        cmd_args["function"] = self.function.get_latest() or self.function.get()
 
-    def reset_sweep(self) -> None:
+        cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
+              "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
+
+        self.write(cmd)
+        self.write(":INITiate")
+        self.write("*WAI")
+
+    def sweep_reset(self) -> None:
         self._sweep_arguments = {}
 
 
