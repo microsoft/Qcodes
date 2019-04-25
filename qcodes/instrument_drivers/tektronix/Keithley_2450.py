@@ -7,6 +7,20 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Sense2450(InstrumentChannel):
+    """
+    The sense module of the Keithley 2450 SMU.
+
+    Args:
+        parent
+        name
+        proper_function: This can be one of either "current", "voltage"
+            or "resistance". All parameters and methods in this submodule
+            should only be accessible to the user if
+            self.parent.sense_function.get() == self._proper_function. We
+            ensure this through the 'sense' property on the main driver class
+            which returns the proper submodule for any given function mode
+    """
+
     function_modes = {
         "current": {
             "name": '"CURR:DC"',
@@ -89,6 +103,19 @@ class Sense2450(InstrumentChannel):
 
 
 class Source2450(InstrumentChannel):
+    """
+    The source module of the Keithley 2450 SMU.
+
+    Args:
+        parent
+        name
+        proper_function: This can be one of either "current" or "voltage"
+            All parameters and methods in this submodule should only be
+            accessible to the user if
+            self.parent.source_function.get() == self._proper_function. We
+            ensure this through the 'source' property on the main driver class
+            which returns the proper submodule for any given function mode
+    """
     function_modes = {
         "current": {
             "name": "CURR",
@@ -205,7 +232,7 @@ class Source2450(InstrumentChannel):
 
 class Keithley2450(VisaInstrument):
     """
-    The QCoDeS driver for the Keithley 2450 source meter
+    The QCoDeS driver for the Keithley 2450 SMU
     """
 
     def __init__(self, name: str, address: str, **kwargs) -> None:
