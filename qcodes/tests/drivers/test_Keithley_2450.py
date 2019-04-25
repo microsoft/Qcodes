@@ -26,7 +26,7 @@ def test_wrong_mode(caplog):
     """
     with caplog.at_level(logging.WARNING):
         instrument = Keithley2450('wrong_mode', address='GPIB::1::INSTR', visalib=visalib)
-        assert "The instrument is an unsupported language mode" in caplog.text
+        assert "The instrument is in an unsupported language mode." in caplog.text
         assert list(instrument.parameters.keys()) == ["IDN", "timeout"]
 
 
