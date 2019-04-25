@@ -7,6 +7,7 @@ import logging
 import warnings
 import os
 from copy import deepcopy
+from ruamel.yaml import YAML
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
@@ -21,15 +22,6 @@ from qcodes.config.config import Config
 
 from qcodes.actions import _actions_snapshot
 
-use_pyyaml = False
-try:
-    from ruamel.yaml import YAML
-except ImportError:
-    use_pyyaml = True
-    warnings.warn(
-        "ruamel yaml not found station configurator is falling back to pyyaml. "
-        "It's highly recommended to install ruamel.yaml. This fixes issues with "
-        "scientific notation and duplicate instruments in the YAML file")
 
 log = logging.getLogger(__name__)
 
@@ -256,32 +248,26 @@ class Station(Metadatable, DelegateAttributes):
 
     delegate_attr_dicts = ['components']
 
-
     def load_config_file(self, filename: Optional[str] = None):
 
         # 1. load config from file
-        if use_pyyaml:
-            import yaml
-        else:
-            yaml = YAML()
         if filename is None:
             filename = DEFAULT_CONFIG_FILE
         try:
             with open(filename, 'r') as f:
-                self._config = yaml.load(f)
+                self._config = YAML().load(f)
         except FileNotFoundError as e:
             try:
                 if not os.path.isabs(filename) and DEFAULT_CONFIG_FOLDER is not None:
                     with open(os.path.join(DEFAULT_CONFIG_FOLDER, filename),
                               'r') as f:
-                        self._config = yaml.load(f)
+                        self._config = YAML().load(f)
                 else:
                     raise e
             except FileNotFoundError:
                 log.warning('Could not load default config for Station: ' +
                             e.msg)
                 return
-                    
 
         self._instrument_config = self._config['instruments']
 
