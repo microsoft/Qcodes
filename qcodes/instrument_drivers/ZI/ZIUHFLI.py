@@ -698,7 +698,9 @@ class ZIUHFLI(Instrument):
 
         ########################################
         # Oscillators
-        for oscs in range(1,3):
+
+        number_of_oscillators = 8 if 'MF' in self.props['options'] else 2
+        for oscs in range(1, number_of_oscillators + 1):
             self.add_parameter('oscillator{}_freq'.format(oscs),
                                label='Frequency of oscillator {}'.format(oscs),
                                unit='Hz',
