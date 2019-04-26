@@ -41,7 +41,13 @@ class RunDescriber:
         Serialize this object into a dictionary
         """
         ser = {}
-        ser['interdependencies'] = self.interdeps.serialize()
+        old_interdeps: InterDependencies
+        if not self._old_style_deps:
+            new_interdeps = cast(InterDependencies_, self.interdeps)
+            old_interdeps = new_to_old(new_interdeps)
+        else:
+            old_interdeps = cast(InterDependencies, self.interdeps)
+        ser['interdependencies'] = old_interdeps.serialize()
         return ser
 
     @classmethod
@@ -92,12 +98,7 @@ class RunDescriber:
         """
         Output the run describtion as a JSON string
         """
-        if not self._old_style_deps:
-            new_interdeps = cast(InterDependencies_, self.interdeps)
-            obj_to_dump = RunDescriber(new_to_old(new_interdeps))
-        else:
-            obj_to_dump = self
-        return json.dumps(obj_to_dump.serialize())
+        return json.dumps(self.serialize())
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> 'RunDescriber':
