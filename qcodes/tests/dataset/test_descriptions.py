@@ -107,6 +107,21 @@ def test_yaml_creation_and_loading(some_paramspecs):
         assert new_desc == desc
 
 
+def test_jsonization_as_old(some_paramspecs):
+    """
+    Test that a RunDescriber always json-ifies itself as an old style
+    RunDescriber, even when given new style interdeps
+    """
+
+    idps_old = InterDependencies(*some_paramspecs[2].values())
+    idps_new = old_to_new(idps_old)
+
+    new_desc = RunDescriber(idps_new)
+    old_desc = RunDescriber(idps_old)
+
+    assert new_desc.to_json() == old_desc.to_json()
+
+
 def test_serialization_as_old(some_paramspecs):
     """
     Test that a RunDescriber always serializes itself as an old style
@@ -119,4 +134,4 @@ def test_serialization_as_old(some_paramspecs):
     new_desc = RunDescriber(idps_new)
     old_desc = RunDescriber(idps_old)
 
-    assert new_desc.to_json() == old_desc.to_json()
+    assert new_desc.serialize() == old_desc.serialize()
