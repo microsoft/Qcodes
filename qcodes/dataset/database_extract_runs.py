@@ -192,7 +192,13 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     if run_id != -1:
         return
 
-    parspecs = new_to_old(dataset._interdeps).paramspecs
+    if dataset.parameters is not None:
+        param_names = dataset.parameters.split(',')
+    else:
+        param_names = []
+    parspecs_dict = {p.name: p for p in new_to_old(dataset._interdeps).paramspecs}
+    parspecs = [parspecs_dict[p] for p in param_names]
+
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
 
@@ -200,7 +206,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
                                                      target_exp_id,
                                                      name=dataset.name,
                                                      guid=dataset.guid,
-                                                     parameters=list(parspecs),
+                                                     parameters=parspecs,
                                                      metadata=metadata)
     _populate_results_table(source_conn,
                             target_conn,
