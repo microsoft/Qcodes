@@ -3,7 +3,8 @@ from typing import Dict, Any, Union
 import json
 
 from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_)
+                                         InterDependencies_,
+                                         new_to_old)
 SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
@@ -91,7 +92,11 @@ class RunDescriber:
         """
         Output the run describtion as a JSON string
         """
-        return json.dumps(self.serialize())
+        if not self._old_style_deps:
+            obj_to_dump = RunDescriber(new_to_old(self.interdeps))
+        else:
+            obj_to_dump = self
+        return json.dumps(obj_to_dump.serialize())
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> 'RunDescriber':
