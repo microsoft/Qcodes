@@ -245,62 +245,67 @@ class Station(Metadatable, DelegateAttributes):
     delegate_attr_dicts = ['components']
 
     def load_config_file(self, filename: Optional[str] = None):
-        # 1. load config from file
-        filename = filename or DEFAULT_CONFIG_FILE
-        try:
-            with open(filename, 'r') as f:
-                self._config = YAML().load(f)
-        except FileNotFoundError as e:
-            try:
-                if not os.path.isabs(filename) and DEFAULT_CONFIG_FOLDER is not None:
-                    with open(os.path.join(DEFAULT_CONFIG_FOLDER, filename),
-                              'r') as f:
-                        self._config = YAML().load(f)
+        def get_config_file_path(
+                filename: Optional[str] = None) -> Optional[str]:
+            filename = filename or DEFAULT_CONFIG_FILE
+            search_list = [filename]
+            if (not os.path.isabs(filename) and
+                DEFAULT_CONFIG_FOLDER is not None):
+                search_list += os.path.join(DEFAULT_CONFIG_FOLDER, filename)
+            for p in search_list:
+                if os.path.isfile(p):
+                    return p
+            return None
+
+        def _update_station_configuration_snapshot(self):
+            class ConfigComponent:
+                def __init__(self, data):
+                    self.data = data
+
+                def snapshot(self, update=True):
+                    return self.data
+
+            self.components['StationConfigurator'] = ConfigComponent(
+                self._config)
+
+        def _update_load_instrument_methods(self):
+            #  create shortcut methods to instantiate instruments via
+            # `load_<instrument_name>()` so that autocompletion can be used
+            # first remove methods that have been added by a previous
+            # `load_config_file` call
+            while len(self._added_methods):
+                delattr(self, self._added_methods.pop())
+
+            # add shortcut methods
+            for instrument_name in self._instrument_config.keys():
+                method_name = f'load_{instrument_name}'
+                if method_name.isidentifier():
+                    setattr(self, method_name, partial(
+                        self.load_instrument, identifier=instrument_name))
+                    self._added_methods.append(method_name)
                 else:
-                    raise e
-            except FileNotFoundError:
-                log.warning('Could not load default config for Station: ' +
-                            e.msg)
+                    log.warning(f'Invalid identifier: ' +
+                                f'for the instrument {instrument_name} no ' +
+                                f'lazy loading method {method_name} could ' +
+                                'be created in the StationConfigurator')
+
+        path = get_config_file_path(filename)
+        if path is None:
+            if filename is not None:
+                raise FileNotFoundError(path)
+            else:
+                log.warning(
+                    'Could not load default instrument config for Station: \n'
+                    f'File {DEFAULT_CONFIG_FILE} not found. \n'
+                    'You can change the default config file in '
+                    '`qcodesrc.json`.')
                 return
 
+        with open(path, 'r') as f:
+            self._config = YAML().load(f)
         self._instrument_config = self._config['instruments']
-
-        # 2. add config to snapshot componenents
-        class ConfigComponent:
-            def __init__(self, data):
-                self.data = data
-
-            def snapshot(self, update=True):
-                return self.data
-
-        # this overwrites any previous configuration
-        # but does invoke snapshoting
-        self.components['StationConfigurator'] = ConfigComponent(self._config)
-
-
-        # 3. create shortcut methods to instantiate instruments via
-        # `load_<instrument_name>()` so that autocompletion can be used
-        # first remove methods that have been added by a previous
-        # `load_config_file` call
-        while len(self._added_methods):
-            delattr(self, self._added_methods.pop())
-
-        # add shortcut methods
-        for instrument_name in self._instrument_config.keys():
-            # TODO: check if name is valid (does not start with digit, contain
-            # dot, other signs etc.)
-            method_name = f'load_{instrument_name}'
-            if method_name.isidentifier():
-                setattr(self, method_name, partial(
-                    self.load_instrument, identifier=instrument_name))
-
-                self._added_methods.append(method_name)
-            else:
-                log.warning(f'Invalid identifier: ' +
-                            f'for the instrument {instrument_name} no ' +
-                            f'lazy loading method {method_name} could be ' +
-                            'created in the StationConfigurator')
-
+        self._update_station_configuration_snapshot()
+        self._update_load_instrument_methods()
 
     def load_instrument(self, identifier: str,
                         revive_instance: bool=False,
