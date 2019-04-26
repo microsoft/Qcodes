@@ -1,9 +1,10 @@
 import io
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, cast
 import json
 
 from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_)
+                                         InterDependencies_,
+                                         new_to_old)
 SomeDeps = Union[InterDependencies, InterDependencies_]
 
 
@@ -40,7 +41,13 @@ class RunDescriber:
         Serialize this object into a dictionary
         """
         ser = {}
-        ser['interdependencies'] = self.interdeps.serialize()
+        old_interdeps: InterDependencies
+        if not self._old_style_deps:
+            new_interdeps = cast(InterDependencies_, self.interdeps)
+            old_interdeps = new_to_old(new_interdeps)
+        else:
+            old_interdeps = cast(InterDependencies, self.interdeps)
+        ser['interdependencies'] = old_interdeps.serialize()
         return ser
 
     @classmethod
