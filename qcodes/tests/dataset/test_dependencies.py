@@ -131,6 +131,14 @@ def test_serialize(some_paramspecbases):
     tester(idps)
 
 
+def test_old_to_new_and_back(some_paramspecs):
+
+    idps_old = InterDependencies(*some_paramspecs[1].values())
+    idps_new = old_to_new(idps_old)
+
+    assert new_to_old(idps_new) == idps_old
+
+
 def test_old_to_new(some_paramspecs):
 
     ps1 = some_paramspecs[1]['ps1']
@@ -220,6 +228,7 @@ def test_new_to_old(some_paramspecbases):
                                           paramspec1, paramspec4)
 
     assert new_to_old(idps_new) == idps_old_expected
+
 
 
 def test_extend_with_paramspec(some_paramspecs):
