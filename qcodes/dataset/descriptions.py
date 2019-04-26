@@ -93,7 +93,8 @@ class RunDescriber:
         Output the run describtion as a JSON string
         """
         if not self._old_style_deps:
-            obj_to_dump = RunDescriber(new_to_old(self.interdeps))
+            new_interdeps = cast(InterDependencies_, self.interdeps)
+            obj_to_dump = RunDescriber(new_to_old(new_interdeps))
         else:
             obj_to_dump = self
         return json.dumps(obj_to_dump.serialize())
