@@ -307,7 +307,7 @@ class Keithley2450(VisaInstrument):
 
         We need to ensure that the setpoints of the sweep parameter in the
         active sense module is correctly set. Normally we would do that
-        with 'self.sense.setpoints = (self.source.sweep_axis,)'
+        with 'self.sense.sweep.setpoints = (self.source.sweep_axis,)'
 
         However, we cannot call the property 'self.sense', because that property
         will call `get_latest` on the parameter for which this function
@@ -326,7 +326,7 @@ class Keithley2450(VisaInstrument):
         We need to ensure that the setpoints of the sweep parameter in the
         active sense module reflects the change in the source module.
         Normally we would do that with
-        'self.sense.setpoints = (self.source.sweep_axis,)'
+        'self.sense.sweep.setpoints = (self.source.sweep_axis,)'
 
         However, we cannot call the property 'self.source', because that property
         will call `get_latest` on the parameter for which this function
