@@ -1,5 +1,5 @@
 import io
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, cast
 import json
 
 from qcodes.dataset.dependencies import (InterDependencies,
