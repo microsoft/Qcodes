@@ -180,7 +180,7 @@ class Source2450(InstrumentChannel):
             unit=unit
         )
 
-    def get_sweep_axis(self):
+    def get_sweep_axis(self) -> np.ndarray:
         if self._sweep_arguments == {}:
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"
