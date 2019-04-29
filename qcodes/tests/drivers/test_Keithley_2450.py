@@ -94,11 +94,12 @@ def test_setpoint_always_follows_source_function(k2450):
     source_modes = np.random.choice(["current", "voltage"], n)
 
     for sense_mode, source_mode in zip(sense_modes, source_modes):
+        k2450.sense.function("voltage") # In 'resistance' sense mode, we cannot
+        # change the source mode by design. Therefore temporarily switch to
+        # 'voltage'
         k2450.source.function(source_mode)
         k2450.sense.function(sense_mode)
         assert k2450.sense.sweep.setpoints == (k2450.source.sweep_axis,)
-        k2450.sense.function("voltage")  # In 'resistance' sense mode, we cannot
-        # change the source mode by design. Therefore switch to 'voltage'
 
 
 def test_reset_sweep_on_source_change(k2450):
