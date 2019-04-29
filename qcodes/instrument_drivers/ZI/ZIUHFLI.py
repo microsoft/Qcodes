@@ -698,7 +698,9 @@ class ZIUHFLI(Instrument):
 
         ########################################
         # Oscillators
-        for oscs in range(1,3):
+
+        number_of_oscillators = 8 if 'MF' in self.props['options'] else 2
+        for oscs in range(1, number_of_oscillators + 1):
             self.add_parameter('oscillator{}_freq'.format(oscs),
                                label='Frequency of oscillator {}'.format(oscs),
                                unit='Hz',
@@ -1377,9 +1379,8 @@ class ZIUHFLI(Instrument):
                            set_cmd=self._set_samplingrate_as_float,
                            unit='Hz',
                            get_cmd=self._get_samplingrate_as_float,
-                           vals=vals.Enum(
-                               *[ZIUHFLI._convert_to_float(freq) for freq in
-                                self._samplingrate_codes.keys()]),
+                           vals=vals.Enum(*[1.8e9 / 2 ** v for v in
+                                            self._samplingrate_codes.values()]),
                            docstring=""" A numeric representation of the scope's
                              samplingrate parameter. Sets and gets the sampling 
                              rate by using the scope_samplingrate parameter."""
@@ -2257,19 +2258,23 @@ class ZIUHFLI(Instrument):
         return float(''.join([value, converter[suffix.lower()]]))
 
     def round_to_nearest_sampling_frequency(self, desired_sampling_rate):
-        available_frequencies = [ZIUHFLI._convert_to_float(freq) for freq in
-                                 self._samplingrate_codes.keys()]
+        available_frequencies = [1.8e9 / 2 ** self._samplingrate_codes[freq]
+                                 for freq in self._samplingrate_codes.keys()]
+
         nearest_frequency = min(available_frequencies, key=lambda f: abs(
             math.log(desired_sampling_rate, 2) - math.log(f, 2)))
         return nearest_frequency
 
     def _set_samplingrate_as_float(self, frequency):
-        sampling_rate = filter(lambda f: ZIUHFLI._convert_to_float(f) == frequency, self._samplingrate_codes.keys())
-        self.scope_samplingrate(''.join(sampling_rate))
+        float_samplingrate_map = {1.8e9 / 2 ** v: k
+                                  for k, v in self._samplingrate_codes.items()}
+        frequency_as_string = float_samplingrate_map[frequency]
+        self.scope_samplingrate(frequency_as_string)
 
     def _get_samplingrate_as_float(self):
         frequency = self.scope_samplingrate()
-        return ZIUHFLI._convert_to_float(frequency)
+        correct_frequency = 1.8e9 / 2 ** self._samplingrate_codes[frequency]
+        return correct_frequency
 
     def close(self):
         """
