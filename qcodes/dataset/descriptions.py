@@ -59,13 +59,27 @@ class RunDescriber:
 
         idp: Union[InterDependencies, InterDependencies_]
 
-        if 'paramspecs' in ser['interdependencies'].keys():
+        if cls._is_description_old_style(ser['interdependencies']):
             idp = InterDependencies.deserialize(ser['interdependencies'])
         else:
             idp = InterDependencies_.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)
 
         return rundesc
+
+    @staticmethod
+    def _is_description_old_style(serialized_object: Dict[str, Any]) -> bool:
+        """
+        Returns True if an old style description is encountered
+        """
+
+        # NOTE: we should probably think carefully about versioning; keeping
+        # the runs description in sync with the API (this file)
+
+        if 'paramspecs' in serialized_object.keys():
+            return True
+        else:
+            return False
 
     @staticmethod
     def _ruamel_importer():
