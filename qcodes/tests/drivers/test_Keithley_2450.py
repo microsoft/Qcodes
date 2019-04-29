@@ -94,7 +94,7 @@ def test_setpoint_always_follows_source_function(k2450):
     source_modes = np.random.choice(["current", "voltage"], n)
 
     for sense_mode, source_mode in zip(sense_modes, source_modes):
-        k2450.sense.function("voltage") # In 'resistance' sense mode, we cannot
+        k2450.sense.function("voltage")  # In 'resistance' sense mode, we cannot
         # change the source mode by design. Therefore temporarily switch to
         # 'voltage'
         k2450.source.function(source_mode)
