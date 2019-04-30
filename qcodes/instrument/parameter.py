@@ -2033,7 +2033,7 @@ class DelegateParameter(Parameter):
 
         for ka, param in zip(('unit', 'label', 'snapshot_value'),
                              ('unit', 'label', '_snapshot_value')):
-            kwargs[ka] = kwargs.get(ka, getattr(self._source_parameter, param))
+            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
 
         for cmd in ('set_cmd', 'get_cmd'):
             if cmd in kwargs:
@@ -2062,7 +2062,7 @@ class DelegateParameter(Parameter):
             params_to_skip_update=params_to_skip_update
         )
         snapshot.update(
-            {'source_parameter': self._source_parameter.snapshot(update=update)}
+            {'source_parameter': self.source.snapshot(update=update)}
         )
         return snapshot
 
