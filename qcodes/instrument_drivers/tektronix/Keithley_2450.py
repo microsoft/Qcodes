@@ -97,9 +97,17 @@ class Sense2450(InstrumentChannel):
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
         raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
-        self.write(":TRACe:CLEar")
+        # Clear the trace so we can be assured that a subsequent measurement
+        # will not be contaminated with data from this run.
+        self.clear_trace()
 
         return np.array([float(i) for i in raw_data.split(",")])
+
+    def clear_trace(self) -> None:
+        """
+        Clear the data buffer
+        """
+        self.write(":TRACe:CLEar")
 
 
 class Source2450(InstrumentChannel):
