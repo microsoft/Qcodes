@@ -169,6 +169,12 @@ class ParamSpecGrove:
     def __contains__(self, ps: ParamSpecBase) -> bool:
         return ps in self._trees_as_dict or ps in self._trees_as_dict_inv
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, ParamSpecGrove):
+            return False
+        if self._trees != other._trees:
+            return False
+        return True
 
 class DependencyError(Exception):
     def __init__(self,
