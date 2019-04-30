@@ -419,49 +419,6 @@ class InterDependencies_:
         """
         return tuple(self._id_to_paramspec.keys())
 
-    def _extend_with_paramspec(self, ps: ParamSpec) -> 'InterDependencies_':
-        """
-        Create a new InterDependencies_ object extended with the provided
-        ParamSpec. A helper function for DataSet's add_parameter function.
-        Note that this function will only work as expected if the ParamSpecs
-        are extended into the InterDependencies_ in the "logical order", i.e.
-        independent ParamSpecs before dependent ones.
-        """
-        base_ps = ps.base_version()
-
-        old_standalones = set(self.standalones.copy())
-        new_standalones: Tuple[ParamSpecBase, ...]
-
-        if len(ps.depends_on_) > 0:
-            deps_list = [self._id_to_paramspec[name] for name in ps.depends_on_]
-            new_deps = {base_ps: tuple(deps_list)}
-            old_standalones = old_standalones.difference(set(deps_list))
-        else:
-            new_deps = {}
-
-        if len(ps.inferred_from_) > 0:
-            inffs_list = [self._id_to_paramspec[name]
-                          for name in ps.inferred_from_]
-            new_inffs = {base_ps: tuple(inffs_list)}
-            old_standalones = old_standalones.difference(set(inffs_list))
-        else:
-            new_inffs = {}
-
-        if new_deps == new_inffs == {}:
-            new_standalones = (base_ps,)
-        else:
-            old_standalones = old_standalones.difference({base_ps})
-            new_standalones = ()
-
-        new_deps.update(self.dependencies.copy())
-        new_inffs.update(self.inferences.copy())
-        new_standalones = tuple(list(new_standalones) + list(old_standalones))
-
-        new_idps = InterDependencies_(dependencies=new_deps,
-                                      inferences=new_inffs,
-                                      standalones=new_standalones)
-
-        return new_idps
 
     def extend(
             self,
