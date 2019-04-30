@@ -9,7 +9,7 @@ import pytest
 
 import qcodes as qc
 from qcodes import new_experiment, new_data_set
-from qcodes.dataset.param_spec import ParamSpec, ParamSpecBase
+from qcodes.dataset.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.dependencies import InterDependencies, InterDependencies_
 from qcodes.dataset.database import (initialise_database,
