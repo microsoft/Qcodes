@@ -36,8 +36,11 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
         A dict with the fix results ('runs_inspected', 'runs_fixed')
     """
 
-    if not get_user_version(conn) == 4:
-        raise RuntimeError('Database of wrong version. Will not apply fix.')
+    user_version = get_user_version(conn)
+
+    if not user_version == 4:
+        raise RuntimeError('Database of wrong version. Will not apply fix. '
+                           'Expected version 4, found version {user_version}')
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
@@ -84,6 +87,13 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
         conn: The connection to the database
         run_ids: The runs to (potentially) fix
     """
+
+    user_version = get_user_version(conn)
+
+    if not user_version == 3:
+        raise RuntimeError('Database of wrong version. Will not apply fix. '
+                           'Expected version 3, found version {user_version}')
+
 
     log.info('[*] Fixing run descriptions...')
     for run_id in run_ids:
