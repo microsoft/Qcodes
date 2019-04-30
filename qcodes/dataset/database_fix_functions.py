@@ -3,16 +3,22 @@ Sometimes it happens that databases are put into inconsistent/corrupt states.
 This module contains functions to remedy known issues.
 """
 import json
-from typing import Dict
+import logging
+from typing import Dict, Sequence
 
 from tqdm import tqdm
 
-from qcodes.dataset.sqlite_base import (ConnectionPlus, get_user_version,
-                                        atomic)
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.sqlite_base import (get_run_description,
-                                        update_run_description,
-                                        one, atomic_transaction)
+from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.sqlite_base import (ConnectionPlus, atomic,
+                                        atomic_transaction,
+                                        get_parameters,
+                                        get_run_description, get_user_version,
+                                        one,
+                                        select_one_where,
+                                        update_run_description)
+
+log = logging.getLogger(__name__)
 
 
 def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
@@ -62,3 +68,37 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
             runs_inspected += 1
 
     return {'runs_inspected': runs_inspected, 'runs_fixed': runs_fixed}
+
+
+def fix_wrong_run_descriptions(conn: ConnectionPlus,
+                               run_ids: Sequence[int]) -> None:
+    """
+    NB: This is a FIX function. Do not use it unless your database has been
+    diagnosed with the problem that this function fixes.
+
+    Overwrite faulty run_descriptions by using information from the layouts and
+    dependencies tables. If a correct description is found for a run, that
+    run is left untouched.
+
+    Args:
+        conn: The connection to the database
+        run_ids: The runs to (potentially) fix
+    """
+
+    log.info('[*] Fixing run descriptions...')
+    for run_id in run_ids:
+        trusted_paramspecs = get_parameters(conn, run_id)
+        trusted_desc = RunDescriber(
+                           interdeps=InterDependencies(*trusted_paramspecs))
+
+        actual_desc_str = select_one_where(conn, "runs",
+                                           "run_description",
+                                           "run_id", run_id)
+
+        if actual_desc_str == trusted_desc.to_json():
+            log.info(f'[+] Run id: {run_id} had an OK description')
+        else:
+            log.info(f'[-] Run id: {run_id} had a broken description. '
+                     f'Description found: {actual_desc_str}')
+            update_run_description(conn, run_id, trusted_desc.to_json())
+            log.info(f'    Run id: {run_id} has been updated.')
