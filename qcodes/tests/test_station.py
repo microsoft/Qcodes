@@ -1,11 +1,20 @@
 import pytest
+import tempfile
+from pathlib import Path
+from typing import Union
 
+import qcodes
 from qcodes import Instrument
 from qcodes.station import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.tests.test_combined_par import DumyPar
 from qcodes.instrument.parameter import Parameter
+from qcodes.tests.test_config import default_config
 
+@pytest.fixture(autouse=True)
+def use_default_config():
+    with default_config():
+        yield
 
 @pytest.fixture(autouse=True)
 def set_default_station_to_none():
@@ -201,3 +210,154 @@ def test_station_after_instrument_is_closed():
     with pytest.raises(KeyError, match='Component bob is not part of the '
                                        'station'):
         station.remove_component('bob')
+
+@pytest.fixture
+def example_station_config() -> str:
+    """
+    Returns path to temp yaml file with station config.
+    """
+    sims_path = f'{qcodes.__path__[0]}\\instrument\\sims\\'
+    test_config = f"""
+instruments:
+  lakeshore:
+    driver: qcodes.instrument_drivers.Lakeshore.Model_336
+    type: Model_336
+    enable_forced_reconnect: true
+    address: GPIB::2::65535::INSTR
+    init:
+      visalib: '{sims_path}Lakeshore_model336.yaml@sim'
+  mock_dac:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {{"ch1", "ch2"}}
+  mock_dac2:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    """
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        filename = Path(tmpdirname, 'station_config.yaml')
+        with filename.open('w') as f:
+            f.write(test_config)
+        yield str(filename)
+
+def station_from_config_str(config: str) -> Station:
+    st = Station(config_file=None)
+    st.load_config(config)
+    return st
+
+
+def has_station_config_been_loaded(st: Station) -> bool:
+    return "StationConfigurator" in st.components.keys()
+
+
+@pytest.fixture
+def example_station(example_station_config) -> Station:
+    return Station(config_file=example_station_config)
+
+
+# instrument loading related tests
+def test_station_config_path_resolution(example_station_config):
+    config = qcodes.config["station_configurator"]
+
+    assert not has_station_config_been_loaded(Station())
+
+    path = Path(example_station_config)
+    config["default_file"] = str(path)
+    assert has_station_config_been_loaded(Station())
+
+    config["default_file"] = path.name
+    config["default_folder"] = str(path.parent)
+    assert has_station_config_been_loaded(Station())
+
+    config["default_file"] = 'random.yml'
+    config["default_folder"] = str(path.parent)
+    assert not has_station_config_been_loaded(Station())
+
+    config["default_file"] = str(path)
+    config["default_folder"] = r'C:\SomeOtherFolder'
+    assert has_station_config_been_loaded(Station())
+
+    config["default_file"] = None
+    config["default_folder"] = str(path.parent)
+    assert has_station_config_been_loaded(Station(config_file=path.name))
+
+    config["default_file"] = None
+    config["default_folder"] = None
+    assert has_station_config_been_loaded(Station(config_file=str(path)))
+
+
+def test_station_creation(example_station):
+    assert "StationConfigurator" in example_station.components.keys()
+
+SIMPLE_MOCK_CONFIG = """
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+"""
+
+@pytest.fixture
+def simple_mock_station(example_station_config) -> Station:
+    yield station_from_config_str(SIMPLE_MOCK_CONFIG)
+
+def test_simple_mock_config(simple_mock_station):
+    st = simple_mock_station
+    assert has_station_config_been_loaded(st)
+    assert hasattr(st, 'load_mock')
+    mock_snapshot = st.snapshot()['components']['StationConfigurator']\
+        ['instruments']['mock']
+    assert mock_snapshot['driver'] == "qcodes.tests.instrument_mocks"
+    assert mock_snapshot['type'] == "DummyInstrument"
+
+
+def test_simple_mock_load_mock(simple_mock_station):
+    st = simple_mock_station
+    mock = st.load_mock()
+    assert type(mock) is DummyInstrument
+
+
+def test_simple_mock_load_instrument(simple_mock_station):
+    st = simple_mock_station
+    mock = st.load_instrument('mock')
+    assert type(mock) is DummyInstrument
+
+
+def test_enable_force_reconnect() -> None:
+    def get_instrument_config(enable_forced_reconnect: Union[bool, None]) -> str:
+        return f"""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    {f'enable_forced_reconnect: {enable_forced_reconnect}'
+        if enable_forced_reconnect is not None else ''}
+    init:
+      gates: {{"ch1", "ch2"}}
+         """
+
+    def assert_on_reconnect(user_config_val: Union[bool, None],
+                            instrument_config_val: Union[bool, None],
+                            expect_failure: bool) -> None:
+        qcodes.config["station_configurator"]\
+            ['enable_forced_reconnect'] = user_config_val
+        st = station_from_config_str(
+            get_instrument_config(instrument_config_val))
+        st.load_instrument('mock')
+        if expect_failure:
+            with pytest.raises(KeyError) as excinfo:
+                st.load_instrument('mock')
+                assert ("Another instrument has the name: mock"
+                        in str(excinfo.value))
+        else:
+            st.load_instrument('mock')
+        Instrument.close_all()
+
+    for user_config_val in [None, True, False]:
+        assert_on_reconnect(user_config_val, False, True)
+        assert_on_reconnect(user_config_val, True, False)
+
+    assert_on_reconnect(True, None, False)
+    assert_on_reconnect(False, None, True)
+    assert_on_reconnect(None, None, True)
