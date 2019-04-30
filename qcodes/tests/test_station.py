@@ -1,12 +1,16 @@
 import pytest
 import tempfile
+import json
 from pathlib import Path
 from typing import Union
 
 import qcodes
+import qcodes.utils.validators as validators
+from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import Station
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import (
+    DummyInstrument, DummyChannelInstrument)
 from qcodes.tests.test_combined_par import DumyPar
 from qcodes.instrument.parameter import Parameter
 from qcodes.tests.test_config import default_config
@@ -316,12 +320,16 @@ def test_simple_mock_load_mock(simple_mock_station):
     st = simple_mock_station
     mock = st.load_mock()
     assert type(mock) is DummyInstrument
+    assert mock.name == 'mock'
+    assert st.components['mock'] is mock
 
 
 def test_simple_mock_load_instrument(simple_mock_station):
     st = simple_mock_station
     mock = st.load_instrument('mock')
     assert type(mock) is DummyInstrument
+    assert mock.name == 'mock'
+    assert st.components['mock'] is mock
 
 
 def test_enable_force_reconnect() -> None:
@@ -361,3 +369,151 @@ instruments:
     assert_on_reconnect(True, None, False)
     assert_on_reconnect(False, None, True)
     assert_on_reconnect(None, None, True)
+
+
+def test_init_parameters():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {"ch1", "ch2"}
+    """)
+    mock = st.load_instrument('mock')
+    for ch in ["ch1", "ch2"]:
+        assert ch in mock.parameters.keys()
+    assert len(mock.parameters) == 3  # there is also IDN
+
+    # Overwrite parameter
+    mock = st.load_instrument('mock', gates=["TestGate"])
+    assert "TestGate" in mock.parameters.keys()
+    assert len(mock.parameters) == 2  # there is also IDN
+
+    # special case of `name`
+    mock = st.load_instrument('mock', name='test')
+    assert mock.name == 'test'
+    assert st.components['test'] is mock
+
+    # test address
+    sims_path = f'{qcodes.__path__[0]}\\instrument\\sims\\'
+    st = station_from_config_str(f"""
+instruments:
+  lakeshore:
+    driver: qcodes.instrument_drivers.Lakeshore.Model_336
+    type: Model_336
+    enable_forced_reconnect: true
+    address: GPIB::2::INSTR
+    init:
+      visalib: '{sims_path}Lakeshore_model336.yaml@sim'
+    """)
+    ls = st.load_instrument('lakeshore')
+
+
+def test_setup_alias_parameters():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {"ch1"}
+    parameters:
+      ch1:
+        unit: mV
+        label: main gate
+        scale: 2
+        offset: 1
+        limits: -10, 10
+        alias: gate_a
+        initial_value: 9
+
+    """)
+    mock = st.load_instrument('mock')
+    p = getattr(mock, 'gate_a')
+    assert isinstance(p, qcodes.Parameter)
+    assert p.unit == 'mV'
+    assert p.label == 'main gate'
+    assert p.scale == 2
+    assert p.offset == 1
+    assert isinstance(p.vals, validators.Numbers)
+    assert str(p.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert p() == 9
+    mock.ch1(1)
+    assert p() == 1
+    p(3)
+    assert mock.ch1() == 3
+    assert p.raw_value == 7
+    assert mock.ch1.raw_value == 7
+
+def test_setup_delegate_parameters():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {"ch1"}
+    parameters:
+      ch1:
+        unit: V
+        label: ch1
+        scale: 1
+        offset: 0
+        limits: -10, 10
+    add_parameters:
+      gate_a:
+        source: ch1
+        unit: mV
+        label: main gate
+        scale: 2
+        offset: 1
+        limits: -6, 6
+        initial_value: 2
+
+    """)
+    mock = st.load_instrument('mock')
+    p = getattr(mock, 'gate_a')
+    assert isinstance(p, DelegateParameter)
+    assert p.unit == 'mV'
+    assert p.label == 'main gate'
+    assert p.scale == 2
+    assert p.offset == 1
+    assert isinstance(p.vals, validators.Numbers)
+    assert str(p.vals) == '<Numbers -6.0<=v<=6.0>'
+    assert p() == 2
+    assert mock.ch1.unit == 'V'
+    assert mock.ch1.label == 'ch1'
+    assert mock.ch1.scale == 1
+    assert mock.ch1.offset == 0
+    assert isinstance(p.vals, validators.Numbers)
+    assert str(mock.ch1.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert mock.ch1() == 5
+    mock.ch1(7)
+    assert p() == 3
+    assert p.raw_value == 7
+    assert mock.ch1.raw_value == 7
+    assert (json.dumps(mock.ch1.snapshot()) ==
+            json.dumps(p.snapshot()['source_parameter']))
+
+
+def test_channel_instrument():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyChannelInstrument
+    enable_forced_reconnect: true
+    parameters:
+      A.temperature:
+        unit: mK
+    add_parameters:
+      T:
+        source: A.temperature
+    """)
+    mock = st.load_instrument('mock')
+    assert mock.A.temperature.unit == 'mK'
+    assert mock.T.unit == 'mK'
