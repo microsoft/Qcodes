@@ -353,8 +353,8 @@ class Station(Metadatable, DelegateAttributes):
         # to report them
 
         # check if instrument is already defined and close connection
-        if instr_cfg.get('ENABLE_FORCED_RECONNECT',
-                         ENABLE_FORCED_RECONNECT):
+        if instr_cfg.get('enable_forced_reconnect',
+                         get_config_enable_forced_reconnect()):
             # save close instrument and remove from monitor list
             with suppress(KeyError):
                 instr = Instrument.find_instrument(identifier)
@@ -372,7 +372,7 @@ class Station(Metadatable, DelegateAttributes):
         module = importlib.import_module(instr_cfg['driver'])
         instr_class = getattr(module, instr_cfg['type'])
 
-        init_kwargs = instr_cfg.get('init',{})
+        init_kwargs = instr_cfg.get('init', {})
         # somebody might have a empty init section in the config
         init_kwargs = {} if init_kwargs is None else init_kwargs
         if 'address' in instr_cfg:
