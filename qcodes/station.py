@@ -6,7 +6,10 @@ import importlib
 import logging
 import os
 from copy import deepcopy
+from io import IOBase
+from typing import Union
 
+import qcodes
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes, YAML
 
@@ -15,21 +18,26 @@ from qcodes.instrument.parameter import (
     Parameter, ManualParameter, StandardParameter, DelegateParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
-from qcodes.config.config import Config
 
 from qcodes.actions import _actions_snapshot
 
 
 log = logging.getLogger(__name__)
 
-# config from the qcodesrc.json file (working directory, home or qcodes dir)
-cfg = Config()
-ENABLE_FORCED_RECONNECT = cfg["station_configurator"]["enable_forced_reconnect"]
-DEFAULT_CONFIG_FOLDER = cfg["station_configurator"]["default_folder"]
-DEFAULT_CONFIG_FILE = cfg["station_configurator"]["default_file"]
-
 PARAMETER_ATTRIBUTES = ['label', 'unit', 'scale', 'inter_delay', 'delay',
                         'step', 'offset']
+
+
+def get_config_enable_forced_reconnect() -> bool:
+    return qcodes.config["station_configurator"]["enable_forced_reconnect"]
+
+
+def get_config_default_folder() -> Optional[str]:
+    return qcodes.config["station_configurator"]["default_folder"]
+
+
+def get_config_default_file() -> Optional[str]:
+    return qcodes.config["station_configurator"]["default_file"]
 
 
 class Station(Metadatable, DelegateAttributes):
@@ -247,17 +255,35 @@ class Station(Metadatable, DelegateAttributes):
     def load_config_file(self, filename: Optional[str] = None):
         def get_config_file_path(
                 filename: Optional[str] = None) -> Optional[str]:
-            filename = filename or DEFAULT_CONFIG_FILE
+            filename = filename or get_config_default_file()
             search_list = [filename]
             if (not os.path.isabs(filename) and
-                DEFAULT_CONFIG_FOLDER is not None):
-                search_list += os.path.join(DEFAULT_CONFIG_FOLDER, filename)
+                get_config_default_folder() is not None):
+                search_list += [os.path.join(get_config_default_folder(),
+                                            filename)]
             for p in search_list:
                 if os.path.isfile(p):
                     return p
             return None
 
-        def _update_station_configuration_snapshot(self):
+
+        path = get_config_file_path(filename)
+        if path is None:
+            if filename is not None:
+                raise FileNotFoundError(path)
+            else:
+                log.warning(
+                    'Could not load default instrument config for Station: \n'
+                    f'File {get_config_default_file()} not found. \n'
+                    'You can change the default config file in '
+                    '`qcodesrc.json`.')
+                return
+
+        with open(path, 'r') as f:
+            self.load_config(f)
+
+    def load_config(self, config: Union[str, IOBase]) -> None:
+        def update_station_configuration_snapshot():
             class ConfigComponent:
                 def __init__(self, data):
                     self.data = data
@@ -268,7 +294,7 @@ class Station(Metadatable, DelegateAttributes):
             self.components['StationConfigurator'] = ConfigComponent(
                 self._config)
 
-        def _update_load_instrument_methods(self):
+        def update_load_instrument_methods():
             #  create shortcut methods to instantiate instruments via
             # `load_<instrument_name>()` so that autocompletion can be used
             # first remove methods that have been added by a previous
@@ -288,24 +314,11 @@ class Station(Metadatable, DelegateAttributes):
                                 f'for the instrument {instrument_name} no ' +
                                 f'lazy loading method {method_name} could ' +
                                 'be created in the StationConfigurator')
-
-        path = get_config_file_path(filename)
-        if path is None:
-            if filename is not None:
-                raise FileNotFoundError(path)
-            else:
-                log.warning(
-                    'Could not load default instrument config for Station: \n'
-                    f'File {DEFAULT_CONFIG_FILE} not found. \n'
-                    'You can change the default config file in '
-                    '`qcodesrc.json`.')
-                return
-
-        with open(path, 'r') as f:
-            self._config = YAML().load(f)
+        self._config = YAML().load(config)
         self._instrument_config = self._config['instruments']
-        self._update_station_configuration_snapshot()
-        self._update_load_instrument_methods()
+        update_station_configuration_snapshot()
+        update_load_instrument_methods()
+
 
     def load_instrument(self, identifier: str,
                         revive_instance: bool=False,
