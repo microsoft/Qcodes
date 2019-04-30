@@ -345,8 +345,8 @@ class Station(Metadatable, DelegateAttributes):
 
         # load from config
         if identifier not in self._instrument_config.keys():
-            raise RuntimeError('Instrument {} not found in config.'
-                               .format(identifier))
+            raise RuntimeError(f'Instrument {identifier} not found in '
+                               'instrument config file')
         instr_cfg = self._instrument_config[identifier]
 
         # config is not parsed for errors. On errors qcodes should be able to
