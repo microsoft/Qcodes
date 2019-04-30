@@ -176,6 +176,11 @@ class ParamSpecGrove:
             return False
         return True
 
+    def __repr__(self) -> str:
+        str_trees = [str(t) for t in self._trees]
+        return 'ParamSpecGrove(' + ', '.join(str_trees) + ')'
+
+
 class DependencyError(Exception):
     def __init__(self,
                  param_name: str,
