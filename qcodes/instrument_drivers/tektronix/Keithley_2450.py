@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable, cast, Dict, Union
+from typing import cast, Dict, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
 from qcodes.utils.validators import Enum, Numbers, Arrays
