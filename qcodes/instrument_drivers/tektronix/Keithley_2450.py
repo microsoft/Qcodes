@@ -87,7 +87,7 @@ class Sense2450(InstrumentChannel):
             parameter_class=ParameterWithSetpoints
         )
 
-    def _measure(self) -> Callable:
+    def _measure(self) -> str:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
         return self.ask(":MEASure?")
@@ -241,7 +241,7 @@ class Keithley2450(VisaInstrument):
 
         if not self._has_correct_language_mode():
             self.log.warning(
-                f"The instrument is in an unsupported language mode."
+                f"The instrument is in an unsupported language mode. "
                 f"Please run `instrument.set_correct_language()` and try to "
                 f"initialize the driver again after an instrument power cycle. "
                 f"No parameters/sub modules will be available on this driver "
