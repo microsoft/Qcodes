@@ -576,7 +576,9 @@ def test_get_description(experiment, some_interdeps):
 
     loaded_ds = DataSet(run_id=1)
 
-    assert loaded_ds.description == desc
+    expected_desc = RunDescriber(some_interdeps[1])
+
+    assert loaded_ds.description == expected_desc
 
 
 def test_metadata(experiment, request):
@@ -698,7 +700,7 @@ def test_mark_complete_is_deprecated_and_marks_as_completed(experiment):
         mark_completed.assert_called_once()
 
 
-@settings(deadline=400)
+@settings(deadline=600)
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
 def test_get_parameter_data(scalar_dataset, start, end):
