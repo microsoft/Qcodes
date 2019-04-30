@@ -389,8 +389,9 @@ class Station(Metadatable, DelegateAttributes):
         # instrument instances via kwargs
         instr_kwargs = deepcopy(init_kwargs)
         instr_kwargs.update(kwargs)
+        name = instr_kwargs.pop('name', identifier)
 
-        instr = instr_class(name=identifier, **instr_kwargs)
+        instr = instr_class(name, **instr_kwargs)
         # setup
 
         # local function to refactor common code from defining new parameter
