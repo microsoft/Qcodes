@@ -710,6 +710,17 @@ class ZIUHFLI(Instrument):
                                                 oscs-1, 1, 'freq'),
                                vals=vals.Numbers(0, 600e6))
 
+            self.add_parameter('demod{}_oscillator'.format(oscs),
+                               label='Selected oscillator {}'.format(oscs),
+                               docstring="Connects the demodulator with the "
+                                         "supplied oscillator.",
+                               get_cmd=partial(self._getter, 'demods',
+                                               oscs-1, 0, 'oscselet'),
+                               set_cmd=partial(self._setter, 'demods',
+                                               oscs-1, 0, 'oscselect'),
+                               val_mapping={i+1: i for i in range(8)},
+                               vals=vals.Ints(1, 8))
+
         ########################################
         # DEMODULATOR PARAMETERS
 
