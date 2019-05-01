@@ -1,10 +1,11 @@
 import io
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, cast
 import json
 
-from qcodes.dataset.dependencies import (InterDependencies,
-                                         InterDependencies_)
 from qcodes.utils.helpers import YAML
+from qcodes.dataset.dependencies import (InterDependencies,
+                                         InterDependencies_,
+                                         new_to_old)
 
 SomeDeps = Union[InterDependencies, InterDependencies_]
 
@@ -42,7 +43,13 @@ class RunDescriber:
         Serialize this object into a dictionary
         """
         ser = {}
-        ser['interdependencies'] = self.interdeps.serialize()
+        old_interdeps: InterDependencies
+        if not self._old_style_deps:
+            new_interdeps = cast(InterDependencies_, self.interdeps)
+            old_interdeps = new_to_old(new_interdeps)
+        else:
+            old_interdeps = cast(InterDependencies, self.interdeps)
+        ser['interdependencies'] = old_interdeps.serialize()
         return ser
 
     @classmethod
@@ -54,13 +61,27 @@ class RunDescriber:
 
         idp: Union[InterDependencies, InterDependencies_]
 
-        if 'paramspecs' in ser['interdependencies'].keys():
+        if cls._is_description_old_style(ser['interdependencies']):
             idp = InterDependencies.deserialize(ser['interdependencies'])
         else:
             idp = InterDependencies_.deserialize(ser['interdependencies'])
         rundesc = cls(interdeps=idp)
 
         return rundesc
+
+    @staticmethod
+    def _is_description_old_style(serialized_object: Dict[str, Any]) -> bool:
+        """
+        Returns True if an old style description is encountered
+        """
+
+        # NOTE: we should probably think carefully about versioning; keeping
+        # the runs description in sync with the API (this file)
+
+        if 'paramspecs' in serialized_object.keys():
+            return True
+        else:
+            return False
 
     def to_yaml(self) -> str:
         """
