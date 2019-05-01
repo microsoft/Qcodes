@@ -718,8 +718,9 @@ class ZIUHFLI(Instrument):
                                                oscs-1, 0, 'oscselet'),
                                set_cmd=partial(self._setter, 'demods',
                                                oscs-1, 0, 'oscselect'),
-                               val_mapping={i+1: i for i in range(8)},
-                               vals=vals.Ints(1, 8))
+                               val_mapping={i + 1: i for i in
+                                            range(number_of_oscillators)},
+                               vals=vals.Ints(1, number_of_oscillators))
 
         ########################################
         # DEMODULATOR PARAMETERS
