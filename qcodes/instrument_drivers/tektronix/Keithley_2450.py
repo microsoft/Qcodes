@@ -2,7 +2,7 @@ import numpy as np
 from typing import cast, Dict, Union
 
 from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.utils.validators import Enum, Numbers, Arrays
+from qcodes.utils.validators import Enum, Numbers, Arrays, Bool
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
@@ -169,6 +169,12 @@ class Source2450(InstrumentChannel):
             get_cmd=f"SOUR:{self._proper_function}:{limit_cmd}?",
             get_parser=float,
             unit=unit
+        )
+
+        self.add_parameter(
+            "limit_tripped",
+            get_cmd=f":SOUR:{self._proper_function}:{limit_cmd}:TRIPped?",
+            val_mapping={True: 1, False: 0}
         )
 
         self.add_parameter(
