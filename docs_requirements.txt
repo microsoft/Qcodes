@@ -2,7 +2,7 @@ sphinx==2.0.1
 sphinx_rtd_theme
 sphinx-jsonschema
 nbsphinx
-nbconvert==5.4.1 #5.4 does not work with nbsphinx and 5.3.x does not work with tornado 6.x
+nbconvert==5.5.0 #5.4 does not work with nbsphinx and 5.3.x does not work with tornado 6.x
 ipython
 jupyter
 scipy
