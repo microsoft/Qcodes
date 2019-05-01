@@ -112,6 +112,12 @@ class ParamSpecGrove:
 
         self._trees_as_dict_inv = self._invert_grove()
 
+        self._names_to_paramspec = {
+            ps.name: ps for ps in self._roots.union(self._leafs)}
+
+        self._stubs: Tuple[ParamSpecTree, ...] = tuple(
+            t for t in self._trees if t.is_stub)
+
     def as_dict(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         return self._trees_as_dict
 
@@ -124,6 +130,9 @@ class ParamSpecGrove:
 
     @property
     def leafs(self) -> Set[ParamSpecBase]:
+    def as_dict_str(self) -> Dict[str, Set[str]]:
+        return self._trees_as_dict_str
+
         return self._leafs
 
     def extend(self, new: ParamSpecTree) -> 'ParamSpecGrove':
