@@ -16,6 +16,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+import qcodes
 from qcodes.utils.deprecate import deprecate
 
 
@@ -718,3 +719,8 @@ def _ruamel_importer():
 
 
 YAML = _ruamel_importer()
+
+
+def get_qcodes_path(*subfolder) -> str:
+    path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
+    return os.path.join(path, *subfolder)

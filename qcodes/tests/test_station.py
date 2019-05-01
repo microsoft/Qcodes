@@ -6,6 +6,7 @@ from typing import Union
 
 import qcodes
 import qcodes.utils.validators as validators
+from qcodes.utils.helpers import get_qcodes_path
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
 from qcodes.station import Station
@@ -216,11 +217,11 @@ def test_station_after_instrument_is_closed():
         station.remove_component('bob')
 
 @pytest.fixture
-def example_station_config() -> str:
+def example_station_config():
     """
     Returns path to temp yaml file with station config.
     """
-    sims_path = f'{qcodes.__path__[0]}\\instrument\\sims\\'
+    sims_path = get_qcodes_path('instrument', 'sims')
     test_config = f"""
 instruments:
   lakeshore:
