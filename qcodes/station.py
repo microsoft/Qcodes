@@ -1,6 +1,6 @@
 """Station objects - collect all the equipment you use to do an experiment."""
 from contextlib import suppress
-from typing import Dict, List, Optional, Sequence, Any
+from typing import Dict, List, Optional, Sequence, Any, cast, AnyStr, IO
 from functools import partial
 import importlib
 import logging
@@ -15,7 +15,8 @@ from qcodes.utils.helpers import make_unique, DelegateAttributes, YAML
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import (
-    Parameter, ManualParameter, StandardParameter, DelegateParameter)
+    Parameter, ManualParameter, StandardParameter,
+    DelegateParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
@@ -97,7 +98,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.default_measurement: List[Any] = []
         self._added_methods: List[str] = []
-        self._monitor_parameters = []
+        self._monitor_parameters: List[Parameter] = []
 
         self.load_config_file(self.config_file)
 
@@ -256,11 +257,13 @@ class Station(Metadatable, DelegateAttributes):
         def get_config_file_path(
                 filename: Optional[str] = None) -> Optional[str]:
             filename = filename or get_config_default_file()
+            if filename is None:
+                return None
             search_list = [filename]
             if (not os.path.isabs(filename) and
                 get_config_default_folder() is not None):
-                search_list += [os.path.join(get_config_default_folder(),
-                                            filename)]
+                config_folder = cast(str, get_config_default_folder())
+                search_list += [os.path.join(config_folder, filename)]
             for p in search_list:
                 if os.path.isfile(p):
                     return p
@@ -282,7 +285,7 @@ class Station(Metadatable, DelegateAttributes):
         with open(path, 'r') as f:
             self.load_config(f)
 
-    def load_config(self, config: Union[str, IOBase]) -> None:
+    def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         def update_station_configuration_snapshot():
             class ConfigComponent:
                 def __init__(self, data):
@@ -396,7 +399,7 @@ class Station(Metadatable, DelegateAttributes):
 
         # local function to refactor common code from defining new parameter
         # and setting existing one
-        def setup_parameter_from_dict(parameter, options_dict):
+        def setup_parameter_from_dict(parameter: Parameter, options_dict):
             for attr, val in options_dict.items():
                 if attr in PARAMETER_ATTRIBUTES:
                     # set the attributes of the parameter, that map 1 to 1
@@ -419,13 +422,22 @@ class Station(Metadatable, DelegateAttributes):
             if 'initial_value' in options_dict:
                 parameter.set(options_dict['initial_value'])
 
+        def resolve_parameter_identifier(instrument: Instrument,
+                                         identifier: str) -> Parameter:
+            p = instrument
+            for level in identifier.split('.'):
+                p = getattr(p, level)
+            if not isinstance(p, Parameter):
+                raise RuntimeError(
+                    f'Cannot resolve parameter identifier `{name}` to '
+                    'a parameter.')
+            return cast(Parameter, p)
+
         # setup existing parameters
         for name, options in instr_cfg.get('parameters', {}).items():
-            # get the parameter object from its name:
-            p = instr
-            for level in name.split('.'):
-                p = getattr(p, level)
-            setup_parameter_from_dict(p, options)
+            setup_parameter_from_dict(
+                resolve_parameter_identifier(instr, name),
+                options)
 
         # setup new parameters
         for name, options in instr_cfg.get('add_parameters', {}).items():
@@ -433,9 +445,7 @@ class Station(Metadatable, DelegateAttributes):
             # pop source only temporarily
             source = options.pop('source', False)
             if source:
-                source_p = instr
-                for level in source.split('.'):
-                    source_p = getattr(source_p, level)
+                source_p = resolve_parameter_identifier(instr, source)
                 instr.add_parameter(name,
                                     DelegateParameter,
                                     source=source_p)

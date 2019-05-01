@@ -258,7 +258,7 @@ def has_station_config_been_loaded(st: Station) -> bool:
 
 
 @pytest.fixture
-def example_station(example_station_config) -> Station:
+def example_station(example_station_config):
     return Station(config_file=example_station_config)
 
 
@@ -304,7 +304,7 @@ instruments:
 """
 
 @pytest.fixture
-def simple_mock_station(example_station_config) -> Station:
+def simple_mock_station(example_station_config):
     yield station_from_config_str(SIMPLE_MOCK_CONFIG)
 
 def test_simple_mock_config(simple_mock_station):

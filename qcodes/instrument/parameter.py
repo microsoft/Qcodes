@@ -2041,7 +2041,7 @@ class DelegateParameter(Parameter):
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
 
-        super().__init__(name=name, *args, **kwargs)
+        super().__init__(name, *args, **kwargs)
 
     # Disable the warnings until MultiParameter and ArrayParameter have been
     # replaced and name/label/unit can live in _BaseParameter
