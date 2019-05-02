@@ -27,6 +27,10 @@ class Keysight_E8267D(VisaInstrument):
     def __init__(self, name, address, step_attenuator=False, **kwargs):
         super().__init__(name, address, **kwargs)
 
+        # Only listed most common spellings idealy want a
+        # .upper val for Enum or string
+        on_off_validator = vals.Enum('on', 'On', 'ON',
+                                     'off', 'Off', 'OFF')
         self.add_parameter(name='frequency',
                            label='Frequency',
                            unit='Hz',
@@ -34,7 +38,8 @@ class Keysight_E8267D(VisaInstrument):
                            set_cmd='FREQ:CW' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
-                           vals=vals.Numbers(1e5, 20e9))
+                           vals=vals.Numbers(1e5, 20e9),
+                           docstring='Adjust the RF output frequency')
         self.add_parameter(name='phase',
                            label='Phase',
                            unit='deg',
@@ -55,10 +60,13 @@ class Keysight_E8267D(VisaInstrument):
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
                            get_parser=parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=on_off_validator)
+        self.add_parameter('status',
+                           get_cmd='DM:STATe?',
+                           set_cmd='DM:STATe {}',
+                           get_parser=parse_on_off,
+                           on_off_validator,
+                           docstring='Enables or disables the internal I/Q modulator. Source can be external or internal.')
 
         self.connect_message()
 
