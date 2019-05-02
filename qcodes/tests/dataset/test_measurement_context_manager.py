@@ -1667,9 +1667,9 @@ def test_save_complex_as_num_raises(complex_num_instrument):
     meas.register_parameter(setparam, paramtype='numeric')
     meas.register_parameter(param, paramtype='numeric', setpoints=(setparam,))
 
-    expected_msg = ("It is not possible to save a complex value for parameter "
-                    "'dummy_channel_inst_complex_num' because its type class "
-                    "is 'numeric', not 'complex'.")
+    expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
+                    'type "numeric", but got a result of '
+                    'type complex128')
 
     with meas.run() as datasaver:
         setparam.set(0)
@@ -1686,9 +1686,8 @@ def test_save_numeric_as_complex_raises(complex_num_instrument):
     meas.register_parameter(setparam, paramtype='numeric')
     meas.register_parameter(param, paramtype='complex', setpoints=(setparam,))
 
-    expected_msg = ("It is not possible to save a numeric value for parameter "
-                    "'dummy_channel_inst_complex_num' because its type class "
-                    "is 'complex', not 'numeric'.")
+    expected_msg = ('Parameter dummy_channel_inst_complex_num is of '
+                    'type "complex", but got a result of type int32 ')
 
     with meas.run() as datasaver:
         setparam.set(0)

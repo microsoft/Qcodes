@@ -344,10 +344,11 @@ class DataSaver:
         Validate the type of the results
         """
 
-        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iuf'}
+        allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iuf',
+                         'complex': 'c'}
 
         for ps, vals in results_dict.items():
-                if not vals.dtype.kind in allowed_kinds[ps.type]:
+                if vals.dtype.kind not in allowed_kinds[ps.type]:
                     raise ValueError(f'Parameter {ps.name} is of type '
                                      f'"{ps.type}", but got a result of '
                                      f'type {vals.dtype} ({vals}).')
@@ -381,8 +382,8 @@ class DataSaver:
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
                     result_dict, all_params)
-            elif toplevel_param.type in ('numeric', 'text'):
-                res_list = self._finalize_res_dict_numeric_or_text(
+            elif toplevel_param.type in ('numeric', 'text', 'complex'):
+                res_list = self._finalize_res_dict_numeric_text_or_complex(
                                result_dict, toplevel_param,
                                inff_params, deps_params)
             else:
@@ -425,7 +426,7 @@ class DataSaver:
         return [res_dict]
 
     @staticmethod
-    def _finalize_res_dict_numeric_or_text(
+    def _finalize_res_dict_numeric_text_or_complex(
             result_dict: Dict[ParamSpecBase, np.ndarray],
             toplevel_param: ParamSpecBase,
             inff_params: Set[ParamSpecBase],
@@ -440,7 +441,7 @@ class DataSaver:
         res_list: List[Dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
-        t_map = {'numeric': float, 'text': str}
+        t_map = {'numeric': float, 'text': str, 'complex': complex}
 
         toplevel_shape = result_dict[toplevel_param].shape
         if toplevel_shape == ():
