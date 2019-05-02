@@ -414,6 +414,8 @@ class DataSaver:
                 return float(val)
             elif paramtype == 'text':
                 return str(val)
+            elif paramtype == 'complex':
+                return complex(val)
             elif paramtype == 'array':
                 if val.shape:
                     return val
