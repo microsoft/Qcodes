@@ -10,6 +10,8 @@ import collections
 
 import numpy as np
 
+from qcodes.utils.types import complex_types
+
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
@@ -306,7 +308,7 @@ class ComplexNum(Validator):
     A validator for complex numbers
     """
 
-    validtypes = (complex, np.complex, np.complex64, np.complex128)
+    validtypes = complex_types
 
     def __init__(self) -> None:
 

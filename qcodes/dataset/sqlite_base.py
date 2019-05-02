@@ -24,13 +24,15 @@ from qcodes.dataset.dependencies import InterDependencies
 from qcodes.dataset.descriptions import RunDescriber
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.utils.types import complex_types
+
 
 log = logging.getLogger(__name__)
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, Number, List, ndarray, bool]
 VALUES = List[VALUE]
-complex_types = Union[complex, np.complex, np.complex64, np.complex128]
+complex_type_union = Union[complex, np.complex, np.complex64, np.complex128]
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -221,7 +223,7 @@ def _convert_array(text: bytes) -> ndarray:
     return np.load(out)
 
 
-def _convert_complex(text: bytes) -> complex_types:
+def _convert_complex(text: bytes) -> complex_type_union:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)[0]
@@ -281,7 +283,7 @@ def _adapt_float(fl: float) -> Union[float, str]:
     return float(fl)
 
 
-def _adapt_complex(value: complex_types) -> sqlite3.Binary:
+def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
     out = io.BytesIO()
     np.save(out, np.array([value]))
     out.seek(0)
@@ -390,8 +392,7 @@ def connect(name: str, debug: bool = False,
     for numpy_float in [np.float, np.float16, np.float32, np.float64]:
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
-    for complex_type in [complex, np.complex, np.complex64,
-                         np.complex128]:
+    for complex_type in complex_types:
         sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore
     sqlite3.register_converter("complex", _convert_complex)
 
