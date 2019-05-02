@@ -120,7 +120,7 @@ class B1517A(B1500Module):
                                       i_range=self._measure_config['measure_range'])
             response = self.ask(msg.message)
 
-            parsed = parse_spot_measurement_response(response)
+            parsed = KeysightB1500.parse_spot_measurement_response(response)
             return parsed['value']
         except AttributeError:
             raise ValueError(
@@ -133,7 +133,7 @@ class B1517A(B1500Module):
                                       v_range=self._measure_config['measure_range'])
             response = self.ask(msg.message)
 
-            parsed = parse_spot_measurement_response(response)
+            parsed = KeysightB1500.parse_spot_measurement_response(response)
             return parsed['value']
 
         except AttributeError:
@@ -245,6 +245,15 @@ class KeysightB1500(VisaInstrument):
 
         self.write(msg.message)
 
+    @staticmethod
+    def parse_spot_measurement_response(response) -> dict:
+        pattern = re.compile(r'((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})')
+
+        d = re.match(pattern, response).groupdict()
+        d['value'] = float(d['value'])
+
+        return d
+
 
 def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
     """
@@ -260,11 +269,3 @@ def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
     return {SlotNr(slot_nr): model for slot_nr, (model, rev) in
             enumerate(moduleinfo, start=1) if model != '0'}
 
-
-def parse_spot_measurement_response(response) -> dict:
-    pattern = re.compile(r'((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})')
-
-    d = re.match(pattern, response).groupdict()
-    d['value'] = float(d['value'])
-
-    return d
