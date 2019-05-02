@@ -61,20 +61,20 @@ class TestB1500:
         assert b1500.aux1 is b1500.by_channel[ChNr.SLOT_06_CH2]
 
     def test_enable_multiple_channels(self, b1500):
-        mock_ask = MagicMock()
-        b1500.ask = mock_ask
+        mock_write = MagicMock()
+        b1500.write = mock_write
 
         b1500.enable_channels({1,2,3})
 
-        mock_ask.assert_called_once_with("CN 1,2,3")
+        mock_write.assert_called_once_with("CN 1,2,3")
 
     def test_disable_multiple_channels(self, b1500):
-        mock_ask = MagicMock()
-        b1500.ask = mock_ask
+        mock_write = MagicMock()
+        b1500.write = mock_write
 
         b1500.disable_channels({1,2,3})
 
-        mock_ask.assert_called_once_with("CL 1,2,3")
+        mock_write.assert_called_once_with("CL 1,2,3")
 
 
 def test_parse_module_query_response():

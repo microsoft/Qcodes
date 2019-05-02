@@ -229,15 +229,21 @@ class KeysightB1500(VisaInstrument):
 
             self.add_submodule(name=module.short_name, submodule=module)
 
-    def enable_channels(self, channels: ChannelList):
+    def enable_channels(self, channels: ChannelList = None):
+        """
+        Enables specified channels. If channels is omitted or `None`, all channels are enabled.
+        """
         msg = MessageBuilder().cn(channels)
 
-        self.ask(msg.message)
+        self.write(msg.message)
 
-    def disable_channels(self, channels: ChannelList):
+    def disable_channels(self, channels: ChannelList = None):
+        """
+        Disables specified channels. If channels is omitted or `None`, all channels are disabled.
+        """
         msg = MessageBuilder().cl(channels)
 
-        self.ask(msg.message)
+        self.write(msg.message)
 
 
 def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
