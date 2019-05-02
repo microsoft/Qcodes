@@ -54,7 +54,7 @@ class CommandList(list):
 
 class MessageBuilder:
 
-    def __init__(self) -> MessageBuilder:
+    def __init__(self):
         """
         Provides a Python wrapper for each of the FLEX commands that the
         KeysightB1500 undestands.
@@ -1184,7 +1184,7 @@ class MessageBuilder:
         return self
 
     def cl(self,
-           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+           channels: enums.ChannelList = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CL'
         elif len(channels) > 15:
@@ -1218,7 +1218,7 @@ class MessageBuilder:
         return self
 
     def cn(self,
-           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+           channels: enums.ChannelList = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CN'
         elif len(channels) > 15:
@@ -1230,7 +1230,7 @@ class MessageBuilder:
         return self
 
     def cnx(self,
-            channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+            channels: enums.ChannelList = None) -> MessageBuilder:
         if channels is None:
             cmd = 'CNX'
         elif len(channels) > 15:
@@ -1437,7 +1437,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def dz(self, channels: List[Union[enums.ChNr, int]] = None) -> \
+    def dz(self, channels: enums.ChannelList = None) -> \
             MessageBuilder:
         if channels is None:
             cmd = 'DZ'
@@ -1909,7 +1909,7 @@ class MessageBuilder:
 
     def fl(self,
            enable_filter: bool,
-           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+           channels: enums.ChannelList = None) -> MessageBuilder:
         """
 
         :param enable_filter:
@@ -1983,7 +1983,7 @@ class MessageBuilder:
         return self
 
     def in_(self,
-            channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+            channels: enums.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2240,7 +2240,7 @@ class MessageBuilder:
         return self
 
     def mcc(self,
-            channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+            channels: enums.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -2400,7 +2400,7 @@ class MessageBuilder:
 
     def mm(self,
            mode: enums.MM.Mode,
-           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+           channels: enums.ChannelList = None) -> MessageBuilder:
         """
 
         :param mode:
@@ -2974,7 +2974,7 @@ class MessageBuilder:
         return self
 
     def rz(self,
-           channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+           channels: enums.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:
@@ -3176,7 +3176,7 @@ class MessageBuilder:
         return self
 
     def spupd(self,
-              channels: List[Union[enums.ChNr, int]] = None) -> MessageBuilder:
+              channels: enums.ChannelList = None) -> MessageBuilder:
         """
 
         :param channels:

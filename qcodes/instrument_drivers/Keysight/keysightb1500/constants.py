@@ -1,12 +1,15 @@
 from enum import Enum, IntEnum, IntFlag
+from typing import Set, Union
 
 
 class StrEnum(str, Enum):
     pass
 
+
 class InstrClass(StrEnum):
     SMU = 'SMU'
     CMU = 'CMU'
+
 
 class SlotNr(IntEnum):
     ALL = 0
@@ -45,6 +48,9 @@ class ChNr(IntEnum):
     SLOT_08_CH2 = 802
     SLOT_09_CH2 = 902
     SLOT_10_CH2 = 1002
+
+
+ChannelList = Set[Union[ChNr, int]]
 
 
 class Abort(IntEnum):
