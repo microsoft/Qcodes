@@ -17,4 +17,4 @@ numpy_concrete_complex = (np.complex64, np.complex128)
 numpy_non_concrete_complex = (np.complex, np.complex_, np.complexfloating)
 
 
-complex_types = numpy_concrete_complex + numpy_non_concrete_floats + (complex,)
+complex_types = numpy_concrete_complex + numpy_non_concrete_complex + (complex,)
