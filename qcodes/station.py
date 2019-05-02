@@ -6,7 +6,6 @@ import importlib
 import logging
 import os
 from copy import deepcopy
-from io import IOBase
 from typing import Union
 
 import qcodes

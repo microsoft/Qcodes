@@ -320,7 +320,7 @@ def test_simple_mock_config(simple_mock_station):
 def test_simple_mock_load_mock(simple_mock_station):
     st = simple_mock_station
     mock = st.load_mock()
-    assert type(mock) is DummyInstrument
+    assert isinstance(mock, DummyInstrument)
     assert mock.name == 'mock'
     assert st.components['mock'] is mock
 
@@ -328,7 +328,7 @@ def test_simple_mock_load_mock(simple_mock_station):
 def test_simple_mock_load_instrument(simple_mock_station):
     st = simple_mock_station
     mock = st.load_instrument('mock')
-    assert type(mock) is DummyInstrument
+    assert isinstance(mock, DummyInstrument)
     assert mock.name == 'mock'
     assert st.components['mock'] is mock
 
@@ -409,7 +409,7 @@ instruments:
     init:
       visalib: '{sims_path}Lakeshore_model336.yaml@sim'
     """)
-    ls = st.load_instrument('lakeshore')
+    st.load_instrument('lakeshore')
 
 
 def test_setup_alias_parameters():
