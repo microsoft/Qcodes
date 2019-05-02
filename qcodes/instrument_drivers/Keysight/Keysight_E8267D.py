@@ -61,7 +61,7 @@ class Keysight_E8267D(VisaInstrument):
                            set_cmd='OUTP {}',
                            get_parser=parse_on_off,
                            vals=on_off_validator)
-        self.add_parameter('status',
+        self.add_parameter('IQmodulator',
                            get_cmd='DM:STATe?',
                            set_cmd='DM:STATe {}',
                            get_parser=parse_on_off,
