@@ -1,0 +1,4 @@
+Changelog for QCoDeS 0.2.1
+==========================
+
+This release fixes two small issues with execution of tests in 0.2.0 (#1540)

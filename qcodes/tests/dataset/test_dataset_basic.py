@@ -14,9 +14,8 @@ import qcodes as qc
 from qcodes import ParamSpec, new_data_set, new_experiment, experiments
 from qcodes import load_by_id, load_by_counter
 from qcodes.dataset.descriptions import RunDescriber
-from qcodes.dataset.dependencies import InterDependencies
+from qcodes.dataset.dependencies import InterDependencies_
 from qcodes.tests.common import error_caused_by
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
 from qcodes.dataset.sqlite_base import _unicode_categories, get_non_dependencies
 from qcodes.dataset.database import get_DB_location
 from qcodes.dataset.data_set import CompletedError, DataSet
@@ -285,7 +284,7 @@ def test_add_paramspec(dataset):
         ps = paramspecs[expected_param_name]
         assert ps.name == expected_param_name
 
-    assert paramspecs['c_param'].inferred_from == 'a_param, b_param'
+    assert set(paramspecs['c_param'].inferred_from_) == {'a_param', 'b_param'}
 
     assert paramspecs == dataset.paramspecs
 
@@ -599,21 +598,30 @@ def test_get_description(experiment, some_paramspecs):
     assert ds.run_id == 1
 
     desc = ds.description
-    assert desc == RunDescriber(InterDependencies())
+    assert desc == RunDescriber(InterDependencies_())
 
     ds.add_parameter(paramspecs['ps1'])
     desc = ds.description
-    assert desc == RunDescriber(InterDependencies(paramspecs['ps1']))
+    expected_desc = RunDescriber(
+                        InterDependencies_(
+                            standalones=(
+                                paramspecs['ps1'].base_version(),)))
+    assert desc == expected_desc
 
     ds.add_parameter(paramspecs['ps2'])
     desc = ds.description
-    assert desc == RunDescriber(InterDependencies(paramspecs['ps1'],
-                                                  paramspecs['ps2']))
+    expected_desc = RunDescriber(
+                        InterDependencies_(
+                            dependencies=(
+                                {paramspecs['ps2'].base_version():
+                                 (paramspecs['ps1'].base_version(),)})))
+    assert desc == expected_desc
 
     # the run description gets written as the dataset is marked as started,
     # so now no description should be stored in the database
     prematurely_loaded_ds = DataSet(run_id=1)
-    assert prematurely_loaded_ds.description == RunDescriber(InterDependencies())
+    assert prematurely_loaded_ds.description == RunDescriber(
+                                                    InterDependencies_())
 
     ds.mark_started()
 
