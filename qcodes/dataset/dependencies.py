@@ -124,15 +124,15 @@ class ParamSpecGrove:
     def as_dict_inv(self) -> Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]:
         return self._trees_as_dict_inv
 
+    def as_dict_str(self) -> Dict[str, Set[str]]:
+        return self._trees_as_dict_str
+
     @property
     def roots(self) -> Set[ParamSpecBase]:
         return self._roots
 
     @property
     def leafs(self) -> Set[ParamSpecBase]:
-    def as_dict_str(self) -> Dict[str, Set[str]]:
-        return self._trees_as_dict_str
-
         return self._leafs
 
     def extend(self, new: ParamSpecTree) -> 'ParamSpecGrove':
