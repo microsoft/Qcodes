@@ -65,8 +65,15 @@ class Keysight_E8267D(VisaInstrument):
                            get_cmd='DM:STATe?',
                            set_cmd='DM:STATe {}',
                            get_parser=parse_on_off,
-                           on_off_validator,
+                           vals=on_off_validator,
                            docstring='Enables or disables the internal I/Q modulator. Source can be external or internal.')
+
+        for source in [1, 2]:
+            self.add_parameter(f'IQsource{source}',
+                               get_cmd=f'DM:SOUR{source}?',
+                               set_cmd=f'DM:SOUR{source} {{}}',
+                               vals=vals.Enum('OFF', 'EXT', 'EXT600', 'INT'),
+                               docstring=f'Source {source} for I/Q modulation.')
 
         self.connect_message()
 
