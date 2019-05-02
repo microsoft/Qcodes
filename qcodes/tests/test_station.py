@@ -398,7 +398,7 @@ instruments:
     assert st.components['test'] is mock
 
     # test address
-    sims_path = f'{qcodes.__path__[0]}\\instrument\\sims\\'
+    sims_path = get_qcodes_path('instrument', 'sims')
     st = station_from_config_str(f"""
 instruments:
   lakeshore:
